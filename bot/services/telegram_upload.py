@@ -177,6 +177,11 @@ async def upload_video_file(
                 log.warning("[TelegramUpload] bot_client.connect() warning: %s", conn_err)
 
         try:
+            await bot_client.get_chat(chat_id)
+        except Exception as gc_err:
+            log.debug("[TelegramUpload] Pre-resolving chat %s note: %s", chat_id, gc_err)
+
+        try:
             return await bot_client.send_video(
                 chat_id=chat_id,
                 video=file_path,

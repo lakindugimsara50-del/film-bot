@@ -152,9 +152,17 @@ async def help_handler(client: Client, message: Message) -> None:
         "🎬 <b>Manual Movie Upload (Wizard):</b>\n"
         "  • <b>Video file / link</b> — Send to bot and follow wizard steps\n"
         "  • <code>/add &lt;film_url&gt; &lt;sub_url&gt; [name] [year]</code>\n\n"
-        "📂 <b>Drafts & Control:</b>\n"
+        "📂 <b>Drafts, Queue & Control:</b>\n"
+        "  • <code>/queue</code> — View pending sequential download queue\n"
         "  • <code>/drafts</code> — List saved drafts\n"
         "  • <code>/cancel</code> — Cancel active leech or upload task\n\n"
+        "💬 <b>උපසිරැසි (Subtitles Management):</b>\n"
+        "  • <code>/sub &lt;movie_name_or_slug&gt; &lt;sub_url&gt;</code> — Add subtitle anytime\n"
+        "  • Reply to <code>.srt</code> or <code>.vtt</code> with <code>/sub &lt;name&gt;</code>\n\n"
+        "👥 <b>කණ්ඩායම් අවසර (Team Access Control):</b>\n"
+        "  • <code>/auth &lt;user_id / @username&gt;</code> — Grant upload permission\n"
+        "  • <code>/unauth &lt;user_id / @username&gt;</code> — Revoke permission\n"
+        "  • <code>/users</code> — List authorized uploaders\n\n"
         "⚙️ <b>Other:</b>\n"
         "  • <code>/status</code> — Bot & server status\n"
         "  • <code>/ping</code> — Liveness check\n\n"
@@ -235,7 +243,15 @@ def _register_handlers() -> None:
 
     from handlers import leech_handler
     leech_handler.register(app)
-    log.info("Handler registered: leech_handler (/leech, /auto, /boost)")
+    log.info("Handler registered: leech_handler (/leech, /auto, /boost, /queue)")
+
+    from handlers import auth_handler
+    auth_handler.register(app)
+    log.info("Handler registered: auth_handler (/auth, /unauth, /users)")
+
+    from handlers import sub_handler
+    sub_handler.register(app)
+    log.info("Handler registered: sub_handler (/sub, /addsub)")
 
 
 
@@ -285,6 +301,14 @@ async def main() -> None:
     # Run uvicorn web server concurrently as a background task
     server_task = asyncio.create_task(server.serve())
     log.info("FastAPI health server started on port %d", port)
+
+    # Start Async FIFO queue worker
+    try:
+        from services.queue_service import queue_service
+        queue_service.start_worker()
+        log.info("FIFO Queue worker started.")
+    except Exception as q_err:
+        log.warning("Could not start queue worker: %s", q_err)
 
     try:
         await app.start()

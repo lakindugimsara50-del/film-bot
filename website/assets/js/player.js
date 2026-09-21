@@ -27,7 +27,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderBreadcrumb(currentMovie);
   renderPageHeader(currentMovie);
   renderServerTabs(currentMovie);
+  initAdaptiveQuality(currentMovie);
   initVideoPlayer(currentMovie);
+  renderSeriesSection(currentMovie);
   renderMovieDetails(currentMovie);
   renderDownloadSection(currentMovie);
   renderRelatedMovies(currentMovie);
@@ -191,6 +193,71 @@ function renderServerTabs(movie) {
       }
     });
   });
+}
+
+// ---- 3b. Adaptive Quality & Network-Aware Streaming ----
+let selectedQuality = 'auto';
+
+function detectNetworkSpeed() {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!conn) return { speed: 'fast', downlink: 10, effectiveType: '4g' };
+  const downlink = conn.downlink || 5;
+  const effectiveType = conn.effectiveType || '4g';
+  let speed = 'fast';
+  if (downlink < 1.0 || effectiveType === '2g' || effectiveType === 'slow-2g') speed = 'slow';
+  else if (downlink < 2.5 || effectiveType === '3g') speed = 'medium';
+  return { speed, downlink, effectiveType };
+}
+
+function initAdaptiveQuality(movie) {
+  const pills = document.querySelectorAll('.q-pill');
+  const speedBadge = document.getElementById('net-speed-text');
+  const net = detectNetworkSpeed();
+
+  if (speedBadge) {
+    if (net.speed === 'slow') {
+      speedBadge.innerHTML = `<i class="fa-solid fa-signal" style="color:#e50914"></i> Low Data (360p)`;
+    } else if (net.speed === 'medium') {
+      speedBadge.innerHTML = `<i class="fa-solid fa-wifi" style="color:#f5c518"></i> Standard (720p)`;
+    } else {
+      speedBadge.innerHTML = `<i class="fa-solid fa-bolt" style="color:#46d369"></i> High Speed (1080p)`;
+    }
+  }
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      selectedQuality = pill.dataset.quality;
+
+      FilmSub.showToast(`Quality set to: ${selectedQuality.toUpperCase()}`, 'info');
+
+      // Check if current stream or downloads have a matching quality
+      const downloads = getMovieDownloads(movie);
+      const matched = downloads.find(d => (d.quality || '').toLowerCase() === selectedQuality.toLowerCase());
+      if (matched && matched.url && vjsPlayer) {
+        vjsPlayer.src({ src: matched.url, type: 'video/mp4' });
+        setTimeout(syncSubtitles, 300);
+      }
+    });
+  });
+
+  // Listen to network changes if browser supports Network Information API
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn && conn.addEventListener) {
+    conn.addEventListener('change', () => {
+      const updatedNet = detectNetworkSpeed();
+      if (selectedQuality === 'auto' && speedBadge) {
+        if (updatedNet.speed === 'slow') {
+          speedBadge.innerHTML = `<i class="fa-solid fa-signal" style="color:#e50914"></i> Low Data (360p)`;
+        } else if (updatedNet.speed === 'medium') {
+          speedBadge.innerHTML = `<i class="fa-solid fa-wifi" style="color:#f5c518"></i> Standard (720p)`;
+        } else {
+          speedBadge.innerHTML = `<i class="fa-solid fa-bolt" style="color:#46d369"></i> High Speed (1080p)`;
+        }
+      }
+    });
+  }
 }
 
 // ---- 4. Video Player ----
@@ -382,6 +449,98 @@ function loadTrailer(movie) {
               style="position:absolute;top:0;left:0;width:100%;height:100%;border:none">
       </iframe>
     </div>`;
+}
+
+// ---- 4b. CineSubz / Netflix TV Series Seasons & Episodes Picker ----
+function renderSeriesSection(movie) {
+  const section = document.getElementById('series-section');
+  if (!section) return;
+
+  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0);
+  if (!isSeries) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+
+  const seasons = Array.isArray(movie.seasons) && movie.seasons.length > 0
+    ? movie.seasons
+    : [{ season_number: 1, name: 'Season 1', episode_count: movie.number_of_episodes || 10 }];
+
+  const totalSeasonsEl = document.getElementById('total-seasons-badge');
+  const totalEpisodesEl = document.getElementById('total-episodes-badge');
+  if (totalSeasonsEl) totalSeasonsEl.textContent = `${seasons.length} Season${seasons.length > 1 ? 's' : ''}`;
+  if (totalEpisodesEl) {
+    const totalEps = seasons.reduce((acc, s) => acc + (s.episode_count || 10), 0);
+    totalEpisodesEl.textContent = `${totalEps} Episodes`;
+  }
+
+  const tabsEl = document.getElementById('season-tabs');
+  const gridEl = document.getElementById('episodes-grid');
+  if (!tabsEl || !gridEl) return;
+
+  // Render season tabs
+  tabsEl.innerHTML = seasons.map((s, idx) => `
+    <button class="season-tab${idx === 0 ? ' active' : ''}" data-index="${idx}" data-season="${s.season_number || (idx + 1)}" type="button">
+      <i class="fa-solid fa-layer-group"></i> ${FilmSub.escHtml(s.name || `Season ${s.season_number || (idx + 1)}`)}
+    </button>
+  `).join('');
+
+  const renderEpisodesForSeason = (seasonObj) => {
+    const count = seasonObj.episode_count || 10;
+    const sNum = seasonObj.season_number || 1;
+    let epHtml = '';
+    for (let ep = 1; ep <= count; ep++) {
+      epHtml += `
+        <div class="episode-card" data-season="${sNum}" data-episode="${ep}">
+          <div class="ep-info">
+            <span class="ep-num">S${String(sNum).padStart(2, '0')} E${String(ep).padStart(2, '0')}</span>
+            <span class="ep-title">Episode ${ep}</span>
+            <span class="ep-duration"><i class="fa-regular fa-clock"></i> ~45 min</span>
+          </div>
+          <button class="ep-play-btn" title="Watch S${sNum} E${ep}" type="button">
+            <i class="fa-solid fa-play"></i>
+          </button>
+        </div>
+      `;
+    }
+    gridEl.innerHTML = epHtml;
+
+    gridEl.querySelectorAll('.episode-card').forEach(card => {
+      card.addEventListener('click', () => {
+        gridEl.querySelectorAll('.episode-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const ep = card.dataset.episode;
+        const s = card.dataset.season;
+        FilmSub.showToast(`Loading Season ${s} Episode ${ep}...`, 'info');
+
+        // Scroll smoothly to player
+        const playerSec = document.getElementById('player-section');
+        if (playerSec) {
+          playerSec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Auto play if available
+        if (vjsPlayer) {
+          try { vjsPlayer.play(); } catch (e) {}
+        }
+      });
+    });
+  };
+
+  // Render initial season
+  renderEpisodesForSeason(seasons[0]);
+
+  // Tab click listeners
+  tabsEl.querySelectorAll('.season-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabsEl.querySelectorAll('.season-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const idx = parseInt(btn.dataset.index, 10);
+      renderEpisodesForSeason(seasons[idx]);
+    });
+  });
 }
 
 // ---- 5. Movie Details & Synopsis ----

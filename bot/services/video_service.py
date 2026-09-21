@@ -183,3 +183,44 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
     except Exception as exc:
         log.debug("[VideoService] Fast remux error: %s", exc)
         return False
+
+
+async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str) -> bool:
+    """
+    Soft-embed subtitles into video container (MP4 mov_text or MKV subrip).
+    Takes only 2-4 seconds since video and audio streams are copied without re-encoding (-c copy).
+    Enables native media players (VLC, MX Player, Smart TVs) to autoplay Sinhala subtitles immediately.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(video_path) or not os.path.exists(sub_path):
+        return False
+
+    ext = os.path.splitext(output_path)[1].lower()
+    sub_codec = "mov_text" if ext in (".mp4", ".m4v", ".mov") else "subrip"
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-i", video_path,
+        "-i", sub_path,
+        "-c", "copy",
+        "-c:s", sub_codec,
+        "-metadata:s:s:0", "language=sin",
+        "-metadata:s:s:0", "title=Sinhala",
+        "-disposition:s:0", "default",
+        output_path,
+    ]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await proc.wait()
+        return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+    except Exception as exc:
+        log.warning("[VideoService] Soft subtitle mux error: %s", exc)
+        return False
+

@@ -146,9 +146,26 @@
   <section class="cs-player-section" id="player-section" aria-label="Online Streaming Player">
     <div class="cs-container">
       <div class="cs-player-card">
-        <!-- Server Switcher Tabs -->
-        <div class="server-tabs" id="server-tabs">
-          <!-- Injected by player.js -->
+        <!-- Player Controls Header: Servers + Quality Switcher -->
+        <div class="player-toolbar">
+          <div class="server-tabs" id="server-tabs">
+            <!-- Injected by player.js -->
+          </div>
+          <div class="quality-selector-wrap" id="quality-selector-wrap">
+            <span class="quality-label"><i class="fa-solid fa-gauge-high"></i> Quality:</span>
+            <div class="quality-pills" id="quality-pills">
+              <button type="button" class="q-pill active" data-quality="auto" title="Auto Speed Adaptive">
+                <i class="fa-solid fa-bolt"></i> Auto
+              </button>
+              <button type="button" class="q-pill" data-quality="1080p">1080p</button>
+              <button type="button" class="q-pill" data-quality="720p">720p</button>
+              <button type="button" class="q-pill" data-quality="480p">480p</button>
+              <button type="button" class="q-pill" data-quality="360p">360p</button>
+            </div>
+            <div class="network-speed-badge" id="net-speed-badge" title="Network Connection Speed">
+              <i class="fa-solid fa-wifi"></i> <span id="net-speed-text">Auto (HD)</span>
+            </div>
+          </div>
         </div>
 
         <!-- Video Player Container -->
@@ -162,6 +179,36 @@
         <div class="player-notice">
           <i class="fa-solid fa-circle-info"></i>
           <span>සිංහල උපසිරැසි (Sinhala Subtitles) සඳහා Player එකේ පහළ ඇති <strong>CC</strong> බොත්තමෙන් "Sinhala" තෝරන්න. උපරිම අත්දැකීමක් සඳහා Fullscreen භාවිතා කරන්න.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TV SERIES SEASONS & EPISODES SECTION (CineSubz / Netflix Style) ========== -->
+  <section class="cs-series-section" id="series-section" style="display:none" aria-label="TV Series Seasons and Episodes">
+    <div class="cs-container">
+      <div class="cs-series-card">
+        <div class="series-header">
+          <div class="series-header-title">
+            <i class="fa-solid fa-tv" style="color:var(--accent)"></i>
+            <h2>Seasons & Episodes (කාලසීමා සහ කොටස්)</h2>
+          </div>
+          <div class="season-badge-wrap">
+            <span class="badge badge-quality" id="total-seasons-badge">1 Season</span>
+            <span class="badge badge-year" id="total-episodes-badge">Episodes</span>
+          </div>
+        </div>
+
+        <!-- Season Selector Tabs -->
+        <div class="season-tabs" id="season-tabs">
+          <!-- Injected by player.js -->
+        </div>
+
+        <!-- Episodes Grid -->
+        <div class="episodes-container">
+          <div class="episodes-grid" id="episodes-grid">
+            <!-- Injected by player.js -->
+          </div>
         </div>
       </div>
     </div>

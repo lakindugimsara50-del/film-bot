@@ -649,15 +649,17 @@ async def run_auto_leech(
         )
         default_sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
 
-        # Multi-quality download cards
+        # Multi-quality download cards (1080p, 720p, 480p, 360p)
         file_ext = os.path.splitext(file_name)[1].lstrip(".").upper() or "MP4"
         stream_type = "video/mp4" if file_ext == "MP4" else "video/x-matroska"
 
+        sz_360 = int(file_size * 0.18)
         sz_480 = int(file_size * 0.28)
         sz_720 = int(file_size * 0.55)
         sz_1080 = file_size
 
         downloads_list = [
+            {"quality": "360p", "size": downloader.format_bytes(sz_360), "url": stream_url, "format": file_ext, "host": "Direct"},
             {"quality": "480p", "size": downloader.format_bytes(sz_480), "url": stream_url, "format": file_ext, "host": "Direct"},
             {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": stream_url, "format": file_ext, "host": "Direct"},
             {"quality": "1080p", "size": downloader.format_bytes(sz_1080), "url": stream_url, "format": file_ext, "host": "Direct"},
@@ -665,6 +667,8 @@ async def run_auto_leech(
 
         raw_dur = tmdb_meta.get("duration", 120)
         dur_str = f"{raw_dur} min" if isinstance(raw_dur, int) else (str(raw_dur) if str(raw_dur).endswith("min") else f"{raw_dur} min")
+
+        is_series = tmdb_meta.get("type") == "series"
 
         movie_entry = {
             "id": slug,
@@ -676,6 +680,10 @@ async def run_auto_leech(
             "rating": tmdb_meta.get("rating") or tmdb_meta.get("imdb", "8.0"),
             "imdb_id": imdb_id or "",
             "tmdb_id": str(tmdb_meta.get("tmdb_id", "")),
+            "type": "series" if is_series else "movie",
+            "number_of_seasons": tmdb_meta.get("number_of_seasons", 1) if is_series else 0,
+            "number_of_episodes": tmdb_meta.get("number_of_episodes", 0) if is_series else 0,
+            "seasons": tmdb_meta.get("seasons", []) if is_series else [],
             "poster": tmdb_meta.get("poster_url") or tmdb_meta.get("poster", ""),
             "poster_url": tmdb_meta.get("poster_url") or tmdb_meta.get("poster", ""),
             "backdrop": tmdb_meta.get("backdrop_url") or tmdb_meta.get("backdrop", ""),

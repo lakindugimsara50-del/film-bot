@@ -51,7 +51,17 @@ async def fetch_metadata(query: str, year: int = None) -> dict:
         results = resp.json().get("results", [])
 
         if not results:
-            log.warning("TMDB: No results for '%s' (%s)", query, year)
+            log.info("TMDB: No movie results for '%s', searching TV series...", query)
+            tv_resp = await client.get(
+                f"{_BASE}/search/tv",
+                params={"api_key": TMDB_API_KEY, "query": query, "language": "en-US"},
+            )
+            if tv_resp.status_code == 200:
+                tv_results = tv_resp.json().get("results", [])
+                if tv_results:
+                    return await _fetch_tv_metadata(client, tv_results[0])
+
+            log.warning("TMDB: No movie or TV results for '%s' (%s)", query, year)
             return _empty_metadata(query, year)
 
         movie = results[0]
@@ -127,6 +137,99 @@ async def fetch_metadata(query: str, year: int = None) -> dict:
         "cast": cast,
         "director": director,
         "rating": rating,
+        "type": "movie",
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+async def _fetch_tv_metadata(client: httpx.AsyncClient, tv_item: dict) -> dict:
+    """Fetch full TV series metadata including seasons and episodes from TMDB."""
+    tmdb_id = tv_item["id"]
+    name = tv_item.get("name", "Unknown Series")
+    log.info("TMDB: Fetching TV details for '%s' (tmdb_id=%s)", name, tmdb_id)
+
+    # 1. TV Details
+    detail_resp = await client.get(
+        f"{_BASE}/tv/{tmdb_id}",
+        params={"api_key": TMDB_API_KEY, "language": "en-US"},
+    )
+    detail_resp.raise_for_status()
+    details = detail_resp.json()
+
+    # 2. Credits
+    credits = {}
+    try:
+        cred_resp = await client.get(
+            f"{_BASE}/tv/{tmdb_id}/credits",
+            params={"api_key": TMDB_API_KEY},
+        )
+        if cred_resp.status_code == 200:
+            credits = cred_resp.json()
+    except Exception as e:
+        log.warning("Could not fetch credits for TV %s: %s", tmdb_id, e)
+
+    # 3. External IDs
+    imdb_id = ""
+    try:
+        ext_resp = await client.get(
+            f"{_BASE}/tv/{tmdb_id}/external_ids",
+            params={"api_key": TMDB_API_KEY},
+        )
+        if ext_resp.status_code == 200:
+            imdb_id = ext_resp.json().get("imdb_id", "")
+    except Exception as e:
+        log.warning("Could not fetch external_ids for TV %s: %s", tmdb_id, e)
+
+    genres = [g["name"] for g in details.get("genres", [])]
+    cast = [
+        {"name": m["name"], "character": m.get("character", "")}
+        for m in credits.get("cast", [])[:5]
+    ]
+    created_by = ", ".join(c["name"] for c in details.get("created_by", [])) or "Unknown"
+
+    poster_path = details.get("poster_path") or tv_item.get("poster_path")
+    backdrop_path = details.get("backdrop_path") or tv_item.get("backdrop_path")
+    poster_url = f"{_IMG_W500}{poster_path}" if poster_path else ""
+    backdrop_url = f"{_IMG_ORIG}{backdrop_path}" if backdrop_path else ""
+
+    first_air_date: str = details.get("first_air_date", "")
+    release_year: int = int(first_air_date[:4]) if len(first_air_date) >= 4 else 0
+
+    rating = await get_imdb_rating(imdb_id) if imdb_id else str(round(float(details.get("vote_average", 0)), 1)) or "N/A"
+
+    # Seasons list
+    raw_seasons = details.get("seasons", [])
+    seasons = []
+    for s in raw_seasons:
+        if s.get("season_number", 0) > 0:
+            seasons.append({
+                "season_number": s.get("season_number"),
+                "name": s.get("name", f"Season {s.get('season_number')}"),
+                "episode_count": s.get("episode_count", 0),
+                "poster_url": f"{_IMG_W500}{s.get('poster_path')}" if s.get("poster_path") else "",
+                "air_date": s.get("air_date", ""),
+            })
+
+    ep_dur = (details.get("episode_run_time") or [45])[0] if details.get("episode_run_time") else 45
+
+    return {
+        "title": details.get("name", name),
+        "title_si": "",
+        "year": release_year,
+        "imdb_id": imdb_id,
+        "tmdb_id": str(tmdb_id),
+        "poster_url": poster_url,
+        "backdrop_url": backdrop_url,
+        "genres": genres,
+        "duration": ep_dur,
+        "description": details.get("overview", ""),
+        "cast": cast,
+        "director": created_by,
+        "rating": rating,
+        "type": "series",
+        "number_of_seasons": details.get("number_of_seasons", len(seasons)),
+        "number_of_episodes": details.get("number_of_episodes", 0),
+        "seasons": seasons,
     }
 
 

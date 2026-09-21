@@ -1407,3 +1407,237 @@ ul { list-style: none; }
   transform: scale(1.04);
   box-shadow: 0 0 24px rgba(255, 255, 255, 0.4);
 }
+
+/* ============================================================
+   Player Toolbar & Adaptive Quality Switcher
+   ============================================================ */
+.player-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #181818;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.server-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.server-tab {
+  background: #242424;
+  color: var(--text2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all var(--transition);
+}
+.server-tab:hover {
+  background: #2f2f2f;
+  color: #fff;
+}
+.server-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px var(--accent-glow);
+}
+.quality-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.quality-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.quality-pills {
+  display: flex;
+  align-items: center;
+  background: #111;
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.q-pill {
+  background: transparent;
+  color: var(--text3);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.q-pill:hover {
+  color: #fff;
+}
+.q-pill.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 1px 6px rgba(229, 9, 20, 0.4);
+}
+.network-speed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #46d369;
+  background: rgba(70, 211, 105, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(70, 211, 105, 0.2);
+}
+
+/* ============================================================
+   TV Series Seasons & Episodes Section (CineSubz / Netflix Style)
+   ============================================================ */
+.cs-series-section {
+  margin-top: 24px;
+}
+.cs-series-card {
+  background: var(--card-bg, #181818);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px;
+}
+.series-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.series-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.series-header-title h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+}
+.season-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  scrollbar-width: thin;
+}
+.season-tab {
+  background: #242424;
+  color: var(--text2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.season-tab:hover {
+  background: #2e2e2e;
+  color: #fff;
+}
+.season-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.episode-card {
+  background: #131313;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.episode-card:hover {
+  background: #202020;
+  border-color: rgba(229, 9, 20, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.episode-card.active {
+  background: rgba(229, 9, 20, 0.15);
+  border-color: var(--accent);
+}
+.ep-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ep-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.ep-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.ep-duration {
+  font-size: 11px;
+  color: var(--text3);
+}
+.ep-play-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #282828;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.episode-card:hover .ep-play-btn,
+.episode-card.active .ep-play-btn {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.1);
+}

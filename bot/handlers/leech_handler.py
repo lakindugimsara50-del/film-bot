@@ -15,9 +15,13 @@ from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+import re
+import os
+
 import config
 from services import leech_service, seedr_service, task_tracker
-import os
+from services.auth_service import auth_service
+from services.queue_service import queue_service
 
 log = logging.getLogger(__name__)
 
@@ -157,20 +161,9 @@ def register(app: Client) -> None:
     )
     async def leech_command(client: Client, message: Message) -> None:
         user_id = message.from_user.id if message.from_user else 0
-        if not _is_admin(user_id):
-            await message.reply_text("⛔ Access denied. Admin only command.")
-            return
-
-        # Check if an active background task is already running for this admin
-        active = task_tracker.tracker.get_active_task(user_id)
-        if active and active.status == task_tracker.TaskStatus.PROCESSING:
-            await message.reply_text(
-                f"⏳ <b>දැනටමත් කාර්යයක් ක්‍රියාත්මක වෙමින් පවතී!</b>\n\n"
-                f"🎬 <b>චිත්‍රපටය:</b> {active.title}\n"
-                f"📍 <b>පියවර:</b> {active.step}\n\n"
-                f"එය අවලංගු කිරීමට <code>/cancel</code> භාවිතා කරන්න.",
-                parse_mode=ParseMode.HTML,
-            )
+        username = message.from_user.username if message.from_user else ""
+        if not auth_service.is_authorized(user_id, username):
+            await message.reply_text("⛔ මෙම විධානය ක්‍රියාත්මක කිරීමට ඔබට අවසර (Access) නැත. කරුණාකර Admin අමතන්න.")
             return
 
         text = (message.text or "").strip()
@@ -224,6 +217,7 @@ def register(app: Client) -> None:
                 "  • <code>/leech &lt;Movie Name&gt; &lt;Year&gt;</code> — උදා: <code>/leech Deadpool 2024</code>\n"
                 "  • <code>/leech &lt;IMDb ID&gt;</code> — උදා: <code>/leech tt1375666</code>\n"
                 "  • <code>/leech &lt;Magnet/Direct URL&gt;</code> — Direct download & upload\n"
+                "  • <code>/queue</code> — බාගත වීමට ඇති පෝලිම බලන්න\n"
                 "  • <code>/cancel</code> — ක්‍රියාත්මක කාර්යය නවත්වන්න\n\n"
                 "<b>සහාය දක්වන ක්‍රම (4 Acquisition Methods):</b>\n"
                 "  1️⃣ Method A: DDL Scrapers (PixelDrain, Pahe, PSA)\n"
@@ -235,24 +229,85 @@ def register(app: Client) -> None:
             )
             return
 
-        initial_title = query_arg[:40] if query_arg else "Auto-Leech"
-        task_tracker.tracker.start_task(user_id=user_id, title=initial_title)
+        display_hint = query_arg[:40] if query_arg else "Movie"
+
+        # Check if an active task is running
+        is_busy = not queue_service.is_idle()
 
         status_msg = await message.reply_text(
-            "⏳ <b>Auto-Leech පද්ධතිය ආරම්භ කරමින් පවතී...</b>",
+            f"⏳ <b>Auto-Leech පද්ධතියට එක්කරමින් පවතී...</b>\n🎬 {display_hint}",
             parse_mode=ParseMode.HTML,
         )
 
-        # Launch background task and register with task_tracker
-        bg_task = asyncio.create_task(
-            leech_service.run_auto_leech(client, status_msg, user_id, query_arg, reply_media=reply_media)
+        pos = await queue_service.add_to_queue(
+            client=client,
+            status_msg=status_msg,
+            user_id=user_id,
+            query_text=query_arg,
+            reply_media=reply_media,
+            title_hint=display_hint,
         )
-        task_tracker.tracker.set_task_handle(user_id, bg_task)
+
+        if is_busy and pos > 1:
+            await status_msg.edit_text(
+                f"📥 <b>චිත්‍රපටය පෝලිමට (Queue) එක් කරන ලදී!</b>\n\n"
+                f"🎬 <b>චිත්‍රපටය:</b> {display_hint}\n"
+                f"🔢 <b>පෝලිමේ ස්ථානය (Queue Position):</b> #{pos}\n\n"
+                f"💡 <i>දැනට ක්‍රියාත්මක කාර්යය අවසන් වූ වහාම මෙම චිත්‍රපටය කිසිදු බාධාවකින් තොරව ස්වයංක්‍රීයව බාගත වේ.</i>\n"
+                f"📋 <i>පෝලිම බැලීමට: <code>/queue</code></i>",
+                parse_mode=ParseMode.HTML,
+            )
+
+    @app.on_message(filters.private & filters.command(["queue", "q"]))
+    async def queue_command(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        username = message.from_user.username if message.from_user else ""
+        if not auth_service.is_authorized(user_id, username):
+            await message.reply_text("⛔ Access denied.")
+            return
+
+        items = queue_service.get_queue_status()
+        if not items:
+            await message.reply_text("🟢 <b>බාගත කිරීමේ පෝලිම හිස්ය (Queue is Empty).</b>\n\nනව චිත්‍රපටයක් බාගත කිරීමට <code>/leech &lt;Movie Name&gt;</code> භාවිතා කරන්න.", parse_mode=ParseMode.HTML)
+            return
+
+        lines = []
+        for i, it in enumerate(items, 1):
+            lines.append(f"<b>{i}. {it['title']}</b>\n   ⚡ <i>{it['status']}</i>")
+
+        body = "\n\n".join(lines)
+        await message.reply_text(
+            f"📋 <b>වත්මන් බාගත කිරීමේ පෝලිම (Movie Download Queue):</b>\n\n"
+            f"{body}\n\n"
+            f"💡 <i>සියලුම චිත්‍රපට පිළිවෙලින් එකිනෙක ස්වයංක්‍රීයව බාගත වේ.</i>",
+            parse_mode=ParseMode.HTML,
+        )
+
+    @app.on_message(filters.private & filters.command(["cancel", "stop"]))
+    async def cancel_command(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        username = message.from_user.username if message.from_user else ""
+        if not auth_service.is_authorized(user_id, username):
+            await message.reply_text("⛔ Access denied.")
+            return
+
+        cancelled = task_tracker.tracker.cancel_task(user_id)
+        if not cancelled:
+            cancelled = task_tracker.tracker.cancel_task(None)
+
+        if cancelled:
+            await message.reply_text(
+                "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>",
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await message.reply_text("ℹ️ දැනට අවලංගු කිරීමට කිසිදු ක්‍රියාකාරී කාර්යයක් නොමැත.")
 
     @app.on_callback_query(filters.regex(r"^leech:"))
     async def leech_callback_handler(client: Client, query: CallbackQuery) -> None:
         user_id = query.from_user.id if query.from_user else 0
-        if not _is_admin(user_id):
+        username = query.from_user.username if query.from_user else ""
+        if not auth_service.is_authorized(user_id, username):
             await query.answer("Unauthorized.", show_alert=True)
             return
 
@@ -270,3 +325,4 @@ def register(app: Client) -> None:
                 )
             else:
                 await query.answer("No active task to cancel.")
+

@@ -9,6 +9,7 @@ All log strings are in English to avoid Windows charmap errors.
 """
 
 import logging
+import re
 import urllib.parse
 from typing import Optional
 
@@ -18,6 +19,8 @@ log = logging.getLogger(__name__)
 
 # YTS official and mirror API domains
 YTS_BASE_URLS = [
+    "https://yts.gg",
+    "https://yts.bz",
     "https://yts.mx",
     "https://yts.lt",
     "https://yts.am",
@@ -55,13 +58,19 @@ async def search(
     year: Optional[int] = None,
     imdb_id: Optional[str] = None,
     max_size_bytes: int = MAX_FILE_SIZE_BYTES,
+    is_series: bool = False,
 ) -> list[dict]:
     """
     Search YTS for torrent releases matching the movie.
     Filters out any release larger than max_size_bytes (< 1.95 GB).
+    Rejects TV series, documentaries, and false title matches.
 
     Returns a list of candidate dictionaries sorted by quality preference (1080p, then 720p).
     """
+    if is_series:
+        log.info("[M-YTS] Skipping YTS because target is a TV series.")
+        return []
+
     query = imdb_id if imdb_id else (f"{title} {year}" if year else title)
     log.info("[M-YTS] Searching YTS API for: %s", query)
 
@@ -92,6 +101,27 @@ async def search(
                         continue
 
                     m_title = movie.get("title_english") or movie.get("title") or title
+
+                    # Clean comparison to filter false matches (e.g. documentaries, spinoffs)
+                    clean_target = re.sub(r"[^\w\s]", "", title).strip().lower()
+                    clean_m = re.sub(r"[^\w\s]", "", m_title).strip().lower()
+                    genres = [str(g).lower() for g in movie.get("genres", [])]
+
+                    if not imdb_id:
+                        if "documentary" in genres and "documentary" not in clean_target:
+                            log.debug("[M-YTS] Skipping documentary '%s'", m_title)
+                            continue
+                        if any(k in clean_m for k in ("parody", "behind the scenes", "the making of", "unauthorized")):
+                            log.debug("[M-YTS] Skipping parody/spinoff '%s'", m_title)
+                            continue
+                        if clean_target != clean_m:
+                            target_words = clean_target.split()
+                            if not all(w in clean_m for w in target_words):
+                                continue
+                            if not year or (m_year and abs(int(m_year) - int(year)) > 1):
+                                log.debug("[M-YTS] Skipping '%s' - non-exact title without matching year", m_title)
+                                continue
+
                     torrents = movie.get("torrents", [])
 
                     for tor in torrents:

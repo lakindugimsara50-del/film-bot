@@ -183,7 +183,22 @@ async def _download_aria2c_http(
                         pass
 
         await proc.wait()
+    except asyncio.CancelledError:
+        log.info("[Downloader] aria2c download cancelled, killing process...")
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
     finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
         if task_key and task_key in ACTIVE_SUBPROCESSES:
             del ACTIVE_SUBPROCESSES[task_key]
 
@@ -375,7 +390,22 @@ async def download_torrent(
                         pass
 
         await proc.wait()
+    except asyncio.CancelledError:
+        log.info("[Downloader] aria2c torrent download cancelled, killing process...")
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
     finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
         if task_key and task_key in ACTIVE_SUBPROCESSES:
             del ACTIVE_SUBPROCESSES[task_key]
 

@@ -100,6 +100,7 @@ async def compress_smart_1080p(
         output_path,
     ]
 
+    proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -145,9 +146,25 @@ async def compress_smart_1080p(
             log.error("[VideoService] FFmpeg exited with code %s", proc.returncode)
             return False
 
+    except asyncio.CancelledError:
+        log.info("[VideoService] Compression cancelled, terminating FFmpeg...")
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
     except Exception as exc:
         log.error("[VideoService] Compression exception: %s", exc)
         return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
 
 
 async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
@@ -172,6 +189,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         output_path,
     ]
 
+    proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -180,9 +198,24 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         )
         await proc.wait()
         return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
     except Exception as exc:
         log.debug("[VideoService] Fast remux error: %s", exc)
         return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
 
 
 async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str) -> bool:
@@ -212,6 +245,7 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
         output_path,
     ]
 
+    proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -220,7 +254,22 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
         )
         await proc.wait()
         return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
     except Exception as exc:
         log.warning("[VideoService] Soft subtitle mux error: %s", exc)
         return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
 

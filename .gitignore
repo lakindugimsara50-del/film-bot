@@ -25,6 +25,7 @@ bot/.env.*
 !bot/.env.example
 seedr_accounts.json
 bot/seedr_accounts.json
+bot/data/
 *.json.local
 !seedr_accounts.example.json
 !bot/seedr_accounts.example.json

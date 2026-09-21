@@ -3,12 +3,13 @@ torrent_finder.py — Multi-Source Torrent Search Engine for TV Series & Movies.
 
 Sources:
 1. The Pirate Bay / Apibay API (Movies + TV series, classic films to new releases)
-2. EZTV API (Specialized high-speed TV series torrents, filtered by SxxExx)
+2. EZTV API (Specialized high-speed TV series torrents, filtered by SxxExx and IMDb)
 3. Torrents-CSV API (Open global torrent search engine)
 4. YTS Torrent API (Specialized for high quality movies < 2GB)
 
 Prioritizes releases under 2.05 GB for 100% Seedr cloud conversion compatibility,
 while also supporting larger releases (up to 3.2 GB) via FFmpeg Smart 1080p compression.
+Filters out commentary tracks (Rifftrax), junk files (posters, soundtracks), and false title matches.
 
 All log strings are in English to avoid Windows charmap errors.
 """
@@ -40,9 +41,43 @@ PUBLIC_TRACKERS = [
     "udp://9.rarbg.to:2710/announce",
 ]
 
-# Max file size: 3.2 GB (files > 1.95 GB are compressed via Smart 1080p FFmpeg)
+# File size boundaries
+MIN_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB minimum to avoid posters/soundtracks/samples
 MAX_FILE_SIZE_BYTES = int(3.2 * 1024 * 1024 * 1024)
 SEEDR_SAFE_SIZE_BYTES = int(2.05 * 1024 * 1024 * 1024)
+
+# Regex patterns identifying non-video junk files
+JUNK_EXTENSIONS = [
+    r"\.jpg\b", r"\.jpeg\b", r"\.png\b", r"\.gif\b",
+    r"\.mp3\b", r"\.flac\b", r"\.wav\b", r"\.aac\b",
+    r"\.pdf\b", r"\.epub\b", r"\.mobi\b",
+    r"\.txt\b", r"\.nfo\b", r"\.exe\b", r"\.zip\b", r"\.rar\b",
+    r"\bsoundtrack\b", r"\bost\b", r"\balbum\b", r"\bdiscography\b",
+    r"\bwallpaper\b", r"\bposter\b",
+]
+
+
+def is_junk_release(name: str) -> bool:
+    """Check if the release is a non-video asset (poster, soundtrack, text, executable)."""
+    name_lower = name.lower()
+    return any(re.search(pat, name_lower) for pat in JUNK_EXTENSIONS)
+
+
+def get_release_penalty(name: str) -> int:
+    """Return penalty points for commentary tracks, samples, or low-quality CAM/TS recordings."""
+    n = name.lower()
+    penalty = 0
+    if "rifftrax" in n or "commentary" in n or "audio commentary" in n:
+        penalty += 1000
+    if "sample" in n or "trailer" in n or "preview" in n or "extras" in n:
+        penalty += 2000
+    if any(k in n for k in ["telesync", "hdts", "hd-ts", "camrip", "hdcam", "hd-cam", "cam-rip", "workprint"]):
+        penalty += 500
+    elif re.search(r"\b(cam|ts)\b", n):
+        penalty += 500
+    if any(k in n for k in ["swesub", "nordic", "latino", "french", "german", "ita", "sub ita", "hindi dubbed", "tamil dubbed"]):
+        penalty += 40
+    return penalty
 
 
 def build_magnet_uri(info_hash: str, title: str) -> str:
@@ -85,12 +120,48 @@ def matches_season_episode(name: str, season: Optional[int], episode: Optional[i
 
     if season is not None:
         patterns = [
-            rf"\bs0?{season}\b",
+            rf"\bs0?{season}(?:e\d{{1,3}}|ep\d{{1,3}}|\b)",
             rf"season\s*0?{season}\b",
+            rf"\b0?{season}x\d{{1,3}}\b",
+        ]
+        return any(re.search(p, name_lower) for p in patterns)
+
+    if episode is not None:
+        patterns = [
+            rf"(?:\b|s\d{{1,2}})e(?:p)?0?{episode}\b",
+            rf"episode\s*0?{episode}\b",
+            rf"\b\d{{1,2}}x0?{episode}\b",
+            rf"\be(?:p)?0?{episode}\b",
         ]
         return any(re.search(p, name_lower) for p in patterns)
 
     return True
+
+
+def is_valid_series_title(release_name: str, show_title: str, season: Optional[int], episode: Optional[int]) -> bool:
+    """
+    Ensure the release title actually belongs to show_title, not another show
+    that happened to mention show_title in the description or tag.
+    Standard TV release format is: <Show Name> SxxExx <Quality/Tags>.
+    The show title must be present in the portion of the name BEFORE SxxExx.
+    """
+    if not matches_season_episode(release_name, season, episode):
+        return False
+
+    name_lower = release_name.lower().replace(".", " ").replace("_", " ").replace("-", " ")
+    parts = re.split(
+        r"\b(?:s\d{1,2}(?:\s*e(?:p)?\d{1,3}(?:[\-e]\d{1,3})?)?|season\s*\d+(?:\s*(?:ep|episode)\s*\d+)?|\d{1,2}x\d{1,3})\b",
+        name_lower,
+        flags=re.IGNORECASE,
+    )
+    prefix = parts[0].strip() if parts else name_lower
+
+    show_words = [w.lower() for w in re.findall(r"\b[a-zA-Z0-9]+\b", show_title) if len(w) > 2]
+    if not show_words:
+        return True
+
+    # All significant words of show_title must be in prefix
+    return all(w in prefix for w in show_words)
 
 
 def title_matches(name: str, query: str) -> bool:
@@ -98,12 +169,29 @@ def title_matches(name: str, query: str) -> bool:
     words = [w.lower() for w in re.findall(r"\b[a-zA-Z0-9]+\b", query) if len(w) > 2]
     if not words:
         return True
-    name_lower = name.lower()
+    name_lower = name.lower().replace(".", " ").replace("_", " ").replace("-", " ")
     return all(w in name_lower for w in words)
+
+
+def calculate_relevance_score(tor_name: str, target_title: str, is_series: bool = False) -> int:
+    """Compute title relevance score penalizing commentary and CAM releases."""
+    score = 100
+    clean_n = re.sub(r"[._-]", " ", tor_name).lower()
+    clean_target = re.sub(r"[._-]", " ", target_title).lower()
+
+    if clean_n.startswith(clean_target):
+        score += 50
+    elif clean_target in clean_n:
+        score += 30
+
+    penalty = get_release_penalty(tor_name)
+    score -= penalty
+    return score
 
 
 async def search_apibay(
     query: str,
+    target_show_title: Optional[str] = None,
     season: Optional[int] = None,
     episode: Optional[int] = None,
     max_size_bytes: int = MAX_FILE_SIZE_BYTES,
@@ -118,6 +206,9 @@ async def search_apibay(
     apibay_urls = [
         "https://apibay.org/q.php",
     ]
+
+    is_series = season is not None or episode is not None or target_show_title is not None
+    show_name = target_show_title or query
 
     async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
         for base_url in apibay_urls:
@@ -138,16 +229,24 @@ async def search_apibay(
                     if name == "No results returned":
                         continue
 
-                    # Season/episode check
-                    if season is not None and not matches_season_episode(name, season, episode):
+                    # Filter junk extensions
+                    if is_junk_release(name):
                         continue
+
+                    # Series prefix / title validation
+                    if is_series:
+                        if not is_valid_series_title(name, show_name, season, episode):
+                            continue
+                    else:
+                        if not title_matches(name, query):
+                            continue
 
                     try:
                         size_bytes = int(it.get("size", 0))
                     except (ValueError, TypeError):
                         size_bytes = 0
 
-                    if size_bytes > max_size_bytes:
+                    if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
                         continue
 
                     try:
@@ -164,6 +263,8 @@ async def search_apibay(
                     magnet = build_magnet_uri(info_hash, name)
                     from services.downloader import format_bytes
 
+                    rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+
                     candidates.append({
                         "method": "torrent",
                         "provider": "ThePirateBay",
@@ -176,6 +277,7 @@ async def search_apibay(
                         "torrent_url": "",
                         "seeds": seeders,
                         "peers": leechers,
+                        "relevance_score": rel_score,
                     })
 
                 if candidates:
@@ -197,7 +299,7 @@ async def search_eztv(
 ) -> list[dict]:
     """
     Search EZTV API for television series releases.
-    Filters specifically for requested season & episode.
+    Filters specifically for requested season & episode, checking page 1 and page 2.
     """
     log.info("[TorrentFinder] EZTV searching: title='%s', imdb_id=%s, S%sE%s", title, imdb_id, season, episode)
     candidates: list[dict] = []
@@ -207,85 +309,92 @@ async def search_eztv(
         "https://eztv.re/api/get-torrents",
     ]
 
-    clean_imdb = (imdb_id or "").lstrip("t")  # Strip 'tt' prefix if present, e.g. tt0944947 -> 0944947
+    clean_imdb = (imdb_id or "").lstrip("t")
 
     async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
         for base_url in eztv_bases:
             try:
-                params: dict = {"limit": 100}
-                if clean_imdb:
-                    params["imdb_id"] = clean_imdb
-                else:
-                    params["search"] = title
+                pages_to_check = [1, 2] if clean_imdb else [1]
+                for p in pages_to_check:
+                    params: dict = {"limit": 100, "page": p}
+                    if clean_imdb:
+                        params["imdb_id"] = clean_imdb
+                    else:
+                        params["search"] = title
 
-                resp = await client.get(base_url, params=params)
-                if resp.status_code != 200:
-                    continue
-
-                data = resp.json()
-                torrents = data.get("torrents", [])
-                if not torrents and clean_imdb and title:
-                    # Fallback to search query if imdb_id search returned 0
-                    params = {"search": title, "limit": 100}
                     resp = await client.get(base_url, params=params)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        torrents = data.get("torrents", [])
-
-                for tor in torrents:
-                    tor_title = tor.get("title") or tor.get("filename") or ""
-                    tor_season = tor.get("season")
-                    tor_episode = tor.get("episode")
-
-                    # Validate show title and season & episode match
-                    if not title_matches(tor_title, title):
+                    if resp.status_code != 200:
                         continue
-                    if season is not None:
-                        if str(tor_season) != str(season) and not matches_season_episode(tor_title, season, episode):
+
+                    data = resp.json()
+                    torrents = data.get("torrents", [])
+                    if not torrents and p == 1 and clean_imdb and title:
+                        params = {"search": title, "limit": 100, "page": 1}
+                        resp = await client.get(base_url, params=params)
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            torrents = data.get("torrents", [])
+
+                    for tor in torrents:
+                        tor_title = tor.get("title") or tor.get("filename") or ""
+                        tor_season = tor.get("season")
+                        tor_episode = tor.get("episode")
+
+                        if is_junk_release(tor_title):
                             continue
-                    if episode is not None:
-                        if str(tor_episode) != str(episode) and not matches_season_episode(tor_title, season, episode):
+
+                        if not title_matches(tor_title, title):
                             continue
 
-                    try:
-                        size_bytes = int(tor.get("size_bytes", 0))
-                    except (ValueError, TypeError):
-                        size_bytes = 0
+                        if season is not None:
+                            if str(tor_season) != str(season) and not matches_season_episode(tor_title, season, episode):
+                                continue
+                        if episode is not None:
+                            if str(tor_episode) != str(episode) and not matches_season_episode(tor_title, season, episode):
+                                continue
 
-                    if size_bytes > max_size_bytes:
-                        continue
+                        try:
+                            size_bytes = int(tor.get("size_bytes", 0))
+                        except (ValueError, TypeError):
+                            size_bytes = 0
 
-                    info_hash = tor.get("hash", "").strip()
-                    magnet = tor.get("magnet_url") or (build_magnet_uri(info_hash, tor_title) if info_hash else "")
-                    if not magnet:
-                        continue
+                        if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
+                            continue
 
-                    try:
-                        seeds = int(tor.get("seeds", 0))
-                    except (ValueError, TypeError):
-                        seeds = 0
+                        info_hash = tor.get("hash", "").strip()
+                        magnet = tor.get("magnet_url") or (build_magnet_uri(info_hash, tor_title) if info_hash else "")
+                        if not magnet:
+                            continue
 
-                    try:
-                        peers = int(tor.get("peers", 0))
-                    except (ValueError, TypeError):
-                        peers = 0
+                        try:
+                            seeds = int(tor.get("seeds", 0))
+                        except (ValueError, TypeError):
+                            seeds = 0
 
-                    quality = extract_quality_from_name(tor_title)
-                    from services.downloader import format_bytes
+                        try:
+                            peers = int(tor.get("peers", 0))
+                        except (ValueError, TypeError):
+                            peers = 0
 
-                    candidates.append({
-                        "method": "torrent",
-                        "provider": "EZTV",
-                        "title": tor_title,
-                        "quality": quality,
-                        "size": format_bytes(size_bytes),
-                        "size_bytes": size_bytes,
-                        "hash": info_hash,
-                        "magnet": magnet,
-                        "torrent_url": tor.get("torrent_url", ""),
-                        "seeds": seeds,
-                        "peers": peers,
-                    })
+                        quality = extract_quality_from_name(tor_title)
+                        from services.downloader import format_bytes
+
+                        rel_score = calculate_relevance_score(tor_title, title, is_series=True)
+
+                        candidates.append({
+                            "method": "torrent",
+                            "provider": "EZTV",
+                            "title": tor_title,
+                            "quality": quality,
+                            "size": format_bytes(size_bytes),
+                            "size_bytes": size_bytes,
+                            "hash": info_hash,
+                            "magnet": magnet,
+                            "torrent_url": tor.get("torrent_url", ""),
+                            "seeds": seeds,
+                            "peers": peers,
+                            "relevance_score": rel_score,
+                        })
 
                 if candidates:
                     log.info("[TorrentFinder] EZTV yielded %d valid candidate(s).", len(candidates))
@@ -300,6 +409,7 @@ async def search_eztv(
 
 async def search_torrents_csv(
     query: str,
+    target_show_title: Optional[str] = None,
     season: Optional[int] = None,
     episode: Optional[int] = None,
     max_size_bytes: int = MAX_FILE_SIZE_BYTES,
@@ -310,6 +420,9 @@ async def search_torrents_csv(
     """
     log.info("[TorrentFinder] Torrents-CSV searching: '%s'", query)
     candidates: list[dict] = []
+
+    is_series = season is not None or episode is not None or target_show_title is not None
+    show_name = target_show_title or query
 
     url = "https://torrents-csv.com/service/search"
     try:
@@ -324,15 +437,24 @@ async def search_torrents_csv(
                     if not info_hash or len(info_hash) != 40:
                         continue
 
-                    if season is not None and not matches_season_episode(name, season, episode):
+                    # Filter junk extensions (like .jpg posters)
+                    if is_junk_release(name):
                         continue
+
+                    # Series prefix / title validation
+                    if is_series:
+                        if not is_valid_series_title(name, show_name, season, episode):
+                            continue
+                    else:
+                        if not title_matches(name, query):
+                            continue
 
                     try:
                         size_bytes = int(it.get("size_bytes", 0))
                     except (ValueError, TypeError):
                         size_bytes = 0
 
-                    if size_bytes > max_size_bytes:
+                    if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
                         continue
 
                     try:
@@ -349,6 +471,8 @@ async def search_torrents_csv(
                     magnet = build_magnet_uri(info_hash, name)
                     from services.downloader import format_bytes
 
+                    rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+
                     candidates.append({
                         "method": "torrent",
                         "provider": "TorrentsCSV",
@@ -361,6 +485,7 @@ async def search_torrents_csv(
                         "torrent_url": "",
                         "seeds": seeders,
                         "peers": leechers,
+                        "relevance_score": rel_score,
                     })
 
                 if candidates:
@@ -386,12 +511,11 @@ async def search_all_torrents(
     - If Movie: YTS + Apibay + Torrents-CSV
 
     Deduplicates by infohash and sorts by:
-    1. Tier 1: Size <= 2.05 GB (100% Seedr cloud compatible)
-       - 1080p > 720p > 480p
-       - Seeds count descending
-    2. Tier 2: Size > 2.05 GB and <= max_size_bytes
-       - 1080p > 720p > 480p
-       - Seeds count descending
+    1. Tier 2: Size <= 2.05 GB (100% Seedr cloud compatible)
+    2. Relevance score: exact show/movie name, penalizing commentary/samples/CAM
+    3. Active seeds: alive torrents (>0 seeds) rank far above dead torrents
+    4. Quality: 1080p > 720p > 480p
+    5. Raw seed count
     """
     clean_title = re.sub(r"[._-]", " ", title).strip()
 
@@ -412,9 +536,9 @@ async def search_all_torrents(
         # 1. EZTV API
         tasks.append(search_eztv(clean_title, imdb_id=imdb_id, season=season, episode=episode, max_size_bytes=max_size_bytes))
         # 2. Apibay
-        tasks.append(search_apibay(series_query, season=season, episode=episode, max_size_bytes=max_size_bytes))
+        tasks.append(search_apibay(series_query, target_show_title=clean_title, season=season, episode=episode, max_size_bytes=max_size_bytes))
         # 3. Torrents-CSV
-        tasks.append(search_torrents_csv(series_query, season=season, episode=episode, max_size_bytes=max_size_bytes))
+        tasks.append(search_torrents_csv(series_query, target_show_title=clean_title, season=season, episode=episode, max_size_bytes=max_size_bytes))
     else:
         # Movie search
         movie_query = f"{clean_title} {year}" if year else clean_title
@@ -435,6 +559,8 @@ async def search_all_torrents(
         if isinstance(res, list):
             for tor in res:
                 tor.setdefault("provider", "YTS" if tor.get("method") == "yts" else "Torrent")
+                if "relevance_score" not in tor:
+                    tor["relevance_score"] = calculate_relevance_score(tor.get("title", ""), clean_title, is_series=is_series)
                 h = tor.get("hash", "").strip().lower()
                 if h and h in seen_hashes:
                     continue
@@ -444,26 +570,34 @@ async def search_all_torrents(
 
     log.info("[TorrentFinder] Total raw torrent candidates collected: %d", len(all_torrents))
 
-    # Ranking formula:
-    # 1. Seedr compatibility tier: size <= 2.05 GB gets Tier 2, larger gets Tier 1
-    # 2. Quality: 1080p (score 3), 720p (score 2), other (score 1)
-    # 3. Seeds: more seeds = higher rank
-    def _rank_torrent(tor: dict) -> tuple[int, int, int]:
+    def _rank_torrent(tor: dict) -> tuple[int, int, int, int, int]:
         sz = tor.get("size_bytes", 0)
-        seedr_tier = 2 if (0 < sz <= SEEDR_SAFE_SIZE_BYTES) else (1 if sz > 0 else 0)
+        # Tier 2: 50MB <= sz <= 2.05GB (100% Seedr cloud compatible)
+        # Tier 1: 2.05GB < sz <= max_size_bytes
+        # Tier 0: < 50MB or > max_size_bytes
+        if MIN_FILE_SIZE_BYTES <= sz <= SEEDR_SAFE_SIZE_BYTES:
+            seedr_tier = 2
+        elif SEEDR_SAFE_SIZE_BYTES < sz <= max_size_bytes:
+            seedr_tier = 1
+        else:
+            seedr_tier = 0
+
+        rel_score = tor.get("relevance_score", 0)
+
+        seeds = tor.get("seeds", 0)
+        has_seeds = 1 if seeds > 0 else 0
 
         q = tor.get("quality", "").lower()
         if "1080" in q:
             q_score = 3
         elif "720" in q:
             q_score = 2
-        elif "2160" in q or "4k" in q:
-            q_score = 1  # 4k is usually too heavy
+        elif "480" in q:
+            q_score = 1
         else:
             q_score = 1
 
-        seeds = tor.get("seeds", 0)
-        return (seedr_tier, q_score, seeds)
+        return (seedr_tier, rel_score, has_seeds, q_score, seeds)
 
     all_torrents.sort(key=_rank_torrent, reverse=True)
     return all_torrents

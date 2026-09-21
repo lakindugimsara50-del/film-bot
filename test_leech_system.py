@@ -511,6 +511,164 @@ class TestLeechService(unittest.TestCase):
 
         asyncio.run(run_cancel())
 
+    def test_torrent_finder_filters_junk_and_false_series_titles(self):
+        """Verify torrent finder excludes non-video junk and false title matches."""
+        async def run_test():
+            mock_apibay = MagicMock()
+            mock_apibay.status_code = 200
+            mock_apibay.json.return_value = [
+                # False title match (The Kingdom... S01E01 Game of Thrones)
+                {
+                    "name": "The Kingdom The Worlds Most Powerful Prince S01E01 Game of Thrones 1080p HDTV",
+                    "info_hash": "HASH_FALSE_MATCH_1",
+                    "seeders": "20",
+                    "size": str(int(1.3 * 1024**3)),
+                },
+                # Junk non-video file (.jpg poster)
+                {
+                    "name": "Game of Thrones (2011) - Season 1 poster.jpg",
+                    "info_hash": "HASH_JUNK_POSTER",
+                    "seeders": "15",
+                    "size": str(int(8 * 1024**2)),
+                },
+                # Commentary track (Rifftrax)
+                {
+                    "name": "Game of Thrones s01e01 1080p Rifftrax 6ch x264 AVC",
+                    "info_hash": "HASH_RIFFTRAX",
+                    "seeders": "5",
+                    "size": str(int(1.4 * 1024**3)),
+                },
+                # Genuine clean release
+                {
+                    "name": "Game of Thrones S01E01 720p HDTV x264-CTU [eztv]",
+                    "info_hash": "HASH_GENUINE_GOT",
+                    "seeders": "7",
+                    "size": str(int(1.5 * 1024**3)),
+                },
+            ]
+
+            def fake_get(url, *args, **kwargs):
+                m = MagicMock()
+                m.status_code = 200
+                m.json.return_value = mock_apibay.json.return_value if "apibay" in str(url) else {"torrents": []}
+                return m
+
+            with patch("httpx.AsyncClient.get", side_effect=fake_get):
+                results = await torrent_finder.search_all_torrents(
+                    title="Game of Thrones",
+                    season=1,
+                    episode=1,
+                    is_series=True,
+                )
+                hashes = [r["hash"] for r in results]
+                # False match and junk poster MUST be excluded
+                self.assertNotIn("HASH_FALSE_MATCH_1", hashes)
+                self.assertNotIn("HASH_JUNK_POSTER", hashes)
+                # Genuine release MUST be ranked above commentary
+                self.assertIn("HASH_GENUINE_GOT", hashes)
+                self.assertEqual(results[0]["hash"], "HASH_GENUINE_GOT")
+
+        asyncio.run(run_test())
+
+    def test_seedr_explicit_delete_methods(self):
+        """Verify SeedrService and SeedrPool explicit delete_folder and delete_torrent methods."""
+        svc = seedr_service.SeedrService(username="dummy", password="pwd")
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+
+        async def run_test():
+            with patch.object(svc, "get_token", new_callable=AsyncMock, return_value="FAKE_TOKEN"), \
+                 patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_resp) as mock_post:
+
+                ok_f = await svc.delete_folder(12345)
+                self.assertTrue(ok_f)
+                mock_post.assert_awaited()
+
+                ok_t = await svc.delete_torrent(67890)
+                self.assertTrue(ok_t)
+
+        asyncio.run(run_test())
+
+    def test_task_tracker_cleanup_coroutine_execution(self):
+        """Verify task_tracker schedules coroutines returned by cleanup callbacks."""
+        tracker = task_tracker.TaskTracker()
+        tracker.start_task(user_id=1001, title="Coro Test")
+
+        called = []
+        async def fake_cleanup_async():
+            called.append("async_called")
+
+        # Register a lambda returning a coroutine object
+        tracker.register_cleanup(1001, lambda: fake_cleanup_async())
+
+        async def run_test():
+            cancelled = tracker.cancel_task(1001)
+            self.assertTrue(cancelled)
+            # Yield control to let event loop run created tasks
+            await asyncio.sleep(0.05)
+            self.assertIn("async_called", called)
+
+        asyncio.run(run_test())
+
+    def test_yts_rejects_documentaries_and_series(self):
+        """Verify YTS strictly rejects TV series and documentary spinoffs."""
+        # 1. is_series = True must immediately return []
+        async def run_series_test():
+            res = await method_yts.search("Game of Thrones", is_series=True)
+            self.assertEqual(res, [])
+        asyncio.run(run_series_test())
+
+        # 2. YTS returning documentaries or parodies without matching year must be rejected
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "status": "ok",
+            "data": {
+                "movie_count": 2,
+                "movies": [
+                    {
+                        "title": "Game of Thrones: The Last Watch",
+                        "title_english": "Game of Thrones: The Last Watch",
+                        "year": 2019,
+                        "genres": ["Action", "Documentary"],
+                        "torrents": [
+                            {"hash": "HASH_DOC", "quality": "1080p", "size": "1.2 GB", "size_bytes": 1024**3, "seeds": 50}
+                        ]
+                    },
+                    {
+                        "title": "Purge of Kingdoms: The Unauthorized Game of Thrones Parody",
+                        "title_english": "Purge of Kingdoms: The Unauthorized Game of Thrones Parody",
+                        "year": 2019,
+                        "genres": ["Comedy"],
+                        "torrents": [
+                            {"hash": "HASH_PARODY", "quality": "1080p", "size": "1.1 GB", "size_bytes": 1024**3, "seeds": 30}
+                        ]
+                    }
+                ]
+            }
+        }
+
+        async def run_doc_test():
+            with patch("httpx.AsyncClient.get", return_value=mock_response):
+                candidates = await method_yts.search(title="Game of Thrones")
+                # Both documentary and parody must be rejected
+                self.assertEqual(len(candidates), 0)
+
+        asyncio.run(run_doc_test())
+
+    def test_matches_season_episode_season_and_episode_alone(self):
+        """Verify season-only and episode-only matching logic."""
+        # Season only
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E01 720p", season=1, episode=None))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E10 720p", season=1, episode=None))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones Season 1 1080p", season=1, episode=None))
+        self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones S02E01 720p", season=1, episode=None))
+
+        # Episode only
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E05 720p", season=None, episode=5))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones Episode 5 720p", season=None, episode=5))
+        self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones S01E06 720p", season=None, episode=5))
+
 
 if __name__ == "__main__":
     unittest.main()

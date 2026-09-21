@@ -128,14 +128,20 @@ class TaskTracker:
             # Execute all registered cleanup callbacks
             for cb in target_info.cleanup_callbacks:
                 try:
+                    loop = None
+                    try:
+                        loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        pass
+
                     if asyncio.iscoroutinefunction(cb):
-                        try:
-                            loop = asyncio.get_running_loop()
+                        if loop and loop.is_running():
                             loop.create_task(cb())
-                        except RuntimeError:
-                            pass
                     else:
-                        cb()
+                        res = cb()
+                        if asyncio.iscoroutine(res):
+                            if loop and loop.is_running():
+                                loop.create_task(res)
                 except Exception as cb_err:
                     log.warning("Task cleanup callback error: %s", cb_err)
 
@@ -240,8 +246,11 @@ async def cancel_all_user_operations(user_id: Optional[int] = None) -> bool:
     """
     # 1. Cancel in task_tracker
     was_cancelled = tracker.cancel_task(user_id)
-    if not was_cancelled and tracker.get_any_active_task():
-        was_cancelled = tracker.cancel_task(None)
+    if not was_cancelled:
+        import config
+        is_admin = (user_id is None) or (user_id in getattr(config, "ADMIN_IDS", []))
+        if is_admin and tracker.get_any_active_task():
+            was_cancelled = tracker.cancel_task(None)
 
     # 2. Cancel in queue_service
     try:

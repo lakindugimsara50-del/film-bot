@@ -133,99 +133,107 @@ class SeedrService:
             return None
 
         # Step 3: Poll folder until torrent is ready in cloud
-        start_time = time.time()
-        while time.time() - start_time < timeout_seconds:
-            await asyncio.sleep(2)
-            try:
-                async with httpx.AsyncClient(timeout=15) as client:
-                    resp = await client.get(
-                        SEEDR_RESOURCE_URL,
-                        headers=headers,
-                        params={"func": "get_folder"},
-                    )
-                    folder_data = resp.json()
-
-                    files = folder_data.get("files", [])
-                    folders = folder_data.get("folders", [])
-
-                    video_files = [
-                        f for f in files
-                        if any(f.get("name", "").lower().endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov"))
-                    ]
-
-                    if not video_files and folders:
-                        for folder in folders:
-                            sub_id = folder.get("id")
-                            if not sub_id:
-                                continue
-                            sub_resp = await client.get(
-                                SEEDR_RESOURCE_URL,
-                                headers=headers,
-                                params={"func": "get_folder", "id": sub_id},
-                            )
-                            sub_data = sub_resp.json()
-                            for f in sub_data.get("files", []):
-                                if any(f.get("name", "").lower().endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov")):
-                                    video_files.append(f)
-
-                    if video_files:
-                        video_files.sort(key=lambda x: x.get("size", 0), reverse=True)
-                        target_file = video_files[0]
-                        file_id = target_file.get("folder_file_id") or target_file.get("id")
-                        file_name = target_file.get("name", "movie.mp4")
-                        file_size = target_file.get("size", 0)
-
-                        if progress_callback:
-                            await progress_callback(
-                                f"☁️ <b>Seedr Cloud බාගත වීම සාර්ථකයි!</b>\n\n"
-                                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
-                                f"📦 <b>ප්‍රමාණය:</b> {file_size / (1024 * 1024):.1f} MB\n"
-                                f"⚡ Direct High-Speed Download Link එක සූදානම් කරමින්..."
-                            )
-
-                        link_resp = await client.get(
+        try:
+            start_time = time.time()
+            while time.time() - start_time < timeout_seconds:
+                await asyncio.sleep(2)
+                try:
+                    async with httpx.AsyncClient(timeout=15) as client:
+                        resp = await client.get(
                             SEEDR_RESOURCE_URL,
                             headers=headers,
-                            params={"func": "fetch_file", "folder_file_id": file_id},
+                            params={"func": "get_folder"},
                         )
-                        link_data = link_resp.json()
-                        direct_url = link_data.get("url")
+                        folder_data = resp.json()
 
-                        if direct_url:
-                            log.info(
-                                "[Seedr] Cloud download complete! Direct URL obtained: %s (%d bytes)",
-                                file_name, file_size
+                        files = folder_data.get("files", [])
+                        folders = folder_data.get("folders", [])
+
+                        video_files = [
+                            f for f in files
+                            if any(f.get("name", "").lower().endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov"))
+                        ]
+
+                        if not video_files and folders:
+                            for folder in folders:
+                                sub_id = folder.get("id")
+                                if not sub_id:
+                                    continue
+                                sub_resp = await client.get(
+                                    SEEDR_RESOURCE_URL,
+                                    headers=headers,
+                                    params={"func": "get_folder", "id": sub_id},
+                                )
+                                sub_data = sub_resp.json()
+                                for f in sub_data.get("files", []):
+                                    if any(f.get("name", "").lower().endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov")):
+                                        video_files.append(f)
+
+                        if video_files:
+                            video_files.sort(key=lambda x: x.get("size", 0), reverse=True)
+                            target_file = video_files[0]
+                            file_id = target_file.get("folder_file_id") or target_file.get("id")
+                            file_name = target_file.get("name", "movie.mp4")
+                            file_size = target_file.get("size", 0)
+
+                            if progress_callback:
+                                await progress_callback(
+                                    f"☁️ <b>Seedr Cloud බාගත වීම සාර්ථකයි!</b>\n\n"
+                                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                                    f"📦 <b>ප්‍රමාණය:</b> {file_size / (1024 * 1024):.1f} MB\n"
+                                    f"⚡ Direct High-Speed Download Link එක සූදානම් කරමින්..."
+                                )
+
+                            link_resp = await client.get(
+                                SEEDR_RESOURCE_URL,
+                                headers=headers,
+                                params={"func": "fetch_file", "folder_file_id": file_id},
                             )
-                            return {
-                                "direct_url": direct_url,
-                                "file_name": file_name,
-                                "file_size": file_size,
-                                "file_id": file_id,
-                            }
+                            link_data = link_resp.json()
+                            direct_url = link_data.get("url")
 
-                    torrents = folder_data.get("torrents", [])
-                    if torrents:
-                        t = torrents[0]
-                        progress = t.get("progress", 0)
-                        seeders = t.get("connected_to", 0) or t.get("seeders", 0)
-                        rate_bytes = t.get("download_rate", 0)
-                        rate_str = f"{rate_bytes / (1024 * 1024):.1f} MB/s" if rate_bytes > 0 else "Connecting"
-                        filled = int(round(10 * (progress / 100.0)))
-                        p_bar = f"[{'█' * filled}{'░' * (10 - filled)}]"
-                        log.debug("[Seedr] Cloud downloading progress: %s%%", progress)
-                        if progress_callback:
-                            await progress_callback(
-                                f"☁️ <b>Seedr Cloud එක බාගත කරමින් පවතී...</b>\n\n"
-                                f"📊 <b>ප්‍රගතිය:</b> {p_bar} {progress}%\n"
-                                f"⚡ <b>Cloud Speed:</b> {rate_str} | 👥 <b>Seeders:</b> {seeders}\n"
-                                f"💡 <i>Seedr Cloud එකෙන් බාගත වූ පසු Render Server එකට කෙලින්ම Direct Link එක ලබාගනී.</i>"
-                            )
+                            if direct_url:
+                                log.info(
+                                    "[Seedr] Cloud download complete! Direct URL obtained: %s (%d bytes)",
+                                    file_name, file_size
+                                )
+                                return {
+                                    "direct_url": direct_url,
+                                    "file_name": file_name,
+                                    "file_size": file_size,
+                                    "file_id": file_id,
+                                }
 
-            except Exception as poll_err:
-                log.debug("[Seedr] Poll iteration error: %s", poll_err)
+                        torrents = folder_data.get("torrents", [])
+                        if torrents:
+                            t = torrents[0]
+                            progress = t.get("progress", 0)
+                            seeders = t.get("connected_to", 0) or t.get("seeders", 0)
+                            rate_bytes = t.get("download_rate", 0)
+                            rate_str = f"{rate_bytes / (1024 * 1024):.1f} MB/s" if rate_bytes > 0 else "Connecting"
+                            filled = int(round(10 * (progress / 100.0)))
+                            p_bar = f"[{'█' * filled}{'░' * (10 - filled)}]"
+                            log.debug("[Seedr] Cloud downloading progress: %s%%", progress)
+                            if progress_callback:
+                                await progress_callback(
+                                    f"☁️ <b>Seedr Cloud එක බාගත කරමින් පවතී...</b>\n\n"
+                                    f"📊 <b>ප්‍රගතිය:</b> {p_bar} {progress}%\n"
+                                    f"⚡ <b>Cloud Speed:</b> {rate_str} | 👥 <b>Seeders:</b> {seeders}\n"
+                                    f"💡 <i>Seedr Cloud එකෙන් බාගත වූ පසු Render Server එකට කෙලින්ම Direct Link එක ලබාගනී.</i>"
+                                )
 
-        log.warning("[Seedr] Timeout reached waiting for torrent cloud download.")
-        return None
+                except Exception as poll_err:
+                    log.debug("[Seedr] Poll iteration error: %s", poll_err)
+
+            log.warning("[Seedr] Timeout reached waiting for torrent cloud download.")
+            return None
+        except asyncio.CancelledError:
+            log.info("[Seedr] Conversion cancelled by user. Purging Seedr storage immediately...")
+            try:
+                await self.clean_storage(tok)
+            except Exception as cl_err:
+                log.warning("[Seedr] Cancel cleanup error: %s", cl_err)
+            raise
 
     async def clean_storage(self, token: Optional[str] = None) -> None:
         """Delete all items in Seedr cloud to maintain clean 2GB storage."""
@@ -241,15 +249,22 @@ class SeedrService:
                     headers=headers,
                     params={"func": "get_folder"},
                 )
+                if resp.status_code != 200:
+                    return
                 data = resp.json()
+                if not isinstance(data, dict):
+                    return
 
                 delete_arr = []
                 for f in data.get("files", []):
-                    delete_arr.append({"type": "file", "id": f["folder_file_id"]})
+                    if isinstance(f, dict) and "folder_file_id" in f:
+                        delete_arr.append({"type": "file", "id": f["folder_file_id"]})
                 for d in data.get("folders", []):
-                    delete_arr.append({"type": "folder", "id": d["id"]})
+                    if isinstance(d, dict) and "id" in d:
+                        delete_arr.append({"type": "folder", "id": d["id"]})
                 for t in data.get("torrents", []):
-                    delete_arr.append({"type": "torrent", "id": t["id"]})
+                    if isinstance(t, dict) and "id" in t:
+                        delete_arr.append({"type": "torrent", "id": t["id"]})
 
                 if delete_arr:
                     import json
@@ -261,6 +276,44 @@ class SeedrService:
                     log.info("[Seedr] Storage cleaned (%d items deleted).", len(delete_arr))
         except Exception as exc:
             log.warning("[Seedr] Storage cleanup error: %s", exc)
+
+    async def delete_folder(self, folder_id: int, token: Optional[str] = None) -> bool:
+        """Explicitly delete a specific folder and all its contents from Seedr."""
+        try:
+            tok = token or await self.get_token()
+            if not tok:
+                return False
+            headers = {"Authorization": f"Bearer {tok}"}
+            async with httpx.AsyncClient(timeout=15) as client:
+                import json
+                resp = await client.post(
+                    SEEDR_RESOURCE_URL,
+                    headers=headers,
+                    data={"func": "delete", "delete_arr": json.dumps([{"type": "folder", "id": folder_id}])},
+                )
+                return resp.status_code == 200
+        except Exception as exc:
+            log.warning("[Seedr] Error deleting folder %s: %s", folder_id, exc)
+            return False
+
+    async def delete_torrent(self, torrent_id: int, token: Optional[str] = None) -> bool:
+        """Explicitly delete an active or stuck torrent from Seedr."""
+        try:
+            tok = token or await self.get_token()
+            if not tok:
+                return False
+            headers = {"Authorization": f"Bearer {tok}"}
+            async with httpx.AsyncClient(timeout=15) as client:
+                import json
+                resp = await client.post(
+                    SEEDR_RESOURCE_URL,
+                    headers=headers,
+                    data={"func": "delete", "delete_arr": json.dumps([{"type": "torrent", "id": torrent_id}])},
+                )
+                return resp.status_code == 200
+        except Exception as exc:
+            log.warning("[Seedr] Error deleting torrent %s: %s", torrent_id, exc)
+            return False
 
 
 class SeedrPool:
@@ -446,12 +499,21 @@ class SeedrPool:
         return None
 
     async def clean_storage(self, service: Optional[SeedrService] = None) -> None:
-        """Clean storage of a specific service or all services in the pool."""
+        """Clean storage of a specific service or all services in the pool concurrently."""
         if service:
             await service.clean_storage()
-        else:
-            for s in self.services:
-                await s.clean_storage()
+        elif self.services:
+            await asyncio.gather(*(s.clean_storage() for s in self.services), return_exceptions=True)
+
+    async def delete_folder(self, folder_id: int) -> None:
+        """Delete folder across all Seedr accounts in the pool."""
+        if self.services:
+            await asyncio.gather(*(s.delete_folder(folder_id) for s in self.services), return_exceptions=True)
+
+    async def delete_torrent(self, torrent_id: int) -> None:
+        """Delete torrent across all Seedr accounts in the pool."""
+        if self.services:
+            await asyncio.gather(*(s.delete_torrent(torrent_id) for s in self.services), return_exceptions=True)
 
 
 # Initialize global pool and client

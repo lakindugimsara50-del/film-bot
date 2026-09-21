@@ -358,7 +358,7 @@ async def run_auto_leech(
         task_tracker.tracker.start_task(user_id=user_id, title=display_title)
 
     task_tracker.tracker.set_metadata(user_id, task_key=task_key)
-    task_tracker.tracker.register_cleanup(user_id, lambda: seedr_service.seedr_pool.clean_storage())
+    task_tracker.tracker.register_cleanup(user_id, seedr_service.seedr_pool.clean_storage)
 
     kb_cancel = InlineKeyboardMarkup([
         [InlineKeyboardButton("❌ Cancel Leech", callback_data="leech:cancel")]
@@ -897,31 +897,40 @@ async def run_auto_leech(
 
     except asyncio.CancelledError:
         log.info("[LeechService] Auto-leech task cancelled for user %s (%s)", user_id, display_title)
-        await downloader.cancel_active_download(task_key)
-        try:
-            await seedr_service.seedr_pool.clean_storage()
-        except Exception:
-            pass
-        task_tracker.tracker.cancel_task(user_id)
-
-        if local_file and os.path.exists(local_file):
+        async def _do_cancel_cleanup():
             try:
-                os.remove(local_file)
+                await downloader.cancel_active_download(task_key)
+            except Exception:
+                pass
+            try:
+                await seedr_service.seedr_pool.clean_storage()
+            except Exception:
+                pass
+            task_tracker.tracker.cancel_task(user_id)
+
+            if local_file and os.path.exists(local_file):
+                try:
+                    os.remove(local_file)
+                except Exception:
+                    pass
+
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                log.info("[LeechService] Deleted temporary directory on cancellation.")
+
+            try:
+                await status_msg.edit_text(
+                    f"❌ <b>Auto-Leech ක්‍රියාවලිය සාර්ථකව අවලංගු කරන ලදී (Cancelled)!</b>\n\n"
+                    f"{media_icon} <b>{display_title}</b>\n"
+                    f"🧹 Seedr Cloud Storage සහ Local Files සියල්ල පිරිසිදු කරන ලදී.",
+                    parse_mode=ParseMode.HTML,
+                )
             except Exception:
                 pass
 
-        if temp_dir and os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            log.info("[LeechService] Deleted temporary directory on cancellation.")
-
         try:
-            await status_msg.edit_text(
-                f"❌ <b>Auto-Leech ක්‍රියාවලිය සාර්ථකව අවලංගු කරන ලදී (Cancelled)!</b>\n\n"
-                f"{media_icon} <b>{display_title}</b>\n"
-                f"🧹 Seedr Cloud Storage සහ Local Files සියල්ල පිරිසිදු කරන ලදී.",
-                parse_mode=ParseMode.HTML,
-            )
-        except Exception:
+            await asyncio.shield(_do_cancel_cleanup())
+        except (Exception, asyncio.CancelledError):
             pass
         raise
 

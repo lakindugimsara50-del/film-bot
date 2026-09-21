@@ -222,26 +222,24 @@ def register(app: Client) -> None:
     async def cancel_command_handler(client: Client, message: Message) -> None:
         user_id = message.from_user.id if message.from_user else 0
         username = message.from_user.username if message.from_user else ""
-        from services import auth_service
+        from services.auth_service import auth_service
         if not auth_service.is_authorized(user_id, username):
-            await message.reply_text("⛔ Access denied.")
+            await message.reply_text("⛔ මෙම විධානය ක්‍රියාත්මක කිරීමට ඔබට අවසර (Access) නැත.")
             return
 
         had_session = bool(USER_SESSIONS.pop(user_id, None))
         was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id)
 
-        if was_task_cancelled:
+        if was_task_cancelled or had_session:
             await message.reply_text(
                 "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
-                "🗑️ <i>Seedr ගිණුමේ ගබඩාව සහ බාගත කිරීම් (Downloads) සියල්ල පිරිසිදු කරන ලදී.</i>",
+                "🗑️ <i>Seedr Cloud Storage, බාගත කිරීම් (Downloads) සහ තාවකාලික ගොනු සියල්ල පිරිසිදු කරන ලදී.</i>",
                 parse_mode=ParseMode.HTML,
             )
-        elif had_session:
-            await message.reply_text("❌ <b>චිත්‍රපට එක්කිරීමේ ක්‍රියාවලිය අවලංගු කරන ලදී (Wizard cancelled).</b>", parse_mode=ParseMode.HTML)
         else:
             await message.reply_text(
-                "ℹ️ <b>දැනට අවලංගු කිරීමට කිසිදු සක්‍රීය කාර්යයක් නොමැත.</b>\n\n"
-                "🗑️ <i>Seedr ගිණුම සහ තාවකාලික ගොනු පිරිසිදු කර සූදානම් කර තබන ලදී.</i>",
+                "ℹ️ <b>දැනට අවලංගු කිරීමට කිසිදු සක්‍රීය කාර්යයක් නොමැත (No Active Task).</b>\n\n"
+                "🧹 <i>Seedr Cloud සහ Storage පිරිසිදු කර සූදානම් කර තබන ලදී.</i>",
                 parse_mode=ParseMode.HTML,
             )
 

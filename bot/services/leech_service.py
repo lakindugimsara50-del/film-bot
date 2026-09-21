@@ -76,16 +76,32 @@ class LeechCandidate:
         )
 
 
-def parse_query(text: str) -> tuple[str, Optional[int], Optional[str], Optional[str]]:
+class ParsedQuery(tuple):
+    """Subclass of 4-tuple (title, year, imdb_id, direct_url) that preserves backward compatibility while exposing series fields."""
+    def __new__(cls, title, year, imdb_id, direct_url, season=None, episode=None, is_series=False):
+        return super().__new__(cls, (title, year, imdb_id, direct_url))
+
+    def __init__(self, title, year, imdb_id, direct_url, season=None, episode=None, is_series=False):
+        self.title = title
+        self.year = year
+        self.imdb_id = imdb_id
+        self.direct_url = direct_url
+        self.season = season
+        self.episode = episode
+        self.is_series = is_series
+
+
+def parse_query(text: str) -> ParsedQuery:
     """
-    Parse user query into (title, year, imdb_id, direct_url_or_magnet).
+    Parse user query into (title, year, imdb_id, direct_url_or_magnet) with smart series detection.
     Supports:
       /leech Inception
       /leech Inception 2010
+      /leech Game of Thrones S01E01
+      /leech Breaking Bad Season 2 Episode 5
       /leech tt1375666
       /leech magnet:?xt=...
       /leech https://pixeldrain.com/u/...
-      /leech https://example.com/movie.torrent
       /boost@Bot Inception 2010
     """
     raw = re.sub(r"^/(?:leech|auto|boost)(?:@\w+)?\s*", "", text.strip())
@@ -94,7 +110,7 @@ def parse_query(text: str) -> tuple[str, Optional[int], Optional[str], Optional[
     if raw.startswith("magnet:?"):
         dn_match = re.search(r"[?&]dn=([^&]+)", raw)
         title = urllib.parse.unquote_plus(dn_match.group(1)) if dn_match else ""
-        return title, None, None, raw
+        return ParsedQuery(title, None, None, raw)
 
     # Check for direct URL
     if raw.startswith(("http://", "https://")):
@@ -102,8 +118,8 @@ def parse_query(text: str) -> tuple[str, Optional[int], Optional[str], Optional[
         url = parts[0]
         extra = parts[1] if len(parts) > 1 else ""
         if extra:
-            t, y, i, _ = parse_query(extra)
-            return t, y, i, url
+            sub = parse_query(extra)
+            return ParsedQuery(sub.title, sub.year, sub.imdb_id, url, sub.season, sub.episode, sub.is_series)
 
         # Infer title and year from URL path
         parsed_url = urllib.parse.urlparse(url)
@@ -114,19 +130,60 @@ def parse_query(text: str) -> tuple[str, Optional[int], Optional[str], Optional[
         year_val = int(ym.group(1)) if ym else None
         if ym:
             clean_name = clean_name[:ym.start()].strip()
-        return clean_name, year_val, None, url
+        return ParsedQuery(clean_name, year_val, None, url)
 
     # Check for IMDb ID
     imdb_match = re.match(r"^(tt\d+)$", raw, re.IGNORECASE)
     if imdb_match:
-        return "", None, imdb_match.group(1), None
+        return ParsedQuery("", None, imdb_match.group(1), None)
+
+    # Check for Season & Episode pattern (e.g. S01E01, Season 1 Episode 2, 1x01, S02)
+    se_match = re.search(r"\b(?:s|season\s*)(\d{1,2})\s*(?:e|ep|episode\s*|x)(\d{1,2})\b", raw, re.IGNORECASE)
+    x_match = re.search(r"\b(\d{1,2})x(\d{1,2})\b", raw, re.IGNORECASE)
+    s_match = re.search(r"\b(?:s|season\s*)(\d{1,2})\b", raw, re.IGNORECASE)
+    e_match = re.search(r"\b(?:e|episode\s*|ep\s*)(\d{1,2})\b", raw, re.IGNORECASE)
+
+    season_val = None
+    episode_val = None
+    is_series = False
+
+    if se_match:
+        season_val = int(se_match.group(1))
+        episode_val = int(se_match.group(2))
+        is_series = True
+    elif x_match:
+        season_val = int(x_match.group(1))
+        episode_val = int(x_match.group(2))
+        is_series = True
+    else:
+        if s_match:
+            season_val = int(s_match.group(1))
+            is_series = True
+        if e_match:
+            episode_val = int(e_match.group(1))
+            is_series = True
+
+    if is_series:
+        clean_title = re.sub(
+            r"\b(?:s\d{1,2}\s*(?:e|ep|episode\s*|x)\d{1,2}|season\s*\d+\s*(?:episode\s*\d+|ep\s*\d+)?|s\d{1,2}|episode\s*\d+|ep\s*\d+|\d{1,2}x\d{1,2})\b.*$",
+            "",
+            raw,
+            flags=re.IGNORECASE,
+        ).strip()
+        ym = re.search(r"\b(19\d\d|20\d\d)\b", clean_title)
+        year_val = int(ym.group(1)) if ym else None
+        if ym:
+            clean_title = clean_title[:ym.start()].strip()
+        if episode_val is None:
+            episode_val = 1
+        return ParsedQuery(clean_title or raw, year_val, None, None, season_val, episode_val, True)
 
     # Check for Title + Year
     year_match = re.match(r"^(.+?)\s+(\d{4})$", raw)
     if year_match:
-        return year_match.group(1).strip(), int(year_match.group(2)), None, None
+        return ParsedQuery(year_match.group(1).strip(), int(year_match.group(2)), None, None)
 
-    return raw, None, None, None
+    return ParsedQuery(raw, None, None, None)
 
 
 async def find_all_candidates(
@@ -134,22 +191,28 @@ async def find_all_candidates(
     year: Optional[int] = None,
     imdb_id: Optional[str] = None,
     bot_client: Optional[Client] = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    is_series: bool = False,
 ) -> list[LeechCandidate]:
     """
     Query all acquisition sources in priority order:
-      Method A: DDL Scrapers (PixelDrain / Pahe / PSArips)
-      Method B: YTS Torrents (< 1.95GB)
-      Method C: Telegram Movie Channels
-      Method D: Consumet / FlixHQ Stream Extractors
+      Method 1: Telegram Channels (Highest Priority - 0 Download Time)
+      Method 2: DDL Scrapers (PixelDrain / Pahe / PSArips)
+      Method 3: Multi-Source Torrent Engine (EZTV, Apibay / ThePirateBay, Torrents-CSV, YTS)
+      Method 4: Web stream extractors (if applicable)
     Returns a list of viable LeechCandidates.
     """
     candidates: list[LeechCandidate] = []
-    log.info("[LeechService] Finding candidates for: '%s' (%s), imdb=%s", title, year, imdb_id)
+    log.info(
+        "[LeechService] Finding candidates for: '%s' (%s), imdb=%s, S%sE%s, is_series=%s",
+        title, year, imdb_id, season, episode, is_series
+    )
 
-    # ── Method 1: Telegram Movie Channels (Highest Priority - 0 Download Time) ──
+    # ── Method 1: Telegram Movie/TV Channels (Highest Priority) ───────────────
     if bot_client:
         try:
-            log.info("[LeechService] Trying Method 1: Telegram Movie Channels...")
+            log.info("[LeechService] Trying Method 1: Telegram Channels...")
             tg_res = await method1_telegram.search(
                 title=title, year=year, imdb_id=imdb_id, client=bot_client
             )
@@ -157,7 +220,7 @@ async def find_all_candidates(
                 candidates.append(
                     LeechCandidate(
                         method="telegram",
-                        method_name=tg_res.get("server_label", "Telegram Movie Channel"),
+                        method_name=tg_res.get("server_label", "Telegram Channel"),
                         source_url=tg_res["file_id"],
                         quality=tg_res.get("quality", "1080p"),
                         size=downloader.format_bytes(tg_res.get("file_size", 0)),
@@ -169,7 +232,7 @@ async def find_all_candidates(
         except Exception as exc:
             log.warning("[LeechService] Method 1 error: %s", exc)
 
-    # ── Method 2: DDL Scrapers (PixelDrain / Pahe / Direct HTTP - Safe & Fast) ──
+    # ── Method 2: DDL Scrapers (PixelDrain / Pahe / Direct HTTP) ─────────────
     try:
         log.info("[LeechService] Trying Method 2: DDL Scrapers (PixelDrain/Pahe)...")
         ddl_res = await method3_ddl.search(title=title, year=year, imdb_id=imdb_id)
@@ -192,29 +255,39 @@ async def find_all_candidates(
     except Exception as exc:
         log.warning("[LeechService] Method 2 error: %s", exc)
 
-    # ── Method 3: YTS Torrent API (< 1.95GB via aria2c + Live Trackers) ───────
+    # ── Method 3: Multi-Source Torrent Engine (Apibay / EZTV / TorrentsCSV / YTS)
     try:
-        log.info("[LeechService] Trying Method 3: YTS Torrent API...")
-        yts_list = await method_yts.search(title=title, year=year, imdb_id=imdb_id)
-        for tor in yts_list:
+        log.info("[LeechService] Trying Method 3: Multi-Source Torrent Engine...")
+        from services.scrapers import torrent_finder
+        tor_list = await torrent_finder.search_all_torrents(
+            title=title,
+            year=year,
+            imdb_id=imdb_id,
+            season=season,
+            episode=episode,
+            is_series=is_series,
+        )
+        for tor in tor_list:
             source_url = tor.get("magnet") or tor.get("torrent_url")
             if source_url:
+                prov = tor.get("provider", "Torrent")
+                q = tor.get("quality", "1080p")
                 candidates.append(
                     LeechCandidate(
-                        method="yts",
-                        method_name=f"YTS Torrent ({tor.get('quality', '1080p')})",
+                        method=tor.get("method", "torrent"),
+                        method_name=f"{prov} ({q})",
                         source_url=source_url,
-                        quality=tor.get("quality", "1080p"),
+                        quality=q,
                         size=tor.get("size", "Unknown"),
                         size_bytes=tor.get("size_bytes", 0),
                         extra=tor,
                     )
                 )
-        log.info("[LeechService] Method 3 yielded %d candidate(s).", len(yts_list))
+        log.info("[LeechService] Method 3 yielded %d candidate(s).", len(tor_list))
     except Exception as exc:
         log.warning("[LeechService] Method 3 error: %s", exc)
 
-    log.info("[LeechService] Total candidates acquired: %d (All strict Telegram upload)", len(candidates))
+    log.info("[LeechService] Total candidates acquired: %d", len(candidates))
     return candidates
 
 
@@ -228,7 +301,12 @@ async def run_auto_leech(
     """
     Main entry point for executing the automated leech & upload workflow.
     """
-    title, year, imdb_id, direct_link = parse_query(query_text)
+    parsed = parse_query(query_text)
+    title, year, imdb_id, direct_link = parsed
+    season = parsed.season
+    episode = parsed.episode
+    is_series = parsed.is_series
+
     task_key = f"leech_{user_id}_{int(time.time())}"
     temp_dir: Optional[str] = None
     local_file: Optional[str] = None
@@ -242,7 +320,9 @@ async def run_auto_leech(
             log.warning("[LeechService] TMDB fetch by IMDb failed: %s", exc)
     elif title:
         try:
-            tmdb_meta = await tmdb_service.fetch_metadata(title, year)
+            tmdb_meta = await tmdb_service.fetch_metadata(
+                title, year, is_series=is_series, season=season, episode=episode
+            )
         except Exception as exc:
             log.warning("[LeechService] TMDB fetch by title failed: %s", exc)
 
@@ -250,31 +330,65 @@ async def run_auto_leech(
         title = tmdb_meta.get("title") or title
         year = tmdb_meta.get("year") or year
         imdb_id = imdb_id or tmdb_meta.get("imdb_id")
+        if tmdb_meta.get("type") == "series":
+            is_series = True
+            season = season or tmdb_meta.get("current_season", 1)
+            episode = episode or tmdb_meta.get("current_episode", 1)
     else:
         title = title or "Movie"
         year = year or 2024
 
-    display_title = f"{title} ({year})" if year else title
+    if is_series:
+        ep_name = tmdb_meta.get("episode_title", "")
+        show_name = tmdb_meta.get("title") or title
+        season = season or 1
+        episode = episode or 1
+        ep_str = f"S{season:02d}E{episode:02d}"
+        display_title = f"{show_name} {ep_str}" + (f" - {ep_name}" if ep_name else "")
+        media_icon = "📺"
+    else:
+        display_title = f"{title} ({year})" if year else title
+        media_icon = "🎬"
 
-    # Update active task title in tracker without destroying the task handle
+    # Update active task title & metadata in tracker
     active_task = task_tracker.tracker.get_active_task(user_id)
     if active_task:
         active_task.title = display_title
     else:
         task_tracker.tracker.start_task(user_id=user_id, title=display_title)
 
+    task_tracker.tracker.set_metadata(user_id, task_key=task_key)
+    task_tracker.tracker.register_cleanup(user_id, lambda: seedr_service.seedr_pool.clean_storage())
+
     kb_cancel = InlineKeyboardMarkup([
         [InlineKeyboardButton("❌ Cancel Leech", callback_data="leech:cancel")]
     ])
 
+    if is_series:
+        auto_ep_note = ""
+        if not parsed.is_series:
+            auto_ep_note = f"\n💡 <i>(Episode සඳහන් නොකළ බැවින් {ep_str} ස්වයංක්‍රීයව තෝරාගන්නා ලදී. වෙනත් Episode එකක් බාගත කිරීමට: <code>/leech {show_name} S01E02</code>)</i>"
+
+        step1_text = (
+            f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
+            f"📺 <b>TV Series:</b> {display_title}\n"
+            f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී (EZTV, PirateBay, TorrentsCSV)..."
+            f"{auto_ep_note}\n\n"
+            f"⚡ <i>Cloud Multi-Source Auto Search සක්‍රීයයි...</i>"
+        )
+    else:
+        step1_text = (
+            f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
+            f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
+            f"🔍 <b>පියවර 1/4:</b> ක්‍රම 4 ඔස්සේ බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී...\n\n"
+            f"• Method A: DDL Scrapers (PixelDrain/Pahe)\n"
+            f"• Method B: Multi-Torrent Scrapers (YTS/PirateBay)\n"
+            f"• Method C: Telegram Movie Channels\n"
+            f"• Method D: Web Stream Extractors"
+        )
+
     await status_msg.edit_text(
-        f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
-        f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
-        f"🔍 <b>පියවර 1/3:</b> ක්‍රම 4 ඔස්සේ බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී...\n\n"
-        f"• Method A: DDL Scrapers (PixelDrain/Pahe)\n"
-        f"• Method B: YTS Torrents (&lt; 1.95GB)\n"
-        f"• Method C: Telegram Movie Channels\n"
-        f"• Method D: Web Stream Extractors",
+        step1_text,
         parse_mode=ParseMode.HTML,
         reply_markup=kb_cancel,
     )
@@ -363,15 +477,21 @@ async def run_auto_leech(
                 )
         if not candidates:
             candidates = await find_all_candidates(
-                title=title, year=year, imdb_id=imdb_id, bot_client=client
+                title=title,
+                year=year,
+                imdb_id=imdb_id,
+                bot_client=client,
+                season=season,
+                episode=episode,
+                is_series=is_series,
             )
 
         if not candidates:
             task_tracker.tracker.fail_task(user_id, "No download candidates found across any method.")
             await status_msg.edit_text(
-                f"❌ <b>චිත්‍රපටය හමු නොවීය (Not Found)!</b>\n\n"
-                f"🎬 <b>{display_title}</b> සඳහා ක්‍රම 4 ඔස්සේ කිසිදු Direct බාගත කිරීමේ Link එකක් හමු නොවීය.\n\n"
-                f"කරුණාකර නම නිවැරදිදැයි පරීක්ෂා කරන්න, නැතහොත් Direct Download URL එකක් හෝ වීඩියෝවක් එවන්න.",
+                f"❌ <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'} හමු නොවීය (Not Found)!</b>\n\n"
+                f"{media_icon} <b>{display_title}</b> සඳහා බාගත කිරීමේ Link එකක් හමු නොවීය.\n\n"
+                f"කරුණාකර නම හෝ Season/Episode නිවැරදිදැයි පරීක්ෂා කරන්න (උදා: <code>/leech {title} S01E01</code>), නැතහොත් Direct Magnet URL එකක් ලබා දෙන්න.",
                 parse_mode=ParseMode.HTML,
             )
             return
@@ -380,6 +500,7 @@ async def run_auto_leech(
         chosen_candidate: Optional[LeechCandidate] = None
         if not temp_dir:
             temp_dir = tempfile.mkdtemp(prefix="leech_")
+        task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
 
         for idx, candidate in enumerate(candidates, 1):
             log.info(
@@ -637,7 +758,8 @@ async def run_auto_leech(
             parse_mode=ParseMode.HTML,
         )
 
-        slug = _slugify(title, year)
+        ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
+        slug = f"{_slugify(title, year)}{ep_suffix}"
         base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
         site_url = f"{base_site}/movie.html?id={slug}"
 
@@ -668,8 +790,6 @@ async def run_auto_leech(
         raw_dur = tmdb_meta.get("duration", 120)
         dur_str = f"{raw_dur} min" if isinstance(raw_dur, int) else (str(raw_dur) if str(raw_dur).endswith("min") else f"{raw_dur} min")
 
-        is_series = tmdb_meta.get("type") == "series"
-
         movie_entry = {
             "id": slug,
             "slug": slug,
@@ -681,6 +801,9 @@ async def run_auto_leech(
             "imdb_id": imdb_id or "",
             "tmdb_id": str(tmdb_meta.get("tmdb_id", "")),
             "type": "series" if is_series else "movie",
+            "season": season if is_series else None,
+            "episode": episode if is_series else None,
+            "episode_title": tmdb_meta.get("episode_title", "") if is_series else "",
             "number_of_seasons": tmdb_meta.get("number_of_seasons", 1) if is_series else 0,
             "number_of_episodes": tmdb_meta.get("number_of_episodes", 0) if is_series else 0,
             "seasons": tmdb_meta.get("seasons", []) if is_series else [],
@@ -740,6 +863,12 @@ async def run_auto_leech(
             except Exception as ann_err:
                 log.warning("[LeechService] Channel announcement failed: %s", ann_err)
 
+        # Clear Seedr storage to guarantee 100% free quota for subsequent tasks
+        try:
+            await seedr_service.seedr_pool.clean_storage()
+        except Exception:
+            pass
+
         task_tracker.tracker.complete_task(user_id)
 
         # ── Final Success Response ───────────────────────────────────────────
@@ -752,12 +881,12 @@ async def run_auto_leech(
 
         await status_msg.edit_text(
             f"🎉 <b>Ultra Auto-Leech සාර්ථකව නිම විය!</b>\n\n"
-            f"🎬 <b>{display_title}</b>\n"
+            f"{media_icon} <b>{display_title}</b>\n"
             f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
             f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
             f"🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
             f"⚡ <b>භාවිතා කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
-            f"🧹 <b>VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කෙරිණි)\n\n"
+            f"🧹 <b>Seedr & VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කෙරිණි)\n\n"
             f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
             f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
             f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!",
@@ -769,6 +898,10 @@ async def run_auto_leech(
     except asyncio.CancelledError:
         log.info("[LeechService] Auto-leech task cancelled for user %s (%s)", user_id, display_title)
         await downloader.cancel_active_download(task_key)
+        try:
+            await seedr_service.seedr_pool.clean_storage()
+        except Exception:
+            pass
         task_tracker.tracker.cancel_task(user_id)
 
         if local_file and os.path.exists(local_file):
@@ -783,9 +916,9 @@ async def run_auto_leech(
 
         try:
             await status_msg.edit_text(
-                f"❌ <b>Auto-Leech ක්‍රියාවලිය අවලංගු කරන ලදී (Cancelled)!</b>\n\n"
-                f"🎬 <b>{display_title}</b>\n"
-                f"🧹 තාවකාලික ගොනු සියල්ල මකා දමා VPS Memory නිදහස් කරන ලදී.",
+                f"❌ <b>Auto-Leech ක්‍රියාවලිය සාර්ථකව අවලංගු කරන ලදී (Cancelled)!</b>\n\n"
+                f"{media_icon} <b>{display_title}</b>\n"
+                f"🧹 Seedr Cloud Storage සහ Local Files සියල්ල පිරිසිදු කරන ලදී.",
                 parse_mode=ParseMode.HTML,
             )
         except Exception:
@@ -795,6 +928,11 @@ async def run_auto_leech(
     except Exception as exc:
         log.exception("[LeechService] Unhandled error during auto-leech for user %s: %s", user_id, exc)
         task_tracker.tracker.fail_task(user_id, str(exc))
+
+        try:
+            await seedr_service.seedr_pool.clean_storage()
+        except Exception:
+            pass
 
         if local_file and os.path.exists(local_file):
             try:
@@ -809,7 +947,7 @@ async def run_auto_leech(
         try:
             await status_msg.edit_text(
                 f"⚠️ <b>Auto-Leech සැකසීමේදී දෝෂයක් සිදු විය (Failed)!</b>\n\n"
-                f"🎬 <b>{display_title}</b>\n"
+                f"{media_icon} <b>{display_title}</b>\n"
                 f"❌ දෝෂය: <code>{err_clean}</code>\n\n"
                 f"කරුණාකර /status බලන්න හෝ නැවත උත්සාහ කරන්න.",
                 parse_mode=ParseMode.HTML,

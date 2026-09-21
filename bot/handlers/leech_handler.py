@@ -291,17 +291,19 @@ def register(app: Client) -> None:
             await message.reply_text("⛔ Access denied.")
             return
 
-        cancelled = task_tracker.tracker.cancel_task(user_id)
-        if not cancelled:
-            cancelled = task_tracker.tracker.cancel_task(None)
-
+        cancelled = await task_tracker.cancel_all_user_operations(user_id)
         if cancelled:
             await message.reply_text(
-                "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>",
+                "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
+                "🗑️ <i>Seedr ගිණුමේ ගබඩාව සහ බාගත කිරීම් (Downloads) සියල්ල පිරිසිදු කරන ලදී.</i>",
                 parse_mode=ParseMode.HTML,
             )
         else:
-            await message.reply_text("ℹ️ දැනට අවලංගු කිරීමට කිසිදු ක්‍රියාකාරී කාර්යයක් නොමැත.")
+            await message.reply_text(
+                "ℹ️ <b>දැනට අවලංගු කිරීමට ක්‍රියාකාරී කාර්යයක් නොමැත.</b>\n\n"
+                "🗑️ <i>Seedr ගිණුම සහ තාවකාලික දත්ත පිරිසිදු කරන ලදී.</i>",
+                parse_mode=ParseMode.HTML,
+            )
 
     @app.on_callback_query(filters.regex(r"^leech:"))
     async def leech_callback_handler(client: Client, query: CallbackQuery) -> None:
@@ -313,16 +315,14 @@ def register(app: Client) -> None:
 
         action = query.data.split(":")[-1]
         if action == "cancel":
-            cancelled = task_tracker.tracker.cancel_task(user_id)
-            if not cancelled:
-                cancelled = task_tracker.tracker.cancel_task(None)
-
-            if cancelled:
-                await query.answer("Leech task cancelled.", show_alert=True)
+            cancelled = await task_tracker.cancel_all_user_operations(user_id)
+            await query.answer("ක්‍රියාවලිය අවලංගු කරන ලදී (Cancelled).", show_alert=True)
+            try:
                 await query.message.edit_text(
-                    "❌ <b>Auto-Leech කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>",
+                    "❌ <b>Auto-Leech කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
+                    "🗑️ <i>Seedr ගිණුමේ ගබඩාව සහ බාගත කිරීම් (Downloads) සියල්ල පිරිසිදු කරන ලදී.</i>",
                     parse_mode=ParseMode.HTML,
                 )
-            else:
-                await query.answer("No active task to cancel.")
+            except Exception:
+                pass
 

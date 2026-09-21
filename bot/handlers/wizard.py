@@ -218,25 +218,32 @@ def register(app: Client) -> None:
             return
         await _show_drafts_menu(message)
 
-    @app.on_message(filters.private & filters.command("cancel"))
+    @app.on_message(filters.private & filters.command(["cancel", "stop"]))
     async def cancel_command_handler(client: Client, message: Message) -> None:
-        if not _is_admin(message.from_user.id):
+        user_id = message.from_user.id if message.from_user else 0
+        username = message.from_user.username if message.from_user else ""
+        from services import auth_service
+        if not auth_service.is_authorized(user_id, username):
+            await message.reply_text("⛔ Access denied.")
             return
-        user_id = message.from_user.id
-        had_session = user_id in USER_SESSIONS
-        if had_session:
-            del USER_SESSIONS[user_id]
 
-        was_task_cancelled = task_tracker.tracker.cancel_task(user_id)
-        if not was_task_cancelled and task_tracker.tracker.get_any_active_task():
-            was_task_cancelled = task_tracker.tracker.cancel_task(None)
+        had_session = bool(USER_SESSIONS.pop(user_id, None))
+        was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id)
 
         if was_task_cancelled:
-            await message.reply_text("❌ ක්‍රියාත්මක වෙමින් පැවති කාර්යය අවලංගු කරන ලදී (Active task cancelled).")
+            await message.reply_text(
+                "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
+                "🗑️ <i>Seedr ගිණුමේ ගබඩාව සහ බාගත කිරීම් (Downloads) සියල්ල පිරිසිදු කරන ලදී.</i>",
+                parse_mode=ParseMode.HTML,
+            )
         elif had_session:
-            await message.reply_text("❌ ක්‍රියාවලිය අවලංගු කරන ලදී (Wizard cancelled).")
+            await message.reply_text("❌ <b>චිත්‍රපට එක්කිරීමේ ක්‍රියාවලිය අවලංගු කරන ලදී (Wizard cancelled).</b>", parse_mode=ParseMode.HTML)
         else:
-            await message.reply_text("ℹ️ අවලංගු කිරීමට කිසිදු ක්‍රියාවලියක් නොමැත (No active wizard or task).")
+            await message.reply_text(
+                "ℹ️ <b>දැනට අවලංගු කිරීමට කිසිදු සක්‍රීය කාර්යයක් නොමැත.</b>\n\n"
+                "🗑️ <i>Seedr ගිණුම සහ තාවකාලික ගොනු පිරිසිදු කර සූදානම් කර තබන ලදී.</i>",
+                parse_mode=ParseMode.HTML,
+            )
 
     # ─────────────────────────────────────────────────────────────────────────
     # 3. Callback Queries (Inline Button Clicks)
@@ -253,14 +260,16 @@ def register(app: Client) -> None:
         # Cancel
         if data == "wiz:cancel":
             USER_SESSIONS.pop(user_id, None)
-            was_task_cancelled = task_tracker.tracker.cancel_task(user_id)
-            if not was_task_cancelled and task_tracker.tracker.get_any_active_task():
-                was_task_cancelled = task_tracker.tracker.cancel_task(None)
+            was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id)
             if was_task_cancelled:
-                await query.message.edit_text("❌ ක්‍රියාත්මක වෙමින් පැවති කාර්යය අවලංගු කරන ලදී (Active task cancelled).")
+                await query.message.edit_text(
+                    "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය අවලංගු කරන ලදී (Cancelled).</b>\n\n"
+                    "🗑️ <i>Seedr ගිණුම සහ බාගත කිරීම් පිරිසිදු කරන ලදී.</i>",
+                    parse_mode=ParseMode.HTML,
+                )
             else:
-                await query.message.edit_text("❌ ක්‍රියාවලිය අවලංගු කරන ලදී.")
-            await query.answer()
+                await query.message.edit_text("❌ <b>ක්‍රියාවලිය අවලංගු කරන ලදී (Cancelled).</b>", parse_mode=ParseMode.HTML)
+            await query.answer("අවලංගු කරන ලදී.")
             return
 
         # Save to draft

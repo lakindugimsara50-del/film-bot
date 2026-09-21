@@ -414,7 +414,20 @@ async def cancel_active_download(task_key: str) -> bool:
             await asyncio.sleep(0.5)
             if proc.returncode is None:
                 proc.kill()
+            ACTIVE_SUBPROCESSES.pop(task_key, None)
             return True
         except Exception as exc:
             log.warning("[Downloader] Could not kill aria2c process: %s", exc)
+            ACTIVE_SUBPROCESSES.pop(task_key, None)
     return False
+
+
+async def cancel_all_active_downloads() -> int:
+    """Terminate and kill all running aria2c processes globally."""
+    count = 0
+    keys = list(ACTIVE_SUBPROCESSES.keys())
+    for k in keys:
+        if await cancel_active_download(k):
+            count += 1
+    log.info("[Downloader] Terminated %d active download subprocess(es).", count)
+    return count

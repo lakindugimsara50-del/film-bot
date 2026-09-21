@@ -19,69 +19,153 @@ _IMG_ORIG = "https://image.tmdb.org/t/p/original"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-async def fetch_metadata(query: str, year: int = None) -> dict:
+import re
+
+# ─────────────────────────────────────────────────────────────────────────────
+async def fetch_metadata(
+    query: str,
+    year: int = None,
+    is_series: bool = False,
+    season: int = None,
+    episode: int = None,
+) -> dict:
     """
     Search TMDB for *query* and return a dict containing all fields that
-    movies.json expects.
-
-    Args:
-        query: Movie title (English or native language).
-        year:  Release year (optional, improves accuracy).
-
-    Returns:
-        dict with keys: title, title_si, year, imdb_id, tmdb_id, poster_url,
-        backdrop_url, genres, duration, description, cast, director, rating
+    movies.json expects. Intelligently detects whether the query is a TV series
+    or a movie.
     """
     if not TMDB_API_KEY:
         raise RuntimeError("TMDB_API_KEY is not configured.")
 
-    params: dict = {
-        "api_key": TMDB_API_KEY,
-        "query": query,
-        "language": "en-US",
-        "include_adult": False,
-    }
-    if year:
-        params["year"] = year
+    # 1. Regex analysis for Season and Episode tokens in query string
+    s_match = re.search(r"\b(?:s|season\s*)(\d{1,2})\b", query, re.IGNORECASE)
+    e_match = re.search(r"\b(?:e|episode\s*|ep\s*)(\d{1,2})\b", query, re.IGNORECASE)
+    x_match = re.search(r"\b(\d{1,2})x(\d{1,2})\b", query, re.IGNORECASE)
+
+    req_season = season
+    req_episode = episode
+
+    if x_match:
+        req_season = req_season or int(x_match.group(1))
+        req_episode = req_episode or int(x_match.group(2))
+        is_series = True
+    else:
+        if s_match:
+            req_season = req_season or int(s_match.group(1))
+            is_series = True
+        if e_match:
+            req_episode = req_episode or int(e_match.group(1))
+            is_series = True
+
+    clean_query = re.sub(
+        r"\b(s\d{1,2}\s*e\d{1,2}|season\s*\d+|s\d{1,2}|episode\s*\d+|ep\s*\d+|\d{1,2}x\d{1,2})\b.*$",
+        "",
+        query,
+        flags=re.IGNORECASE,
+    ).strip() or query
 
     async with httpx.AsyncClient(timeout=20) as client:
-        # ── Step 1: Search for the movie ────────────────────────────────────
-        resp = await client.get(f"{_BASE}/search/movie", params=params)
-        resp.raise_for_status()
-        results = resp.json().get("results", [])
+        selected_media_type = "tv" if is_series else None
+        selected_item = None
 
-        if not results:
-            log.info("TMDB: No movie results for '%s', searching TV series...", query)
-            clean_tv_query = re.sub(
-                r"\b(s\d{1,2}\s*e\d{1,2}|season\s*\d+|s\d{1,2}|episode\s*\d+|ep\s*\d+)\b.*$",
-                "",
-                query,
-                flags=re.IGNORECASE,
-            ).strip() or query
-
-            s_match = re.search(r"\b(?:s|season\s*)(\d{1,2})\b", query, re.IGNORECASE)
-            e_match = re.search(r"\b(?:e|episode\s*|ep\s*)(\d{1,2})\b", query, re.IGNORECASE)
-            req_season = int(s_match.group(1)) if s_match else None
-            req_episode = int(e_match.group(1)) if e_match else None
-
+        if is_series:
+            # Explicit TV series query
             tv_resp = await client.get(
                 f"{_BASE}/search/tv",
-                params={"api_key": TMDB_API_KEY, "query": clean_tv_query, "language": "en-US"},
+                params={"api_key": TMDB_API_KEY, "query": clean_query, "language": "en-US"},
             )
             if tv_resp.status_code == 200:
                 tv_results = tv_resp.json().get("results", [])
                 if tv_results:
-                    meta = await _fetch_tv_metadata(client, tv_results[0])
-                    if req_season:
-                        meta["current_season"] = req_season
-                    if req_episode:
-                        meta["current_episode"] = req_episode
-                    return meta
+                    selected_item = tv_results[0]
+                    selected_media_type = "tv"
+        else:
+            # Disambiguate using /search/multi (or movie vs tv popularity check)
+            multi_resp = await client.get(
+                f"{_BASE}/search/multi",
+                params={"api_key": TMDB_API_KEY, "query": clean_query, "language": "en-US"},
+            )
+            if multi_resp.status_code == 200:
+                multi_results = multi_resp.json().get("results", [])
+                tv_candidates = [it for it in multi_results if it.get("media_type") == "tv"]
+                movie_candidates = [it for it in multi_results if it.get("media_type") == "movie"]
 
-            log.warning("TMDB: No movie or TV results for '%s' (%s)", query, year)
+                top_tv = tv_candidates[0] if tv_candidates else None
+                top_movie = movie_candidates[0] if movie_candidates else None
+
+                if top_tv and top_movie:
+                    tv_name = (top_tv.get("name") or "").strip().lower()
+                    movie_title = (top_movie.get("title") or "").strip().lower()
+                    q_lower = clean_query.lower()
+
+                    # Exact title check
+                    tv_exact = (tv_name == q_lower)
+                    movie_exact = (movie_title == q_lower)
+
+                    tv_pop = float(top_tv.get("popularity", 0))
+                    movie_pop = float(top_movie.get("popularity", 0))
+
+                    if tv_exact and not movie_exact:
+                        selected_item = top_tv
+                        selected_media_type = "tv"
+                    elif movie_exact and not tv_exact:
+                        selected_item = top_movie
+                        selected_media_type = "movie"
+                    elif tv_pop > movie_pop * 1.5:
+                        selected_item = top_tv
+                        selected_media_type = "tv"
+                    else:
+                        selected_item = top_movie
+                        selected_media_type = "movie"
+                elif top_tv:
+                    selected_item = top_tv
+                    selected_media_type = "tv"
+                elif top_movie:
+                    selected_item = top_movie
+                    selected_media_type = "movie"
+
+        if not selected_item:
+            # Fallback: try search/movie directly
+            params = {"api_key": TMDB_API_KEY, "query": clean_query, "language": "en-US", "include_adult": False}
+            if year:
+                params["year"] = year
+            resp = await client.get(f"{_BASE}/search/movie", params=params)
+            if resp.status_code == 200 and resp.json().get("results"):
+                selected_item = resp.json()["results"][0]
+                selected_media_type = "movie"
+
+        if not selected_item:
+            log.warning("TMDB: No movie or TV results for '%s' (%s)", clean_query, year)
             return _empty_metadata(query, year)
 
-        movie = results[0]
+        # Process metadata based on selected media type
+        if selected_media_type == "tv":
+            meta = await _fetch_tv_metadata(client, selected_item)
+            # Default to season 1 episode 1 if none specified
+            meta["current_season"] = req_season or 1
+            meta["current_episode"] = req_episode or 1
+
+            # Fetch specific episode details if season and episode known
+            if meta.get("tmdb_id") and meta.get("current_season") and meta.get("current_episode"):
+                try:
+                    ep_resp = await client.get(
+                        f"{_BASE}/tv/{meta['tmdb_id']}/season/{meta['current_season']}/episode/{meta['current_episode']}",
+                        params={"api_key": TMDB_API_KEY, "language": "en-US"},
+                    )
+                    if ep_resp.status_code == 200:
+                        ep_data = ep_resp.json()
+                        meta["episode_title"] = ep_data.get("name", "")
+                        if ep_data.get("overview"):
+                            meta["episode_overview"] = ep_data.get("overview")
+                        if ep_data.get("runtime"):
+                            meta["duration"] = ep_data.get("runtime")
+                        log.info("TMDB: Found episode details S%02dE%02d: %s", meta["current_season"], meta["current_episode"], ep_data.get("name"))
+                except Exception as ep_err:
+                    log.debug("Could not fetch episode details: %s", ep_err)
+
+            return meta
+
+        movie = selected_item
         tmdb_id: int = movie["id"]
         log.info("TMDB: Found movie '%s' (tmdb_id=%s)", movie.get("title"), tmdb_id)
 
@@ -303,10 +387,8 @@ def _empty_metadata(query: str, year: int = None) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 async def fetch_by_imdb_id(imdb_id: str) -> dict:
     """
-    Resolve an IMDb ID (e.g. 'tt1375666') to full TMDB metadata.
-
-    Uses TMDB /find endpoint then delegates to fetch_metadata with tmdb_id.
-    Returns empty metadata dict on failure.
+    Resolve an IMDb ID (e.g. 'tt1375666' or 'tt0944947') to full TMDB metadata.
+    Supports both movies and TV shows/episodes.
     """
     if not imdb_id or not TMDB_API_KEY:
         return _empty_metadata(imdb_id)
@@ -319,24 +401,49 @@ async def fetch_by_imdb_id(imdb_id: str) -> dict:
             )
             resp.raise_for_status()
             data = resp.json()
-            results = data.get("movie_results", [])
-            if not results:
-                log.warning("TMDB: No movie results for IMDb ID: %s", imdb_id)
-                return _empty_metadata(imdb_id)
 
-            movie = results[0]
-            tmdb_id = movie["id"]
-            title = movie.get("title", "")
-            year_str = movie.get("release_date", "")[:4]
-            year = int(year_str) if year_str.isdigit() else None
-            log.info("TMDB: Resolved IMDb %s -> tmdb_id=%s title=%r", imdb_id, tmdb_id, title)
+            movie_results = data.get("movie_results", [])
+            tv_results = data.get("tv_results", [])
+            tv_ep_results = data.get("tv_episode_results", [])
 
-        # Fetch full metadata using the resolved title + year
-        meta = await fetch_metadata(title, year)
-        # Ensure imdb_id is set even if TMDB doesn't surface it in search
-        if not meta.get("imdb_id"):
-            meta["imdb_id"] = imdb_id
-        return meta
+            if tv_ep_results:
+                ep = tv_ep_results[0]
+                show_id = ep.get("show_id")
+                req_season = ep.get("season_number", 1)
+                req_episode = ep.get("episode_number", 1)
+                show_resp = await client.get(f"{_BASE}/tv/{show_id}", params={"api_key": TMDB_API_KEY, "language": "en-US"})
+                if show_resp.status_code == 200:
+                    meta = await _fetch_tv_metadata(client, show_resp.json())
+                    meta["current_season"] = req_season
+                    meta["current_episode"] = req_episode
+                    meta["episode_title"] = ep.get("name", "")
+                    meta["imdb_id"] = imdb_id
+                    return meta
+
+            if tv_results:
+                top_tv = tv_results[0]
+                tv_pop = float(top_tv.get("popularity", 0))
+                movie_pop = float(movie_results[0].get("popularity", 0)) if movie_results else 0
+                if tv_pop >= movie_pop or not movie_results:
+                    meta = await _fetch_tv_metadata(client, top_tv)
+                    meta["current_season"] = 1
+                    meta["current_episode"] = 1
+                    meta["imdb_id"] = imdb_id
+                    return meta
+
+            if movie_results:
+                movie = movie_results[0]
+                title = movie.get("title", "")
+                year_str = movie.get("release_date", "")[:4]
+                year = int(year_str) if year_str.isdigit() else None
+                log.info("TMDB: Resolved IMDb %s -> tmdb_id=%s title=%r", imdb_id, movie.get("id"), title)
+                meta = await fetch_metadata(title, year)
+                if not meta.get("imdb_id"):
+                    meta["imdb_id"] = imdb_id
+                return meta
+
+            log.warning("TMDB: No movie or TV results for IMDb ID: %s", imdb_id)
+            return _empty_metadata(imdb_id)
 
     except Exception as exc:
         log.warning("fetch_by_imdb_id failed for %s: %s", imdb_id, exc)

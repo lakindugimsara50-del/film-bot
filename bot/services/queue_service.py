@@ -36,6 +36,7 @@ class QueueService:
         self._pending_items: List[QueueItem] = []
         self._is_worker_running = False
         self._active_item: Optional[QueueItem] = None
+        self._current_task: Optional[asyncio.Task] = None
         self._worker_task: Optional[asyncio.Task] = None
 
     def start_worker(self) -> None:
@@ -73,6 +74,9 @@ class QueueService:
             title=title,
         )
 
+        # Track in task tracker immediately so /cancel or /status knows about it
+        task_tracker.tracker.start_task(user_id=user_id, title=title)
+
         self._pending_items.append(item)
         await self._queue.put(item)
         position = len(self._pending_items)
@@ -82,6 +86,38 @@ class QueueService:
             title, position, len(self._pending_items)
         )
         return position
+
+    def cancel_user(self, user_id: Optional[int] = None) -> bool:
+        """Cancel current active task and remove all matching pending items from queue."""
+        cancelled = False
+        if self._active_item and (user_id is None or self._active_item.user_id == user_id):
+            if self._current_task and not self._current_task.done():
+                log.info("[QueueService] Cancelling active task for user %s (%s)", self._active_item.user_id, self._active_item.title)
+                self._current_task.cancel()
+                cancelled = True
+
+        # Remove matching pending items
+        remaining: List[QueueItem] = []
+        for it in self._pending_items:
+            if it == self._active_item:
+                remaining.append(it)
+                continue
+            if user_id is None or it.user_id == user_id:
+                cancelled = True
+                try:
+                    asyncio.create_task(
+                        it.status_msg.edit_text(
+                            "❌ <b>බාගත කිරීමේ පෝලිමෙන් ඉවත් කරන ලදී (Cancelled from queue).</b>",
+                            parse_mode=ParseMode.HTML,
+                        )
+                    )
+                except Exception:
+                    pass
+            else:
+                remaining.append(it)
+
+        self._pending_items = remaining
+        return cancelled
 
     def get_queue_status(self) -> List[dict]:
         """Return list of queued items."""
@@ -115,19 +151,26 @@ class QueueService:
                 log.info("[QueueService] Processing queue item: %s for user %s", item.title, item.user_id)
 
                 from services import leech_service
-                try:
-                    await leech_service.run_auto_leech(
+                leech_task = asyncio.create_task(
+                    leech_service.run_auto_leech(
                         client=item.client,
                         status_msg=item.status_msg,
                         user_id=item.user_id,
                         query_text=item.query_text,
                         reply_media=item.reply_media,
                     )
+                )
+                self._current_task = leech_task
+                task_tracker.tracker.set_task_handle(item.user_id, leech_task)
+
+                try:
+                    await leech_task
                 except asyncio.CancelledError:
-                    log.info("[QueueService] Task cancelled: %s", item.title)
+                    log.info("[QueueService] Task cancelled for user %s: %s", item.user_id, item.title)
                 except Exception as exc:
                     log.error("[QueueService] Error executing queued item '%s': %s", item.title, exc)
                 finally:
+                    self._current_task = None
                     if item in self._pending_items:
                         self._pending_items.remove(item)
                     self._active_item = None

@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 # Ensure bot directory is on sys.path
 sys.path.insert(0, os.path.abspath("bot"))
 
-from services.scrapers import method_yts, method3_ddl, method1_telegram
-from services import downloader, leech_service, task_tracker, telegram_upload
+from services.scrapers import method_yts, method3_ddl, method1_telegram, torrent_finder
+from services import downloader, leech_service, seedr_service, task_tracker, telegram_upload
 
 
 class TestLeechScrapers(unittest.TestCase):
@@ -379,6 +379,139 @@ class TestLeechService(unittest.TestCase):
 
         asyncio.run(run_test())
 
+    def test_parse_query_tv_series(self):
+        """Verify TV series season and episode query parsing."""
+        # S01E01 format
+        parsed = leech_service.parse_query("/leech Game of Thrones S01E01")
+        self.assertEqual(parsed.title, "Game of Thrones")
+        self.assertEqual(parsed.season, 1)
+        self.assertEqual(parsed.episode, 1)
+        self.assertTrue(parsed.is_series)
+
+        # Lowercase s05e16 format
+        parsed2 = leech_service.parse_query("/boost Breaking Bad s05e16")
+        self.assertEqual(parsed2.title, "Breaking Bad")
+        self.assertEqual(parsed2.season, 5)
+        self.assertEqual(parsed2.episode, 16)
+        self.assertTrue(parsed2.is_series)
+
+        # Season-only query defaults to episode 1
+        parsed3 = leech_service.parse_query("/auto The Last of Us S01")
+        self.assertEqual(parsed3.title, "The Last of Us")
+        self.assertEqual(parsed3.season, 1)
+        self.assertEqual(parsed3.episode, 1)
+        self.assertTrue(parsed3.is_series)
+
+        # "Season X Episode Y" written out
+        parsed4 = leech_service.parse_query("/leech Stranger Things Season 2 Episode 3")
+        self.assertEqual(parsed4.title, "Stranger Things")
+        self.assertEqual(parsed4.season, 2)
+        self.assertEqual(parsed4.episode, 3)
+        self.assertTrue(parsed4.is_series)
+
+        # Regular movie
+        parsed5 = leech_service.parse_query("/leech Inception 2010")
+        self.assertEqual(parsed5.title, "Inception")
+        self.assertEqual(parsed5.year, 2010)
+        self.assertFalse(parsed5.is_series)
+
+        # Backward compatibility 4-tuple unpacking
+        t, y, i, d = leech_service.parse_query("/leech Game of Thrones S01E01")
+        self.assertEqual(t, "Game of Thrones")
+        self.assertIsNone(y)
+
+    def test_torrent_finder_multi_source_and_seedr_limit(self):
+        """Verify torrent finder handles multi-source results and enforces Seedr <= 2.05GB limit."""
+        async def run_test():
+            mock_apibay = MagicMock()
+            mock_apibay.status_code = 200
+            mock_apibay.json.return_value = [
+                # 3.5GB torrent (should be excluded due to > 2.05GB limit)
+                {"name": "Game of Thrones S01E01 2160p", "info_hash": "HASH_BIG", "seeders": "150", "size": str(int(3.5 * 1024**3))},
+                # 1.2GB 1080p torrent (should be included)
+                {"name": "Game of Thrones S01E01 1080p HDTV", "info_hash": "HASH_1080P", "seeders": "90", "size": str(int(1.2 * 1024**3))},
+                # 450MB 720p torrent (should be included)
+                {"name": "Game of Thrones S01E01 720p HDTV", "info_hash": "HASH_720P", "seeders": "40", "size": str(int(450 * 1024**2))},
+            ]
+
+            mock_eztv = MagicMock()
+            mock_eztv.status_code = 200
+            mock_eztv.json.return_value = {
+                "torrents": [
+                    {
+                        "title": "Game of Thrones S01E01 720p EZTV",
+                        "magnet_url": "magnet:?xt=urn:btih:EZTV_HASH",
+                        "seeds": 85,
+                        "size_bytes": 600 * 1024 * 1024,
+                        "season": 1,
+                        "episode": 1,
+                    },
+                    # Different episode (should be filtered out)
+                    {
+                        "title": "Game of Thrones S01E02 720p EZTV",
+                        "magnet_url": "magnet:?xt=urn:btih:EZTV_EP2",
+                        "seeds": 100,
+                        "size_bytes": 600 * 1024 * 1024,
+                        "season": 1,
+                        "episode": 2,
+                    }
+                ]
+            }
+
+            mock_csv = MagicMock()
+            mock_csv.status_code = 200
+            mock_csv.json.return_value = {"torrents": []}
+
+            def fake_get(url, *args, **kwargs):
+                u = str(url)
+                if "apibay" in u:
+                    return mock_apibay
+                elif "eztv" in u:
+                    return mock_eztv
+                elif "torrents-csv" in u:
+                    return mock_csv
+                m = MagicMock()
+                m.status_code = 200
+                m.json.return_value = {}
+                return m
+
+            with patch("httpx.AsyncClient.get", side_effect=fake_get):
+                results = await torrent_finder.search_all_torrents(
+                    title="Game of Thrones",
+                    season=1,
+                    episode=1,
+                )
+                self.assertTrue(len(results) > 0)
+                # Ensure all returned torrents are <= 2.05 GB
+                for tor in results:
+                    self.assertLessEqual(tor["size_bytes"], int(2.05 * 1024**3))
+                # Ensure excluded big torrent is not in results
+                hashes = [r["hash"] for r in results]
+                self.assertNotIn("HASH_BIG", hashes)
+                self.assertIn("HASH_1080P", hashes)
+
+        asyncio.run(run_test())
+
+    def test_cancel_all_user_operations_cleans_seedr_and_subprocesses(self):
+        """Verify cancel_all_user_operations terminates tasks and purges Seedr storage."""
+        task_tracker.tracker.start_task(user_id=888, title="Game of Thrones S01E01")
+
+        mock_clean_seedr = AsyncMock(return_value=True)
+        mock_cancel_dl = AsyncMock(return_value=True)
+
+        async def run_cancel():
+            with patch("services.seedr_service.seedr_pool.clean_storage", mock_clean_seedr), \
+                 patch("services.downloader.cancel_all_active_downloads", mock_cancel_dl):
+
+                cancelled = await task_tracker.cancel_all_user_operations(user_id=888)
+                self.assertTrue(cancelled)
+                self.assertIsNone(task_tracker.tracker.get_active_task(888))
+                mock_clean_seedr.assert_awaited()
+                mock_cancel_dl.assert_awaited()
+
+        asyncio.run(run_cancel())
+
 
 if __name__ == "__main__":
     unittest.main()
+

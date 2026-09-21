@@ -417,12 +417,13 @@ async def run_auto_leech(
                         status_line = f"⚡ <b>වේගය:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}"
 
                     text = (
-                        f"📥 <b>පියවර 1/3: වීඩියෝව බාගත කරමින් පවතී (Downloading)...</b>\n\n"
+                        f"📥 <b>පියවර 2/4: Seedr ➔ Render Cloud වෙත බාගත කරමින්...</b>\n\n"
                         f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
-                        f"⚡ <b>ක්‍රමය:</b> {candidate.method_name}\n"
+                        f"⚡ <b>ක්‍රමය:</b> {candidate.method_name} (Cloud Direct Link)\n"
                         f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                         f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
-                        f"{status_line}"
+                        f"{status_line}\n"
+                        f"☁️ <i>Render Data Center High-Speed Cloud Bandwidth (ඔබේ Data නොයයි)</i>"
                     )
                     try:
                         await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -579,7 +580,7 @@ async def run_auto_leech(
         size_str = downloader.format_bytes(file_size)
 
         task_tracker.tracker.set_step(
-            user_id, f"2/3 - Fast Upload to Channel ({size_str})..."
+            user_id, f"4/4 - Render to Telegram Upload ({size_str})..."
         )
 
         last_upload_edit = 0.0
@@ -587,16 +588,17 @@ async def run_auto_leech(
         async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
             nonlocal last_upload_edit
             now = time.time()
-            if now - last_upload_edit >= 2.5:
+            if now - last_upload_edit >= 2.5 or pct >= 99.0:
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
                 text = (
-                    f"📤 <b>පියවර 2/3: Telegram Channel එකට Upload කරමින් පවතී...</b>\n\n"
+                    f"📤 <b>පියවර 4/4: Render Cloud ➔ Telegram Storage වෙත Upload වෙමින්...</b>\n\n"
                     f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
                     f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
-                    f"⚡ <b>වේගය:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}"
+                    f"⚡ <b>Cloud Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
+                    f"☁️ <i>Telegram Private Storage වෙත සෘජුවම සුරැකේ.</i>"
                 )
                 try:
                     await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -629,9 +631,9 @@ async def run_auto_leech(
             log.warning("[LeechService] Error during disk cleanup: %s", clean_err)
 
         # ── Step 5: Save to movies.json & Deploy to Website ───────────────────
-        task_tracker.tracker.set_step(user_id, "3/3 - Updating Website & Channel Announcement...")
+        task_tracker.tracker.set_step(user_id, "Completed - Updating Website...")
         await status_msg.edit_text(
-            f"⚡ <b>පියවර 3/3:</b> වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...",
+            f"⚡ <b>අවසන් පියවර:</b> වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...",
             parse_mode=ParseMode.HTML,
         )
 

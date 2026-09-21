@@ -97,13 +97,16 @@ class SeedrService:
                 return None
 
         # Step 1: Clean any existing files in Seedr to ensure 2GB quota is free
+        # Step 1: Clean any existing files in Seedr to ensure 2GB quota is free
+        if progress_callback:
+            await progress_callback("☁️ <b>Seedr Cloud:</b> ගිණුමේ ඉඩ පරීක්ෂා කර පිරිසිදු කරමින් (Preparing Storage)...")
         await self.clean_storage(token)
 
         # Step 2: Add magnet to Seedr
         try:
             log.info("[Seedr] Adding magnet to Seedr cloud: %s", magnet_url[:60])
             if progress_callback:
-                await progress_callback("⏳ Seedr Cloud එකට Torrent එක යවමින් පවතී...")
+                await progress_callback("☁️ <b>Seedr Cloud:</b> Magnet Torrent එක Seedr වෙත යවමින්...")
 
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.post(
@@ -114,18 +117,25 @@ class SeedrService:
                 res_data = resp.json()
                 result_val = res_data.get("result")
                 if result_val not in (True, "true", 1, "1"):
+                    err_msg = res_data.get("result") or res_data.get("error") or "Unknown error"
                     log.warning("[Seedr] Failed to add torrent: %s", res_data)
+                    if progress_callback:
+                        await progress_callback(f"⚠️ <b>Seedr Cloud දෝෂය:</b> Torrent එක එක්කිරීම අසාර්ථක විය ({err_msg})")
                     return None
 
             log.info("[Seedr] Torrent added to Seedr cloud successfully.")
+            if progress_callback:
+                await progress_callback("☁️ <b>Seedr Cloud:</b> Torrent එක සාර්ථකව ලැබිණි. Cloud බාගත කිරීම ආරම්භ විය...")
         except Exception as exc:
             log.error("[Seedr] Error adding torrent: %s", exc)
+            if progress_callback:
+                await progress_callback(f"⚠️ <b>Seedr Cloud Connection Error:</b> {exc}")
             return None
 
         # Step 3: Poll folder until torrent is ready in cloud
         start_time = time.time()
         while time.time() - start_time < timeout_seconds:
-            await asyncio.sleep(3)
+            await asyncio.sleep(2)
             try:
                 async with httpx.AsyncClient(timeout=15) as client:
                     resp = await client.get(
@@ -165,6 +175,14 @@ class SeedrService:
                         file_name = target_file.get("name", "movie.mp4")
                         file_size = target_file.get("size", 0)
 
+                        if progress_callback:
+                            await progress_callback(
+                                f"☁️ <b>Seedr Cloud බාගත වීම සාර්ථකයි!</b>\n\n"
+                                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                                f"📦 <b>ප්‍රමාණය:</b> {file_size / (1024 * 1024):.1f} MB\n"
+                                f"⚡ Direct High-Speed Download Link එක සූදානම් කරමින්..."
+                            )
+
                         link_resp = await client.get(
                             SEEDR_RESOURCE_URL,
                             headers=headers,
@@ -189,9 +207,19 @@ class SeedrService:
                     if torrents:
                         t = torrents[0]
                         progress = t.get("progress", 0)
+                        seeders = t.get("connected_to", 0) or t.get("seeders", 0)
+                        rate_bytes = t.get("download_rate", 0)
+                        rate_str = f"{rate_bytes / (1024 * 1024):.1f} MB/s" if rate_bytes > 0 else "Connecting"
+                        filled = int(round(10 * (progress / 100.0)))
+                        p_bar = f"[{'█' * filled}{'░' * (10 - filled)}]"
                         log.debug("[Seedr] Cloud downloading progress: %s%%", progress)
                         if progress_callback:
-                            await progress_callback(f"☁️ Seedr Cloud එකේ බාගත වෙමින් පවතී: {progress}%...")
+                            await progress_callback(
+                                f"☁️ <b>Seedr Cloud එක බාගත කරමින් පවතී...</b>\n\n"
+                                f"📊 <b>ප්‍රගතිය:</b> {p_bar} {progress}%\n"
+                                f"⚡ <b>Cloud Speed:</b> {rate_str} | 👥 <b>Seeders:</b> {seeders}\n"
+                                f"💡 <i>Seedr Cloud එකෙන් බාගත වූ පසු Render Server එකට කෙලින්ම Direct Link එක ලබාගනී.</i>"
+                            )
 
             except Exception as poll_err:
                 log.debug("[Seedr] Poll iteration error: %s", poll_err)

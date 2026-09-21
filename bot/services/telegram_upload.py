@@ -15,8 +15,10 @@ import tempfile
 
 import aiofiles
 import httpx
+import inspect
 from pyrogram import Client
 
+import config
 from config import (
     API_ID,
     API_HASH,
@@ -52,12 +54,17 @@ async def download_and_upload(
         # ── 2. Upload to Telegram private channel ──────────────────────────
         log.info("Uploading '%s' to private channel %s …", file_name, PRIVATE_CHANNEL_ID)
 
-        def _pyrogram_progress(current: int, total: int) -> None:
-            """Bridge Pyrogram's sync progress callback to our async one."""
-            if progress_callback:
-                asyncio.get_event_loop().create_task(
+        async def _pyrogram_progress(current: int, total: int) -> None:
+            """Bridge Pyrogram's progress callback to our async one safely."""
+            if not progress_callback or not total:
+                return
+            try:
+                if inspect.iscoroutinefunction(progress_callback):
+                    await progress_callback(current, total)
+                else:
                     progress_callback(current, total)
-                )
+            except Exception as p_err:
+                log.debug("[TelegramUpload] download_and_upload progress callback error: %s", p_err)
 
         target_chat = PRIVATE_CHANNEL_ID if PRIVATE_CHANNEL_ID != 0 else (fallback_chat_id or config.ADMIN_IDS[0])
 
@@ -139,12 +146,12 @@ async def upload_video_file(
     start_time = time.time()
     last_notify = 0.0
 
-    def _pyrogram_progress(current: int, total: int) -> None:
+    async def _pyrogram_progress(current: int, total: int) -> None:
         nonlocal last_notify
         if not progress_callback or not total:
             return
         now = time.time()
-        if now - last_notify >= 2.0 or current == total:
+        if now - last_notify >= 2.5 or current == total:
             last_notify = now
             elapsed = max(0.001, now - start_time)
             speed_bytes = current / elapsed
@@ -153,11 +160,22 @@ async def upload_video_file(
             pct = (current / total) * 100.0
             eta_seconds = int((total - current) / speed_bytes) if speed_bytes > 0 else 0
             eta_str = f"{eta_seconds}s" if eta_seconds < 60 else f"{eta_seconds // 60}m {eta_seconds % 60}s"
-            asyncio.create_task(
-                progress_callback(pct, format_bytes(current), format_bytes(total), speed_str, eta_str)
-            )
+            try:
+                if inspect.iscoroutinefunction(progress_callback):
+                    await progress_callback(pct, format_bytes(current), format_bytes(total), speed_str, eta_str)
+                else:
+                    progress_callback(pct, format_bytes(current), format_bytes(total), speed_str, eta_str)
+            except Exception as p_err:
+                log.debug("[TelegramUpload] Progress callback error ignored: %s", p_err)
 
     async def _do_send(chat_id: int):
+        if not bot_client.is_connected:
+            try:
+                log.info("[TelegramUpload] bot_client not connected, reconnecting...")
+                await bot_client.connect()
+            except Exception as conn_err:
+                log.warning("[TelegramUpload] bot_client.connect() warning: %s", conn_err)
+
         try:
             return await bot_client.send_video(
                 chat_id=chat_id,
@@ -182,11 +200,11 @@ async def upload_video_file(
     try:
         message = await _do_send(target)
     except Exception as exc:
-        if fallback_chat and target != fallback_chat and ("PEER" in str(exc).upper() or "CHANNEL" in str(exc).upper() or "CHAT_ADMIN" in str(exc).upper()):
-            log.warning("[TelegramUpload] Channel %s failed (%s). Falling back to chat %s", target, exc, fallback_chat)
+        if fallback_chat and target != fallback_chat:
+            log.warning("[TelegramUpload] Target chat %s failed (%s). Falling back to chat %s", target, exc, fallback_chat)
             message = await _do_send(fallback_chat)
         else:
-            log.error("[TelegramUpload] Failed to upload video: %s", exc)
+            log.error("[TelegramUpload] Failed to upload video: %s", exc, exc_info=True)
             raise
 
     file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")

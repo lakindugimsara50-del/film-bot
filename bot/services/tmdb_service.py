@@ -52,14 +52,31 @@ async def fetch_metadata(query: str, year: int = None) -> dict:
 
         if not results:
             log.info("TMDB: No movie results for '%s', searching TV series...", query)
+            clean_tv_query = re.sub(
+                r"\b(s\d{1,2}\s*e\d{1,2}|season\s*\d+|s\d{1,2}|episode\s*\d+|ep\s*\d+)\b.*$",
+                "",
+                query,
+                flags=re.IGNORECASE,
+            ).strip() or query
+
+            s_match = re.search(r"\b(?:s|season\s*)(\d{1,2})\b", query, re.IGNORECASE)
+            e_match = re.search(r"\b(?:e|episode\s*|ep\s*)(\d{1,2})\b", query, re.IGNORECASE)
+            req_season = int(s_match.group(1)) if s_match else None
+            req_episode = int(e_match.group(1)) if e_match else None
+
             tv_resp = await client.get(
                 f"{_BASE}/search/tv",
-                params={"api_key": TMDB_API_KEY, "query": query, "language": "en-US"},
+                params={"api_key": TMDB_API_KEY, "query": clean_tv_query, "language": "en-US"},
             )
             if tv_resp.status_code == 200:
                 tv_results = tv_resp.json().get("results", [])
                 if tv_results:
-                    return await _fetch_tv_metadata(client, tv_results[0])
+                    meta = await _fetch_tv_metadata(client, tv_results[0])
+                    if req_season:
+                        meta["current_season"] = req_season
+                    if req_episode:
+                        meta["current_episode"] = req_episode
+                    return meta
 
             log.warning("TMDB: No movie or TV results for '%s' (%s)", query, year)
             return _empty_metadata(query, year)

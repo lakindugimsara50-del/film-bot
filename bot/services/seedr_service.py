@@ -144,17 +144,19 @@ class SeedrService:
                     ]
 
                     if not video_files and folders:
-                        sub_id = folders[0].get("id")
-                        sub_resp = await client.get(
-                            SEEDR_RESOURCE_URL,
-                            headers=headers,
-                            params={"func": "get_folder", "folder_id": sub_id},
-                        )
-                        sub_data = sub_resp.json()
-                        video_files = [
-                            f for f in sub_data.get("files", [])
-                            if any(f.get("name", "").lower().endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov"))
-                        ]
+                        for folder in folders:
+                            sub_id = folder.get("id")
+                            if not sub_id:
+                                continue
+                            sub_resp = await client.get(
+                                SEEDR_RESOURCE_URL,
+                                headers=headers,
+                                params={"func": "get_folder", "id": sub_id},
+                            )
+                            sub_data = sub_resp.json()
+                            for f in sub_data.get("files", []):
+                                if any(f.get("name", "").lower().endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov")):
+                                    video_files.append(f)
 
                     if video_files:
                         video_files.sort(key=lambda x: x.get("size", 0), reverse=True)
@@ -218,6 +220,8 @@ class SeedrService:
                     delete_arr.append({"type": "file", "id": f["folder_file_id"]})
                 for d in data.get("folders", []):
                     delete_arr.append({"type": "folder", "id": d["id"]})
+                for t in data.get("torrents", []):
+                    delete_arr.append({"type": "torrent", "id": t["id"]})
 
                 if delete_arr:
                     import json

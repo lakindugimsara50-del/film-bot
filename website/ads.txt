@@ -1,0 +1,28 @@
+# ads.txt – Authorized Digital Sellers
+# ======================================
+# This file verifies that your site is authorized to sell ad inventory
+# through the listed ad networks.
+#
+# Format: <SSP Domain>, <Publisher Account ID>, <Relationship>, [Cert Authority ID]
+#   DIRECT   = you have a direct contract with that ad network
+#   RESELLER = the network is reselling through another party
+#
+# ── How to find your IDs ─────────────────────────────────────────────────────
+#   Monetag  : https://monetag.com  → Account → Publisher ID
+#   Adsterra : https://adsterra.com → Publisher → Website → ads.txt tab
+#   AdSense  : https://adsense.google.com → Account → Publisher ID (pub-XXXXXXXX)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Monetag (formerly PropellerAds) ──────────────────────────────────────────
+# Replace YOUR_MONETAG_PUBLISHER_ID with your real ID from Monetag dashboard
+monetag.com, YOUR_MONETAG_PUBLISHER_ID, DIRECT
+
+# ── Adsterra ─────────────────────────────────────────────────────────────────
+# Replace YOUR_ADSTERRA_PUBLISHER_ID with your real ID from Adsterra dashboard
+adsterra.com, YOUR_ADSTERRA_PUBLISHER_ID, DIRECT
+
+# ── Google AdSense (if you apply later) ──────────────────────────────────────
+# google.com, pub-YOUR_ADSENSE_PUBLISHER_ID, DIRECT, f08c47fec0942fa0
+
+# ── A-ADS (anonymous, crypto-friendly) ───────────────────────────────────────
+# a-ads.com, YOUR_AADS_PUBLISHER_ID, DIRECT

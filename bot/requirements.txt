@@ -1,0 +1,12 @@
+pyrogram==2.0.106
+TgCrypto==1.2.5
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+httpx==0.25.2
+gdown==5.1.0
+python-dotenv==1.0.0
+aiofiles==23.2.1
+Pillow==10.1.0
+beautifulsoup4==4.12.3
+lxml==5.2.1
+imageio-ffmpeg>=0.4.9

@@ -1,0 +1,13 @@
+{
+  "name": "filmsite-scripts",
+  "version": "1.0.0",
+  "description": "Build scripts for FilmSite automation",
+  "main": "generate_sitemap.js",
+  "scripts": {
+    "sitemap": "node generate_sitemap.js",
+    "test": "echo No tests yet && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "license": "MIT"
+}

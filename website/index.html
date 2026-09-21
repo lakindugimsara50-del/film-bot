@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="si" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FilmSub – සිංහල උපසිරැසි සහිත හොලිවුඩ් චිත්‍රපට නරඹන්න. Watch Hollywood movies with Sinhala subtitles.">
+  <meta name="theme-color" content="#141414">
+  <meta property="og:site_name" content="FilmSub">
+  <meta property="og:type" content="website">
+  <title>FilmSub – සිංහල උපසිරැසි සහිත චිත්‍රපට</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Site CSS -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ========== SEARCH OVERLAY ========== -->
+<div class="search-overlay" id="search-overlay" role="search">
+  <div class="search-bar-wrap">
+    <div class="search-input-group">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" class="search-input" id="search-input"
+             placeholder="සොයන්න... (Search movies, genres...)"
+             autocomplete="off" spellcheck="false">
+    </div>
+    <button class="search-close-btn" id="search-close-btn" type="button">
+      <i class="fa-solid fa-xmark"></i> Close
+    </button>
+  </div>
+  <div class="search-results-live" id="search-results-live"></div>
+</div>
+
+<!-- ========== HEADER ========== -->
+<header class="site-header" id="site-header">
+  <!-- Logo -->
+  <a href="index.html" class="logo" aria-label="FilmSub Home">
+    <div class="logo-icon"><i class="fa-solid fa-film"></i></div>
+    <div class="logo-text">Film<span>Sub</span></div>
+  </a>
+
+  <!-- Primary Nav -->
+  <nav class="primary-nav" aria-label="Main Navigation">
+    <a href="index.html" class="active"><i class="fa-solid fa-house"></i> Home</a>
+    <a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a>
+    <a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a>
+
+    <!-- Genre Dropdown -->
+    <div class="nav-dropdown">
+      <button type="button"><i class="fa-solid fa-layer-group"></i> Genre <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></button>
+      <div class="dropdown-menu">
+        <a href="search.html?genre=Action">Action</a>
+        <a href="search.html?genre=Adventure">Adventure</a>
+        <a href="search.html?genre=Animation">Animation</a>
+        <a href="search.html?genre=Comedy">Comedy</a>
+        <a href="search.html?genre=Crime">Crime</a>
+        <a href="search.html?genre=Drama">Drama</a>
+        <a href="search.html?genre=Fantasy">Fantasy</a>
+        <a href="search.html?genre=Horror">Horror</a>
+        <a href="search.html?genre=Romance">Romance</a>
+        <a href="search.html?genre=Sci-Fi">Sci-Fi</a>
+        <a href="search.html?genre=Thriller">Thriller</a>
+        <a href="search.html?genre=War">War</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header Actions -->
+  <div class="header-actions">
+    <button class="icon-btn" id="search-open-btn" title="Search (Ctrl+K)" type="button">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+    <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="tg-btn">
+      <i class="fa-brands fa-telegram"></i>
+      <span>Telegram</span>
+    </a>
+    <button class="hamburger" id="hamburger" type="button" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- Mobile Nav -->
+<nav class="mobile-nav" id="mobile-nav" aria-label="Mobile Navigation">
+  <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+  <a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a>
+  <a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a>
+  <p style="color:var(--text3);font-size:12px;padding:8px 0 4px;text-transform:uppercase;letter-spacing:1px">Genres</p>
+  <div class="mobile-genre-grid">
+    <a href="search.html?genre=Action">Action</a>
+    <a href="search.html?genre=Adventure">Adventure</a>
+    <a href="search.html?genre=Animation">Animation</a>
+    <a href="search.html?genre=Comedy">Comedy</a>
+    <a href="search.html?genre=Crime">Crime</a>
+    <a href="search.html?genre=Drama">Drama</a>
+    <a href="search.html?genre=Fantasy">Fantasy</a>
+    <a href="search.html?genre=Horror">Horror</a>
+    <a href="search.html?genre=Romance">Romance</a>
+    <a href="search.html?genre=Sci-Fi">Sci-Fi</a>
+    <a href="search.html?genre=Thriller">Thriller</a>
+  </div>
+  <a href="https://t.me/YourChannel" target="_blank" rel="noopener" style="margin-top:12px;background:#0088cc;border-radius:8px">
+    <i class="fa-brands fa-telegram"></i> Join Telegram Channel
+  </a>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero-section" aria-label="Featured Movie">
+  <div class="hero-backdrop" id="hero-backdrop"></div>
+  <div class="hero-gradient"></div>
+  <div class="hero-content">
+    <div class="hero-badge" id="hero-badge">Featured</div>
+    <h1 class="hero-title" id="hero-title">Loading...</h1>
+    <p class="hero-title-si" id="hero-title-si"></p>
+    <div class="hero-meta" id="hero-meta"></div>
+    <div class="hero-genres" id="hero-genres"></div>
+    <p class="hero-description" id="hero-description"></p>
+    <div class="hero-actions">
+      <a href="#" class="btn btn-primary" id="hero-watch-btn">
+        <i class="fa-solid fa-play"></i> Watch Now
+      </a>
+      <a href="#" class="btn btn-secondary" id="hero-download-btn">
+        <i class="fa-solid fa-download"></i> Download
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 1. TRENDING NOW (CineSubz Top Row: 2-Col on mobile) ========== -->
+<section class="section" aria-label="Trending Now">
+  <div class="section-header">
+    <h2 class="section-title"><i class="fa-solid fa-fire" style="color:var(--accent)"></i> Trending Now</h2>
+    <a href="search.html?sort=trending" class="section-link">View All <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a>
+  </div>
+  <div class="carousel-wrap">
+    <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="carousel-track trending-track" id="trending-track" role="list">
+      <!-- Injected by JS: 2 large cards on mobile with rank watermark -->
+    </div>
+    <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</section>
+
+<!-- ========== 2. ALL MOVIES (CineSubz 2nd Row: 3-Col compact on mobile) ========== -->
+<section class="section" aria-label="All Movies">
+  <div class="section-header">
+    <h2 class="section-title">All Movies</h2>
+    <a href="search.html" class="section-link">VIEW ALL <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a>
+  </div>
+  <div class="carousel-wrap">
+    <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="carousel-track compact-track" id="new-releases-track" role="list">
+      <!-- Injected by JS: 3 compact cards on mobile -->
+    </div>
+    <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</section>
+
+<!-- ========== 3. SINHALA SUBTITLES ========== -->
+<section class="section" aria-label="Sinhala Subtitles">
+  <div class="section-header">
+    <h2 class="section-title"><i class="fa-solid fa-closed-captioning" style="color:var(--blue)"></i> Sinhala Subtitles</h2>
+    <a href="search.html?sub=sinhala" class="section-link">VIEW ALL <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a>
+  </div>
+  <div class="carousel-wrap">
+    <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="carousel-track compact-track" id="sinhala-dub-track" role="list">
+      <!-- Injected by JS -->
+    </div>
+    <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</section>
+
+<!-- Ad Slot -->
+<div class="ad-slot">Advertisement</div>
+
+<!-- ========== FOOTER ========== -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="logo">
+        <div class="logo-icon"><i class="fa-solid fa-film"></i></div>
+        <div class="logo-text">Film<span>Sub</span></div>
+      </a>
+      <p class="footer-tagline">ඔබේ ප්‍රියතම හොලිවුඩ් හා ජාත්‍යන්තර චිත්‍රපට සිංහල උපසිරැසි සමඟ නොමිලේ නරඹන්න.</p>
+      <div class="footer-social">
+        <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="social-btn" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
+        <a href="#" class="social-btn" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" class="social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Browse</h4>
+      <ul>
+        <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a></li>
+        <li><a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a></li>
+        <li><a href="search.html?sort=newest"><i class="fa-solid fa-star"></i> New Releases</a></li>
+        <li><a href="search.html?sort=trending"><i class="fa-solid fa-fire"></i> Trending</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Genres</h4>
+      <ul>
+        <li><a href="search.html?genre=Action">Action</a></li>
+        <li><a href="search.html?genre=Comedy">Comedy</a></li>
+        <li><a href="search.html?genre=Drama">Drama</a></li>
+        <li><a href="search.html?genre=Horror">Horror</a></li>
+        <li><a href="search.html?genre=Sci-Fi">Sci-Fi</a></li>
+        <li><a href="search.html?genre=Thriller">Thriller</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Info</h4>
+      <ul>
+        <li><a href="#"><i class="fa-solid fa-circle-info"></i> About Us</a></li>
+        <li><a href="#"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a></li>
+        <li><a href="#"><i class="fa-solid fa-file-contract"></i> Terms of Use</a></li>
+        <li><a href="#"><i class="fa-solid fa-envelope"></i> Contact</a></li>
+        <li><a href="#"><i class="fa-solid fa-flag"></i> DMCA</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p class="footer-copy">&copy; 2025 <a href="index.html">FilmSub</a>. All rights reserved.</p>
+    <p class="footer-disclaimer">This site does not host any files. All content is embedded from third-party sources for educational purposes only.</p>
+  </div>
+</footer>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="data/movies_data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

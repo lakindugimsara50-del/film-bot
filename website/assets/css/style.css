@@ -1,0 +1,1409 @@
+/* ============================================================
+   FilmSub – Main Stylesheet | Dark Netflix-style theme v1.0
+   ============================================================ */
+
+:root {
+  --bg: #141414;
+  --bg2: #1f1f1f;
+  --bg3: #2a2a2a;
+  --accent: #e50914;
+  --accent-dark: #b20710;
+  --accent-glow: rgba(229, 9, 20, 0.4);
+  --text: #ffffff;
+  --text2: #aaaaaa;
+  --text3: #666666;
+  --gold: #f5c518;
+  --blue: #1e90ff;
+  --green: #1db954;
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --radius: 8px;
+  --radius-lg: 14px;
+  --header-h: 68px;
+  --transition: 0.25s ease;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { background-color: var(--bg); color: var(--text); font-family: 'Roboto', 'Noto Sans Sinhala', 'Iskoola Pota', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+img { display: block; max-width: 100%; }
+ul { list-style: none; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* === HEADER === */
+.site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: var(--header-h); display: flex; align-items: center;
+  padding: 0 24px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.85) 100%);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background var(--transition); gap: 24px;
+}
+.site-header.solid { background: rgba(10,10,10,0.98); }
+
+.logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; text-decoration: none; }
+.logo-icon { width: 36px; height: 36px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+.logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+.logo-text span { color: var(--accent); }
+
+.primary-nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+.primary-nav a, .nav-dropdown > button {
+  padding: 8px 14px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
+  color: var(--text2); background: transparent;
+  transition: color var(--transition), background var(--transition);
+  white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.primary-nav a:hover, .primary-nav a.active, .nav-dropdown > button:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+.nav-dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute; top: calc(100% + 8px); left: 0;
+  background: rgba(20,20,20,0.98); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius); padding: 8px 0; min-width: 180px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  opacity: 0; visibility: hidden; transform: translateY(-8px);
+  transition: all var(--transition); backdrop-filter: blur(20px);
+  box-shadow: var(--card-shadow); z-index: 100;
+}
+.nav-dropdown:hover .dropdown-menu, .nav-dropdown:focus-within .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+.dropdown-menu a { padding: 9px 16px; font-size: 13px; color: var(--text2); transition: all var(--transition); border-radius: 0; }
+.dropdown-menu a:hover { color: var(--accent); background: rgba(229,9,20,0.08); }
+
+.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--text2); font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all var(--transition); border: 1px solid transparent; }
+.icon-btn:hover { background: rgba(229,9,20,0.15); color: var(--accent); border-color: rgba(229,9,20,0.3); }
+
+.tg-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: #0088cc; color: #fff; font-size: 13px; font-weight: 600; transition: all var(--transition); white-space: nowrap; }
+.tg-btn:hover { background: #0077b5; transform: translateY(-1px); }
+
+.hamburger { display: none; flex-direction: column; gap: 5px; width: 40px; height: 40px; align-items: center; justify-content: center; background: none; border-radius: var(--radius); transition: background var(--transition); }
+.hamburger:hover { background: rgba(255,255,255,0.08); }
+.hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 1px; transition: all var(--transition); }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.mobile-nav { display: none; position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; background: rgba(10,10,10,0.98); z-index: 999; padding: 24px; flex-direction: column; gap: 8px; overflow-y: auto; transform: translateX(-100%); transition: transform 0.3s ease; }
+.mobile-nav.open { transform: translateX(0); }
+.mobile-nav a { padding: 14px 16px; border-radius: var(--radius); font-size: 16px; color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 12px; }
+.mobile-nav a:hover { color: var(--accent); }
+.mobile-genre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0; }
+.mobile-genre-grid a { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; background: var(--bg2); border: none; }
+
+/* === SEARCH OVERLAY === */
+.search-overlay { position: fixed; top: 0; left: 0; right: 0; z-index: 2000; background: rgba(5,5,5,0.97); backdrop-filter: blur(20px); padding: 20px 24px; transform: translateY(-100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); border-bottom: 1px solid rgba(255,255,255,0.08); }
+.search-overlay.active { transform: translateY(0); }
+.search-bar-wrap { display: flex; align-items: center; gap: 16px; max-width: 800px; margin: 0 auto; }
+.search-input-group { flex: 1; display: flex; align-items: center; gap: 12px; background: var(--bg2); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; padding: 12px 20px; transition: border-color var(--transition); }
+.search-input-group:focus-within { border-color: var(--accent); }
+.search-input-group i { color: var(--text2); font-size: 18px; }
+.search-input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-size: 18px; font-family: inherit; }
+.search-input::placeholder { color: var(--text3); }
+.search-close-btn { background: rgba(255,255,255,0.08); color: var(--text2); padding: 12px 20px; border-radius: 40px; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all var(--transition); }
+.search-close-btn:hover { background: rgba(229,9,20,0.15); color: var(--accent); }
+.search-results-live { max-width: 800px; margin: 16px auto 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; max-height: 360px; overflow-y: auto; }
+.search-no-results { text-align: center; padding: 32px; color: var(--text2); font-size: 15px; grid-column: 1/-1; }
+
+/* === HERO === */
+.hero { position: relative; min-height: 88vh; display: flex; align-items: flex-end; padding-bottom: 80px; overflow: hidden; margin-top: var(--header-h); }
+.hero-backdrop { position: absolute; inset: 0; background-size: cover; background-position: center top; background-repeat: no-repeat; transform: scale(1.04); transition: transform 8s ease; z-index: 0; }
+.hero:hover .hero-backdrop { transform: scale(1); }
+.hero-gradient { position: absolute; inset: 0; background: linear-gradient(to right, rgba(20,20,20,0.96) 0%, rgba(20,20,20,0.75) 50%, rgba(20,20,20,0.2) 100%), linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0.3) 40%, transparent 100%); z-index: 1; }
+.hero-content { position: relative; z-index: 2; padding: 0 48px; max-width: 640px; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; margin-bottom: 16px; }
+.hero-title { font-size: clamp(32px,5vw,58px); font-weight: 900; line-height: 1.1; margin-bottom: 6px; text-shadow: 0 2px 20px rgba(0,0,0,0.5); }
+.hero-title-si { font-size: clamp(14px,2vw,18px); color: var(--text2); margin-bottom: 16px; font-weight: 400; }
+.hero-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.badge-imdb { background: var(--gold); color: #1a1200; }
+.badge-quality { background: var(--accent); color: #fff; }
+.badge-lang { background: var(--blue); color: #fff; }
+.badge-year { background: var(--bg3); color: var(--text2); border: 1px solid rgba(255,255,255,0.1); }
+.badge-duration { background: transparent; color: var(--text2); border: 1px solid rgba(255,255,255,0.15); }
+.hero-genres { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.genre-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--text2); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); transition: all var(--transition); cursor: pointer; }
+.genre-chip:hover { color: var(--text); background: rgba(229,9,20,0.15); border-color: var(--accent); }
+.hero-description { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 28px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* === BUTTONS === */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: var(--radius); font-size: 15px; font-weight: 700; transition: all var(--transition); border: 2px solid transparent; letter-spacing: 0.3px; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
+.btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); backdrop-filter: blur(10px); }
+.btn-secondary:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.35); transform: translateY(-2px); }
+.btn-outline { background: transparent; color: var(--accent); border-color: var(--accent); }
+.btn-outline:hover { background: var(--accent); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
+.btn-sm { padding: 9px 18px; font-size: 13px; }
+
+/* === SECTIONS === */
+.section { padding: 40px 0 24px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; margin-bottom: 20px; }
+.section-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.section-title::before { content: ''; display: block; width: 4px; height: 22px; background: var(--accent); border-radius: 2px; }
+.section-link { font-size: 13px; color: var(--accent); display: flex; align-items: center; gap: 4px; transition: gap var(--transition); }
+.section-link:hover { gap: 8px; }
+
+.carousel-wrap { position: relative; }
+.carousel-track { display: flex; gap: 14px; padding: 8px 24px 20px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none; }
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; width: 44px; height: 80px; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, rgba(10,10,10,0.95), rgba(10,10,10,0.6)); color: #fff; font-size: 20px; border: none; cursor: pointer; opacity: 0; transition: opacity var(--transition); border-radius: var(--radius); }
+.carousel-arrow.left { left: 0; border-radius: 0 var(--radius) var(--radius) 0; }
+.carousel-arrow.right { right: 0; border-radius: var(--radius) 0 0 var(--radius); }
+.carousel-wrap:hover .carousel-arrow { opacity: 1; }
+.carousel-arrow:hover { background: linear-gradient(90deg, rgba(229,9,20,0.4), transparent); }
+
+/* === MOVIE GRID (Responsive: 3 columns on mobile, scaling up to 8 on 4K TV) === */
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 10px;
+}
+
+/* === CINESUBZ STYLE MOVIE CARD === */
+.movie-card {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #181818;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  flex-shrink: 0;
+  display: block;
+  width: 155px; /* Default desktop carousel card */
+  text-decoration: none;
+}
+.movie-grid .movie-card {
+  width: auto;
+}
+.movie-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px var(--accent-glow);
+  z-index: 5;
+}
+
+/* Card Poster */
+.card-poster {
+  position: relative;
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  background: #111;
+  border-radius: 6px;
+}
+.card-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.movie-card:hover .card-poster img {
+  transform: scale(1.06);
+}
+
+/* CineSubz Top-Left Quality Badge (Red) */
+.badge-top-left {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  line-height: 1.2;
+}
+
+/* CineSubz Top-Right IMDb Badge (Gold) */
+.badge-top-right {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--gold);
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  line-height: 1.2;
+}
+
+/* CineSubz Trending Rank Watermark (1, 2, 3...) */
+.card-rank-num {
+  position: absolute;
+  top: 45%;
+  left: 8px;
+  transform: translateY(-50%);
+  font-size: 34px;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: 'Roboto', -apple-system, sans-serif;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 2px #000;
+  z-index: 2;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* CineSubz Bottom Title Overlay */
+.card-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 50%, transparent 100%);
+  padding: 22px 7px 7px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+}
+.card-title-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  line-height: 1.3;
+}
+
+/* === PAGE HEADER === */
+.page-header { margin-top: var(--header-h); padding: 48px 24px 32px; background: linear-gradient(180deg, rgba(229,9,20,0.05) 0%, transparent 100%); border-bottom: 1px solid rgba(255,255,255,0.05); }
+.page-title { font-size: 28px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.page-subtitle { color: var(--text2); font-size: 15px; }
+
+/* === MOVIE DETAIL === */
+.movie-hero { position: relative; margin-top: var(--header-h); min-height: 60vh; display: flex; align-items: center; overflow: hidden; }
+.movie-hero-backdrop { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(2px) brightness(0.4); transform: scale(1.05); z-index: 0; }
+.movie-hero-gradient { position: absolute; inset: 0; background: linear-gradient(to right, rgba(20,20,20,0.98) 0%, rgba(20,20,20,0.7) 60%, rgba(20,20,20,0.3) 100%), linear-gradient(to top, var(--bg) 0%, transparent 100%); z-index: 1; }
+.movie-hero-inner { position: relative; z-index: 2; display: flex; gap: 40px; padding: 60px 48px; align-items: flex-start; width: 100%; max-width: 1200px; margin: 0 auto; }
+.movie-poster-wrap { flex-shrink: 0; width: 220px; }
+.movie-poster-img { width: 100%; border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.7); border: 2px solid rgba(255,255,255,0.06); }
+.movie-detail-info { flex: 1; min-width: 0; }
+.movie-detail-title { font-size: clamp(24px,4vw,44px); font-weight: 900; line-height: 1.15; margin-bottom: 6px; }
+.movie-detail-title-si { font-size: 16px; color: var(--text2); margin-bottom: 20px; }
+.movie-detail-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.movie-detail-genres { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.movie-detail-desc { font-size: 14px; color: var(--text2); line-height: 1.75; margin-bottom: 8px; }
+.movie-detail-desc-si { font-size: 14px; color: #888; line-height: 1.75; margin-bottom: 24px; border-left: 3px solid var(--accent); padding-left: 12px; font-style: italic; }
+.movie-detail-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* === PLAYER === */
+.player-section { background: var(--bg2); border-radius: var(--radius-lg); overflow: hidden; margin: 0 24px 32px; border: 1px solid rgba(255,255,255,0.06); }
+.server-tabs { display: flex; gap: 0; background: var(--bg3); border-bottom: 1px solid rgba(255,255,255,0.08); overflow-x: auto; scrollbar-width: none; }
+.server-tabs::-webkit-scrollbar { display: none; }
+.server-tab { padding: 14px 24px; font-size: 14px; font-weight: 600; color: var(--text2); background: transparent; border-bottom: 3px solid transparent; white-space: nowrap; transition: all var(--transition); display: flex; align-items: center; gap: 8px; }
+.server-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.server-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(229,9,20,0.06); }
+.player-container { position: relative; background: #000; }
+.video-js { width: 100% !important; height: auto !important; aspect-ratio: 16/9; }
+.player-notice { padding: 16px 20px; background: rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); border-top: 1px solid rgba(255,255,255,0.06); }
+.player-notice i { color: var(--gold); }
+
+/* === DOWNLOAD === */
+.download-section { margin: 0 24px 32px; }
+.download-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
+.download-card { background: var(--bg2); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-lg); padding: 20px; display: flex; align-items: center; gap: 16px; transition: all var(--transition); cursor: pointer; }
+.download-card:hover { border-color: var(--accent); background: rgba(229,9,20,0.05); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(229,9,20,0.15); }
+.download-icon-wrap { width: 52px; height: 52px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; flex-shrink: 0; box-shadow: 0 4px 16px var(--accent-glow); }
+.download-info { flex: 1; min-width: 0; }
+.download-quality { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
+.download-size { font-size: 13px; color: var(--text2); }
+.download-btn-arrow { width: 36px; height: 36px; border-radius: 50%; background: rgba(229,9,20,0.15); color: var(--accent); font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all var(--transition); flex-shrink: 0; }
+.download-card:hover .download-btn-arrow { background: var(--accent); color: #fff; }
+
+/* === COUNTDOWN OVERLAY === */
+.countdown-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(5,5,5,0.97); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+.countdown-overlay.active { opacity: 1; visibility: visible; }
+.countdown-box { background: var(--bg2); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 48px 56px; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 40px 80px rgba(0,0,0,0.6); animation: scaleIn 0.3s cubic-bezier(0.4,0,0.2,1); }
+@keyframes scaleIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.countdown-icon { width: 80px; height: 80px; border-radius: 50%; background: rgba(229,9,20,0.1); border: 2px solid rgba(229,9,20,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: var(--accent); }
+.countdown-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.countdown-sub { color: var(--text2); font-size: 14px; margin-bottom: 32px; }
+.countdown-ring-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto 28px; }
+.countdown-ring { transform: rotate(-90deg); width: 100px; height: 100px; }
+.countdown-ring-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; }
+.countdown-ring-progress { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
+.countdown-number { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 32px; font-weight: 900; color: var(--text); }
+.countdown-get-link { display: none; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; border-radius: var(--radius-lg); background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; transition: all var(--transition); animation: pulse-btn 1.5s ease infinite; }
+.countdown-get-link.visible { display: flex; }
+@keyframes pulse-btn { 0%,100% { box-shadow: 0 0 0 0 var(--accent-glow); } 50% { box-shadow: 0 0 0 10px transparent; } }
+.countdown-get-link:hover { background: var(--accent-dark); transform: translateY(-2px); }
+.countdown-close { margin-top: 16px; background: none; color: var(--text3); font-size: 13px; padding: 8px; transition: color var(--transition); }
+.countdown-close:hover { color: var(--text2); }
+
+/* === CONTENT SECTIONS === */
+.content-section { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.section-card { background: var(--bg2); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 28px; }
+.section-card-header { padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; }
+.section-card-header i { color: var(--accent); font-size: 18px; }
+.section-card-body { padding: 24px; }
+
+/* === SEARCH PAGE === */
+.search-hero { margin-top: var(--header-h); padding: 48px 24px 32px; background: linear-gradient(135deg, rgba(229,9,20,0.08) 0%, transparent 50%); border-bottom: 1px solid rgba(255,255,255,0.05); }
+.search-hero-inner { max-width: 700px; margin: 0 auto; text-align: center; }
+.search-hero h1 { font-size: 32px; font-weight: 800; margin-bottom: 24px; }
+.search-form { display: flex; gap: 0; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); }
+.search-form input { flex: 1; padding: 18px 24px; background: var(--bg2); border: none; outline: none; color: var(--text); font-size: 17px; font-family: inherit; }
+.search-form input::placeholder { color: var(--text3); }
+.search-form button { padding: 18px 28px; background: var(--accent); color: #fff; font-size: 18px; transition: background var(--transition); }
+.search-form button:hover { background: var(--accent-dark); }
+.search-results-header { padding: 24px 24px 0; display: flex; align-items: center; justify-content: space-between; }
+.results-count { font-size: 15px; color: var(--text2); }
+.results-count strong { color: var(--text); }
+.filter-bar { display: flex; gap: 8px; padding: 14px 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; }
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-chip { padding: 7px 16px; border-radius: 20px; font-size: 13px; background: var(--bg2); color: var(--text2); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; transition: all var(--transition); white-space: nowrap; flex-shrink: 0; }
+.filter-chip:hover, .filter-chip.active { background: rgba(229,9,20,0.15); color: var(--accent); border-color: var(--accent); }
+.empty-state { text-align: center; padding: 80px 24px; }
+.empty-state-icon { font-size: 64px; color: var(--text3); margin-bottom: 20px; }
+.empty-state h3 { font-size: 24px; margin-bottom: 8px; color: var(--text2); }
+.empty-state p { color: var(--text3); font-size: 15px; max-width: 360px; margin: 0 auto; }
+
+/* === FOOTER === */
+.site-footer { background: var(--bg2); border-top: 1px solid rgba(255,255,255,0.06); margin-top: 60px; padding: 48px 24px 24px; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+.footer-brand .logo { margin-bottom: 16px; }
+.footer-tagline { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 20px; }
+.footer-social { display: flex; gap: 10px; }
+.social-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.06); color: var(--text2); font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all var(--transition); }
+.social-btn:hover { background: var(--accent); color: #fff; transform: translateY(-2px); }
+.footer-col h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.8px; }
+.footer-col ul { display: flex; flex-direction: column; gap: 10px; }
+.footer-col ul a { font-size: 13px; color: var(--text2); transition: color var(--transition); display: flex; align-items: center; gap: 8px; }
+.footer-col ul a:hover { color: var(--accent); }
+.footer-bottom { max-width: 1200px; margin: 40px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.footer-copy { font-size: 13px; color: var(--text3); }
+.footer-copy a { color: var(--accent); }
+.footer-disclaimer { font-size: 12px; color: var(--text3); text-align: right; max-width: 420px; }
+
+/* === SKELETON === */
+.skeleton { background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius); }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.skeleton-card { width: 160px; flex-shrink: 0; border-radius: var(--radius-lg); overflow: hidden; }
+.skeleton-poster { aspect-ratio: 2/3; }
+.skeleton-body { padding: 10px; }
+.skeleton-line { height: 10px; margin-bottom: 6px; }
+.skeleton-line.short { width: 60%; }
+
+.spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* === TOAST === */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; }
+.toast { background: var(--bg3); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); padding: 14px 20px; display: flex; align-items: center; gap: 12px; font-size: 14px; min-width: 280px; box-shadow: var(--card-shadow); animation: slideInRight 0.3s ease; }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast i { color: var(--green); font-size: 18px; }
+.toast.error i { color: var(--accent); }
+
+/* === RESPONSIVE BREAKPOINTS (CineSubz Engine: Mobile, Tablet, Laptop, Desktop, Smart TV) === */
+
+/* --- Phablets & Small Tablets (min-width: 480px) --- */
+@media (min-width: 480px) {
+  .movie-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 14px; }
+  .download-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .carousel-track.trending-track .movie-card { width: 175px !important; }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card { width: 130px !important; }
+}
+
+/* --- Tablets & Small Laptops (min-width: 768px) --- */
+@media (min-width: 768px) {
+  .movie-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 20px; }
+  .carousel-track.trending-track .movie-card { width: 185px !important; }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card { width: 145px !important; }
+}
+
+/* --- Standard Laptops & Desktops (min-width: 1024px) --- */
+@media (min-width: 1024px) {
+  .movie-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; padding: 20px 24px; }
+  .carousel-track.trending-track .movie-card { width: 200px !important; }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card { width: 155px !important; }
+}
+
+/* --- Large Monitors (min-width: 1440px) --- */
+@media (min-width: 1440px) {
+  .movie-grid { grid-template-columns: repeat(6, 1fr); gap: 18px; padding: 24px 30px; }
+  .carousel-track.trending-track .movie-card { width: 220px !important; }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card { width: 170px !important; }
+}
+
+/* --- Smart TVs & 4K Displays (min-width: 1800px) --- */
+@media (min-width: 1800px) {
+  :root { --header-h: 78px; }
+  .cs-container { max-width: 1600px; padding: 0 40px; }
+  .movie-grid { grid-template-columns: repeat(7, 1fr); gap: 22px; padding: 32px 40px; }
+  .hero-content { max-width: 800px; padding: 0 60px; }
+  .hero-title { font-size: 52px; }
+  .section-title { font-size: 24px; }
+  .carousel-track.trending-track .movie-card { width: 260px !important; }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card { width: 200px !important; }
+  .card-rank-num { font-size: 52px; }
+}
+
+/* --- Ultra-Wide & 8K Smart TVs (min-width: 2400px) --- */
+@media (min-width: 2400px) {
+  :root { --header-h: 86px; }
+  html { font-size: 18px; }
+  .cs-container { max-width: 2000px; padding: 0 48px; }
+  .movie-grid { grid-template-columns: repeat(8, 1fr); gap: 26px; padding: 40px; }
+  .carousel-track.trending-track .movie-card { width: 300px !important; }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card { width: 230px !important; }
+  .card-rank-num { font-size: 60px; }
+}
+
+/* --- Max-Width Overrides for Small Screens (Mobile CineSubz UI) --- */
+@media (max-width: 900px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 28px; }
+  .movie-hero-inner { padding: 40px 20px; gap: 24px; }
+  .movie-poster-wrap { width: 160px; }
+}
+
+@media (max-width: 768px) {
+  :root { --header-h: 52px; }
+
+  /* 1. CineSubz Header on Mobile: Hamburger on left, Logo in center/left, Search on right */
+  .site-header {
+    padding: 0 12px;
+    height: var(--header-h);
+    gap: 0;
+    justify-content: space-between;
+  }
+  .primary-nav { display: none; }
+  .hamburger {
+    display: flex;
+    order: 1;
+    margin: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+  .logo {
+    order: 2;
+    margin-right: auto;
+    margin-left: 8px;
+  }
+  .logo-text {
+    font-size: 19px;
+  }
+  .logo-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    border-radius: 5px;
+  }
+  .header-actions {
+    order: 3;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .header-actions .tg-btn {
+    display: none !important; /* Hide telegram button in mobile top bar to match CineSubz */
+  }
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    color: #fff;
+    border: none;
+    font-size: 17px;
+  }
+  .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--accent);
+  }
+
+  /* 2. Hide bulky Hero banner on mobile (CineSubz starts immediately with content rows) */
+  .hero {
+    display: none !important;
+  }
+
+  /* Adjust section spacing for top of page */
+  body > .section:first-of-type,
+  main > .section:first-of-type {
+    padding-top: calc(var(--header-h) + 12px);
+  }
+  .section {
+    padding: 16px 0 12px;
+  }
+  .section-header {
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .section-link {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* 3. CineSubz Carousel Rows on Mobile */
+  .carousel-track {
+    padding: 2px 12px 14px;
+    gap: 8px;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .carousel-track::-webkit-scrollbar { display: none; }
+
+  /* Trending Row: Exactly 2 Cards side-by-side */
+  .carousel-track.trending-track .movie-card {
+    width: calc(50vw - 16px) !important;
+    max-width: 175px !important;
+    min-width: 135px !important;
+  }
+
+  /* Compact Rows (All Movies & Sinhala Subtitles): Exactly 3 Cards side-by-side */
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card {
+    width: calc(33.33vw - 13px) !important;
+    max-width: 120px !important;
+    min-width: 95px !important;
+  }
+
+  /* Chevrons on mobile */
+  .carousel-arrow {
+    width: 24px;
+    height: 48px;
+    font-size: 13px;
+    background: rgba(0, 0, 0, 0.7);
+    opacity: 0.85;
+  }
+
+  /* 4. Movie Grid on Mobile (Search & Browse): 3 Compact Columns */
+  .movie-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+  .movie-grid .movie-card {
+    width: auto !important;
+  }
+
+  /* 5. Mobile Nav Drawer & Search Overlay */
+  .mobile-nav {
+    display: flex;
+    top: var(--header-h);
+  }
+  .search-overlay {
+    padding: 12px 14px;
+  }
+  .search-bar-wrap {
+    gap: 8px;
+  }
+  .search-input-group {
+    padding: 9px 14px;
+  }
+  .search-input {
+    font-size: 15px;
+  }
+  .search-close-btn {
+    padding: 9px 14px;
+    font-size: 12px;
+  }
+  .search-results-live {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  /* Footer on mobile */
+  .footer-inner { grid-template-columns: 1fr; gap: 24px; }
+  .footer-bottom { flex-direction: column; text-align: center; gap: 8px; }
+  .footer-disclaimer { text-align: center; }
+  .content-section { padding: 0 12px; }
+}
+
+@media (max-width: 380px) {
+  .carousel-track.trending-track .movie-card {
+    width: calc(50vw - 14px) !important;
+  }
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card {
+    width: calc(33.33vw - 11px) !important;
+  }
+  .badge-top-left, .badge-top-right {
+    font-size: 8.5px;
+    padding: 1px 4px;
+  }
+  .card-rank-num {
+    font-size: 26px;
+  }
+  .card-title-text {
+    font-size: 10.5px;
+  }
+}
+
+/* === UTILS === */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+.text-accent { color: var(--accent); }
+.text-muted { color: var(--text2); }
+.text-gold { color: var(--gold); }
+.fw-bold { font-weight: 700; }
+.no-scroll { overflow: hidden; }
+.ad-slot { background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.06); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 12px; min-height: 90px; margin: 20px 24px; }
+
+/* ============================================================
+   CineSubz-Inspired Movie Page Styles
+   ============================================================ */
+
+.cs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Breadcrumb */
+.cs-breadcrumb-wrap {
+  margin-top: var(--header-h);
+  background: rgba(25, 25, 25, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px 0;
+  font-size: 13px;
+}
+.cs-breadcrumb-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  color: var(--text2);
+}
+.cs-breadcrumb-list a {
+  color: var(--text2);
+  transition: color var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.cs-breadcrumb-list a:hover {
+  color: var(--accent);
+}
+.cs-breadcrumb-list .cs-sep {
+  font-size: 10px;
+  color: var(--text3);
+}
+.cs-breadcrumb-list .active {
+  color: #fff;
+  font-weight: 600;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Movie Header Title */
+.cs-movie-header {
+  padding: 24px 0 16px;
+  background: linear-gradient(180deg, rgba(229, 9, 20, 0.06) 0%, transparent 100%);
+}
+.cs-main-title {
+  font-size: clamp(22px, 3.5vw, 34px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  font-family: 'Roboto', 'Noto Sans Sinhala', sans-serif;
+}
+.cs-title-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+}
+.cs-sub-badge {
+  background: rgba(229, 9, 20, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cs-header-quality, .cs-header-year {
+  background: var(--bg3);
+  color: var(--text2);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Player Card (at the very top) */
+.cs-player-section {
+  padding-bottom: 28px;
+}
+.cs-player-card {
+  background: var(--bg2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Movie Details Card */
+.cs-movie-details-section {
+  padding-bottom: 36px;
+}
+.cs-details-card {
+  background: var(--bg2);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 30px;
+  display: flex;
+  gap: 36px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.cs-poster-col {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cs-poster-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 2/3;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cs-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cs-poster-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cs-poster-dl-btn {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition);
+}
+.cs-poster-dl-btn:hover {
+  background: var(--accent-dark);
+  box-shadow: 0 6px 20px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+/* Meta Table */
+.cs-info-col {
+  flex: 1;
+  min-width: 0;
+}
+.cs-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.cs-meta-row {
+  display: flex;
+  align-items: baseline;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+}
+.cs-meta-label {
+  width: 170px;
+  flex-shrink: 0;
+  color: var(--text3);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cs-meta-label i {
+  color: var(--accent);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+.cs-meta-val {
+  color: var(--text);
+  flex: 1;
+  line-height: 1.5;
+}
+.cs-meta-val a.genre-chip {
+  display: inline-block;
+  margin: 2px 4px 2px 0;
+}
+
+/* Synopsis Box */
+.cs-synopsis-box {
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 20px 24px;
+}
+.cs-synopsis-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cs-synopsis-heading i {
+  color: var(--gold);
+}
+.cs-synopsis-si {
+  font-family: 'Noto Sans Sinhala', sans-serif;
+  font-size: 15px;
+  line-height: 1.85;
+  color: #ebebeb;
+  margin-bottom: 14px;
+}
+.cs-synopsis-en-wrap {
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+.cs-synopsis-en-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text3);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.cs-synopsis-en {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+/* Downloads Section */
+.cs-downloads-section {
+  padding-bottom: 40px;
+}
+.cs-section-header {
+  margin-bottom: 20px;
+}
+.cs-section-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.cs-section-title i {
+  color: var(--accent);
+}
+.cs-section-desc {
+  font-size: 14px;
+  color: var(--text2);
+}
+
+/* CineSubz Download Grid */
+.cs-dl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.cs-dl-card {
+  background: var(--bg2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.cs-dl-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.cs-dl-card:hover {
+  border-color: rgba(229, 9, 20, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.cs-dl-card:hover::before {
+  opacity: 1;
+}
+.cs-dl-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cs-dl-quality {
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cs-dl-size-badge {
+  background: rgba(245, 197, 24, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(245, 197, 24, 0.3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cs-dl-specs {
+  font-size: 13px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cs-dl-specs span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cs-dl-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+.btn-direct-dl {
+  background: var(--accent);
+  color: #fff;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.btn-direct-dl:hover {
+  background: var(--accent-dark);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.btn-tg-dl {
+  background: #0088cc;
+  color: #fff;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+.btn-tg-dl:hover {
+  background: #0077b5;
+  color: #fff;
+}
+
+/* Subtitle Download Card */
+.cs-sub-dl-card {
+  background: linear-gradient(135deg, rgba(30, 144, 255, 0.08) 0%, rgba(20, 20, 20, 0.95) 100%);
+  border: 1px solid rgba(30, 144, 255, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.cs-sub-dl-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cs-sub-dl-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(30, 144, 255, 0.15);
+  color: var(--blue);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cs-sub-dl-info h4 {
+  font-size: 15px;
+  color: #fff;
+  margin-bottom: 3px;
+}
+.cs-sub-dl-info p {
+  font-size: 13px;
+  color: var(--text2);
+}
+.cs-sub-dl-btn {
+  background: var(--blue);
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition);
+}
+.cs-sub-dl-btn:hover {
+  background: #187bcd;
+  transform: translateY(-1px);
+}
+
+/* Telegram Community Promo Banner */
+.cs-tg-promo-section {
+  padding-bottom: 40px;
+}
+.cs-tg-banner {
+  background: linear-gradient(135deg, rgba(0, 136, 204, 0.18) 0%, rgba(20, 20, 20, 0.95) 100%);
+  border: 1px solid rgba(0, 136, 204, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.cs-tg-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 280px;
+}
+.cs-tg-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0088cc;
+  color: #fff;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 136, 204, 0.4);
+}
+.cs-tg-text h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.cs-tg-text p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.cs-tg-join-btn {
+  background: #0088cc;
+  color: #fff;
+  padding: 13px 26px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all var(--transition);
+  box-shadow: 0 4px 16px rgba(0, 136, 204, 0.3);
+}
+.cs-tg-join-btn:hover {
+  background: #0077b5;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 136, 204, 0.5);
+}
+
+/* Related section */
+.cs-related-section {
+  padding-bottom: 50px;
+}
+
+/* ============================================================
+   CineSubz Responsive Engine (Mobile, Tablet, Desktop, Smart TV)
+   ============================================================ */
+
+/* --- Touch-Friendly Breadcrumbs & Server Tabs (Horizontal Swiping) --- */
+.cs-breadcrumb-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.cs-breadcrumb-list::-webkit-scrollbar { display: none; }
+
+.server-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.server-tabs::-webkit-scrollbar { display: none; }
+
+/* --- Mobile Breakpoint (<= 768px) --- */
+@media (max-width: 768px) {
+  .cs-container {
+    padding: 0 14px;
+  }
+  .cs-breadcrumb-wrap {
+    padding: 8px 0;
+  }
+  .cs-breadcrumb-list .active {
+    max-width: 220px;
+  }
+  .cs-movie-header {
+    padding: 16px 0 12px;
+  }
+  .cs-main-title {
+    font-size: clamp(19px, 5.2vw, 26px);
+    line-height: 1.3;
+  }
+  .cs-title-sub {
+    gap: 6px;
+    font-size: 12px;
+  }
+  .cs-sub-badge, .cs-header-quality, .cs-header-year {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .cs-player-section {
+    padding-bottom: 18px;
+  }
+  .server-tab {
+    padding: 11px 16px;
+    font-size: 12.5px;
+  }
+  .player-notice {
+    padding: 10px 12px;
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+  .cs-movie-details-section {
+    padding-bottom: 24px;
+  }
+  .cs-details-card {
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 14px;
+    gap: 18px;
+  }
+  .cs-poster-col {
+    width: 150px;
+    align-items: center;
+  }
+  .cs-poster-wrap {
+    width: 100%;
+    max-width: 150px;
+  }
+  .cs-poster-dl-btn {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .cs-info-col {
+    width: 100%;
+  }
+  .cs-meta-grid {
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .cs-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding-bottom: 7px;
+  }
+  .cs-meta-label {
+    width: 100%;
+    font-size: 11.5px;
+  }
+  .cs-meta-val {
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .cs-synopsis-box {
+    padding: 14px 12px;
+  }
+  .cs-synopsis-heading {
+    font-size: 14px;
+  }
+  .cs-synopsis-si {
+    font-size: 13.5px;
+    line-height: 1.75;
+    margin-bottom: 10px;
+  }
+  .cs-synopsis-en {
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .cs-downloads-section {
+    padding-bottom: 28px;
+  }
+  .cs-section-title {
+    font-size: 19px;
+  }
+  .cs-dl-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .cs-dl-card {
+    padding: 16px 14px;
+    gap: 12px;
+  }
+  .cs-dl-quality {
+    font-size: 17px;
+  }
+  .cs-dl-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .cs-sub-dl-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 14px;
+    gap: 12px;
+  }
+  .cs-sub-dl-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .cs-tg-banner {
+    flex-direction: column;
+    padding: 20px 16px;
+    text-align: center;
+    gap: 16px;
+  }
+  .cs-tg-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .cs-tg-join-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* --- Extra Small Screens (<= 380px) --- */
+@media (max-width: 380px) {
+  .cs-container {
+    padding: 0 10px;
+  }
+  .cs-dl-actions {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .btn-direct-dl, .btn-tg-dl {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}
+
+/* --- Smart TV & 10-Foot UI Optimizations --- */
+@media (min-width: 1600px) {
+  .cs-details-card {
+    padding: 36px 40px;
+    gap: 44px;
+  }
+  .cs-poster-col {
+    width: 280px;
+  }
+  .cs-meta-label {
+    width: 200px;
+    font-size: 15px;
+  }
+  .cs-meta-val {
+    font-size: 16px;
+  }
+  .cs-synopsis-si {
+    font-size: 16.5px;
+    line-height: 1.9;
+  }
+  .cs-synopsis-en {
+    font-size: 14.5px;
+  }
+  .cs-dl-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 22px;
+  }
+}
+
+/* Smart TV / Remote Focus Ring */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.movie-card:focus-visible,
+.server-tab:focus-visible,
+.btn:focus-visible,
+.cs-dl-card:focus-visible,
+.cs-poster-dl-btn:focus-visible,
+.filter-chip:focus-visible {
+  outline: 3px solid #ffffff !important;
+  outline-offset: 4px;
+  transform: scale(1.04);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.4);
+}

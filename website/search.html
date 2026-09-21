@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="si" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Search movies on FilmSub – Sinhala subtitle streaming site.">
+  <meta name="theme-color" content="#141414">
+  <title>Search – FilmSub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ========== SEARCH OVERLAY ========== -->
+<div class="search-overlay" id="search-overlay" role="search">
+  <div class="search-bar-wrap">
+    <div class="search-input-group">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" class="search-input" id="search-input"
+             placeholder="සොයන්න... (Search movies...)" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="search-close-btn" id="search-close-btn" type="button">
+      <i class="fa-solid fa-xmark"></i> Close
+    </button>
+  </div>
+  <div class="search-results-live" id="search-results-live"></div>
+</div>
+
+<!-- ========== HEADER ========== -->
+<header class="site-header solid" id="site-header">
+  <a href="index.html" class="logo">
+    <div class="logo-icon"><i class="fa-solid fa-film"></i></div>
+    <div class="logo-text">Film<span>Sub</span></div>
+  </a>
+  <nav class="primary-nav" aria-label="Main Navigation">
+    <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+    <a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a>
+    <a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a>
+    <div class="nav-dropdown">
+      <button type="button"><i class="fa-solid fa-layer-group"></i> Genre <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></button>
+      <div class="dropdown-menu">
+        <a href="search.html?genre=Action">Action</a>
+        <a href="search.html?genre=Adventure">Adventure</a>
+        <a href="search.html?genre=Animation">Animation</a>
+        <a href="search.html?genre=Comedy">Comedy</a>
+        <a href="search.html?genre=Crime">Crime</a>
+        <a href="search.html?genre=Drama">Drama</a>
+        <a href="search.html?genre=Fantasy">Fantasy</a>
+        <a href="search.html?genre=Horror">Horror</a>
+        <a href="search.html?genre=Romance">Romance</a>
+        <a href="search.html?genre=Sci-Fi">Sci-Fi</a>
+        <a href="search.html?genre=Thriller">Thriller</a>
+        <a href="search.html?genre=War">War</a>
+      </div>
+    </div>
+  </nav>
+  <div class="header-actions">
+    <button class="icon-btn" id="search-open-btn" title="Search" type="button">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+    <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="tg-btn">
+      <i class="fa-brands fa-telegram"></i><span>Telegram</span>
+    </a>
+    <button class="hamburger" id="hamburger" type="button" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- Mobile Nav -->
+<nav class="mobile-nav" id="mobile-nav">
+  <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+  <a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a>
+  <a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a>
+  <div class="mobile-genre-grid">
+    <a href="search.html?genre=Action">Action</a>
+    <a href="search.html?genre=Comedy">Comedy</a>
+    <a href="search.html?genre=Drama">Drama</a>
+    <a href="search.html?genre=Horror">Horror</a>
+    <a href="search.html?genre=Sci-Fi">Sci-Fi</a>
+    <a href="search.html?genre=Thriller">Thriller</a>
+  </div>
+</nav>
+
+<!-- ========== SEARCH HERO ========== -->
+<div class="search-hero">
+  <div class="search-hero-inner">
+    <h1 id="search-page-title"><i class="fa-solid fa-magnifying-glass"></i> Search Movies</h1>
+    <form class="search-form" id="search-page-form" role="search">
+      <input type="search" id="search-page-input" placeholder="Search by title, genre..." autocomplete="off" spellcheck="false">
+      <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </form>
+  </div>
+</div>
+
+<!-- ========== FILTERS ========== -->
+<div class="filter-bar" id="filter-bar" role="list">
+  <button class="filter-chip active" data-filter="all" type="button">All</button>
+  <button class="filter-chip" data-filter="Action" type="button">Action</button>
+  <button class="filter-chip" data-filter="Adventure" type="button">Adventure</button>
+  <button class="filter-chip" data-filter="Animation" type="button">Animation</button>
+  <button class="filter-chip" data-filter="Comedy" type="button">Comedy</button>
+  <button class="filter-chip" data-filter="Crime" type="button">Crime</button>
+  <button class="filter-chip" data-filter="Drama" type="button">Drama</button>
+  <button class="filter-chip" data-filter="Fantasy" type="button">Fantasy</button>
+  <button class="filter-chip" data-filter="Horror" type="button">Horror</button>
+  <button class="filter-chip" data-filter="Romance" type="button">Romance</button>
+  <button class="filter-chip" data-filter="Sci-Fi" type="button">Sci-Fi</button>
+  <button class="filter-chip" data-filter="Thriller" type="button">Thriller</button>
+</div>
+
+<!-- ========== RESULTS ========== -->
+<div class="search-results-header">
+  <p class="results-count" id="results-count"></p>
+</div>
+
+<main>
+  <div class="movie-grid" id="results-grid" style="min-height:300px">
+    <div class="spinner" style="grid-column:1/-1"></div>
+  </div>
+</main>
+
+<!-- ========== FOOTER ========== -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="logo">
+        <div class="logo-icon"><i class="fa-solid fa-film"></i></div>
+        <div class="logo-text">Film<span>Sub</span></div>
+      </a>
+      <p class="footer-tagline">ඔබේ ප්‍රියතම හොලිවුඩ් හා ජාත්‍යන්තර චිත්‍රපට සිංහල උපසිරැසි සමඟ නොමිලේ නරඹන්න.</p>
+      <div class="footer-social">
+        <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
+        <a href="#" class="social-btn"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" class="social-btn"><i class="fa-brands fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Browse</h4>
+      <ul>
+        <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a></li>
+        <li><a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Genres</h4>
+      <ul>
+        <li><a href="search.html?genre=Action">Action</a></li>
+        <li><a href="search.html?genre=Comedy">Comedy</a></li>
+        <li><a href="search.html?genre=Drama">Drama</a></li>
+        <li><a href="search.html?genre=Horror">Horror</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Info</h4>
+      <ul>
+        <li><a href="#"><i class="fa-solid fa-circle-info"></i> About Us</a></li>
+        <li><a href="#"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a></li>
+        <li><a href="#"><i class="fa-solid fa-envelope"></i> Contact</a></li>
+        <li><a href="#"><i class="fa-solid fa-flag"></i> DMCA</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">&copy; 2025 <a href="index.html">FilmSub</a>. All rights reserved.</p>
+    <p class="footer-disclaimer">This site does not host any files. All content is embedded from third-party sources.</p>
+  </div>
+</footer>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="data/movies_data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ---- Search Page Logic ---- */
+'use strict';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await waitForFS();
+  await FilmSub.loadMovies();
+
+  const params = new URLSearchParams(window.location.search);
+  const query = params.get('q') || '';
+  const genre = params.get('genre') || '';
+  const sort  = params.get('sort') || '';
+  const type  = params.get('type') || '';
+  const sub   = params.get('sub') || '';
+
+  const pageTitle = document.getElementById('search-page-title');
+  const pageInput = document.getElementById('search-page-input');
+
+  // Prefill search box
+  if (query) pageInput.value = query;
+  if (genre && pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-layer-group"></i> Genre: ${FilmSub.escHtml(genre)}`;
+  else if (sort === 'newest' && pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-star"></i> New Releases`;
+  else if (sort === 'trending' && pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-fire"></i> Trending Now`;
+  else if (type === 'series' && pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-tv"></i> TV Series`;
+  else if (query && pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Results for: "<strong>${FilmSub.escHtml(query)}</strong>"`;
+
+  // Activate genre chip
+  if (genre) {
+    document.querySelectorAll('.filter-chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.filter === genre);
+    });
+  }
+
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const f = chip.dataset.filter;
+      const filtered = f === 'all' ? FilmSub.allMovies() : filterByGenre(FilmSub.allMovies(), f);
+      renderResults(filtered);
+    });
+  });
+
+  // Search form
+  const form = document.getElementById('search-page-form');
+  if (form) {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const q = pageInput.value.trim();
+      if (q) window.location.href = `search.html?q=${encodeURIComponent(q)}`;
+    });
+  }
+
+  // Compute results
+  const results = computeResults(FilmSub.allMovies(), { query, genre, sort, type, sub });
+  renderResults(results);
+});
+
+function waitForFS() {
+  return new Promise(r => { const c = () => { if (window.FilmSub) r(); else setTimeout(c, 50); }; c(); });
+}
+
+function computeResults(movies, { query, genre, sort, type, sub }) {
+  let res = [...movies];
+  if (query) {
+    const q = query.toLowerCase();
+    res = res.filter(m =>
+      (m.title || '').toLowerCase().includes(q) ||
+      (m.title_si || '').toLowerCase().includes(q) ||
+      (Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes(q)))
+    );
+  }
+  if (genre) res = filterByGenre(res, genre);
+  if (sub === 'sinhala') res = res.filter(m => Array.isArray(m.subtitles) && m.subtitles.length > 0);
+  if (sort === 'newest') res.sort((a, b) => (b.year || 0) - (a.year || 0));
+  if (sort === 'trending') res = res.filter(m => m.trending);
+  return res;
+}
+
+function filterByGenre(movies, genre) {
+  return movies.filter(m => Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase() === genre.toLowerCase()));
+}
+
+function renderResults(movies) {
+  const grid = document.getElementById('results-grid');
+  const countEl = document.getElementById('results-count');
+  if (countEl) countEl.innerHTML = `<strong>${movies.length}</strong> movie${movies.length !== 1 ? 's' : ''} found`;
+  FilmSub.renderMovieGrid('results-grid', movies);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# _redirects – Cloudflare Pages URL rewriting
+# Docs: https://developers.cloudflare.com/pages/configuration/redirects/
+#
+# Format:  [source]  [destination]  [status]
+#   200 = rewrite (keep URL in browser bar)
+#   301 = permanent redirect
+#   302 = temporary redirect
+
+# ── Clean movie URLs ─────────────────────────────────────────────────────────
+# /movie/the-dark-knight  →  movie.html?id=the-dark-knight  (stays in URL bar)
+/movie/*        /movie.html?id=:splat           200
+
+# ── Clean search URLs ────────────────────────────────────────────────────────
+# /search/batman  →  search.html?q=batman
+/search/*       /search.html?q=:splat           200
+
+# ── Clean genre URLs ─────────────────────────────────────────────────────────
+# /genre/action  →  genres.html?g=action
+/genre/*        /genres.html?g=:splat           200
+
+# ── Redirect legacy /films/* to /movie/* (permanent) ─────────────────────────
+/films/*        /movie/:splat                   301
+
+# ── SPA fallback – serve index.html for unmatched paths ──────────────────────
+# KEEP THIS LAST – it is the catch-all
+/*              /index.html                     200

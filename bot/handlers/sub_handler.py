@@ -11,6 +11,7 @@ Supports:
 
 import logging
 import os
+import re
 import tempfile
 import urllib.parse
 from pyrogram import Client, filters

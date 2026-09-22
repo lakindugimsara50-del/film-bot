@@ -8,14 +8,16 @@ Provides:
 """
 
 import asyncio
+import inspect
+import io
 import logging
 import os
 import re
 import tempfile
+import time
 
 import aiofiles
 import httpx
-import inspect
 from pyrogram import Client
 
 # Support 64-bit Telegram channel IDs (e.g. -1004325759505)
@@ -39,6 +41,73 @@ log = logging.getLogger(__name__)
 
 # How many bytes to buffer while streaming a download to disk
 _CHUNK_SIZE = 1024 * 1024  # 1 MB
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class LowRamFileReader(io.RawIOBase):
+    """
+    Binary file reader that evicts read chunks from Linux page cache using
+    os.posix_fadvise(..., os.POSIX_FADV_DONTNEED).
+
+    Prevents uploaded video files (1GB - 2GB) from accumulating in the Linux page cache,
+    avoiding memory pressure and OOM restarts on memory-constrained containers (e.g., Render 512MB).
+    Fully compatible with Pyrogram's Client.save_file / send_video / send_document.
+    """
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.name = os.path.basename(file_path)
+        self._file = open(file_path, "rb")
+        self._fd = self._file.fileno()
+
+    def readable(self) -> bool:
+        return True
+
+    def seekable(self) -> bool:
+        return True
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        return self._file.seek(offset, whence)
+
+    def tell(self) -> int:
+        return self._file.tell()
+
+    def fileno(self) -> int:
+        return self._fd
+
+    def readinto(self, b) -> int:
+        pos = self._file.tell()
+        n = self._file.readinto(b)
+        if n and hasattr(os, "posix_fadvise") and hasattr(os, "POSIX_FADV_DONTNEED"):
+            try:
+                os.posix_fadvise(self._fd, pos, n, os.POSIX_FADV_DONTNEED)
+            except Exception:
+                pass
+        return n
+
+    def read(self, size: int = -1) -> bytes:
+        pos = self._file.tell()
+        data = self._file.read(size)
+        if data and hasattr(os, "posix_fadvise") and hasattr(os, "POSIX_FADV_DONTNEED"):
+            try:
+                os.posix_fadvise(self._fd, pos, len(data), os.POSIX_FADV_DONTNEED)
+            except Exception:
+                pass
+        return data
+
+    def close(self) -> None:
+        if not self.closed:
+            super().close()
+            try:
+                self._file.close()
+            except Exception:
+                pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -84,12 +153,13 @@ async def download_and_upload(
             api_hash=API_HASH,
         )
         async with userbot:
-            message = await userbot.send_video(
-                chat_id=target_chat,
-                video=local_path,
-                file_name=file_name,
-                disable_notification=True,
-            )
+            with LowRamFileReader(local_path) as reader:
+                message = await userbot.send_video(
+                    chat_id=target_chat,
+                    video=reader,
+                    file_name=file_name,
+                    disable_notification=True,
+                )
 
         file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
         message_id: int = message.id
@@ -115,7 +185,7 @@ async def upload_video_file(
 ) -> dict:
     """
     Directly upload a local video file to the specified Telegram chat/channel.
-    Supports progress callbacks with calculated speed and ETA.
+    Supports progress callbacks with calculated speed and ETA decoupled from the chunk upload loop.
     Falls back to document upload and/or fallback_chat if channel permissions fail.
     """
     if not os.path.exists(file_path):
@@ -131,31 +201,59 @@ async def upload_video_file(
 
     log.info("[TelegramUpload] Uploading '%s' (%d bytes) to chat %s", file_name, file_size, target)
 
-    import time
     start_time = time.time()
-    last_notify = 0.0
+    progress_state = {
+        "current": 0,
+        "total": file_size,
+        "is_done": False,
+        "last_reported_bytes": -1,
+    }
 
     async def _pyrogram_progress(current: int, total: int) -> None:
-        nonlocal last_notify
-        if not progress_callback or not total:
-            return
-        now = time.time()
-        if now - last_notify >= 2.5 or current == total:
-            last_notify = now
+        """
+        Fast in-memory update called from Pyrogram's chunk upload loop.
+        Does NOT block or make network/Telegram calls in-band.
+        """
+        progress_state["current"] = current
+        progress_state["total"] = total
+
+    async def _progress_monitor() -> None:
+        """
+        Lightweight background task updating the Telegram message every 3.5 seconds.
+        Decoupled from Pyrogram's MTProto chunk upload loop to eliminate event loop contention.
+        """
+        from services.downloader import format_bytes
+
+        while not progress_state["is_done"]:
+            try:
+                await asyncio.sleep(3.5)
+            except asyncio.CancelledError:
+                break
+
+            if not progress_callback:
+                continue
+
+            cur = progress_state["current"]
+            tot = progress_state["total"]
+            if tot <= 0 or cur == progress_state["last_reported_bytes"]:
+                continue
+
+            progress_state["last_reported_bytes"] = cur
+            now = time.time()
             elapsed = max(0.001, now - start_time)
-            speed_bytes = current / elapsed
-            from services.downloader import format_bytes
+            speed_bytes = cur / elapsed
             speed_str = f"{format_bytes(speed_bytes)}/s"
-            pct = (current / total) * 100.0
-            eta_seconds = int((total - current) / speed_bytes) if speed_bytes > 0 else 0
+            pct = min(100.0, (cur / tot) * 100.0)
+            eta_seconds = int((tot - cur) / speed_bytes) if speed_bytes > 0 else 0
             eta_str = f"{eta_seconds}s" if eta_seconds < 60 else f"{eta_seconds // 60}m {eta_seconds % 60}s"
+
             try:
                 if inspect.iscoroutinefunction(progress_callback):
-                    await progress_callback(pct, format_bytes(current), format_bytes(total), speed_str, eta_str)
+                    await progress_callback(pct, format_bytes(cur), format_bytes(tot), speed_str, eta_str)
                 else:
-                    progress_callback(pct, format_bytes(current), format_bytes(total), speed_str, eta_str)
+                    progress_callback(pct, format_bytes(cur), format_bytes(tot), speed_str, eta_str)
             except Exception as p_err:
-                log.debug("[TelegramUpload] Progress callback error ignored: %s", p_err)
+                log.debug("[TelegramUpload] Decoupled progress callback error: %s", p_err)
 
     async def _do_send(chat_id: int):
         if not bot_client.is_connected:
@@ -171,27 +269,30 @@ async def upload_video_file(
         except Exception as gc_err:
             log.warning("[TelegramUpload] Pre-resolving chat %s warning: %s", chat_id, gc_err)
 
-        try:
-            return await bot_client.send_video(
-                chat_id=chat_id,
-                video=file_path,
-                file_name=file_name,
-                caption=caption,
-                progress=_pyrogram_progress,
-                disable_notification=True,
-            )
-        except Exception as vid_err:
-            log.warning("[TelegramUpload] send_video failed (%s). Falling back to send_document...", vid_err)
-            return await bot_client.send_document(
-                chat_id=chat_id,
-                document=file_path,
-                file_name=file_name,
-                caption=caption,
-                force_document=True,
-                progress=_pyrogram_progress,
-                disable_notification=True,
-            )
+        with LowRamFileReader(file_path) as reader:
+            try:
+                return await bot_client.send_video(
+                    chat_id=chat_id,
+                    video=reader,
+                    file_name=file_name,
+                    caption=caption,
+                    progress=_pyrogram_progress,
+                    disable_notification=True,
+                )
+            except Exception as vid_err:
+                log.warning("[TelegramUpload] send_video failed (%s). Falling back to send_document...", vid_err)
+                reader.seek(0)
+                return await bot_client.send_document(
+                    chat_id=chat_id,
+                    document=reader,
+                    file_name=file_name,
+                    caption=caption,
+                    force_document=True,
+                    progress=_pyrogram_progress,
+                    disable_notification=True,
+                )
 
+    monitor_task = asyncio.create_task(_progress_monitor())
     try:
         message = await _do_send(target)
     except Exception as exc:
@@ -202,6 +303,13 @@ async def upload_video_file(
             message = await _do_send(fallback_chat)
         else:
             raise RuntimeError(f"Telegram upload to channel {target} failed: {exc}") from exc
+    finally:
+        progress_state["is_done"] = True
+        monitor_task.cancel()
+        try:
+            await asyncio.wait_for(monitor_task, timeout=0.5)
+        except (asyncio.CancelledError, asyncio.TimeoutError, Exception):
+            pass
 
     file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
     message_id: int = message.id

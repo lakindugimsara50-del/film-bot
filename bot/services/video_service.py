@@ -170,20 +170,31 @@ async def compress_smart_1080p(
 async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
     """
     Fast remux non-MP4 or MKV videos to MP4 with +faststart.
-    Attempts instant stream copy (-c copy) first (takes ~3s).
-    Falls back to AAC audio remux with a strict 90s timeout.
+    Attempts instant stream copy (-c copy -sn) first (takes ~3s).
+    Falls back to AAC audio remux with a strict 90s timeout for files <= 1.2 GB.
+    For files > 1.2 GB, immediately falls back to uploading original file if copy remux fails.
+    Guarantees immediate cleanup of output_path on failure or timeout so partial files never leak.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
         return False
 
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
     # Attempt 1: Instant stream-copy (fastest, no re-encoding, ~3 seconds)
+    # -sn strips incompatible subtitle streams that prevent stream copy in MP4
     cmd_copy = [
         ffmpeg_bin,
         "-y",
         "-hide_banner",
         "-i", input_path,
         "-c", "copy",
+        "-sn",
         "-movflags", "+faststart",
         output_path,
     ]
@@ -198,13 +209,27 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024:
             log.info("[VideoService] Fast remux (copy) succeeded: %s", output_path)
             return True
+        else:
+            log.warning(
+                "[VideoService] Fast copy remux exited with code %s or invalid output.",
+                getattr(proc, "returncode", None),
+            )
+            _cleanup_output()
     except Exception as exc:
-        log.debug("[VideoService] Fast copy remux skipped (%s), trying AAC remux...", exc)
-        if os.path.exists(output_path):
-            try:
-                os.remove(output_path)
-            except Exception:
-                pass
+        log.debug("[VideoService] Fast copy remux skipped or timed out (%s)", exc)
+        _cleanup_output()
+
+    # For files > 1.2 GB, avoid running slow, CPU-intensive audio transcode on Render (0.1 vCPU).
+    # Immediately fall back to uploading the original file.
+    file_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    if file_size > 1.2 * 1024 * 1024 * 1024:
+        log.warning(
+            "[VideoService] File size %.2f GB > 1.2 GB and stream-copy failed. "
+            "Skipping slow CPU audio transcode; falling back to original file.",
+            file_size / (1024 * 1024 * 1024),
+        )
+        _cleanup_output()
+        return False
 
     # Attempt 2: Audio AAC remux if stream-copy was incompatible (with 90s timeout)
     cmd_aac = [
@@ -216,6 +241,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         "-c:a", "aac",
         "-b:a", "128k",
         "-ac", "2",
+        "-sn",
         "-movflags", "+faststart",
         output_path,
     ]
@@ -228,7 +254,13 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
             stderr=asyncio.subprocess.DEVNULL,
         )
         await asyncio.wait_for(proc.wait(), timeout=90.0)
-        return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024:
+            log.info("[VideoService] AAC audio remux succeeded: %s", output_path)
+            return True
+        else:
+            log.warning("[VideoService] AAC audio remux failed with code %s", getattr(proc, "returncode", None))
+            _cleanup_output()
+            return False
     except asyncio.CancelledError:
         if proc and proc.returncode is None:
             try:
@@ -236,9 +268,11 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
                 proc.kill()
             except Exception:
                 pass
+        _cleanup_output()
         raise
     except Exception as exc:
         log.warning("[VideoService] AAC remux error or timeout: %s", exc)
+        _cleanup_output()
         return False
     finally:
         if proc and proc.returncode is None:

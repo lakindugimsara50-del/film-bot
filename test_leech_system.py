@@ -225,6 +225,7 @@ class TestLeechService(unittest.TestCase):
         async def run_test():
             with patch("services.leech_service.find_all_candidates", return_value=[cand1, cand2]), \
                  patch("services.seedr_service.seedr_client.is_configured", return_value=False), \
+                 patch("services.pikpak_service.pikpak_service.is_configured", return_value=False), \
                  patch("services.downloader.download_http", side_effect=fake_download_http), \
                  patch("services.downloader.download_torrent", side_effect=fake_download_torrent), \
                  patch("services.telegram_upload.upload_video_file", side_effect=fake_upload_video_file), \
@@ -501,6 +502,7 @@ class TestLeechService(unittest.TestCase):
 
         async def run_cancel():
             with patch("services.seedr_service.seedr_pool.clean_storage", mock_clean_seedr), \
+                 patch("services.pikpak_service.pikpak_service.clean_storage", AsyncMock(return_value=True)), \
                  patch("services.downloader.cancel_all_active_downloads", mock_cancel_dl):
 
                 cancelled = await task_tracker.cancel_all_user_operations(user_id=888)
@@ -668,6 +670,93 @@ class TestLeechService(unittest.TestCase):
         self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E05 720p", season=None, episode=5))
         self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones Episode 5 720p", season=None, episode=5))
         self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones S01E06 720p", season=None, episode=5))
+
+    def test_low_ram_file_reader_lifecycle_and_fadvise(self):
+        """Verify LowRamFileReader seeks, reads, tells, and invokes posix_fadvise when available."""
+        from services.telegram_upload import LowRamFileReader
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
+            tf.write(b"ABCDEFGHIJ" * 100)  # 1000 bytes
+            temp_path = tf.name
+
+        fadvise_calls = []
+        def fake_fadvise(fd, offset, length, advice):
+            fadvise_calls.append((offset, length, advice))
+
+        try:
+            with patch("os.posix_fadvise", fake_fadvise, create=True), \
+                 patch("os.POSIX_FADV_DONTNEED", 4, create=True):
+                with LowRamFileReader(temp_path) as reader:
+                    self.assertTrue(reader.readable())
+                    self.assertTrue(reader.seekable())
+                    self.assertEqual(reader.seek(0, os.SEEK_END), 1000)
+                    self.assertEqual(reader.tell(), 1000)
+                    reader.seek(0)
+                    chunk = reader.read(200)
+                    self.assertEqual(len(chunk), 200)
+                    self.assertEqual(len(fadvise_calls), 1)
+                    self.assertEqual(fadvise_calls[0], (0, 200, 4))
+
+                    buf = bytearray(300)
+                    n = reader.readinto(buf)
+                    self.assertEqual(n, 300)
+                    self.assertEqual(len(fadvise_calls), 2)
+                    self.assertEqual(fadvise_calls[1], (200, 300, 4))
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def test_ensure_web_streamable_flags_cleanup_and_size_cutoff(self):
+        """Verify ensure_web_streamable uses -sn, cleans up failed output, and skips transcode for >1.2GB."""
+        from services import video_service
+
+        async def run_test():
+            executed_cmds = []
+
+            class FakeProc:
+                def __init__(self, returncode=1):
+                    self.returncode = returncode
+                async def wait(self):
+                    return self.returncode
+
+            async def fake_create_subprocess_exec(*args, **kwargs):
+                executed_cmds.append(list(args))
+                # simulate partial file creation
+                out_path = args[-1]
+                with open(out_path, "wb") as f:
+                    f.write(b"PARTIAL_BROKEN_DATA")
+                return FakeProc(returncode=1)
+
+            with tempfile.TemporaryDirectory() as td:
+                in_path = os.path.join(td, "input.mkv")
+                out_path = os.path.join(td, "output.mp4")
+                with open(in_path, "wb") as f:
+                    f.write(b"ORIGINAL_DATA")
+
+                # Test 1: For <= 1.2GB file, both Attempt 1 and Attempt 2 run, both include -sn,
+                # and when both fail, output_path is guaranteed cleaned up
+                with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+                     patch("asyncio.create_subprocess_exec", side_effect=fake_create_subprocess_exec):
+                    ok = await video_service.ensure_web_streamable(in_path, out_path)
+                    self.assertFalse(ok)
+                    self.assertEqual(len(executed_cmds), 2)
+                    # Check -sn present in both Attempt 1 and Attempt 2
+                    self.assertIn("-sn", executed_cmds[0])
+                    self.assertIn("-sn", executed_cmds[1])
+                    # Check guaranteed cleanup: output_path must not exist
+                    self.assertFalse(os.path.exists(out_path))
+
+                # Test 2: For > 1.2GB file, if Attempt 1 fails, Attempt 2 is skipped immediately
+                executed_cmds.clear()
+                with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+                     patch("asyncio.create_subprocess_exec", side_effect=fake_create_subprocess_exec), \
+                     patch("os.path.getsize", return_value=int(1.3 * 1024**3)):
+                    ok = await video_service.ensure_web_streamable(in_path, out_path)
+                    self.assertFalse(ok)
+                    # Attempt 2 must NOT have executed!
+                    self.assertEqual(len(executed_cmds), 1)
+                    self.assertFalse(os.path.exists(out_path))
+
+        asyncio.run(run_test())
 
 
 if __name__ == "__main__":

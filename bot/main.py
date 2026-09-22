@@ -10,6 +10,8 @@ import asyncio
 import logging
 import os
 import sys
+import threading
+from typing import Optional
 
 _bot_dir = os.path.dirname(os.path.abspath(__file__))
 if _bot_dir not in sys.path:
@@ -117,6 +119,45 @@ async def status_endpoint() -> dict:
         "seedr_pool_accounts": seedr_count,
         "active_tasks": active_tasks,
     }
+
+
+_health_server_instance: Optional[uvicorn.Server] = None
+
+
+def start_health_server_thread(port: int) -> threading.Thread:
+    """
+    Run FastAPI / Uvicorn in a dedicated daemon OS thread with its own independent
+    asyncio event loop. Render's HTTP health checks (/health and /) respond in <1ms
+    and are NEVER blocked or starved by Pyrogram, event loop contention, or MTProto encryption.
+    """
+    global _health_server_instance
+    server_cfg = uvicorn.Config(
+        app=web_app,
+        host="0.0.0.0",
+        port=port,
+        log_level="warning",
+        access_log=False,
+    )
+    server = uvicorn.Server(server_cfg)
+    _health_server_instance = server
+
+    def _thread_target():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(server.serve())
+        except Exception as exc:
+            log.error("[HealthServer] Web health server error: %s", exc)
+        finally:
+            try:
+                loop.close()
+            except Exception:
+                pass
+
+    t = threading.Thread(target=_thread_target, name="HealthServerThread", daemon=True)
+    t.start()
+    log.info("FastAPI health server started on port %d (dedicated daemon thread)", port)
+    return t
 
 
 
@@ -311,17 +352,7 @@ async def _on_start(client: Client) -> None:
 
 async def main() -> None:
     port = int(os.getenv("PORT", 7860))
-    server_cfg = uvicorn.Config(
-        app=web_app,
-        host="0.0.0.0",
-        port=port,
-        log_level="info",
-    )
-    server = uvicorn.Server(server_cfg)
-
-    # Run uvicorn web server concurrently as a background task
-    server_task = asyncio.create_task(server.serve())
-    log.info("FastAPI health server started on port %d", port)
+    start_health_server_thread(port)
 
     # Start Async FIFO queue worker
     try:
@@ -338,11 +369,8 @@ async def main() -> None:
         await idle()
     finally:
         log.info("Shutting down bot and health server...")
-        server.should_exit = True
-        try:
-            await asyncio.wait_for(server_task, timeout=5.0)
-        except (asyncio.TimeoutError, asyncio.CancelledError):
-            server_task.cancel()
+        if _health_server_instance:
+            _health_server_instance.should_exit = True
         if app.is_connected:
             await app.stop()
 

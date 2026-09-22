@@ -318,6 +318,30 @@ class TestBotHandlers(unittest.TestCase):
             self.assertTrue(service.is_admin(333))
             self.assertFalse(service.is_admin(444))
 
+    def test_fastapi_health_server_endpoints(self):
+        """Verify FastAPI health server endpoints respond immediately."""
+        import main
+        from starlette.testclient import TestClient
+        client = TestClient(main.web_app)
+        res_root = client.get("/")
+        self.assertEqual(res_root.status_code, 200)
+        self.assertEqual(res_root.json()["status"], "running")
+
+        res_health = client.get("/health")
+        self.assertEqual(res_health.status_code, 200)
+        self.assertEqual(res_health.json(), {"status": "healthy"})
+
+    def test_start_health_server_thread_structure(self):
+        """Verify start_health_server_thread creates a daemon OS thread."""
+        import main
+        with patch("uvicorn.Server.serve", return_value=None):
+            t = main.start_health_server_thread(port=19999)
+            self.assertTrue(t.daemon)
+            self.assertEqual(t.name, "HealthServerThread")
+            if main._health_server_instance:
+                main._health_server_instance.should_exit = True
+
+
 if __name__ == '__main__':
     unittest.main()
 

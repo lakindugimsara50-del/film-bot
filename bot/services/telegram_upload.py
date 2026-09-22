@@ -57,6 +57,7 @@ class LowRamFileReader(io.RawIOBase):
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.name = os.path.basename(file_path)
+        self.mode = "rb"
         self._file = open(file_path, "rb")
         self._fd = self._file.fileno()
 
@@ -65,6 +66,9 @@ class LowRamFileReader(io.RawIOBase):
 
     def seekable(self) -> bool:
         return True
+
+    def writable(self) -> bool:
+        return False
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
         return self._file.seek(offset, whence)
@@ -154,12 +158,23 @@ async def download_and_upload(
         )
         async with userbot:
             with LowRamFileReader(local_path) as reader:
-                message = await userbot.send_video(
-                    chat_id=target_chat,
-                    video=reader,
-                    file_name=file_name,
-                    disable_notification=True,
-                )
+                try:
+                    message = await userbot.send_video(
+                        chat_id=target_chat,
+                        video=reader,
+                        file_name=file_name,
+                        disable_notification=True,
+                    )
+                except Exception as vid_err:
+                    log.warning("[TelegramUpload] userbot send_video failed (%s). Retrying send_document...", vid_err)
+                    reader.seek(0)
+                    message = await userbot.send_document(
+                        chat_id=target_chat,
+                        document=reader,
+                        file_name=file_name,
+                        force_document=True,
+                        disable_notification=True,
+                    )
 
         file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
         message_id: int = message.id
@@ -208,6 +223,12 @@ async def upload_video_file(
         "is_done": False,
         "last_reported_bytes": -1,
     }
+
+    def _reset_progress_state():
+        nonlocal start_time
+        start_time = time.time()
+        progress_state["current"] = 0
+        progress_state["last_reported_bytes"] = -1
 
     async def _pyrogram_progress(current: int, total: int) -> None:
         """
@@ -269,6 +290,7 @@ async def upload_video_file(
         except Exception as gc_err:
             log.warning("[TelegramUpload] Pre-resolving chat %s warning: %s", chat_id, gc_err)
 
+        _reset_progress_state()
         with LowRamFileReader(file_path) as reader:
             try:
                 return await bot_client.send_video(
@@ -281,6 +303,7 @@ async def upload_video_file(
                 )
             except Exception as vid_err:
                 log.warning("[TelegramUpload] send_video failed (%s). Falling back to send_document...", vid_err)
+                _reset_progress_state()
                 reader.seek(0)
                 return await bot_client.send_document(
                     chat_id=chat_id,
@@ -300,6 +323,7 @@ async def upload_video_file(
         # Only fallback if target was 0/unset; never dump a movie into user DM if channel was specified
         if fallback_chat and target == 0:
             log.warning("[TelegramUpload] Target chat unset. Falling back to chat %s", fallback_chat)
+            _reset_progress_state()
             message = await _do_send(fallback_chat)
         else:
             raise RuntimeError(f"Telegram upload to channel {target} failed: {exc}") from exc
@@ -310,6 +334,21 @@ async def upload_video_file(
             await asyncio.wait_for(monitor_task, timeout=0.5)
         except (asyncio.CancelledError, asyncio.TimeoutError, Exception):
             pass
+
+    # Ensure a final 100% progress update is dispatched if not already reported
+    if progress_callback and file_size > 0:
+        now = time.time()
+        elapsed = max(0.001, now - start_time)
+        speed_bytes = file_size / elapsed
+        from services.downloader import format_bytes
+        speed_str = f"{format_bytes(speed_bytes)}/s"
+        try:
+            if inspect.iscoroutinefunction(progress_callback):
+                await progress_callback(100.0, format_bytes(file_size), format_bytes(file_size), speed_str, "0s")
+            else:
+                progress_callback(100.0, format_bytes(file_size), format_bytes(file_size), speed_str, "0s")
+        except Exception as p_err:
+            log.debug("[TelegramUpload] Final progress callback error: %s", p_err)
 
     file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
     message_id: int = message.id
@@ -426,7 +465,13 @@ async def _download_http(
                     await fh.write(chunk)
                     downloaded += len(chunk)
                     if progress_callback and total:
-                        await progress_callback(downloaded, total)
+                        try:
+                            if inspect.iscoroutinefunction(progress_callback):
+                                await progress_callback(downloaded, total)
+                            else:
+                                progress_callback(downloaded, total)
+                        except Exception:
+                            pass
 
     return local_path
 

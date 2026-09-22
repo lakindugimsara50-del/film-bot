@@ -688,6 +688,8 @@ class TestLeechService(unittest.TestCase):
                 with LowRamFileReader(temp_path) as reader:
                     self.assertTrue(reader.readable())
                     self.assertTrue(reader.seekable())
+                    self.assertFalse(reader.writable())
+                    self.assertEqual(reader.mode, "rb")
                     self.assertEqual(reader.seek(0, os.SEEK_END), 1000)
                     self.assertEqual(reader.tell(), 1000)
                     reader.seek(0)
@@ -717,6 +719,10 @@ class TestLeechService(unittest.TestCase):
                     self.returncode = returncode
                 async def wait(self):
                     return self.returncode
+                def kill(self):
+                    pass
+                def terminate(self):
+                    pass
 
             async def fake_create_subprocess_exec(*args, **kwargs):
                 executed_cmds.append(list(args))
@@ -757,6 +763,79 @@ class TestLeechService(unittest.TestCase):
                     self.assertFalse(os.path.exists(out_path))
 
         asyncio.run(run_test())
+
+    def test_ensure_web_streamable_timeout_and_cancel_kills_process(self):
+        """Verify ensure_web_streamable kills proc and cleans up on timeout or cancellation in Attempt 1."""
+        from services import video_service
+
+        async def run_test():
+            kill_called = []
+            class StallingProc:
+                def __init__(self):
+                    self.returncode = None
+                def wait(self):
+                    f = asyncio.Future()
+                    return f
+                def kill(self):
+                    kill_called.append("killed")
+                    self.returncode = -9
+                def terminate(self):
+                    pass
+
+            with tempfile.TemporaryDirectory() as td:
+                in_path = os.path.join(td, "input.mkv")
+                out_path = os.path.join(td, "output.mp4")
+                with open(in_path, "wb") as f:
+                    f.write(b"DATA")
+                with open(out_path, "wb") as f:
+                    f.write(b"PARTIAL")
+
+                proc = StallingProc()
+                with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+                     patch("asyncio.create_subprocess_exec", return_value=proc), \
+                     patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
+                    ok = await video_service.ensure_web_streamable(in_path, out_path)
+                    self.assertFalse(ok)
+                    self.assertIn("killed", kill_called)
+                    self.assertFalse(os.path.exists(out_path))
+
+        asyncio.run(run_test())
+
+    def test_upload_video_file_dispatches_final_100_percent_progress(self):
+        """Verify upload_video_file dispatches 100% progress callback even for fast/cached uploads."""
+        from services import telegram_upload
+        client_mock = MagicMock()
+        mock_msg = MagicMock()
+        mock_msg.id = 999
+        mock_msg.video = MagicMock()
+        mock_msg.video.file_id = "SUCCESS_VID_ID"
+        mock_msg.document = None
+        client_mock.send_video = AsyncMock(return_value=mock_msg)
+
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tf:
+            tf.write(b"TEST_VIDEO_PAYLOAD" * 50)
+            tf_path = tf.name
+
+        reported_pcts = []
+        async def mock_callback(pct, done, total, speed, eta):
+            reported_pcts.append(pct)
+
+        try:
+            async def run_test():
+                res = await telegram_upload.upload_video_file(
+                    bot_client=client_mock,
+                    file_path=tf_path,
+                    target_chat=-1001234567,
+                    progress_callback=mock_callback,
+                )
+                self.assertEqual(res["file_id"], "SUCCESS_VID_ID")
+                # Final 100.0% MUST have been dispatched!
+                self.assertIn(100.0, reported_pcts)
+
+            asyncio.run(run_test())
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
 
 
 if __name__ == "__main__":

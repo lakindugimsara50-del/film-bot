@@ -100,6 +100,13 @@ async def compress_smart_1080p(
         output_path,
     ]
 
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
     proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -144,6 +151,7 @@ async def compress_smart_1080p(
             return True
         else:
             log.error("[VideoService] FFmpeg exited with code %s", proc.returncode)
+            _cleanup_output()
             return False
 
     except asyncio.CancelledError:
@@ -154,9 +162,17 @@ async def compress_smart_1080p(
                 proc.kill()
             except Exception:
                 pass
+        _cleanup_output()
         raise
     except Exception as exc:
         log.error("[VideoService] Compression exception: %s", exc)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
         return False
     finally:
         if proc and proc.returncode is None:
@@ -199,6 +215,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         output_path,
     ]
 
+    proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd_copy,
@@ -215,9 +232,31 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
                 getattr(proc, "returncode", None),
             )
             _cleanup_output()
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        raise
     except Exception as exc:
         log.debug("[VideoService] Fast copy remux skipped or timed out (%s)", exc)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
         _cleanup_output()
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
 
     # For files > 1.2 GB, avoid running slow, CPU-intensive audio transcode on Render (0.1 vCPU).
     # Immediately fall back to uploading the original file.
@@ -272,6 +311,12 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         raise
     except Exception as exc:
         log.warning("[VideoService] AAC remux error or timeout: %s", exc)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
         _cleanup_output()
         return False
     finally:

@@ -150,6 +150,11 @@ def start_health_server_thread(port: int) -> threading.Thread:
             log.error("[HealthServer] Web health server error: %s", exc)
         finally:
             try:
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    task.cancel()
+                if pending:
+                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
                 loop.close()
             except Exception:
                 pass

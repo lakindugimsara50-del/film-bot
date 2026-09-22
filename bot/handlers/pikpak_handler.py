@@ -51,113 +51,113 @@ def register(app: Client) -> None:
                     )
                     return
 
-            if len(parts) < 4:
-                await message.reply_text(
-                    "ℹ️ <b>PikPak Login Format:</b>\n\n"
-                    "<code>/pikpak login &lt;email_or_phone&gt; &lt;password&gt;</code>\n\n"
-                    "උදාහරණයක්:\n"
-                    "<code>/pikpak login user@gmail.com mysecretpass123</code>",
-                    parse_mode=ParseMode.HTML,
-                )
-                return
-
-            pp_user = parts[2]
-            pp_pass = parts[3]
-
-            status_msg = await message.reply_text(
-                "⏳ <b>PikPak ගිණුම තහවුරු කරමින් පවතී (Verifying credentials)...</b>",
-                parse_mode=ParseMode.HTML,
-            )
-
-            try:
-                pikpak_service.save_credentials(pp_user, pp_pass)
-                # Test login
-                quota = await pikpak_service.get_quota_summary()
-                await status_msg.edit_text(
-                    f"✅ <b>PikPak ගිණුම සාර්ථකව සම්බන්ධ කරන ලදී!</b>\n\n"
-                    f"👤 <b>ගිණුම:</b> <code>{pp_user}</code>\n"
-                    f"☁️ <b>මුළු ධාරිතාව:</b> {quota['limit_gb']} GB\n"
-                    f"📦 <b>භාවිත කළ ඉඩ:</b> {quota['usage_gb']} GB\n"
-                    f"🆓 <b>ඉතිරි නිදහස් ඉඩ:</b> {quota['free_gb']} GB\n\n"
-                    f"🚀 දැන් 2GB ට වැඩි විශාල Torrents & TV Series ද PikPak හරහා සුපිරි වේගයෙන් බාගත වේ!",
-                    parse_mode=ParseMode.HTML,
-                )
-            except Exception as exc:
-                log.error("[PikPakHandler] Login verification failed: %s", exc)
-                await status_msg.edit_text(
-                    f"❌ <b>PikPak Login අසාර්ථක විය!</b>\n\n"
-                    f"දෝෂය: <code>{exc}</code>\n\n"
-                    f"කරුණාකර ඔබ ලබා දුන් Email/Phone සහ Password නිවැරදිදැයි පරීක්ෂා කරන්න.",
-                    parse_mode=ParseMode.HTML,
-                )
-            return
-
-        # ── /pikpak clear ───────────────────────────────────────────────────
-        if subcommand == "clear":
-            if not pikpak_service.is_configured():
-                await message.reply_text(
-                    "⚠️ PikPak ගිණුමක් සකසා නොමැත. කරුණාකර පළමුව <code>/pikpak login</code> භාවිතා කරන්න.",
-                    parse_mode=ParseMode.HTML,
-                )
-                return
-
-            status_msg = await message.reply_text(
-                "🧹 <b>PikPak Cloud Storage පිරිසිදු කරමින් පවතී (Clearing all files)...</b>",
-                parse_mode=ParseMode.HTML,
-            )
-
-            ok = await pikpak_service.clean_storage()
-            if ok:
-                try:
-                    quota = await pikpak_service.get_quota_summary()
-                    await status_msg.edit_text(
-                        f"✅ <b>PikPak Storage එක 100% පිරිසිදු කරන ලදී!</b>\n\n"
-                        f"🆓 <b>දැනට පවතින නිදහස් ඉඩ:</b> {quota['free_gb']} GB / {quota['limit_gb']} GB",
+                if len(parts) < 4:
+                    await message.reply_text(
+                        "ℹ️ <b>PikPak Login Format:</b>\n\n"
+                        "<code>/pikpak login &lt;email_or_phone&gt; &lt;password&gt;</code>\n\n"
+                        "උදාහරණයක්:\n"
+                        "<code>/pikpak login user@gmail.com mysecretpass123</code>",
                         parse_mode=ParseMode.HTML,
                     )
-                except Exception:
-                    await status_msg.edit_text("✅ <b>PikPak Storage එක සම්පූර්ණයෙන්ම පිරිසිදු කරන ලදී!</b>", parse_mode=ParseMode.HTML)
-            else:
-                await status_msg.edit_text("❌ Storage එක පිරිසිදු කිරීමේදී දෝෂයක් සිදුවිය.", parse_mode=ParseMode.HTML)
-            return
+                    return
 
-        # ── /pikpak (status) ────────────────────────────────────────────────
-        if not pikpak_service.is_configured():
-            await message.reply_text(
-                "☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
-                "❌ <b>තත්ත්වය:</b> PikPak සම්බන්ධ කර නොමැත.\n\n"
-                "10GB+ විශාල Torrents බාගත කරගැනීමට PikPak සම්බන්ධ කරන්න:\n"
-                "<code>/pikpak login &lt;email&gt; &lt;password&gt;</code>\n\n"
-                "💡 <i>නැතහොත් Render Dashboard එකේ PIKPAK_USER සහ PIKPAK_PASS ලබා දෙන්න.</i>",
-                parse_mode=ParseMode.HTML,
-            )
-            return
+                pp_user = parts[2]
+                pp_pass = parts[3]
 
-        try:
-            quota = await pikpak_service.get_quota_summary()
+                status_msg = await message.reply_text(
+                    "⏳ <b>PikPak ගිණුම තහවුරු කරමින් පවතී (Verifying credentials)...</b>",
+                    parse_mode=ParseMode.HTML,
+                )
+
+                try:
+                    pikpak_service.save_credentials(pp_user, pp_pass)
+                    quota = await pikpak_service.get_quota_summary()
+                    await status_msg.edit_text(
+                        f"✅ <b>PikPak ගිණුම සාර්ථකව සම්බන්ධ කරන ලදී!</b>\n\n"
+                        f"👤 <b>ගිණුම:</b> <code>{pp_user}</code>\n"
+                        f"☁️ <b>මුළු ධාරිතාව:</b> {quota['limit_gb']} GB\n"
+                        f"📦 <b>භාවිත කළ ඉඩ:</b> {quota['usage_gb']} GB\n"
+                        f"🆓 <b>ඉතිරි නිදහස් ඉඩ:</b> {quota['free_gb']} GB\n\n"
+                        f"🚀 දැන් 2GB ට වැඩි විශාල Torrents & TV Series ද PikPak හරහා සුපිරි වේගයෙන් බාගත වේ!",
+                        parse_mode=ParseMode.HTML,
+                    )
+                except Exception as exc:
+                    log.error("[PikPakHandler] Login verification failed: %s", exc)
+                    await status_msg.edit_text(
+                        f"❌ <b>PikPak Login අසාර්ථක විය!</b>\n\n"
+                        f"දෝෂය: <code>{exc}</code>\n\n"
+                        f"කරුණාකර ඔබ ලබා දුන් Email/Phone සහ Password නිවැරදිදැයි පරීක්ෂා කරන්න.",
+                        parse_mode=ParseMode.HTML,
+                    )
+                return
+
+            # ── /pikpak clear ───────────────────────────────────────────────────
+            if subcommand == "clear":
+                if not pikpak_service.is_configured():
+                    await message.reply_text(
+                        "⚠️ PikPak ගිණුමක් සකසා නොමැත. කරුණාකර පළමුව <code>/pikpak login</code> භාවිතා කරන්න.",
+                        parse_mode=ParseMode.HTML,
+                    )
+                    return
+
+                status_msg = await message.reply_text(
+                    "🧹 <b>PikPak Cloud Storage පිරිසිදු කරමින් පවතී (Clearing all files)...</b>",
+                    parse_mode=ParseMode.HTML,
+                )
+
+                ok = await pikpak_service.clean_storage()
+                if ok:
+                    try:
+                        quota = await pikpak_service.get_quota_summary()
+                        await status_msg.edit_text(
+                            f"✅ <b>PikPak Storage එක 100% පිරිසිදු කරන ලදී!</b>\n\n"
+                            f"🆓 <b>දැනට පවතින නිදහස් ඉඩ:</b> {quota['free_gb']} GB / {quota['limit_gb']} GB",
+                            parse_mode=ParseMode.HTML,
+                        )
+                    except Exception:
+                        await status_msg.edit_text("✅ <b>PikPak Storage එක සම්පූර්ණයෙන්ම පිරිසිදු කරන ලදී!</b>", parse_mode=ParseMode.HTML)
+                else:
+                    await status_msg.edit_text("❌ Storage එක පිරිසිදු කිරීමේදී දෝෂයක් සිදුවිය.", parse_mode=ParseMode.HTML)
+                return
+
+            # ── /pikpak (status) ────────────────────────────────────────────────
+            if not pikpak_service.is_configured():
+                await message.reply_text(
+                    "☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
+                    "❌ <b>තත්ත්වය:</b> PikPak සම්බන්ධ කර නොමැත.\n\n"
+                    "10GB+ විශාල Torrents බාගත කරගැනීමට PikPak සම්බන්ධ කරන්න:\n"
+                    "<code>/pikpak login &lt;email&gt; &lt;password&gt;</code>\n\n"
+                    "💡 <i>නැතහොත් Render Dashboard එකේ PIKPAK_USER සහ PIKPAK_PASS ලබා දෙන්න.</i>",
+                    parse_mode=ParseMode.HTML,
+                )
+                return
+
+            try:
+                quota = await pikpak_service.get_quota_summary()
+                await message.reply_text(
+                    f"☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
+                    f"✅ <b>තත්ත්වය:</b> සම්බන්ධ වී ඇත (Active & Ready)\n"
+                    f"👤 <b>User:</b> <code>{quota['username']}</code>\n"
+                    f"📊 <b>මුළු ධාරිතාව:</b> {quota['limit_gb']} GB\n"
+                    f"📦 <b>භාවිත කළ ඉඩ:</b> {quota['usage_gb']} GB\n"
+                    f"🆓 <b>නිදහස් ඉඩ:</b> {quota['free_gb']} GB\n\n"
+                    f"<b>විධාන (Commands):</b>\n"
+                    f"• <code>/pikpak clear</code> — Cloud storage එක 100% පිරිසිදු කිරීම\n"
+                    f"• <code>/pikpak login &lt;user&gt; &lt;pass&gt;</code> — වෙනත් ගිණුමක් මාරු කිරීම",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception as q_exc:
+                log.warning("[PikPakHandler] Could not fetch quota: %s", q_exc)
+                await message.reply_text(
+                    f"☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
+                    f"⚠️ සම්බන්ධ වීමේ ගැටලුවක් පවතී: <code>{q_exc}</code>\n\n"
+                    f"නැවත login වීමට: <code>/pikpak login &lt;email&gt; &lt;password&gt;</code>",
+                    parse_mode=ParseMode.HTML,
+                )
+
+        except Exception as exc:
+            log.error("[PikPakHandler] Unexpected error: %s", exc, exc_info=True)
             await message.reply_text(
-                f"☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
-                f"✅ <b>තත්ත්වය:</b> සම්බන්ධ වී ඇත (Active & Ready)\n"
-                f"👤 <b>User:</b> <code>{quota['username']}</code>\n"
-                f"📊 <b>මුළු ධාරිතාව:</b> {quota['limit_gb']} GB\n"
-                f"📦 <b>භාවිත කළ ඉඩ:</b> {quota['usage_gb']} GB\n"
-                f"🆓 <b>නිදහස් ඉඩ:</b> {quota['free_gb']} GB\n\n"
-                f"<b>විධාන (Commands):</b>\n"
-                f"• <code>/pikpak clear</code> — Cloud storage එක 100% පිරිසිදු කිරීම\n"
-                f"• <code>/pikpak login &lt;user&gt; &lt;pass&gt;</code> — වෙනත් ගිණුමක් මාරු කිරීම",
+                f"❌ <b>PikPak විධානය ක්‍රියාත්මක කිරීමේදී දෝෂයක් සිදුවිය:</b>\n\n<code>{exc}</code>",
                 parse_mode=ParseMode.HTML,
             )
-        except Exception as q_exc:
-            log.warning("[PikPakHandler] Could not fetch quota: %s", q_exc)
-            await message.reply_text(
-                f"☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
-                f"⚠️ සම්බන්ධ වීමේ ගැටලුවක් පවතී: <code>{q_exc}</code>\n\n"
-                f"නැවත login වීමට: <code>/pikpak login &lt;email&gt; &lt;password&gt;</code>",
-                parse_mode=ParseMode.HTML,
-            )
-    except Exception as exc:
-        log.error("[PikPakHandler] Unexpected error: %s", exc, exc_info=True)
-        await message.reply_text(
-            f"❌ <b>PikPak විධානය ක්‍රියාත්මක කිරීමේදී දෝෂයක් සිදුවිය:</b>\n\n<code>{exc}</code>",
-            parse_mode=ParseMode.HTML,
-        )

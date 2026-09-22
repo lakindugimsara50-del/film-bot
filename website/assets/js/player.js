@@ -78,69 +78,72 @@ function getMovieStreams(movie) {
   const msgId = movie.message_id || null;
   const fileId = movie.file_id || null;
 
-  // 1. Primary: High-Speed Telegram Cloud Stream (Edge-proxied via Cloudflare)
-  let edgeUrl = '';
+  // Render backend – the only reliable origin for Telegram byte-range streaming
+  const RENDER = 'https://film-bot-2.onrender.com';
+
   let directUrl = '';
 
   if (msgId) {
-    edgeUrl = `/stream/channel/${channelId}/${msgId}`;
-    directUrl = `https://film-bot-2.onrender.com/stream/channel/${channelId}/${msgId}`;
+    directUrl = `${RENDER}/stream/channel/${channelId}/${msgId}`;
   } else if (fileId) {
-    edgeUrl = `/stream/file/${encodeURIComponent(fileId)}`;
-    directUrl = `https://film-bot-2.onrender.com/stream/file/${encodeURIComponent(fileId)}`;
-  } else if (movie.stream_url && !movie.stream_url.includes('autoembed') && !movie.stream_url.includes('vidsrc')) {
-    edgeUrl = movie.stream_url;
-    directUrl = movie.stream_url.startsWith('http') ? movie.stream_url : `https://film-bot-2.onrender.com${movie.stream_url}`;
+    directUrl = `${RENDER}/stream/file/${encodeURIComponent(fileId)}`;
+  } else if (movie.stream_url &&
+             !movie.stream_url.includes('autoembed') &&
+             !movie.stream_url.includes('vidsrc')) {
+    directUrl = movie.stream_url.startsWith('http')
+      ? movie.stream_url
+      : `${RENDER}${movie.stream_url}`;
   }
 
-  if (directUrl || edgeUrl) {
-    const primaryUrl = directUrl || edgeUrl;
-    const secondaryUrl = edgeUrl || directUrl;
+  if (directUrl) {
+    // Server 1 — direct Render connection
     list.push({
-      server: "Server 1",
-      label: "⚡ Server 1 (Telegram Cloud HD)",
-      type: "video/mp4",
-      stream_url: primaryUrl,
-      file_id: fileId || ""
+      server: 'Server 1',
+      label: '⚡ Server 1 (Telegram Cloud HD)',
+      type: 'video/mp4',
+      stream_url: directUrl,
+      file_id: fileId || ''
     });
-    if (secondaryUrl && secondaryUrl !== primaryUrl) {
-      list.push({
-        server: "Server 2",
-        label: "⚡ Server 2 (Telegram Edge Mirror)",
-        type: "video/mp4",
-        stream_url: secondaryUrl,
-        file_id: fileId || ""
-      });
-    }
+    // Server 2 — same backend but asks for a fresh connection (different query param)
+    // This lets the browser open a second TCP connection when Server 1 stalls.
+    list.push({
+      server: 'Server 2',
+      label: '🌩️ Server 2 (Telegram Mirror HD)',
+      type: 'video/mp4',
+      stream_url: directUrl + (directUrl.includes('?') ? '&' : '?') + 's=2',
+      file_id: fileId || ''
+    });
   }
 
-  // 2. Check movie.streams from data for other direct streams (exclude third-party embeds)
+  // Also include any explicit direct streams from movies.json (skip 3rd-party embeds)
   if (Array.isArray(movie.streams)) {
     movie.streams.forEach(s => {
       const sUrl = s.stream_url || '';
-      if (sUrl.includes('autoembed') || sUrl.includes('vidsrc') || sUrl.includes('multiembed') || sUrl.includes('2embed') || s.embed === true || s.type === 'embed') {
-        return;
-      }
-      if (sUrl && !list.some(item => item.stream_url === sUrl)) {
-        list.push({
-          server: `Server ${list.length + 1}`,
-          label: s.label || `Server ${list.length + 1} (Direct Cloud)`,
-          type: s.type || 'video/mp4',
-          stream_url: sUrl,
-          file_id: s.file_id || ''
-        });
-      }
+      if (!sUrl) return;
+      if (sUrl.includes('autoembed') || sUrl.includes('vidsrc') ||
+          sUrl.includes('multiembed') || sUrl.includes('2embed') ||
+          s.embed === true || s.type === 'embed') return;
+      // Skip if we already have this URL (or a mirror variant of it)
+      const base = sUrl.split('?')[0];
+      if (list.some(item => item.stream_url.split('?')[0] === base)) return;
+      list.push({
+        server: `Server ${list.length + 1}`,
+        label: s.label || `Server ${list.length + 1} (Direct Cloud)`,
+        type: s.type || 'video/mp4',
+        stream_url: sUrl,
+        file_id: s.file_id || ''
+      });
     });
   }
 
-  // 3. Fallback direct stream if list is empty
+  // Fallback: use movie.stream_url if nothing found
   if (list.length === 0 && movie.stream_url) {
     list.push({
-      server: "Server 1",
-      label: "⚡ Server 1 (Cloud HD)",
-      type: "video/mp4",
+      server: 'Server 1',
+      label: '⚡ Server 1 (Cloud HD)',
+      type: 'video/mp4',
       stream_url: movie.stream_url,
-      file_id: movie.file_id || ""
+      file_id: movie.file_id || ''
     });
   }
 
@@ -385,7 +388,23 @@ function createVjsPlayer(playerEl, stream, movie) {
       fluid: true,
       responsive: true,
       preload: 'auto',
+      autoplay: false,
       playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
+      techOrder: ['html5'],
+      html5: {
+        vhs: {
+          overrideNative: false,
+          enableLowInitialPlaylist: true,
+          limitRenditionByPlayerDimensions: false,
+          useNetworkInformationApi: true,
+          bandwidth: 5000000,       // start assuming 5 Mbps
+          bufferBasedABR: true
+        },
+        nativeVideoTracks: true,
+        nativeAudioTracks: true,
+        nativeTextTracks: true
+      },
+      liveui: false,
       controlBar: {
         children: [
           'playToggle', 'volumePanel', 'currentTimeDisplay', 'timeDivider',
@@ -396,6 +415,15 @@ function createVjsPlayer(playerEl, stream, movie) {
     });
 
     vjsPlayer.ready(() => {
+      // Increase buffer goal for smoother playback
+      try {
+        if (vjsPlayer.tech_ && vjsPlayer.tech_.vhs) {
+          vjsPlayer.tech_.vhs.options_.bufferBasedABR = true;
+        }
+        if (vjsPlayer.tech_ && vjsPlayer.tech_.el_) {
+          vjsPlayer.tech_.el_.setAttribute('preload', 'auto');
+        }
+      } catch (e) {}
       syncSubtitles();
       try { vjsPlayer.play(); } catch (e) {}
     });
@@ -410,7 +438,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       // Auto-fallback to next stream if available (e.g. Server 1 -> Server 2)
       if (streams.length > 1 && currentStreamIdx < streams.length - 1) {
         const nextIdx = currentStreamIdx + 1;
-        FilmSub.showToast('Switching to direct cloud stream mirror...', 'info');
+        FilmSub.showToast('Switching to mirror stream...', 'info');
         const tabsEl = document.getElementById('server-tabs');
         if (tabsEl) {
           tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
@@ -424,6 +452,7 @@ function createVjsPlayer(playerEl, stream, movie) {
     });
   }
 }
+
 
 function renderPlayerFallback(playerEl, movie) {
   if (vjsPlayer) {

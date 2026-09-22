@@ -308,6 +308,16 @@ class TestBotHandlers(unittest.TestCase):
                 finally:
                     loop.close()
 
+    def test_auth_service_is_admin_check(self):
+        from services.auth_service import AuthService
+        service = AuthService()
+        with patch("config.ADMIN_IDS", [111, 222]):
+            service._authorized_ids = {333}
+            self.assertTrue(service.is_admin(111))
+            self.assertTrue(service.is_admin(222))
+            self.assertTrue(service.is_admin(333))
+            self.assertFalse(service.is_admin(444))
+
 if __name__ == '__main__':
     unittest.main()
 

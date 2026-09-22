@@ -542,12 +542,13 @@ async def run_auto_leech(
             except Exception:
                 pass
 
+            cloud_service_name = "Cloud"
             last_edit_time = 0.0
 
             async def _download_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
                 nonlocal last_edit_time
                 now = time.time()
-                if now - last_edit_time >= 2.0 or pct >= 99.0:
+                if (now - last_edit_time >= 3.0) or (pct >= 100.0 and now - last_edit_time >= 1.0):
                     last_edit_time = now
                     p_bar = downloader.format_progress_bar(pct)
                     if pct == 0.0 and (speed_str in ("0B/s", "0 B/s", "0.0 B/s", "N/A", "") or "0B" in speed_str):
@@ -556,8 +557,8 @@ async def run_auto_leech(
                         status_line = f"⚡ <b>වේගය:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}"
 
                     text = (
-                        f"📥 <b>පියවර 2/4: Seedr ➔ Render Cloud වෙත බාගත කරමින්...</b>\n\n"
-                        f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
+                        f"📥 <b>පියවර 2/4: {cloud_service_name} ➔ Render Cloud වෙත බාගත කරමින්...</b>\n\n"
+                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                         f"⚡ <b>ක්‍රමය:</b> {candidate.method_name} (Cloud Direct Link)\n"
                         f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                         f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
@@ -566,8 +567,8 @@ async def run_auto_leech(
                     )
                     try:
                         await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                    except Exception:
-                        pass
+                    except Exception as p_err:
+                        log.debug("[LeechService] Download progress edit ignored: %s", p_err)
 
             try:
                 if candidate.method in ("yts", "magnet", "torrent"):
@@ -760,6 +761,17 @@ async def run_auto_leech(
             # File is < 1.95 GB: Ensure it is web-streamable MP4 (+faststart)
             ext = os.path.splitext(local_file)[1].lower()
             if ext in (".mkv", ".avi", ".webm"):
+                try:
+                    await status_msg.edit_text(
+                        f"⚙️ <b>පියවර 3/4: වීඩියෝව වෙබ් ධාවනය සඳහා සකසමින් පවතී (Optimizing for Web)...</b>\n\n"
+                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                        f"⚡ <b>ආකෘතිය:</b> {ext.upper()} ➔ MP4 Web-Streamable (+faststart)\n"
+                        f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=kb_cancel,
+                    )
+                except Exception:
+                    pass
                 log.info("[LeechService] Remuxing %s to web-streamable MP4...", ext)
                 remuxed = os.path.join(temp_dir, f"web_{_slugify(title, year)}.mp4")
                 if await video_service.ensure_web_streamable(local_file, remuxed):
@@ -783,12 +795,12 @@ async def run_auto_leech(
         async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
             nonlocal last_upload_edit
             now = time.time()
-            if now - last_upload_edit >= 2.5 or pct >= 99.0:
+            if (now - last_upload_edit >= 3.0) or (pct >= 100.0 and now - last_upload_edit >= 1.0):
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
                 text = (
                     f"📤 <b>පියවර 4/4: Render Cloud ➔ Telegram Storage වෙත Upload වෙමින්...</b>\n\n"
-                    f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
@@ -797,8 +809,8 @@ async def run_auto_leech(
                 )
                 try:
                     await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                except Exception:
-                    pass
+                except Exception as up_err:
+                    log.debug("[LeechService] Upload progress edit ignored: %s", up_err)
 
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
         upload_res = await telegram_upload.upload_video_file(

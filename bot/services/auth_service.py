@@ -87,6 +87,10 @@ class AuthService:
         """Primary admin / owner check."""
         return user_id in config.ADMIN_IDS
 
+    def is_admin(self, user_id: int) -> bool:
+        """Admin or authorized uploader check."""
+        return self.is_owner(user_id) or (user_id in self._authorized_ids)
+
     def add_user(self, identifier: str, added_by: int = 0) -> str:
         """
         Authorize a user by user_id (e.g. 123456789) or username (e.g. @john).

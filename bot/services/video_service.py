@@ -170,13 +170,44 @@ async def compress_smart_1080p(
 async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
     """
     Fast remux non-MP4 or MKV videos to MP4 with +faststart.
-    Takes only seconds since it copies video stream without re-encoding.
+    Attempts instant stream copy (-c copy) first (takes ~3s).
+    Falls back to AAC audio remux with a strict 90s timeout.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
         return False
 
-    cmd = [
+    # Attempt 1: Instant stream-copy (fastest, no re-encoding, ~3 seconds)
+    cmd_copy = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-i", input_path,
+        "-c", "copy",
+        "-movflags", "+faststart",
+        output_path,
+    ]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_copy,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=35.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024:
+            log.info("[VideoService] Fast remux (copy) succeeded: %s", output_path)
+            return True
+    except Exception as exc:
+        log.debug("[VideoService] Fast copy remux skipped (%s), trying AAC remux...", exc)
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+    # Attempt 2: Audio AAC remux if stream-copy was incompatible (with 90s timeout)
+    cmd_aac = [
         ffmpeg_bin,
         "-y",
         "-hide_banner",
@@ -192,12 +223,12 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
     proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
-            *cmd,
+            *cmd_aac,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await proc.wait()
-        return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+        await asyncio.wait_for(proc.wait(), timeout=90.0)
+        return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024
     except asyncio.CancelledError:
         if proc and proc.returncode is None:
             try:
@@ -207,7 +238,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
                 pass
         raise
     except Exception as exc:
-        log.debug("[VideoService] Fast remux error: %s", exc)
+        log.warning("[VideoService] AAC remux error or timeout: %s", exc)
         return False
     finally:
         if proc and proc.returncode is None:

@@ -131,10 +131,15 @@ async def _download_aria2c_http(
 
     cmd = [
         aria2_bin,
-        "-x", "16",
-        "-s", "16",
-        "-j", "16",
+        "-x", "4",
+        "-s", "4",
+        "-j", "4",
         "-k", "1M",
+        "--timeout=20",
+        "--connect-timeout=15",
+        "--lowest-speed-limit=20K",
+        "--max-tries=5",
+        "--retry-wait=2",
         "--summary-interval=1",
         "--console-log-level=warn",
         "--allow-overwrite=true",
@@ -160,10 +165,23 @@ async def _download_aria2c_http(
         r"\[#\w+\s+([0-9.]+[A-Za-z]+)/([0-9.]+[A-Za-z]+)\((\d+)%\).*?DL:([0-9.]+[A-Za-z]+)(?:.*?ETA:([0-9a-zA-Z]+))?"
     )
 
+    last_callback_time = 0.0
+
     try:
         buffer = ""
         while True:
-            chunk = await proc.stdout.read(512)
+            # 45s watchdog timeout for reading next chunk from aria2c stdout
+            try:
+                chunk = await asyncio.wait_for(proc.stdout.read(512), timeout=45.0)
+            except asyncio.TimeoutError:
+                log.warning("[Downloader] aria2c produced no output for 45s, terminating to trigger fallback...")
+                if proc and proc.returncode is None:
+                    try:
+                        proc.terminate()
+                    except Exception:
+                        pass
+                raise RuntimeError("aria2c stalled (45s watchdog timeout)")
+
             if not chunk:
                 break
             buffer += chunk.decode("utf-8", errors="replace")
@@ -177,10 +195,17 @@ async def _download_aria2c_http(
                     pct = float(pct_str)
                     speed_formatted = f"{dl_speed}/s"
                     eta_formatted = eta or "N/A"
-                    try:
-                        await progress_callback(pct, done_str, total_str, speed_formatted, eta_formatted)
-                    except Exception:
-                        pass
+                    now = time.time()
+                    if (now - last_callback_time >= 2.5) or pct >= 100.0:
+                        last_callback_time = now
+                        try:
+                            # Non-blocking callback task so stdout pipe buffer is never blocked
+                            if asyncio.iscoroutinefunction(progress_callback):
+                                asyncio.create_task(progress_callback(pct, done_str, total_str, speed_formatted, eta_formatted))
+                            else:
+                                progress_callback(pct, done_str, total_str, speed_formatted, eta_formatted)
+                        except Exception:
+                            pass
 
         await proc.wait()
     except asyncio.CancelledError:
@@ -203,9 +228,16 @@ async def _download_aria2c_http(
             del ACTIVE_SUBPROCESSES[task_key]
 
     target_path = os.path.join(dest_dir, out_name)
-    if proc.returncode == 0 and os.path.exists(target_path) and os.path.getsize(target_path) > 0:
-        log.info("[Downloader] aria2c download completed: %s (%s)", out_name, format_bytes(os.path.getsize(target_path)))
-        return target_path
+    if proc.returncode == 0:
+        if os.path.exists(target_path) and os.path.getsize(target_path) > 0:
+            log.info("[Downloader] aria2c download completed: %s (%s)", out_name, format_bytes(os.path.getsize(target_path)))
+            return target_path
+        # Defensive fallback: search dest_dir for any valid downloaded video
+        for f in os.listdir(dest_dir):
+            p = os.path.join(dest_dir, f)
+            if os.path.isfile(p) and not f.endswith(".aria2") and os.path.getsize(p) > 1024 * 1024:
+                log.info("[Downloader] aria2c download completed (found in folder): %s (%s)", f, format_bytes(os.path.getsize(p)))
+                return p
 
     raise RuntimeError(f"aria2c exited with return code {proc.returncode}")
 
@@ -254,7 +286,7 @@ async def _download_httpx(
                     downloaded += len(chunk)
 
                     now = time.time()
-                    if progress_callback and (now - last_notify >= 2.0 or downloaded == total):
+                    if progress_callback and ((now - last_notify >= 2.5) or (total and downloaded >= total)):
                         last_notify = now
                         elapsed = max(0.001, now - start_time)
                         speed_bytes = downloaded / elapsed
@@ -263,13 +295,22 @@ async def _download_httpx(
                         eta_seconds = int((total - downloaded) / speed_bytes) if (total and speed_bytes > 0) else 0
                         eta_str = f"{eta_seconds}s" if eta_seconds < 60 else f"{eta_seconds // 60}m {eta_seconds % 60}s"
                         try:
-                            await progress_callback(
-                                pct,
-                                format_bytes(downloaded),
-                                format_bytes(total) if total else "Unknown",
-                                speed_str,
-                                eta_str,
-                            )
+                            if asyncio.iscoroutinefunction(progress_callback):
+                                asyncio.create_task(progress_callback(
+                                    pct,
+                                    format_bytes(downloaded),
+                                    format_bytes(total) if total else "Unknown",
+                                    speed_str,
+                                    eta_str,
+                                ))
+                            else:
+                                progress_callback(
+                                    pct,
+                                    format_bytes(downloaded),
+                                    format_bytes(total) if total else "Unknown",
+                                    speed_str,
+                                    eta_str,
+                                )
                         except Exception:
                             pass
 

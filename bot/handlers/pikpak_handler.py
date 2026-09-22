@@ -19,32 +19,37 @@ from services.pikpak_service import pikpak_service
 log = logging.getLogger(__name__)
 
 
+def _is_admin(uid: int) -> bool:
+    return auth_service.is_owner(uid) or auth_service.is_authorized(uid)
+
+
 def register(app: Client) -> None:
     """Register all PikPak management handlers."""
 
     @app.on_message(filters.command("pikpak"))
     async def pikpak_command_handler(client: Client, message: Message) -> None:
-        user_id = message.from_user.id if message.from_user else 0
-        if not auth_service.is_authorized(user_id):
-            await message.reply_text(
-                "⛔ <b>අවසර නොමැත (Access Denied)</b>\n\nමෙම විධානය භාවිතා කිරීමට ඔබට අවසර නොමැත.",
-                parse_mode=ParseMode.HTML,
-            )
-            return
-
-        text = (message.text or "").strip()
-        parts = text.split()
-
-        subcommand = parts[1].lower() if len(parts) > 1 else "status"
-
-        # ── /pikpak login <user> <pass> ─────────────────────────────────────
-        if subcommand == "login":
-            if not auth_service.is_admin(user_id):
+        try:
+            user_id = message.from_user.id if message.from_user else 0
+            if not _is_admin(user_id):
                 await message.reply_text(
-                    "🔒 <b>Admin Only</b>: PikPak ගිණුම සම්බන්ධ කිරීමට Bot Admin හට පමණක් අවසර ඇත.",
+                    "⛔ <b>අවසර නොමැත (Access Denied)</b>\n\nමෙම විධානය භාවිතා කිරීමට ඔබට අවසර නොමැත.",
                     parse_mode=ParseMode.HTML,
                 )
                 return
+
+            text = (message.text or "").strip()
+            parts = text.split()
+
+            subcommand = parts[1].lower() if len(parts) > 1 else "status"
+
+            # ── /pikpak login <user> <pass> ─────────────────────────────────────
+            if subcommand == "login":
+                if not _is_admin(user_id):
+                    await message.reply_text(
+                        "🔒 <b>Admin Only</b>: PikPak ගිණුම සම්බන්ධ කිරීමට Bot Admin හට පමණක් අවසර ඇත.",
+                        parse_mode=ParseMode.HTML,
+                    )
+                    return
 
             if len(parts) < 4:
                 await message.reply_text(
@@ -142,11 +147,17 @@ def register(app: Client) -> None:
                 f"• <code>/pikpak login &lt;user&gt; &lt;pass&gt;</code> — වෙනත් ගිණුමක් මාරු කිරීම",
                 parse_mode=ParseMode.HTML,
             )
-        except Exception as exc:
-            log.error("[PikPakHandler] Could not get quota: %s", exc)
+        except Exception as q_exc:
+            log.warning("[PikPakHandler] Could not fetch quota: %s", q_exc)
             await message.reply_text(
                 f"☁️ <b>PikPak Cloud Debrid තත්ත්වය</b>\n\n"
-                f"⚠️ Credentials සකසා ඇතත් සම්බන්ධ වීමේ ගැටලුවක් පවතී: <code>{exc}</code>\n\n"
+                f"⚠️ සම්බන්ධ වීමේ ගැටලුවක් පවතී: <code>{q_exc}</code>\n\n"
                 f"නැවත login වීමට: <code>/pikpak login &lt;email&gt; &lt;password&gt;</code>",
                 parse_mode=ParseMode.HTML,
             )
+    except Exception as exc:
+        log.error("[PikPakHandler] Unexpected error: %s", exc, exc_info=True)
+        await message.reply_text(
+            f"❌ <b>PikPak විධානය ක්‍රියාත්මක කිරීමේදී දෝෂයක් සිදුවිය:</b>\n\n<code>{exc}</code>",
+            parse_mode=ParseMode.HTML,
+        )

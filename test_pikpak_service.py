@@ -25,7 +25,9 @@ class TestPikPakService(unittest.IsolatedAsyncioTestCase):
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_credentials_save_and_load(self):
-        with patch("services.pikpak_service.CREDS_FILE", self.creds_file):
+        with patch("services.pikpak_service.CREDS_FILE", self.creds_file), \
+             patch("config.PIKPAK_USER", ""), \
+             patch("config.PIKPAK_PASS", ""):
             service = PikPakService()
             self.assertFalse(service.is_configured())
 

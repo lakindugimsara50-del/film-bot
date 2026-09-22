@@ -13,7 +13,7 @@
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://vjs.zencdn.net https://www.youtube.com https://monetag.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://vjs.zencdn.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://vjs.zencdn.net data:; img-src 'self' data: https:; media-src 'self' blob: data: https: http:; connect-src 'self' blob: data: https:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https:; object-src 'none'; base-uri 'self'; form-action 'self';
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://vjs.zencdn.net https://www.youtube.com https://monetag.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://vjs.zencdn.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://vjs.zencdn.net data:; img-src 'self' data: https:; media-src 'self' blob: data: https: http:; connect-src 'self' blob: data: https: http:; frame-src 'self' https: http: blob:; object-src 'none'; base-uri 'self'; form-action 'self';
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 
 # ══════════════════════════════════════════════════════════════════════════════

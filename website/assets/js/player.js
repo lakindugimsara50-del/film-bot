@@ -8,6 +8,8 @@ let currentMovie = null;
 let vjsPlayer = null;
 let currentStreamIdx = 0;
 let isTrailerActive = false;
+let currentSeason = 1;
+let currentEpisode = 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Wait for app.js to be ready
@@ -19,6 +21,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   currentMovie = FilmSub.findMovieBySlug(slug);
   if (!currentMovie) { showError('Movie not found. It may have been removed.'); return; }
+
+  // Set initial season / episode
+  currentSeason = currentMovie.season || 1;
+  currentEpisode = currentMovie.episode || 1;
 
   FilmSub.trackView(slug);
   document.title = `${currentMovie.title || 'Movie'} (${currentMovie.year || ''}) Sinhala Subtitles – FilmSub`;
@@ -67,23 +73,106 @@ function showError(msg) {
 // ---- Data Fallback Helpers ----
 function getMovieStreams(movie) {
   if (!movie) return [];
-  if (Array.isArray(movie.streams) && movie.streams.length > 0) {
-    return movie.streams;
+  const list = [];
+  const sNum = currentSeason || movie.season || 1;
+  const epNum = currentEpisode || movie.episode || 1;
+  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0);
+  const tmdb = movie.tmdb_id || '';
+
+  // 1. For TMDB movies or series, generate top-tier universal embed streams
+  if (tmdb) {
+    if (isSeries) {
+      list.push({
+        server: "Server 1",
+        label: "Server 1 (AutoEmbed HD)",
+        type: "embed",
+        stream_url: `https://autoembed.cc/embed/tv/${tmdb}/${sNum}/${epNum}`,
+        embed: true
+      });
+      list.push({
+        server: "Server 2",
+        label: "Server 2 (VidSrc)",
+        type: "embed",
+        stream_url: `https://vidsrc.to/embed/tv/${tmdb}/${sNum}/${epNum}`,
+        embed: true
+      });
+      list.push({
+        server: "Server 3",
+        label: "Server 3 (SuperEmbed)",
+        type: "embed",
+        stream_url: `https://multiembed.mov/directstream.php?video_id=${tmdb}&tmdb=1&s=${sNum}&e=${epNum}`,
+        embed: true
+      });
+      list.push({
+        server: "Server 4",
+        label: "Server 4 (2Embed)",
+        type: "embed",
+        stream_url: `https://www.2embed.cc/embedtv/${tmdb}&s=${sNum}&e=${epNum}`,
+        embed: true
+      });
+    } else {
+      list.push({
+        server: "Server 1",
+        label: "Server 1 (AutoEmbed HD)",
+        type: "embed",
+        stream_url: `https://autoembed.cc/embed/movie/${tmdb}`,
+        embed: true
+      });
+      list.push({
+        server: "Server 2",
+        label: "Server 2 (VidSrc)",
+        type: "embed",
+        stream_url: `https://vidsrc.to/embed/movie/${tmdb}`,
+        embed: true
+      });
+      list.push({
+        server: "Server 3",
+        label: "Server 3 (SuperEmbed)",
+        type: "embed",
+        stream_url: `https://multiembed.mov/directstream.php?video_id=${tmdb}&tmdb=1`,
+        embed: true
+      });
+      list.push({
+        server: "Server 4",
+        label: "Server 4 (2Embed)",
+        type: "embed",
+        stream_url: `https://www.2embed.cc/embed/${tmdb}`,
+        embed: true
+      });
+    }
   }
+
+  // 2. Merge existing movie.streams from data if available
+  if (Array.isArray(movie.streams) && movie.streams.length > 0) {
+    movie.streams.forEach(s => {
+      // Avoid duplicate stream_urls
+      if (!list.some(item => item.stream_url === s.stream_url)) {
+        list.push({
+          server: s.server || `Server ${list.length + 1}`,
+          label: s.label || s.server || `Server ${list.length + 1}`,
+          type: s.type || (s.embed ? 'embed' : 'video/mp4'),
+          stream_url: s.stream_url,
+          embed: Boolean(s.embed || s.type === 'embed'),
+          file_id: s.file_id || ''
+        });
+      }
+    });
+  }
+
+  // 3. Direct URL / file fallback
   const fallbackUrl = movie.stream_url || (Array.isArray(movie.files) && movie.files[0] && movie.files[0].stream_url);
   const fallbackFileId = movie.file_id || (Array.isArray(movie.files) && movie.files[0] && movie.files[0].file_id);
-  if (fallbackUrl || fallbackFileId) {
-    return [
-      {
-        server: "Server 1",
-        label: "Server 1 (Telegram Cloud)",
-        type: "video/mp4",
-        stream_url: fallbackUrl || "",
-        file_id: fallbackFileId || ""
-      }
-    ];
+  if (fallbackUrl && !list.some(item => item.stream_url === fallbackUrl)) {
+    list.push({
+      server: `Server ${list.length + 1}`,
+      label: `Server ${list.length + 1} (Direct MP4)`,
+      type: "video/mp4",
+      stream_url: fallbackUrl,
+      file_id: fallbackFileId || ""
+    });
   }
-  return [];
+
+  return list;
 }
 
 function getMovieSubtitles(movie) {
@@ -162,10 +251,10 @@ function renderServerTabs(movie) {
   const tabsEl = document.getElementById('server-tabs');
   if (!tabsEl) return;
   const streams = getMovieStreams(movie);
-  const icons = ['fa-solid fa-circle-play', 'fa-solid fa-bolt', 'fa-brands fa-telegram'];
+  const icons = ['fa-solid fa-circle-play', 'fa-solid fa-bolt', 'fa-solid fa-server', 'fa-solid fa-film', 'fa-brands fa-telegram'];
 
   let tabsHtml = streams.map((s, i) => `
-    <button class="server-tab${i === 0 ? ' active' : ''}" data-type="stream" data-index="${i}">
+    <button class="server-tab${i === currentStreamIdx ? ' active' : ''}" data-type="stream" data-index="${i}">
       <i class="${icons[i] || 'fa-solid fa-server'}"></i>
       ${FilmSub.escHtml(s.label || s.server || `Server ${i + 1}`)}
     </button>`).join('');
@@ -260,47 +349,47 @@ function initAdaptiveQuality(movie) {
   }
 }
 
-// ---- 4. Video Player ----
+// ---- 4. Universal Video Player (Iframe Embeds & Video.js) ----
 function initVideoPlayer(movie) {
   const streams = getMovieStreams(movie);
-  const subtitles = getMovieSubtitles(movie);
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
 
   if (streams.length === 0) {
     playerEl.innerHTML = `
-      <div style="aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;color:var(--text2);gap:12px">
+      <div style="aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;color:var(--text2);gap:12px;border-radius:8px">
         <i class="fa-solid fa-film" style="font-size:36px;color:var(--text3)"></i>
-        <span>No video stream available for this movie yet.</span>
+        <span>No video stream available for this title yet.</span>
       </div>`;
     return;
   }
 
-  const firstStream = streams[0];
-  const src = firstStream.stream_url || '';
-  currentStreamIdx = 0;
+  loadStream(movie, 0);
+}
+
+function renderStreamEmbed(playerEl, stream, movie) {
+  if (vjsPlayer) {
+    try { vjsPlayer.dispose(); } catch (e) {}
+    vjsPlayer = null;
+  }
   isTrailerActive = false;
+  playerEl.innerHTML = `
+    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden">
+      <iframe src="${FilmSub.escHtml(stream.stream_url)}"
+              title="${FilmSub.escHtml(movie.title || 'Movie')} Streaming Player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+              allowfullscreen="true"
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
+              playsinline="true"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px">
+      </iframe>
+    </div>`;
+}
 
-  // Handle iframe embed stream (e.g. VidSrc, AutoEmbed)
-  if (firstStream.type === 'embed' || firstStream.embed === true) {
-    if (vjsPlayer) {
-      try { vjsPlayer.dispose(); } catch (e) {}
-      vjsPlayer = null;
-    }
-    playerEl.innerHTML = `
-      <div style="position:relative;aspect-ratio:16/9;width:100%;background:#000">
-        <iframe src="${FilmSub.escHtml(src)}"
-                title="${FilmSub.escHtml(movie.title)} Stream"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen
-                style="position:absolute;top:0;left:0;width:100%;height:100%;border:none">
-        </iframe>
-      </div>`;
-    return;
-  }
-
-  // Build tracks HTML for Video.js
+function createVjsPlayer(playerEl, stream, movie) {
+  const subtitles = getMovieSubtitles(movie);
   const tracksHTML = subtitles.map((sub, i) => `
     <track kind="subtitles" src="${FilmSub.escHtml(sub.url || '')}"
            srclang="${FilmSub.escHtml(sub.language || 'si')}"
@@ -308,15 +397,17 @@ function initVideoPlayer(movie) {
            ${sub.default || i === 0 ? 'default' : ''}>`).join('');
 
   playerEl.innerHTML = `
-    <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
-           controls preload="metadata" playsinline
-           data-setup='{"fluid": true, "responsive": true}'>
-      <source src="${FilmSub.escHtml(src)}" type="${FilmSub.escHtml(firstStream.type || 'video/mp4')}">
-      ${tracksHTML}
-      <p class="vjs-no-js">Enable JavaScript or use a modern browser to watch videos.</p>
-    </video>`;
+    <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden">
+      <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
+             controls preload="metadata" playsinline webkit-playsinline
+             style="position:absolute;top:0;left:0;width:100%;height:100%"
+             data-setup='{"fluid": true, "responsive": true}'>
+        <source src="${FilmSub.escHtml(stream.stream_url)}" type="${FilmSub.escHtml(stream.type || 'video/mp4')}">
+        ${tracksHTML}
+        <p class="vjs-no-js">Enable JavaScript or use a modern browser to watch videos.</p>
+      </video>
+    </div>`;
 
-  // Init Video.js
   if (typeof videojs !== 'undefined') {
     vjsPlayer = videojs('filmsubPlayer', {
       fluid: true,
@@ -331,33 +422,69 @@ function initVideoPlayer(movie) {
       }
     });
 
-    // Auto-select Sinhala sub track
     vjsPlayer.ready(() => {
-      const textTracks = vjsPlayer.textTracks();
-      for (let i = 0; i < textTracks.length; i++) {
-        if (textTracks[i].kind === 'subtitles') {
-          textTracks[i].mode = 'showing';
-          break;
-        }
-      }
+      syncSubtitles();
+      try { vjsPlayer.play(); } catch (e) {}
     });
 
-    // Auto fallback to next stream server on error
+    // Intercept Video.js errors cleanly - never show raw black error screen
     vjsPlayer.on('error', () => {
-      console.warn('Video.js player error on server index', currentStreamIdx);
-      if (currentStreamIdx + 1 < streams.length) {
-        const nextIdx = currentStreamIdx + 1;
+      console.warn('Video.js direct stream error on server index', currentStreamIdx);
+      const errDisplay = playerEl.querySelector('.vjs-error-display');
+      if (errDisplay) errDisplay.style.display = 'none';
+
+      const streams = getMovieStreams(movie);
+      // Auto-fallback to first embed stream
+      const embedIdx = streams.findIndex(s => s.type === 'embed' || s.embed === true);
+      if (embedIdx !== -1 && embedIdx !== currentStreamIdx) {
+        FilmSub.showToast('Direct stream unavailable. Switching to high-speed mirror...', 'info');
         const tabsEl = document.getElementById('server-tabs');
         if (tabsEl) {
-          const btn = tabsEl.querySelector(`button[data-index="${nextIdx}"]`);
+          const btn = tabsEl.querySelector(`button[data-index="${embedIdx}"]`);
           if (btn) {
-            console.log('Auto-switching to fallback server', nextIdx);
-            btn.click();
+            tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
           }
         }
+        loadStream(movie, embedIdx);
+      } else {
+        renderPlayerFallback(playerEl, movie);
       }
     });
   }
+}
+
+function renderPlayerFallback(playerEl, movie) {
+  if (vjsPlayer) {
+    try { vjsPlayer.dispose(); } catch (e) {}
+    vjsPlayer = null;
+  }
+  const streams = getMovieStreams(movie);
+  playerEl.innerHTML = `
+    <div style="width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0d;color:#fff;padding:24px;text-align:center;gap:14px;border-radius:8px">
+      <i class="fa-solid fa-triangle-exclamation" style="font-size:42px;color:var(--accent)"></i>
+      <h3 style="font-size:18px;margin:0">Stream Server Issue</h3>
+      <p style="font-size:13px;color:var(--text2);max-width:440px;margin:0">මෙම සේවාදායකයේ (Direct Server) වීඩියෝව වාදනය කිරීමට නොහැකි විය. කරුණාකර පහත ඇති වෙනත් Server එකක් තෝරන්න:</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+        ${streams.map((s, i) => `
+          <button class="server-tab fallback-btn" data-index="${i}" type="button" style="background:#242424;padding:9px 18px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;cursor:pointer">
+            <i class="fa-solid fa-play"></i> ${FilmSub.escHtml(s.label || s.server || `Server ${i + 1}`)}
+          </button>
+        `).join('')}
+      </div>
+    </div>`;
+
+  playerEl.querySelectorAll('.fallback-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      const tabsEl = document.getElementById('server-tabs');
+      if (tabsEl) {
+        const tabBtn = tabsEl.querySelector(`button[data-index="${idx}"]`);
+        if (tabBtn) { tabBtn.click(); return; }
+      }
+      loadStream(movie, idx);
+    });
+  });
 }
 
 function syncSubtitles() {
@@ -380,37 +507,27 @@ function loadStream(movie, idx) {
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
 
-  // Handle iframe embed stream
+  // Handle iframe embed stream (AutoEmbed, VidSrc, SuperEmbed, 2Embed)
   if (stream.type === 'embed' || stream.embed === true) {
+    renderStreamEmbed(playerEl, stream, movie);
+    return;
+  }
+
+  // If trailer was active, or vjsPlayer is not initialized, create Video.js player
+  if (isTrailerActive || !vjsPlayer) {
     if (vjsPlayer) {
       try { vjsPlayer.dispose(); } catch (e) {}
       vjsPlayer = null;
     }
     isTrailerActive = false;
-    playerEl.innerHTML = `
-      <div style="position:relative;aspect-ratio:16/9;width:100%;background:#000">
-        <iframe src="${FilmSub.escHtml(stream.stream_url)}"
-                title="${FilmSub.escHtml(movie.title)} Stream"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen
-                style="position:absolute;top:0;left:0;width:100%;height:100%;border:none">
-        </iframe>
-      </div>`;
+    createVjsPlayer(playerEl, stream, movie);
     return;
   }
 
-  // If trailer or iframe was active, re-initialize Video.js player DOM
-  if (isTrailerActive || !vjsPlayer) {
-    initVideoPlayer(movie);
-  }
-
   if (stream.stream_url && (stream.stream_url.startsWith('http://') || stream.stream_url.startsWith('https://')) && !stream.stream_url.includes('t.me/')) {
-    if (vjsPlayer) {
-      vjsPlayer.src({ src: stream.stream_url, type: stream.type || 'video/mp4' });
-      setTimeout(syncSubtitles, 250);
-      try { vjsPlayer.play(); } catch (e) {}
-    }
+    vjsPlayer.src({ src: stream.stream_url, type: stream.type || 'video/mp4' });
+    setTimeout(syncSubtitles, 250);
+    try { vjsPlayer.play(); } catch (e) {}
     return;
   }
 
@@ -440,13 +557,16 @@ function loadTrailer(movie) {
   const trailerSrc = movie.trailer_url || `https://www.youtube-nocookie.com/embed?listType=search&list=${query}&autoplay=1`;
 
   playerEl.innerHTML = `
-    <div style="position:relative;aspect-ratio:16/9;width:100%;background:#000">
+    <div style="position:relative;aspect-ratio:16/9;width:100%;background:#000;border-radius:8px;overflow:hidden">
       <iframe src="${trailerSrc}"
               title="${FilmSub.escHtml(movie.title)} Official Trailer"
               frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none">
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+              allowfullscreen="true"
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
+              playsinline="true"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px">
       </iframe>
     </div>`;
 }
@@ -492,12 +612,13 @@ function renderSeriesSection(movie) {
     const sNum = seasonObj.season_number || 1;
     let epHtml = '';
     for (let ep = 1; ep <= count; ep++) {
+      const isActive = (sNum === currentSeason && ep === currentEpisode);
       epHtml += `
-        <div class="episode-card" data-season="${sNum}" data-episode="${ep}">
+        <div class="episode-card${isActive ? ' active' : ''}" data-season="${sNum}" data-episode="${ep}">
           <div class="ep-info">
             <span class="ep-num">S${String(sNum).padStart(2, '0')} E${String(ep).padStart(2, '0')}</span>
             <span class="ep-title">Episode ${ep}</span>
-            <span class="ep-duration"><i class="fa-regular fa-clock"></i> ~45 min</span>
+            <span class="ep-duration"><i class="fa-regular fa-clock"></i> ~50 min</span>
           </div>
           <button class="ep-play-btn" title="Watch S${sNum} E${ep}" type="button">
             <i class="fa-solid fa-play"></i>
@@ -511,19 +632,26 @@ function renderSeriesSection(movie) {
       card.addEventListener('click', () => {
         gridEl.querySelectorAll('.episode-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
-        const ep = card.dataset.episode;
-        const s = card.dataset.season;
+        const ep = parseInt(card.dataset.episode, 10);
+        const s = parseInt(card.dataset.season, 10);
+        currentSeason = s;
+        currentEpisode = ep;
+
         FilmSub.showToast(`Loading Season ${s} Episode ${ep}...`, 'info');
+
+        const qualEl = document.getElementById('cs-header-quality');
+        if (qualEl) {
+          qualEl.textContent = `S${String(s).padStart(2, '0')} E${String(ep).padStart(2, '0')} HD`;
+        }
+
+        // Re-generate tabs & load stream for this episode
+        renderServerTabs(movie);
+        loadStream(movie, 0);
 
         // Scroll smoothly to player
         const playerSec = document.getElementById('player-section');
         if (playerSec) {
           playerSec.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Auto play if available
-        if (vjsPlayer) {
-          try { vjsPlayer.play(); } catch (e) {}
         }
       });
     });

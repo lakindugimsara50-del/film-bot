@@ -43,15 +43,30 @@
       "streams": [
         {
           "server": "Server 1",
-          "label": "Server 1 (Telegram Cloud)",
-          "type": "video/mp4",
-          "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          "label": "Server 1 (AutoEmbed HD)",
+          "type": "embed",
+          "stream_url": "https://autoembed.cc/embed/movie/76600",
+          "embed": true
         },
         {
           "server": "Server 2",
-          "label": "Server 2 (Fast Mirror)",
+          "label": "Server 2 (VidSrc)",
+          "type": "embed",
+          "stream_url": "https://vidsrc.to/embed/movie/76600",
+          "embed": true
+        },
+        {
+          "server": "Server 3",
+          "label": "Server 3 (SuperEmbed)",
+          "type": "embed",
+          "stream_url": "https://multiembed.mov/directstream.php?video_id=76600&tmdb=1",
+          "embed": true
+        },
+        {
+          "server": "Server 4",
+          "label": "Server 4 (Direct Stream)",
           "type": "video/mp4",
-          "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+          "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
         }
       ],
       "downloads": [
@@ -118,7 +133,28 @@
       "streams": [
         {
           "server": "Server 1",
-          "label": "Server 1 (Telegram Stream)",
+          "label": "Server 1 (AutoEmbed HD)",
+          "type": "embed",
+          "stream_url": "https://autoembed.cc/embed/movie/533535",
+          "embed": true
+        },
+        {
+          "server": "Server 2",
+          "label": "Server 2 (VidSrc)",
+          "type": "embed",
+          "stream_url": "https://vidsrc.to/embed/movie/533535",
+          "embed": true
+        },
+        {
+          "server": "Server 3",
+          "label": "Server 3 (SuperEmbed)",
+          "type": "embed",
+          "stream_url": "https://multiembed.mov/directstream.php?video_id=533535&tmdb=1",
+          "embed": true
+        },
+        {
+          "server": "Server 4",
+          "label": "Server 4 (Direct Stream)",
           "type": "video/mp4",
           "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
         }
@@ -822,15 +858,37 @@
       "streams": [
         {
           "server": "Server 1",
-          "label": "Server 1 (Fast CDN)",
-          "type": "video/mp4",
-          "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+          "label": "Server 1 (AutoEmbed HD)",
+          "type": "embed",
+          "stream_url": "https://autoembed.cc/embed/tv/1399/1/1",
+          "embed": true
         },
         {
           "server": "Server 2",
-          "label": "Server 2 (Telegram Cloud)",
+          "label": "Server 2 (VidSrc)",
+          "type": "embed",
+          "stream_url": "https://vidsrc.to/embed/tv/1399/1/1",
+          "embed": true
+        },
+        {
+          "server": "Server 3",
+          "label": "Server 3 (SuperEmbed)",
+          "type": "embed",
+          "stream_url": "https://multiembed.mov/directstream.php?video_id=1399&tmdb=1&s=1&e=1",
+          "embed": true
+        },
+        {
+          "server": "Server 4",
+          "label": "Server 4 (2Embed)",
+          "type": "embed",
+          "stream_url": "https://www.2embed.cc/embedtv/1399&s=1&e=1",
+          "embed": true
+        },
+        {
+          "server": "Server 5",
+          "label": "Server 5 (Telegram Stream)",
           "type": "video/mp4",
-          "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
         }
       ],
       "downloads": [

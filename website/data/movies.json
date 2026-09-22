@@ -934,7 +934,26 @@
       "added_date": "2026-09-22",
       "added_at": "2026-09-22T16:39:00Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "avatar-3",
+      "slug": "avatar-3",
+      "title": "Avatar 3",
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "Sinhala Sub",
+          "url": "data:text/vtt;..."
+        }
+      ],
+      "has_sinhala_sub": true
+    },
+    {
+      "id": "oppenheimer",
+      "slug": "oppenheimer",
+      "title": "Oppenheimer",
+      "subtitles": []
     }
   ],
-  "last_updated": "2026-09-22T17:39:00Z"
+  "last_updated": "2026-09-22T19:05:00Z"
 }

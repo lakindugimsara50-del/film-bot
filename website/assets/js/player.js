@@ -93,21 +93,25 @@ function getMovieStreams(movie) {
     directUrl = movie.stream_url.startsWith('http') ? movie.stream_url : `https://film-bot-2.onrender.com${movie.stream_url}`;
   }
 
-  if (edgeUrl) {
+  if (directUrl || edgeUrl) {
+    const primaryUrl = directUrl || edgeUrl;
+    const secondaryUrl = edgeUrl || directUrl;
     list.push({
       server: "Server 1",
       label: "⚡ Server 1 (Telegram Cloud HD)",
       type: "video/mp4",
-      stream_url: edgeUrl,
+      stream_url: primaryUrl,
       file_id: fileId || ""
     });
-    list.push({
-      server: "Server 2",
-      label: "⚡ Server 2 (Telegram Direct Fast)",
-      type: "video/mp4",
-      stream_url: directUrl,
-      file_id: fileId || ""
-    });
+    if (secondaryUrl && secondaryUrl !== primaryUrl) {
+      list.push({
+        server: "Server 2",
+        label: "⚡ Server 2 (Telegram Edge Mirror)",
+        type: "video/mp4",
+        stream_url: secondaryUrl,
+        file_id: fileId || ""
+      });
+    }
   }
 
   // 2. Check movie.streams from data for other direct streams (exclude third-party embeds)

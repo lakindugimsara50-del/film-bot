@@ -813,19 +813,19 @@ window.FILMSUB_MOVIES_DATA = {
       "message_id": 14,
       "file_name": "Game.of.Thrones.S01E01.720p.HDTV.x264-CTU.mkv",
       "file_size": 1563733824,
-      "stream_url": "/stream/channel/-1004325759505/14",
+      "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/14",
       "streams": [
         {
           "server": "Server 1",
-          "label": "Server 1 (Telegram Cloud HD)",
+          "label": "⚡ Server 1 (Telegram Cloud HD)",
           "type": "video/mp4",
-          "stream_url": "/stream/channel/-1004325759505/14"
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/14"
         },
         {
           "server": "Server 2",
-          "label": "Server 2 (Telegram Direct Fast)",
+          "label": "⚡ Server 2 (Telegram Edge Mirror)",
           "type": "video/mp4",
-          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/14"
+          "stream_url": "/stream/channel/-1004325759505/14"
         }
       ],
       "downloads": [

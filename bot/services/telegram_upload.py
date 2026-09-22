@@ -18,6 +18,14 @@ import httpx
 import inspect
 from pyrogram import Client
 
+# Support 64-bit Telegram channel IDs (e.g. -1004325759505)
+try:
+    import pyrogram.utils
+    pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
+    pyrogram.utils.MIN_CHAT_ID = -999999999999
+except Exception:
+    pass
+
 import config
 from config import (
     API_ID,
@@ -52,65 +60,42 @@ async def download_and_upload(
         log.info("Downloaded '%s'  (%d bytes)", file_name, file_size)
 
         # ── 2. Upload to Telegram private channel ──────────────────────────
-        log.info("Uploading '%s' to private channel %s …", file_name, PRIVATE_CHANNEL_ID)
-
-        async def _pyrogram_progress(current: int, total: int) -> None:
-            """Bridge Pyrogram's progress callback to our async one safely."""
-            if not progress_callback or not total:
-                return
-            try:
-                if inspect.iscoroutinefunction(progress_callback):
-                    await progress_callback(current, total)
-                else:
-                    progress_callback(current, total)
-            except Exception as p_err:
-                log.debug("[TelegramUpload] download_and_upload progress callback error: %s", p_err)
-
-        target_chat = PRIVATE_CHANNEL_ID if PRIVATE_CHANNEL_ID != 0 else (fallback_chat_id or config.ADMIN_IDS[0])
-
+        target_chat = PRIVATE_CHANNEL_ID if PRIVATE_CHANNEL_ID != 0 else (fallback_chat_id or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0))
         try:
-            if bot_client:
-                message = await bot_client.send_video(
-                    chat_id=target_chat,
-                    video=local_path,
-                    file_name=file_name,
-                    progress=_pyrogram_progress,
-                    disable_notification=True,
-                )
-            else:
-                userbot = Client(
-                    SESSION_NAME,
-                    api_id=API_ID,
-                    api_hash=API_HASH,
-                )
-                async with userbot:
-                    message = await userbot.send_video(
-                        chat_id=target_chat,
-                        video=local_path,
-                        file_name=file_name,
-                        progress=_pyrogram_progress,
-                        disable_notification=True,
-                    )
-        except Exception as exc:
-            if fallback_chat_id and target_chat != fallback_chat_id and ("PEER" in str(exc).upper() or "CHANNEL" in str(exc).upper()):
-                log.warning("Channel %s failed (%s). Falling back to chat %s", target_chat, exc, fallback_chat_id)
-                message = await bot_client.send_video(
-                    chat_id=fallback_chat_id,
-                    video=local_path,
-                    file_name=file_name,
-                    progress=_pyrogram_progress,
-                    disable_notification=True,
-                )
-            else:
-                raise
+            target_chat = int(target_chat)
+        except (ValueError, TypeError):
+            pass
 
-        # ── 3. Extract file_id from the sent message ───────────────────────
-        file_id: str = message.video.file_id if message.video else ""
+        log.info("Uploading '%s' to private channel %s …", file_name, target_chat)
+
+        if bot_client:
+            return await upload_video_file(
+                bot_client=bot_client,
+                file_path=local_path,
+                target_chat=target_chat,
+                progress_callback=progress_callback,
+                fallback_chat=0,
+            )
+
+        # Userbot upload fallback if bot_client not provided
+        userbot = Client(
+            SESSION_NAME,
+            api_id=API_ID,
+            api_hash=API_HASH,
+        )
+        async with userbot:
+            message = await userbot.send_video(
+                chat_id=target_chat,
+                video=local_path,
+                file_name=file_name,
+                disable_notification=True,
+            )
+
+        file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
         message_id: int = message.id
-
         stream_url = get_file_stream_url(file_id)
-        log.info("Upload complete. file_id=%s  stream_url=%s", file_id, stream_url)
 
+        log.info("Upload complete. file_id=%s  stream_url=%s", file_id, stream_url)
         return {
             "file_id": file_id,
             "message_id": message_id,
@@ -139,6 +124,10 @@ async def upload_video_file(
     file_name = os.path.basename(file_path)
     file_size = os.path.getsize(file_path)
     target = target_chat if target_chat != 0 else (PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0))
+    try:
+        target = int(target)
+    except (ValueError, TypeError):
+        pass
 
     log.info("[TelegramUpload] Uploading '%s' (%d bytes) to chat %s", file_name, file_size, target)
 
@@ -177,9 +166,10 @@ async def upload_video_file(
                 log.warning("[TelegramUpload] bot_client.connect() warning: %s", conn_err)
 
         try:
-            await bot_client.get_chat(chat_id)
+            resolved = await bot_client.get_chat(chat_id)
+            log.info("[TelegramUpload] Confirmed target peer: '%s' (ID: %s)", getattr(resolved, "title", "Channel"), chat_id)
         except Exception as gc_err:
-            log.debug("[TelegramUpload] Pre-resolving chat %s note: %s", chat_id, gc_err)
+            log.warning("[TelegramUpload] Pre-resolving chat %s warning: %s", chat_id, gc_err)
 
         try:
             return await bot_client.send_video(
@@ -205,12 +195,13 @@ async def upload_video_file(
     try:
         message = await _do_send(target)
     except Exception as exc:
-        if fallback_chat and target != fallback_chat:
-            log.warning("[TelegramUpload] Target chat %s failed (%s). Falling back to chat %s", target, exc, fallback_chat)
+        log.error("[TelegramUpload] Upload to channel %s failed: %s", target, exc, exc_info=True)
+        # Only fallback if target was 0/unset; never dump a movie into user DM if channel was specified
+        if fallback_chat and target == 0:
+            log.warning("[TelegramUpload] Target chat unset. Falling back to chat %s", fallback_chat)
             message = await _do_send(fallback_chat)
         else:
-            log.error("[TelegramUpload] Failed to upload video: %s", exc, exc_info=True)
-            raise
+            raise RuntimeError(f"Telegram upload to channel {target} failed: {exc}") from exc
 
     file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
     message_id: int = message.id

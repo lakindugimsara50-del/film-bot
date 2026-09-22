@@ -78,9 +78,21 @@ async def add_movie(movie: dict) -> bool:
         log.error("Could not fetch movies.json before adding movie: %s", exc)
         return False
 
-    # ── Append and update the timestamp ──────────────────────────────────────
+    # ── Append or update in place and update the timestamp ───────────────────
     movies: list = content_dict.setdefault("movies", [])
-    movies.append(movie)
+    target_id = movie.get("id") or movie.get("slug")
+    existing_idx = None
+    if target_id:
+        for idx, m in enumerate(movies):
+            if m.get("id") == target_id or m.get("slug") == target_id:
+                existing_idx = idx
+                break
+    if existing_idx is not None:
+        movies[existing_idx] = movie
+        log.info("Updated existing movie '%s' (index %d) in movies.json", target_id, existing_idx)
+    else:
+        movies.append(movie)
+        log.info("Appended new movie '%s' to movies.json", target_id)
     content_dict["last_updated"] = datetime.now(timezone.utc).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
     )

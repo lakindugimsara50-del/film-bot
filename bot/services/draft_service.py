@@ -29,20 +29,51 @@ def _save(drafts: list[dict]) -> None:
 
 def save_draft(data: dict) -> str:
     drafts = _load()
-    draft_id = f"draft_{len(drafts) + 1}_{uuid.uuid4().hex[:4]}"
+    draft_id = data.get("id") or data.get("draft_id") or f"draft_{len(drafts) + 1}_{uuid.uuid4().hex[:4]}"
+    
+    # Check if updating existing draft
+    existing_idx = None
+    for idx, d in enumerate(drafts):
+        if d.get("id") == draft_id:
+            existing_idx = idx
+            break
+
     entry = {
         "id": draft_id,
-        "title_hint": data.get("title_hint") or data.get("file_name") or "Untitled Movie",
+        "title_hint": data.get("title_hint") or data.get("movie_name") or data.get("file_name") or "Untitled Movie",
+        "movie_name": data.get("movie_name", ""),
+        "year": data.get("year"),
         "file_id": data.get("file_id", ""),
+        "message_id": data.get("message_id", 0),
         "file_name": data.get("file_name", ""),
         "file_size": data.get("file_size", 0),
         "film_url": data.get("film_url", ""),
+        "stream_url": data.get("stream_url", ""),
         "quality": data.get("quality", "1080p"),
-        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "subtitles": data.get("subtitles", []),
+        "subtitle_url": data.get("subtitle_url", ""),
+        "meta": data.get("meta", {}),
+        "movie_entry": data.get("movie_entry", {}),
+        "created_at": data.get("created_at") or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "channel_id": data.get("channel_id", 0),
     }
-    drafts.append(entry)
+
+    if existing_idx is not None:
+        drafts[existing_idx] = entry
+    else:
+        drafts.append(entry)
+
     _save(drafts)
     return draft_id
+
+def update_draft(draft_id: str, updates: dict) -> bool:
+    drafts = _load()
+    for d in drafts:
+        if d.get("id") == draft_id:
+            d.update(updates)
+            _save(drafts)
+            return True
+    return False
 
 def list_drafts() -> list[dict]:
     return _load()
@@ -50,6 +81,14 @@ def list_drafts() -> list[dict]:
 def get_draft(draft_id: str) -> dict | None:
     for d in _load():
         if d.get("id") == draft_id:
+            return d
+    return None
+
+def find_draft_by_media(file_id: str = "", message_id: int = 0) -> dict | None:
+    for d in reversed(_load()):
+        if file_id and d.get("file_id") == file_id:
+            return d
+        if message_id and d.get("message_id") == message_id:
             return d
     return None
 
@@ -61,3 +100,4 @@ def delete_draft(draft_id: str) -> bool:
         _save(drafts)
         return True
     return False
+

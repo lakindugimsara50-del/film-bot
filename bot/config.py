@@ -7,12 +7,26 @@ on a local machine (via .env) and on a VPS (via exported shell variables).
 import os
 from dotenv import load_dotenv
 
-# Load .env file if it exists (development convenience)
-_env_path = os.path.join(os.path.dirname(__file__), ".env")
-if os.path.exists(_env_path):
-    load_dotenv(dotenv_path=_env_path)
+# Load .env file (checks bot/.env, project root .env, or current directory)
+_bot_env = os.path.join(os.path.dirname(__file__), ".env")
+_root_env = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+if os.path.exists(_bot_env):
+    load_dotenv(dotenv_path=_bot_env)
+elif os.path.exists(_root_env):
+    load_dotenv(dotenv_path=_root_env)
 else:
     load_dotenv()
+
+# ── Monkeypatch Pyrogram for 64-bit Telegram Channel IDs ─────────────────────
+# Pyrogram 2.0.x hardcodes MIN_CHANNEL_ID = -1002147483647 (32-bit limit).
+# Modern Telegram channels like Filmhost (-1004325759505) exceed this, causing
+# get_peer_type to throw ValueError: Peer id invalid: -1004325759505.
+try:
+    import pyrogram.utils
+    pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
+    pyrogram.utils.MIN_CHAT_ID = -999999999999
+except Exception:
+    pass
 
 # ── Telegram credentials ────────────────────────────────────────────────────
 # Obtain these from https://my.telegram.org/apps
@@ -29,7 +43,7 @@ ADMIN_IDS: list[int] = (
 )
 
 # ── Channel IDs ─────────────────────────────────────────────────────────────
-# PRIVATE_CHANNEL: where uploaded video files are stored (bot must be admin)
+# PRIVATE_CHANNEL: where uploaded video files are stored (Filmhost, bot must be admin)
 PRIVATE_CHANNEL_ID: int = int(os.getenv("PRIVATE_CHANNEL_ID", "0"))
 # PUBLIC_CHANNEL: where movie announcements are posted
 PUBLIC_CHANNEL_ID: int = int(os.getenv("PUBLIC_CHANNEL_ID", "0"))
@@ -55,9 +69,15 @@ STREAM_BASE_URL: str = os.getenv(
 SESSION_NAME: str = os.getenv("SESSION_NAME", "session")
 
 # ── Site URL ─────────────────────────────────────────────────────────────────
-SITE_BASE_URL: str = os.getenv("SITE_BASE_URL", "https://yoursite.lk")
+# Always default to actual Cloudflare Pages URL; never use dummy domain yoursite.lk
+_raw_site_url = os.getenv("SITE_BASE_URL", "").strip()
+if not _raw_site_url or "yoursite.lk" in _raw_site_url:
+    SITE_BASE_URL: str = "https://filmsub.pages.dev"
+else:
+    SITE_BASE_URL: str = _raw_site_url.rstrip("/")
 
 # ── Seedr Cloud Debrid ───────────────────────────────────────────────────────
 SEEDR_USERNAME: str = os.getenv("SEEDR_USERNAME", "")
 SEEDR_PASSWORD: str = os.getenv("SEEDR_PASSWORD", "")
 SEEDR_TOKEN: str = os.getenv("SEEDR_TOKEN", "")
+

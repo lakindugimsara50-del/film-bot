@@ -32,9 +32,12 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import config
+import uuid
+
 from handlers.announce import post_to_channel, _slugify
 from services import (
     downloader,
+    draft_service,
     github_service,
     seedr_service,
     subtitle_service,
@@ -297,11 +300,25 @@ async def run_auto_leech(
     user_id: int,
     query_text: str,
     reply_media: Optional[dict] = None,
+    auto_publish: bool = False,
 ) -> None:
     """
     Main entry point for executing the automated leech & upload workflow.
     """
-    parsed = parse_query(query_text)
+    is_auto_mode = auto_publish
+    clean_query = (query_text or "").strip()
+    lower_q = clean_query.lower()
+    if "--auto" in lower_q or "-a" in clean_query.split():
+        is_auto_mode = True
+        clean_query = re.sub(r"\b(--auto|-a)\b", "", clean_query).strip()
+    elif lower_q.startswith("auto "):
+        is_auto_mode = True
+        clean_query = clean_query[5:].strip()
+    elif lower_q.endswith(" auto"):
+        is_auto_mode = True
+        clean_query = clean_query[:-5].strip()
+
+    parsed = parse_query(clean_query)
     title, year, imdb_id, direct_link = parsed
     season = parsed.season
     episode = parsed.episode
@@ -733,7 +750,7 @@ async def run_auto_leech(
             target_chat=target_channel,
             caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)",
             progress_callback=_upload_progress,
-            fallback_chat=user_id,
+            fallback_chat=0,  # Do NOT fall back to user DM; must go to channel
         )
 
         file_id = upload_res.get("file_id", "")
@@ -751,16 +768,18 @@ async def run_auto_leech(
         except Exception as clean_err:
             log.warning("[LeechService] Error during disk cleanup: %s", clean_err)
 
-        # ── Step 5: Save to movies.json & Deploy to Website ───────────────────
-        task_tracker.tracker.set_step(user_id, "Completed - Updating Website...")
-        await status_msg.edit_text(
-            f"⚡ <b>අවසන් පියවර:</b> වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...",
-            parse_mode=ParseMode.HTML,
-        )
+        # Clear Seedr storage to guarantee 100% free quota for subsequent tasks
+        try:
+            await seedr_service.seedr_pool.clean_storage()
+        except Exception:
+            pass
 
+        # ── Step 5: Prepare Movie Payload & Draft ────────────────────────────
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
         slug = f"{_slugify(title, year)}{ep_suffix}"
         base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        if "yoursite.lk" in base_site:
+            base_site = "https://filmsub.pages.dev"
         site_url = f"{base_site}/movie.html?id={slug}"
 
         # Default Sinhala Subtitle
@@ -850,50 +869,100 @@ async def run_auto_leech(
             "added_by": "bot_auto_leech",
         }
 
-        # Save to database (movies.json & movies_data.js) & trigger Cloudflare deploy
-        saved = await github_service.add_movie(movie_entry)
-        if not saved:
-            log.warning("[LeechService] github_service.add_movie failed to commit.")
-
-        # Post announcement to public channel
-        if config.PUBLIC_CHANNEL_ID:
-            try:
-                await post_to_channel(client, movie_entry, config.PUBLIC_CHANNEL_ID)
-                log.info("[LeechService] Channel announcement posted.")
-            except Exception as ann_err:
-                log.warning("[LeechService] Channel announcement failed: %s", ann_err)
-
-        # Clear Seedr storage to guarantee 100% free quota for subsequent tasks
-        try:
-            await seedr_service.seedr_pool.clean_storage()
-        except Exception:
-            pass
-
-        task_tracker.tracker.complete_task(user_id)
-
-        # ── Final Success Response ───────────────────────────────────────────
-        kb_done = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
-        ])
+        # Save to draft_service so video in channel is never lost
+        draft_id = f"leech_{uuid.uuid4().hex[:6]}"
+        draft_service.save_draft({
+            "id": draft_id,
+            "title_hint": display_title,
+            "movie_name": title,
+            "year": year,
+            "file_id": file_id,
+            "message_id": message_id,
+            "file_name": file_name,
+            "file_size": file_size,
+            "film_url": "",
+            "stream_url": stream_url,
+            "quality": chosen_candidate.quality,
+            "subtitles": movie_entry.get("subtitles", []),
+            "subtitle_url": default_sub_url,
+            "meta": tmdb_meta,
+            "movie_entry": movie_entry,
+            "channel_id": target_channel,
+        })
 
         imdb_val = movie_entry.get("imdb", "8.0")
         genres_val = ", ".join(movie_entry.get("genres", [])[:3])
 
-        await status_msg.edit_text(
-            f"🎉 <b>Ultra Auto-Leech සාර්ථකව නිම විය!</b>\n\n"
-            f"{media_icon} <b>{display_title}</b>\n"
-            f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
-            f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
-            f"🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
-            f"⚡ <b>භාවිතා කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
-            f"🧹 <b>Seedr & VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කෙරිණි)\n\n"
-            f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
-            f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
-            f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!",
-            parse_mode=ParseMode.HTML,
-            reply_markup=kb_done,
-            disable_web_page_preview=False,
-        )
+        if is_auto_mode:
+            # Full-auto mode: publish immediately
+            task_tracker.tracker.set_step(user_id, "Completed - Updating Website...")
+            saved = await github_service.add_movie(movie_entry)
+            if not saved:
+                log.warning("[LeechService] github_service.add_movie failed to commit.")
+
+            if config.PUBLIC_CHANNEL_ID:
+                try:
+                    await post_to_channel(client, movie_entry, config.PUBLIC_CHANNEL_ID)
+                    log.info("[LeechService] Channel announcement posted.")
+                except Exception as ann_err:
+                    log.warning("[LeechService] Channel announcement failed: %s", ann_err)
+
+            draft_service.delete_draft(draft_id)
+            task_tracker.tracker.complete_task(user_id)
+
+            kb_done = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
+                [InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub_posted:{slug}")],
+            ])
+
+            await status_msg.edit_text(
+                f"🎉 <b>Ultra Auto-Leech සාර්ථකව නිම විය!</b>\n\n"
+                f"{media_icon} <b>{display_title}</b>\n"
+                f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
+                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
+                f"🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
+                f"⚡ <b>භාවිතා කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
+                f"☁️ <b>Telegram Storage:</b> Filmhost Channel වෙත සෘජුවම Upload විය!\n"
+                f"🧹 <b>Seedr & VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කෙරිණි)\n\n"
+                f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
+                f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
+                f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!\n\n"
+                f"💡 <i>පසුව සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_done,
+                disable_web_page_preview=False,
+            )
+        else:
+            # Interactive choice mode: provide 3 action buttons
+            task_tracker.tracker.complete_task(user_id)
+
+            kb_choices = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data=f"leech_act:pub:{draft_id}"),
+                    InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub:{draft_id}"),
+                ],
+                [
+                    InlineKeyboardButton("📁 Draft ලෙස තබන්න (Channel Only)", callback_data=f"leech_act:draft:{draft_id}"),
+                ]
+            ])
+
+            await status_msg.edit_text(
+                f"🎉 <b>Ultra Auto-Leech සාර්ථකව බාගත කර Channel එකට Upload විය!</b>\n\n"
+                f"{media_icon} <b>{display_title}</b>\n"
+                f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
+                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
+                f"🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
+                f"⚡ <b>භාවිතා කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
+                f"☁️ <b>Telegram Storage:</b> Filmhost Channel වෙත සුරැකිණි!\n"
+                f"🧹 <b>Seedr & VPS Storage:</b> 100% Free\n\n"
+                f"<b>දැන් ඔබට අවශ්‍ය කුමක්ද? පහත බොත්තමක් තෝරන්න:</b>\n"
+                f"• <b>Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (පසුව <code>/sub</code> මඟින් උපසිරැසි දැමිය හැක)\n"
+                f"• <b>Add Sub:</b> උපසිරැසි ගොනුව Upload කර Publish කරයි\n"
+                f"• <b>Keep as Draft:</b> වෙබ් අඩවියට නොයවා Channel එකේ පමණක් Draft එකක් ලෙස තබයි",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_choices,
+                disable_web_page_preview=True,
+            )
 
     except asyncio.CancelledError:
         log.info("[LeechService] Auto-leech task cancelled for user %s (%s)", user_id, display_title)

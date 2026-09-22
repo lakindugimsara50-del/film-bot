@@ -31,6 +31,7 @@ from pyrogram.types import (
 import config
 from handlers import add_movie
 from handlers.announce import post_to_channel, _slugify
+from handlers.sub_handler import PENDING_SUB_DOCS
 from services import draft_service, github_service, subtitle_service, task_tracker, telegram_upload, tmdb_service, video_service
 
 log = logging.getLogger(__name__)
@@ -61,9 +62,13 @@ def register(app: Client) -> None:
             await _handle_sub_file(client, message, session)
             return
 
-        # Otherwise treat as new Movie Video upload
         doc = message.document
         vid = message.video
+
+        # Check if user uploaded a standalone .srt / .vtt subtitle file outside of wizard
+        if doc and (doc.file_name or "").lower().endswith((".srt", ".vtt")):
+            await _handle_standalone_subtitle_upload(client, message, doc)
+            return
 
         file_id = ""
         file_name = "movie_video.mp4"
@@ -82,6 +87,8 @@ def register(app: Client) -> None:
 
         size_str = add_movie._human_size(file_size)
         session_id = f"sess_{message.id}"
+        caption_hint = (message.caption or "").strip()
+        title_hint = caption_hint or _extract_title_hint(file_name)
 
         USER_SESSIONS[message.from_user.id] = {
             "session_id": session_id,
@@ -90,8 +97,15 @@ def register(app: Client) -> None:
             "file_name": file_name,
             "file_size": file_size,
             "film_url": "",
-            "title_hint": _extract_title_hint(file_name),
+            "title_hint": title_hint,
+            "reply_message_id": message.id,
+            "reply_chat_id": message.chat.id,
         }
+
+        # If caption provides a clear movie title, search TMDB directly to present the 3 action buttons
+        if caption_hint:
+            await _handle_movie_name_search(client, message, USER_SESSIONS[message.from_user.id], caption_hint)
+            return
 
         kb = InlineKeyboardMarkup([
             [
@@ -135,6 +149,64 @@ def register(app: Client) -> None:
                 await _handle_sub_url(client, message, session, text)
                 return
 
+        # Check if user replied to a draft confirmation or bot message with draft info
+        reply = message.reply_to_message
+        rep_text = getattr(reply, "text", None) if reply else None
+        rep_caption = getattr(reply, "caption", None) if reply else None
+        reply_content = rep_text if isinstance(rep_text, str) else (rep_caption if isinstance(rep_caption, str) else "")
+        if reply_content:
+            draft_match = re.search(r"(?:Draft ID|Draft):\s*<code>?([a-zA-Z0-9_-]+)</code>?", reply_content, re.IGNORECASE)
+            if draft_match:
+                d_id = draft_match.group(1).strip()
+                existing_draft = draft_service.get_draft(d_id)
+                if existing_draft:
+                    new_session = {
+                        "session_id": f"sess_{message.id}",
+                        "draft_id": d_id,
+                        "step": "WAITING_NAME",
+                        "file_id": existing_draft.get("file_id", ""),
+                        "file_name": existing_draft.get("file_name", ""),
+                        "file_size": existing_draft.get("file_size", 0),
+                        "film_url": existing_draft.get("film_url", ""),
+                        "title_hint": text,
+                        "reply_message_id": existing_draft.get("message_id") or reply.id,
+                        "reply_chat_id": existing_draft.get("channel_id") or reply.chat.id,
+                        "stream_url": existing_draft.get("stream_url", ""),
+                        "movie_entry": existing_draft.get("movie_entry"),
+                    }
+                    USER_SESSIONS[message.from_user.id] = new_session
+                    await _handle_movie_name_search(client, message, new_session, text)
+                    return
+
+        # Check if user replied to a video message with a movie name
+        if reply and (reply.video or (reply.document and (("video" in (reply.document.mime_type or "")) or (reply.document.file_name or "").lower().endswith((".mp4", ".mkv", ".avi", ".mov", ".webm"))))):
+            rep_vid = reply.video
+            rep_doc = reply.document
+            r_file_id = rep_vid.file_id if rep_vid else rep_doc.file_id
+            r_file_name = (rep_vid.file_name if rep_vid else rep_doc.file_name) or "movie_video.mp4"
+            r_file_size = (rep_vid.file_size if rep_vid else rep_doc.file_size) or 0
+
+            # Correlate with existing draft if available
+            existing_draft = draft_service.find_draft_by_media(file_id=r_file_id, message_id=reply.id)
+            draft_id = existing_draft.get("id") if existing_draft else None
+
+            new_session = {
+                "session_id": f"sess_{message.id}",
+                "draft_id": draft_id,
+                "step": "WAITING_NAME",
+                "file_id": r_file_id,
+                "file_name": r_file_name,
+                "file_size": r_file_size,
+                "film_url": "",
+                "title_hint": text,
+                "reply_message_id": reply.id,
+                "reply_chat_id": reply.chat.id,
+                "movie_entry": existing_draft.get("movie_entry") if existing_draft else None,
+            }
+            USER_SESSIONS[message.from_user.id] = new_session
+            await _handle_movie_name_search(client, message, new_session, text)
+            return
+
         # If not in wizard, check if user sent a video download URL (e.g. mega, gdrive, direct mp4)
         if text.startswith(("http://", "https://")):
             url_lower = text.lower()
@@ -147,6 +219,8 @@ def register(app: Client) -> None:
                     "file_size": 0,
                     "film_url": text,
                     "title_hint": "",
+                    "reply_message_id": message.id,
+                    "reply_chat_id": message.chat.id,
                 }
 
                 kb = InlineKeyboardMarkup([
@@ -172,8 +246,10 @@ def register(app: Client) -> None:
             "• <code>/leech &lt;Movie Name&gt;</code> — Download & upload movie\n"
             "• <code>/seedr &lt;email&gt; &lt;password&gt;</code> — Connect Seedr.cc Cloud\n"
             "• <code>/find &lt;Movie Name&gt;</code> — Search movies\n"
+            "• <code>/drafts</code> — View and publish drafts\n"
+            "• <code>/sub &lt;Movie Name&gt;</code> — Attach Sinhala subtitle\n"
             "• <code>/status</code> — System status\n\n"
-            "<i>වීඩියෝවක් හෝ Direct Link එකක් එවන්න, නැතහොත් ඉහත Command එකක් භාවිතා කරන්න.</i>",
+            "<i>වීඩියෝවක් හෝ Direct Link එකක් එවන්න, නැතහොත් වීඩියෝවකට Reply කර චිත්‍රපටයේ නම එවන්න.</i>",
             parse_mode=ParseMode.HTML,
         )
 
@@ -187,9 +263,55 @@ def register(app: Client) -> None:
             return
 
         tokens = message.text.split()[1:]
-        # If arguments are passed, route to existing one-liner add_movie handler
-        if tokens or (message.reply_to_message and message.reply_to_message.video):
+        reply = message.reply_to_message
+        has_video_reply = bool(reply and (reply.video or (reply.document and (("video" in (reply.document.mime_type or "")) or (reply.document.file_name or "").lower().endswith((".mp4", ".mkv", ".avi", ".mov", ".webm"))))))
+
+        # If arguments are passed with URL (legacy one-liner /add <film_url> <sub_url> ...)
+        is_legacy_one_liner = False
+        if tokens:
+            if tokens[0].startswith(("http://", "https://")):
+                is_legacy_one_liner = True
+            elif has_video_reply and any(t.startswith(("http://", "https://")) for t in tokens):
+                is_legacy_one_liner = True
+
+        if is_legacy_one_liner:
             await add_movie._handle_add(client, message)
+            return
+
+        # If replying to a video with a title (e.g. /add Cocaine Bear 2023) or just /add
+        if has_video_reply:
+            rep_vid = reply.video
+            rep_doc = reply.document
+            r_file_id = rep_vid.file_id if rep_vid else rep_doc.file_id
+            r_file_name = (rep_vid.file_name if rep_vid else rep_doc.file_name) or "movie_video.mp4"
+            r_file_size = (rep_vid.file_size if rep_vid else rep_doc.file_size) or 0
+            search_title = " ".join(tokens).strip() if tokens else (reply.caption or _extract_title_hint(r_file_name))
+
+            existing_draft = draft_service.find_draft_by_media(file_id=r_file_id, message_id=reply.id)
+            draft_id = existing_draft.get("id") if existing_draft else None
+
+            session = {
+                "session_id": f"sess_{message.id}",
+                "draft_id": draft_id,
+                "step": "CHOICE" if search_title else "WAITING_NAME",
+                "file_id": r_file_id,
+                "file_name": r_file_name,
+                "file_size": r_file_size,
+                "film_url": "",
+                "title_hint": search_title,
+                "reply_message_id": reply.id,
+                "reply_chat_id": reply.chat.id,
+                "movie_entry": existing_draft.get("movie_entry") if existing_draft else None,
+            }
+            USER_SESSIONS[message.from_user.id] = session
+
+            if search_title:
+                await _handle_movie_name_search(client, message, session, search_title)
+            else:
+                await message.reply_text(
+                    "🔍 <b>චිත්‍රපටයේ නම කුමක්ද?</b>\n\nකරුණාකර චිත්‍රපටයේ ඉංග්‍රීසි නම සහ වර්ෂය Reply කරන්න (උදා: <code>Avatar 2009</code>):",
+                    parse_mode=ParseMode.HTML,
+                )
             return
 
         # Otherwise start interactive wizard
@@ -277,19 +399,68 @@ def register(app: Client) -> None:
                 await query.answer("Session expired. Please send video again.", show_alert=True)
                 return
 
+            # Copy video to Filmhost channel if not already in channel
+            if config.PRIVATE_CHANNEL_ID and session.get("reply_message_id") and session.get("reply_chat_id") and session.get("reply_chat_id") != config.PRIVATE_CHANNEL_ID:
+                try:
+                    copied = await client.copy_message(
+                        chat_id=config.PRIVATE_CHANNEL_ID,
+                        from_chat_id=session["reply_chat_id"],
+                        message_id=session["reply_message_id"],
+                    )
+                    session["message_id"] = copied.id
+                    session["channel_id"] = config.PRIVATE_CHANNEL_ID
+                    if copied.video:
+                        session["file_id"] = copied.video.file_id
+                    elif copied.document:
+                        session["file_id"] = copied.document.file_id
+                    session["stream_url"] = telegram_upload.get_file_stream_url(session.get("file_id", ""))
+                except Exception as copy_err:
+                    log.warning("[Wizard] Could not copy draft video to Filmhost channel: %s", copy_err)
+
+            # If session has metadata, prebuild movie_entry for instant publishing
+            if session.get("meta"):
+                meta = session["meta"]
+                title = meta.get("title") or session.get("movie_name", "Untitled")
+                year = meta.get("year", 2025)
+                slug = _slugify(title, year)
+                base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+                if "yoursite.lk" in base_site:
+                    base_site = "https://filmsub.pages.dev"
+                site_url = f"{base_site}/movie.html?id={slug}"
+                file_id = session.get("file_id", "")
+                stream_url = session.get("stream_url") or telegram_upload.get_file_stream_url(file_id)
+                session["movie_entry"] = add_movie._build_movie_dict(
+                    meta=meta,
+                    slug=slug,
+                    quality=session.get("quality", "1080p"),
+                    lang="Sinhala",
+                    file_id=file_id,
+                    stream_url=stream_url,
+                    message_id=session.get("message_id", 0),
+                    file_name=session.get("file_name", "movie.mp4"),
+                    file_size=session.get("file_size", 0),
+                    subtitle_url=session.get("subtitle_url", "default"),
+                    site_url=site_url,
+                )
+
             draft_id = draft_service.save_draft(session)
             USER_SESSIONS.pop(user_id, None)
 
             kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data=f"draft:pub:{draft_id}")],
+                [
+                    InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data=f"draft:pub:{draft_id}"),
+                    InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub:{draft_id}"),
+                ],
                 [InlineKeyboardButton("📂 සියලුම Drafts බලන්න (/drafts)", callback_data="drafts:list")],
             ])
 
+            title_hint = session.get("title_hint") or session.get("movie_name") or session.get("file_name", "Movie")
             await query.message.edit_text(
-                f"💾 <b>චිත්‍රපටය Drafts තුළ සාර්ථකව සුරැකිණි!</b>\n\n"
+                f"📁 <b>චිත්‍රපටය Filmhost Channel එකෙහි Draft එකක් ලෙස සුරැකිණි!</b>\n\n"
+                f"🎬 <b>චිත්‍රපටය:</b> {title_hint}\n"
                 f"🆔 <b>Draft ID:</b> <code>{draft_id}</code>\n"
-                f"📁 <b>ගොනුව:</b> {session.get('file_name', 'Movie')}\n\n"
-                f"ඔබට අවශ්‍ය ඕනෑම වේලාවක මෙම චිත්‍රපටයේ නම, උපසිරැසි ලබාදී වෙබ් අඩවියට Publish කළ හැක.",
+                f"☁️ <b>Storage:</b> Filmhost Telegram Channel\n\n"
+                f"<i>මෙම චිත්‍රපටය වෙබ් අඩවියට Publish කර නැත. ඔබට අවශ්‍ය ඕනෑම වේලාවක <code>/drafts</code> මඟින් හෝ පහත බොත්තමෙන් Subtitle එක්කර Publish කළ හැක.</i>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
             )
@@ -314,6 +485,29 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
             await query.answer()
+            return
+
+        # Direct 1-click publish without subtitles (uses default Sinhala subtitle)
+        if data == "wiz:pub_direct":
+            session = USER_SESSIONS.get(user_id)
+            if not session:
+                await query.answer("Session expired. Please send file again.", show_alert=True)
+                return
+
+            session["subtitle_url"] = "default"
+            session["quality"] = "auto_all"
+            status_msg = await query.message.edit_text("⏳ <b>චිත්‍රපටය වෙබ් අඩවියට එකතු කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+            await query.answer()
+
+            meta = session.get("meta", {})
+            title = meta.get("title") or session.get("movie_name", "Untitled")
+
+            # Register with task_tracker and spawn cancellable asyncio.Task
+            task_tracker.tracker.start_task(user_id, title)
+            bg_task = asyncio.create_task(_finalize_and_publish(client, status_msg, session, user_id))
+            task_tracker.tracker.set_task_handle(user_id, bg_task)
+
+            USER_SESSIONS.pop(user_id, None)
             return
 
         # Confirm TMDB match
@@ -401,6 +595,72 @@ def register(app: Client) -> None:
                 await query.answer("Draft not found.", show_alert=True)
                 return
 
+            # If draft already has complete movie_entry, publish directly!
+            movie_entry = draft.get("movie_entry")
+            if movie_entry:
+                await query.answer("Publishing to website...")
+                await query.message.edit_text("⏳ <b>වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...</b>", parse_mode=ParseMode.HTML)
+                saved = await github_service.add_movie(movie_entry)
+                if not saved:
+                    await query.message.edit_text("⚠️ <b>වෙබ් අඩවිය යාවත්කාලීන කිරීම අසාර්ථක විය.</b>", parse_mode=ParseMode.HTML)
+                    return
+
+                if config.PUBLIC_CHANNEL_ID:
+                    try:
+                        await post_to_channel(client, movie_entry, config.PUBLIC_CHANNEL_ID)
+                    except Exception as ann_err:
+                        log.warning("[Wizard] Channel announcement error: %s", ann_err)
+
+                draft_service.delete_draft(draft_id)
+                USER_SESSIONS.pop(user_id, None)
+
+                base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+                if "yoursite.lk" in base_site:
+                    base_site = "https://filmsub.pages.dev"
+                site_url = movie_entry.get("site_url") or f"{base_site}/movie.html?id={movie_entry.get('slug')}"
+                kb_done = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
+                    [InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub_posted:{movie_entry.get('slug')}")],
+                ])
+
+                title = movie_entry.get("title", "Movie")
+                year = movie_entry.get("year", "")
+                quality = movie_entry.get("quality", "1080p")
+                imdb_val = movie_entry.get("imdb", "8.0")
+
+                await query.message.edit_text(
+                    f"🎉 <b>චිත්‍රපටය සාර්ථකව Web එකට Publish කරන ලදී!</b>\n\n"
+                    f"🎬 <b>{title} ({year})</b>\n"
+                    f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {quality}\n\n"
+                    f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
+                    f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
+                    f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!\n\n"
+                    f"💡 <i>පසුව සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_done,
+                    disable_web_page_preview=False,
+                )
+                return
+
+            # If draft has meta, skip name prompt and jump directly to quality/publish
+            if draft.get("meta"):
+                USER_SESSIONS[user_id] = {
+                    "draft_id": draft_id,
+                    "step": "WAITING_QUALITY",
+                    "file_id": draft.get("file_id", ""),
+                    "file_name": draft.get("file_name", ""),
+                    "file_size": draft.get("file_size", 0),
+                    "film_url": draft.get("film_url", ""),
+                    "title_hint": draft.get("title_hint", ""),
+                    "meta": draft.get("meta", {}),
+                    "movie_name": draft.get("movie_name") or draft.get("meta", {}).get("title", ""),
+                    "year": draft.get("year") or draft.get("meta", {}).get("year"),
+                    "subtitle_url": draft.get("subtitle_url", "default"),
+                }
+                await _ask_quality(query.message)
+                await query.answer()
+                return
+
             USER_SESSIONS[user_id] = {
                 "draft_id": draft_id,
                 "step": "WAITING_NAME",
@@ -432,6 +692,48 @@ def register(app: Client) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. Helper Step Functions
 # ─────────────────────────────────────────────────────────────────────────────
+
+async def _handle_standalone_subtitle_upload(client: Client, message: Message, doc) -> None:
+    """Handle a user uploading an .srt or .vtt file without being in an active wizard."""
+    PENDING_SUB_DOCS[message.from_user.id] = doc.file_id
+    buttons = []
+
+    # Check drafts
+    drafts = draft_service.list_drafts()
+    if drafts:
+        recent_draft = drafts[-1]
+        d_name = recent_draft.get("title_hint") or recent_draft.get("movie_name") or "Draft"
+        d_id = recent_draft.get("id")
+        buttons.append([
+            InlineKeyboardButton(f"📁 Draft එකට එක් කරන්න: {d_name[:24]}", callback_data=f"sub_act:draft:{d_id}")
+        ])
+
+    # Check published movies in movies.json
+    try:
+        data, _ = await github_service.get_movies_json()
+        movies = data.get("movies", [])
+        if movies:
+            latest_movie = movies[-1]
+            m_title = latest_movie.get("title") or "Latest Movie"
+            m_slug = latest_movie.get("slug") or ""
+            buttons.append([
+                InlineKeyboardButton(f"🎬 අවසන් චිත්‍රපටයට එක් කරන්න: {m_title[:24]}", callback_data=f"sub_act:movie:{m_slug[:45]}")
+            ])
+    except Exception:
+        pass
+
+    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")])
+    kb = InlineKeyboardMarkup(buttons)
+
+    await message.reply_text(
+        f"💬 <b>සිංහල උපසිරැසි ගොනුවක් හඳුනාගන්නා ලදී (.srt / .vtt Detected)!</b>\n\n"
+        f"📁 <b>ගොනුව:</b> <code>{doc.file_name}</code>\n\n"
+        f"ඔබට මෙම උපසිරැසිය එක් කිරීමට අවශ්‍ය චිත්‍රපටය පහතින් තෝරන්න:\n"
+        f"<i>(නැතහොත් මෙම උපසිරැසි ගොනුවට Reply කර <code>/sub &lt;චිත්‍රපටයේ නම&gt;</code> ලෙස එවන්න)</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=kb,
+    )
+
 
 async def _handle_movie_name_search(client: Client, message: Message, session: dict, query_text: str) -> None:
     """Search TMDB for the movie and ask for user confirmation."""
@@ -466,13 +768,20 @@ async def _handle_movie_name_search(client: Client, message: Message, session: d
         f"⭐ <b>IMDb:</b> {imdb_str} / 10 | ⏱ <b>ධාවන කාලය:</b> {duration_str}\n"
         f"🎭 <b>කාණ්ඩ:</b> {genres_str}\n"
         f"📖 <b>විස්තරය:</b> {desc}\n\n"
-        f"<b>මෙම චිත්‍රපටය නිවැරදිද?</b>"
+        f"<b>දැන් ඔබට අවශ්‍ය කුමක්ද? පහත බොත්තමක් තෝරන්න:</b>\n"
+        f"• <b>Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (උපසිරැසි පසුව දැමිය හැක)\n"
+        f"• <b>Add Sub:</b> උපසිරැසි ගොනුව Upload කර Publish කරයි\n"
+        f"• <b>Keep as Draft:</b> Filmhost Channel එකේ පමණක් Draft එකක් ලෙස තබයි"
     )
 
     kb = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ ඔව්, දිගටම යන්න (Continue)", callback_data="wiz:confirm_tmdb"),
-            InlineKeyboardButton("🔄 වෙනත් නමක් සෙවීම", callback_data="wiz:search_again"),
+            InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data="wiz:pub_direct"),
+            InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data="wiz:confirm_tmdb"),
+        ],
+        [
+            InlineKeyboardButton("📁 Channel Draft ලෙස තබන්න (Draft Only)", callback_data="wiz:save_draft"),
+            InlineKeyboardButton("🔄 වෙනත් නමක් (Search Again)", callback_data="wiz:search_again"),
         ],
         [InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")],
     ])
@@ -507,9 +816,20 @@ async def _handle_sub_file(client: Client, message: Message, session: dict) -> N
         vtt_text = f.read()
 
     encoded = urllib.parse.quote(vtt_text)
-    session["subtitle_url"] = f"data:text/vtt;charset=utf-8,{encoded}"
-    session["step"] = "WAITING_QUALITY"
+    sub_url = f"data:text/vtt;charset=utf-8,{encoded}"
+    session["subtitle_url"] = sub_url
 
+    # 1. If attaching subtitle to an already published movie:
+    if session.get("slug"):
+        await _update_published_movie_sub(client, msg, session.get("slug"), sub_url, message.from_user.id)
+        return
+
+    # 2. If this session already has a pre-built movie_entry (e.g. from leech draft), publish directly!
+    if session.get("movie_entry"):
+        await _publish_draft_with_sub(client, msg, session, sub_url, message.from_user.id)
+        return
+
+    session["step"] = "WAITING_QUALITY"
     await msg.delete()
     await _ask_quality(message)
 
@@ -520,9 +840,150 @@ async def _handle_sub_url(client: Client, message: Message, session: dict, text:
         await message.reply_text("❌ කරුණාකර වලංගු Subtitle URL එකක් හෝ Subtitle (.srt) ගොනුවක් Upload කරන්න.")
         return
 
-    session["subtitle_url"] = text
+    msg = await message.reply("⏳ උපසිරැසි Download කරමින් පවතී...")
+    sub_url = text
+    try:
+        srt_path = await subtitle_service.download_subtitle(text)
+        vtt_path = subtitle_service.srt_to_vtt(srt_path)
+        with open(vtt_path, "r", encoding="utf-8", errors="replace") as f:
+            sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(f.read())}"
+    except Exception as exc:
+        log.warning("Could not download subtitle URL into data URI: %s", exc)
+
+    session["subtitle_url"] = sub_url
+
+    # 1. If attaching subtitle to an already published movie:
+    if session.get("slug"):
+        await _update_published_movie_sub(client, msg, session.get("slug"), sub_url, message.from_user.id)
+        return
+
+    # 2. If this session already has a pre-built movie_entry, publish directly!
+    if session.get("movie_entry"):
+        await _publish_draft_with_sub(client, msg, session, sub_url, message.from_user.id)
+        return
+
     session["step"] = "WAITING_QUALITY"
+    await msg.delete()
     await _ask_quality(message)
+
+
+async def _publish_draft_with_sub(client: Client, status_msg: Message, session: dict, sub_url: str, user_id: int) -> None:
+    """Helper to update a prepared movie_entry with new subtitles and commit directly."""
+    movie_entry = session["movie_entry"]
+    movie_entry["subtitles"] = [
+        {
+            "language": "Sinhala",
+            "label": "සිංහල උපසිරැසි",
+            "url": sub_url,
+            "default": True,
+        }
+    ]
+    movie_entry["has_sinhala_sub"] = True
+    movie_entry["subtitle_language"] = "Sinhala"
+
+    await status_msg.edit_text("⏳ <b>වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...</b>", parse_mode=ParseMode.HTML)
+    saved = await github_service.add_movie(movie_entry)
+    if not saved:
+        await status_msg.edit_text("⚠️ <b>වෙබ් අඩවිය යාවත්කාලීන කිරීම අසාර්ථක විය.</b>", parse_mode=ParseMode.HTML)
+        return
+
+    if config.PUBLIC_CHANNEL_ID:
+        try:
+            await post_to_channel(client, movie_entry, config.PUBLIC_CHANNEL_ID)
+        except Exception as ann_err:
+            log.warning("[Wizard] Announcement error: %s", ann_err)
+
+    draft_id = session.get("draft_id")
+    if draft_id:
+        draft_service.delete_draft(draft_id)
+    USER_SESSIONS.pop(user_id, None)
+
+    base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+    if "yoursite.lk" in base_site:
+        base_site = "https://filmsub.pages.dev"
+    site_url = movie_entry.get("site_url") or f"{base_site}/movie.html?id={movie_entry.get('slug')}"
+    kb_done = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
+    ])
+
+    title = movie_entry.get("title", "Movie")
+    year = movie_entry.get("year", "")
+    await status_msg.edit_text(
+        f"🎉 <b>සිංහල උපසිරැසි සමඟ චිත්‍රපටය සාර්ථකව Web එකට එක් කරන ලදී!</b>\n\n"
+        f"🎬 <b>{title} ({year})</b>\n"
+        f"📝 <b>උපසිරැසි:</b> සිංහල (Sinhala VTT Attached)\n\n"
+        f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
+        f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
+        f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!",
+        parse_mode=ParseMode.HTML,
+        reply_markup=kb_done,
+        disable_web_page_preview=False,
+    )
+
+
+async def _update_published_movie_sub(client: Client, status_msg: Message, slug: str, sub_url: str, user_id: int) -> None:
+    """Update subtitle for an already published movie in movies.json or published draft."""
+    await status_msg.edit_text("⏳ <b>වෙබ් අඩවියේ උපසිරැසි යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...</b>", parse_mode=ParseMode.HTML)
+
+    data, sha = await github_service.get_movies_json()
+    movies = data.get("movies", [])
+    target = None
+    for m in reversed(movies):
+        if m.get("slug") == slug or _slugify(m.get("title", ""), m.get("year")) == slug or m.get("id") == slug:
+            target = m
+            break
+
+    if not target:
+        # Check drafts fallback
+        draft = draft_service.get_draft(slug)
+        if draft and draft.get("movie_entry"):
+            session = {"movie_entry": draft.get("movie_entry"), "draft_id": slug}
+            await _publish_draft_with_sub(client, status_msg, session, sub_url, user_id)
+            return
+
+        await status_msg.edit_text(f"❌ <code>{slug}</code> චිත්‍රපටය සොයාගත නොහැකි විය.")
+        USER_SESSIONS.pop(user_id, None)
+        return
+
+    target["subtitles"] = [
+        {
+            "language": "Sinhala",
+            "label": "සිංහල උපසිරැසි",
+            "url": sub_url,
+            "default": True,
+        }
+    ]
+    target["subtitle_language"] = "Sinhala"
+    target["has_sinhala_sub"] = True
+
+    saved = await github_service.add_movie(target)
+    if not saved:
+        await status_msg.edit_text("⚠️ <b>වෙබ් අඩවිය යාවත්කාලීන කිරීම අසාර්ථක විය.</b>", parse_mode=ParseMode.HTML)
+        return
+
+    USER_SESSIONS.pop(user_id, None)
+
+    base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+    if "yoursite.lk" in base_site:
+        base_site = "https://filmsub.pages.dev"
+    watch_link = target.get("site_url") or f"{base_site}/movie.html?id={target.get('slug')}"
+    kb_done = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=watch_link)],
+    ])
+
+    title = target.get("title", "Movie")
+    year = target.get("year", "")
+    await status_msg.edit_text(
+        f"🎉 <b>සිංහල උපසිරැසි සාර්ථකව යාවත්කාලීන කරන ලදී!</b>\n\n"
+        f"🎬 <b>{title} ({year})</b>\n"
+        f"📝 <b>උපසිරැසි:</b> සිංහල (Sinhala VTT Attached)\n\n"
+        f"🌐 <b>Live Link:</b> <a href=\"{watch_link}\">{watch_link}</a>\n"
+        f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!\n\n"
+        f"💡 <i>වෙබ් අඩවියෙන් නරඹන විට හෝ බාගත කරන විට උපසිරැසි ස්වයංක්‍රීයව Play වේ.</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=kb_done,
+        disable_web_page_preview=False,
+    )
 
 
 async def _ask_quality(target_message: Message) -> None:
@@ -570,19 +1031,36 @@ async def _finalize_and_publish(client: Client, status_msg: Message, session: di
         await status_msg.edit_text("⏳ <b>Step 1/4:</b> වීඩියෝව සකස් කරමින් පවතී...", parse_mode=ParseMode.HTML)
 
         stream_url = ""
-        message_id = 0
+        message_id = session.get("message_id", 0)
 
-        # Handle video source
-        if file_id:
-            # Check if direct Telegram URL is available (<20MB or unknown size)
-            if config.BOT_TOKEN and (not file_size or file_size < 20 * 1024 * 1024):
-                direct = await telegram_upload.get_telegram_direct_url(file_id, config.BOT_TOKEN)
-                stream_url = direct or telegram_upload.get_file_stream_url(file_id)
-            else:
+        # Copy to Filmhost channel if uploaded in bot DM
+        if config.PRIVATE_CHANNEL_ID and session.get("reply_message_id") and session.get("reply_chat_id") and session.get("reply_chat_id") != config.PRIVATE_CHANNEL_ID:
+            try:
+                copied = await client.copy_message(
+                    chat_id=config.PRIVATE_CHANNEL_ID,
+                    from_chat_id=session["reply_chat_id"],
+                    message_id=session["reply_message_id"],
+                )
+                message_id = copied.id
+                if copied.video:
+                    file_id = copied.video.file_id
+                elif copied.document:
+                    file_id = copied.document.file_id
                 stream_url = telegram_upload.get_file_stream_url(file_id)
-        elif film_url:
-            # Check if direct link or needs uploading
-            stream_url = film_url
+                log.info("[Wizard] Video file backed up to Filmhost channel (message_id=%s)", message_id)
+            except Exception as copy_err:
+                log.warning("[Wizard] Could not copy video to Filmhost channel: %s", copy_err)
+
+        # Handle video source if not set by channel copy
+        if not stream_url:
+            if file_id:
+                if config.BOT_TOKEN and (not file_size or file_size < 20 * 1024 * 1024):
+                    direct = await telegram_upload.get_telegram_direct_url(file_id, config.BOT_TOKEN)
+                    stream_url = direct or telegram_upload.get_file_stream_url(file_id)
+                else:
+                    stream_url = telegram_upload.get_file_stream_url(file_id)
+            elif film_url:
+                stream_url = film_url
 
         # Handle Subtitle
         task_tracker.tracker.set_step(uid, "2/4 - සිංහල උපසිරැසි සකස් කරමින් පවතී...")
@@ -605,6 +1083,8 @@ async def _finalize_and_publish(client: Client, status_msg: Message, session: di
         await status_msg.edit_text("⏳ <b>Step 3/4:</b> වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...", parse_mode=ParseMode.HTML)
         slug = _slugify(title, year)
         base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        if "yoursite.lk" in base_site:
+            base_site = "https://filmsub.pages.dev"
         site_url = f"{base_site}/movie.html?id={slug}"
 
         display_quality = "1080p" if quality == "auto_all" else quality
@@ -662,6 +1142,7 @@ async def _finalize_and_publish(client: Client, status_msg: Message, session: di
 
         kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
+            [InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub_posted:{slug}")],
         ])
 
         await status_msg.edit_text(
@@ -725,6 +1206,7 @@ async def _show_drafts_menu(message: Message, edit: bool = False) -> None:
         d_id = d.get("id")
         buttons.append([
             InlineKeyboardButton(f"🚀 Publish #{i}", callback_data=f"draft:pub:{d_id}"),
+            InlineKeyboardButton(f"💬 Sub #{i}", callback_data=f"leech_act:sub:{d_id}"),
             InlineKeyboardButton(f"🗑 Delete #{i}", callback_data=f"draft:del:{d_id}"),
         ])
 

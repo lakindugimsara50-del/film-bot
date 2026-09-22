@@ -15,6 +15,10 @@ _bot_dir = os.path.dirname(os.path.abspath(__file__))
 if _bot_dir not in sys.path:
     sys.path.insert(0, _bot_dir)
 
+import pyrogram.utils
+pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
+pyrogram.utils.MIN_CHAT_ID = -999999999999
+
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message
@@ -271,6 +275,15 @@ async def _on_start(client: Client) -> None:
     log.info("  Public ch.   : %d", config.PUBLIC_CHANNEL_ID)
     log.info("  GitHub repo  : %s", config.GITHUB_REPO)
     log.info("=" * 60)
+
+    # Prime channel peers in session database to avoid [400 PEER_ID_INVALID]
+    for ch_name, ch_id in [("Private channel (Filmhost)", config.PRIVATE_CHANNEL_ID), ("Public channel", config.PUBLIC_CHANNEL_ID)]:
+        if ch_id:
+            try:
+                chat = await client.get_chat(ch_id)
+                log.info("[PeerInit] Successfully primed %s: '%s' (ID: %s)", ch_name, getattr(chat, "title", "Channel"), chat.id)
+            except Exception as ch_err:
+                log.error("[PeerInit] Failed to prime %s (ID: %s): %s", ch_name, ch_id, ch_err)
 
     # Notify admins that the bot restarted
     for admin_id in config.ADMIN_IDS:

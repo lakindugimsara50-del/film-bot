@@ -234,6 +234,10 @@ def register(app: Client) -> None:
         # Check if an active task is running
         is_busy = not queue_service.is_idle()
 
+        # Check if full auto was requested via /auto or --auto / -a
+        cmd_name = message.command[0].lower() if message.command else "leech"
+        is_auto = (cmd_name == "auto") or ("--auto" in text.lower()) or ("-a" in text.split())
+
         status_msg = await message.reply_text(
             f"⏳ <b>Auto-Leech පද්ධතියට එක්කරමින් පවතී...</b>\n🎬 {display_hint}",
             parse_mode=ParseMode.HTML,
@@ -246,6 +250,7 @@ def register(app: Client) -> None:
             query_text=query_arg,
             reply_media=reply_media,
             title_hint=display_hint,
+            auto_publish=is_auto,
         )
 
         if is_busy and pos > 1:
@@ -325,4 +330,164 @@ def register(app: Client) -> None:
                 )
             except Exception:
                 pass
+
+    @app.on_callback_query(filters.regex(r"^leech_act:"))
+    async def leech_action_callback(client: Client, query: CallbackQuery) -> None:
+        user_id = query.from_user.id if query.from_user else 0
+        username = query.from_user.username if query.from_user else ""
+        if not auth_service.is_authorized(user_id, username):
+            await query.answer("Unauthorized.", show_alert=True)
+            return
+
+        parts = query.data.split(":")
+        action = parts[1] if len(parts) > 1 else ""
+        payload = parts[2] if len(parts) > 2 else ""
+
+        from services import draft_service, github_service
+        from handlers.announce import post_to_channel
+        from handlers.wizard import USER_SESSIONS
+
+        # 1. Publish directly now
+        if action == "pub":
+            draft_id = payload
+            draft = draft_service.get_draft(draft_id)
+            if not draft:
+                await query.answer("චිත්‍රපටයේ දත්ත සොයාගත නොහැකි විය හෝ කල් ඉකුත් වී ඇත.", show_alert=True)
+                return
+
+            movie_entry = draft.get("movie_entry") or {}
+            if not movie_entry:
+                await query.answer("චිත්‍රපටයේ දත්ත දෝෂ සහිතයි.", show_alert=True)
+                return
+
+            await query.answer("වෙබ් අඩවියට Publish වෙමින් පවතී...")
+            await query.message.edit_text("⏳ <b>වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...</b>", parse_mode=ParseMode.HTML)
+
+            saved = await github_service.add_movie(movie_entry)
+            if not saved:
+                await query.message.edit_text("⚠️ <b>වෙබ් අඩවිය යාවත්කාලීන කිරීම අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න.</b>", parse_mode=ParseMode.HTML)
+                return
+
+            if config.PUBLIC_CHANNEL_ID:
+                try:
+                    await post_to_channel(client, movie_entry, config.PUBLIC_CHANNEL_ID)
+                except Exception as ann_err:
+                    log.warning("[LeechHandler] Channel announcement error: %s", ann_err)
+
+            draft_service.delete_draft(draft_id)
+            USER_SESSIONS.pop(user_id, None)
+
+            base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+            if "yoursite.lk" in base_site:
+                base_site = "https://filmsub.pages.dev"
+            site_url = movie_entry.get("site_url") or f"{base_site}/movie.html?id={movie_entry.get('slug')}"
+            kb_done = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
+                [InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub_posted:{movie_entry.get('slug')}")],
+            ])
+
+            title = movie_entry.get("title", "Movie")
+            year = movie_entry.get("year", "")
+            quality = movie_entry.get("quality", "1080p")
+            imdb_val = movie_entry.get("imdb", "8.0")
+
+            await query.message.edit_text(
+                f"🎉 <b>චිත්‍රපටය සාර්ථකව Web එකට Publish කරන ලදී!</b>\n\n"
+                f"🎬 <b>{title} ({year})</b>\n"
+                f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {quality}\n\n"
+                f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
+                f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
+                f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!\n\n"
+                f"💡 <i>පසුව සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_done,
+                disable_web_page_preview=False,
+            )
+            return
+
+        # 2. Add Subtitle prompt
+        if action == "sub":
+            draft_id = payload
+            draft = draft_service.get_draft(draft_id)
+            if not draft:
+                await query.answer("Draft not found.", show_alert=True)
+                return
+
+            USER_SESSIONS[user_id] = {
+                "draft_id": draft_id,
+                "step": "WAITING_SUB",
+                "movie_name": draft.get("movie_name"),
+                "year": draft.get("year"),
+                "meta": draft.get("meta"),
+                "movie_entry": draft.get("movie_entry"),
+                "file_id": draft.get("file_id"),
+                "file_name": draft.get("file_name"),
+                "file_size": draft.get("file_size"),
+                "title_hint": draft.get("title_hint"),
+            }
+
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏩ Default Subtitle මඟින් දැන්ම Publish කරන්න", callback_data=f"leech_act:pub:{draft_id}")],
+                [InlineKeyboardButton("📁 Draft ලෙස තබන්න (Publish Later)", callback_data=f"leech_act:draft:{draft_id}")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")],
+            ])
+
+            title_hint = draft.get("title_hint", "Movie")
+            await query.message.edit_text(
+                f"💬 <b>පියවර: සිංහල උපසිරැසි (.srt / .vtt) ගොනුව එවන්න</b>\n\n"
+                f"🎬 <b>චිත්‍රපටය:</b> {title_hint}\n\n"
+                f"කරුණාකර උපසිරැසි <b>.srt</b> හෝ <b>.vtt</b> ගොනුව Upload කරන්න, නැතහොත් Subtitle Link එකක් එවන්න.\n\n"
+                f"<i>(ඔබ ළඟ වෙනම උපසිරැසි ගොනුවක් නැත්නම් ඉහත බොත්තම ඔබා දැන්ම Publish කළ හැක)</i>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb,
+            )
+            await query.answer()
+            return
+
+        # 3. Keep as draft in channel only
+        if action == "draft":
+            draft_id = payload
+            draft = draft_service.get_draft(draft_id)
+            if not draft:
+                await query.answer("Draft not found.", show_alert=True)
+                return
+
+            USER_SESSIONS.pop(user_id, None)
+
+            kb = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data=f"leech_act:pub:{draft_id}"),
+                    InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub:{draft_id}"),
+                ],
+                [InlineKeyboardButton("📂 සියලුම Drafts බලන්න (/drafts)", callback_data="drafts:list")],
+            ])
+
+            title_hint = draft.get("title_hint", "Movie")
+            await query.message.edit_text(
+                f"📁 <b>චිත්‍රපටය Filmhost Channel එකෙහි Draft එකක් ලෙස සුරැකිණි!</b>\n\n"
+                f"🎬 <b>චිත්‍රපටය:</b> {title_hint}\n"
+                f"🆔 <b>Draft ID:</b> <code>{draft_id}</code>\n"
+                f"☁️ <b>Storage:</b> Filmhost Telegram Channel\n\n"
+                f"<i>මෙම චිත්‍රපටය වෙබ් අඩවියට Publish කර නැත. ඔබට අවශ්‍ය ඕනෑම වේලාවක <code>/drafts</code> මඟින් හෝ පහත බොත්තමෙන් Publish කළ හැක.</i>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb,
+            )
+            await query.answer("Saved to drafts!")
+            return
+
+        # 4. Prompt for sub after already posted
+        if action == "sub_posted":
+            slug = payload
+            USER_SESSIONS[user_id] = {
+                "step": "WAITING_SUB",
+                "slug": slug,
+            }
+            await query.answer()
+            await query.message.reply_text(
+                f"📝 <b>සිංහල උපසිරැසි එක් කිරීම:</b>\n\n"
+                f"කරුණාකර <b>.srt</b> හෝ <b>.vtt</b> ගොනුවක් මට Upload කරන්න (නැතහොත් Subtitle Link එකක් එවන්න).\n\n"
+                f"<i>(ඔබට මෙම උපසිරැසි ගොනුවට Reply කර <code>/sub {slug}</code> ලෙස යැවීමටද හැක)</i>",
+                parse_mode=ParseMode.HTML,
+            )
+            return
 

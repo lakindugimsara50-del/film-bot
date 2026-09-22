@@ -181,7 +181,10 @@ async def _handle_add(client: Client, message: Message) -> None:
         # ── Step 7: Build the movies.json entry ──────────────────────────────
         await _edit(progress_msg, "⏳ <b>Step 7/8</b> — Updating movies.json on GitHub…")
 
-        site_url = f"{config.SITE_BASE_URL.rstrip('/')}/movie.html?id={slug}"
+        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        if "yoursite.lk" in base_site:
+            base_site = "https://filmsub.pages.dev"
+        site_url = f"{base_site}/movie.html?id={slug}"
         movie_dict = _build_movie_dict(
             meta=meta,
             slug=slug,

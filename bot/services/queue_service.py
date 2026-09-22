@@ -28,6 +28,7 @@ class QueueItem:
     status_msg: Message
     client: Client
     title: str
+    auto_publish: bool = False
 
 
 class QueueService:
@@ -55,6 +56,7 @@ class QueueService:
         query_text: str,
         reply_media: Optional[dict] = None,
         title_hint: str = "",
+        auto_publish: bool = False,
     ) -> int:
         """
         Add a movie request to the queue.
@@ -72,6 +74,7 @@ class QueueService:
             status_msg=status_msg,
             client=client,
             title=title,
+            auto_publish=auto_publish,
         )
 
         # Track in task tracker immediately so /cancel or /status knows about it
@@ -158,6 +161,7 @@ class QueueService:
                         user_id=item.user_id,
                         query_text=item.query_text,
                         reply_media=item.reply_media,
+                        auto_publish=item.auto_publish,
                     )
                 )
                 self._current_task = leech_task

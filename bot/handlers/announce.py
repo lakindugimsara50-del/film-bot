@@ -102,7 +102,10 @@ def _build_message(movie: dict) -> str:
     short_desc = textwrap.shorten(description, width=200, placeholder="…") if description else ""
 
     # ── Watch link ────────────────────────────────────────────────────────────
-    watch_link = site_url or f"{config.SITE_BASE_URL.rstrip('/')}/movie.html?id={slug}"
+    raw_watch_link = site_url or f"{config.SITE_BASE_URL.rstrip('/')}/movie.html?id={slug}"
+    watch_link = raw_watch_link.replace("https://yoursite.lk", "https://filmsub.pages.dev").replace("http://yoursite.lk", "https://filmsub.pages.dev")
+    if not watch_link or "yoursite.lk" in watch_link:
+        watch_link = f"https://filmsub.pages.dev/movie.html?id={slug}"
 
     # ── Download buttons (per resolution entry) ───────────────────────────────
     download_parts: list[str] = []

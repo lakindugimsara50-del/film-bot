@@ -7,7 +7,7 @@
  *          website/robots.txt
  *
  * Usage  : node scripts/generate_sitemap.js
- * Env    : SITE_BASE_URL  (default: https://yoursite.lk)
+ * Env    : SITE_BASE_URL  (default: https://filmsub.pages.dev)
  */
 
 'use strict';
@@ -16,7 +16,7 @@ const fs   = require('fs');
 const path = require('path');
 
 // ── Config ──────────────────────────────────────────────────────────────────
-const BASE_URL    = (process.env.SITE_BASE_URL || 'https://yoursite.lk').replace(/\/$/, '');
+const BASE_URL    = (process.env.SITE_BASE_URL || 'https://filmsub.pages.dev').replace(/\/$/, '');
 const ROOT        = path.resolve(__dirname, '..');
 const MOVIES_JSON = path.join(ROOT, 'website', 'data', 'movies.json');
 const SITEMAP_OUT = path.join(ROOT, 'website', 'sitemap.xml');

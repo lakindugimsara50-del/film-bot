@@ -78,7 +78,20 @@ app = Client(
 
 
 # ── Health & Status Web Server ────────────────────────────────────────────────
-web_app = FastAPI(title="Film Movie Bot Health Server")
+web_app = FastAPI(title="Film Movie Bot Health & Stream Server")
+
+from fastapi.middleware.cors import CORSMiddleware
+web_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Content-Length", "Content-Range", "Accept-Ranges"],
+)
+
+from streaming.stream_server import stream_router
+web_app.include_router(stream_router)
 
 
 @web_app.get("/")
@@ -338,6 +351,15 @@ async def _on_start(client: Client) -> None:
                 log.info("[PeerInit] Successfully primed %s: '%s' (ID: %s)", ch_name, getattr(chat, "title", "Channel"), chat.id)
             except Exception as ch_err:
                 log.error("[PeerInit] Failed to prime %s (ID: %s): %s", ch_name, ch_id, ch_err)
+
+    # Initialize Telegram streaming pool for web video streaming
+    try:
+        from streaming.session_pool import stream_pool
+        stream_pool.set_main_client(client)
+        await stream_pool.init_extra_sessions(config.API_ID, config.API_HASH)
+        log.info("[StreamPool] Streaming pool initialized with main bot client.")
+    except Exception as sp_err:
+        log.warning("[StreamPool] Failed to initialize extra sessions in streaming pool: %s", sp_err)
 
     # Notify admins that the bot restarted
     service_name = os.getenv("RENDER_SERVICE_NAME", "") or os.getenv("RENDER_INSTANCE_ID", "")

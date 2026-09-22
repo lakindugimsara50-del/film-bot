@@ -15,6 +15,7 @@ import os
 import re
 import tempfile
 import time
+from typing import Optional, Union
 
 import aiofiles
 import httpx
@@ -352,7 +353,7 @@ async def upload_video_file(
 
     file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
     message_id: int = message.id
-    stream_url = get_file_stream_url(file_id)
+    stream_url = get_file_stream_url(file_id, chat_id=target, message_id=message_id)
 
     log.info("[TelegramUpload] Upload success. file_id=%s stream_url=%s", file_id, stream_url)
     return {
@@ -366,15 +367,17 @@ async def upload_video_file(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def get_file_stream_url(file_id: str) -> str:
+def get_file_stream_url(file_id: str, chat_id: Union[int, str] = 0, message_id: int = 0) -> str:
     """
-    Build and return the public stream URL for a Telegram file_id.
+    Build and return the public stream URL for a Telegram file_id or channel message.
 
     Example:
-        get_file_stream_url("BQACAgIAA...") →
-        "https://stream.yourdomain.workers.dev/stream/BQACAgIAA..."
+        get_file_stream_url("BQACAgIAA...", chat_id=-1004325759505, message_id=14) →
+        "https://film-bot-2.onrender.com/stream/channel/-1004325759505/14"
     """
     base = (STREAM_BASE_URL or "").rstrip("/")
+    if chat_id and message_id:
+        return f"{base}/stream/channel/{chat_id}/{message_id}"
     return f"{base}/stream/{file_id}"
 
 

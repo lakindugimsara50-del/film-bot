@@ -74,101 +74,69 @@ function showError(msg) {
 function getMovieStreams(movie) {
   if (!movie) return [];
   const list = [];
-  const sNum = currentSeason || movie.season || 1;
-  const epNum = currentEpisode || movie.episode || 1;
-  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0);
-  const tmdb = movie.tmdb_id || '';
+  const channelId = movie.channel_id || '-1004325759505';
+  const msgId = movie.message_id || null;
+  const fileId = movie.file_id || null;
 
-  // 1. For TMDB movies or series, generate top-tier universal embed streams
-  if (tmdb) {
-    if (isSeries) {
-      list.push({
-        server: "Server 1",
-        label: "Server 1 (AutoEmbed HD)",
-        type: "embed",
-        stream_url: `https://autoembed.cc/embed/tv/${tmdb}/${sNum}/${epNum}`,
-        embed: true
-      });
-      list.push({
-        server: "Server 2",
-        label: "Server 2 (VidSrc)",
-        type: "embed",
-        stream_url: `https://vidsrc.to/embed/tv/${tmdb}/${sNum}/${epNum}`,
-        embed: true
-      });
-      list.push({
-        server: "Server 3",
-        label: "Server 3 (SuperEmbed)",
-        type: "embed",
-        stream_url: `https://multiembed.mov/directstream.php?video_id=${tmdb}&tmdb=1&s=${sNum}&e=${epNum}`,
-        embed: true
-      });
-      list.push({
-        server: "Server 4",
-        label: "Server 4 (2Embed)",
-        type: "embed",
-        stream_url: `https://www.2embed.cc/embedtv/${tmdb}&s=${sNum}&e=${epNum}`,
-        embed: true
-      });
-    } else {
-      list.push({
-        server: "Server 1",
-        label: "Server 1 (AutoEmbed HD)",
-        type: "embed",
-        stream_url: `https://autoembed.cc/embed/movie/${tmdb}`,
-        embed: true
-      });
-      list.push({
-        server: "Server 2",
-        label: "Server 2 (VidSrc)",
-        type: "embed",
-        stream_url: `https://vidsrc.to/embed/movie/${tmdb}`,
-        embed: true
-      });
-      list.push({
-        server: "Server 3",
-        label: "Server 3 (SuperEmbed)",
-        type: "embed",
-        stream_url: `https://multiembed.mov/directstream.php?video_id=${tmdb}&tmdb=1`,
-        embed: true
-      });
-      list.push({
-        server: "Server 4",
-        label: "Server 4 (2Embed)",
-        type: "embed",
-        stream_url: `https://www.2embed.cc/embed/${tmdb}`,
-        embed: true
-      });
-    }
+  // 1. Primary: High-Speed Telegram Cloud Stream (Edge-proxied via Cloudflare)
+  let edgeUrl = '';
+  let directUrl = '';
+
+  if (msgId) {
+    edgeUrl = `/stream/channel/${channelId}/${msgId}`;
+    directUrl = `https://film-bot-2.onrender.com/stream/channel/${channelId}/${msgId}`;
+  } else if (fileId) {
+    edgeUrl = `/stream/file/${encodeURIComponent(fileId)}`;
+    directUrl = `https://film-bot-2.onrender.com/stream/file/${encodeURIComponent(fileId)}`;
+  } else if (movie.stream_url && !movie.stream_url.includes('autoembed') && !movie.stream_url.includes('vidsrc')) {
+    edgeUrl = movie.stream_url;
+    directUrl = movie.stream_url.startsWith('http') ? movie.stream_url : `https://film-bot-2.onrender.com${movie.stream_url}`;
   }
 
-  // 2. Merge existing movie.streams from data if available
-  if (Array.isArray(movie.streams) && movie.streams.length > 0) {
+  if (edgeUrl) {
+    list.push({
+      server: "Server 1",
+      label: "⚡ Server 1 (Telegram Cloud HD)",
+      type: "video/mp4",
+      stream_url: edgeUrl,
+      file_id: fileId || ""
+    });
+    list.push({
+      server: "Server 2",
+      label: "⚡ Server 2 (Telegram Direct Fast)",
+      type: "video/mp4",
+      stream_url: directUrl,
+      file_id: fileId || ""
+    });
+  }
+
+  // 2. Check movie.streams from data for other direct streams (exclude third-party embeds)
+  if (Array.isArray(movie.streams)) {
     movie.streams.forEach(s => {
-      // Avoid duplicate stream_urls
-      if (!list.some(item => item.stream_url === s.stream_url)) {
+      const sUrl = s.stream_url || '';
+      if (sUrl.includes('autoembed') || sUrl.includes('vidsrc') || sUrl.includes('multiembed') || sUrl.includes('2embed') || s.embed === true || s.type === 'embed') {
+        return;
+      }
+      if (sUrl && !list.some(item => item.stream_url === sUrl)) {
         list.push({
-          server: s.server || `Server ${list.length + 1}`,
-          label: s.label || s.server || `Server ${list.length + 1}`,
-          type: s.type || (s.embed ? 'embed' : 'video/mp4'),
-          stream_url: s.stream_url,
-          embed: Boolean(s.embed || s.type === 'embed'),
+          server: `Server ${list.length + 1}`,
+          label: s.label || `Server ${list.length + 1} (Direct Cloud)`,
+          type: s.type || 'video/mp4',
+          stream_url: sUrl,
           file_id: s.file_id || ''
         });
       }
     });
   }
 
-  // 3. Direct URL / file fallback
-  const fallbackUrl = movie.stream_url || (Array.isArray(movie.files) && movie.files[0] && movie.files[0].stream_url);
-  const fallbackFileId = movie.file_id || (Array.isArray(movie.files) && movie.files[0] && movie.files[0].file_id);
-  if (fallbackUrl && !list.some(item => item.stream_url === fallbackUrl)) {
+  // 3. Fallback direct stream if list is empty
+  if (list.length === 0 && movie.stream_url) {
     list.push({
-      server: `Server ${list.length + 1}`,
-      label: `Server ${list.length + 1} (Direct MP4)`,
+      server: "Server 1",
+      label: "⚡ Server 1 (Cloud HD)",
       type: "video/mp4",
-      stream_url: fallbackUrl,
-      file_id: fallbackFileId || ""
+      stream_url: movie.stream_url,
+      file_id: movie.file_id || ""
     });
   }
 
@@ -399,7 +367,7 @@ function createVjsPlayer(playerEl, stream, movie) {
   playerEl.innerHTML = `
     <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden">
       <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
-             controls preload="metadata" playsinline webkit-playsinline
+             controls preload="auto" playsinline webkit-playsinline
              style="position:absolute;top:0;left:0;width:100%;height:100%"
              data-setup='{"fluid": true, "responsive": true}'>
         <source src="${FilmSub.escHtml(stream.stream_url)}" type="${FilmSub.escHtml(stream.type || 'video/mp4')}">
@@ -412,6 +380,7 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer = videojs('filmsubPlayer', {
       fluid: true,
       responsive: true,
+      preload: 'auto',
       playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
       controlBar: {
         children: [
@@ -434,19 +403,17 @@ function createVjsPlayer(playerEl, stream, movie) {
       if (errDisplay) errDisplay.style.display = 'none';
 
       const streams = getMovieStreams(movie);
-      // Auto-fallback to first embed stream
-      const embedIdx = streams.findIndex(s => s.type === 'embed' || s.embed === true);
-      if (embedIdx !== -1 && embedIdx !== currentStreamIdx) {
-        FilmSub.showToast('Direct stream unavailable. Switching to high-speed mirror...', 'info');
+      // Auto-fallback to next stream if available (e.g. Server 1 -> Server 2)
+      if (streams.length > 1 && currentStreamIdx < streams.length - 1) {
+        const nextIdx = currentStreamIdx + 1;
+        FilmSub.showToast('Switching to direct cloud stream mirror...', 'info');
         const tabsEl = document.getElementById('server-tabs');
         if (tabsEl) {
-          const btn = tabsEl.querySelector(`button[data-index="${embedIdx}"]`);
-          if (btn) {
-            tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-          }
+          tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
+          const btn = tabsEl.querySelector(`button[data-index="${nextIdx}"]`);
+          if (btn) btn.classList.add('active');
         }
-        loadStream(movie, embedIdx);
+        loadStream(movie, nextIdx);
       } else {
         renderPlayerFallback(playerEl, movie);
       }
@@ -507,7 +474,7 @@ function loadStream(movie, idx) {
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
 
-  // Handle iframe embed stream (AutoEmbed, VidSrc, SuperEmbed, 2Embed)
+  // Handle iframe embed stream if ever provided
   if (stream.type === 'embed' || stream.embed === true) {
     renderStreamEmbed(playerEl, stream, movie);
     return;
@@ -524,16 +491,10 @@ function loadStream(movie, idx) {
     return;
   }
 
-  if (stream.stream_url && (stream.stream_url.startsWith('http://') || stream.stream_url.startsWith('https://')) && !stream.stream_url.includes('t.me/')) {
+  if (stream.stream_url && !stream.stream_url.includes('t.me/')) {
     vjsPlayer.src({ src: stream.stream_url, type: stream.type || 'video/mp4' });
     setTimeout(syncSubtitles, 250);
     try { vjsPlayer.play(); } catch (e) {}
-    return;
-  }
-
-  if (stream.server && stream.server.toLowerCase().includes('telegram')) {
-    const tgUrl = stream.stream_url || `https://t.me/${stream.file_id}`;
-    window.open(tgUrl, '_blank');
     return;
   }
 

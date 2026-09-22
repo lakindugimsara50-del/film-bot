@@ -6,6 +6,10 @@
 #   301 = permanent redirect
 #   302 = temporary redirect
 
+# ── High-Speed Telegram Cloud Stream Proxy ──────────────────────────────────
+# Proxy /stream/* to the live Render streaming backend (Edge-cached & range-enabled)
+/stream/*       https://film-bot-2.onrender.com/stream/:splat   200
+
 # ── Clean movie URLs ─────────────────────────────────────────────────────────
 # /movie/the-dark-knight  →  movie.html?id=the-dark-knight  (stays in URL bar)
 /movie/*        /movie.html?id=:splat           200

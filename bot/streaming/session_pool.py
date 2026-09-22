@@ -19,7 +19,8 @@ from pyrogram.errors import FloodWait, PeerIdInvalid
 
 log = logging.getLogger(__name__)
 
-CHUNK_SIZE = 1024 * 1024  # 1 MiB chunks for smooth video buffering
+CHUNK_SIZE = 1024 * 1024  # 1 MiB — must match Pyrogram's internal MTProto block size (DO NOT change)
+STREAM_BATCH = 4           # fetch 4 × 1 MiB = 4 MiB per browser request for fast buffering
 
 
 class TelegramStreamPool:

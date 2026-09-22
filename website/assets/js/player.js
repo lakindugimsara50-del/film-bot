@@ -415,10 +415,11 @@ function createVjsPlayer(playerEl, stream, movie) {
     });
 
     vjsPlayer.ready(() => {
-      // Increase buffer goal for smoother playback
+      // Aggressively pre-buffer: set bandwidth hint high so browser
+      // sends a large initial Range request (matches server's 4 MiB pre-buffer)
       try {
         if (vjsPlayer.tech_ && vjsPlayer.tech_.vhs) {
-          vjsPlayer.tech_.vhs.options_.bufferBasedABR = true;
+          vjsPlayer.tech_.vhs.bandwidth = 8000000; // 8 Mbps hint → fast initial fetch
         }
         if (vjsPlayer.tech_ && vjsPlayer.tech_.el_) {
           vjsPlayer.tech_.el_.setAttribute('preload', 'auto');

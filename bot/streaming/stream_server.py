@@ -83,8 +83,10 @@ async def stream_ping() -> dict:
 
 @stream_router.get("/stream/channel/{chat_id}/{message_id}")
 @stream_router.head("/stream/channel/{chat_id}/{message_id}")
-async def stream_channel_message(chat_id: str, message_id: int, request: Request) -> Response:
-    """Stream a video stored in a Telegram channel message."""
+async def stream_channel_message(chat_id: str, message_id: int, request: Request, s: Optional[int] = None) -> Response:
+    """Stream a video stored in a Telegram channel message.
+    The optional `s` query param is a server-selector hint (1 or 2) and is intentionally ignored.
+    """
     try:
         info = await stream_pool.get_media_info(chat_id, message_id)
     except RuntimeError as r_err:
@@ -96,13 +98,25 @@ async def stream_channel_message(chat_id: str, message_id: int, request: Request
 
     file_size = info["file_size"]
     msg = info["message"]
+    mime_type = info.get("mime_type", "video/mp4")
 
     range_header = request.headers.get("range")
     start, end = _parse_range(range_header, file_size)
+
+    # Serve at least 4 MiB per response so the browser pre-buffers fast.
+    # This is the key to smooth "CineSubz-like" playback without a CDN.
+    MIN_SERVE = 4 * 1024 * 1024  # 4 MiB minimum response
+    if not range_header:
+        # No range → serve first 4 MiB so player starts instantly
+        end = min(start + MIN_SERVE - 1, file_size - 1)
+    elif (end - start + 1) < MIN_SERVE and end < file_size - 1:
+        # Browser asked for tiny range → expand to at least 4 MiB
+        end = min(start + MIN_SERVE - 1, file_size - 1)
+
     content_length = end - start + 1
 
     headers = {
-        "Content-Type": "video/mp4",
+        "Content-Type": mime_type,
         "Content-Length": str(content_length),
         "Accept-Ranges": "bytes",
         "Content-Range": f"bytes {start}-{end}/{file_size}",
@@ -110,7 +124,7 @@ async def stream_channel_message(chat_id: str, message_id: int, request: Request
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "public, max-age=3600",
     }
 
     if request.method == "HEAD":
@@ -120,7 +134,7 @@ async def stream_channel_message(chat_id: str, message_id: int, request: Request
         stream_pool.stream_media_chunks(msg, start, end),
         status_code=206 if range_header else 200,
         headers=headers,
-        media_type="video/mp4",
+        media_type=mime_type,
     )
 
 

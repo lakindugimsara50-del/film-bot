@@ -81,3 +81,7 @@ SEEDR_USERNAME: str = os.getenv("SEEDR_USERNAME", "")
 SEEDR_PASSWORD: str = os.getenv("SEEDR_PASSWORD", "")
 SEEDR_TOKEN: str = os.getenv("SEEDR_TOKEN", "")
 
+# ── PikPak Cloud Debrid (10GB+ Free Tier) ───────────────────────────────────
+PIKPAK_USER: str = os.getenv("PIKPAK_USER", "")
+PIKPAK_PASS: str = os.getenv("PIKPAK_PASS", "")
+

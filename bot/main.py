@@ -167,6 +167,10 @@ async def help_handler(client: Client, message: Message) -> None:
         "  • <code>/auth &lt;user_id / @username&gt;</code> — Grant upload permission\n"
         "  • <code>/unauth &lt;user_id / @username&gt;</code> — Revoke permission\n"
         "  • <code>/users</code> — List authorized uploaders\n\n"
+        "☁️ <b>PikPak Cloud Debrid (10GB+):</b>\n"
+        "  • <code>/pikpak</code> — View PikPak storage and connection\n"
+        "  • <code>/pikpak login &lt;email&gt; &lt;pass&gt;</code> — Connect account\n"
+        "  • <code>/pikpak clear</code> — Clean cloud storage\n\n"
         "⚙️ <b>Other:</b>\n"
         "  • <code>/status</code> — Bot & server status\n"
         "  • <code>/ping</code> — Liveness check\n\n"
@@ -256,6 +260,10 @@ def _register_handlers() -> None:
     from handlers import sub_handler
     sub_handler.register(app)
     log.info("Handler registered: sub_handler (/sub, /addsub)")
+
+    from handlers import pikpak_handler
+    pikpak_handler.register(app)
+    log.info("Handler registered: pikpak_handler (/pikpak)")
 
 
 

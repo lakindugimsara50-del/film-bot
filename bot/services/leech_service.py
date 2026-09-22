@@ -46,6 +46,7 @@ from services import (
     tmdb_service,
     video_service,
 )
+from services.pikpak_service import pikpak_service
 from services.scrapers import method1_telegram, method2_consumet, method3_ddl, method_yts
 
 log = logging.getLogger(__name__)
@@ -570,14 +571,48 @@ async def run_auto_leech(
 
             try:
                 if candidate.method in ("yts", "magnet", "torrent"):
-                    seedr_res = None
-                    if seedr_service.seedr_client.is_configured():
+                    cloud_res = None
+                    cloud_service_name = "Seedr"
+
+                    mag_to_use = candidate.source_url
+                    if candidate.extra and candidate.extra.get("magnet"):
+                        mag_to_use = candidate.extra.get("magnet")
+
+                    candidate_bytes = candidate.size_bytes or 0
+                    # If file is larger than 1.95 GB and PikPak is configured, use PikPak directly (10GB capacity)
+                    prefer_pikpak = candidate_bytes > int(1.95 * 1024 * 1024 * 1024) and pikpak_service.is_configured()
+
+                    # 1. Try PikPak first if file > 1.95GB
+                    if prefer_pikpak:
+                        log.info("[LeechService] Large file (>1.95GB). Using PikPak Cloud Debrid...")
+                        cloud_service_name = "PikPak"
+                        async def _pikpak_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+                            try:
+                                await status_msg.edit_text(
+                                    f"☁️ <b>PikPak Cloud Debrid (10GB Tier) ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
+                                    f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
+                            except Exception:
+                                pass
+
+                        cloud_res = await pikpak_service.convert_magnet_to_direct_url(
+                            magnet_link=mag_to_use,
+                            progress_callback=_pikpak_progress,
+                        )
+
+                    # 2. Try Seedr if not preferred PikPak (or if PikPak didn't resolve)
+                    if not cloud_res and seedr_service.seedr_client.is_configured() and not prefer_pikpak:
                         log.info("[LeechService] Attempting Seedr.cc Cloud Debrid conversion...")
+                        cloud_service_name = "Seedr"
                         async def _seedr_progress(status_str: str) -> None:
                             try:
                                 await status_msg.edit_text(
                                     f"☁️ <b>Seedr Cloud Debrid ක්‍රියාත්මකයි...</b>\n\n"
-                                    f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                                     f"⚡ {status_str}",
                                     parse_mode=ParseMode.HTML,
                                     reply_markup=kb_cancel,
@@ -585,28 +620,50 @@ async def run_auto_leech(
                             except Exception:
                                 pass
 
-                        mag_to_use = candidate.source_url
-                        if candidate.extra and candidate.extra.get("magnet"):
-                            mag_to_use = candidate.extra.get("magnet")
-
-                        seedr_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
+                        cloud_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
                             magnet_url=mag_to_use,
                             progress_callback=_seedr_progress,
                         )
 
-                    if seedr_res and seedr_res.get("direct_url"):
-                        log.info("[LeechService] Downloading via Seedr direct HTTPS link: %s", seedr_res["file_name"])
-                        clean_name = seedr_res.get("file_name") or f"{_slugify(title, year)}.mp4"
+                    # 3. Fallback to PikPak if Seedr failed or was full
+                    if not cloud_res and pikpak_service.is_configured() and not prefer_pikpak:
+                        log.info("[LeechService] Seedr conversion failed/full. Falling back to PikPak Cloud Debrid...")
+                        cloud_service_name = "PikPak"
+                        async def _pikpak_progress2(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+                            try:
+                                await status_msg.edit_text(
+                                    f"☁️ <b>PikPak Cloud Debrid (Fallback) ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
+                                    f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
+                            except Exception:
+                                pass
+
+                        cloud_res = await pikpak_service.convert_magnet_to_direct_url(
+                            magnet_link=mag_to_use,
+                            progress_callback=_pikpak_progress2,
+                        )
+
+                    if cloud_res and cloud_res.get("direct_url"):
+                        log.info("[LeechService] Downloading via %s direct HTTPS link: %s", cloud_service_name, cloud_res.get("file_name"))
+                        clean_name = cloud_res.get("file_name") or f"{_slugify(title, year)}.mp4"
                         local_file = await downloader.download_http(
-                            url=seedr_res["direct_url"],
+                            url=cloud_res["direct_url"],
                             dest_dir=temp_dir,
                             filename=clean_name,
                             task_key=task_key,
                             progress_callback=_download_progress,
                         )
-                        asyncio.create_task(seedr_service.seedr_client.clean_storage())
-                    elif seedr_service.seedr_client.is_configured():
-                        log.warning("[LeechService] Seedr conversion failed for candidate %s. Skipping raw P2P fallback to protect local data.", candidate.method_name)
+                        # Clean up cloud storage immediately after download
+                        if cloud_service_name == "PikPak":
+                            asyncio.create_task(pikpak_service.clean_storage())
+                        else:
+                            asyncio.create_task(seedr_service.seedr_client.clean_storage())
+                    elif seedr_service.seedr_client.is_configured() or pikpak_service.is_configured():
+                        log.warning("[LeechService] Cloud debrid (Seedr/PikPak) failed for candidate %s.", candidate.method_name)
                         continue
                     else:
                         local_file = await downloader.download_torrent(

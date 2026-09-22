@@ -168,6 +168,14 @@ class TaskTracker:
         except (RuntimeError, Exception):
             pass
 
+        try:
+            loop = asyncio.get_running_loop()
+            from services.pikpak_service import pikpak_service
+            if pikpak_service.is_configured():
+                loop.create_task(pikpak_service.clean_storage())
+        except (RuntimeError, Exception):
+            pass
+
         # Also cancel corresponding items in queue_service
         try:
             from services.queue_service import queue_service

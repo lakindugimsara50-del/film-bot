@@ -340,12 +340,14 @@ async def _on_start(client: Client) -> None:
                 log.error("[PeerInit] Failed to prime %s (ID: %s): %s", ch_name, ch_id, ch_err)
 
     # Notify admins that the bot restarted
+    service_name = os.getenv("RENDER_SERVICE_NAME", "") or os.getenv("RENDER_INSTANCE_ID", "")
+    service_tag = f" <i>[Service: {service_name}]</i>" if service_name else ""
     for admin_id in config.ADMIN_IDS:
         try:
             await client.send_message(
                 chat_id=admin_id,
                 text=(
-                    f"🤖 <b>Film Bot started!</b>\n"
+                    f"🤖 <b>Film Bot started!</b>{service_tag}\n"
                     f"Bot: @{me.username}\n"
                     "Use /help to see available commands."
                 ),

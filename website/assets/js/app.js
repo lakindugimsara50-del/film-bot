@@ -69,13 +69,34 @@ function getRelated(movie) {
 }
 function findMovieBySlug(slug) {
   if (!slug) return null;
-  const s = String(slug).trim().replace(/\/+$/, '').toLowerCase();
+  const s = decodeURIComponent(String(slug)).trim().replace(/\/+$/, '').toLowerCase();
   const clean = s.replace(/-sinhala(-sub|-subtitles)?$/, '');
-  return allMovies.find(m => {
+
+  // 1. Exact match by slug or id
+  let found = allMovies.find(m => {
     const mSlug = (m.slug || '').toLowerCase();
     const mId = String(m.id || '').toLowerCase();
     const mClean = mSlug.replace(/-sinhala(-sub|-subtitles)?$/, '');
     return mSlug === s || mId === s || mSlug === clean || mId === clean || mClean === s || mClean === clean;
+  });
+  if (found) return found;
+
+  // 2. Prefix / Episode match (e.g. game-of-thrones-2011-s01e01 matches game-of-thrones)
+  const normS = clean.replace(/[^a-z0-9]/g, '');
+  found = allMovies.find(m => {
+    const mSlug = (m.slug || '').toLowerCase().replace(/-sinhala(-sub|-subtitles)?$/, '');
+    const mId = String(m.id || '').toLowerCase();
+    const normMSlug = mSlug.replace(/[^a-z0-9]/g, '');
+    const normMId = mId.replace(/[^a-z0-9]/g, '');
+    return (normMSlug && (normMSlug.startsWith(normS) || normS.startsWith(normMSlug))) ||
+           (normMId && (normMId.startsWith(normS) || normS.startsWith(normMId)));
+  });
+  if (found) return found;
+
+  // 3. Title match fallback
+  return allMovies.find(m => {
+    const t = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return t && (t === normS || normS.startsWith(t) || t.startsWith(normS));
   }) || null;
 }
 

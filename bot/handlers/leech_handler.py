@@ -17,6 +17,7 @@ from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMa
 
 import re
 import os
+import time
 
 import config
 from services import leech_service, seedr_service, task_tracker
@@ -24,6 +25,10 @@ from services.auth_service import auth_service
 from services.queue_service import queue_service
 
 log = logging.getLogger(__name__)
+
+# Deduplication cache for /leech commands to prevent duplicate tasks:
+# Key: (user_id, query_str, reply_msg_id), Value: float(timestamp)
+_recent_leech_commands: dict = {}
 
 
 def _is_admin(uid: int) -> bool:
@@ -228,6 +233,20 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
             return
+
+        # Deduplication guard: ignore exact duplicate requests from same user within 15 seconds
+        now = time.time()
+        reply_id = getattr(message.reply_to_message, "id", None) if message.reply_to_message else None
+        dedup_key = (user_id, (query_arg or "").lower().strip(), reply_id)
+        last_time = _recent_leech_commands.get(dedup_key, 0)
+        if now - last_time < 15:
+            log.warning("[LeechHandler] Duplicate command detected for user %s, query %r within 15s — ignoring.", user_id, query_arg)
+            return
+        _recent_leech_commands[dedup_key] = now
+        # Clean up stale keys
+        for k in list(_recent_leech_commands.keys()):
+            if now - _recent_leech_commands[k] > 60:
+                _recent_leech_commands.pop(k, None)
 
         display_hint = query_arg[:40] if query_arg else "Movie"
 

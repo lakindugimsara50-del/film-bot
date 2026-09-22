@@ -56,7 +56,7 @@ TMDB_API_KEY: str = os.getenv("TMDB_API_KEY", "")
 GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
 
 # GitHub repo that hosts the site, e.g. "john/filmsite"
-GITHUB_REPO: str = os.getenv("GITHUB_REPO", "username/repo")
+GITHUB_REPO: str = os.getenv("GITHUB_REPO", "lakindugimsara50-del/film-bot")
 
 # ── Streaming ────────────────────────────────────────────────────────────────
 # Base URL of the Cloudflare Worker / FastAPI proxy that streams Telegram files

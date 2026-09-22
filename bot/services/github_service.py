@@ -17,17 +17,26 @@ from datetime import datetime, timezone
 
 import httpx
 
-from config import GITHUB_TOKEN, GITHUB_REPO
+import config
 
 log = logging.getLogger(__name__)
 
 _API_BASE = "https://api.github.com"
 _MOVIES_PATH = "website/data/movies.json"  # Path inside the repo
-_HEADERS = {
-    "Authorization": f"token {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-}
+_MOVIES_DATA_JS_PATH = "website/data/movies_data.js"
+
+
+GITHUB_TOKEN = getattr(config, "GITHUB_TOKEN", "")
+GITHUB_REPO = getattr(config, "GITHUB_REPO", "username/repo")
+
+
+def _get_headers() -> dict:
+    token = GITHUB_TOKEN or getattr(config, "GITHUB_TOKEN", "") or ""
+    return {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -41,16 +50,18 @@ async def get_movies_json() -> tuple[dict, str]:
     """
     Fetch the current movies.json from GitHub (or local file fallback).
     """
-    if not GITHUB_TOKEN or GITHUB_REPO == "username/repo":
+    token = GITHUB_TOKEN or getattr(config, "GITHUB_TOKEN", "") or ""
+    repo = GITHUB_REPO or getattr(config, "GITHUB_REPO", "") or ""
+    if not token or repo in ("", "username/repo"):
         if os.path.exists(_LOCAL_MOVIES_PATH):
             with open(_LOCAL_MOVIES_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
             return data, "local"
         return {"site": {}, "movies": []}, "local"
 
-    url = f"{_API_BASE}/repos/{GITHUB_REPO}/contents/{_MOVIES_PATH}"
+    url = f"{_API_BASE}/repos/{repo}/contents/{_MOVIES_PATH}"
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(url, headers=_HEADERS)
+        resp = await client.get(url, headers=_get_headers())
         resp.raise_for_status()
         data = resp.json()
 
@@ -99,48 +110,51 @@ async def add_movie(movie: dict) -> bool:
 
     updated_json = json.dumps(content_dict, ensure_ascii=False, indent=2)
 
-    if sha == "local" or not GITHUB_TOKEN:
-        try:
-            os.makedirs(os.path.dirname(_LOCAL_MOVIES_PATH), exist_ok=True)
-            with open(_LOCAL_MOVIES_PATH, "w", encoding="utf-8") as f:
-                f.write(updated_json)
-            js_path = os.path.join(os.path.dirname(_LOCAL_MOVIES_PATH), "movies_data.js")
-            with open(js_path, "w", encoding="utf-8") as f:
-                f.write("window.FILMSUB_DATA = " + updated_json + ";\n")
-            log.info("movies.json & movies_data.js updated LOCALLY. Movie '%s' added.", movie.get("title", "?"))
-            
-            # Automatically push update to Cloudflare Pages
-            try:
-                import subprocess
-                website_dir = os.path.dirname(os.path.dirname(_LOCAL_MOVIES_PATH))
-                subprocess.Popen(
-                    ["npx", "wrangler", "pages", "deploy", website_dir, "--project-name", "filmsub", "--commit-dirty=true"],
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
-                )
-                log.info("Cloudflare Pages auto-deploy triggered for filmsub")
-            except Exception as cf_err:
-                log.warning("Cloudflare Pages auto-deploy skipped: %s", cf_err)
+    # 1. Always write locally so local files are up-to-date
+    try:
+        os.makedirs(os.path.dirname(_LOCAL_MOVIES_PATH), exist_ok=True)
+        with open(_LOCAL_MOVIES_PATH, "w", encoding="utf-8") as f:
+            f.write(updated_json)
+        js_path = os.path.join(os.path.dirname(_LOCAL_MOVIES_PATH), "movies_data.js")
+        with open(js_path, "w", encoding="utf-8") as f:
+            f.write("window.FILMSUB_DATA = " + updated_json + ";\n")
+        log.info("movies.json & movies_data.js updated LOCALLY. Movie '%s' added.", movie.get("title", "?"))
+    except Exception as exc:
+        log.warning("Could not write movies locally: %s", exc)
 
-            return True
-        except Exception as exc:
-            log.error("Failed to write movies.json locally: %s", exc)
-            return False
+    token = GITHUB_TOKEN or getattr(config, "GITHUB_TOKEN", "") or ""
+    repo = GITHUB_REPO or getattr(config, "GITHUB_REPO", "") or ""
+    if not token or repo in ("", "username/repo"):
+        # Fallback to local only
+        return True
+
+    # If sha is local, fetch current remote sha
+    if sha == "local":
+        try:
+            url_meta = f"{_API_BASE}/repos/{repo}/contents/{_MOVIES_PATH}"
+            async with httpx.AsyncClient(timeout=20) as client:
+                r_meta = await client.get(url_meta, headers=_get_headers())
+                if r_meta.status_code == 200:
+                    sha = r_meta.json().get("sha", "")
+        except Exception:
+            pass
 
     encoded = base64.b64encode(updated_json.encode("utf-8")).decode("ascii")
 
     payload = {
         "message": f"Add movie: {movie.get('title', 'Unknown')} ({movie.get('year', '')})",
         "content": encoded,
-        "sha": sha,  # Required — identifies the blob being replaced
     }
+    if sha and sha != "local":
+        payload["sha"] = sha
 
-    url = f"{_API_BASE}/repos/{GITHUB_REPO}/contents/{_MOVIES_PATH}"
+    url = f"{_API_BASE}/repos/{repo}/contents/{_MOVIES_PATH}"
+    headers = _get_headers()
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.put(url, headers=_HEADERS, json=payload)
+            resp = await client.put(url, headers=headers, json=payload)
             resp.raise_for_status()
+        log.info("movies.json updated on GitHub repo %s. Movie '%s' added.", repo, movie.get("title", "?"))
     except httpx.HTTPStatusError as exc:
         log.error(
             "GitHub PUT movies.json failed (HTTP %s): %s",
@@ -152,9 +166,17 @@ async def add_movie(movie: dict) -> bool:
         log.error("Unexpected error updating movies.json: %s", exc)
         return False
 
-    log.info(
-        "movies.json updated on GitHub. Movie '%s' added.", movie.get("title", "?")
-    )
+    # Also sync movies_data.js to GitHub
+    try:
+        js_content = f"window.FILMSUB_DATA = {updated_json};\n"
+        await upload_file(
+            content=js_content.encode("utf-8"),
+            path=_MOVIES_DATA_JS_PATH,
+            message=f"Sync movies_data.js for {movie.get('title', 'Unknown')}",
+        )
+    except Exception as js_err:
+        log.warning("Could not sync movies_data.js to GitHub: %s", js_err)
+
     return True
 
 
@@ -177,13 +199,15 @@ async def upload_file(
     Returns:
         The public raw.githubusercontent.com URL to the file.
     """
-    api_url = f"{_API_BASE}/repos/{GITHUB_REPO}/contents/{path}"
+    repo = GITHUB_REPO or getattr(config, "GITHUB_REPO", "") or ""
+    headers = _get_headers()
+    api_url = f"{_API_BASE}/repos/{repo}/contents/{path}"
     encoded = base64.b64encode(content).decode("ascii")
 
     # ── Check for existing file (need SHA to update) ─────────────────────────
     sha: str = ""
     async with httpx.AsyncClient(timeout=20) as client:
-        existing = await client.get(api_url, headers=_HEADERS)
+        existing = await client.get(api_url, headers=headers)
         if existing.status_code == 200:
             sha = existing.json().get("sha", "")
 
@@ -191,9 +215,9 @@ async def upload_file(
         if sha:
             payload["sha"] = sha
 
-        resp = await client.put(api_url, headers=_HEADERS, json=payload)
+        resp = await client.put(api_url, headers=headers, json=payload)
         resp.raise_for_status()
 
-    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{path}"
+    raw_url = f"https://raw.githubusercontent.com/{repo}/main/{path}"
     log.info("Uploaded file to GitHub: %s", raw_url)
     return raw_url

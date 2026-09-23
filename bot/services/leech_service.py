@@ -200,79 +200,127 @@ async def find_all_candidates(
     season: Optional[int] = None,
     episode: Optional[int] = None,
     is_series: bool = False,
+    original_title: Optional[str] = None,
+    original_language: Optional[str] = None,
 ) -> list[LeechCandidate]:
     """
     Query all acquisition sources in priority order:
       Method 1: Telegram Channels (Highest Priority - 0 Download Time)
       Method 2: DDL Scrapers (PixelDrain / Pahe / PSArips)
-      Method 3: Multi-Source Torrent Engine (EZTV, Apibay / ThePirateBay, Torrents-CSV, YTS)
+      Method 3: Multi-Source Torrent Engine (Torrentio, EZTV, Apibay / ThePirateBay, Torrents-CSV, YTS)
       Method 4: Web stream extractors (if applicable)
     Returns a list of viable LeechCandidates.
     """
     candidates: list[LeechCandidate] = []
     log.info(
-        "[LeechService] Finding candidates for: '%s' (%s), imdb=%s, S%sE%s, is_series=%s",
-        title, year, imdb_id, season, episode, is_series
+        "[LeechService] Finding candidates for: '%s' (%s), imdb=%s, S%sE%s, is_series=%s, orig='%s' (%s)",
+        title, year, imdb_id, season, episode, is_series, original_title, original_language
     )
 
-    # ── Method 1: Telegram Movie/TV Channels (Highest Priority) ───────────────
-    if bot_client:
+    async def _fetch_telegram():
+        if not bot_client:
+            return None
         try:
-            log.info("[LeechService] Trying Method 1: Telegram Channels...")
-            tg_res = await method1_telegram.search(
-                title=title, year=year, imdb_id=imdb_id, client=bot_client
+            return await method1_telegram.search(
+                title=title,
+                year=year,
+                imdb_id=imdb_id,
+                season=season,
+                episode=episode,
+                is_series=is_series,
+                client=bot_client,
             )
-            if tg_res and tg_res.get("file_id"):
-                candidates.append(
-                    LeechCandidate(
-                        method="telegram",
-                        method_name=tg_res.get("server_label", "Telegram Channel"),
-                        source_url=tg_res["file_id"],
-                        quality=tg_res.get("quality", "1080p"),
-                        size=downloader.format_bytes(tg_res.get("file_size", 0)),
-                        size_bytes=tg_res.get("file_size", 0),
-                        extra=tg_res,
-                    )
-                )
-                log.info("[LeechService] Method 1 yielded Telegram candidate.")
         except Exception as exc:
             log.warning("[LeechService] Method 1 error: %s", exc)
+            return None
 
-    # ── Method 2: DDL Scrapers (PixelDrain / Pahe / Direct HTTP) ─────────────
-    try:
-        log.info("[LeechService] Trying Method 2: DDL Scrapers (PixelDrain/Pahe)...")
-        ddl_res = await method3_ddl.search(title=title, year=year, imdb_id=imdb_id)
-        if ddl_res and ddl_res.get("downloads"):
-            for d in ddl_res["downloads"]:
-                url = d.get("direct_url") or d.get("url")
-                host = d.get("host", "DDL").title()
-                if url:
-                    candidates.append(
-                        LeechCandidate(
-                            method="ddl",
-                            method_name=f"DDL Direct ({host})",
-                            source_url=url,
-                            quality=ddl_res.get("quality", "1080p"),
-                            size=ddl_res.get("size", "Unknown"),
-                            extra=d,
-                        )
-                    )
-            log.info("[LeechService] Method 2 yielded %d candidate(s).", len(ddl_res["downloads"]))
-    except Exception as exc:
-        log.warning("[LeechService] Method 2 error: %s", exc)
+    async def _fetch_ddl():
+        try:
+            return await method3_ddl.search(title=title, year=year, imdb_id=imdb_id)
+        except Exception as exc:
+            log.warning("[LeechService] Method 2 error: %s", exc)
+            return None
 
-    # ── Method 3: Multi-Source Torrent Engine (Apibay / EZTV / TorrentsCSV / YTS)
-    try:
-        log.info("[LeechService] Trying Method 3: Multi-Source Torrent Engine...")
-        from services.scrapers import torrent_finder
-        tor_list = await torrent_finder.search_all_torrents(
-            title=title,
-            year=year,
-            imdb_id=imdb_id,
-            season=season,
-            episode=episode,
-            is_series=is_series,
+    async def _fetch_torrents():
+        try:
+            from services.scrapers import torrent_finder
+            tor_list = await torrent_finder.search_all_torrents(
+                title=title,
+                year=year,
+                imdb_id=imdb_id,
+                season=season,
+                episode=episode,
+                is_series=is_series,
+            )
+            # If few results and an original/transliterated title exists, search with that as well
+            if len(tor_list) < 5 and original_title and original_title.lower() != title.lower():
+                log.info("[LeechService] Searching original title '%s'...", original_title)
+                alt_tor_list = await torrent_finder.search_all_torrents(
+                    title=original_title,
+                    year=year,
+                    imdb_id=imdb_id,
+                    season=season,
+                    episode=episode,
+                    is_series=is_series,
+                )
+                seen_hashes = {t.get("hash", "").lower() for t in tor_list if t.get("hash")}
+                for at in alt_tor_list:
+                    h = at.get("hash", "").lower()
+                    if h and h not in seen_hashes:
+                        seen_hashes.add(h)
+                        tor_list.append(at)
+            return tor_list
+        except Exception as exc:
+            log.warning("[LeechService] Method 3 error: %s", exc)
+            return []
+
+    # Run all search methods concurrently for maximum speed
+    results = await asyncio.gather(
+        _fetch_telegram(),
+        _fetch_ddl(),
+        _fetch_torrents(),
+        return_exceptions=True,
+    )
+
+    tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
+    ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
+    tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
+
+    # 1. Process Telegram match
+    if tg_res and isinstance(tg_res, dict) and tg_res.get("file_id"):
+        candidates.append(
+            LeechCandidate(
+                method="telegram",
+                method_name=tg_res.get("server_label", "Telegram Channel"),
+                source_url=tg_res["file_id"],
+                quality=tg_res.get("quality", "1080p"),
+                size=downloader.format_bytes(tg_res.get("file_size", 0)),
+                size_bytes=tg_res.get("file_size", 0),
+                extra=tg_res,
+            )
         )
+        log.info("[LeechService] Method 1 yielded Telegram candidate.")
+
+    # 2. Process DDL matches
+    if ddl_res and isinstance(ddl_res, dict) and ddl_res.get("downloads"):
+        for d in ddl_res["downloads"]:
+            url = d.get("direct_url") or d.get("url")
+            host = d.get("host", "DDL").title()
+            if url:
+                candidates.append(
+                    LeechCandidate(
+                        method="ddl",
+                        method_name=f"DDL Direct ({host})",
+                        source_url=url,
+                        quality=ddl_res.get("quality", "1080p"),
+                        size=ddl_res.get("size", "Unknown"),
+                        extra=d,
+                    )
+                )
+        log.info("[LeechService] Method 2 yielded %d candidate(s).", len(ddl_res["downloads"]))
+
+    # 3. Process Multi-source Torrents (Torrentio / Apibay / EZTV / TorrentsCSV / YTS)
+    if tor_list:
         for tor in tor_list:
             source_url = tor.get("magnet") or tor.get("torrent_url")
             if source_url:
@@ -290,8 +338,6 @@ async def find_all_candidates(
                     )
                 )
         log.info("[LeechService] Method 3 yielded %d candidate(s).", len(tor_list))
-    except Exception as exc:
-        log.warning("[LeechService] Method 3 error: %s", exc)
 
     log.info("[LeechService] Total candidates acquired: %d", len(candidates))
     return candidates
@@ -504,6 +550,8 @@ async def run_auto_leech(
                 season=season,
                 episode=episode,
                 is_series=is_series,
+                original_title=tmdb_meta.get("original_title"),
+                original_language=tmdb_meta.get("original_language"),
             )
 
         if not candidates:

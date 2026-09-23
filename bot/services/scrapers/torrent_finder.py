@@ -189,19 +189,138 @@ def calculate_relevance_score(tor_name: str, target_title: str, is_series: bool 
     return score
 
 
+async def search_torrentio(
+    imdb_id: str,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    is_series: bool = False,
+    target_title: str = "",
+    max_size_bytes: int = MAX_FILE_SIZE_BYTES,
+) -> list[dict]:
+    """
+    Search Torrentio global aggregator (aggregates 1337x, EZTV, YTS, ThePirateBay,
+    KickassTorrents, TorrentGalaxy, MagnetDL, Torrent9, Rutor, etc.).
+    Supports both movies and TV series episodes.
+    """
+    clean_id = (imdb_id or "").strip()
+    if not clean_id:
+        return []
+    if not clean_id.startswith("tt"):
+        clean_id = f"tt{clean_id}"
+
+    if is_series or (season is not None and episode is not None):
+        s_num = season or 1
+        e_num = episode or 1
+        url = f"https://torrentio.strem.fun/stream/series/{clean_id}:{s_num}:{e_num}.json"
+    else:
+        url = f"https://torrentio.strem.fun/stream/movie/{clean_id}.json"
+
+    log.info("[TorrentFinder] Torrentio querying: %s (target='%s')", url, target_title)
+    candidates: list[dict] = []
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=12, follow_redirects=True) as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                log.warning("[TorrentFinder] Torrentio HTTP %d on %s", resp.status_code, url)
+                return []
+            data = resp.json()
+            streams = data.get("streams", [])
+            for s in streams:
+                info_hash = s.get("infoHash", "").strip().lower()
+                if not info_hash or len(info_hash) != 40:
+                    continue
+
+                tf = s.get("title", "")
+                nf = s.get("name", "")
+                lines = [line.strip() for line in tf.split("\n") if line.strip()]
+                release_name = lines[0] if lines else target_title
+
+                if is_junk_release(release_name):
+                    continue
+
+                # Parse seeders: 👤 (\d+)
+                seeds_m = re.search(r"👤\s*(\d+)", tf)
+                seeds = int(seeds_m.group(1)) if seeds_m else 0
+
+                # Parse file size: 💾 ([\d.]+)\s*(GB|MB|KB)
+                size_m = re.search(r"💾\s*([\d.]+)\s*(GB|MB|KB)", tf, re.IGNORECASE)
+                size_bytes = 0
+                if size_m:
+                    val = float(size_m.group(1))
+                    unit = size_m.group(2).upper()
+                    if unit == "GB":
+                        size_bytes = int(val * 1024 * 1024 * 1024)
+                    elif unit == "MB":
+                        size_bytes = int(val * 1024 * 1024)
+                    elif unit == "KB":
+                        size_bytes = int(val * 1024)
+
+                if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
+                    continue
+
+                # Parse provider: ⚙️\s*([^\n\r]+)
+                prov_m = re.search(r"⚙️\s*([^\n\r]+)", tf)
+                provider = prov_m.group(1).strip() if prov_m else "Torrentio"
+
+                quality = extract_quality_from_name(f"{nf} {tf}")
+                magnet = build_magnet_uri(info_hash, release_name)
+                from services.downloader import format_bytes
+
+                rel_score = calculate_relevance_score(release_name, target_title, is_series=is_series)
+
+                candidates.append({
+                    "method": "torrent",
+                    "provider": provider,
+                    "title": release_name,
+                    "quality": quality,
+                    "size": format_bytes(size_bytes),
+                    "size_bytes": size_bytes,
+                    "hash": info_hash,
+                    "magnet": magnet,
+                    "torrent_url": "",
+                    "seeds": seeds,
+                    "peers": 0,
+                    "relevance_score": rel_score,
+                    "file_idx": s.get("fileIdx"),
+                })
+
+            if candidates:
+                log.info("[TorrentFinder] Torrentio yielded %d valid candidate(s).", len(candidates))
+    except Exception as exc:
+        log.warning("[TorrentFinder] Torrentio error: %s", exc)
+
+    return candidates
+
+
 async def search_apibay(
     query: str,
     target_show_title: Optional[str] = None,
     season: Optional[int] = None,
     episode: Optional[int] = None,
+    alternate_queries: Optional[list[str]] = None,
     max_size_bytes: int = MAX_FILE_SIZE_BYTES,
 ) -> list[dict]:
     """
     Search The Pirate Bay via the official Apibay JSON API.
     Supports movies (both old and new) and TV series episodes.
     """
-    log.info("[TorrentFinder] Apibay searching: '%s'", query)
     candidates: list[dict] = []
+    seen_hashes: set[str] = set()
+
+    all_queries = [query]
+    if alternate_queries:
+        for aq in alternate_queries:
+            if aq and aq not in all_queries:
+                all_queries.append(aq)
 
     apibay_urls = [
         "https://apibay.org/q.php",
@@ -211,81 +330,86 @@ async def search_apibay(
     show_name = target_show_title or query
 
     async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
-        for base_url in apibay_urls:
-            try:
-                resp = await client.get(base_url, params={"q": query})
-                if resp.status_code != 200:
-                    continue
-
-                items = resp.json()
-                if not isinstance(items, list):
-                    continue
-
-                for it in items:
-                    name = it.get("name", "")
-                    info_hash = it.get("info_hash", "").strip()
-                    if not info_hash or info_hash.startswith("00000000") or it.get("id") == "0":
-                        continue
-                    if name == "No results returned":
+        for q in all_queries:
+            log.info("[TorrentFinder] Apibay searching: '%s'", q)
+            for base_url in apibay_urls:
+                try:
+                    resp = await client.get(base_url, params={"q": q})
+                    if resp.status_code != 200:
                         continue
 
-                    # Filter junk extensions
-                    if is_junk_release(name):
+                    items = resp.json()
+                    if not isinstance(items, list):
                         continue
 
-                    # Series prefix / title validation
-                    if is_series:
-                        if not is_valid_series_title(name, show_name, season, episode):
+                    for it in items:
+                        name = it.get("name", "")
+                        info_hash = it.get("info_hash", "").strip().lower()
+                        if not info_hash or info_hash.startswith("00000000") or it.get("id") == "0":
                             continue
-                    else:
-                        if not title_matches(name, query):
+                        if name == "No results returned":
+                            continue
+                        if info_hash in seen_hashes:
                             continue
 
-                    try:
-                        size_bytes = int(it.get("size", 0))
-                    except (ValueError, TypeError):
-                        size_bytes = 0
+                        # Filter junk extensions
+                        if is_junk_release(name):
+                            continue
 
-                    if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
-                        continue
+                        # Series prefix / title validation
+                        if is_series:
+                            if not is_valid_series_title(name, show_name, season, episode):
+                                continue
+                        else:
+                            if not title_matches(name, show_name):
+                                continue
 
-                    try:
-                        seeders = int(it.get("seeders", 0))
-                    except (ValueError, TypeError):
-                        seeders = 0
+                        try:
+                            size_bytes = int(it.get("size", 0))
+                        except (ValueError, TypeError):
+                            size_bytes = 0
 
-                    try:
-                        leechers = int(it.get("leechers", 0))
-                    except (ValueError, TypeError):
-                        leechers = 0
+                        if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
+                            continue
 
-                    quality = extract_quality_from_name(name)
-                    magnet = build_magnet_uri(info_hash, name)
-                    from services.downloader import format_bytes
+                        try:
+                            seeders = int(it.get("seeders", 0))
+                        except (ValueError, TypeError):
+                            seeders = 0
 
-                    rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+                        try:
+                            leechers = int(it.get("leechers", 0))
+                        except (ValueError, TypeError):
+                            leechers = 0
 
-                    candidates.append({
-                        "method": "torrent",
-                        "provider": "ThePirateBay",
-                        "title": name,
-                        "quality": quality,
-                        "size": format_bytes(size_bytes),
-                        "size_bytes": size_bytes,
-                        "hash": info_hash,
-                        "magnet": magnet,
-                        "torrent_url": "",
-                        "seeds": seeders,
-                        "peers": leechers,
-                        "relevance_score": rel_score,
-                    })
+                        seen_hashes.add(info_hash)
+                        quality = extract_quality_from_name(name)
+                        magnet = build_magnet_uri(info_hash, name)
+                        from services.downloader import format_bytes
 
-                if candidates:
-                    log.info("[TorrentFinder] Apibay yielded %d valid candidate(s).", len(candidates))
-                    break
-            except Exception as exc:
-                log.warning("[TorrentFinder] Apibay error on %s: %s", base_url, exc)
-                continue
+                        rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+
+                        candidates.append({
+                            "method": "torrent",
+                            "provider": "ThePirateBay",
+                            "title": name,
+                            "quality": quality,
+                            "size": format_bytes(size_bytes),
+                            "size_bytes": size_bytes,
+                            "hash": info_hash,
+                            "magnet": magnet,
+                            "torrent_url": "",
+                            "seeds": seeders,
+                            "peers": leechers,
+                            "relevance_score": rel_score,
+                        })
+
+                    if candidates:
+                        log.info("[TorrentFinder] Apibay query '%s' yielded %d valid candidate(s).", q, len(candidates))
+                        break
+                except Exception as exc:
+                    log.warning("[TorrentFinder] Apibay error on %s for '%s': %s", base_url, q, exc)
+                    continue
 
     return candidates
 
@@ -311,7 +435,7 @@ async def search_eztv(
 
     clean_imdb = (imdb_id or "").lstrip("t")
 
-    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
         for base_url in eztv_bases:
             try:
                 pages_to_check = [1, 2] if clean_imdb else [1]
@@ -412,86 +536,99 @@ async def search_torrents_csv(
     target_show_title: Optional[str] = None,
     season: Optional[int] = None,
     episode: Optional[int] = None,
+    alternate_queries: Optional[list[str]] = None,
     max_size_bytes: int = MAX_FILE_SIZE_BYTES,
 ) -> list[dict]:
     """
     Search Torrents-CSV public open torrent index.
     Covers movies and TV series with infohash and seeds.
     """
-    log.info("[TorrentFinder] Torrents-CSV searching: '%s'", query)
     candidates: list[dict] = []
+    seen_hashes: set[str] = set()
+
+    all_queries = [query]
+    if alternate_queries:
+        for aq in alternate_queries:
+            if aq and aq not in all_queries:
+                all_queries.append(aq)
 
     is_series = season is not None or episode is not None or target_show_title is not None
     show_name = target_show_title or query
 
     url = "https://torrents-csv.com/service/search"
-    try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
-            resp = await client.get(url, params={"q": query})
-            if resp.status_code == 200:
-                data = resp.json()
-                torrents = data.get("torrents", [])
-                for it in torrents:
-                    name = it.get("name", "")
-                    info_hash = it.get("infohash", "").strip()
-                    if not info_hash or len(info_hash) != 40:
-                        continue
-
-                    # Filter junk extensions (like .jpg posters)
-                    if is_junk_release(name):
-                        continue
-
-                    # Series prefix / title validation
-                    if is_series:
-                        if not is_valid_series_title(name, show_name, season, episode):
+    async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+        for q in all_queries:
+            log.info("[TorrentFinder] Torrents-CSV searching: '%s'", q)
+            try:
+                resp = await client.get(url, params={"q": q})
+                if resp.status_code == 200:
+                    data = resp.json()
+                    torrents = data.get("torrents", [])
+                    for it in torrents:
+                        name = it.get("name", "")
+                        info_hash = it.get("infohash", "").strip().lower()
+                        if not info_hash or len(info_hash) != 40:
                             continue
-                    else:
-                        if not title_matches(name, query):
+                        if info_hash in seen_hashes:
                             continue
 
-                    try:
-                        size_bytes = int(it.get("size_bytes", 0))
-                    except (ValueError, TypeError):
-                        size_bytes = 0
+                        # Filter junk extensions (like .jpg posters)
+                        if is_junk_release(name):
+                            continue
 
-                    if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
-                        continue
+                        # Series prefix / title validation
+                        if is_series:
+                            if not is_valid_series_title(name, show_name, season, episode):
+                                continue
+                        else:
+                            if not title_matches(name, show_name):
+                                continue
 
-                    try:
-                        seeders = int(it.get("seeders", 0))
-                    except (ValueError, TypeError):
-                        seeders = 0
+                        try:
+                            size_bytes = int(it.get("size_bytes", 0))
+                        except (ValueError, TypeError):
+                            size_bytes = 0
 
-                    try:
-                        leechers = int(it.get("leechers", 0))
-                    except (ValueError, TypeError):
-                        leechers = 0
+                        if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
+                            continue
 
-                    quality = extract_quality_from_name(name)
-                    magnet = build_magnet_uri(info_hash, name)
-                    from services.downloader import format_bytes
+                        try:
+                            seeders = int(it.get("seeders", 0))
+                        except (ValueError, TypeError):
+                            seeders = 0
 
-                    rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+                        try:
+                            leechers = int(it.get("leechers", 0))
+                        except (ValueError, TypeError):
+                            leechers = 0
 
-                    candidates.append({
-                        "method": "torrent",
-                        "provider": "TorrentsCSV",
-                        "title": name,
-                        "quality": quality,
-                        "size": format_bytes(size_bytes),
-                        "size_bytes": size_bytes,
-                        "hash": info_hash,
-                        "magnet": magnet,
-                        "torrent_url": "",
-                        "seeds": seeders,
-                        "peers": leechers,
-                        "relevance_score": rel_score,
-                    })
+                        seen_hashes.add(info_hash)
+                        quality = extract_quality_from_name(name)
+                        magnet = build_magnet_uri(info_hash, name)
+                        from services.downloader import format_bytes
 
-                if candidates:
-                    log.info("[TorrentFinder] Torrents-CSV yielded %d valid candidate(s).", len(candidates))
-    except Exception as exc:
-        log.warning("[TorrentFinder] Torrents-CSV error: %s", exc)
+                        rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+
+                        candidates.append({
+                            "method": "torrent",
+                            "provider": "TorrentsCSV",
+                            "title": name,
+                            "quality": quality,
+                            "size": format_bytes(size_bytes),
+                            "size_bytes": size_bytes,
+                            "hash": info_hash,
+                            "magnet": magnet,
+                            "torrent_url": "",
+                            "seeds": seeders,
+                            "peers": leechers,
+                            "relevance_score": rel_score,
+                        })
+
+                    if candidates:
+                        log.info("[TorrentFinder] Torrents-CSV query '%s' yielded %d valid candidate(s).", q, len(candidates))
+                        break
+            except Exception as exc:
+                log.warning("[TorrentFinder] Torrents-CSV error on '%s': %s", q, exc)
 
     return candidates
 
@@ -507,14 +644,14 @@ async def search_all_torrents(
 ) -> list[dict]:
     """
     Aggregates results from multiple torrent sources:
-    - If TV series: EZTV + Apibay + Torrents-CSV
-    - If Movie: YTS + Apibay + Torrents-CSV
+    - If TV series: Torrentio (1337x/EZTV/Galaxy/TPB) + EZTV + Apibay + Torrents-CSV
+    - If Movie: Torrentio + YTS + Apibay + Torrents-CSV
 
     Deduplicates by infohash and sorts by:
     1. Tier 2: Size <= 2.05 GB (100% Seedr cloud compatible)
     2. Relevance score: exact show/movie name, penalizing commentary/samples/CAM
     3. Active seeds: alive torrents (>0 seeds) rank far above dead torrents
-    4. Quality: 1080p > 720p > 480p
+    4. Quality: 1080p > 720p > 4K > 480p
     5. Raw seed count
     """
     clean_title = re.sub(r"[._-]", " ", title).strip()
@@ -524,31 +661,53 @@ async def search_all_torrents(
     if is_series or season is not None or episode is not None:
         # Construct specific search query for series episode
         ep_tag = ""
+        alt_ep_tag = ""
         if season is not None and episode is not None:
             ep_tag = f"S{season:02d}E{episode:02d}"
+            alt_ep_tag = f"{season}x{episode:02d}"
         elif season is not None:
             ep_tag = f"S{season:02d}"
         elif episode is not None:
             ep_tag = f"E{episode:02d}"
 
         series_query = f"{clean_title} {ep_tag}".strip()
+        alt_series_queries = [f"{clean_title} {alt_ep_tag}".strip()] if alt_ep_tag else []
 
-        # 1. EZTV API
+        # 1. Torrentio (if imdb_id) - Highest quality multi-tracker aggregator
+        if imdb_id:
+            tasks.append(search_torrentio(
+                imdb_id=imdb_id,
+                season=season,
+                episode=episode,
+                is_series=True,
+                target_title=clean_title,
+                max_size_bytes=max_size_bytes,
+            ))
+        # 2. EZTV API
         tasks.append(search_eztv(clean_title, imdb_id=imdb_id, season=season, episode=episode, max_size_bytes=max_size_bytes))
-        # 2. Apibay
-        tasks.append(search_apibay(series_query, target_show_title=clean_title, season=season, episode=episode, max_size_bytes=max_size_bytes))
-        # 3. Torrents-CSV
-        tasks.append(search_torrents_csv(series_query, target_show_title=clean_title, season=season, episode=episode, max_size_bytes=max_size_bytes))
+        # 3. Apibay
+        tasks.append(search_apibay(series_query, target_show_title=clean_title, season=season, episode=episode, alternate_queries=alt_series_queries, max_size_bytes=max_size_bytes))
+        # 4. Torrents-CSV
+        tasks.append(search_torrents_csv(series_query, target_show_title=clean_title, season=season, episode=episode, alternate_queries=alt_series_queries, max_size_bytes=max_size_bytes))
     else:
         # Movie search
         movie_query = f"{clean_title} {year}" if year else clean_title
+        alt_movie_queries = [clean_title] if year else []
 
-        # 1. YTS
+        # 1. Torrentio (if imdb_id)
+        if imdb_id:
+            tasks.append(search_torrentio(
+                imdb_id=imdb_id,
+                is_series=False,
+                target_title=clean_title,
+                max_size_bytes=max_size_bytes,
+            ))
+        # 2. YTS
         tasks.append(method_yts.search(clean_title, year=year, imdb_id=imdb_id, max_size_bytes=max_size_bytes))
-        # 2. Apibay
-        tasks.append(search_apibay(movie_query, max_size_bytes=max_size_bytes))
-        # 3. Torrents-CSV
-        tasks.append(search_torrents_csv(movie_query, max_size_bytes=max_size_bytes))
+        # 3. Apibay
+        tasks.append(search_apibay(movie_query, alternate_queries=alt_movie_queries, max_size_bytes=max_size_bytes))
+        # 4. Torrents-CSV
+        tasks.append(search_torrents_csv(movie_query, alternate_queries=alt_movie_queries, max_size_bytes=max_size_bytes))
 
     results_lists = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -589,8 +748,10 @@ async def search_all_torrents(
 
         q = tor.get("quality", "").lower()
         if "1080" in q:
-            q_score = 3
+            q_score = 4
         elif "720" in q:
+            q_score = 3
+        elif "2160" in q or "4k" in q:
             q_score = 2
         elif "480" in q:
             q_score = 1

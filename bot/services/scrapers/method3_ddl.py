@@ -61,7 +61,7 @@ async def _search_pahe(title: str, year: Optional[int], client: httpx.AsyncClien
                 base_url,
                 params={"s": query},
                 headers=HEADERS,
-                timeout=12,
+                timeout=2.5,
             )
             if resp.status_code != 200:
                 continue
@@ -79,7 +79,7 @@ async def _search_pahe(title: str, year: Optional[int], client: httpx.AsyncClien
                 if not href.startswith("http"):
                     href = base_url.rstrip("/") + "/" + href.lstrip("/")
 
-                page_resp = await client.get(href, headers=HEADERS, timeout=12)
+                page_resp = await client.get(href, headers=HEADERS, timeout=2.5)
                 if page_resp.status_code != 200:
                     continue
 
@@ -132,7 +132,7 @@ async def _search_psarips(title: str, year: Optional[int], client: httpx.AsyncCl
                 base_url,
                 params={"s": query},
                 headers=HEADERS,
-                timeout=12,
+                timeout=2.5,
             )
             if resp.status_code != 200:
                 continue
@@ -148,7 +148,7 @@ async def _search_psarips(title: str, year: Optional[int], client: httpx.AsyncCl
                     continue
                 href = link_tag["href"]
 
-                page_resp = await client.get(href, headers=HEADERS, timeout=12)
+                page_resp = await client.get(href, headers=HEADERS, timeout=2.5)
                 if page_resp.status_code != 200:
                     continue
 

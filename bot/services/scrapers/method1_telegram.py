@@ -21,6 +21,8 @@ SEARCH_CHANNELS = [
     "MoviesFlixPro",
     "Tamilmv_org",
     "DirectMovieLinks4u",
+    "iFlix_Cinema",
+    "Cinema_Company_Channel",
 ]
 
 
@@ -78,35 +80,64 @@ async def search(
     title: str,
     year: Optional[int] = None,
     imdb_id: Optional[str] = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    is_series: bool = False,
     bot_token: str = "",
     client: Any = None,
 ) -> Optional[dict]:
     """
     Search Telegram channels for matching video.
+    Validates series season & episode to avoid returning trailers or wrong episodes.
     """
+    from services.scrapers.torrent_finder import matches_season_episode
+
     query = f"{title} {year}" if year else title
+    if is_series or season is not None or episode is not None:
+        ep_tag = f"S{season:02d}E{episode:02d}" if (season and episode) else ""
+        query = f"{title} {ep_tag}".strip()
+
     log.info("[M1-Telegram] Searching Telegram for: %s", query)
 
     # If Pyrogram client is provided, try searching channels
     if client:
         for ch in SEARCH_CHANNELS:
             try:
-                async for message in client.search_messages(ch, query=title, limit=10):
+                search_q = title
+                async for message in client.search_messages(ch, query=search_q, limit=15):
                     if message.video or (message.document and "video" in (message.document.mime_type or "")):
                         media = message.video or message.document
-                        f_name = getattr(media, "file_name", "").lower()
-                        # Check basic matching
-                        if title.lower() in f_name or (message.caption and title.lower() in message.caption.lower()):
-                            log.info("[M1-Telegram] Found video match in @%s: %s", ch, f_name)
-                            return {
-                                "method": "telegram",
-                                "file_id": media.file_id,
-                                "message": message,
-                                "file_name": getattr(media, "file_name", "movie.mp4"),
-                                "file_size": getattr(media, "file_size", 0),
-                                "quality": "1080p" if "1080" in f_name else "720p",
-                                "server_label": f"Telegram (@{ch})",
-                            }
+                        f_name = (getattr(media, "file_name", "") or "").lower()
+                        caption = (message.caption or "").lower()
+                        combined_text = f"{f_name} {caption}"
+
+                        # Ignore trailers, samples, and tiny preview files
+                        if any(k in combined_text for k in ["trailer", "sample", "preview", "promo"]):
+                            continue
+
+                        file_size = getattr(media, "file_size", 0)
+                        if file_size < 50 * 1024 * 1024:  # Must be at least 50MB
+                            continue
+
+                        # Check title match
+                        if title.lower() not in combined_text:
+                            continue
+
+                        # Check season and episode if series
+                        if is_series or season is not None or episode is not None:
+                            if not matches_season_episode(combined_text, season, episode):
+                                continue
+
+                        log.info("[M1-Telegram] Found valid video match in @%s: %s", ch, f_name)
+                        return {
+                            "method": "telegram",
+                            "file_id": media.file_id,
+                            "message": message,
+                            "file_name": getattr(media, "file_name", "movie.mp4") or "movie.mp4",
+                            "file_size": file_size,
+                            "quality": "1080p" if "1080" in f_name else "720p",
+                            "server_label": f"Telegram (@{ch})",
+                        }
             except Exception as exc:
                 log.debug("[M1-Telegram] Could not search @%s: %s", ch, exc)
                 continue

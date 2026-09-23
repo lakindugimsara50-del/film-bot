@@ -226,6 +226,8 @@ async def fetch_metadata(
 
     return {
         "title": details.get("title", movie.get("title", query)),
+        "original_title": details.get("original_title", movie.get("original_title", "")),
+        "original_language": details.get("original_language", movie.get("original_language", "en")),
         "title_si": "",  # Sinhala title — to be filled manually if desired
         "year": release_year,
         "imdb_id": imdb_id,
@@ -315,6 +317,8 @@ async def _fetch_tv_metadata(client: httpx.AsyncClient, tv_item: dict) -> dict:
 
     return {
         "title": details.get("name", name),
+        "original_title": details.get("original_name", tv_item.get("original_name", "")),
+        "original_language": details.get("original_language", tv_item.get("original_language", "en")),
         "title_si": "",
         "year": release_year,
         "imdb_id": imdb_id,

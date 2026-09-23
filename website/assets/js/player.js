@@ -91,12 +91,14 @@ function getMovieStreams(movie) {
       url.includes('sharepoint.com') ||
       url.includes('1drv.ms') ||
       url.includes('google.com/uc') ||
-      url.includes('drive.google.com') ||
+      url.includes('drive.google.com') ||        // GDrive share, preview, file/d/
+      url.includes('drive.google.com/file/d/') || // GDrive direct file links
       url.includes('r2.dev') ||
       url.includes('lnk.fyi') ||  // rclone share links
       url.includes('googleusercontent.com')
     );
   }
+
 
   // 1. Prefer explicit streams[] array from movie data (set by bot after upload)
   if (Array.isArray(movie.streams)) {
@@ -349,9 +351,20 @@ function renderStreamEmbed(playerEl, stream, movie) {
     vjsPlayer = null;
   }
   isTrailerActive = false;
+
+  // For Google Drive /preview URLs, ensure clean embed format (no extra params)
+  let embedUrl = stream.stream_url || '';
+  if (embedUrl.includes('drive.google.com/file/d/')) {
+    // Extract file ID and build clean preview URL
+    const match = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      embedUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+  }
+
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden">
-      <iframe src="${FilmSub.escHtml(stream.stream_url)}"
+      <iframe src="${FilmSub.escHtml(embedUrl)}"
               title="${FilmSub.escHtml(movie.title || 'Movie')} Streaming Player"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
@@ -365,6 +378,7 @@ function renderStreamEmbed(playerEl, stream, movie) {
 }
 
 function createVjsPlayer(playerEl, stream, movie) {
+
   const subtitles = getMovieSubtitles(movie);
   const tracksHTML = subtitles.map((sub, i) => `
     <track kind="subtitles" src="${FilmSub.escHtml(sub.url || '')}"
@@ -527,11 +541,18 @@ function loadStream(movie, idx) {
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
 
-  // Handle iframe embed stream if ever provided
-  if (stream.type === 'embed' || stream.embed === true) {
+  // Google Drive /preview URLs MUST be shown as iframes (not Video.js).
+  // They are Google's native video player and support Range requests internally.
+  const url = stream.stream_url || '';
+  const isGDrivePreview = url.includes('drive.google.com/file/d/') && url.includes('/preview');
+  const isGDriveEmbed = url.includes('drive.google.com') && (url.includes('/preview') || url.includes('/view'));
+
+  // Handle iframe embed stream (type=embed, or GDrive /preview)
+  if (stream.type === 'embed' || stream.embed === true || isGDrivePreview || isGDriveEmbed) {
     renderStreamEmbed(playerEl, stream, movie);
     return;
   }
+
 
   // If trailer was active, or vjsPlayer is not initialized, create Video.js player
   if (isTrailerActive || !vjsPlayer) {

@@ -13,6 +13,7 @@ import asyncio
 import logging
 import os
 import re
+import multiprocessing
 import shutil
 import subprocess
 from typing import Callable, Optional
@@ -83,6 +84,12 @@ async def compress_smart_1080p(
     # Filter: scale to 1080p max height if larger, otherwise keep original
     scale_filter = "scale=-2:min'(1080,ih)':force_original_aspect_ratio=decrease"
 
+    # Auto-detect CPU cores; use ultrafast preset on Colab for 3-5x speed improvement
+    _on_colab = os.path.exists('/content')
+    _threads = '0'  # Use all available CPU cores
+    _preset = 'ultrafast' if _on_colab else 'veryfast'
+    log.info('[VideoService] on_colab=%s preset=%s threads=%s', _on_colab, _preset, _threads)
+
     cmd = [
         ffmpeg_bin,
         "-y",
@@ -90,9 +97,9 @@ async def compress_smart_1080p(
         "-i", input_path,
         "-vf", scale_filter,
         "-c:v", "libx264",
-        "-preset", "veryfast",
+        "-preset", _preset,
         "-crf", "23",
-        "-threads", "2",
+        "-threads", _threads,
         "-maxrate", "3500k",
         "-bufsize", "4000k",
         "-pix_fmt", "yuv420p",
@@ -225,7 +232,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await asyncio.wait_for(proc.wait(), timeout=35.0)
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024:
             log.info("[VideoService] Fast remux (copy) succeeded: %s", output_path)
             return True
@@ -264,7 +271,8 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
     # For files > 1.2 GB, avoid running slow, CPU-intensive audio transcode on Render (0.1 vCPU).
     # Immediately fall back to uploading the original file.
     file_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
-    if file_size > 1.2 * 1024 * 1024 * 1024:
+    _on_colab_env = os.path.exists('/content')
+    if not _on_colab_env and file_size > 1.2 * 1024 * 1024 * 1024:
         log.warning(
             "[VideoService] File size %.2f GB > 1.2 GB and stream-copy failed. "
             "Skipping slow CPU audio transcode; falling back to original file.",
@@ -295,7 +303,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await asyncio.wait_for(proc.wait(), timeout=90.0)
+        await asyncio.wait_for(proc.wait(), timeout=300.0)
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024 * 1024:
             log.info("[VideoService] AAC audio remux succeeded: %s", output_path)
             return True

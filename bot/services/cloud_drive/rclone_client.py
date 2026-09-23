@@ -110,7 +110,8 @@ class RcloneDriveClient:
         progress_callback: Optional[Callable[[int, int], Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Upload local file to `<remote>:FilmSub_Movies/<filename>` and retrieve public direct link.
+        Upload local file to `<remote>:FilmSub_Movies/<filename>` with real-time progress.
+        Parses rclone --stats stderr to fire progress_callback(bytes_done, bytes_total).
         """
         if not os.path.exists(local_path):
             raise FileNotFoundError(f"Local file not found: {local_path}")
@@ -120,15 +121,17 @@ class RcloneDriveClient:
         remote_dest = f"{self.remote_name}:{self.folder_name}/{upload_name}"
 
         await self.ensure_folder()
-        log.info("[Rclone:%s] Uploading '%s' (%d bytes) to %s...", self.remote_name, local_path, file_size, remote_dest)
+        log.info("[Rclone:%s] Uploading '%s' (%d bytes) -> %s", self.remote_name, local_path, file_size, remote_dest)
 
-        # 1. Copy file
+        # Build rclone copyto with real-time stats reporting every 3s
         cmd = self._cmd_prefix() + [
             "copyto",
             local_path,
             remote_dest,
             "--transfers", "4",
-            "--drive-chunk-size", "64M",
+            "--drive-chunk-size", "128M",
+            "--stats", "3s",
+            "--stats-one-line",
             "-v",
         ]
 
@@ -137,15 +140,70 @@ class RcloneDriveClient:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate()
+
+        # Parse rclone stats lines from stderr in real-time
+        # rclone --stats-one-line format: "Transferred: 1.234 GiB / 2.100 GiB, 59%, 45.2 MiB/s, ETA 20s"
+        import time as _time
+        _last_cb = 0.0
+
+        async def _read_progress() -> None:
+            nonlocal _last_cb
+            assert proc.stderr is not None
+            while True:
+                try:
+                    raw = await asyncio.wait_for(proc.stderr.readline(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    break
+                if not raw:
+                    break
+                line = raw.decode(errors="ignore").strip()
+                if not line:
+                    continue
+                log.debug("[Rclone:%s] %s", self.remote_name, line)
+                if progress_callback is None:
+                    continue
+                # Match: "Transferred:   1.234 GiB / 2.100 GiB, 59%, ..."
+                m = re.search(
+                    r"Transferred:\s+([\d.]+)\s*(\w+)\s*/\s*([\d.]+)\s*(\w+),\s*[\d.]+%",
+                    line,
+                )
+                if not m:
+                    continue
+                try:
+                    unit_map = {
+                        "B": 1, "KIB": 1024, "MIB": 1024**2, "GIB": 1024**3,
+                        "KB": 1000, "MB": 1000**2, "GB": 1000**3, "TIB": 1024**4,
+                    }
+                    done_val = float(m.group(1))
+                    done_mult = unit_map.get(m.group(2).upper(), 1)
+                    bytes_done = int(done_val * done_mult)
+                    now = _time.monotonic()
+                    if now - _last_cb >= 3.0:
+                        _last_cb = now
+                        try:
+                            await progress_callback(bytes_done, file_size)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+        # Wait for upload + progress reader concurrently
+        try:
+            await asyncio.gather(proc.wait(), _read_progress())
+        except Exception as gather_err:
+            log.warning("[Rclone:%s] Upload gather error: %s", self.remote_name, gather_err)
 
         if proc.returncode != 0:
-            err = stderr.decode(errors="ignore").strip()
+            try:
+                leftover = await proc.stderr.read() if proc.stderr else b""
+            except Exception:
+                leftover = b""
+            err = leftover.decode(errors="ignore").strip() or f"rclone exited {proc.returncode}"
             self.is_active = False
             self.last_error = err
             raise RuntimeError(f"Rclone copyto failed: {err}")
 
-        # 2. Get public link
+        # ── Get shareable public link ──────────────────────────────────────────
         link_cmd = self._cmd_prefix() + ["link", remote_dest]
         link_proc = await asyncio.create_subprocess_exec(
             *link_cmd,
@@ -155,22 +213,23 @@ class RcloneDriveClient:
         link_out, _ = await link_proc.communicate()
         web_link = link_out.decode().strip()
 
-        # Extract file ID for direct streaming URL
+        # Build proper streaming URLs from GDrive file ID
+        # Share:    https://drive.google.com/file/d/<ID>/view?usp=sharing
+        # Embed:    https://drive.google.com/file/d/<ID>/preview
+        # Download: https://drive.google.com/uc?export=download&id=<ID>
         file_id = ""
         direct_stream_url = web_link
+        direct_download_url = web_link
 
-        if "id=" in web_link:
-            m = re.search(r"id=([a-zA-Z0-9_-]+)", web_link)
-            if m:
-                file_id = m.group(1)
-                direct_stream_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-        elif "/d/" in web_link:
-            m = re.search(r"/d/([a-zA-Z0-9_-]+)", web_link)
-            if m:
-                file_id = m.group(1)
-                direct_stream_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        m_id = re.search(r"/d/([a-zA-Z0-9_-]+)", web_link)
+        if not m_id:
+            m_id = re.search(r"id=([a-zA-Z0-9_-]+)", web_link)
+        if m_id:
+            file_id = m_id.group(1)
+            direct_stream_url = f"https://drive.google.com/file/d/{file_id}/preview"
+            direct_download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
-        log.info("[Rclone:%s] Upload completed: %s -> %s", self.remote_name, upload_name, direct_stream_url)
+        log.info("[Rclone:%s] Upload complete: %s → %s", self.remote_name, upload_name, direct_stream_url)
 
         return {
             "file_id": file_id or upload_name,
@@ -178,7 +237,8 @@ class RcloneDriveClient:
             "size": file_size,
             "web_url": web_link,
             "stream_url": direct_stream_url or web_link,
-            "download_url": direct_stream_url or web_link,
+            "download_url": direct_download_url or web_link,
             "drive_id": self.drive_id,
             "provider": "gdrive",
         }
+

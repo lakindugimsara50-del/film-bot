@@ -343,6 +343,32 @@ async def find_all_candidates(
     return candidates
 
 
+
+# ── Global Sequential Leech Queue ────────────────────────────────────────────
+# Ensures only ONE film is downloaded/processed at a time to prevent disk and
+# memory exhaustion. Subsequent /leech requests queue up and auto-start.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_leech_queue: asyncio.Queue = asyncio.Queue()
+_leech_worker_task: Optional[asyncio.Task] = None
+
+
+async def _leech_queue_worker() -> None:
+    """Background coroutine that processes leech jobs one at a time."""
+    global _leech_worker_task
+    while True:
+        job = await _leech_queue.get()
+        try:
+            client, status_msg, user_id, query_text, reply_media, auto_publish = job
+            await _execute_leech(client, status_msg, user_id, query_text, reply_media, auto_publish)
+        except Exception as worker_err:
+            log.error("[LeechQueue] Worker uncaught error: %s", worker_err, exc_info=True)
+        finally:
+            _leech_queue.task_done()
+        # Small pause between jobs for disk/Seedr cleanup to settle
+        await asyncio.sleep(2)
+
+
 async def run_auto_leech(
     client: Client,
     status_msg: Message,
@@ -352,8 +378,49 @@ async def run_auto_leech(
     auto_publish: bool = False,
 ) -> None:
     """
-    Main entry point for executing the automated leech & upload workflow.
+    Public entry point: enqueues the leech request and shows queue position.
+    Starts background worker if not already running.
     """
+    global _leech_worker_task
+
+    # Start worker if it died or was never started
+    if _leech_worker_task is None or _leech_worker_task.done():
+        _leech_worker_task = asyncio.create_task(_leech_queue_worker())
+        log.info("[LeechQueue] Worker task started.")
+
+    queue_pos = _leech_queue.qsize() + 1  # +1 for this job being added
+
+    if queue_pos > 1:
+        # Notify user they are in queue
+        try:
+            await status_msg.edit_text(
+                f"🕐 <b>Queue Position: {queue_pos}</b> — ඔබේ ඉල්ලීම පෝලිමේ යොදා ඇත!\n\n"
+                f"📋 <b>ඉල්ලීම:</b> <code>{query_text}</code>\n"
+                f"⏳ <b>ඉදිරිය:</b> {queue_pos - 1} ගොනු(වල්) processing නිම වූ පසු ස්වයංක්‍රීයව ආරම්භ වේ.\n\n"
+                f"<i>Cancel කිරීමට /cancel ටයිප් කරන්න.</i>",
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception:
+            pass
+
+    # Enqueue
+    await _leech_queue.put((client, status_msg, user_id, query_text, reply_media, auto_publish))
+    log.info("[LeechQueue] Enqueued job for user %d: %r (queue size=%d)", user_id, query_text, _leech_queue.qsize())
+
+
+async def _execute_leech(
+    client: Client,
+    status_msg: Message,
+    user_id: int,
+    query_text: str,
+    reply_media: Optional[dict] = None,
+    auto_publish: bool = False,
+) -> None:
+    """
+    Internal leech executor — runs one film end-to-end.
+    Called by _leech_queue_worker() sequentially.
+    """
+
     is_auto_mode = auto_publish
     clean_query = (query_text or "").strip()
     lower_q = clean_query.lower()
@@ -977,13 +1044,40 @@ async def run_auto_leech(
         slug = f"{_slugify(title, year)}{ep_suffix}"
         cloud_upload_res = None
 
+        _last_drive_edit = 0.0
+        _drive_file_size = os.path.getsize(local_file)
+
+        async def _drive_upload_progress(done_bytes: int, total_bytes: int) -> None:
+            nonlocal _last_drive_edit
+            now = time.time()
+            if now - _last_drive_edit < 5.0:
+                return
+            _last_drive_edit = now
+            pct = min(100.0, (done_bytes / total_bytes * 100)) if total_bytes > 0 else 0.0
+            p_bar = downloader.format_progress_bar(pct)
+            done_str = downloader.format_bytes(done_bytes)
+            total_str = downloader.format_bytes(total_bytes)
+            txt = (
+                f"☁️ <b>Google Drive වෙත Upload වෙමින්...</b>\n\n"
+                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
+                f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
+                f"☁️ <i>FilmSub_Movies → Google Drive CDN Storage.</i>"
+            )
+            try:
+                await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+            except Exception:
+                pass
+
         try:
             cloud_upload_res = await drive_manager.upload_movie(
                 local_path=local_file,
                 movie_slug=slug,
                 movie_title=display_title,
                 filename=f"{slug}.mp4",
+                progress_callback=_drive_upload_progress,
             )
+
             if cloud_upload_res:
                 log.info("[LeechService] Movie '%s' uploaded to Cloud Drive: %s", slug, cloud_upload_res.get("stream_url"))
         except Exception as c_err:

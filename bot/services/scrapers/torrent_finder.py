@@ -226,75 +226,87 @@ async def search_torrentio(
         "Accept": "application/json",
     }
 
+    data = None
+    for attempt in range(2):
+        try:
+            async with httpx.AsyncClient(headers=headers, timeout=12, follow_redirects=True) as client:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    break
+                else:
+                    log.warning("[TorrentFinder] Torrentio HTTP %d on %s (attempt %d)", resp.status_code, url, attempt + 1)
+        except Exception as exc:
+            log.warning("[TorrentFinder] Torrentio attempt %d error: %s", attempt + 1, exc)
+            if attempt == 0:
+                await asyncio.sleep(1.5)
+
+    if not data:
+        return []
+
     try:
-        async with httpx.AsyncClient(headers=headers, timeout=12, follow_redirects=True) as client:
-            resp = await client.get(url)
-            if resp.status_code != 200:
-                log.warning("[TorrentFinder] Torrentio HTTP %d on %s", resp.status_code, url)
-                return []
-            data = resp.json()
-            streams = data.get("streams", [])
-            for s in streams:
-                info_hash = s.get("infoHash", "").strip().lower()
-                if not info_hash or len(info_hash) != 40:
-                    continue
+        streams = data.get("streams", [])
+        for s in streams:
+            info_hash = s.get("infoHash", "").strip().lower()
+            if not info_hash or len(info_hash) != 40:
+                continue
 
-                tf = s.get("title", "")
-                nf = s.get("name", "")
-                lines = [line.strip() for line in tf.split("\n") if line.strip()]
-                release_name = lines[0] if lines else target_title
+            tf = s.get("title", "")
+            nf = s.get("name", "")
+            lines = [line.strip() for line in tf.split("\n") if line.strip()]
+            release_name = lines[0] if lines else target_title
 
-                if is_junk_release(release_name):
-                    continue
+            if is_junk_release(release_name):
+                continue
 
-                # Parse seeders: 👤 (\d+)
-                seeds_m = re.search(r"👤\s*(\d+)", tf)
-                seeds = int(seeds_m.group(1)) if seeds_m else 0
+            # Parse seeders: 👤 (\d+)
+            seeds_m = re.search(r"👤\s*(\d+)", tf)
+            seeds = int(seeds_m.group(1)) if seeds_m else 0
 
-                # Parse file size: 💾 ([\d.]+)\s*(GB|MB|KB)
-                size_m = re.search(r"💾\s*([\d.]+)\s*(GB|MB|KB)", tf, re.IGNORECASE)
-                size_bytes = 0
-                if size_m:
-                    val = float(size_m.group(1))
-                    unit = size_m.group(2).upper()
-                    if unit == "GB":
-                        size_bytes = int(val * 1024 * 1024 * 1024)
-                    elif unit == "MB":
-                        size_bytes = int(val * 1024 * 1024)
-                    elif unit == "KB":
-                        size_bytes = int(val * 1024)
+            # Parse file size: 💾 ([\d.]+)\s*(GB|MB|KB)
+            size_m = re.search(r"💾\s*([\d.]+)\s*(GB|MB|KB)", tf, re.IGNORECASE)
+            size_bytes = 0
+            if size_m:
+                val = float(size_m.group(1))
+                unit = size_m.group(2).upper()
+                if unit == "GB":
+                    size_bytes = int(val * 1024 * 1024 * 1024)
+                elif unit == "MB":
+                    size_bytes = int(val * 1024 * 1024)
+                elif unit == "KB":
+                    size_bytes = int(val * 1024)
 
-                if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
-                    continue
+            if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
+                continue
 
-                # Parse provider: ⚙️\s*([^\n\r]+)
-                prov_m = re.search(r"⚙️\s*([^\n\r]+)", tf)
-                provider = prov_m.group(1).strip() if prov_m else "Torrentio"
+            # Parse provider: ⚙️\s*([^\n\r]+)
+            prov_m = re.search(r"⚙️\s*([^\n\r]+)", tf)
+            provider = prov_m.group(1).strip() if prov_m else "Torrentio"
 
-                quality = extract_quality_from_name(f"{nf} {tf}")
-                magnet = build_magnet_uri(info_hash, release_name)
-                from services.downloader import format_bytes
+            quality = extract_quality_from_name(f"{nf} {tf}")
+            magnet = build_magnet_uri(info_hash, release_name)
+            from services.downloader import format_bytes
 
-                rel_score = calculate_relevance_score(release_name, target_title, is_series=is_series)
+            rel_score = calculate_relevance_score(release_name, target_title, is_series=is_series)
 
-                candidates.append({
-                    "method": "torrent",
-                    "provider": provider,
-                    "title": release_name,
-                    "quality": quality,
-                    "size": format_bytes(size_bytes),
-                    "size_bytes": size_bytes,
-                    "hash": info_hash,
-                    "magnet": magnet,
-                    "torrent_url": "",
-                    "seeds": seeds,
-                    "peers": 0,
-                    "relevance_score": rel_score,
-                    "file_idx": s.get("fileIdx"),
-                })
+            candidates.append({
+                "method": "torrent",
+                "provider": provider,
+                "title": release_name,
+                "quality": quality,
+                "size": format_bytes(size_bytes),
+                "size_bytes": size_bytes,
+                "hash": info_hash,
+                "magnet": magnet,
+                "torrent_url": "",
+                "seeds": seeds,
+                "peers": 0,
+                "relevance_score": rel_score,
+                "file_idx": s.get("fileIdx"),
+            })
 
-            if candidates:
-                log.info("[TorrentFinder] Torrentio yielded %d valid candidate(s).", len(candidates))
+        if candidates:
+            log.info("[TorrentFinder] Torrentio yielded %d valid candidate(s).", len(candidates))
     except Exception as exc:
         log.warning("[TorrentFinder] Torrentio error: %s", exc)
 
@@ -780,7 +792,13 @@ async def search_all_torrents(
         else:
             q_score = 1
 
-        return (seedr_tier, rel_score, has_seeds, q_score, seeds)
+        # Priority order:
+        # 1. seedr_tier (under 2GB for fast cloud / light VPS)
+        # 2. has_seeds (TORRENTS WITH ACTIVE SEEDS ALWAYS COME FIRST!)
+        # 3. seeds (more seeds = much faster download speed!)
+        # 4. relevance score (exact show title match, no commentary)
+        # 5. quality score (1080p > 720p)
+        return (seedr_tier, has_seeds, seeds, rel_score, q_score)
 
     all_torrents.sort(key=_rank_torrent, reverse=True)
     return all_torrents

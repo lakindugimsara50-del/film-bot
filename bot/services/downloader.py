@@ -409,6 +409,9 @@ async def download_torrent(
     )
     meta_regex = re.compile(r"\[#\w+\s+.*?CN:(\d+).*?DL:([0-9.]+[A-Za-z]+)?")
 
+    start_wait_time = time.time()
+    has_started_download = False
+
     try:
         buffer = ""
         while True:
@@ -426,6 +429,8 @@ async def download_torrent(
                     pct = float(pct_str)
                     speed_formatted = f"{dl_speed}/s"
                     eta_formatted = eta or "N/A"
+                    if pct > 0 or ("0B" not in done_str and "0.0" not in done_str):
+                        has_started_download = True
                     try:
                         await progress_callback(pct, done_str, total_str, speed_formatted, eta_formatted)
                     except Exception:
@@ -438,6 +443,17 @@ async def download_torrent(
                         await progress_callback(0.0, "0 B", "Connecting...", speed_val, f"Peers: {peers_count}")
                     except Exception:
                         pass
+
+            # Fail fast if torrent has 0 seeds and cannot start downloading within 40 seconds
+            if not has_started_download and (time.time() - start_wait_time > 40.0):
+                log.warning("[Downloader] Torrent stuck with 0 seeds for 40s. Terminating to try next candidate...")
+                if proc and proc.returncode is None:
+                    try:
+                        proc.terminate()
+                        proc.kill()
+                    except Exception:
+                        pass
+                raise RuntimeError("Torrent stalled connecting to peers (40s seeder timeout)")
 
         await proc.wait()
     except asyncio.CancelledError:

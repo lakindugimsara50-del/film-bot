@@ -80,6 +80,22 @@ def format_progress_bar(percent: float, length: int = 10) -> str:
     return f"[{'█' * filled}{'░' * (length - filled)}]"
 
 
+def parse_size_str(s: str) -> float:
+    """Parse size string like '2.3GiB', '991.4MiB', '500KiB' to bytes."""
+    m = re.match(r"^([0-9.]+)\s*([A-Za-z]+)$", s.strip())
+    if not m:
+        return 0.0
+    val = float(m.group(1))
+    unit = m.group(2).upper()
+    if "G" in unit:
+        return val * 1024 * 1024 * 1024
+    if "M" in unit:
+        return val * 1024 * 1024
+    if "K" in unit:
+        return val * 1024
+    return val
+
+
 async def download_http(
     url: str,
     dest_dir: str,
@@ -429,6 +445,22 @@ async def download_torrent(
                     pct = float(pct_str)
                     speed_formatted = f"{dl_speed}/s"
                     eta_formatted = eta or "N/A"
+
+                    # Hard protection for Render container disk: abort if torrent total size > 1.85 GB
+                    total_bytes = parse_size_str(total_str)
+                    if total_bytes > int(1.85 * 1024 * 1024 * 1024):
+                        log.warning(
+                            "[Downloader] Torrent total size %s (%s) exceeds Render disk safe limit (1.85 GB). Aborting to prevent container crash.",
+                            total_str, format_bytes(total_bytes)
+                        )
+                        if proc and proc.returncode is None:
+                            try:
+                                proc.terminate()
+                                proc.kill()
+                            except Exception:
+                                pass
+                        raise RuntimeError(f"Torrent size ({total_str}) exceeds Render safe limit (1.85 GB)")
+
                     if pct > 0 or ("0B" not in done_str and "0.0" not in done_str):
                         has_started_download = True
                     try:

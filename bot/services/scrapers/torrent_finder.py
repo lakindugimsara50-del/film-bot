@@ -43,8 +43,8 @@ PUBLIC_TRACKERS = [
 
 # File size boundaries
 MIN_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB minimum to avoid posters/soundtracks/samples
-MAX_FILE_SIZE_BYTES = int(3.2 * 1024 * 1024 * 1024)
-SEEDR_SAFE_SIZE_BYTES = int(2.05 * 1024 * 1024 * 1024)
+MAX_FILE_SIZE_BYTES = int(1.95 * 1024 * 1024 * 1024)  # 1.95 GB limit: guaranteed 100% Seedr-compatible & safe for Render disk
+SEEDR_SAFE_SIZE_BYTES = int(1.90 * 1024 * 1024 * 1024)
 
 # Regex patterns identifying non-video junk files
 JUNK_EXTENSIONS = [
@@ -765,8 +765,8 @@ async def search_all_torrents(
 
     def _rank_torrent(tor: dict) -> tuple[int, int, int, int, int]:
         sz = tor.get("size_bytes", 0)
-        # Tier 2: 50MB <= sz <= 2.05GB (100% Seedr cloud compatible)
-        # Tier 1: 2.05GB < sz <= max_size_bytes
+        # Tier 2: 50MB <= sz <= 1.90GB (100% Seedr cloud compatible)
+        # Tier 1: 1.90GB < sz <= max_size_bytes (<= 1.95GB)
         # Tier 0: < 50MB or > max_size_bytes
         if MIN_FILE_SIZE_BYTES <= sz <= SEEDR_SAFE_SIZE_BYTES:
             seedr_tier = 2

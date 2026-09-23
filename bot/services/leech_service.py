@@ -669,7 +669,15 @@ async def run_auto_leech(
                         )
 
                     # 2. Try Seedr if not preferred PikPak (or if PikPak didn't resolve)
-                    if not cloud_res and seedr_service.seedr_client.is_configured() and not prefer_pikpak:
+                    can_try_seedr = seedr_service.seedr_client.is_configured() and not prefer_pikpak
+                    if can_try_seedr and candidate_bytes > int(2.0 * 1024 * 1024 * 1024):
+                        log.warning(
+                            "[LeechService] Candidate size (%s) exceeds Seedr 2.0 GB tier. Skipping Seedr attempt.",
+                            downloader.format_bytes(candidate_bytes)
+                        )
+                        can_try_seedr = False
+
+                    if not cloud_res and can_try_seedr:
                         log.info("[LeechService] Attempting Seedr.cc Cloud Debrid conversion...")
                         cloud_service_name = "Seedr"
                         async def _seedr_progress(status_str: str) -> None:
@@ -738,10 +746,19 @@ async def run_auto_leech(
                             )
                         cloud_service_name = "VPS aria2c"
 
-                        # Prevent VPS disk exhaustion crashes: ensure enough free space exists
+                        # Hard protection against Render container disk exhaustion crash: NEVER download > 1.85 GB via local aria2c
+                        c_bytes = candidate.size_bytes or 0
+                        if c_bytes > int(1.85 * 1024 * 1024 * 1024):
+                            log.warning(
+                                "[LeechService] Candidate %s (%s) exceeds Render safe limit (1.85 GB). Skipping to prevent container crash.",
+                                candidate.method_name,
+                                downloader.format_bytes(c_bytes),
+                            )
+                            continue
+
+                        # Ensure enough free space exists
                         try:
                             free_disk = shutil.disk_usage(temp_dir).free
-                            c_bytes = candidate.size_bytes or 0
                             if c_bytes > 0 and free_disk < (c_bytes + 400 * 1024 * 1024):
                                 log.warning(
                                     "[LeechService] Candidate %s (%s) exceeds available VPS disk (%s). Skipping to prevent container crash.",

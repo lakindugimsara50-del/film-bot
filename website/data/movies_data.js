@@ -20,5 +20,5 @@ window.FILMSUB_DATA = {
       "subtitles": []
     }
   ],
-  "last_updated": "2026-09-23T17:33:27Z"
+  "last_updated": "2026-09-23T17:34:42Z"
 };

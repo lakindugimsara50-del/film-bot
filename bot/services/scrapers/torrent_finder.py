@@ -633,6 +633,22 @@ async def search_torrents_csv(
     return candidates
 
 
+async def resolve_imdb_cinemeta(title: str, is_series: bool = False) -> Optional[str]:
+    """Auto-resolve IMDb ID using Cinemeta public metadata API (no API key required)."""
+    m_type = "series" if is_series else "movie"
+    url = f"https://v3-cinemeta.strem.io/catalog/{m_type}/top/search={urllib.parse.quote(title)}.json"
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                metas = resp.json().get("metas", [])
+                if metas and metas[0].get("id"):
+                    return metas[0]["id"]
+    except Exception as exc:
+        log.debug("[TorrentFinder] Cinemeta IMDb resolution error for '%s': %s", title, exc)
+    return None
+
+
 async def search_all_torrents(
     title: str,
     year: Optional[int] = None,
@@ -655,6 +671,12 @@ async def search_all_torrents(
     5. Raw seed count
     """
     clean_title = re.sub(r"[._-]", " ", title).strip()
+
+    # If imdb_id is missing, auto-resolve it via Cinemeta so Torrentio can be leveraged
+    if not imdb_id:
+        imdb_id = await resolve_imdb_cinemeta(clean_title, is_series=is_series or season is not None)
+        if imdb_id:
+            log.info("[TorrentFinder] Resolved IMDb ID for '%s': %s", clean_title, imdb_id)
 
     tasks = []
 

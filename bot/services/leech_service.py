@@ -728,10 +728,16 @@ async def run_auto_leech(
                             asyncio.create_task(pikpak_service.clean_storage())
                         else:
                             asyncio.create_task(seedr_service.seedr_client.clean_storage())
-                    elif seedr_service.seedr_client.is_configured() or pikpak_service.is_configured():
-                        log.warning("[LeechService] Cloud debrid (Seedr/PikPak) failed for candidate %s.", candidate.method_name)
-                        continue
-                    else:
+
+                    # If cloud debrid (Seedr/PikPak) was not used or failed to resolve, fall back to direct VPS aria2c
+                    if not local_file:
+                        if seedr_service.seedr_client.is_configured() or pikpak_service.is_configured():
+                            log.info(
+                                "[LeechService] Cloud debrid unavailable/failed for '%s'. Falling back to direct VPS aria2c torrent download...",
+                                candidate.method_name,
+                            )
+                        cloud_service_name = "VPS aria2c"
+
                         # Prevent VPS disk exhaustion crashes: ensure enough free space exists
                         try:
                             free_disk = shutil.disk_usage(temp_dir).free
@@ -758,8 +764,9 @@ async def run_auto_leech(
                     # Download telegram media
                     tg_file_id = candidate.source_url
                     target_dest = os.path.join(temp_dir, f"{_slugify(title, year)}.mp4")
+                    msg_obj = candidate.extra.get("message") if candidate.extra else None
                     local_file = await client.download_media(
-                        message=tg_file_id,
+                        message=msg_obj or tg_file_id,
                         file_name=target_dest,
                     )
                 else:

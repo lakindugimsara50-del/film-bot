@@ -131,15 +131,38 @@ class DriveManager:
                 client_secret=d.get("client_secret"),
                 folder_name=d.get("folder_name", "FilmSub_Movies"),
             )
-        elif provider in ("gdrive", "googledrive"):
-            self.drives[d_id] = GoogleDriveClient(
-                drive_id=d_id,
-                name=name,
-                refresh_token=d.get("refresh_token", ""),
-                client_id=d.get("client_id", ""),
-                client_secret=d.get("client_secret", ""),
-                folder_name=d.get("folder_name", "FilmSub_Movies"),
-            )
+        elif provider in ("gdrive", "googledrive", "rclone"):
+            token_val = d.get("refresh_token", "")
+            c_id = d.get("client_id")
+            c_sec = d.get("client_secret")
+            if c_id and c_sec and not token_val.startswith("{"):
+                self.drives[d_id] = GoogleDriveClient(
+                    drive_id=d_id,
+                    name=name,
+                    refresh_token=token_val,
+                    client_id=c_id,
+                    client_secret=c_sec,
+                    folder_name=d.get("folder_name", "FilmSub_Movies"),
+                )
+            else:
+                # Use RcloneDriveClient and persist remote to rclone.conf
+                try:
+                    os.makedirs(DATA_DIR, exist_ok=True)
+                    import configparser
+                    cfg = configparser.ConfigParser()
+                    if os.path.exists(DEFAULT_CONF_FILE):
+                        cfg.read(DEFAULT_CONF_FILE)
+                    if not cfg.has_section(d_id):
+                        cfg.add_section(d_id)
+                    cfg.set(d_id, "type", "drive")
+                    cfg.set(d_id, "scope", "drive")
+                    cfg.set(d_id, "token", token_val.strip())
+                    with open(DEFAULT_CONF_FILE, "w", encoding="utf-8") as f:
+                        cfg.write(f)
+                    self.drives[d_id] = RcloneDriveClient(remote_name=d_id, config_file=DEFAULT_CONF_FILE)
+                    log.info("[DriveManager] Registered Rclone gdrive '%s' into pool.", d_id)
+                except Exception as r_err:
+                    log.warning("[DriveManager] Failed to register Rclone remote %s: %s", d_id, r_err)
 
     def save_state(self) -> None:
         """Persist movie index and configured drives."""
@@ -193,20 +216,37 @@ class DriveManager:
     def remove_drive(self, drive_id: str) -> bool:
         """Remove a drive from active management."""
         self.initialize()
+        removed = False
         if drive_id in self.drives:
             del self.drives[drive_id]
+            removed = True
 
         if os.path.exists(DRIVES_CONFIG_FILE):
             try:
                 with open(DRIVES_CONFIG_FILE, "r", encoding="utf-8") as f:
                     drives_list = json.load(f)
-                drives_list = [d for d in drives_list if d.get("id") != drive_id]
+                new_list = [d for d in drives_list if d.get("id") != drive_id]
+                if len(new_list) < len(drives_list):
+                    removed = True
                 with open(DRIVES_CONFIG_FILE, "w", encoding="utf-8") as f:
-                    json.dump(drives_list, f, indent=2)
-                return True
+                    json.dump(new_list, f, indent=2)
             except Exception as e:
                 log.error("[DriveManager] Error removing drive: %s", e)
-        return False
+
+        if os.path.exists(DEFAULT_CONF_FILE):
+            try:
+                import configparser
+                cfg = configparser.ConfigParser()
+                cfg.read(DEFAULT_CONF_FILE)
+                if cfg.has_section(drive_id):
+                    cfg.remove_section(drive_id)
+                    with open(DEFAULT_CONF_FILE, "w", encoding="utf-8") as f:
+                        cfg.write(f)
+                    removed = True
+            except Exception as e:
+                log.warning("[DriveManager] Error removing remote from rclone.conf: %s", e)
+
+        return removed
 
     async def get_drives_status(self) -> List[Dict[str, Any]]:
         """

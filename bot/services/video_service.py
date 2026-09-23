@@ -281,7 +281,9 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         _cleanup_output()
         return False
 
-    # Attempt 2: Audio AAC remux if stream-copy was incompatible (with 90s timeout)
+    # Attempt 2: Audio AAC remux if stream-copy was incompatible (with 300s timeout)
+    # -threads 0 = use all CPU cores for audio re-encode (fast on Colab)
+    _aac_threads = '0' if os.path.exists('/content') else '2'
     cmd_aac = [
         ffmpeg_bin,
         "-y",
@@ -292,6 +294,7 @@ async def ensure_web_streamable(input_path: str, output_path: str) -> bool:
         "-b:a", "128k",
         "-ac", "2",
         "-sn",
+        "-threads", _aac_threads,
         "-movflags", "+faststart",
         output_path,
     ]
@@ -373,7 +376,7 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await proc.wait()
+        await asyncio.wait_for(proc.wait(), timeout=30.0)
         return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
     except asyncio.CancelledError:
         if proc and proc.returncode is None:
@@ -383,9 +386,19 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
             except Exception:
                 pass
         raise
+    except asyncio.TimeoutError:
+        log.warning("[VideoService] Soft subtitle mux timed out (30s) — skipping soft embed.")
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        return False
     except Exception as exc:
         log.warning("[VideoService] Soft subtitle mux error: %s", exc)
         return False
+
     finally:
         if proc and proc.returncode is None:
             try:

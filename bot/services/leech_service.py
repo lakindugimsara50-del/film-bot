@@ -902,11 +902,14 @@ async def _execute_leech(
             )
             return
 
-        # ── Step 2.5: Smart 1080p Compression if > 1.95GB / Web Stream Remux ────
+        # ── Step 2.5: Fast Web Stream Remux (+faststart) ─────────────────────
         curr_size = os.path.getsize(local_file)
-        if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
+        _on_colab = os.path.exists('/content')
+
+        # Only on memory/disk constrained environments (e.g. Render 512MB RAM, 2GB disk) do we re-encode
+        if not _on_colab and curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
             log.info(
-                "[LeechService] File size %.2f GB exceeds 1.95 GB limit. Starting Smart 1080p compression...",
+                "[LeechService] File size %.2f GB exceeds 1.95 GB limit on non-Colab env. Starting Smart 1080p compression...",
                 curr_size / (1024 * 1024 * 1024),
             )
             task_tracker.tracker.set_step(user_id, "Smart 1080p Compression (FFmpeg)...")
@@ -938,9 +941,10 @@ async def _execute_leech(
                     pass
                 local_file = compressed_file
         else:
-            # File is < 1.95 GB: Ensure it is web-streamable MP4 (+faststart)
+            # On Colab (12GB RAM, 100GB disk) or file <= 1.95GB: Ultra-fast stream-copy remux (takes 10-25s)
             ext = os.path.splitext(local_file)[1].lower()
             if ext in (".mkv", ".avi", ".webm"):
+
                 # Safety check: remuxing creates a second copy on disk during ffmpeg operation.
                 # If available free disk is less than file size + 200MB, skip remuxing and keep original file!
                 try:
@@ -1088,42 +1092,11 @@ async def _execute_leech(
         except Exception as c_err:
             log.warning("[LeechService] Cloud Drive upload skipped/failed: %s", c_err)
 
-        # ── Step 3b: Upload to Telegram Channel (For Telegram Downloads) ──────
-        target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
-        upload_res = await telegram_upload.upload_video_file(
-            bot_client=client,
-            file_path=local_file,
-            target_chat=target_channel,
-            caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)",
-            progress_callback=_upload_progress,
-            fallback_chat=0,  # Do NOT fall back to user DM; must go to channel
-        )
+        cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
+        cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
+        primary_stream = cloud_stream or ""
 
-        file_id = upload_res.get("file_id", "")
-        stream_url = upload_res.get("stream_url", "")
-        message_id = upload_res.get("message_id", 0)
-
-        # ── Step 4: Immediate VPS Disk Cleanup ────────────────────────────────
-        try:
-            if os.path.exists(local_file):
-                os.remove(local_file)
-                log.info("[LeechService] Immediate cleanup: local video '%s' deleted.", local_file)
-            if temp_dir and os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
-                log.info("[LeechService] Temporary folder '%s' removed.", temp_dir)
-        except Exception as clean_err:
-            log.warning("[LeechService] Error during disk cleanup: %s", clean_err)
-
-        # ── Delete crash-recovery checkpoint (download + upload both succeeded) ─
-        resume_service.delete_checkpoint(user_id)
-
-        # Clear Seedr storage to guarantee 100% free quota for subsequent tasks
-        try:
-            await seedr_service.seedr_pool.clean_storage()
-        except Exception:
-            pass
-
-        # ── Step 5: Prepare Movie Payload & Draft ────────────────────────────
+        # ── Step 3b: Prepare Movie Payload & Publish to Website Immediately ──
         base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
         if "yoursite.lk" in base_site:
             base_site = "https://filmsub.pages.dev"
@@ -1137,7 +1110,6 @@ async def _execute_leech(
         )
         default_sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
 
-        # Multi-quality download cards (1080p, 720p, 480p, 360p)
         file_ext = os.path.splitext(file_name)[1].lstrip(".").upper() or "MP4"
         stream_type = "video/mp4" if file_ext == "MP4" else "video/x-matroska"
 
@@ -1146,21 +1118,13 @@ async def _execute_leech(
         sz_720 = int(file_size * 0.55)
         sz_1080 = file_size
 
-        cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
-        cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
-        # primary_stream is ONLY the cloud CDN URL — Telegram is download-only
-        primary_stream = cloud_stream or ""
-
         streams_list = []
         downloads_list = []
 
-        # ── Cloud CDN Stream (for website video player) ────────────────────────
-        # ONLY Cloud Drive URLs (GDrive, OneDrive, R2) go into streams_list.
-        # Telegram stream URLs are NEVER added here — Telegram is download-only.
         if cloud_stream:
             streams_list.append({
                 "server": "Server 1",
-                "label": "⚡ Server 1 (Cloud Direct Ultra HD)",
+                "label": "⚡ Server 1 (Google Drive Ultra HD)",
                 "type": stream_type,
                 "stream_url": cloud_stream,
             })
@@ -1169,22 +1133,10 @@ async def _execute_leech(
                 "size": downloader.format_bytes(sz_1080),
                 "url": cloud_download or cloud_stream,
                 "format": file_ext,
-                "host": "Cloud CDN",
+                "host": "Google Drive",
             })
 
-        # ── Telegram: download link ONLY — NOT added to streams_list ──────────
-        if stream_url:
-            downloads_list.append({
-                "quality": "1080p (Telegram Download)",
-                "size": downloader.format_bytes(sz_1080),
-                "url": stream_url,
-                "format": file_ext,
-                "host": "Telegram",
-                "download_only": True,  # flag: player.js must NOT use this as stream
-            })
-
-        # ── Multi-quality download placeholders (same URL, different size hints) ─
-        base_dl_url = cloud_download or cloud_stream or stream_url
+        base_dl_url = cloud_download or cloud_stream
         if base_dl_url:
             downloads_list.extend([
                 {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": base_dl_url, "format": file_ext, "host": "Direct"},
@@ -1226,8 +1178,8 @@ async def _execute_leech(
             "cast": tmdb_meta.get("cast", []),
             "featured": False,
             "trending": True,
-            "file_id": file_id,
-            "message_id": message_id,
+            "file_id": "",
+            "message_id": 0,
             "file_name": file_name,
             "file_size": file_size,
             "stream_url": primary_stream,
@@ -1248,6 +1200,85 @@ async def _execute_leech(
             "added_by": "bot_auto_leech",
         }
 
+        # Publish immediately to website (Cloudflare Pages deploy triggers now!)
+        if is_auto_mode:
+            task_tracker.tracker.set_step(user_id, "Publishing to Website...")
+            try:
+                saved = await github_service.add_movie(movie_entry)
+                log.info("[LeechService] Immediate website publish: %s", saved)
+            except Exception as gh_err:
+                log.warning("[LeechService] GitHub service add_movie note: %s", gh_err)
+
+        # ── Step 3c: Upload to Telegram Channel ──────────────────────────────
+        target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
+        file_id = ""
+        stream_url = ""
+        message_id = 0
+
+        # Telegram Bot API limit is 2000 MB. If larger, post Drive download link to channel instead of hanging
+        if file_size > int(1.95 * 1024 * 1024 * 1024):
+            log.info("[LeechService] File size %.2f GB > 1.95 GB. Posting Drive link to Telegram channel.", file_size / (1024**3))
+            try:
+                msg = await client.send_message(
+                    chat_id=target_channel,
+                    text=(
+                        f"🎬 <b>{display_title}</b>\n\n"
+                        f"📦 <b>Size:</b> {size_str} (High Definition 1080p)\n"
+                        f"⚡ <b>Google Drive Ultra HD:</b> <a href=\"{site_url}\">Watch Online & Download</a>"
+                    ),
+                    parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=False,
+                )
+                message_id = msg.id
+            except Exception as t_err:
+                log.warning("[LeechService] Channel link post error: %s", t_err)
+        else:
+            try:
+                upload_res = await telegram_upload.upload_video_file(
+                    bot_client=client,
+                    file_path=local_file,
+                    target_chat=target_channel,
+                    caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
+                    progress_callback=_upload_progress,
+                    fallback_chat=0,
+                )
+                file_id = upload_res.get("file_id", "")
+                stream_url = upload_res.get("stream_url", "")
+                message_id = upload_res.get("message_id", 0)
+
+                # Append Telegram download link to downloads list if available
+                if stream_url:
+                    downloads_list.append({
+                        "quality": "1080p (Telegram Download)",
+                        "size": downloader.format_bytes(sz_1080),
+                        "url": stream_url,
+                        "format": file_ext,
+                        "host": "Telegram",
+                        "download_only": True,
+                    })
+                    movie_entry["file_id"] = file_id
+                    movie_entry["message_id"] = message_id
+            except Exception as tg_err:
+                log.warning("[LeechService] Telegram upload note: %s", tg_err)
+
+        # ── Step 4: Immediate VPS Disk Cleanup ────────────────────────────────
+        try:
+            if os.path.exists(local_file):
+                os.remove(local_file)
+                log.info("[LeechService] Immediate cleanup: local video '%s' deleted.", local_file)
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                log.info("[LeechService] Temporary folder '%s' removed.", temp_dir)
+        except Exception as clean_err:
+            log.warning("[LeechService] Error during disk cleanup: %s", clean_err)
+
+        resume_service.delete_checkpoint(user_id)
+        try:
+            await seedr_service.seedr_pool.clean_storage()
+        except Exception:
+            pass
+
+
         # Save to draft_service so video in channel is never lost
         draft_id = f"leech_{uuid.uuid4().hex[:6]}"
         draft_service.save_draft({
@@ -1260,7 +1291,7 @@ async def _execute_leech(
             "file_name": file_name,
             "file_size": file_size,
             "film_url": "",
-            "stream_url": stream_url,
+            "stream_url": stream_url or cloud_stream,
             "quality": chosen_candidate.quality,
             "subtitles": movie_entry.get("subtitles", []),
             "subtitle_url": default_sub_url,
@@ -1273,11 +1304,9 @@ async def _execute_leech(
         genres_val = ", ".join(movie_entry.get("genres", [])[:3])
 
         if is_auto_mode:
-            # Full-auto mode: publish immediately
-            task_tracker.tracker.set_step(user_id, "Completed - Updating Website...")
-            saved = await github_service.add_movie(movie_entry)
-            if not saved:
-                log.warning("[LeechService] github_service.add_movie failed to commit.")
+            # Full-auto mode: movie was already published to GitHub at Step 3b
+            task_tracker.tracker.set_step(user_id, "Completed - All Uploads Finished")
+
 
             if config.PUBLIC_CHANNEL_ID:
                 try:

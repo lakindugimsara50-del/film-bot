@@ -281,17 +281,18 @@ function initAdaptiveQuality(movie) {
       pill.classList.add('active');
       selectedQuality = pill.dataset.quality;
 
-      FilmSub.showToast(`Quality set to: ${selectedQuality.toUpperCase()}`, 'info');
-
       // Check if current stream or downloads have a matching quality
       const downloads = getMovieDownloads(movie);
       const matched = downloads.find(d => (d.quality || '').toLowerCase() === selectedQuality.toLowerCase());
       if (matched && matched.url && vjsPlayer) {
         vjsPlayer.src({ src: matched.url, type: 'video/mp4' });
         setTimeout(syncSubtitles, 300);
+      } else {
+        FilmSub.showToast(`Quality: ${selectedQuality.toUpperCase()} — Player එකේ ⚙️ Settings එකෙනුත් Quality මාරු කළ හැක`, 'info');
       }
     });
   });
+
 
   // Listen to network changes if browser supports Network Information API
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;

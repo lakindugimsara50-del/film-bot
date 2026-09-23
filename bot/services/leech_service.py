@@ -869,25 +869,37 @@ async def run_auto_leech(
             # File is < 1.95 GB: Ensure it is web-streamable MP4 (+faststart)
             ext = os.path.splitext(local_file)[1].lower()
             if ext in (".mkv", ".avi", ".webm"):
+                # Safety check: remuxing creates a second copy on disk during ffmpeg operation.
+                # If available free disk is less than file size + 200MB, skip remuxing and keep original file!
                 try:
-                    await status_msg.edit_text(
-                        f"⚙️ <b>පියවර 3/4: වීඩියෝව වෙබ් ධාවනය සඳහා සකසමින් පවතී (Optimizing for Web)...</b>\n\n"
-                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                        f"⚡ <b>ආකෘතිය:</b> {ext.upper()} ➔ MP4 Web-Streamable (+faststart)\n"
-                        f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=kb_cancel,
-                    )
+                    free_disk = shutil.disk_usage(temp_dir).free
+                    file_size = os.path.getsize(local_file)
+                    can_remux = free_disk > (file_size + 200 * 1024 * 1024)
                 except Exception:
-                    pass
-                log.info("[LeechService] Remuxing %s to web-streamable MP4...", ext)
-                remuxed = os.path.join(temp_dir, f"web_{_slugify(title, year)}.mp4")
-                if await video_service.ensure_web_streamable(local_file, remuxed):
+                    can_remux = True
+
+                if can_remux:
                     try:
-                        os.remove(local_file)
+                        await status_msg.edit_text(
+                            f"⚙️ <b>පියවර 3/4: වීඩියෝව වෙබ් ධාවනය සඳහා සකසමින් පවතී (Optimizing for Web)...</b>\n\n"
+                            f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                            f"⚡ <b>ආකෘතිය:</b> {ext.upper()} ➔ MP4 Web-Streamable (+faststart)\n"
+                            f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
+                            parse_mode=ParseMode.HTML,
+                            reply_markup=kb_cancel,
+                        )
                     except Exception:
                         pass
-                    local_file = remuxed
+                    log.info("[LeechService] Remuxing %s to web-streamable MP4...", ext)
+                    remuxed = os.path.join(temp_dir, f"web_{_slugify(title, year)}.mp4")
+                    if await video_service.ensure_web_streamable(local_file, remuxed):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                        local_file = remuxed
+                else:
+                    log.warning("[LeechService] Insufficient disk for remuxing (%d free vs %d file). Keeping original file to prevent crash.", free_disk, file_size)
 
         # ── Step 2.6: Soft-Embed Sinhala Subtitle into Video Container ────────
         # Merges subtitle track into MP4 container (-c copy -c:s mov_text).

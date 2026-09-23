@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 # Ensure bot directory is on sys.path
 sys.path.insert(0, os.path.abspath("bot"))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from services.scrapers import method_yts, method3_ddl, method1_telegram, torrent_finder
 from services import downloader, leech_service, seedr_service, task_tracker, telegram_upload
@@ -223,7 +224,13 @@ class TestLeechService(unittest.TestCase):
             }
 
         async def run_test():
-            with patch("services.leech_service.find_all_candidates", return_value=[cand1, cand2]), \
+            mock_tmdb = {"title": "Inception", "year": 2010, "imdb_id": "tt1375666", "type": "movie"}
+            with patch("services.tmdb_service.fetch_metadata", new_callable=AsyncMock, return_value=mock_tmdb), \
+                 patch("services.tmdb_service.fetch_by_imdb_id", new_callable=AsyncMock, return_value=mock_tmdb), \
+                 patch("services.seedr_service.seedr_pool.clean_storage", new_callable=AsyncMock), \
+                 patch("services.cloud_drive.drive_manager.DriveManager.upload_movie", new_callable=AsyncMock, return_value=None), \
+                 patch("services.video_service.embed_subtitles_soft", new_callable=AsyncMock, return_value=False), \
+                 patch("services.leech_service.find_all_candidates", return_value=[cand1, cand2]), \
                  patch("services.seedr_service.seedr_client.is_configured", return_value=False), \
                  patch("services.pikpak_service.pikpak_service.is_configured", return_value=False), \
                  patch("services.downloader.download_http", side_effect=fake_download_http), \
@@ -328,7 +335,18 @@ class TestLeechService(unittest.TestCase):
             return {"file_id": "OUT_ID", "message_id": 99, "stream_url": "https://stream/OUT_ID"}
 
         async def run_test():
-            with patch("services.telegram_upload.upload_video_file", side_effect=fake_upload), \
+            mock_tmdb = {
+                "title": "Gladiator II",
+                "year": 2024,
+                "imdb_id": "tt2104996",
+                "type": "movie",
+            }
+            with patch("services.tmdb_service.fetch_metadata", new_callable=AsyncMock, return_value=mock_tmdb), \
+                 patch("services.tmdb_service.fetch_by_imdb_id", new_callable=AsyncMock, return_value=mock_tmdb), \
+                 patch("services.seedr_service.seedr_pool.clean_storage", new_callable=AsyncMock), \
+                 patch("services.cloud_drive.drive_manager.DriveManager.upload_movie", new_callable=AsyncMock, return_value=None), \
+                 patch("services.video_service.embed_subtitles_soft", new_callable=AsyncMock, return_value=False), \
+                 patch("services.telegram_upload.upload_video_file", side_effect=fake_upload), \
                  patch("services.github_service.add_movie", return_value=True), \
                  patch("services.leech_service.post_to_channel", new_callable=AsyncMock):
 
@@ -442,6 +460,7 @@ class TestLeechService(unittest.TestCase):
                     {
                         "title": "Game of Thrones S01E01 720p EZTV",
                         "magnet_url": "magnet:?xt=urn:btih:EZTV_HASH",
+                        "hash": "eztv_hash",
                         "seeds": 85,
                         "size_bytes": 600 * 1024 * 1024,
                         "season": 1,
@@ -489,7 +508,7 @@ class TestLeechService(unittest.TestCase):
                 # Ensure excluded big torrent is not in results
                 hashes = [r["hash"] for r in results]
                 self.assertNotIn("HASH_BIG", hashes)
-                self.assertIn("HASH_1080P", hashes)
+                self.assertIn("hash_1080p", hashes)
 
         asyncio.run(run_test())
 
@@ -567,8 +586,8 @@ class TestLeechService(unittest.TestCase):
                 self.assertNotIn("HASH_FALSE_MATCH_1", hashes)
                 self.assertNotIn("HASH_JUNK_POSTER", hashes)
                 # Genuine release MUST be ranked above commentary
-                self.assertIn("HASH_GENUINE_GOT", hashes)
-                self.assertEqual(results[0]["hash"], "HASH_GENUINE_GOT")
+                self.assertIn("hash_genuine_got", hashes)
+                self.assertEqual(results[0]["hash"], "hash_genuine_got")
 
         asyncio.run(run_test())
 

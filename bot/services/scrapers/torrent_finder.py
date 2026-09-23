@@ -26,6 +26,13 @@ from services.scrapers import method_yts
 
 log = logging.getLogger(__name__)
 
+# Standardized browser headers for torrent indexing APIs and scrapers
+DEFAULT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
 # High-speed public trackers to attach to all magnet links
 PUBLIC_TRACKERS = [
     "udp://tracker.opentrackr.org:1337/announce",
@@ -217,14 +224,7 @@ async def search_torrentio(
 
     log.info("[TorrentFinder] Torrentio querying: %s (target='%s')", url, target_title)
     candidates: list[dict] = []
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
-        "Accept": "application/json",
-    }
+    headers = DEFAULT_HEADERS
 
     data = None
     for attempt in range(2):
@@ -236,10 +236,12 @@ async def search_torrentio(
                     break
                 else:
                     log.warning("[TorrentFinder] Torrentio HTTP %d on %s (attempt %d)", resp.status_code, url, attempt + 1)
+                    if attempt == 0:
+                        await asyncio.sleep(2.0)
         except Exception as exc:
             log.warning("[TorrentFinder] Torrentio attempt %d error: %s", attempt + 1, exc)
             if attempt == 0:
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(2.0)
 
     if not data:
         return []
@@ -336,12 +338,13 @@ async def search_apibay(
 
     apibay_urls = [
         "https://apibay.org/q.php",
+        "https://piratebay.party/api/q.php",
     ]
 
     is_series = season is not None or episode is not None or target_show_title is not None
     show_name = target_show_title or query
 
-    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=12, follow_redirects=True) as client:
         for q in all_queries:
             log.info("[TorrentFinder] Apibay searching: '%s'", q)
             for base_url in apibay_urls:
@@ -447,7 +450,7 @@ async def search_eztv(
 
     clean_imdb = (imdb_id or "").lstrip("t")
 
-    async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=4.0, follow_redirects=True) as client:
         for base_url in eztv_bases:
             try:
                 pages_to_check = [1, 2] if clean_imdb else [1]
@@ -568,7 +571,7 @@ async def search_torrents_csv(
     show_name = target_show_title or query
 
     url = "https://torrents-csv.com/service/search"
-    async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=10, follow_redirects=True) as client:
         for q in all_queries:
             log.info("[TorrentFinder] Torrents-CSV searching: '%s'", q)
             try:
@@ -650,7 +653,7 @@ async def resolve_imdb_cinemeta(title: str, is_series: bool = False) -> Optional
     m_type = "series" if is_series else "movie"
     url = f"https://v3-cinemeta.strem.io/catalog/{m_type}/top/search={urllib.parse.quote(title)}.json"
     try:
-        async with httpx.AsyncClient(timeout=4.0) as client:
+        async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=4.0) as client:
             resp = await client.get(url)
             if resp.status_code == 200:
                 metas = resp.json().get("metas", [])
@@ -706,6 +709,12 @@ async def search_all_torrents(
 
         series_query = f"{clean_title} {ep_tag}".strip()
         alt_series_queries = [f"{clean_title} {alt_ep_tag}".strip()] if alt_ep_tag else []
+        if season is not None:
+            s_q = f"{clean_title} S{season:02d}"
+            if s_q not in alt_series_queries and s_q != series_query:
+                alt_series_queries.append(s_q)
+        if clean_title not in alt_series_queries and clean_title != series_query:
+            alt_series_queries.append(clean_title)
 
         # 1. Torrentio (if imdb_id) - Highest quality multi-tracker aggregator
         if imdb_id:

@@ -118,7 +118,7 @@ class TestPikPakService(unittest.IsolatedAsyncioTestCase):
             }
 
             # Offline list raises CancelledError to simulate user /cancel during polling
-            mock_client.offline_list.side_effect = asyncio.CancelledError()
+            mock_client.offline_list.side_effect = [{"tasks": []}, asyncio.CancelledError()]
 
             service._client = mock_client
 

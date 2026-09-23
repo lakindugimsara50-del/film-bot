@@ -336,6 +336,75 @@ async def _download_httpx(
     raise RuntimeError(f"Download file empty or missing at {local_path}")
 
 
+def matches_episode_filename(filename: str, hint: str) -> bool:
+    """Check if filename matches the episode hint (supports S01E02, 1x02, etc.)."""
+    if not hint:
+        return True
+    fn_lower = filename.lower()
+    hint_lower = hint.lower().strip()
+    if hint_lower in fn_lower:
+        return True
+
+    # Try parsing SxxExx or xxXxx (e.g. S01E02, 1x02)
+    m = re.search(r"s?(\d+)[ex](\d+)", hint_lower)
+    if m:
+        s_num = int(m.group(1))
+        e_num = int(m.group(2))
+        patterns = [
+            rf"\bs0?{s_num}e0?{e_num}\b",
+            rf"\bs0?{s_num}\s*ep?0?{e_num}\b",
+            rf"\b0?{s_num}x0?{e_num}\b",
+            rf"season\s*0?{s_num}.*?episode\s*0?{e_num}\b",
+            rf"s0?{s_num}[\s._-]+e0?{e_num}\b",
+        ]
+        return any(re.search(p, fn_lower) for p in patterns)
+
+    # Try episode only: e.g. "E02" or "ep02"
+    m_ep = re.search(r"(?:e|ep|episode)\s*0?(\d+)", hint_lower)
+    if m_ep:
+        e_num = int(m_ep.group(1))
+        patterns = [
+            rf"(?:\b|s\d{{1,2}})e(?:p)?0?{e_num}\b",
+            rf"episode\s*0?{e_num}\b",
+            rf"\b\d{{1,2}}x0?{e_num}\b",
+        ]
+        return any(re.search(p, fn_lower) for p in patterns)
+
+    return False
+
+
+async def find_episode_file_index_from_torrent(
+    aria2_bin: str,
+    torrent_file: str,
+    episode_hint: str,
+) -> Optional[int]:
+    """Inspect .torrent file with aria2c --show-files to select the target episode index."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            aria2_bin,
+            "--show-files=true",
+            torrent_file,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=8.0)
+        output = stdout.decode("utf-8", errors="replace")
+        video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
+
+        for line in output.splitlines():
+            m = re.match(r"^\s*(\d+)\|\s*(.+)$", line)
+            if m:
+                idx = int(m.group(1))
+                file_path = m.group(2).strip()
+                ext = os.path.splitext(file_path)[1].lower()
+                if ext in video_exts and matches_episode_filename(file_path, episode_hint):
+                    log.info("[Downloader] Found target episode file in torrent: index %d -> %s", idx, file_path)
+                    return idx
+    except Exception as exc:
+        log.warning("[Downloader] Error running aria2c --show-files on %s: %s", torrent_file, exc)
+    return None
+
+
 async def download_torrent(
     magnet_or_torrent: str,
     dest_dir: str,
@@ -388,6 +457,40 @@ async def download_torrent(
         "udp://movies.zsw.ca:6969/announce",
     ])
 
+    # Check if episode_hint is provided and inspect file list via aria2c --show-files
+    target_file_idx = None
+    if episode_hint:
+        if os.path.isfile(torrent_arg):
+            target_file_idx = await find_episode_file_index_from_torrent(aria2_bin, torrent_arg, episode_hint)
+        elif torrent_arg.startswith("magnet:"):
+            # Attempt to fetch metadata (.torrent) quickly (up to 12s) to inspect file list
+            meta_cmd = [
+                aria2_bin,
+                "--dir", dest_dir,
+                "--bt-metadata-only=true",
+                "--bt-save-metadata=true",
+                "--bt-stop-timeout=12",
+                "--console-log-level=warn",
+                f"--bt-tracker={live_trackers}",
+                torrent_arg,
+            ]
+            try:
+                meta_proc = await asyncio.create_subprocess_exec(
+                    *meta_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                await asyncio.wait_for(meta_proc.communicate(), timeout=12.0)
+                for f in os.listdir(dest_dir):
+                    if f.endswith(".torrent"):
+                        saved_torrent = os.path.join(dest_dir, f)
+                        target_file_idx = await find_episode_file_index_from_torrent(aria2_bin, saved_torrent, episode_hint)
+                        if target_file_idx:
+                            torrent_arg = saved_torrent
+                            break
+            except Exception as meta_err:
+                log.debug("[Downloader] Magnet metadata fetch skipped/timed out: %s", meta_err)
+
     cmd = [
         aria2_bin,
         "--dir", dest_dir,
@@ -407,8 +510,15 @@ async def download_torrent(
         "--summary-interval=1",
         "--console-log-level=warn",
         "--follow-torrent=mem",
-        torrent_arg,
     ]
+
+    if target_file_idx:
+        cmd.extend([
+            f"--select-file={target_file_idx}",
+            "--bt-remove-unselected-file=true",
+        ])
+
+    cmd.append(torrent_arg)
 
     log.info("[Downloader] Starting aria2c torrent download: %s", torrent_arg[:80])
     proc = await asyncio.create_subprocess_exec(
@@ -447,8 +557,9 @@ async def download_torrent(
                     eta_formatted = eta or "N/A"
 
                     # Hard protection for Render container disk: abort if torrent total size > 1.85 GB
+                    # (skip if target file is specifically selected, as total_str reflects whole torrent)
                     total_bytes = parse_size_str(total_str)
-                    if total_bytes > int(1.85 * 1024 * 1024 * 1024):
+                    if not target_file_idx and total_bytes > int(1.85 * 1024 * 1024 * 1024):
                         log.warning(
                             "[Downloader] Torrent total size %s (%s) exceeds Render disk safe limit (1.85 GB). Aborting to prevent container crash.",
                             total_str, format_bytes(total_bytes)
@@ -516,11 +627,10 @@ async def download_torrent(
     video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
 
     if episode_hint:
-        eh = episode_hint.lower().strip()
         for root, _, files in os.walk(dest_dir):
             for f in files:
                 ext = os.path.splitext(f)[1].lower()
-                if ext in video_exts and (eh in f.lower() or re.search(r"\b" + re.escape(eh) + r"\b", f.lower())):
+                if ext in video_exts and matches_episode_filename(f, episode_hint):
                     best_file = os.path.join(root, f)
                     log.info("[Downloader] Found matching episode file '%s' -> %s", episode_hint, f)
                     break

@@ -398,6 +398,13 @@ async def _on_start(client: Client) -> None:
         except Exception as exc:
             log.warning("Could not send startup message to admin %d: %s", admin_id, exc)
 
+    # Check for any interrupted downloads from previous run (Render crash recovery)
+    try:
+        from services import resume_service
+        await resume_service.notify_interrupted_downloads(client)
+    except Exception as rs_err:
+        log.warning("[ResumeService] Could not check interrupted downloads: %s", rs_err)
+
 
 async def main() -> None:
     port = int(os.getenv("PORT", 7860))

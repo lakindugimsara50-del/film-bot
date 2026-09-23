@@ -71,104 +71,67 @@ function showError(msg) {
 }
 
 // ---- Data Fallback Helpers ----
+/**
+ * Returns ONLY Cloud CDN streams (Google Drive, OneDrive, R2, etc.)
+ * Telegram URLs are NEVER included here — they are download-only.
+ * If no cloud stream exists, returns empty array → player shows download UI.
+ */
 function getMovieStreams(movie) {
   if (!movie) return [];
   const list = [];
-  const channelId = movie.channel_id || '-1004325759505';
-  const msgId = movie.message_id || null;
-  const fileId = movie.file_id || null;
 
-  // Render backend origin for Telegram byte-range streaming fallback
-  const RENDER = 'https://film-bot-2.onrender.com';
-
-  let tgDirectUrl = '';
-  if (msgId) {
-    tgDirectUrl = `${RENDER}/stream/channel/${channelId}/${msgId}`;
-  } else if (fileId) {
-    tgDirectUrl = `${RENDER}/stream/file/${encodeURIComponent(fileId)}`;
-  } else if (movie.stream_url && !movie.stream_url.includes('autoembed') && !movie.stream_url.includes('vidsrc')) {
-    if (movie.stream_url.includes('sharepoint.com') ||
-        movie.stream_url.includes('1drv.ms') ||
-        movie.stream_url.includes('google.com') ||
-        movie.stream_url.includes('drive.google.com') ||
-        movie.stream_url.includes('r2.dev')) {
-      // It's a high-speed Cloud CDN stream!
-    } else {
-      tgDirectUrl = movie.stream_url.startsWith('http')
-        ? movie.stream_url
-        : `${RENDER}${movie.stream_url}`;
-    }
+  // Helper: is a URL a valid Cloud CDN stream (not Telegram, not embed)?
+  function isCloudStreamUrl(url) {
+    if (!url) return false;
+    if (url.includes('t.me/') || url.includes('api.telegram.org') ||
+        url.includes('onrender.com/stream') || url.includes('telegram')) return false;
+    if (url.includes('autoembed') || url.includes('vidsrc') ||
+        url.includes('multiembed') || url.includes('2embed')) return false;
+    return (
+      url.includes('sharepoint.com') ||
+      url.includes('1drv.ms') ||
+      url.includes('google.com/uc') ||
+      url.includes('drive.google.com') ||
+      url.includes('r2.dev') ||
+      url.includes('lnk.fyi') ||  // rclone share links
+      url.includes('googleusercontent.com')
+    );
   }
 
-  // 1. Check if movie already has explicit Cloud CDN streams (OneDrive, GDrive, R2)
+  // 1. Prefer explicit streams[] array from movie data (set by bot after upload)
   if (Array.isArray(movie.streams)) {
     movie.streams.forEach(s => {
       const sUrl = s.stream_url || '';
-      if (!sUrl) return;
-      if (sUrl.includes('autoembed') || sUrl.includes('vidsrc') ||
-          sUrl.includes('multiembed') || sUrl.includes('2embed') ||
-          s.embed === true || s.type === 'embed') return;
+      // Skip download_only entries and non-cloud entries
+      if (s.download_only) return;
+      if (!isCloudStreamUrl(sUrl)) return;
 
-      const isCloud = sUrl.includes('sharepoint.com') ||
-                      sUrl.includes('1drv.ms') ||
-                      sUrl.includes('google.com') ||
-                      sUrl.includes('drive.google.com') ||
-                      sUrl.includes('r2.dev') ||
-                      (s.label && s.label.includes('Cloud Direct'));
-
-      if (isCloud) {
-        list.push({
-          server: `Server ${list.length + 1}`,
-          label: s.label || `⚡ Server ${list.length + 1} (Cloud Direct Ultra HD)`,
-          type: s.type || 'video/mp4',
-          stream_url: sUrl,
-          file_id: s.file_id || '',
-        });
-      }
+      list.push({
+        server: `Server ${list.length + 1}`,
+        label: s.label || `⚡ Server ${list.length + 1} (Cloud Direct)`,
+        type: s.type || 'video/mp4',
+        stream_url: sUrl,
+        file_id: s.file_id || '',
+      });
     });
   }
 
-  // Also check movie.stream_url if it's a Cloud URL and not yet in list
-  if (movie.stream_url) {
-    const isCloudUrl = movie.stream_url.includes('sharepoint.com') ||
-                       movie.stream_url.includes('1drv.ms') ||
-                       movie.stream_url.includes('google.com') ||
-                       movie.stream_url.includes('drive.google.com') ||
-                       movie.stream_url.includes('r2.dev');
-    if (isCloudUrl && !list.some(item => item.stream_url === movie.stream_url)) {
+  // 2. Fallback: use movie.stream_url if it is a cloud URL and not already in list
+  if (movie.stream_url && isCloudStreamUrl(movie.stream_url)) {
+    if (!list.some(item => item.stream_url === movie.stream_url)) {
       list.unshift({
         server: 'Server 1',
         label: '⚡ Server 1 (Cloud Direct Ultra HD)',
         type: 'video/mp4',
         stream_url: movie.stream_url,
-        file_id: fileId || '',
+        file_id: movie.file_id || '',
       });
     }
   }
 
-  // 2. Add Telegram Streams (as Server 1 if no cloud, or Server 2 if cloud exists)
-  if (tgDirectUrl) {
-    const nextIdx = list.length + 1;
-    list.push({
-      server: `Server ${nextIdx}`,
-      label: list.length === 0 ? '⚡ Server 1 (Telegram Cloud HD)' : `🌩️ Server ${nextIdx} (Telegram Mirror)`,
-      type: 'video/mp4',
-      stream_url: tgDirectUrl,
-      file_id: fileId || '',
-    });
-  }
-
-  // 3. Fallback: use movie.stream_url if list is completely empty
-  if (list.length === 0 && movie.stream_url) {
-    list.push({
-      server: 'Server 1',
-      label: '⚡ Server 1 (Direct HD)',
-      type: 'video/mp4',
-      stream_url: movie.stream_url,
-      file_id: movie.file_id || '',
-    });
-  }
-
+  // NOTE: Telegram is intentionally EXCLUDED from streams.
+  // Telegram URLs are in movie.downloads[] for download-only use.
+  // If list is empty, the player will show a "Download Only" UI.
   return list;
 }
 
@@ -353,10 +316,26 @@ function initVideoPlayer(movie) {
   if (!playerEl) return;
 
   if (streams.length === 0) {
+    // No cloud stream — show download-only UI
+    const downloads = getMovieDownloads(movie);
+    const dlLinks = downloads.slice(0, 3).map(dl =>
+      `<a href="${FilmSub.escHtml(dl.url || '#')}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600">
+         <i class="fa-solid fa-cloud-arrow-down"></i>
+         ${FilmSub.escHtml(dl.quality || '1080p')} — Download
+       </a>`
+    ).join('');
+
     playerEl.innerHTML = `
-      <div style="aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;color:var(--text2);gap:12px;border-radius:8px">
-        <i class="fa-solid fa-film" style="font-size:36px;color:var(--text3)"></i>
-        <span>No video stream available for this title yet.</span>
+      <div style="aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0a0a,#141414);color:var(--text2);gap:16px;border-radius:8px;padding:32px;text-align:center">
+        <i class="fa-solid fa-cloud-arrow-down" style="font-size:48px;color:var(--accent)"></i>
+        <h3 style="color:#fff;margin:0;font-size:18px">Download to Watch</h3>
+        <p style="font-size:13px;color:var(--text3);max-width:400px;margin:0">
+          Cloud stream server is being set up. Download the file and watch it with any player — Sinhala subtitles are included!
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+          ${dlLinks || '<span style="color:var(--text3);font-size:13px">Download links loading...</span>'}
+        </div>
       </div>`;
     return;
   }
@@ -793,12 +772,38 @@ function renderDownloadSection(movie) {
   if (downloads.length === 0) {
     grid.innerHTML = `<p class="text-muted" style="padding:20px">No download links available yet.</p>`;
   } else {
-    grid.innerHTML = downloads.map(dl => {
+    // Deduplicate by quality label + host
+    const seen = new Set();
+    const uniqueDls = downloads.filter(dl => {
+      const key = `${dl.quality}|${dl.host}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    grid.innerHTML = uniqueDls.map(dl => {
       const q = dl.quality || '720p';
-      const sz = dl.size || '1.2 GB';
+      const sz = dl.size || '';
       const fmt = dl.format || 'MP4';
       const dlUrl = dl.url || '#';
-      const tgUrl = (dl.url && dl.url.includes('t.me/')) ? dl.url : `https://t.me/Filmsinhala200Bot?start=${encodeURIComponent(movie.slug || '')}`;
+      const host = dl.host || 'Direct';
+      const isTelegram = dl.download_only === true || host === 'Telegram';
+      const isCloud = host === 'Cloud CDN' || (!isTelegram && dlUrl.includes('drive.google'));
+
+      // Host badge color
+      const hostColor = isCloud ? 'var(--accent)' : (isTelegram ? '#229ED9' : 'var(--text2)');
+      const hostIcon = isCloud
+        ? '<i class="fa-brands fa-google-drive"></i>'
+        : (isTelegram ? '<i class="fa-brands fa-telegram"></i>' : '<i class="fa-solid fa-server"></i>');
+
+      const actionBtn = isTelegram
+        ? `<a href="${FilmSub.escHtml(dlUrl)}" target="_blank" rel="noopener" class="btn-tg-dl"
+              style="display:inline-flex;align-items:center;gap:7px">
+             <i class="fa-brands fa-telegram"></i> Telegram Download
+           </a>`
+        : `<button class="btn-direct-dl" data-url="${FilmSub.escHtml(dlUrl)}" data-quality="${FilmSub.escHtml(q)}">
+             <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
+           </button>`;
 
       return `
         <div class="cs-dl-card download-card">
@@ -810,24 +815,19 @@ function renderDownloadSection(movie) {
             <div class="cs-dl-size-badge">${FilmSub.escHtml(sz)}</div>
           </div>
           <div class="cs-dl-specs">
-            <span><i class="fa-solid fa-video"></i> ${FilmSub.escHtml(fmt)} (x264)</span>
+            <span>${hostIcon} <span style="color:${hostColor}">${FilmSub.escHtml(host)}</span></span>
             <span>•</span>
-            <span><i class="fa-solid fa-volume-high"></i> AAC 2.0</span>
+            <span><i class="fa-solid fa-video"></i> ${FilmSub.escHtml(fmt)}</span>
             <span>•</span>
             <span style="color:var(--accent)"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</span>
           </div>
           <div class="cs-dl-actions">
-            <button class="btn-direct-dl" data-url="${FilmSub.escHtml(dlUrl)}" data-quality="${FilmSub.escHtml(q)}">
-              <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
-            </button>
-            <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-tg-dl">
-              <i class="fa-brands fa-telegram"></i> Telegram Link
-            </a>
+            ${actionBtn}
           </div>
         </div>`;
     }).join('');
 
-    // Attach countdown trigger
+    // Attach countdown trigger for direct download buttons
     grid.querySelectorAll('.btn-direct-dl').forEach(btn => {
       btn.addEventListener('click', () => {
         const url = btn.dataset.url;

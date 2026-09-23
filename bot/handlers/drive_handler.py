@@ -13,7 +13,11 @@ Commands:
 import logging
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
-from pyrogram.types import Message
+from pyrogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 import config
 from services.auth_service import auth_service
@@ -53,21 +57,35 @@ def register(app: Client) -> None:
         # Default: Show summary of all connected drives
         wait_msg = await message.reply_text("🔍 Cloud Drive තත්ත්වයන් පරීක්ෂා කරමින් පවතී...")
         try:
+            # Check if drive_manager is ready
+            if not drive_manager._initialized:
+                await wait_msg.edit_text(
+                    "⏳ <b>Drive Manager තවමත් ආරම්භ වෙමින් පවතී...</b>\n\n"
+                    "තත්පර 30ක් රැඳී නැවත /drives ටයිප් කරන්න.",
+                    parse_mode=ParseMode.HTML,
+                )
+                return
+
             statuses = await drive_manager.get_drives_status()
             if not statuses:
+                kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("➕ Google Drive Add කරන්න", callback_data="adddrive:gdrive")],
+                    [InlineKeyboardButton("➕ OneDrive Add කරන්න", callback_data="adddrive:onedrive")],
+                ])
                 text = (
                     "☁️ <b>Cloud Drive Storage තත්ත්වය</b>\n\n"
-                    "ℹ️ තවමත් කිසිදු Cloud Drive එකක් (OneDrive / Google Drive) සම්බන්ධ කර නොමැත.\n\n"
+                    "ℹ️ තවමත් කිසිදු Cloud Drive එකක් සම්බන්ධ කර නොමැත.\n\n"
                     "<b>නව Drive එකක් එක් කිරීමට:</b>\n"
-                    "• <code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
-                    "• <code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt; &lt;client_id&gt; &lt;client_secret&gt;</code>"
+                    "• <code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
+                    "• <code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>"
                 )
-                await wait_msg.edit_text(text, parse_mode=ParseMode.HTML)
+                await wait_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
                 return
 
             lines = ["☁️ <b>සම්බන්ධිත Cloud Drive ගිණුම් තත්ත්වය</b>\n"]
             total_quota = 0.0
             total_used = 0.0
+            remove_buttons = []
 
             for d in statuses:
                 icon = "✅" if d["is_active"] else "❌"
@@ -85,20 +103,150 @@ def register(app: Client) -> None:
                 )
                 total_quota += d["total_gb"]
                 total_used += d["used_gb"]
+                remove_buttons.append(
+                    [InlineKeyboardButton(f"🗑 Remove: {d['name']}", callback_data=f"rmdrive:{d['drive_id']}")]
+                )
 
             lines.append(
                 f"📊 <b>මුළු Cloud Storage:</b> {round(total_used, 1)} GB / {round(total_quota, 1)} GB\n\n"
                 f"<b>විධාන:</b>\n"
-                f"• <code>/drives list &lt;drive_id&gt;</code> — Drive එකේ ඇති චිත්‍රපට ලැයිස්තුව\n"
-                f"• <code>/drives offline</code> — අක්‍රිය වූ Drive සහ බලපෑ චිත්‍රපට\n"
-                f"• <code>/rmdrive &lt;drive_id&gt;</code> — Drive එකක් ඉවත් කිරීම"
+                f"• <code>/drives list &lt;drive_id&gt;</code> — Drive එකේ ඇති චිත්‍රපට\n"
+                f"• <code>/drives offline</code> — අක්‍රිය Drive සහ බලපෑ චිත්‍රපට\n"
+                f"• <code>/rmdrive &lt;drive_id&gt;</code> — Drive ඉවත් කිරීම"
             )
-            await wait_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML)
+
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("➕ නව Drive Add කරන්න", callback_data="adddrive:new")],
+                *remove_buttons,
+            ])
+            await wait_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=kb)
 
         except Exception as exc:
             log.error("[DriveHandler] Error checking drives: %s", exc)
             await wait_msg.edit_text(f"❌ දෝෂයක් සිදුවිය: {exc}")
 
+    @app.on_message(filters.command(["adddrive"]))
+    async def adddrive_command(client: Client, message: Message) -> None:
+        """Add a new OneDrive or Google Drive."""
+        if not _is_admin(message.from_user.id if message.from_user else 0):
+            await message.reply_text("⛔ මෙම විධානය භාවිත කළ හැක්කේ Administrators ලට පමණි.")
+            return
+
+        # Check if drive_manager is initialized
+        if not drive_manager._initialized:
+            await message.reply_text(
+                "⏳ <b>Drive Manager ආරම්භ වෙමින් පවතී...</b>\n\n"
+                "Bot සම්පූර්ණයෙන් ආරම්භ වූ පසු (30s) නැවත උත්සාහ කරන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        args = message.text.strip().split()
+        if len(args) < 5:
+            help_text = (
+                "📖 <b>Cloud Drive එකක් සම්බන්ධ කරන ආකාරය</b>\n\n"
+                "<b>1. Google Drive (Rclone):</b>\n"
+                "<code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
+                "උදා: <code>/adddrive gdrive gdrive_main MyGDrive 1//0g...</code>\n\n"
+                "<b>2. OneDrive:</b>\n"
+                "<code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt; [client_id] [client_secret]</code>\n"
+                "උදා: <code>/adddrive onedrive sab_one Sabaragamuwa_1 0.ARwA...</code>"
+            )
+            await message.reply_text(help_text, parse_mode=ParseMode.HTML)
+            return
+
+        provider = args[1].lower()
+        d_id = args[2]
+        d_name = args[3]
+        refresh_token = args[4]
+        client_id = args[5] if len(args) > 5 else None
+        client_secret = args[6] if len(args) > 6 else None
+
+        if provider not in ("onedrive", "gdrive", "googledrive", "rclone"):
+            await message.reply_text("❌ 'onedrive' හෝ 'gdrive' පමණක් භාවිත කරන්න.")
+            return
+
+        wait_msg = await message.reply_text(f"⏳ <b>{d_name}</b> Drive එකතු කරමින් පවතී...", parse_mode=ParseMode.HTML)
+
+        try:
+            drive_manager.add_drive(
+                drive_id=d_id,
+                name=d_name,
+                provider=provider,
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret,
+            )
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("☁️ Drives Status බලන්න", callback_data="drives:status")],
+            ])
+            await wait_msg.edit_text(
+                f"✅ <b>Drive සාර්ථකව එක් කරන ලදී!</b>\n\n"
+                f"• ID: <code>{d_id}</code>\n"
+                f"• නම: {d_name}\n"
+                f"• වර්ගය: {provider.upper()}\n\n"
+                f"තත්ත්වය බැලීමට /drives භාවිත කරන්න.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb,
+            )
+        except Exception as exc:
+            log.error("[DriveHandler] adddrive error: %s", exc)
+            await wait_msg.edit_text(f"❌ Drive එකතු කිරීම අසාර්ථක විය:\n<code>{exc}</code>", parse_mode=ParseMode.HTML)
+
+    @app.on_message(filters.command(["rmdrive"]))
+    async def rmdrive_command(client: Client, message: Message) -> None:
+        """Remove a drive."""
+        if not _is_admin(message.from_user.id if message.from_user else 0):
+            await message.reply_text("⛔ Administrators only.")
+            return
+
+        args = message.text.strip().split()
+        if len(args) < 2:
+            await message.reply_text("භාවිතය: <code>/rmdrive &lt;drive_id&gt;</code>", parse_mode=ParseMode.HTML)
+            return
+
+        d_id = args[1]
+        success = drive_manager.remove_drive(d_id)
+        if success:
+            await message.reply_text(f"✅ Drive <code>{d_id}</code> සාර්ථකව ඉවත් කරන ලදී.", parse_mode=ParseMode.HTML)
+        else:
+            await message.reply_text(f"❌ Drive <code>{d_id}</code> සොයාගත නොහැකි විය.", parse_mode=ParseMode.HTML)
+
+    @app.on_callback_query(filters.regex(r"^rmdrive:(.+)$"))
+    async def rmdrive_callback(client: Client, callback_query) -> None:
+        """Handle [Remove Drive] inline button."""
+        if not _is_admin(callback_query.from_user.id):
+            await callback_query.answer("⛔ Admins only!", show_alert=True)
+            return
+        d_id = callback_query.data.split(":", 1)[1]
+        success = drive_manager.remove_drive(d_id)
+        if success:
+            await callback_query.answer(f"✅ Drive '{d_id}' removed!", show_alert=True)
+            await callback_query.message.edit_text(f"✅ Drive <code>{d_id}</code> ඉවත් කරන ලදී.", parse_mode=ParseMode.HTML)
+        else:
+            await callback_query.answer(f"❌ Drive '{d_id}' not found.", show_alert=True)
+
+    @app.on_callback_query(filters.regex(r"^drives:status$"))
+    async def drives_status_callback(client: Client, callback_query) -> None:
+        """Handle [Drives Status] button callback."""
+        if not _is_admin(callback_query.from_user.id):
+            await callback_query.answer("⛔ Admins only!", show_alert=True)
+            return
+        await callback_query.answer()
+        try:
+            statuses = await drive_manager.get_drives_status()
+            if not statuses:
+                await callback_query.message.edit_text("ℹ️ Drive connected නැත. /adddrive use කරන්න.")
+                return
+            lines = ["☁️ <b>Cloud Drives</b>\n"]
+            for d in statuses:
+                icon = "✅" if d["is_active"] else "❌"
+                lines.append(
+                    f"{icon} <b>{d['name']}</b> — {d['remaining_gb']} GB free | {d['movie_count']} movies"
+                )
+            await callback_query.message.edit_text("\n".join(lines), parse_mode=ParseMode.HTML)
+        except Exception as exc:
+            await callback_query.message.edit_text(f"❌ Error: {exc}")
 
 
 async def _show_offline_movies(client: Client, message: Message) -> None:
@@ -140,7 +288,7 @@ async def _list_drive_movies(client: Client, message: Message, drive_id: str) ->
     """List movies stored on a specific drive."""
     movies = drive_manager.get_movies_on_drive(drive_id)
     if not movies:
-        await message.reply_text(f"ℹ️ <code>{drive_id}</code> මත ගබඩා කර ඇති චිත්‍රපට කිසිවක් හමු නොවීය.")
+        await message.reply_text(f"ℹ️ <code>{drive_id}</code> මත ගබඩා කර ඇති චිත්‍රපට කිසිවක් හමු නොවීය.", parse_mode=ParseMode.HTML)
         return
 
     lines = [f"📁 <b>Drive: <code>{drive_id}</code> හි ගබඩා කර ඇති චිත්‍රපට ({len(movies)})</b>\n"]
@@ -151,75 +299,3 @@ async def _list_drive_movies(client: Client, message: Message, drive_id: str) ->
         lines.append(f"\n<i>...සහ තවත් චිත්‍රපට {len(movies) - 30} ක්.</i>")
 
     await message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
-
-
-    @app.on_message(filters.command(["adddrive"]))
-    async def adddrive_command(client: Client, message: Message) -> None:
-        """Add a new OneDrive or Google Drive."""
-        if not _is_admin(message.from_user.id if message.from_user else 0):
-            await message.reply_text("⛔ මෙම විධානය භාවිත කළ හැක්කේ Administrators ලට පමණි.")
-            return
-
-        args = message.text.strip().split()
-        if len(args) < 5:
-            help_text = (
-                "📖 <b>Cloud Drive එකක් සම්බන්ධ කරන ආකාරය</b>\n\n"
-                "<b>1. OneDrive එකතු කිරීම:</b>\n"
-                "<code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt; [client_id] [client_secret]</code>\n"
-                "උදා: <code>/adddrive onedrive sab_one Sabaragamuwa_1 0.ARwA...</code>\n\n"
-                "<b>2. Google Drive එකතු කිරීම:</b>\n"
-                "<code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt; &lt;client_id&gt; &lt;client_secret&gt;</code>"
-            )
-            await message.reply_text(help_text, parse_mode=ParseMode.HTML)
-            return
-
-        provider = args[1].lower()
-        d_id = args[2]
-        d_name = args[3]
-        refresh_token = args[4]
-        client_id = args[5] if len(args) > 5 else None
-        client_secret = args[6] if len(args) > 6 else None
-
-        if provider not in ("onedrive", "gdrive", "googledrive"):
-            await message.reply_text("❌ අසත්‍ය Provider වර්ගයකි. 'onedrive' හෝ 'gdrive' පමණක් භාවිත කරන්න.")
-            return
-
-        try:
-            drive_manager.add_drive(
-                drive_id=d_id,
-                name=d_name,
-                provider=provider,
-                refresh_token=refresh_token,
-                client_id=client_id,
-                client_secret=client_secret,
-            )
-            await message.reply_text(
-                f"✅ <b>Drive සාර්ථකව එක් කරන ලදී!</b>\n\n"
-                f"• ID: <code>{d_id}</code>\n"
-                f"• නම: {d_name}\n"
-                f"• වර්ගය: {provider.upper()}\n\n"
-                f"තත්ත්වය බැලීමට <code>/drives</code> භාවිත කරන්න.",
-                parse_mode=ParseMode.HTML,
-            )
-        except Exception as exc:
-            await message.reply_text(f"❌ Drive එකතු කිරීම අසාර්ථක විය: {exc}")
-
-    @app.on_message(filters.command(["rmdrive"]))
-    async def rmdrive_command(client: Client, message: Message) -> None:
-        """Remove a drive."""
-        if not _is_admin(message.from_user.id if message.from_user else 0):
-            await message.reply_text("⛔ Administrators only.")
-            return
-
-        args = message.text.strip().split()
-        if len(args) < 2:
-            await message.reply_text("භාවිතය: <code>/rmdrive &lt;drive_id&gt;</code>", parse_mode=ParseMode.HTML)
-            return
-
-        d_id = args[1]
-        success = drive_manager.remove_drive(d_id)
-        if success:
-            await message.reply_text(f"✅ Drive <code>{d_id}</code> සාර්ථකව ඉවත් කරන ලදී.", parse_mode=ParseMode.HTML)
-        else:
-            await message.reply_text(f"❌ Drive <code>{d_id}</code> සොයාගත නොහැකි විය.", parse_mode=ParseMode.HTML)
-

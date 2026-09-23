@@ -39,6 +39,7 @@ from services import (
     downloader,
     draft_service,
     github_service,
+    resume_service,
     seedr_service,
     subtitle_service,
     task_tracker,
@@ -515,6 +516,19 @@ async def run_auto_leech(
             )
             return
 
+        # ── Save crash-recovery checkpoint BEFORE starting download ─────────
+        # If Render restarts mid-download, resume_service detects this on next startup
+        resume_service.save_checkpoint(user_id, {
+            "display_title": display_title,
+            "title": title,
+            "year": year,
+            "query_text": clean_query,
+            "candidate_method_name": candidates[0].method_name if candidates else "Unknown",
+            "is_series": is_series,
+            "season": season,
+            "episode": episode,
+        })
+
         # ── Step 2: Download with Multi-Method Fallback ────────────────────────
         chosen_candidate: Optional[LeechCandidate] = None
         if not temp_dir:
@@ -856,6 +870,9 @@ async def run_auto_leech(
         except Exception as clean_err:
             log.warning("[LeechService] Error during disk cleanup: %s", clean_err)
 
+        # ── Delete crash-recovery checkpoint (download + upload both succeeded) ─
+        resume_service.delete_checkpoint(user_id)
+
         # Clear Seedr storage to guarantee 100% free quota for subsequent tasks
         try:
             await seedr_service.seedr_pool.clean_storage()
@@ -887,11 +904,15 @@ async def run_auto_leech(
 
         cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
         cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
-        primary_stream = cloud_stream or stream_url
+        # primary_stream is ONLY the cloud CDN URL — Telegram is download-only
+        primary_stream = cloud_stream or ""
 
         streams_list = []
         downloads_list = []
 
+        # ── Cloud CDN Stream (for website video player) ────────────────────────
+        # ONLY Cloud Drive URLs (GDrive, OneDrive, R2) go into streams_list.
+        # Telegram stream URLs are NEVER added here — Telegram is download-only.
         if cloud_stream:
             streams_list.append({
                 "server": "Server 1",
@@ -900,36 +921,32 @@ async def run_auto_leech(
                 "stream_url": cloud_stream,
             })
             downloads_list.append({
-                "quality": "1080p (Super High-Speed Direct)",
+                "quality": "1080p (Cloud High-Speed)",
                 "size": downloader.format_bytes(sz_1080),
                 "url": cloud_download or cloud_stream,
                 "format": file_ext,
                 "host": "Cloud CDN",
             })
 
+        # ── Telegram: download link ONLY — NOT added to streams_list ──────────
         if stream_url:
-            server_label = "Server 2 (Telegram Mirror)" if cloud_stream else "Server 1 (Telegram Direct)"
-            server_name = "Server 2" if cloud_stream else "Server 1"
-            streams_list.append({
-                "server": server_name,
-                "label": server_label,
-                "type": stream_type,
-                "stream_url": stream_url,
-            })
             downloads_list.append({
-                "quality": "1080p (Telegram Direct)",
+                "quality": "1080p (Telegram Download)",
                 "size": downloader.format_bytes(sz_1080),
                 "url": stream_url,
                 "format": file_ext,
                 "host": "Telegram",
+                "download_only": True,  # flag: player.js must NOT use this as stream
             })
 
-        # Add other qualities
-        downloads_list.extend([
-            {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": primary_stream, "format": file_ext, "host": "Direct"},
-            {"quality": "480p", "size": downloader.format_bytes(sz_480), "url": primary_stream, "format": file_ext, "host": "Direct"},
-            {"quality": "360p", "size": downloader.format_bytes(sz_360), "url": primary_stream, "format": file_ext, "host": "Direct"},
-        ])
+        # ── Multi-quality download placeholders (same URL, different size hints) ─
+        base_dl_url = cloud_download or cloud_stream or stream_url
+        if base_dl_url:
+            downloads_list.extend([
+                {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": base_dl_url, "format": file_ext, "host": "Direct"},
+                {"quality": "480p", "size": downloader.format_bytes(sz_480), "url": base_dl_url, "format": file_ext, "host": "Direct"},
+                {"quality": "360p", "size": downloader.format_bytes(sz_360), "url": base_dl_url, "format": file_ext, "host": "Direct"},
+            ])
 
         raw_dur = tmdb_meta.get("duration", 120)
         dur_str = f"{raw_dur} min" if isinstance(raw_dur, int) else (str(raw_dur) if str(raw_dur).endswith("min") else f"{raw_dur} min")

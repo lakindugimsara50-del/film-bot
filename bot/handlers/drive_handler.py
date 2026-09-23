@@ -36,68 +36,69 @@ def register(app: Client) -> None:
             await message.reply_text("⛔ මෙම විධානය භාවිත කළ හැක්කේ Administrators ලට පමණි.")
             return
 
-    args = message.text.strip().split()
-    subcommand = args[1].lower() if len(args) > 1 else ""
+        args = message.text.strip().split()
+        subcommand = args[1].lower() if len(args) > 1 else ""
 
-    # Subcommand: /drives offline
-    if subcommand in ("offline", "lost", "inactive"):
-        await _show_offline_movies(client, message)
-        return
-
-    # Subcommand: /drives list <drive_id>
-    if subcommand == "list" and len(args) > 2:
-        drive_id = args[2]
-        await _list_drive_movies(client, message, drive_id)
-        return
-
-    # Default: Show summary of all connected drives
-    wait_msg = await message.reply_text("🔍 Cloud Drive තත්ත්වයන් පරීක්ෂා කරමින් පවතී...")
-    try:
-        statuses = await drive_manager.get_drives_status()
-        if not statuses:
-            text = (
-                "☁️ <b>Cloud Drive Storage තත්ත්වය</b>\n\n"
-                "ℹ️ තවමත් කිසිදු Cloud Drive එකක් (OneDrive / Google Drive) සම්බන්ධ කර නොමැත.\n\n"
-                "<b>නව Drive එකක් එක් කිරීමට:</b>\n"
-                "• <code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
-                "• <code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt; &lt;client_id&gt; &lt;client_secret&gt;</code>"
-            )
-            await wait_msg.edit_text(text, parse_mode=ParseMode.HTML)
+        # Subcommand: /drives offline
+        if subcommand in ("offline", "lost", "inactive"):
+            await _show_offline_movies(client, message)
             return
 
-        lines = ["☁️ <b>සම්බන්ධිත Cloud Drive ගිණුම් තත්ත්වය</b>\n"]
-        total_quota = 0.0
-        total_used = 0.0
+        # Subcommand: /drives list <drive_id>
+        if subcommand == "list" and len(args) > 2:
+            drive_id = args[2]
+            await _list_drive_movies(client, message, drive_id)
+            return
 
-        for d in statuses:
-            icon = "✅" if d["is_active"] else "❌"
-            p_name = "Microsoft OneDrive" if d["provider"] == "onedrive" else "Google Drive"
-            status_text = "Active (සක්‍රිය)" if d["is_active"] else f"Offline ({d.get('error', 'Error')[:40]})"
+        # Default: Show summary of all connected drives
+        wait_msg = await message.reply_text("🔍 Cloud Drive තත්ත්වයන් පරීක්ෂා කරමින් පවතී...")
+        try:
+            statuses = await drive_manager.get_drives_status()
+            if not statuses:
+                text = (
+                    "☁️ <b>Cloud Drive Storage තත්ත්වය</b>\n\n"
+                    "ℹ️ තවමත් කිසිදු Cloud Drive එකක් (OneDrive / Google Drive) සම්බන්ධ කර නොමැත.\n\n"
+                    "<b>නව Drive එකක් එක් කිරීමට:</b>\n"
+                    "• <code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
+                    "• <code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt; &lt;client_id&gt; &lt;client_secret&gt;</code>"
+                )
+                await wait_msg.edit_text(text, parse_mode=ParseMode.HTML)
+                return
+
+            lines = ["☁️ <b>සම්බන්ධිත Cloud Drive ගිණුම් තත්ත්වය</b>\n"]
+            total_quota = 0.0
+            total_used = 0.0
+
+            for d in statuses:
+                icon = "✅" if d["is_active"] else "❌"
+                p_name = "Microsoft OneDrive" if d["provider"] == "onedrive" else "Google Drive"
+                status_text = "Active (සක්‍රිය)" if d["is_active"] else f"Offline ({d.get('error', 'Error')[:40]})"
+
+                lines.append(
+                    f"{icon} <b>{d['name']}</b> ({p_name})\n"
+                    f"   • ID: <code>{d['drive_id']}</code>\n"
+                    f"   • තත්ත්වය: {status_text}\n"
+                    f"   • මුළු ඉඩ: {d['total_gb']} GB\n"
+                    f"   • භාවිත කළ: {d['used_gb']} GB\n"
+                    f"   • නිදහස් ඉඩ: <b>{d['remaining_gb']} GB</b>\n"
+                    f"   • ගබඩා කළ චිත්‍රපට: <b>{d['movie_count']}</b>\n"
+                )
+                total_quota += d["total_gb"]
+                total_used += d["used_gb"]
 
             lines.append(
-                f"{icon} <b>{d['name']}</b> ({p_name})\n"
-                f"   • ID: <code>{d['drive_id']}</code>\n"
-                f"   • තත්ත්වය: {status_text}\n"
-                f"   • මුළු ඉඩ: {d['total_gb']} GB\n"
-                f"   • භාවිත කළ: {d['used_gb']} GB\n"
-                f"   • නිදහස් ඉඩ: <b>{d['remaining_gb']} GB</b>\n"
-                f"   • ගබඩා කළ චිත්‍රපට: <b>{d['movie_count']}</b>\n"
+                f"📊 <b>මුළු Cloud Storage:</b> {round(total_used, 1)} GB / {round(total_quota, 1)} GB\n\n"
+                f"<b>විධාන:</b>\n"
+                f"• <code>/drives list &lt;drive_id&gt;</code> — Drive එකේ ඇති චිත්‍රපට ලැයිස්තුව\n"
+                f"• <code>/drives offline</code> — අක්‍රිය වූ Drive සහ බලපෑ චිත්‍රපට\n"
+                f"• <code>/rmdrive &lt;drive_id&gt;</code> — Drive එකක් ඉවත් කිරීම"
             )
-            total_quota += d["total_gb"]
-            total_used += d["used_gb"]
+            await wait_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML)
 
-        lines.append(
-            f"📊 <b>මුළු Cloud Storage:</b> {round(total_used, 1)} GB / {round(total_quota, 1)} GB\n\n"
-            f"<b>විධාන:</b>\n"
-            f"• <code>/drives list &lt;drive_id&gt;</code> — Drive එකේ ඇති චිත්‍රපට ලැයිස්තුව\n"
-            f"• <code>/drives offline</code> — අක්‍රිය වූ Drive සහ බලපෑ චිත්‍රපට\n"
-            f"• <code>/rmdrive &lt;drive_id&gt;</code> — Drive එකක් ඉවත් කිරීම"
-        )
-        await wait_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML)
+        except Exception as exc:
+            log.error("[DriveHandler] Error checking drives: %s", exc)
+            await wait_msg.edit_text(f"❌ දෝෂයක් සිදුවිය: {exc}")
 
-    except Exception as exc:
-        log.error("[DriveHandler] Error checking drives: %s", exc)
-        await wait_msg.edit_text(f"❌ දෝෂයක් සිදුවිය: {exc}")
 
 
 async def _show_offline_movies(client: Client, message: Message) -> None:

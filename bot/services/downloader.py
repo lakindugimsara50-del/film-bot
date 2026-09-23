@@ -325,14 +325,23 @@ async def download_torrent(
     dest_dir: str,
     task_key: str = "",
     progress_callback: Optional[Callable] = None,
+    episode_hint: Optional[str] = None,
 ) -> str:
     """
     Download a torrent or magnet link directly to dest_dir using aria2c.
-    Extracts and returns the largest video file (.mp4, .mkv, .avi) inside the download folder.
+    Extracts and returns the target episode or largest video file (.mp4, .mkv, .avi).
     """
     aria2_bin = find_aria2c()
     if not aria2_bin:
         raise RuntimeError("aria2c is required on the system for torrent/magnet downloads.")
+
+    # Prevent container crash by checking available disk space
+    try:
+        free_space = shutil.disk_usage(dest_dir).free
+        if free_space < 500 * 1024 * 1024:
+            raise RuntimeError(f"Low server disk space ({format_bytes(free_space)} free). Aborting download to prevent crash.")
+    except Exception as d_err:
+        log.warning("[Downloader] Disk check warning: %s", d_err)
 
     # If input is a remote .torrent URL, download it directly first for instant startup
     torrent_arg = magnet_or_torrent
@@ -374,6 +383,7 @@ async def download_torrent(
         "--bt-enable-lpd=true",
         "--bt-max-peers=100",
         "--file-allocation=none",
+        "--disk-cache=16M",
         "--peer-id-prefix=-qB4520-",
         "--user-agent=qBittorrent/4.5.2",
         f"--bt-tracker={live_trackers}",
@@ -452,23 +462,36 @@ async def download_torrent(
     if proc.returncode != 0:
         raise RuntimeError(f"aria2c torrent download exited with return code {proc.returncode}")
 
-    # Find the primary video file (largest file with video extension)
+    # Find the primary video file (target episode or largest video file)
     best_file = None
     best_size = 0
     video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
 
-    for root, _, files in os.walk(dest_dir):
-        for f in files:
-            ext = os.path.splitext(f)[1].lower()
-            if ext in video_exts:
-                f_path = os.path.join(root, f)
-                sz = os.path.getsize(f_path)
-                if sz > best_size:
-                    best_size = sz
-                    best_file = f_path
+    if episode_hint:
+        eh = episode_hint.lower().strip()
+        for root, _, files in os.walk(dest_dir):
+            for f in files:
+                ext = os.path.splitext(f)[1].lower()
+                if ext in video_exts and (eh in f.lower() or re.search(r"\b" + re.escape(eh) + r"\b", f.lower())):
+                    best_file = os.path.join(root, f)
+                    log.info("[Downloader] Found matching episode file '%s' -> %s", episode_hint, f)
+                    break
+            if best_file:
+                break
+
+    if not best_file:
+        for root, _, files in os.walk(dest_dir):
+            for f in files:
+                ext = os.path.splitext(f)[1].lower()
+                if ext in video_exts:
+                    f_path = os.path.join(root, f)
+                    sz = os.path.getsize(f_path)
+                    if sz > best_size:
+                        best_size = sz
+                        best_file = f_path
 
     if best_file:
-        log.info("[Downloader] Found main torrent video file: %s (%s)", os.path.basename(best_file), format_bytes(best_size))
+        log.info("[Downloader] Found main torrent video file: %s (%s)", os.path.basename(best_file), format_bytes(os.path.getsize(best_file)))
         return best_file
 
     raise RuntimeError("No valid video file (.mp4, .mkv, .avi) found in torrent download.")

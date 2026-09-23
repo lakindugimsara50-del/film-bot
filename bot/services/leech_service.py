@@ -636,9 +636,11 @@ async def run_auto_leech(
                             except Exception:
                                 pass
 
+                        ep_hint = f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None
                         cloud_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
                             magnet_url=mag_to_use,
                             progress_callback=_seedr_progress,
+                            episode_hint=ep_hint,
                         )
 
                     # 3. Fallback to PikPak if Seedr failed or was full
@@ -682,11 +684,27 @@ async def run_auto_leech(
                         log.warning("[LeechService] Cloud debrid (Seedr/PikPak) failed for candidate %s.", candidate.method_name)
                         continue
                     else:
+                        # Prevent VPS disk exhaustion crashes: ensure enough free space exists
+                        try:
+                            free_disk = shutil.disk_usage(temp_dir).free
+                            c_bytes = candidate.size_bytes or 0
+                            if c_bytes > 0 and free_disk < (c_bytes + 400 * 1024 * 1024):
+                                log.warning(
+                                    "[LeechService] Candidate %s (%s) exceeds available VPS disk (%s). Skipping to prevent container crash.",
+                                    candidate.method_name,
+                                    downloader.format_bytes(c_bytes),
+                                    downloader.format_bytes(free_disk),
+                                )
+                                continue
+                        except Exception as d_check_err:
+                            log.debug("[LeechService] Disk check: %s", d_check_err)
+
                         local_file = await downloader.download_torrent(
                             magnet_or_torrent=candidate.source_url,
                             dest_dir=temp_dir,
                             task_key=task_key,
                             progress_callback=_download_progress,
+                            episode_hint=f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None,
                         )
                 elif candidate.method == "telegram":
                     # Download telegram media
@@ -795,6 +813,46 @@ async def run_auto_leech(
                     except Exception:
                         pass
                     local_file = remuxed
+
+        # ── Step 2.6: Soft-Embed Sinhala Subtitle into Video Container ────────
+        # Merges subtitle track into MP4 container (-c copy -c:s mov_text).
+        # When users download the file to PC/Phone, VLC and MX Player will autoplay
+        # Sinhala subtitles immediately without requiring separate .srt download.
+        try:
+            sub_to_embed = None
+            if temp_dir and os.path.exists(temp_dir):
+                for root, _, files in os.walk(temp_dir):
+                    for f in files:
+                        f_l = f.lower()
+                        if f_l.endswith((".srt", ".vtt")):
+                            sub_to_embed = os.path.join(root, f)
+                            if "sin" in f_l or "si" in f_l:
+                                break
+
+            # If no subtitle file was found in download folder, create Sinhala intro subtitle
+            if not sub_to_embed:
+                default_sub_srt = os.path.join(temp_dir, "sinhala_auto.srt")
+                with open(default_sub_srt, "w", encoding="utf-8") as sf:
+                    sf.write(
+                        "1\n00:00:01,000 --> 00:00:07,000\n"
+                        f"FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n"
+                        "2\n00:00:08,000 --> 00:00:16,000\n"
+                        f"{display_title} නැරඹීමට සහ බාගත කිරීමට ස්තූතියි!\n"
+                    )
+                sub_to_embed = default_sub_srt
+
+            if sub_to_embed and os.path.exists(sub_to_embed):
+                log.info("[LeechService] Soft-embedding Sinhala subtitle into video: %s", sub_to_embed)
+                sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
+                if await video_service.embed_subtitles_soft(local_file, sub_to_embed, sub_muxed):
+                    try:
+                        os.remove(local_file)
+                    except Exception:
+                        pass
+                    local_file = sub_muxed
+                    log.info("[LeechService] Subtitle soft-embed succeeded! Subtitles now merged into video.")
+        except Exception as sub_mux_err:
+            log.warning("[LeechService] Subtitle soft-embed note: %s", sub_mux_err)
 
         # ── Step 3: Fast Parallel Upload to Telegram Channel ──────────────────
         file_size = os.path.getsize(local_file)

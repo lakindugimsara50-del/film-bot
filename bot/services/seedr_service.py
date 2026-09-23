@@ -76,6 +76,7 @@ class SeedrService:
         magnet_url: str,
         timeout_seconds: int = 180,
         progress_callback: Optional[object] = None,
+        episode_hint: Optional[str] = None,
     ) -> Optional[dict]:
         """
         Add magnet to Seedr Cloud, wait for cloud download to finish,
@@ -170,8 +171,19 @@ class SeedrService:
                                         video_files.append(f)
 
                         if video_files:
-                            video_files.sort(key=lambda x: x.get("size", 0), reverse=True)
-                            target_file = video_files[0]
+                            target_file = None
+                            if episode_hint:
+                                eh = episode_hint.lower().strip()
+                                for vf in video_files:
+                                    vf_name = vf.get("name", "").lower()
+                                    if eh in vf_name or re.search(r"\b" + re.escape(eh) + r"\b", vf_name):
+                                        target_file = vf
+                                        log.info("[Seedr] Matched requested episode '%s' -> %s", episode_hint, vf.get("name"))
+                                        break
+                            if not target_file:
+                                video_files.sort(key=lambda x: x.get("size", 0), reverse=True)
+                                target_file = video_files[0]
+
                             file_id = target_file.get("folder_file_id") or target_file.get("id")
                             file_name = target_file.get("name", "movie.mp4")
                             file_size = target_file.get("size", 0)
@@ -460,6 +472,7 @@ class SeedrPool:
         magnet_url: str,
         timeout_seconds: int = 180,
         progress_callback: Optional[object] = None,
+        episode_hint: Optional[str] = None,
     ) -> Optional[dict]:
         """
         Attempt conversion using accounts in pool with round-robin rotation.
@@ -485,6 +498,7 @@ class SeedrPool:
                 magnet_url=magnet_url,
                 timeout_seconds=timeout_seconds,
                 progress_callback=progress_callback,
+                episode_hint=episode_hint,
             )
 
             if res and res.get("direct_url"):

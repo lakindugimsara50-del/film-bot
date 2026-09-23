@@ -510,3 +510,76 @@ def register(app: Client) -> None:
             )
             return
 
+    @app.on_callback_query(filters.regex(r"^releech:"))
+    async def releech_callback(client: Client, query: CallbackQuery) -> None:
+        """Re-trigger a leech that was interrupted by a bot crash/restart."""
+        if not _is_admin(query.from_user.id if query.from_user else 0):
+            await query.answer("⛔ Admin only!", show_alert=True)
+            return
+
+        await query.answer("🔄 Re-leech ආරම්භ කරමින් පවතී...")
+
+        # Parse: releech:<user_id>:<query_text>
+        parts = query.data.split(":", 2)
+        original_user_id = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else query.from_user.id
+        query_text = parts[2] if len(parts) > 2 else ""
+
+        if not query_text:
+            await query.message.edit_text("❌ Re-leech query text හමු නොවීය. /leech manually use කරන්න.")
+            return
+
+        # Delete checkpoint before re-triggering
+        from services import resume_service
+        resume_service.delete_checkpoint(original_user_id)
+
+        # Create a status message and trigger leech_service
+        status_msg = await query.message.reply_text(
+            f"🔄 <b>Re-Leech ආරම්භ විය!</b>\n\n"
+            f"🎬 <b>Query:</b> <code>{query_text}</code>\n\n"
+            f"⏳ Candidates සොයමින් පවතී...",
+            parse_mode=ParseMode.HTML,
+        )
+
+        # Add to sequential queue for crash recovery re-leech
+        await queue_service.add_to_queue(
+            client=client,
+            status_msg=status_msg,
+            user_id=query.from_user.id,
+            query_text=query_text,
+            title_hint=query_text[:40],
+            auto_publish=False,
+        )
+
+        # Update original notification
+        try:
+            await query.message.edit_text(
+                f"✅ <b>Re-Leech triggered!</b>\n\n"
+                f"Query: <code>{query_text}</code>\n"
+                f"Progress message sent above ☝️",
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception:
+            pass
+
+    @app.on_callback_query(filters.regex(r"^dismiss_checkpoint:"))
+    async def dismiss_checkpoint_callback(client: Client, query: CallbackQuery) -> None:
+        """Dismiss a crash-recovery notification and delete the checkpoint."""
+        if not _is_admin(query.from_user.id if query.from_user else 0):
+            await query.answer("⛔ Admin only!", show_alert=True)
+            return
+
+        parts = query.data.split(":", 1)
+        target_user_id_str = parts[1] if len(parts) > 1 else ""
+        if target_user_id_str.isdigit():
+            from services import resume_service
+            resume_service.delete_checkpoint(int(target_user_id_str))
+
+        await query.answer("✅ Checkpoint dismissed.", show_alert=False)
+        try:
+            await query.message.edit_text(
+                "🗑 <i>Interrupted download checkpoint dismissed.</i>",
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception:
+            pass
+

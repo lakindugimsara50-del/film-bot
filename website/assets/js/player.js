@@ -430,6 +430,20 @@ function createVjsPlayer(playerEl, stream, movie) {
       try { vjsPlayer.play(); } catch (e) {}
     });
 
+    vjsPlayer.on('loadedmetadata', () => {
+      syncSubtitles();
+    });
+
+    try {
+      if (vjsPlayer.textTracks && vjsPlayer.textTracks()) {
+        vjsPlayer.textTracks().on('addtrack', (e) => {
+          if (e && e.track && (e.track.kind === 'subtitles' || e.track.kind === 'captions')) {
+            e.track.mode = 'showing';
+          }
+        });
+      }
+    } catch (e) {}
+
     // Intercept Video.js errors cleanly - never show raw black error screen
     vjsPlayer.on('error', () => {
       console.warn('Video.js direct stream error on server index', currentStreamIdx);
@@ -491,13 +505,17 @@ function renderPlayerFallback(playerEl, movie) {
 
 function syncSubtitles() {
   if (!vjsPlayer) return;
-  const textTracks = vjsPlayer.textTracks();
-  for (let i = 0; i < textTracks.length; i++) {
-    if (textTracks[i].kind === 'subtitles') {
-      textTracks[i].mode = 'showing';
-      break;
+  try {
+    const textTracks = vjsPlayer.textTracks();
+    if (!textTracks) return;
+    for (let i = 0; i < textTracks.length; i++) {
+      const track = textTracks[i];
+      if (track && (track.kind === 'subtitles' || track.kind === 'captions')) {
+        track.mode = 'showing';
+        break;
+      }
     }
-  }
+  } catch (e) {}
 }
 
 function loadStream(movie, idx) {

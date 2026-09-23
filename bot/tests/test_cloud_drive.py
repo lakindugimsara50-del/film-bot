@@ -44,6 +44,7 @@ class DummyOneDrive(OneDriveClient):
 @pytest.mark.asyncio
 async def test_drive_manager_selection_picks_drive_with_most_space(tmp_path):
     dm = DriveManager()
+    dm._initialized = True
     dm.drives = {
         "drive_1": DummyOneDrive("drive_1", remaining_gb=10.0),
         "drive_2": DummyOneDrive("drive_2", remaining_gb=85.0),  # Most space
@@ -58,6 +59,7 @@ async def test_drive_manager_selection_picks_drive_with_most_space(tmp_path):
 @pytest.mark.asyncio
 async def test_drive_manager_skips_inactive_drives(tmp_path):
     dm = DriveManager()
+    dm._initialized = True
     dm.drives = {
         "drive_active": DummyOneDrive("drive_active", remaining_gb=20.0, is_active=True),
         "drive_broken": DummyOneDrive("drive_broken", remaining_gb=90.0, is_active=False),
@@ -71,6 +73,7 @@ async def test_drive_manager_skips_inactive_drives(tmp_path):
 @pytest.mark.asyncio
 async def test_drive_manager_offline_movies_detection(tmp_path):
     dm = DriveManager()
+    dm._initialized = True
     dm.drives = {
         "drive_1": DummyOneDrive("drive_1", remaining_gb=50.0, is_active=True),
         "drive_2": DummyOneDrive("drive_2", remaining_gb=50.0, is_active=False),  # Offline
@@ -98,6 +101,7 @@ async def test_drive_manager_upload_and_index(tmp_path):
     dummy_file.write_bytes(b"dummy video data")
 
     dm = DriveManager()
+    dm._initialized = True
     dm.drives = {
         "drive_test": DummyOneDrive("drive_test", remaining_gb=50.0, is_active=True),
     }
@@ -112,3 +116,4 @@ async def test_drive_manager_upload_and_index(tmp_path):
     assert res["stream_url"] == "https://onedrive.mock/drive_test?download=1"
     assert "test-movie-2024" in dm.movie_index
     assert dm.movie_index["test-movie-2024"]["drive_id"] == "drive_test"
+

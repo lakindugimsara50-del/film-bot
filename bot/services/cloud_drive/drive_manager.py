@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from .gdrive_client import GoogleDriveClient
 from .onedrive_client import OneDriveClient
+from .rclone_client import RcloneDriveClient, DEFAULT_CONF_FILE
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +82,35 @@ class DriveManager:
                             client_id=d_client_id,
                             client_secret=d_secret,
                         )
+
+        # 4. Auto-populate rclone.conf from environment variable on Render/cloud
+        gdrive_token_env = os.getenv("RCLONE_CONFIG_GDRIVE_TOKEN") or os.getenv("GDRIVE_TOKEN")
+        if gdrive_token_env:
+            try:
+                os.makedirs(DATA_DIR, exist_ok=True)
+                existing = ""
+                if os.path.exists(DEFAULT_CONF_FILE):
+                    with open(DEFAULT_CONF_FILE, "r", encoding="utf-8") as f:
+                        existing = f.read()
+                if "[gdrive]" not in existing:
+                    with open(DEFAULT_CONF_FILE, "a+", encoding="utf-8") as f:
+                        f.write(f"\n[gdrive]\ntype = drive\nscope = drive\ntoken = {gdrive_token_env}\n")
+                    log.info("[DriveManager] Wrote gdrive token from environment variable to %s", DEFAULT_CONF_FILE)
+            except Exception as w_err:
+                log.warning("[DriveManager] Could not write rclone env token: %s", w_err)
+
+        # 5. Load remotes from rclone.conf (e.g. 5TB Google Drive / OneDrive)
+        if os.path.exists(DEFAULT_CONF_FILE):
+            try:
+                import configparser
+                cfg = configparser.ConfigParser()
+                cfg.read(DEFAULT_CONF_FILE)
+                for section in cfg.sections():
+                    if section not in self.drives:
+                        self.drives[section] = RcloneDriveClient(remote_name=section, config_file=DEFAULT_CONF_FILE)
+                        log.info("[DriveManager] Auto-registered Rclone remote '%s' into cloud pool.", section)
+            except Exception as rc_err:
+                log.warning("[DriveManager] Error reading rclone.conf: %s", rc_err)
 
         self._initialized = True
         log.info("[DriveManager] Initialized with %d configured drive(s).", len(self.drives))

@@ -6,11 +6,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg aria2 curl git \
+    ffmpeg aria2 curl git rclone \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up user for Hugging Face Spaces compatibility
 RUN useradd -m -u 1000 user
+RUN mkdir -p /home/user/.config/rclone && chown -R user:user /home/user/.config
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH

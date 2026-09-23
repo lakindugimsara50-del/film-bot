@@ -18,6 +18,64 @@
       "slug": "oppenheimer",
       "title": "Oppenheimer",
       "subtitles": []
+    },
+    {
+      "id": "game-of-thrones-2011-s01e05",
+      "slug": "game-of-thrones-2011-s01e05",
+      "title": "Game of Thrones",
+      "title_si": "ගේම් ඔෆ් ත්‍රෝන්ස්",
+      "year": 2011,
+      "imdb": "9.6",
+      "rating": "9.6",
+      "imdb_id": "tt0944947",
+      "tmdb_id": "1399",
+      "type": "series",
+      "season": 1,
+      "episode": 5,
+      "episode_title": "The Wolf and the Lion",
+      "number_of_seasons": 8,
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/2OMB0ynKlyIenMJWI2Dy9IWT4c.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/2OMB0ynKlyIenMJWI2Dy9IWT4c.jpg",
+      "genres": [
+        "Drama",
+        "Action",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "quality": "1080p",
+      "duration": "56 min",
+      "description": "Lord Eddard Stark travels to Kings Landing to serve as Hand of the King. Across the sea, Daenerys and her new husband plan to take back the Iron Throne. Meanwhile, at Winterfell, Bran begins his recovery from the assassination attempt.",
+      "featured": false,
+      "trending": true,
+      "file_id": "",
+      "stream_url": "",
+      "streams": [],
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Download)",
+          "size": "1.46 GB",
+          "url": "https://t.me/filmhost_lk",
+          "format": "MP4",
+          "host": "Telegram",
+          "download_only": true
+        }
+      ],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "Sinhala Subtitle",
+          "url": "",
+          "default": true
+        }
+      ],
+      "source_method": "auto_leech",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s01e05",
+      "added_date": "2026-09-24",
+      "added_at": "2026-09-24T01:00:00Z",
+      "added_by": "manual_fix"
     }
   ],
   "last_updated": "2026-09-23T17:55:18Z"

@@ -421,10 +421,15 @@ async def _execute_leech(
     Called by _leech_queue_worker() sequentially.
     """
 
-    is_auto_mode = auto_publish
+    # Default: AUTO-PUBLISH — film is immediately added to website after upload.
+    # Only --draft flag gives the manual "Publish / Add Sub / Keep Draft" choice.
+    is_auto_mode = True  # Always publish by default
     clean_query = (query_text or "").strip()
     lower_q = clean_query.lower()
-    if "--auto" in lower_q or "-a" in clean_query.split():
+    if "--draft" in lower_q or "-d" in clean_query.split():
+        is_auto_mode = False  # Manual choice buttons shown only with --draft
+        clean_query = re.sub(r"\b(--draft|-d)\b", "", clean_query).strip()
+    elif "--auto" in lower_q or "-a" in clean_query.split():
         is_auto_mode = True
         clean_query = re.sub(r"\b(--auto|-a)\b", "", clean_query).strip()
     elif lower_q.startswith("auto "):

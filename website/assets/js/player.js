@@ -78,44 +78,29 @@ function getMovieStreams(movie) {
   const msgId = movie.message_id || null;
   const fileId = movie.file_id || null;
 
-  // Render backend – the only reliable origin for Telegram byte-range streaming
+  // Render backend origin for Telegram byte-range streaming fallback
   const RENDER = 'https://film-bot-2.onrender.com';
 
-  let directUrl = '';
-
+  let tgDirectUrl = '';
   if (msgId) {
-    directUrl = `${RENDER}/stream/channel/${channelId}/${msgId}`;
+    tgDirectUrl = `${RENDER}/stream/channel/${channelId}/${msgId}`;
   } else if (fileId) {
-    directUrl = `${RENDER}/stream/file/${encodeURIComponent(fileId)}`;
-  } else if (movie.stream_url &&
-             !movie.stream_url.includes('autoembed') &&
-             !movie.stream_url.includes('vidsrc')) {
-    directUrl = movie.stream_url.startsWith('http')
-      ? movie.stream_url
-      : `${RENDER}${movie.stream_url}`;
+    tgDirectUrl = `${RENDER}/stream/file/${encodeURIComponent(fileId)}`;
+  } else if (movie.stream_url && !movie.stream_url.includes('autoembed') && !movie.stream_url.includes('vidsrc')) {
+    if (movie.stream_url.includes('sharepoint.com') ||
+        movie.stream_url.includes('1drv.ms') ||
+        movie.stream_url.includes('google.com') ||
+        movie.stream_url.includes('drive.google.com') ||
+        movie.stream_url.includes('r2.dev')) {
+      // It's a high-speed Cloud CDN stream!
+    } else {
+      tgDirectUrl = movie.stream_url.startsWith('http')
+        ? movie.stream_url
+        : `${RENDER}${movie.stream_url}`;
+    }
   }
 
-  if (directUrl) {
-    // Server 1 — direct Render connection
-    list.push({
-      server: 'Server 1',
-      label: '⚡ Server 1 (Telegram Cloud HD)',
-      type: 'video/mp4',
-      stream_url: directUrl,
-      file_id: fileId || ''
-    });
-    // Server 2 — same backend but asks for a fresh connection (different query param)
-    // This lets the browser open a second TCP connection when Server 1 stalls.
-    list.push({
-      server: 'Server 2',
-      label: '🌩️ Server 2 (Telegram Mirror HD)',
-      type: 'video/mp4',
-      stream_url: directUrl + (directUrl.includes('?') ? '&' : '?') + 's=2',
-      file_id: fileId || ''
-    });
-  }
-
-  // Also include any explicit direct streams from movies.json (skip 3rd-party embeds)
+  // 1. Check if movie already has explicit Cloud CDN streams (OneDrive, GDrive, R2)
   if (Array.isArray(movie.streams)) {
     movie.streams.forEach(s => {
       const sUrl = s.stream_url || '';
@@ -123,27 +108,64 @@ function getMovieStreams(movie) {
       if (sUrl.includes('autoembed') || sUrl.includes('vidsrc') ||
           sUrl.includes('multiembed') || sUrl.includes('2embed') ||
           s.embed === true || s.type === 'embed') return;
-      // Skip if we already have this URL (or a mirror variant of it)
-      const base = sUrl.split('?')[0];
-      if (list.some(item => item.stream_url.split('?')[0] === base)) return;
-      list.push({
-        server: `Server ${list.length + 1}`,
-        label: s.label || `Server ${list.length + 1} (Direct Cloud)`,
-        type: s.type || 'video/mp4',
-        stream_url: sUrl,
-        file_id: s.file_id || ''
-      });
+
+      const isCloud = sUrl.includes('sharepoint.com') ||
+                      sUrl.includes('1drv.ms') ||
+                      sUrl.includes('google.com') ||
+                      sUrl.includes('drive.google.com') ||
+                      sUrl.includes('r2.dev') ||
+                      (s.label && s.label.includes('Cloud Direct'));
+
+      if (isCloud) {
+        list.push({
+          server: `Server ${list.length + 1}`,
+          label: s.label || `⚡ Server ${list.length + 1} (Cloud Direct Ultra HD)`,
+          type: s.type || 'video/mp4',
+          stream_url: sUrl,
+          file_id: s.file_id || '',
+        });
+      }
     });
   }
 
-  // Fallback: use movie.stream_url if nothing found
+  // Also check movie.stream_url if it's a Cloud URL and not yet in list
+  if (movie.stream_url) {
+    const isCloudUrl = movie.stream_url.includes('sharepoint.com') ||
+                       movie.stream_url.includes('1drv.ms') ||
+                       movie.stream_url.includes('google.com') ||
+                       movie.stream_url.includes('drive.google.com') ||
+                       movie.stream_url.includes('r2.dev');
+    if (isCloudUrl && !list.some(item => item.stream_url === movie.stream_url)) {
+      list.unshift({
+        server: 'Server 1',
+        label: '⚡ Server 1 (Cloud Direct Ultra HD)',
+        type: 'video/mp4',
+        stream_url: movie.stream_url,
+        file_id: fileId || '',
+      });
+    }
+  }
+
+  // 2. Add Telegram Streams (as Server 1 if no cloud, or Server 2 if cloud exists)
+  if (tgDirectUrl) {
+    const nextIdx = list.length + 1;
+    list.push({
+      server: `Server ${nextIdx}`,
+      label: list.length === 0 ? '⚡ Server 1 (Telegram Cloud HD)' : `🌩️ Server ${nextIdx} (Telegram Mirror)`,
+      type: 'video/mp4',
+      stream_url: tgDirectUrl,
+      file_id: fileId || '',
+    });
+  }
+
+  // 3. Fallback: use movie.stream_url if list is completely empty
   if (list.length === 0 && movie.stream_url) {
     list.push({
       server: 'Server 1',
-      label: '⚡ Server 1 (Cloud HD)',
+      label: '⚡ Server 1 (Direct HD)',
       type: 'video/mp4',
       stream_url: movie.stream_url,
-      file_id: movie.file_id || ''
+      file_id: movie.file_id || '',
     });
   }
 

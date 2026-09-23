@@ -66,9 +66,12 @@ if _missing:
     )
     sys.exit(1)
 
-# ── Create Pyrogram bot Client ────────────────────────────────────────────────
-# NOTE: Bots use BOT_TOKEN; userbots (telegram_upload / stream_server)
-#       use the SESSION_NAME .session file with API_ID + API_HASH.
+# Ensure an active event loop exists for Pyrogram Dispatcher in Python 3.11+
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 app = Client(
     name="film_bot",
     api_id=config.API_ID,
@@ -226,6 +229,11 @@ async def help_handler(client: Client, message: Message) -> None:
         "  • <code>/auth &lt;user_id / @username&gt;</code> — Grant upload permission\n"
         "  • <code>/unauth &lt;user_id / @username&gt;</code> — Revoke permission\n"
         "  • <code>/users</code> — List authorized uploaders\n\n"
+        "☁️ <b>Cloud Drive Storage (OneDrive & Google Drive):</b>\n"
+        "  • <code>/drives</code> — View storage quota and connected drives\n"
+        "  • <code>/drives list &lt;id&gt;</code> — Movies on specific drive\n"
+        "  • <code>/drives offline</code> — Check inactive drives & affected movies\n"
+        "  • <code>/adddrive</code> — Add OneDrive / Google Drive\n\n"
         "☁️ <b>PikPak Cloud Debrid (10GB+):</b>\n"
         "  • <code>/pikpak</code> — View PikPak storage and connection\n"
         "  • <code>/pikpak login &lt;email&gt; &lt;pass&gt;</code> — Connect account\n"
@@ -324,6 +332,10 @@ def _register_handlers() -> None:
     pikpak_handler.register(app)
     log.info("Handler registered: pikpak_handler (/pikpak)")
 
+    from handlers import drive_handler
+    drive_handler.register(app)
+    log.info("Handler registered: drive_handler (/drives, /storage, /adddrive)")
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -342,6 +354,14 @@ async def _on_start(client: Client) -> None:
     log.info("  Public ch.   : %d", config.PUBLIC_CHANNEL_ID)
     log.info("  GitHub repo  : %s", config.GITHUB_REPO)
     log.info("=" * 60)
+
+    # Initialize Cloud Drive Manager (OneDrive / Google Drive)
+    try:
+        from services.cloud_drive import drive_manager
+        drive_manager.initialize()
+        log.info("[DriveManager] Cloud Drive storage initialized.")
+    except Exception as dm_err:
+        log.warning("[DriveManager] Initialization error: %s", dm_err)
 
     # Prime channel peers in session database to avoid [400 PEER_ID_INVALID]
     for ch_name, ch_id in [("Private channel (Filmhost)", config.PRIVATE_CHANNEL_ID), ("Public channel", config.PUBLIC_CHANNEL_ID)]:

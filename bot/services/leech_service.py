@@ -46,6 +46,7 @@ from services import (
     tmdb_service,
     video_service,
 )
+from services.cloud_drive import drive_manager
 from services.pikpak_service import pikpak_service
 from services.scrapers import method1_telegram, method2_consumet, method3_ddl, method_yts
 
@@ -812,6 +813,24 @@ async def run_auto_leech(
                 except Exception as up_err:
                     log.debug("[LeechService] Upload progress edit ignored: %s", up_err)
 
+        # ── Step 3a: Upload to High-Speed Cloud Drive (OneDrive / Google Drive) ──
+        ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
+        slug = f"{_slugify(title, year)}{ep_suffix}"
+        cloud_upload_res = None
+
+        try:
+            cloud_upload_res = await drive_manager.upload_movie(
+                local_path=local_file,
+                movie_slug=slug,
+                movie_title=display_title,
+                filename=f"{slug}.mp4",
+            )
+            if cloud_upload_res:
+                log.info("[LeechService] Movie '%s' uploaded to Cloud Drive: %s", slug, cloud_upload_res.get("stream_url"))
+        except Exception as c_err:
+            log.warning("[LeechService] Cloud Drive upload skipped/failed: %s", c_err)
+
+        # ── Step 3b: Upload to Telegram Channel (For Telegram Downloads) ──────
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
         upload_res = await telegram_upload.upload_video_file(
             bot_client=client,
@@ -844,8 +863,6 @@ async def run_auto_leech(
             pass
 
         # ── Step 5: Prepare Movie Payload & Draft ────────────────────────────
-        ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
-        slug = f"{_slugify(title, year)}{ep_suffix}"
         base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
         if "yoursite.lk" in base_site:
             base_site = "https://filmsub.pages.dev"
@@ -868,12 +885,51 @@ async def run_auto_leech(
         sz_720 = int(file_size * 0.55)
         sz_1080 = file_size
 
-        downloads_list = [
-            {"quality": "360p", "size": downloader.format_bytes(sz_360), "url": stream_url, "format": file_ext, "host": "Direct"},
-            {"quality": "480p", "size": downloader.format_bytes(sz_480), "url": stream_url, "format": file_ext, "host": "Direct"},
-            {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": stream_url, "format": file_ext, "host": "Direct"},
-            {"quality": "1080p", "size": downloader.format_bytes(sz_1080), "url": stream_url, "format": file_ext, "host": "Direct"},
-        ]
+        cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
+        cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
+        primary_stream = cloud_stream or stream_url
+
+        streams_list = []
+        downloads_list = []
+
+        if cloud_stream:
+            streams_list.append({
+                "server": "Server 1",
+                "label": "⚡ Server 1 (Cloud Direct Ultra HD)",
+                "type": stream_type,
+                "stream_url": cloud_stream,
+            })
+            downloads_list.append({
+                "quality": "1080p (Super High-Speed Direct)",
+                "size": downloader.format_bytes(sz_1080),
+                "url": cloud_download or cloud_stream,
+                "format": file_ext,
+                "host": "Cloud CDN",
+            })
+
+        if stream_url:
+            server_label = "Server 2 (Telegram Mirror)" if cloud_stream else "Server 1 (Telegram Direct)"
+            server_name = "Server 2" if cloud_stream else "Server 1"
+            streams_list.append({
+                "server": server_name,
+                "label": server_label,
+                "type": stream_type,
+                "stream_url": stream_url,
+            })
+            downloads_list.append({
+                "quality": "1080p (Telegram Direct)",
+                "size": downloader.format_bytes(sz_1080),
+                "url": stream_url,
+                "format": file_ext,
+                "host": "Telegram",
+            })
+
+        # Add other qualities
+        downloads_list.extend([
+            {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": primary_stream, "format": file_ext, "host": "Direct"},
+            {"quality": "480p", "size": downloader.format_bytes(sz_480), "url": primary_stream, "format": file_ext, "host": "Direct"},
+            {"quality": "360p", "size": downloader.format_bytes(sz_360), "url": primary_stream, "format": file_ext, "host": "Direct"},
+        ])
 
         raw_dur = tmdb_meta.get("duration", 120)
         dur_str = f"{raw_dur} min" if isinstance(raw_dur, int) else (str(raw_dur) if str(raw_dur).endswith("min") else f"{raw_dur} min")
@@ -913,15 +969,8 @@ async def run_auto_leech(
             "message_id": message_id,
             "file_name": file_name,
             "file_size": file_size,
-            "stream_url": stream_url,
-            "streams": [
-                {
-                    "server": "Server 1",
-                    "label": "Server 1 (Telegram Direct)",
-                    "type": stream_type,
-                    "stream_url": stream_url,
-                }
-            ],
+            "stream_url": primary_stream,
+            "streams": streams_list,
             "downloads": downloads_list,
             "subtitles": [
                 {

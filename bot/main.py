@@ -296,10 +296,20 @@ async def status_handler(client: Client, message: Message) -> None:
     )
 
 
-@app.on_message(filters.command("ping"))
+BOT_VERSION = "v2.5.0-turbo"
+BOT_COMMIT = "633af8a"
+BOT_FEATURES = "✅ Sequential Queue | ✅ Ultra-Fast FFmpeg (Colab) | ✅ Drive Progress | ✅ Auto-Publish"
+
+@app.on_message(filters.command(["ping", "version"]))
 async def ping_handler(client: Client, message: Message) -> None:
-    """Simple liveness check."""
-    await message.reply_text("🏓 Pong!")
+    """Check liveness and active build version."""
+    await message.reply_text(
+        f"🏓 <b>Pong! Bot is Live</b>\n\n"
+        f"🔖 <b>Version:</b> <code>{BOT_VERSION}</code> (Commit <code>{BOT_COMMIT}</code>)\n"
+        f"⚡ <b>Active Features:</b>\n{BOT_FEATURES}",
+        parse_mode=ParseMode.HTML,
+    )
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

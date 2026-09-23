@@ -129,6 +129,12 @@ class PikPakService:
         target_file_id: Optional[str] = None
 
         try:
+            # Step 0: Ensure PikPak cloud storage is clean and has full 6GB free
+            try:
+                await self.clean_storage()
+            except Exception as c_err:
+                log.warning("[PikPak] Pre-conversion cleanup warning: %s", c_err)
+
             log.info("[PikPak] Submitting magnet to PikPak cloud...")
             res = await client.offline_download(file_url=magnet_link)
             log.info("[PikPak] Offline download response: %s", res)
@@ -313,13 +319,31 @@ class PikPakService:
             except Exception as e:
                 log.warning("[PikPak] Error clearing tasks: %e", e)
 
-            # Delete all root files & folders forever
+            # Delete all root files & folders forever, including contents inside "My Pack"
             try:
                 files_res = await client.file_list(parent_id=None, size=100)
-                file_ids = [f["id"] for f in files_res.get("files", []) if "id" in f]
+                root_files = files_res.get("files", [])
+
+                # Scan inside subfolders (specifically "My Pack" where cloud torrents reside)
+                child_file_ids = []
+                for rf in root_files:
+                    if rf.get("kind") == "drive#folder" or "folder" in rf.get("mime_type", "").lower() or rf.get("name") == "My Pack":
+                        try:
+                            sub_res = await client.file_list(parent_id=rf["id"], size=100)
+                            sub_ids = [sf["id"] for sf in sub_res.get("files", []) if "id" in sf]
+                            if sub_ids:
+                                child_file_ids.extend(sub_ids)
+                        except Exception as sub_err:
+                            log.debug("[PikPak] Error listing subfolder %s: %s", rf.get("id"), sub_err)
+
+                if child_file_ids:
+                    await client.delete_forever(ids=child_file_ids)
+                    log.info("[PikPak] Deleted %d files inside My Pack/folders forever.", len(child_file_ids))
+
+                file_ids = [f["id"] for f in root_files if "id" in f and f.get("name") != "My Pack"]
                 if file_ids:
                     await client.delete_forever(ids=file_ids)
-                    log.info("[PikPak] Deleted %d files/folders forever.", len(file_ids))
+                    log.info("[PikPak] Deleted %d root files/folders forever.", len(file_ids))
             except Exception as e:
                 log.warning("[PikPak] Error clearing root files: %s", e)
 

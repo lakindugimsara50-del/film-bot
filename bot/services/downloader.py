@@ -337,7 +337,7 @@ async def _download_httpx(
 
 
 def matches_episode_filename(filename: str, hint: str) -> bool:
-    """Check if filename matches the episode hint (supports S01E02, 1x02, etc.)."""
+    """Check if filename matches the episode hint (supports S01E02, 1x02, ranges, etc.)."""
     if not hint:
         return True
     fn_lower = filename.lower()
@@ -357,7 +357,29 @@ def matches_episode_filename(filename: str, hint: str) -> bool:
             rf"season\s*0?{s_num}.*?episode\s*0?{e_num}\b",
             rf"s0?{s_num}[\s._-]+e0?{e_num}\b",
         ]
-        return any(re.search(p, fn_lower) for p in patterns)
+        if any(re.search(p, fn_lower) for p in patterns):
+            return True
+
+        # Check multi-episode ranges: S01E01-E10, S01E01-02, 1x01-1x05, S01E01E02
+        p1 = rf"\bs0?{s_num}\s*e(?:p)?(\d+)\s*(?:[-~]|[-~]?e(?:p)?)\s*0?(\d+)\b"
+        m1 = re.search(p1, fn_lower)
+        if m1:
+            ep1, ep2 = int(m1.group(1)), int(m1.group(2))
+            if ep1 > ep2:
+                ep1, ep2 = ep2, ep1
+            if ep1 <= e_num <= ep2:
+                return True
+
+        p2 = rf"\b0?{s_num}x0?(\d+)\s*(?:[-~]|[-~]?\d{{1,2}}x|[-~]?x)\s*0?(\d+)\b"
+        m2 = re.search(p2, fn_lower)
+        if m2:
+            ep1, ep2 = int(m2.group(1)), int(m2.group(2))
+            if ep1 > ep2:
+                ep1, ep2 = ep2, ep1
+            if ep1 <= e_num <= ep2:
+                return True
+
+        return False  # Hint explicitly specified season, so do not fall through to episode-only
 
     # Try episode only: e.g. "E02" or "ep02"
     m_ep = re.search(r"(?:e|ep|episode)\s*0?(\d+)", hint_lower)
@@ -368,7 +390,17 @@ def matches_episode_filename(filename: str, hint: str) -> bool:
             rf"episode\s*0?{e_num}\b",
             rf"\b\d{{1,2}}x0?{e_num}\b",
         ]
-        return any(re.search(p, fn_lower) for p in patterns)
+        if any(re.search(p, fn_lower) for p in patterns):
+            return True
+
+        p_ep_range = r"\be(?:p)?(\d+)\s*(?:[-~]|[-~]?e(?:p)?)\s*0?(\d+)\b"
+        m_r = re.search(p_ep_range, fn_lower)
+        if m_r:
+            ep1, ep2 = int(m_r.group(1)), int(m_r.group(2))
+            if ep1 > ep2:
+                ep1, ep2 = ep2, ep1
+            if ep1 <= e_num <= ep2:
+                return True
 
     return False
 
@@ -392,12 +424,14 @@ async def find_episode_file_index_from_torrent(
         video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
 
         for line in output.splitlines():
-            m = re.match(r"^\s*(\d+)\|\s*(.+)$", line)
-            if m:
-                idx = int(m.group(1))
-                file_path = m.group(2).strip()
+            # aria2c --show-files output: idx|path/to/file|length|completed%|selected
+            parts = line.split("|")
+            if len(parts) >= 2 and parts[0].strip().isdigit():
+                idx = int(parts[0].strip())
+                file_path = parts[1].strip()
                 ext = os.path.splitext(file_path)[1].lower()
-                if ext in video_exts and matches_episode_filename(file_path, episode_hint):
+                base_name = os.path.basename(file_path.replace("\\", "/"))
+                if ext in video_exts and (matches_episode_filename(base_name, episode_hint) or matches_episode_filename(file_path, episode_hint)):
                     log.info("[Downloader] Found target episode file in torrent: index %d -> %s", idx, file_path)
                     return idx
     except Exception as exc:

@@ -165,6 +165,40 @@ class TestDownloader(unittest.TestCase):
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
+    def test_matches_episode_filename(self):
+        # Exact and varied episode formats
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.S01E02.720p.mkv", "S01E02"))
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.1x02.720p.mkv", "S01E02"))
+        self.assertTrue(downloader.matches_episode_filename("Game of Thrones Season 1 Episode 2.mp4", "S01E02"))
+        # Range formats
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.S01E01-E02.mkv", "S01E02"))
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.S01E01-02.mkv", "S01E02"))
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.S01E01E02.mkv", "S01E02"))
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.S01E01-E10.mkv", "S01E02"))
+        self.assertTrue(downloader.matches_episode_filename("Game.of.Thrones.1x01-1x10.mkv", "S01E02"))
+        # Non-matching episodes or seasons
+        self.assertFalse(downloader.matches_episode_filename("Game.of.Thrones.S01E03.mkv", "S01E02"))
+        self.assertFalse(downloader.matches_episode_filename("Game.of.Thrones.S02E02.mkv", "S01E02"))
+
+    def test_find_episode_file_index_from_torrent(self):
+        sample_output = (
+            "1|./Game of Thrones S01/Game.of.Thrones.S01E01.720p.mkv|145236789|0%|true\n"
+            "2|./Game of Thrones S01/Game.of.Thrones.S01E02.720p.mkv|154320000|0%|true\n"
+            "3|./Game of Thrones S01/poster.jpg|12000|0%|true\n"
+        )
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(sample_output.encode("utf-8"), b""))
+
+        async def run_find():
+            with patch("asyncio.create_subprocess_exec", AsyncMock(return_value=mock_proc)):
+                idx = await downloader.find_episode_file_index_from_torrent("aria2c", "dummy.torrent", "S01E02")
+                self.assertEqual(idx, 2)
+
+                idx_none = await downloader.find_episode_file_index_from_torrent("aria2c", "dummy.torrent", "S01E05")
+                self.assertIsNone(idx_none)
+
+        asyncio.run(run_find())
+
 
 class TestLeechService(unittest.TestCase):
     def test_parse_query(self):
@@ -590,6 +624,25 @@ class TestLeechService(unittest.TestCase):
                 self.assertEqual(results[0]["hash"], "hash_genuine_got")
 
         asyncio.run(run_test())
+
+    def test_matches_season_episode_season_packs(self):
+        """Verify season packs and episode ranges are matched for target series episodes."""
+        # Exact match
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E02 720p HDTV", 1, 2))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones 1x02 720p", 1, 2))
+        # Range matches
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E01-E10 720p", 1, 2))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E01-02 720p", 1, 2))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01E01E02 720p", 1, 2))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones 1x01-1x10 720p", 1, 2))
+        # Season packs
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones Season 1 Complete 720p", 1, 2))
+        self.assertTrue(torrent_finder.matches_season_episode("Game of Thrones S01 720p HDTV", 1, 2))
+        # Wrong episode or wrong season
+        self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones S01E01 720p", 1, 2))
+        self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones S01E03 720p", 1, 2))
+        self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones S02 720p", 1, 2))
+        self.assertFalse(torrent_finder.matches_season_episode("Game of Thrones Season 2 Complete", 1, 2))
 
     def test_seedr_explicit_delete_methods(self):
         """Verify SeedrService and SeedrPool explicit delete_folder and delete_torrent methods."""

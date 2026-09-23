@@ -117,13 +117,54 @@ def matches_season_episode(name: str, season: Optional[int], episode: Optional[i
     name_lower = name.lower()
 
     if season is not None and episode is not None:
-        patterns = [
+        # 1. Exact episode match: S01E02, 1x02, Season 1 Episode 2, S01 Ep02, S01.E02
+        exact_patterns = [
             rf"\bs0?{season}e0?{episode}\b",
             rf"\bs0?{season}\s*ep?0?{episode}\b",
             rf"\b0?{season}x0?{episode}\b",
             rf"season\s*0?{season}.*?episode\s*0?{episode}\b",
+            rf"s0?{season}[\s._-]+e0?{episode}\b",
         ]
-        return any(re.search(p, name_lower) for p in patterns)
+        if any(re.search(p, name_lower) for p in exact_patterns):
+            return True
+
+        # 2. Episode range: S01E01-E10, S01E01-04, 1x01-1x05, S01E01E02
+        p1 = rf"\bs0?{season}\s*e(?:p)?(\d+)\s*(?:[-~]|[-~]?e(?:p)?)\s*0?(\d+)\b"
+        m1 = re.search(p1, name_lower)
+        if m1:
+            ep1, ep2 = int(m1.group(1)), int(m1.group(2))
+            if ep1 > ep2:
+                ep1, ep2 = ep2, ep1
+            if ep1 <= episode <= ep2:
+                return True
+
+        p2 = rf"\b0?{season}x0?(\d+)\s*(?:[-~]|[-~]?\d{{1,2}}x|[-~]?x)\s*0?(\d+)\b"
+        m2 = re.search(p2, name_lower)
+        if m2:
+            ep1, ep2 = int(m2.group(1)), int(m2.group(2))
+            if ep1 > ep2:
+                ep1, ep2 = ep2, ep1
+            if ep1 <= episode <= ep2:
+                return True
+
+        # 3. Season pack for this season (e.g. S01 Complete, Season 1 720p)
+        # Must match season, and NOT mention a conflicting episode or conflicting season
+        season_match = re.search(rf"\b(?:s0?{season}|season\s*0?{season})\b", name_lower)
+        if season_match:
+            # Check for conflicting episode
+            other_ep = re.search(r"\b(?:s\d{1,2})?e(?:p)?(\d{1,3})\b|\b\d{1,2}x(\d{1,3})\b", name_lower)
+            if other_ep:
+                found_ep = int(other_ep.group(1) or other_ep.group(2))
+                if found_ep != episode:
+                    return False
+            # Check for conflicting other seasons
+            other_seasons = re.findall(r"\bs0?(\d{1,2})\b|\bseason\s*0?(\d{1,2})\b", name_lower)
+            all_s = [int(s[0] or s[1]) for s in other_seasons if (s[0] or s[1])]
+            if all_s and all(s != season for s in all_s):
+                return False
+            return True
+
+        return False
 
     if season is not None:
         patterns = [
@@ -180,7 +221,13 @@ def title_matches(name: str, query: str) -> bool:
     return all(w in name_lower for w in words)
 
 
-def calculate_relevance_score(tor_name: str, target_title: str, is_series: bool = False) -> int:
+def calculate_relevance_score(
+    tor_name: str,
+    target_title: str,
+    is_series: bool = False,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+) -> int:
     """Compute title relevance score penalizing commentary and CAM releases."""
     score = 100
     clean_n = re.sub(r"[._-]", " ", tor_name).lower()
@@ -190,6 +237,12 @@ def calculate_relevance_score(tor_name: str, target_title: str, is_series: bool 
         score += 50
     elif clean_target in clean_n:
         score += 30
+
+    if is_series and season is not None and episode is not None:
+        # Boost exact episode release over full season packs
+        exact_pat = rf"\bs0?{season}[\s._-]*e(?:p)?0?{episode}\b|\b0?{season}x0?{episode}\b"
+        if re.search(exact_pat, tor_name.lower()):
+            score += 15
 
     penalty = get_release_penalty(tor_name)
     score -= penalty
@@ -402,7 +455,13 @@ async def search_apibay(
                         magnet = build_magnet_uri(info_hash, name)
                         from services.downloader import format_bytes
 
-                        rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+                        rel_score = calculate_relevance_score(
+                            name,
+                            show_name,
+                            is_series=is_series,
+                            season=season,
+                            episode=episode,
+                        )
 
                         candidates.append({
                             "method": "torrent",
@@ -762,7 +821,13 @@ async def search_all_torrents(
             for tor in res:
                 tor.setdefault("provider", "YTS" if tor.get("method") == "yts" else "Torrent")
                 if "relevance_score" not in tor:
-                    tor["relevance_score"] = calculate_relevance_score(tor.get("title", ""), clean_title, is_series=is_series)
+                    tor["relevance_score"] = calculate_relevance_score(
+                        tor.get("title", ""),
+                        clean_title,
+                        is_series=is_series,
+                        season=season,
+                        episode=episode,
+                    )
                 h = tor.get("hash", "").strip().lower()
                 if h and h in seen_hashes:
                     continue

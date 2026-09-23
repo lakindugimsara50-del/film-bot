@@ -747,8 +747,10 @@ async def run_auto_leech(
                         cloud_service_name = "VPS aria2c"
 
                         # Hard protection against Render container disk exhaustion crash: NEVER download > 1.85 GB via local aria2c
+                        # (Allow season packs for series episode tasks since aria2c selects only the single requested episode file)
                         c_bytes = candidate.size_bytes or 0
-                        if c_bytes > int(1.85 * 1024 * 1024 * 1024):
+                        is_single_ep = bool(is_series and season and episode)
+                        if not is_single_ep and c_bytes > int(1.85 * 1024 * 1024 * 1024):
                             log.warning(
                                 "[LeechService] Candidate %s (%s) exceeds Render safe limit (1.85 GB). Skipping to prevent container crash.",
                                 candidate.method_name,
@@ -759,7 +761,8 @@ async def run_auto_leech(
                         # Ensure enough free space exists
                         try:
                             free_disk = shutil.disk_usage(temp_dir).free
-                            if c_bytes > 0 and free_disk < (c_bytes + 400 * 1024 * 1024):
+                            needed_bytes = (min(c_bytes, 850 * 1024 * 1024) if is_single_ep else c_bytes) + 400 * 1024 * 1024
+                            if c_bytes > 0 and free_disk < needed_bytes:
                                 log.warning(
                                     "[LeechService] Candidate %s (%s) exceeds available VPS disk (%s). Skipping to prevent container crash.",
                                     candidate.method_name,

@@ -695,4 +695,3 @@ window.FILMSUB_DATA = {
   ],
   "last_updated": "2026-09-24T09:30:00Z"
 };
-window.MOVIES_DATA = window.FILMSUB_DATA;

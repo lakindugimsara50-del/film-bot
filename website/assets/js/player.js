@@ -363,11 +363,10 @@ function renderStreamEmbed(playerEl, stream, movie) {
   }
   isTrailerActive = false;
 
-  // For Google Drive /preview URLs, ensure clean embed format (no extra params)
+  // For Google Drive URLs, ensure clean embed format (/preview)
   let embedUrl = stream.stream_url || '';
-  if (embedUrl.includes('drive.google.com/file/d/')) {
-    // Extract file ID and build clean preview URL
-    const match = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (embedUrl.includes('drive.google.com')) {
+    const match = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || embedUrl.match(/id=([a-zA-Z0-9_-]+)/);
     if (match) {
       embedUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
     }
@@ -386,6 +385,15 @@ function renderStreamEmbed(playerEl, stream, movie) {
               style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px">
       </iframe>
     </div>`;
+
+  const qWrap = document.getElementById('quality-selector-wrap');
+  if (qWrap) {
+    qWrap.innerHTML = `
+      <div style="font-size:13px;color:var(--text2);display:inline-flex;align-items:center;gap:6px">
+        <i class="fa-solid fa-gear" style="color:var(--accent)"></i>
+        <span>Player එකේ ⚙️ Settings මඟින් 1080p, 720p, 480p Quality තෝරාගත හැක</span>
+      </div>`;
+  }
 }
 
 function createVjsPlayer(playerEl, stream, movie) {
@@ -552,14 +560,13 @@ function loadStream(movie, idx) {
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
 
-  // Google Drive /preview URLs MUST be shown as iframes (not Video.js).
-  // They are Google's native video player and support Range requests internally.
-  const url = stream.stream_url || '';
-  const isGDrivePreview = url.includes('drive.google.com/file/d/') && url.includes('/preview');
-  const isGDriveEmbed = url.includes('drive.google.com') && (url.includes('/preview') || url.includes('/view'));
+  // Google Drive URLs MUST ALWAYS be shown as iframes (not Video.js).
+  // They use Google's native CDN player with Range request support and built-in quality controls.
+  const url = (stream.stream_url || '').toLowerCase();
+  const isDrive = url.includes('drive.google.com') || url.includes('googleusercontent.com') || url.includes('docs.google.com');
 
-  // Handle iframe embed stream (type=embed, or GDrive /preview)
-  if (stream.type === 'embed' || stream.embed === true || isGDrivePreview || isGDriveEmbed) {
+  // Handle iframe embed stream (type=embed, or any Google Drive stream)
+  if (stream.type === 'embed' || stream.embed === true || isDrive) {
     renderStreamEmbed(playerEl, stream, movie);
     return;
   }

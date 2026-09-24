@@ -1209,14 +1209,18 @@ async def _execute_leech(
             except Exception as gh_err:
                 log.warning("[LeechService] GitHub service add_movie note: %s", gh_err)
 
-        # ── Step 3c: Upload to Telegram Channel ──────────────────────────────
+        # ── Step 3c: Upload to Telegram Channel (Temporarily Paused via Toggle) ──
+        ENABLE_TELEGRAM_VIDEO_UPLOAD = False  # Set True anytime to re-enable Telegram video upload
+
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
         file_id = ""
         stream_url = ""
         message_id = 0
 
-        # Telegram Bot API limit is 2000 MB. If larger, post Drive download link to channel instead of hanging
-        if file_size > int(1.95 * 1024 * 1024 * 1024):
+        if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
+            log.info("[LeechService] Telegram video upload is temporarily paused (Drive-only mode active).")
+        elif file_size > int(1.95 * 1024 * 1024 * 1024):
+            # Telegram Bot API limit is 2000 MB. If larger, post Drive download link to channel instead of hanging
             log.info("[LeechService] File size %.2f GB > 1.95 GB. Posting Drive link to Telegram channel.", file_size / (1024**3))
             try:
                 msg = await client.send_message(
@@ -1260,6 +1264,7 @@ async def _execute_leech(
                     movie_entry["message_id"] = message_id
             except Exception as tg_err:
                 log.warning("[LeechService] Telegram upload note: %s", tg_err)
+
 
         # ── Step 4: Immediate VPS Disk Cleanup ────────────────────────────────
         try:

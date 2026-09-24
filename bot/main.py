@@ -303,9 +303,10 @@ async def status_handler(client: Client, message: Message) -> None:
     )
 
 
-BOT_VERSION = "v2.6.0-speed-pro"
-BOT_COMMIT = "pipeline-turbo"
-BOT_FEATURES = "✅ Fast Remux (15s) | ✅ Direct Drive Stream | ✅ Immediate Web Publish | ✅ Multi-Quality (1080p-360p) | ✅ Drives Cleaned"
+BOT_VERSION = "v2.6.1-drive-only-test"
+BOT_COMMIT = "drive-only-mode"
+BOT_FEATURES = "✅ Drive-Only Upload Mode (TG Paused) | ✅ Fast Remux (15s) | ✅ Immediate Web Publish | ✅ Multi-Quality"
+
 
 
 @app.on_message(filters.command(["ping", "version"]))

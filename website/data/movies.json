@@ -1766,7 +1766,172 @@
       "added_at": "2026-09-24T18:14:47Z",
       "added_by": "bot_auto_leech",
       "drive_file_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S"
+    },
+    {
+      "id": "feed-2026",
+      "slug": "feed-2026",
+      "title": "Feed",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.6",
+      "rating": "5.6",
+      "imdb_id": "tt30505578",
+      "tmdb_id": "1128204",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/8AI6GBlESvZ4RWhreSWHfqg03HA.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/8AI6GBlESvZ4RWhreSWHfqg03HA.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4ZeaWA6DzFVOjWTi70b9ZAaQktf.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4ZeaWA6DzFVOjWTi70b9ZAaQktf.jpg",
+      "genres": [
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "Five social media influencers spend a weekend at a forest retreat but inadvertently awaken and confront the world's first vampire.",
+      "director": "Marco van Belle",
+      "cast": [
+        {
+          "name": "Grace Collender",
+          "character": "Orla Ryan"
+        },
+        {
+          "name": "Rhys Mannion",
+          "character": "Austin"
+        },
+        {
+          "name": "Molly McCann",
+          "character": "Ciara Ryan"
+        },
+        {
+          "name": "Charlotte Bradley",
+          "character": "Nora"
+        },
+        {
+          "name": "Flynn Gray",
+          "character": "Cathal"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADMWq1cjMxJjembmbInjl1w0hmxO4iAAL7JAACTLaxVZuhDFHnG-4THgQ",
+      "message_id": 49,
+      "file_name": "feed-2026.mp4",
+      "file_size": 1487379050,
+      "stream_url": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "type": "video/mp4",
+          "stream_url": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
+          "type": "video/mp4",
+          "stream_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
+        "1080p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=hd1080",
+        "720p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=hd720",
+        "480p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=large",
+        "360p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=medium"
+      },
+      "downloads": [
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.4 GB",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=1080p&title=Feed%20%282026%29&size=1487379050",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "size_bytes": 1487379050
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "780.2 MB",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=720p&title=Feed%20%282026%29&size=818058477",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "size_bytes": 818058477
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Sinhala Sub Merged)",
+          "size": "397.2 MB",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=480p&title=Feed%20%282026%29&size=475961296",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "size_bytes": 475961296
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Sinhala Sub Merged)",
+          "size": "255.3 MB",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=360p&title=Feed%20%282026%29&size=267728229",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "size_bytes": 267728229
+        },
+        {
+          "quality": "1080p (Telegram Download)",
+          "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
+          "size": "1.4 GB",
+          "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/49",
+          "format": "MP4",
+          "host": "Telegram",
+          "download_only": true,
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A08.000%0A%F0%9F%8E%AC%20Feed%20%282026%29%20%282026%29%20%E2%80%94%20FilmSub.lk%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%0A%0A00%3A00%3A08.500%20--%3E%2000%3A00%3A18.000%0A%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B7%8A%E0%B7%80%E0%B6%BA%E0%B6%82%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%93%E0%B6%BA%E0%B7%80%20%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%92%E0%B6%BA%E0%B7%8F%E0%B6%AD%E0%B7%8A%E0%B6%B8%E0%B6%9A%E0%B6%BA%E0%B7%92%20%28Auto%20Sinhala%20Subtitles%20Enabled%29%0A%0A00%3A00%3A18.500%20--%3E%2000%3A00%3A30.000%0A1080p%20/%20720p%20/%20480p%20/%20360p%20High-Speed%20Cloud%20Streaming%20%26%20Download%0A%0A00%3A00%3A30.500%20--%3E%2000%3A00%3A45.000%0AFeed%20%282026%29%20%282026%29%20%E2%80%94%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%80%E0%B7%93%E0%B6%A9%E0%B7%92%E0%B6%BA%E0%B7%9D%E0%B7%80%E0%B6%A7%E0%B6%B8%20Merge%20%E0%B6%9A%E0%B6%BB%20%E0%B6%87%E0%B6%AD",
+          "default": true
+        }
+      ],
+      "source_method": "yts",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=feed-2026",
+      "added_date": "2026-09-24",
+      "added_at": "2026-09-24T18:47:30Z",
+      "added_by": "bot_auto_leech",
+      "drive_file_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry"
     }
   ],
-  "last_updated": "2026-09-24T18:26:43Z"
+  "last_updated": "2026-09-24T18:55:48Z"
 }

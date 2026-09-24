@@ -23,7 +23,7 @@ pyrogram.utils.MIN_CHAT_ID = -999999999999
 
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode
-from pyrogram.types import Message
+from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 
 from fastapi import FastAPI
 import uvicorn
@@ -197,15 +197,33 @@ def start_health_server_thread(port: int) -> threading.Thread:
 
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client: Client, message: Message) -> None:
-    """Greet new users."""
+    """Greet new users warmly in Sinhala."""
+    user_name = message.from_user.first_name if message.from_user else "යාලුවා"
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🎬 Movies Leech කරන්න (/leech)", switch_inline_query_current_chat="/leech "),
+            InlineKeyboardButton("📂 Drafts බලන්න", callback_data="drafts:list"),
+        ],
+        [
+            InlineKeyboardButton("☁️ Drive Quota (/drives)", callback_data="btn:drives"),
+            InlineKeyboardButton("📖 සියලු විධාන (Help)", callback_data="btn:help"),
+        ],
+        [
+            InlineKeyboardButton("🌐 Film Website එකට යන්න", url="https://filmsub.pages.dev"),
+        ]
+    ])
     await message.reply_text(
-        "👋 <b>Welcome to Film Bot!</b>\n\n"
-        "I automate movie uploads to the streaming site.\n\n"
-        "<b>Admin commands:</b>\n"
-        "  /add — Add a new movie\n"
-        "  /status — Check bot & server status\n"
-        "  /help — Show this message",
+        f"👋 <b>ආයුබෝවන් {user_name}! FilmSub Official Bot වෙත සාදරයෙන් පිළිගනිමු!</b> 🎬\n\n"
+        f"මම ඔබගේ චිත්‍රපට වෙබ් අඩවිය (<a href=\"https://filmsub.pages.dev\">filmsub.pages.dev</a>) කළමනාකරණය කරන ස්වයංක්‍රීය සහායකයා වෙමි.\n\n"
+        f"<b>ප්‍රධාන පහසුකම්:</b>\n"
+        f"• ⚡ <b>Ultra Auto-Leech:</b> ඕනෑම චිත්‍රපටයක් 1080p වලින් Google Drive සහ Telegram වෙත Upload කිරීම\n"
+        f"• 💬 <b>Subtitle System:</b> සිංහල උපසිරැසි (.srt/.vtt) ස්වයංක්‍රීයව එක් කිරීම\n"
+        f"• ☁️ <b>15TB Google Drive CDN:</b> Ultra Smooth 1080p, 720p, 480p Streaming\n"
+        f"• 💾 <b>Drafts & Instant Publish:</b> වෙබ් අඩවියට දැන්ම හෝ පසුව දැමීමේ පූර්ණ පාලනය\n\n"
+        f"<i>💡 චිත්‍රපටයක් එක් කිරීමට: <code>/leech &lt;චිත්‍රපටයේ නම&gt;</code> ලෙස එවන්න.</i>",
         parse_mode=ParseMode.HTML,
+        reply_markup=kb,
+        disable_web_page_preview=True,
     )
 
 
@@ -258,6 +276,25 @@ async def help_handler(client: Client, message: Message) -> None:
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True,
     )
+
+
+@app.on_callback_query(filters.regex(r"^btn:"))
+async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
+    """Handle quick buttons from /start greeting."""
+    action = query.data.split(":", 1)[1]
+    if action == "help":
+        await query.answer()
+        fake_msg = query.message
+        fake_msg.from_user = query.from_user
+        await help_handler(client, fake_msg)
+    elif action == "drives":
+        await query.answer()
+        from handlers.drive_admin import drives_command
+        fake_msg = query.message
+        fake_msg.from_user = query.from_user
+        await drives_command(client, fake_msg)
+    else:
+        await query.answer()
 
 
 @app.on_message(filters.command("status"))

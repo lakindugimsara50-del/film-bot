@@ -110,16 +110,20 @@ def register(app: Client) -> None:
         kb = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data="wiz:pub_start"),
-                InlineKeyboardButton("💾 පස්සේ දාන්න Save කරගන්න (Draft)", callback_data="wiz:save_draft"),
+                InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data="wiz:pub_start"),
             ],
-            [InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")],
+            [
+                InlineKeyboardButton("💾 Draft එකක් ලෙස තබන්න", callback_data="wiz:save_draft"),
+                InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel"),
+            ],
         ])
 
         await message.reply_text(
             f"🎬 <b>චිත්‍රපට වීඩියෝව හඳුනාගන්නා ලදී! (Movie File Detected)</b>\n\n"
             f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
             f"📦 <b>ප්‍රමාණය:</b> {size_str}\n\n"
-            f"ඔබට අවශ්‍ය කුමක්ද?",
+            f"<b>ඔබට මෙම චිත්‍රපටය සමඟ කුමක් කිරීමට අවශ්‍යද?</b>\n"
+            f"පහතින් ඔබට අවශ්‍ය ක්‍රියාව තෝරන්න:",
             parse_mode=ParseMode.HTML,
             reply_markup=kb,
         )
@@ -519,14 +523,15 @@ def register(app: Client) -> None:
 
             session["step"] = "WAITING_SUB"
             kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("⏩ Default Sinhala Subtitle භාවිතා කරන්න", callback_data="wiz:skip_sub")],
+                [InlineKeyboardButton("⏩ Default Sinhala Subtitle භාවිතා කරන්න (Publish Now)", callback_data="wiz:skip_sub")],
+                [InlineKeyboardButton("💾 පසුව දැමීමට Draft ලෙස තබන්න", callback_data="wiz:save_draft")],
                 [InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")],
             ])
 
             await query.message.edit_text(
                 f"💬 <b>පියවර 2/3: සිංහල උපසිරැසි ගොනුව (.srt / .vtt) එවන්න</b>\n\n"
                 f"චිත්‍රපටයේ <b>.srt</b> හෝ <b>.vtt</b> උපසිරැසි ගොනුව මට Upload කරන්න, නැතහොත් Subtitle Link එකක් එවන්න.\n\n"
-                f"<i>(ඔබ ළඟ වෙනම උපසිරැසි ගොනුවක් නැත්නම් පහත බොත්තම ඔබා Default Subtitle එක තෝරන්න)</i>",
+                f"<i>💡 ඔබට වෙනම උපසිරැසි ගොනුවක් නැත්නම් හෝ පසුව දැමීමට අවශ්‍ය නම් ඉහත බොත්තම ඔබා Default Subtitle එක සමඟ දැන්ම Publish කරන්න.</i>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
             )

@@ -446,17 +446,17 @@ def register(app: Client) -> None:
             }
 
             kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("⏩ Default Subtitle මඟින් දැන්ම Publish කරන්න", callback_data=f"leech_act:pub:{draft_id}")],
-                [InlineKeyboardButton("📁 Draft ලෙස තබන්න (Publish Later)", callback_data=f"leech_act:draft:{draft_id}")],
+                [InlineKeyboardButton("⏩ පසුව දාන්නම් (Default Subtitle සමඟ දැන්ම Publish කරන්න)", callback_data=f"leech_act:pub:{draft_id}")],
+                [InlineKeyboardButton("💾 Draft ලෙස තබන්න (Channel Only)", callback_data=f"leech_act:draft:{draft_id}")],
                 [InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")],
             ])
 
             title_hint = draft.get("title_hint", "Movie")
             await query.message.edit_text(
-                f"💬 <b>පියවර: සිංහල උපසිරැසි (.srt / .vtt) ගොනුව එවන්න</b>\n\n"
+                f"💬 <b>සිංහල උපසිරැසි (.srt / .vtt) ගොනුව එවන්න:</b>\n\n"
                 f"🎬 <b>චිත්‍රපටය:</b> {title_hint}\n\n"
-                f"කරුණාකර උපසිරැසි <b>.srt</b> හෝ <b>.vtt</b> ගොනුව Upload කරන්න, නැතහොත් Subtitle Link එකක් එවන්න.\n\n"
-                f"<i>(ඔබ ළඟ වෙනම උපසිරැසි ගොනුවක් නැත්නම් ඉහත බොත්තම ඔබා දැන්ම Publish කළ හැක)</i>",
+                f"කරුණාකර ඔබ සතු <b>.srt</b> හෝ <b>.vtt</b> උපසිරැසි ගොනුව මෙතැනට Upload කරන්න (නැතහොත් Subtitle බාගත හැකි Direct Link එකක් එවන්න).\n\n"
+                f"<i>💡 ඔබට උපසිරැසි ගොනුවක් නොමැති නම් හෝ පසුව දැමීමට අවශ්‍ය නම්, ඉහත 'පසුව දාන්නම්' බොත්තම ඔබා Default Subtitle සමඟ දැන්ම Web එකට එක් කළ හැක.</i>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
             )
@@ -483,11 +483,11 @@ def register(app: Client) -> None:
 
             title_hint = draft.get("title_hint", "Movie")
             await query.message.edit_text(
-                f"📁 <b>චිත්‍රපටය Filmhost Channel එකෙහි Draft එකක් ලෙස සුරැකිණි!</b>\n\n"
+                f"💾 <b>චිත්‍රපටය Filmhost Channel එකෙහි සහ Drafts තුළ සුරැකිණි!</b>\n\n"
                 f"🎬 <b>චිත්‍රපටය:</b> {title_hint}\n"
                 f"🆔 <b>Draft ID:</b> <code>{draft_id}</code>\n"
-                f"☁️ <b>Storage:</b> Filmhost Telegram Channel\n\n"
-                f"<i>මෙම චිත්‍රපටය වෙබ් අඩවියට Publish කර නැත. ඔබට අවශ්‍ය ඕනෑම වේලාවක <code>/drafts</code> මඟින් හෝ පහත බොත්තමෙන් Publish කළ හැක.</i>",
+                f"☁️ <b>Storage:</b> Google Drive CDN & Telegram Storage ✅\n\n"
+                f"<i>මෙම චිත්‍රපටය වෙබ් අඩවියට තවම Publish කර නැත. ඔබට අවශ්‍ය ඕනෑම වේලාවක <code>/drafts</code> මඟින් හෝ ඉහත බොත්තම් මඟින් Web එකට එක් කළ හැක.</i>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
             )

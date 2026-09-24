@@ -1035,7 +1035,7 @@ async def _execute_leech(
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
                 text = (
-                    f"📤 <b>පියවර 4/4: Telegram Private Storage වෙත Upload වෙමින්...</b>\n\n"
+                    f"📤 <b>පියවර 5/5: Telegram Film Channel වෙත Upload වෙමින්...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
@@ -1048,7 +1048,7 @@ async def _execute_leech(
                 except Exception as up_err:
                     log.debug("[LeechService] Upload progress edit ignored: %s", up_err)
 
-        # ── Step 3a: Upload to High-Speed Cloud Drive (OneDrive / Google Drive) ──
+        # ── Step 4: Upload to High-Speed Cloud Drive (OneDrive / Google Drive) ──
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
         slug = f"{_slugify(title, year)}{ep_suffix}"
         cloud_upload_res = None
@@ -1059,7 +1059,7 @@ async def _execute_leech(
         # Initial notification that Google Drive upload has begun
         try:
             await status_msg.edit_text(
-                f"☁️ <b>පියවර 4/4: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
+                f"☁️ <b>පියවර 4/5: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                 f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
@@ -1087,7 +1087,7 @@ async def _execute_leech(
             total_str = downloader.format_bytes(total_bytes)
             speed_display = f"⚡ <b>Drive Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n" if speed_str != "--" else ""
             txt = (
-                f"☁️ <b>පියවර 4/4: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
+                f"☁️ <b>පියවර 4/5: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
@@ -1222,17 +1222,8 @@ async def _execute_leech(
             "added_by": "bot_auto_leech",
         }
 
-        # Publish immediately to website (Cloudflare Pages deploy triggers now!)
-        if is_auto_mode:
-            task_tracker.tracker.set_step(user_id, "Publishing to Website...")
-            try:
-                saved = await github_service.add_movie(movie_entry)
-                log.info("[LeechService] Immediate website publish: %s", saved)
-            except Exception as gh_err:
-                log.warning("[LeechService] GitHub service add_movie note: %s", gh_err)
-
-        # ── Step 3c: Upload to Telegram Channel (Temporarily Paused via Toggle) ──
-        ENABLE_TELEGRAM_VIDEO_UPLOAD = False  # Set True anytime to re-enable Telegram video upload
+        # ── Step 5: Upload to Telegram Channel ──
+        ENABLE_TELEGRAM_VIDEO_UPLOAD = True  # Re-enabled: Google Drive CDN + Telegram dual storage
 
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
         file_id = ""
@@ -1240,7 +1231,7 @@ async def _execute_leech(
         message_id = 0
 
         if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
-            log.info("[LeechService] Telegram video upload is temporarily paused (Drive-only mode active).")
+            log.info("[LeechService] Telegram video upload is disabled.")
         elif file_size > int(1.95 * 1024 * 1024 * 1024):
             # Telegram Bot API limit is 2000 MB. If larger, post Drive download link to channel instead of hanging
             log.info("[LeechService] File size %.2f GB > 1.95 GB. Posting Drive link to Telegram channel.", file_size / (1024**3))
@@ -1259,6 +1250,20 @@ async def _execute_leech(
             except Exception as t_err:
                 log.warning("[LeechService] Channel link post error: %s", t_err)
         else:
+            task_tracker.tracker.set_step(user_id, "Step 5/5 - Telegram Channel Upload")
+            try:
+                await status_msg.edit_text(
+                    f"📤 <b>පියවර 5/5: Telegram Film Channel වෙත Upload වෙමින් පවතී...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                    f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
+                    f"⚡ <b>Telegram Storage Channel වෙත සම්බන්ධ වෙමින් පවතී...</b>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_cancel,
+                )
+            except Exception:
+                pass
+
             try:
                 upload_res = await telegram_upload.upload_video_file(
                     bot_client=client,
@@ -1287,8 +1292,7 @@ async def _execute_leech(
             except Exception as tg_err:
                 log.warning("[LeechService] Telegram upload note: %s", tg_err)
 
-
-        # ── Step 4: Immediate VPS Disk Cleanup ────────────────────────────────
+        # ── Step 6: Immediate VPS Disk Cleanup ────────────────────────────────
         try:
             if os.path.exists(local_file):
                 os.remove(local_file)
@@ -1304,7 +1308,6 @@ async def _execute_leech(
             await seedr_service.seedr_pool.clean_storage()
         except Exception:
             pass
-
 
         # Save to draft_service so video in channel is never lost
         draft_id = f"leech_{uuid.uuid4().hex[:6]}"
@@ -1331,9 +1334,13 @@ async def _execute_leech(
         genres_val = ", ".join(movie_entry.get("genres", [])[:3])
 
         if is_auto_mode:
-            # Full-auto mode: movie was already published to GitHub at Step 3b
-            task_tracker.tracker.set_step(user_id, "Completed - All Uploads Finished")
-
+            # Full-auto mode: publish complete movie_entry now
+            task_tracker.tracker.set_step(user_id, "Publishing to Website...")
+            try:
+                saved = await github_service.add_movie(movie_entry)
+                log.info("[LeechService] Auto website publish: %s", saved)
+            except Exception as gh_err:
+                log.warning("[LeechService] GitHub service add_movie note: %s", gh_err)
 
             if config.PUBLIC_CHANNEL_ID:
                 try:
@@ -1354,10 +1361,9 @@ async def _execute_leech(
                 f"🎉 <b>Ultra Auto-Leech සාර්ථකව නිම විය!</b>\n\n"
                 f"{media_icon} <b>{display_title}</b>\n"
                 f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
-                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
-                f"🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
-                f"⚡ <b>භාවිතා කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
-                f"☁️ <b>Telegram Storage:</b> Filmhost Channel වෙත සෘජුවම Upload විය!\n"
+                f"📦 <b>ප්‍රමාණය:</b> {size_str} | 🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
+                f"☁️ <b>Google Drive CDN:</b> Ultra Fast Cloud Stream Ready ✅\n"
+                f"✈️ <b>Telegram Storage:</b> Filmhost Channel වෙත Upload විය ✅\n"
                 f"🧹 <b>Seedr & VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කෙරිණි)\n\n"
                 f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
                 f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
@@ -1368,32 +1374,36 @@ async def _execute_leech(
                 disable_web_page_preview=False,
             )
         else:
-            # Interactive choice mode: provide 3 action buttons
+            # Interactive humanized choice mode: provide 4 intuitive action buttons
             task_tracker.tracker.complete_task(user_id)
 
             kb_choices = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("🚀 දැන්ම Web එකට දාන්න (Publish Now)", callback_data=f"leech_act:pub:{draft_id}"),
-                    InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub:{draft_id}"),
                 ],
                 [
-                    InlineKeyboardButton("📁 Draft ලෙස තබන්න (Channel Only)", callback_data=f"leech_act:draft:{draft_id}"),
+                    InlineKeyboardButton("💬 Subtitle දැන්ම දාන්න (.srt)", callback_data=f"leech_act:sub:{draft_id}"),
+                    InlineKeyboardButton("⏩ පසුව දාන්නම් (Default Sub)", callback_data=f"leech_act:pub:{draft_id}"),
+                ],
+                [
+                    InlineKeyboardButton("💾 Draft ලෙස තබන්න (Channel Only)", callback_data=f"leech_act:draft:{draft_id}"),
                 ]
             ])
 
             await status_msg.edit_text(
-                f"🎉 <b>Ultra Auto-Leech සාර්ථකව බාගත කර Channel එකට Upload විය!</b>\n\n"
+                f"👋 <b>චිත්‍රපටය සාර්ථකව Download කර Channel එකට Upload විය!</b> 🎉\n\n"
                 f"{media_icon} <b>{display_title}</b>\n"
                 f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
-                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
-                f"🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
-                f"⚡ <b>භාවිතා කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
-                f"☁️ <b>Telegram Storage:</b> Filmhost Channel වෙත සුරැකිණි!\n"
-                f"🧹 <b>Seedr & VPS Storage:</b> 100% Free\n\n"
-                f"<b>දැන් ඔබට අවශ්‍ය කුමක්ද? පහත බොත්තමක් තෝරන්න:</b>\n"
-                f"• <b>Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (පසුව <code>/sub</code> මඟින් උපසිරැසි දැමිය හැක)\n"
-                f"• <b>Add Sub:</b> උපසිරැසි ගොනුව Upload කර Publish කරයි\n"
-                f"• <b>Keep as Draft:</b> වෙබ් අඩවියට නොයවා Channel එකේ පමණක් Draft එකක් ලෙස තබයි",
+                f"📦 <b>ප්‍රමාණය:</b> {size_str} | 🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
+                f"⚡ <b>භාවිත කළ ක්‍රමය:</b> {chosen_candidate.method_name}\n"
+                f"☁️ <b>Google Drive CDN:</b> Ultra Fast Stream Ready ✅\n"
+                f"✈️ <b>Telegram Storage:</b> Filmhost Channel වෙත සුරැකිණි ✅\n"
+                f"🧹 <b>VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කරන ලදී)\n\n"
+                f"<b>දැන් ඔබට කුමක් කිරීමට අවශ්‍යද? පහතින් තෝරන්න:</b>\n\n"
+                f"• <b>🚀 Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (Default සිංහල උපසිරැසි සමඟ)\n"
+                f"• <b>💬 Subtitle දාන්න:</b> ඔබ සතු .srt / .vtt උපසිරැසි ගොනුව Upload කර Publish කරයි\n"
+                f"• <b>⏩ පසුව දාන්නම්:</b> වෙබ් අඩවියට දැන්ම දමා පසුව <code>/sub</code> මඟින් Subtitle දමයි\n"
+                f"• <b>💾 Draft ලෙස තබන්න:</b> වෙබ් අඩවියට නොදමා Channel එකේ පමණක් තබයි",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb_choices,
                 disable_web_page_preview=True,

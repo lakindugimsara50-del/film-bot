@@ -1,4 +1,4 @@
-window.SINHALASUB_MOVIES_DATA = {
+window.FILMSUB_DATA = {
   "movies": [
     {
       "id": "the-100-2014-s01e01",
@@ -899,7 +899,216 @@ window.SINHALASUB_MOVIES_DATA = {
         "480p": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview?vq=large",
         "360p": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview?vq=medium"
       }
+    },
+    {
+      "id": "game-of-thrones-2011-s01e01",
+      "slug": "game-of-thrones-2011-s01e01",
+      "title": "Game of Thrones",
+      "title_si": "",
+      "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt0944947",
+      "tmdb_id": "1399",
+      "type": "series",
+      "season": 1,
+      "episode": 1,
+      "episode_title": "Winter Is Coming",
+      "number_of_seasons": 8,
+      "number_of_episodes": 73,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/wgfKiqzuMrFIkU1M68DDDY8kGC1.jpg",
+          "air_date": "2011-04-17"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/9xfNkPwDOqyeUvfNhs1XlWA0esP.jpg",
+          "air_date": "2012-04-01"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/5MkZjRnCKiIGn3bkXrXfndEzqOU.jpg",
+          "air_date": "2013-03-31"
+        },
+        {
+          "season_number": 4,
+          "name": "Season 4",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/jXIMScXE4J4EVHUba1JgxZnWbo4.jpg",
+          "air_date": "2014-04-06"
+        },
+        {
+          "season_number": 5,
+          "name": "Season 5",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/7Q1Hy1AHxAzA2lsmzEMBvuWTX0x.jpg",
+          "air_date": "2015-04-12"
+        },
+        {
+          "season_number": 6,
+          "name": "Season 6",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/p1udLh0gfqyZFmXBGa393gk8go5.jpg",
+          "air_date": "2016-04-24"
+        },
+        {
+          "season_number": 7,
+          "name": "Season 7",
+          "episode_count": 7,
+          "poster_url": "https://image.tmdb.org/t/p/w500/oX51n32QyHeFP5kErksemJsJljL.jpg",
+          "air_date": "2017-07-16"
+        },
+        {
+          "season_number": 8,
+          "name": "Season 8",
+          "episode_count": 6,
+          "poster_url": "https://image.tmdb.org/t/p/w500/yToCshWmirenreC6mrHwFAScFNJ.jpg",
+          "air_date": "2019-04-14"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "quality": "480p",
+      "duration": "62 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADK2q1Ki6gzohgTp3nc80LIc1qM-QOAAJ2JAACTLaxVVTpm4m03yaTHgQ",
+      "message_id": 43,
+      "file_name": "game-of-thrones-2011-s01e01.mp4",
+      "file_size": 573312561,
+      "stream_url": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "type": "video/mp4",
+          "stream_url": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
+          "type": "video/mp4",
+          "stream_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
+        "1080p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=hd1080",
+        "720p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=hd720",
+        "480p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=large",
+        "360p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=medium"
+      },
+      "downloads": [
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "546.8 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "300.7 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&vq=hd720",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Sinhala Sub Merged)",
+          "size": "153.1 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&vq=large",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Sinhala Sub Merged)",
+          "size": "98.4 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&vq=medium",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p (Telegram Download)",
+          "size": "546.8 MB",
+          "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/43",
+          "format": "MP4",
+          "host": "Telegram",
+          "download_only": true
+        }
+      ],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A08.000%0A%F0%9F%8E%AC%20Game%20of%20Thrones%20S01E01%20-%20Winter%20Is%20Coming%20%282011%29%20%E2%80%94%20FilmSub.lk%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%0A%0A00%3A00%3A08.500%20--%3E%2000%3A00%3A18.000%0A%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B7%8A%E0%B7%80%E0%B6%BA%E0%B6%82%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%93%E0%B6%BA%E0%B7%80%20%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%92%E0%B6%BA%E0%B7%8F%E0%B6%AD%E0%B7%8A%E0%B6%B8%E0%B6%9A%E0%B6%BA%E0%B7%92%20%28Auto%20Sinhala%20Subtitles%20Enabled%29%0A%0A00%3A00%3A18.500%20--%3E%2000%3A00%3A30.000%0A1080p%20/%20720p%20/%20480p%20/%20360p%20High-Speed%20Cloud%20Streaming%20%26%20Download%0A%0A00%3A00%3A30.500%20--%3E%2000%3A00%3A45.000%0AGame%20of%20Thrones%20S01E01%20-%20Winter%20Is%20Coming%20%282011%29%20%E2%80%94%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%80%E0%B7%93%E0%B6%A9%E0%B7%92%E0%B6%BA%E0%B7%9D%E0%B7%80%E0%B6%A7%E0%B6%B8%20Merge%20%E0%B6%9A%E0%B6%BB%20%E0%B6%87%E0%B6%AD",
+          "default": true
+        }
+      ],
+      "source_method": "torrent",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s01e01",
+      "added_date": "2026-09-24",
+      "added_at": "2026-09-24T13:44:53Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-24T09:30:00Z"
+  "last_updated": "2026-09-24T13:48:32Z"
 };
+window.MOVIES_DATA = window.FILMSUB_DATA;

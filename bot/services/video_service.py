@@ -718,137 +718,153 @@ async def generate_multi_quality_variants_ram(
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     num_q = len(target_q_list)
 
-    # Build a SINGLE-PASS filter_complex with split=N so input video is decoded ONLY ONCE
-    # and Sinhala subtitles (if present) are rendered ONLY ONCE prior to splitting!
-    if num_q == 1:
-        q0 = target_q_list[0]
-        h0 = profiles[q0]["height"]
-        filter_complex = (
-            f"[0:v:0]subtitles=sub_burn_multi.srt,scale=-2:'min({h0},ih)'[v_{q0}]"
-            if has_sub
-            else f"[0:v:0]scale=-2:'min({h0},ih)'[v_{q0}]"
-        )
-    else:
-        split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
-        split_head = (
-            f"[0:v:0]subtitles=sub_burn_multi.srt,split={num_q}{split_labels}"
-            if has_sub
-            else f"[0:v:0]split={num_q}{split_labels}"
-        )
-        scale_branches = ";".join(
-            f"[sp_{q}]scale=-2:'min({profiles[q]['height']},ih)'[v_{q}]"
-            for q in target_q_list
-        )
-        filter_complex = f"{split_head};{scale_branches}"
-
-    cmd = [
-        ffmpeg_bin,
-        "-y",
-        "-hide_banner",
-        "-threads", "0",
-        "-i", os.path.abspath(input_path),
-    ]
-    if has_sub:
-        cmd.extend(["-i", os.path.abspath(sub_path)])
-
-    cmd.extend(["-filter_complex", filter_complex])
-
-    out_paths: dict[str, str] = {}
-    for q in target_q_list:
-        prof = profiles[q]
-        out_file = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
-        out_paths[q] = out_file
-        cmd.extend([
-            "-map", f"[v_{q}]",
-            "-map", "0:a:0?",
-        ])
-        if has_sub:
-            cmd.extend([
-                "-map", "1:0",
-                "-map", "1:0",
-                "-c:s", "mov_text",
-                "-metadata:s:s:0", "language=eng",
-                "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
-                "-disposition:s:0", "default+forced",
-                "-metadata:s:s:1", "language=sin",
-                "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
-                "-disposition:s:1", "default+forced",
-            ])
-        if hw_enc == "h264_nvenc":
-            cmd.extend([
-                "-c:v", "h264_nvenc",
-                "-preset", "p1",
-                "-rc", "vbr",
-                "-cq", prof["crf"],
-                "-maxrate", prof["maxrate"],
-                "-bufsize", prof["bufsize"],
-            ])
+    def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
+        if num_q == 1:
+            q0 = target_q_list[0]
+            h0 = profiles[q0]["height"]
+            fc = (
+                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=-2:'min({h0},ih)':flags=fast_bilinear[v_{q0}]"
+                if burn_subs
+                else f"[0:v:0]scale=-2:'min({h0},ih)':flags=fast_bilinear[v_{q0}]"
+            )
         else:
-            cmd.extend([
-                "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-tune", "fastdecode",
-                "-crf", prof["crf"],
-                "-maxrate", prof["maxrate"],
-                "-bufsize", prof["bufsize"],
+            split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
+            split_head = (
+                f"[0:v:0]subtitles=sub_burn_multi.srt,split={num_q}{split_labels}"
+                if burn_subs
+                else f"[0:v:0]split={num_q}{split_labels}"
+            )
+            scale_branches = ";".join(
+                f"[sp_{q}]scale=-2:'min({profiles[q]['height']},ih)':flags=fast_bilinear[v_{q}]"
+                for q in target_q_list
+            )
+            fc = f"{split_head};{scale_branches}"
+
+        c: list[str] = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(input_path),
+        ]
+        if include_soft_subs and sub_path and os.path.exists(sub_path):
+            c.extend(["-i", os.path.abspath(sub_path)])
+
+        c.extend(["-filter_complex", fc])
+
+        paths: dict[str, str] = {}
+        for q in target_q_list:
+            prof = profiles[q]
+            out_file = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
+            paths[q] = out_file
+            c.extend([
+                "-map", f"[v_{q}]",
+                "-map", "0:a:0?",
             ])
-        cmd.extend([
-            "-pix_fmt", "yuv420p",
-            "-c:a", "aac",
-            "-b:a", prof["abitrate"],
-            "-ac", "2",
-            "-movflags", "+faststart",
-            out_file,
-        ])
+            if include_soft_subs and sub_path and os.path.exists(sub_path):
+                c.extend([
+                    "-map", "1:0",
+                    "-map", "1:0",
+                    "-c:s", "mov_text",
+                    "-metadata:s:s:0", "language=eng",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
+                    "-disposition:s:0", "default+forced",
+                    "-metadata:s:s:1", "language=sin",
+                    "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+                    "-disposition:s:1", "default+forced",
+                ])
+            if use_hw == "h264_nvenc":
+                c.extend([
+                    "-c:v", "h264_nvenc",
+                    "-preset", "p1",
+                    "-rc", "vbr",
+                    "-cq", prof["crf"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
+                ])
+            else:
+                c.extend([
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-tune", "fastdecode",
+                    "-crf", prof["crf"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
+                ])
+            c.extend([
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", prof["abitrate"],
+                "-ac", "2",
+                "-movflags", "+faststart",
+                out_file,
+            ])
+        return c, paths
+
+    # Build ordered attempt strategies:
+    # 1. Preferred encoder (NVENC or libx264) + subtitle burn-in + soft subs
+    # 2. Fallback CPU libx264 + soft subs only (recovers from NVENC 3-stream limit or missing libass filter)
+    # 3. Fallback CPU libx264 without subs (recovers from corrupt SRT stream)
+    strategies: list[tuple[str, bool, bool]] = [(hw_enc, has_sub, has_sub)]
+    if hw_enc == "h264_nvenc" or has_sub:
+        strategies.append(("libx264", False, has_sub))
+    if has_sub:
+        strategies.append(("libx264", False, False))
 
     proc = None
     try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=abs_out_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
-        last_pct = 0.0
+        for attempt_idx, (enc_choice, burn_choice, soft_choice) in enumerate(strategies):
+            cmd, out_paths = _build_multi_cmd(enc_choice, burn_choice, soft_choice)
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=abs_out_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+            last_pct = 0.0
 
-        async def _read_stderr():
-            nonlocal last_pct
-            while True:
-                if hasattr(proc.stderr, "read"):
-                    chunk = await proc.stderr.read(4096)
-                else:
-                    chunk = await proc.stderr.readline()
-                if not chunk:
-                    break
-                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
-                matches = time_pattern.findall(decoded)
-                if matches and duration > 0:
-                    h, mm, ss = matches[-1]
-                    cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                    pct = min(99.0, (cur_secs / duration) * 100.0)
-                    if pct - last_pct >= 3.0:
-                        last_pct = pct
-                        if progress_callback:
-                            try:
-                                if asyncio.iscoroutinefunction(progress_callback):
-                                    await progress_callback(pct, f"{pct:.1f}%")
-                                else:
-                                    progress_callback(pct, f"{pct:.1f}%")
-                            except Exception:
-                                pass
+            async def _read_stderr():
+                nonlocal last_pct
+                while True:
+                    if hasattr(proc.stderr, "read"):
+                        chunk = await proc.stderr.read(4096)
+                    else:
+                        chunk = await proc.stderr.readline()
+                    if not chunk:
+                        break
+                    decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                    matches = time_pattern.findall(decoded)
+                    if matches and duration > 0:
+                        h, mm, ss = matches[-1]
+                        cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                        pct = min(99.0, (cur_secs / duration) * 100.0)
+                        if pct - last_pct >= 3.0:
+                            last_pct = pct
+                            if progress_callback:
+                                try:
+                                    if asyncio.iscoroutinefunction(progress_callback):
+                                        await progress_callback(pct, f"{pct:.1f}%")
+                                    else:
+                                        progress_callback(pct, f"{pct:.1f}%")
+                                except Exception:
+                                    pass
 
-        await asyncio.gather(proc.wait(), _read_stderr())
-        if os.path.exists(local_burn_srt):
-            try:
-                os.remove(local_burn_srt)
-            except Exception:
-                pass
-        valid_outputs = {
-            q: p for q, p in out_paths.items()
-            if os.path.exists(p) and os.path.getsize(p) >= min_valid_size
-        }
-        log.info("[VideoService] Multi-quality RAM generation complete: %s", list(valid_outputs.keys()))
+            await asyncio.gather(proc.wait(), _read_stderr())
+            valid_outputs = {
+                q: p for q, p in out_paths.items()
+                if os.path.exists(p) and os.path.getsize(p) >= min_valid_size
+            }
+            if len(valid_outputs) == len(target_q_list):
+                log.info(
+                    "[VideoService] Multi-quality RAM generation complete (attempt %d, encoder=%s, burn=%s): %s",
+                    attempt_idx + 1, enc_choice, burn_choice, list(valid_outputs.keys()),
+                )
+                return valid_outputs
+            log.warning(
+                "[VideoService] Multi-quality attempt %d (encoder=%s, burn=%s) produced %d/%d variants; retrying fallback...",
+                attempt_idx + 1, enc_choice, burn_choice, len(valid_outputs), len(target_q_list),
+            )
         return valid_outputs
     except Exception as exc:
         log.warning("[VideoService] Multi-quality generation skipped/failed: %s", exc)

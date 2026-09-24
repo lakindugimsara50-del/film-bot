@@ -78,6 +78,11 @@ class RcloneDriveClient:
         self.rclone_bin = find_rclone_binary()
         self.is_active = True
         self.last_error = ""
+        self._quota_cache: Optional[Dict[str, Any]] = None
+        self._quota_cached_at: float = 0.0
+        self._quota_lock = asyncio.Lock()
+        self._folder_ensured: bool = False
+        self._folder_lock = asyncio.Lock()
 
     def _cmd_prefix(self) -> list[str]:
         cmd = [self.rclone_bin]
@@ -85,48 +90,79 @@ class RcloneDriveClient:
             cmd.extend(["--config", self.config_file])
         return cmd
 
-    async def get_quota(self) -> Dict[str, Any]:
-        """Fetch remote storage quota via `rclone about <remote>: --json`."""
-        cmd = self._cmd_prefix() + ["about", f"{self.remote_name}:", "--json"]
-        try:
+    async def get_quota(self, force: bool = False) -> Dict[str, Any]:
+        """Fetch remote storage quota via `rclone about <remote>: --json` with 300s cache."""
+        import time as _time
+        now = _time.monotonic()
+        if not force and self._quota_cache and (now - self._quota_cached_at) < 300.0:
+            self.is_active = True
+            return self._quota_cache
+
+        async with self._quota_lock:
+            now = _time.monotonic()
+            if not force and self._quota_cache and (now - self._quota_cached_at) < 300.0:
+                self.is_active = True
+                return self._quota_cache
+
+            cmd = self._cmd_prefix() + ["about", f"{self.remote_name}:", "--json"]
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate()
+                if proc.returncode != 0:
+                    err_msg = stderr.decode(errors="ignore").strip()
+                    if self._quota_cache:
+                        log.warning("[Rclone:%s] Transient about error (%s); using cached quota.", self.remote_name, err_msg)
+                        self.is_active = True
+                        return self._quota_cache
+                    self.is_active = False
+                    self.last_error = err_msg
+                    raise RuntimeError(f"Rclone about failed: {self.last_error}")
+
+                data = json.loads(stdout.decode())
+                total = data.get("total", 0)
+                used = data.get("used", 0)
+                free = data.get("free", max(total - used, 0))
+                self.is_active = True
+                self._quota_cache = {
+                    "total_bytes": total,
+                    "used_bytes": used,
+                    "remaining_bytes": free,
+                    "state": "normal",
+                }
+                self._quota_cached_at = _time.monotonic()
+                return self._quota_cache
+            except Exception as exc:
+                if self._quota_cache:
+                    log.warning("[Rclone:%s] Quota check transient failure (%s); returning cached quota.", self.remote_name, exc)
+                    self.is_active = True
+                    return self._quota_cache
+                self.is_active = False
+                self.last_error = str(exc)
+                log.warning("[Rclone:%s] Quota check failed: %s", self.remote_name, exc)
+                raise
+
+    async def ensure_folder(self) -> bool:
+        """Create target folder on remote once per client session."""
+        if self._folder_ensured:
+            return True
+        async with self._folder_lock:
+            if self._folder_ensured:
+                return True
+            cmd = self._cmd_prefix() + ["mkdir", f"{self.remote_name}:{self.folder_name}"]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                self.is_active = False
-                self.last_error = stderr.decode(errors="ignore").strip()
-                raise RuntimeError(f"Rclone about failed: {self.last_error}")
-
-            data = json.loads(stdout.decode())
-            total = data.get("total", 0)
-            used = data.get("used", 0)
-            free = data.get("free", max(total - used, 0))
-            self.is_active = True
-            return {
-                "total_bytes": total,
-                "used_bytes": used,
-                "remaining_bytes": free,
-                "state": "normal",
-            }
-        except Exception as exc:
-            self.is_active = False
-            self.last_error = str(exc)
-            log.warning("[Rclone:%s] Quota check failed: %s", self.remote_name, exc)
-            raise
-
-    async def ensure_folder(self) -> bool:
-        """Create target folder on remote."""
-        cmd = self._cmd_prefix() + ["mkdir", f"{self.remote_name}:{self.folder_name}"]
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        _, _ = await proc.communicate()
-        return proc.returncode == 0
+            _, _ = await proc.communicate()
+            if proc.returncode == 0:
+                self._folder_ensured = True
+                return True
+            return False
 
     async def upload_file(
         self,
@@ -279,13 +315,36 @@ class RcloneDriveClient:
             m_id = re.search(r"id=([a-zA-Z0-9_-]+)", web_link)
         if m_id:
             file_id = m_id.group(1)
+
+        # Fallback: if `rclone link` was rate-limited or returned empty, resolve file_id via `rclone lsjson`
+        if not file_id:
+            try:
+                ls_cmd = self._cmd_prefix() + ["lsjson", remote_dest]
+                ls_proc = await asyncio.create_subprocess_exec(
+                    *ls_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                ls_out, _ = await ls_proc.communicate()
+                if ls_proc.returncode == 0 and ls_out:
+                    items = json.loads(ls_out.decode(errors="ignore"))
+                    if isinstance(items, list) and items:
+                        cand_id = str(items[0].get("ID") or items[0].get("Id") or "").strip()
+                        if cand_id and len(cand_id) >= 15:
+                            file_id = cand_id
+                            if not web_link:
+                                web_link = f"https://drive.google.com/open?id={file_id}"
+            except Exception as ls_err:
+                log.debug("[Rclone:%s] lsjson fallback failed: %s", self.remote_name, ls_err)
+
+        if file_id:
             direct_stream_url = f"https://drive.google.com/file/d/{file_id}/preview"
             direct_download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
-        log.info("[Rclone:%s] Upload complete: %s → %s", self.remote_name, upload_name, direct_stream_url)
+        log.info("[Rclone:%s] Upload complete: %s → %s (file_id=%s)", self.remote_name, upload_name, direct_stream_url, file_id)
 
         return {
-            "file_id": file_id or upload_name,
+            "file_id": file_id,
             "filename": upload_name,
             "size": file_size,
             "web_url": web_link,

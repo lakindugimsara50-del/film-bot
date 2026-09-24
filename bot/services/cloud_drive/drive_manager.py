@@ -303,6 +303,9 @@ class DriveManager:
                         best_client = client
             except Exception as exc:
                 log.warning("[DriveManager] Health check failed for %s: %s", d_id, exc)
+                if len(self.drives) == 1 and best_client is None:
+                    client.is_active = True
+                    best_client = client
 
         return best_client
 

@@ -1,4 +1,4 @@
-window.MOVIES_DATA = {
+window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
   "movies": [
     {
       "id": "the-100-2014-s01e01",
@@ -111,7 +111,7 @@ window.MOVIES_DATA = {
       "message_id": 0,
       "file_name": "sub_web_the-100-2014.mp4",
       "file_size": 1458395546,
-      "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
+      "stream_url": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -149,51 +149,55 @@ window.MOVIES_DATA = {
       "downloads": [
         {
           "quality": "1080p",
-          "size": "1.4 GB",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.36 GB",
+          "size_bytes": 1458395546,
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=1080p&title=The%20100%20S01E01&size=1458395546",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
           "host": "Google Drive",
-          "subtitle_merged": true,
-          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "size_bytes": 1458395546,
-          "sub_merged": true
+          "sub_merged": true,
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
-          "size": "765.0 MB",
-          "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=720p&title=The%20100%20S01E01&size=802117550",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "291.4 MB",
+          "size_bytes": 305519158,
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=720p&title=The%20100%20S01E01&size=305519158",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
           "host": "Google Drive",
-          "subtitle_merged": true,
-          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "size_bytes": 802117550,
-          "sub_merged": true
+          "sub_merged": true,
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
-          "size": "389.4 MB",
-          "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=480p&title=The%20100%20S01E01&size=466686574",
+          "label": "480p SD (Sinhala Sub Merged)",
+          "size": "184.2 MB",
+          "size_bytes": 193136537,
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=480p&title=The%20100%20S01E01&size=193136537",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
           "host": "Google Drive",
-          "subtitle_merged": true,
-          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "size_bytes": 466686574,
-          "sub_merged": true
+          "sub_merged": true,
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
-          "size": "250.4 MB",
-          "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=360p&title=The%20100%20S01E01&size=262511198",
+          "label": "360p Data Saver (Sinhala Sub Merged)",
+          "size": "86.0 MB",
+          "size_bytes": 90173457,
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "url": "/api/download?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=360p&title=The%20100%20S01E01&size=90173457",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
           "host": "Google Drive",
-          "subtitle_merged": true,
-          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "size_bytes": 262511198,
-          "sub_merged": true
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -216,7 +220,8 @@ window.MOVIES_DATA = {
         "480p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=480p",
         "360p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=360p"
       },
-      "drive_file_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
+      "drive_file_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+      "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
     },
     {
       "id": "one-last-shot-2026",
@@ -277,7 +282,7 @@ window.MOVIES_DATA = {
       "message_id": 0,
       "file_name": "sub_web_one-last-shot-2026.mp4",
       "file_size": 1549277151,
-      "stream_url": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview",
+      "stream_url": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -317,53 +322,53 @@ window.MOVIES_DATA = {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
           "size": "1.44 GB",
+          "size_bytes": 1549277151,
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
           "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=1080p&title=One%20Last%20Shot%20%282026%29&size=1549277151",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "size_bytes": 1549277151
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "812 MB",
-          "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=720p&title=One%20Last%20Shot%20%282026%29&size=852102433",
+          "size": "1.23 GB",
+          "size_bytes": 1319261883,
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+          "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=720p&title=One%20Last%20Shot%20%282026%29&size=1319261883",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "size_bytes": 852102433
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "472 MB",
-          "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=480p&title=One%20Last%20Shot%20%282026%29&size=495768688",
+          "size": "765.5 MB",
+          "size_bytes": 802671418,
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+          "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=480p&title=One%20Last%20Shot%20%282026%29&size=802671418",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "size_bytes": 495768688
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "265 MB",
-          "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=360p&title=One%20Last%20Shot%20%282026%29&size=278869887",
+          "size": "319.0 MB",
+          "size_bytes": 334476576,
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+          "url": "/api/download?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=360p&title=One%20Last%20Shot%20%282026%29&size=334476576",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "size_bytes": 278869887
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -389,7 +394,8 @@ window.MOVIES_DATA = {
         "480p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=480p",
         "360p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=360p"
       },
-      "drive_file_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz"
+      "drive_file_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+      "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz"
     },
     {
       "id": "dc-2026",
@@ -451,7 +457,7 @@ window.MOVIES_DATA = {
       "message_id": 0,
       "file_name": "sub_web_dc-2026.mp4",
       "file_size": 1545230105,
-      "stream_url": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview",
+      "stream_url": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -491,53 +497,53 @@ window.MOVIES_DATA = {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
           "size": "1.44 GB",
+          "size_bytes": 1545230105,
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
           "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=1080p&title=DC%20%282026%29&size=1545230105",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "size_bytes": 1545230105
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "810 MB",
-          "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=720p&title=DC%20%282026%29&size=849876557",
+          "size": "1.02 GB",
+          "size_bytes": 1094058276,
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+          "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=720p&title=DC%20%282026%29&size=1094058276",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "size_bytes": 849876557
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "471 MB",
-          "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=480p&title=DC%20%282026%29&size=494473633",
+          "size": "1.02 GB",
+          "size_bytes": 1094058276,
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+          "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=480p&title=DC%20%282026%29&size=1094058276",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "size_bytes": 494473633
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "265 MB",
-          "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=360p&title=DC%20%282026%29&size=278141418",
+          "size": "426.8 MB",
+          "size_bytes": 447503630,
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+          "url": "/api/download?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=360p&title=DC%20%282026%29&size=447503630",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "size_bytes": 278141418
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -563,12 +569,13 @@ window.MOVIES_DATA = {
         "480p": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=480p",
         "360p": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=360p"
       },
-      "drive_file_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g"
+      "drive_file_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+      "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g"
     },
     {
       "id": "fuze-2026",
       "slug": "fuze-2026",
-      "title": "Fuze (2025)",
+      "title": "Fuze",
       "title_si": "ෆියුස් (2025)",
       "year": 2025,
       "imdb": "7.1",
@@ -604,7 +611,7 @@ window.MOVIES_DATA = {
       "message_id": 0,
       "file_name": "sub_web_fuze-2026.mp4",
       "file_size": 1623209371,
-      "stream_url": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview",
+      "stream_url": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -644,53 +651,53 @@ window.MOVIES_DATA = {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
           "size": "1.51 GB",
-          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=1080p&title=Fuze%20%282025%29%20%282025%29&size=1623209371",
+          "size_bytes": 1623209371,
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=1080p&title=Fuze%20%282025%29&size=1623209371",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "size_bytes": 1623209371
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "851 MB",
-          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=720p&title=Fuze%20%282025%29%20%282025%29&size=892765154",
+          "size": "1.65 GB",
+          "size_bytes": 1775262687,
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=720p&title=Fuze%20%282025%29&size=1775262687",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "size_bytes": 892765154
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "495 MB",
-          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=480p&title=Fuze%20%282025%29%20%282025%29&size=519426998",
+          "size": "953.6 MB",
+          "size_bytes": 999924308,
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=480p&title=Fuze%20%282025%29&size=999924308",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "size_bytes": 519426998
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "278 MB",
-          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=360p&title=Fuze%20%282025%29%20%282025%29&size=292177686",
+          "size": "283.6 MB",
+          "size_bytes": 297340221,
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "url": "/api/download?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=360p&title=Fuze%20%282025%29&size=297340221",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "size_bytes": 292177686
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -716,7 +723,8 @@ window.MOVIES_DATA = {
         "480p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=480p",
         "360p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=360p"
       },
-      "drive_file_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C"
+      "drive_file_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+      "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C"
     },
     {
       "id": "the-beekeeper-2024",
@@ -778,7 +786,7 @@ window.MOVIES_DATA = {
       "message_id": 0,
       "file_name": "sub_web_the-beekeeper-2024.mp4",
       "file_size": 1507744796,
-      "stream_url": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview",
+      "stream_url": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -818,53 +826,53 @@ window.MOVIES_DATA = {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
           "size": "1.40 GB",
+          "size_bytes": 1507744796,
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
           "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=1080p&title=The%20Beekeeper%20%282024%29&size=1507744796",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "size_bytes": 1507744796
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "790 MB",
-          "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=720p&title=The%20Beekeeper%20%282024%29&size=829259637",
+          "size": "1.51 GB",
+          "size_bytes": 1616444837,
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=720p&title=The%20Beekeeper%20%282024%29&size=1616444837",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "size_bytes": 829259637
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "460 MB",
-          "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=480p&title=The%20Beekeeper%20%282024%29&size=482478334",
+          "size": "910.2 MB",
+          "size_bytes": 954423568,
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=480p&title=The%20Beekeeper%20%282024%29&size=954423568",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "size_bytes": 482478334
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "258 MB",
-          "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=360p&title=The%20Beekeeper%20%282024%29&size=271394063",
+          "size": "299.6 MB",
+          "size_bytes": 314146852,
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "url": "/api/download?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=360p&title=The%20Beekeeper%20%282024%29&size=314146852",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "size_bytes": 271394063
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -890,7 +898,8 @@ window.MOVIES_DATA = {
         "480p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=480p",
         "360p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=360p"
       },
-      "drive_file_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI"
+      "drive_file_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+      "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI"
     },
     {
       "id": "premalu-2024",
@@ -951,7 +960,7 @@ window.MOVIES_DATA = {
       "message_id": 0,
       "file_name": "sub_web_premalu-2024.mp4",
       "file_size": 1427294756,
-      "stream_url": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview",
+      "stream_url": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -991,53 +1000,53 @@ window.MOVIES_DATA = {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
           "size": "1.33 GB",
+          "size_bytes": 1427294756,
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
           "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=1080p&title=Premalu%20%282024%29&size=1427294756",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "size_bytes": 1427294756
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "748 MB",
-          "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=720p&title=Premalu%20%282024%29&size=785012115",
+          "size": "2.06 GB",
+          "size_bytes": 2216499002,
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+          "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=720p&title=Premalu%20%282024%29&size=2216499002",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "size_bytes": 785012115
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "435 MB",
-          "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=480p&title=Premalu%20%282024%29&size=456734321",
+          "size": "1.30 GB",
+          "size_bytes": 1390698030,
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+          "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=480p&title=Premalu%20%282024%29&size=1390698030",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "size_bytes": 456734321
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "245 MB",
-          "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=360p&title=Premalu%20%282024%29&size=256913056",
+          "size": "560.2 MB",
+          "size_bytes": 587461245,
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+          "url": "/api/download?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=360p&title=Premalu%20%282024%29&size=587461245",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "size_bytes": 256913056
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -1063,7 +1072,8 @@ window.MOVIES_DATA = {
         "480p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=480p",
         "360p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=360p"
       },
-      "drive_file_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88"
+      "drive_file_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+      "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88"
     },
     {
       "id": "game-of-thrones-2011-s01e01",
@@ -1184,7 +1194,7 @@ window.MOVIES_DATA = {
       "message_id": 43,
       "file_name": "game-of-thrones-2011-s01e01.mp4",
       "file_size": 573312561,
-      "stream_url": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
+      "stream_url": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -1231,59 +1241,59 @@ window.MOVIES_DATA = {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
           "size": "546.8 MB",
+          "size_bytes": 573312561,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=1080p&title=Game%20of%20Thrones%20S01E01&size=573312561",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "size_bytes": 573312561
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
           "size": "300.7 MB",
+          "size_bytes": 315321908,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=720p&title=Game%20of%20Thrones%20S01E01&size=315321908",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "size_bytes": 315321908
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "153.1 MB",
+          "size": "175.0 MB",
+          "size_bytes": 183460019,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=480p&title=Game%20of%20Thrones%20S01E01&size=183460019",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "size_bytes": 183460019
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "98.4 MB",
-          "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=360p&title=Game%20of%20Thrones%20S01E01&size=103196260",
+          "size": "218.6 MB",
+          "size_bytes": 229255719,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=360p&title=Game%20of%20Thrones%20S01E01&size=229255719",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "size_bytes": 103196260
+          "subtitle_merged": true
         },
         {
           "quality": "1080p (Telegram Download)",
           "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
           "size": "546.8 MB",
-          "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/43",
+          "url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/43",
           "format": "MP4",
           "host": "Telegram",
           "download_only": true,
@@ -1305,7 +1315,8 @@ window.MOVIES_DATA = {
       "added_date": "2026-09-24",
       "added_at": "2026-09-24T13:44:53Z",
       "added_by": "bot_auto_leech",
-      "drive_file_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
+      "drive_file_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+      "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
     },
     {
       "id": "game-of-thrones-2011-s01e02",
@@ -1426,7 +1437,7 @@ window.MOVIES_DATA = {
       "message_id": 45,
       "file_name": "compressed_game-of-thrones-2011-s01e02.mp4",
       "file_size": 1477128034,
-      "stream_url": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview",
+      "stream_url": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=auto",
       "streams": [
         {
           "server": "Server 1",
@@ -1472,60 +1483,60 @@ window.MOVIES_DATA = {
         {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
-          "size": "1.4 GB",
+          "size": "1.38 GB",
+          "size_bytes": 1477128034,
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
           "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=1080p&title=Game%20of%20Thrones%20S01E02&size=1477128034",
+          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "size_bytes": 1477128034
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "774.8 MB",
-          "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=720p&title=Game%20of%20Thrones%20S01E02&size=812420418",
+          "size": "1.04 GB",
+          "size_bytes": 1111765038,
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+          "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=720p&title=Game%20of%20Thrones%20S01E02&size=1111765038",
+          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "size_bytes": 812420418
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "394.4 MB",
-          "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=480p&title=Game%20of%20Thrones%20S01E02&size=472680970",
+          "size": "597.5 MB",
+          "size_bytes": 626473486,
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+          "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=480p&title=Game%20of%20Thrones%20S01E02&size=626473486",
+          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "size_bytes": 472680970
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "253.6 MB",
-          "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=360p&title=Game%20of%20Thrones%20S01E02&size=265883046",
+          "size": "188.6 MB",
+          "size_bytes": 197746335,
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+          "url": "/api/download?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=360p&title=Game%20of%20Thrones%20S01E02&size=197746335",
+          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "raw_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "size_bytes": 265883046
+          "subtitle_merged": true
         },
         {
           "quality": "1080p (Telegram Download)",
           "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
           "size": "1.4 GB",
-          "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/45",
+          "url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/45",
           "format": "MP4",
           "host": "Telegram",
           "download_only": true,
@@ -1547,7 +1558,8 @@ window.MOVIES_DATA = {
       "added_date": "2026-09-24",
       "added_at": "2026-09-24T17:37:56Z",
       "added_by": "bot_auto_leech",
-      "drive_file_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n"
+      "drive_file_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+      "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n"
     },
     {
       "id": "the-100-2014-s01e02",
@@ -1662,88 +1674,92 @@ window.MOVIES_DATA = {
       "message_id": 47,
       "file_name": "the-100-2014-s01e02.mp4",
       "file_size": 1641455851,
-      "stream_url": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview",
+      "stream_url": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=auto",
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview",
+          "mode": "super_chunk",
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+          "stream_url": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+          "stream_url": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview",
           "quality": "1080p"
         }
       ],
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview",
-        "1080p": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview?vq=medium"
+        "auto": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=auto",
+        "1080p": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=1080p",
+        "720p": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=720p",
+        "480p": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=480p",
+        "360p": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=360p"
       },
       "downloads": [
         {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
-          "size": "1.5 GB",
+          "size": "1.53 GB",
+          "size_bytes": 1641455851,
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
           "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=1080p&title=The%20100%20S01E02&size=1641455851",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "size_bytes": 1641455851
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "861.0 MB",
-          "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=720p&title=The%20100%20S01E02&size=902800718",
+          "size": "787.4 MB",
+          "size_bytes": 825695019,
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+          "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=720p&title=The%20100%20S01E02&size=825695019",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "size_bytes": 902800718
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "438.3 MB",
-          "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=480p&title=The%20100%20S01E02&size=525265872",
+          "size": "443.0 MB",
+          "size_bytes": 464538465,
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+          "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=480p&title=The%20100%20S01E02&size=464538465",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "size_bytes": 525265872
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "281.8 MB",
-          "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=360p&title=The%20100%20S01E02&size=295462053",
+          "size": "150.2 MB",
+          "size_bytes": 157481081,
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+          "url": "/api/download?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=360p&title=The%20100%20S01E02&size=157481081",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "raw_url": "https://drive.google.com/uc?export=download&id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "size_bytes": 295462053
+          "subtitle_merged": true
         },
         {
           "quality": "1080p (Telegram Download)",
           "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
           "size": "1.5 GB",
-          "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/47",
+          "url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/47",
           "format": "MP4",
           "host": "Telegram",
           "download_only": true,
@@ -1765,7 +1781,8 @@ window.MOVIES_DATA = {
       "added_date": "2026-09-24",
       "added_at": "2026-09-24T18:14:47Z",
       "added_by": "bot_auto_leech",
-      "drive_file_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S"
+      "drive_file_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+      "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S"
     },
     {
       "id": "feed-2026",
@@ -1827,88 +1844,92 @@ window.MOVIES_DATA = {
       "message_id": 49,
       "file_name": "feed-2026.mp4",
       "file_size": 1487379050,
-      "stream_url": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
+      "stream_url": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=auto",
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
+          "mode": "super_chunk",
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "stream_url": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "stream_url": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
           "quality": "1080p"
         }
       ],
       "qualities": {
-        "auto": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
-        "1080p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview?vq=medium"
+        "auto": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=auto",
+        "1080p": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=1080p",
+        "720p": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=720p",
+        "480p": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=480p",
+        "360p": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=360p"
       },
       "downloads": [
         {
           "quality": "1080p",
           "label": "1080p Full HD (Sinhala Sub Merged)",
-          "size": "1.4 GB",
+          "size": "1.39 GB",
+          "size_bytes": 1487379050,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
           "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=1080p&title=Feed%20%282026%29&size=1487379050",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "size_bytes": 1487379050
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "label": "720p HD (Sinhala Sub Merged)",
-          "size": "780.2 MB",
-          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=720p&title=Feed%20%282026%29&size=818058477",
+          "size": "620.9 MB",
+          "size_bytes": 651019240,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=720p&title=Feed%20%282026%29&size=651019240",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "size_bytes": 818058477
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "label": "480p SD (Sinhala Sub Merged)",
-          "size": "397.2 MB",
-          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=480p&title=Feed%20%282026%29&size=475961296",
+          "size": "374.4 MB",
+          "size_bytes": 392544809,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=480p&title=Feed%20%282026%29&size=392544809",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "size_bytes": 475961296
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "label": "360p Data Saver (Sinhala Sub Merged)",
-          "size": "255.3 MB",
-          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=360p&title=Feed%20%282026%29&size=267728229",
+          "size": "237.3 MB",
+          "size_bytes": 248877799,
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+          "url": "/api/download?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=360p&title=Feed%20%282026%29&size=248877799",
+          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
           "format": "MP4",
           "host": "Google Drive",
           "sub_merged": true,
-          "subtitle_merged": true,
-          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "raw_url": "https://drive.google.com/uc?export=download&id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "size_bytes": 267728229
+          "subtitle_merged": true
         },
         {
           "quality": "1080p (Telegram Download)",
           "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
           "size": "1.4 GB",
-          "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/49",
+          "url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/49",
           "format": "MP4",
           "host": "Telegram",
           "download_only": true,
@@ -1930,7 +1951,8 @@ window.MOVIES_DATA = {
       "added_date": "2026-09-24",
       "added_at": "2026-09-24T18:47:30Z",
       "added_by": "bot_auto_leech",
-      "drive_file_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry"
+      "drive_file_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+      "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry"
     }
   ],
   "last_updated": "2026-09-24T18:55:48Z"

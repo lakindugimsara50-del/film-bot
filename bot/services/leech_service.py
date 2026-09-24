@@ -512,7 +512,9 @@ async def _execute_leech(
         display_title = f"{show_name} {ep_str}" + (f" - {ep_name}" if ep_name else "")
         media_icon = "📺"
     else:
-        display_title = f"{title} ({year})" if year else title
+        clean_title_base = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip() or title
+        title = clean_title_base
+        display_title = f"{clean_title_base} ({year})" if year else clean_title_base
         media_icon = "🎬"
 
     # Update active task title & metadata in tracker
@@ -1105,21 +1107,7 @@ async def _execute_leech(
             else:
                 log.warning("[LeechService] Insufficient free space for remuxing. Keeping original file.")
 
-        # Single-Pass 12GB RAM Multi-Quality (720p, 480p, 360p) Burn-In Variant Generation
-        variant_files: dict[str, str] = {}
-        if getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
-            try:
-                variant_files = await video_service.generate_multi_quality_variants_ram(
-                    input_path=local_file,
-                    output_dir=temp_dir,
-                    slug=slug,
-                    sub_path=sub_srt_path,
-                    qualities=("720p", "480p", "360p"),
-                )
-            except Exception as mq_err:
-                log.warning("[LeechService] Multi-quality RAM variant generation skipped: %s", mq_err)
-
-        # ── Step 3 & 4: Parallel Upload to Google Drive (1080p/720p/480p/360p) + Telegram Channel ──
+        # ── Step 3 & 4: Overlapped Multi-Quality RAM Encoding + Parallel Cloud Drive & Telegram Upload ──
         file_size = os.path.getsize(local_file)
         file_name = os.path.basename(local_file)
         size_str = downloader.format_bytes(file_size)
@@ -1130,11 +1118,16 @@ async def _execute_leech(
         site_url = f"{base_site}/movie.html?id={slug}"
 
         task_tracker.tracker.set_step(
-            user_id, f"4/4 - Parallel Cloud Drive + Telegram Upload ({size_str})..."
+            user_id, f"4/4 - Parallel Multi-Quality RAM Encode + Cloud Drive & Telegram Upload ({size_str})..."
         )
 
         last_upload_edit = 0.0
         _last_drive_edit = 0.0
+        _mq_progress_str = "Starting 720p/480p/360p RAM Split..."
+
+        async def _mq_progress_cb(pct: float, pct_str: str) -> None:
+            nonlocal _mq_progress_str
+            _mq_progress_str = f"RAM 720p/480p/360p: {pct_str}"
 
         async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
             nonlocal last_upload_edit
@@ -1149,7 +1142,8 @@ async def _execute_leech(
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                     f"⚡ <b>Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
-                    f"☁️ <i>1080p / 720p / 480p / 360p Cloud + Telegram Parallel Upload</i>"
+                    f"⚙️ <b>Multi-Quality:</b> {_mq_progress_str}\n"
+                    f"☁️ <i>1080p / 720p / 480p / 360p Cloud + Telegram Parallel Pipeline</i>"
                 )
                 try:
                     await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -1179,6 +1173,7 @@ async def _execute_leech(
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                 f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                 f"{speed_display}"
+                f"⚙️ <b>Multi-Quality:</b> {_mq_progress_str}\n"
                 f"☁️ <i>FilmSub_Movies → Google Drive & Telegram Multi-Stream Storage</i>"
             )
             try:
@@ -1188,10 +1183,10 @@ async def _execute_leech(
 
         try:
             await status_msg.edit_text(
-                f"☁️ <b>පියවර 4/5: Google Drive CDN (1080p/720p/480p/360p) + Telegram Parallel Upload...</b>\n\n"
+                f"☁️ <b>පියවර 4/5: Google Drive CDN (1080p/720p/480p/360p) + Telegram Parallel Pipeline...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📁 <b>ගොනුව:</b> <code>{file_name}</code> ({size_str})\n"
-                f"⚡ <b>සියලුම Quality ගොනු එකවර අධිවේගීව Upload වෙමින් පවතී...</b>",
+                f"⚡ <b>1080p Upload වන අතරතුරම 720p / 480p / 360p ගොනු RAM තුළ සැකසී එකවර Upload වේ...</b>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb_cancel,
             )
@@ -1199,6 +1194,7 @@ async def _execute_leech(
             pass
 
         cloud_upload_res = None
+        variant_files: dict[str, str] = {}
         variant_cloud_urls: dict[str, dict[str, Any]] = {}
         ENABLE_TELEGRAM_VIDEO_UPLOAD = True
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
@@ -1245,6 +1241,29 @@ async def _execute_leech(
             except Exception as q_up_err:
                 log.debug("[LeechService] Variant %s upload skipped: %s", q_label, q_up_err)
 
+        async def _task_encode_and_upload_variants() -> None:
+            nonlocal variant_files, _mq_progress_str
+            if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
+                return
+            try:
+                variant_files = await video_service.generate_multi_quality_variants_ram(
+                    input_path=local_file,
+                    output_dir=temp_dir,
+                    slug=slug,
+                    sub_path=sub_srt_path,
+                    qualities=("720p", "480p", "360p"),
+                    progress_callback=_mq_progress_cb,
+                )
+                _mq_progress_str = "720p/480p/360p Uploading to Drive..."
+                if variant_files:
+                    await asyncio.gather(
+                        *[_task_upload_drive_variant(ql, qp) for ql, qp in variant_files.items()],
+                        return_exceptions=True,
+                    )
+                _mq_progress_str = "720p/480p/360p Complete ✅"
+            except Exception as mq_err:
+                log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
+
         async def _task_upload_telegram() -> None:
             nonlocal file_id, stream_url, message_id
             if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
@@ -1281,15 +1300,13 @@ async def _execute_leech(
                 except Exception as tg_err:
                     log.warning("[LeechService] Telegram upload note: %s", tg_err)
 
-        # Execute all uploads (Drive 1080p + Drive 720p/480p/360p + Telegram 1080p) concurrently!
-        parallel_upload_tasks = [
+        # Execute Drive 1080p upload, Telegram 1080p upload, and 720p/480p/360p RAM Encode+Upload concurrently!
+        await asyncio.gather(
             _task_upload_drive_1080(),
             _task_upload_telegram(),
-        ]
-        for q_label, q_path in variant_files.items():
-            parallel_upload_tasks.append(_task_upload_drive_variant(q_label, q_path))
-
-        await asyncio.gather(*parallel_upload_tasks, return_exceptions=True)
+            _task_encode_and_upload_variants(),
+            return_exceptions=True,
+        )
 
         cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
         cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
@@ -1429,7 +1446,7 @@ async def _execute_leech(
 
             encoded_title = urllib.parse.quote(display_title)
             dl_url_1080 = (
-                f"/api/download?id={drive_file_id}&q=1080p&title={encoded_title}"
+                f"/api/download?id={drive_file_id}&q=1080p&title={encoded_title}&size={sz_1080}"
                 if drive_file_id
                 else (cloud_download or cloud_stream)
             )
@@ -1458,10 +1475,11 @@ async def _execute_leech(
             ):
                 v_info = variant_cloud_urls.get(q_tier, {})
                 v_drive_id = v_info.get("file_id") or _extract_drive_id_str(v_info.get("download_url") or v_info.get("stream_url") or "") or drive_file_id
+                is_dedicated = "1" if (v_drive_id and v_drive_id != drive_file_id) else "0"
                 v_sz_bytes = v_info.get("size_bytes") or q_def_sz
                 v_sz_str = v_info.get("size") or downloader.format_bytes(v_sz_bytes)
                 v_direct_url = (
-                    f"/api/download?id={v_drive_id}&q={q_tier}&title={encoded_title}&size={v_sz_bytes}"
+                    f"/api/download?id={v_drive_id}&q={q_tier}&title={encoded_title}&size={v_sz_bytes}" + ("&dedicated=1" if is_dedicated == "1" else "")
                     if v_drive_id
                     else (v_info.get("download_url") or f"{base_dl_url}{sep}vq={q_vq}")
                 )

@@ -129,7 +129,7 @@ async def add_movie(movie: dict) -> bool:
             f.write(updated_json)
         js_path = os.path.join(os.path.dirname(_LOCAL_MOVIES_PATH), "movies_data.js")
         with open(js_path, "w", encoding="utf-8") as f:
-            f.write("window.FILMSUB_DATA = " + updated_json + ";\n")
+            f.write("window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = " + updated_json + ";\n")
         log.info("movies.json & movies_data.js updated LOCALLY. Movie '%s' added.", movie.get("title", "?"))
     except Exception as exc:
         log.warning("Could not write movies locally: %s", exc)

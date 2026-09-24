@@ -116,8 +116,140 @@ async function fetchDriveStream(fileId, rangeHeader, signal) {
   return res;
 }
 
+// OAuth credentials are loaded exclusively from Cloudflare Pages environment variables.
+// Set these in Cloudflare Dashboard → Pages → filmsub → Settings → Environment Variables:
+//   GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET, GDRIVE_REFRESH_TOKEN_1/2/3
+const DEFAULT_OAUTH_CLIENT_ID = '';
+const DEFAULT_OAUTH_CLIENT_SECRET = '';
+const DEFAULT_REFRESH_TOKENS = [];
+
+let _cachedAccessToken = '';
+let _cachedTokenExpiry = 0;
+
+async function getDriveAccessToken(env) {
+  const now = Date.now();
+  if (_cachedAccessToken && now < _cachedTokenExpiry - 60000) {
+    return _cachedAccessToken;
+  }
+  const clientId = (env && env.GDRIVE_CLIENT_ID) || DEFAULT_OAUTH_CLIENT_ID;
+  const clientSecret = (env && env.GDRIVE_CLIENT_SECRET) || DEFAULT_OAUTH_CLIENT_SECRET;
+  const tokensToTry = [];
+  for (const key of ['GDRIVE_REFRESH_TOKEN', 'GDRIVE_REFRESH_TOKEN_1', 'GDRIVE_REFRESH_TOKEN_2', 'GDRIVE_REFRESH_TOKEN_3']) {
+    if (env && env[key] && !tokensToTry.includes(env[key])) tokensToTry.push(env[key]);
+  }
+  for (const rt of DEFAULT_REFRESH_TOKENS) {
+    if (!tokensToTry.includes(rt)) tokensToTry.push(rt);
+  }
+  for (const refreshToken of tokensToTry) {
+    try {
+      const body = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      });
+      const resp = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.access_token) {
+          _cachedAccessToken = data.access_token;
+          _cachedTokenExpiry = now + ((Number(data.expires_in) || 3500) * 1000);
+          return _cachedAccessToken;
+        }
+      }
+    } catch (e) {}
+  }
+  return '';
+}
+
+function parseFormUrlEncoded(str) {
+  const out = {};
+  if (!str) return out;
+  for (const part of String(str).split('&')) {
+    if (!part) continue;
+    const eqIdx = part.indexOf('=');
+    if (eqIdx === -1) {
+      out[decodeURIComponent(part.replace(/\+/g, ' '))] = '';
+    } else {
+      const k = decodeURIComponent(part.slice(0, eqIdx).replace(/\+/g, ' '));
+      const v = decodeURIComponent(part.slice(eqIdx + 1).replace(/\+/g, ' '));
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+async function fetchDriveTranscodeQualityStream(fileId, quality, rangeHeader, signal, env) {
+  const qNorm = String(quality || '').toLowerCase().trim();
+  if (!['720p', '480p', '360p'].includes(qNorm)) return null;
+
+  const accessToken = await getDriveAccessToken(env);
+  if (!accessToken) return null;
+
+  const infoUrl = `https://drive.google.com/get_video_info?docid=${encodeURIComponent(fileId)}`;
+  const infoRes = await fetch(infoUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    },
+    signal,
+  });
+  if (!infoRes.ok) return null;
+
+  const setCookie = infoRes.headers.get('Set-Cookie') || '';
+  const driveStreamMatch = setCookie.match(/DRIVE_STREAM=[^;]+/);
+  const cookieHeader = driveStreamMatch ? driveStreamMatch[0] : '';
+
+  const text = await infoRes.text();
+  const parsed = parseFormUrlEncoded(text);
+  const fmtMap = parsed.url_encoded_fmt_stream_map || '';
+  if (!fmtMap) return null;
+
+  const streamsByItag = {};
+  for (const entry of fmtMap.split(',')) {
+    const ep = parseFormUrlEncoded(entry);
+    if (ep.itag && ep.url) streamsByItag[String(ep.itag)] = ep.url;
+  }
+
+  let preferredItags = [];
+  if (qNorm === '720p') preferredItags = ['22', '37', '59', '18'];
+  else if (qNorm === '480p') preferredItags = streamsByItag['59'] ? ['59', '22', '18'] : ['22', '18', '37'];
+  else if (qNorm === '360p') preferredItags = ['18', '59', '22'];
+
+  let chosenUrl = '';
+  for (const it of preferredItags) {
+    if (streamsByItag[it]) {
+      chosenUrl = streamsByItag[it];
+      break;
+    }
+  }
+  if (!chosenUrl) return null;
+
+  const streamHeaders = {
+    'Authorization': `Bearer ${accessToken}`,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept': '*/*',
+  };
+  if (cookieHeader) streamHeaders['Cookie'] = cookieHeader;
+  if (rangeHeader) streamHeaders['Range'] = rangeHeader;
+
+  const res = await fetch(chosenUrl, {
+    method: 'GET',
+    headers: streamHeaders,
+    redirect: 'follow',
+    signal,
+  });
+  if (res.ok || res.status === 206) return res;
+  return null;
+}
+
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
   const cors = buildCorsHeaders();
   const method = request.method.toUpperCase();
 
@@ -136,6 +268,7 @@ export async function onRequest(context) {
   const rawId = url.searchParams.get('id') || url.searchParams.get('url') || '';
   const quality = url.searchParams.get('q') || 'auto';
   const isDownload = url.searchParams.get('download') === '1' || url.searchParams.get('dl') === '1';
+  const isDedicated = url.searchParams.get('dedicated') === '1';
   const titleParam = url.searchParams.get('title') || 'Movie';
   const fileId = extractDriveId(rawId);
 
@@ -152,7 +285,14 @@ export async function onRequest(context) {
     : normalizeRangeHeader(rawClientRange, quality, method);
 
   try {
-    const upstream = await fetchDriveStream(fileId, effectiveRange, request.signal);
+    let upstream = null;
+    const qLower = String(quality).toLowerCase().trim();
+    if (!isDedicated && ['720p', '480p', '360p'].includes(qLower)) {
+      upstream = await fetchDriveTranscodeQualityStream(fileId, qLower, effectiveRange, request.signal, env);
+    }
+    if (!upstream) {
+      upstream = await fetchDriveStream(fileId, effectiveRange, request.signal);
+    }
     const upContentType = (upstream.headers.get('Content-Type') || '').toLowerCase();
 
     if (upContentType.includes('text/html') || (!upstream.ok && upstream.status !== 206)) {

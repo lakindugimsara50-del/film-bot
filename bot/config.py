@@ -60,9 +60,11 @@ GITHUB_REPO: str = os.getenv("GITHUB_REPO", "lakindugimsara50-del/film-bot")
 
 # ── Streaming ────────────────────────────────────────────────────────────────
 # Base URL of the Cloudflare Worker / FastAPI proxy that streams Telegram files
-STREAM_BASE_URL: str = os.getenv(
-    "STREAM_BASE_URL", "https://film-bot-2.onrender.com"
-)
+_raw_stream_url = os.getenv("STREAM_BASE_URL", "").strip()
+if not _raw_stream_url or "yourdomain.workers.dev" in _raw_stream_url or "yoursite.lk" in _raw_stream_url:
+    STREAM_BASE_URL: str = "https://film-bot-2.onrender.com"
+else:
+    STREAM_BASE_URL: str = _raw_stream_url.rstrip("/")
 
 # ── Pyrogram session ─────────────────────────────────────────────────────────
 # Name of the Pyrogram session file (userbot session, NOT the bot session)

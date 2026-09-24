@@ -18,7 +18,171 @@ window.FILMSUB_DATA = {
       "slug": "oppenheimer",
       "title": "Oppenheimer",
       "subtitles": []
+    },
+    {
+      "id": "the-100-2014-s01e01",
+      "slug": "the-100-2014-s01e01",
+      "title": "The 100",
+      "title_si": "",
+      "year": 2014,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt2661044",
+      "tmdb_id": "48866",
+      "type": "series",
+      "season": 1,
+      "episode": 1,
+      "episode_title": "Pilot",
+      "number_of_seasons": 7,
+      "number_of_episodes": 100,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 13,
+          "poster_url": "https://image.tmdb.org/t/p/w500/jAsSkxSGEjeEEHL3KiWXr3NwyPG.jpg",
+          "air_date": "2014-03-19"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 16,
+          "poster_url": "https://image.tmdb.org/t/p/w500/4ngujsHppz4Imxh7qf9NQIIMlLY.jpg",
+          "air_date": "2014-10-22"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 16,
+          "poster_url": "https://image.tmdb.org/t/p/w500/ayebqASxTXVSo9Qoug6M5YowZS0.jpg",
+          "air_date": "2016-01-21"
+        },
+        {
+          "season_number": 4,
+          "name": "Season 4",
+          "episode_count": 13,
+          "poster_url": "https://image.tmdb.org/t/p/w500/qCdJvikZUQkr4sOVYNkKHntRfha.jpg",
+          "air_date": "2017-02-01"
+        },
+        {
+          "season_number": 5,
+          "name": "Season 5",
+          "episode_count": 13,
+          "poster_url": "https://image.tmdb.org/t/p/w500/oYhQz0jHC3pgJKNMyKXiLKauQUC.jpg",
+          "air_date": "2018-04-24"
+        },
+        {
+          "season_number": 6,
+          "name": "Season 6",
+          "episode_count": 13,
+          "poster_url": "https://image.tmdb.org/t/p/w500/wBzNjurA8ijJPF21Ggs9nbviIzi.jpg",
+          "air_date": "2019-04-30"
+        },
+        {
+          "season_number": 7,
+          "name": "Season 7",
+          "episode_count": 16,
+          "poster_url": "https://image.tmdb.org/t/p/w500/xLOEWox9zuvzDbDdODP92RnQtjO.jpg",
+          "air_date": "2020-05-20"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/wHIMMLFsk32wIzDmawWkYVbxFCS.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/wHIMMLFsk32wIzDmawWkYVbxFCS.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/8ZerYKvIaNUJZvAHXYTQu4qTwFw.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/8ZerYKvIaNUJZvAHXYTQu4qTwFw.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Action & Adventure",
+        "Drama",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "quality": "1080p",
+      "duration": "42 min",
+      "description": "100 years in the future, when the Earth has been abandoned due to radioactivity, the last surviving humans live on an ark orbiting the planet — but the ark won't last forever. So the repressive regime picks 100 expendable juvenile delinquents to send down to Earth to see if the planet is still habitable.",
+      "director": "Jason Rothenberg",
+      "cast": [
+        {
+          "name": "Eliza Taylor",
+          "character": "Clarke Griffin"
+        },
+        {
+          "name": "Bob Morley",
+          "character": "Bellamy Blake"
+        },
+        {
+          "name": "Lindsey Morgan",
+          "character": "Raven Reyes"
+        },
+        {
+          "name": "Marie Avgeropoulos",
+          "character": "Octavia Blake"
+        },
+        {
+          "name": "Richard Harmon",
+          "character": "John Murphy"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "",
+      "message_id": 0,
+      "file_name": "sub_web_the-100-2014.mp4",
+      "file_size": 1458395546,
+      "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Server 1 (Google Drive Ultra HD)",
+          "type": "video/mp4",
+          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview"
+        }
+      ],
+      "downloads": [
+        {
+          "quality": "1080p (Cloud High-Speed)",
+          "size": "1.4 GB",
+          "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "format": "MP4",
+          "host": "Google Drive"
+        },
+        {
+          "quality": "720p",
+          "size": "765.0 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "format": "MP4",
+          "host": "Direct"
+        },
+        {
+          "quality": "480p",
+          "size": "389.4 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "format": "MP4",
+          "host": "Direct"
+        },
+        {
+          "quality": "360p",
+          "size": "250.4 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "format": "MP4",
+          "host": "Direct"
+        }
+      ],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "Sinhala Subtitle",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A1%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A06.000%0AFilmSub.lk%20%E0%B7%80%E0%B7%99%E0%B6%AD%E0%B7%92%E0%B6%B1%E0%B7%8A%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%0A%0A2%0A00%3A00%3A07.000%20--%3E%2000%3A00%3A15.000%0AThe%20100%20S01E01%20-%20Pilot%20%E0%B6%B1%E0%B7%90%E0%B6%BB%E0%B6%B9%E0%B7%93%E0%B6%B8%E0%B6%A7%20%E0%B7%83%E0%B7%8A%E0%B6%AD%E0%B7%96%E0%B6%AD%E0%B7%92%E0%B6%BA%E0%B7%92%21",
+          "default": true
+        }
+      ],
+      "source_method": "torrent",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-100-2014-s01e01",
+      "added_date": "2026-09-24",
+      "added_at": "2026-09-24T08:55:52Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-24T08:52:25Z"
+  "last_updated": "2026-09-24T08:55:53Z"
 };

@@ -1023,7 +1023,7 @@ async def _execute_leech(
         size_str = downloader.format_bytes(file_size)
 
         task_tracker.tracker.set_step(
-            user_id, f"4/4 - Render to Telegram Upload ({size_str})..."
+            user_id, f"4/4 - Google Drive CDN Upload ({size_str})..."
         )
 
         last_upload_edit = 0.0
@@ -1035,12 +1035,12 @@ async def _execute_leech(
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
                 text = (
-                    f"📤 <b>පියවර 4/4: Render Cloud ➔ Telegram Storage වෙත Upload වෙමින්...</b>\n\n"
+                    f"📤 <b>පියවර 4/4: Telegram Private Storage වෙත Upload වෙමින්...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
-                    f"⚡ <b>Cloud Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
+                    f"⚡ <b>Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
                     f"☁️ <i>Telegram Private Storage වෙත සෘජුවම සුරැකේ.</i>"
                 )
                 try:
@@ -1056,22 +1056,44 @@ async def _execute_leech(
         _last_drive_edit = 0.0
         _drive_file_size = os.path.getsize(local_file)
 
-        async def _drive_upload_progress(done_bytes: int, total_bytes: int) -> None:
+        # Initial notification that Google Drive upload has begun
+        try:
+            await status_msg.edit_text(
+                f"☁️ <b>පියවර 4/4: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
+                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
+                f"⚡ <b>Google Drive අධිවේගී Server වෙත සම්බන්ධ වෙමින් පවතී...</b>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_cancel,
+            )
+        except Exception:
+            pass
+
+        async def _drive_upload_progress(
+            done_bytes: int,
+            total_bytes: int,
+            speed_str: str = "--",
+            eta_str: str = "--",
+        ) -> None:
             nonlocal _last_drive_edit
             now = time.time()
-            if now - _last_drive_edit < 5.0:
+            pct = min(100.0, (done_bytes / total_bytes * 100)) if total_bytes > 0 else 0.0
+            if (now - _last_drive_edit < 2.5) and pct < 100.0:
                 return
             _last_drive_edit = now
-            pct = min(100.0, (done_bytes / total_bytes * 100)) if total_bytes > 0 else 0.0
             p_bar = downloader.format_progress_bar(pct)
             done_str = downloader.format_bytes(done_bytes)
             total_str = downloader.format_bytes(total_bytes)
+            speed_display = f"⚡ <b>Drive Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n" if speed_str != "--" else ""
             txt = (
-                f"☁️ <b>Google Drive වෙත Upload වෙමින්...</b>\n\n"
+                f"☁️ <b>පියවර 4/4: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                 f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
-                f"☁️ <i>FilmSub_Movies → Google Drive CDN Storage.</i>"
+                f"{speed_display}"
+                f"☁️ <i>FilmSub_Movies → Google Drive Storage</i>"
             )
             try:
                 await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)

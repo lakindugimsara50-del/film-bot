@@ -20,6 +20,7 @@
 
 # ── Clean genre URLs ─────────────────────────────────────────────────────────
 # /genre/action  →  genres.html?g=action
+/genres/*       /genres.html?g=:splat           200
 /genre/*        /genres.html?g=:splat           200
 
 # ── Redirect legacy /films/* to /movie/* (permanent) ─────────────────────────

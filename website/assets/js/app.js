@@ -31,23 +31,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ---- Load Movies ----
 async function loadMovies() {
-  // Fallback for file:/// protocol when browser blocks fetch()
+  // 1. Initial baseline from pre-loaded script tag
   if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
     siteData = window.FILMSUB_DATA.site || {};
     allMovies = window.FILMSUB_DATA.movies;
   }
 
-  try {
-    const cacheBuster = `?_t=${Date.now()}`;
-    const res = await fetch(`${SITE_CONFIG.moviesPath}${cacheBuster}`);
-    if (res.ok) {
-      const data = await res.json();
-      siteData = data.site || siteData;
-      allMovies = Array.isArray(data.movies) ? data.movies : allMovies;
-    }
-  } catch (e) {
+  const cacheBuster = `?_t=${Date.now()}`;
+  // 2. Fetch live data: First try GitHub Raw (instant bot updates), then local data/movies.json
+  const remoteUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json${cacheBuster}`;
+  const localUrl = `${SITE_CONFIG.moviesPath}${cacheBuster}`;
 
-    console.info('Using local FILMSUB_DATA fallback (file:/// safe).');
+  let fetched = false;
+  for (const url of [remoteUrl, localUrl]) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.movies) && data.movies.length > 0) {
+          siteData = data.site || siteData;
+          allMovies = data.movies;
+          fetched = true;
+          break;
+        }
+      }
+    } catch (e) {
+      // Continue to next source
+    }
+  }
+
+  if (!fetched && allMovies.length === 0) {
+    console.info('Using local FILMSUB_DATA fallback.');
   }
 }
 

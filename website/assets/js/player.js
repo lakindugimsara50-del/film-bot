@@ -53,7 +53,17 @@ function waitForFilmSub() {
 // ---- Get slug from URL ----
 function getSlugFromURL() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('id') || window.location.hash.replace('#', '') || null;
+  const qId = params.get('id') || params.get('movie') || params.get('slug');
+  if (qId) return qId.trim();
+
+  const hash = window.location.hash.replace(/^#\/?/, '').trim();
+  if (hash) return hash;
+
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  if (pathParts.length >= 2 && (pathParts[0] === 'movie' || pathParts[0] === 'films')) {
+    return pathParts[1].replace(/\.html$/, '').trim();
+  }
+  return null;
 }
 
 // ---- Error state ----

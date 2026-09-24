@@ -305,9 +305,9 @@ async def status_handler(client: Client, message: Message) -> None:
     )
 
 
-BOT_VERSION = "v2.6.2-turbo-inmemory"
-BOT_COMMIT = "inmemory-session"
-BOT_FEATURES = "✅ In-Memory Session (No SQLite Lock) | ✅ Drive-Only Upload Mode | ✅ Fast Remux (15s) | ✅ Immediate Web Publish"
+BOT_VERSION = "v2.6.3-live-drive-stats"
+BOT_COMMIT = "live-drive-stats"
+BOT_FEATURES = "✅ In-Memory Session | ✅ Live Drive Speed & ETA | ✅ Instant GitHub Raw Web Sync | ✅ Clean URL Rewrites"
 
 
 

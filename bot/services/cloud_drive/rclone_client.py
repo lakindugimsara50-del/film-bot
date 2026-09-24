@@ -149,43 +149,69 @@ class RcloneDriveClient:
         async def _read_progress() -> None:
             nonlocal _last_cb
             assert proc.stderr is not None
-            while True:
+            buf = bytearray()
+            while proc.returncode is None:
                 try:
-                    raw = await asyncio.wait_for(proc.stderr.readline(), timeout=5.0)
-                except asyncio.TimeoutError:
-                    break
-                if not raw:
-                    break
-                line = raw.decode(errors="ignore").strip()
-                if not line:
-                    continue
-                log.debug("[Rclone:%s] %s", self.remote_name, line)
-                if progress_callback is None:
-                    continue
-                # Match: "Transferred:   1.234 GiB / 2.100 GiB, 59%, ..."
-                m = re.search(
-                    r"Transferred:\s+([\d.]+)\s*(\w+)\s*/\s*([\d.]+)\s*(\w+),\s*[\d.]+%",
-                    line,
-                )
-                if not m:
-                    continue
-                try:
-                    unit_map = {
-                        "B": 1, "KIB": 1024, "MIB": 1024**2, "GIB": 1024**3,
-                        "KB": 1000, "MB": 1000**2, "GB": 1000**3, "TIB": 1024**4,
-                    }
-                    done_val = float(m.group(1))
-                    done_mult = unit_map.get(m.group(2).upper(), 1)
-                    bytes_done = int(done_val * done_mult)
-                    now = _time.monotonic()
-                    if now - _last_cb >= 3.0:
-                        _last_cb = now
+                    chunk = await asyncio.wait_for(proc.stderr.read(256), timeout=2.0)
+                    if not chunk:
+                        if proc.returncode is not None:
+                            break
+                        await asyncio.sleep(0.2)
+                        continue
+                    buf.extend(chunk)
+                    while b"\n" in buf or b"\r" in buf:
+                        idx_n = buf.find(b"\n")
+                        idx_r = buf.find(b"\r")
+                        if idx_n != -1 and idx_r != -1:
+                            idx = min(idx_n, idx_r)
+                        elif idx_n != -1:
+                            idx = idx_n
+                        else:
+                            idx = idx_r
+                        raw_line = bytes(buf[:idx])
+                        del buf[:idx + 1]
+                        line = raw_line.decode(errors="ignore").strip()
+                        if not line:
+                            continue
+                        log.debug("[Rclone:%s] %s", self.remote_name, line)
+                        if progress_callback is None:
+                            continue
+
+                        # Match: Transferred: 1.234 GiB / 2.100 GiB, 59%, 45.2 MiB/s, ETA 20s
+                        m = re.search(
+                            r"Transferred:\s+([\d.]+)\s*(\w+)\s*/\s*([\d.]+)\s*(\w+)(?:,\s*([\d.]+)%)?(?:,\s*([\d.]+\s*\w+/s))?(?:,\s*ETA\s*([^\s,]+))?",
+                            line,
+                        )
+                        if not m:
+                            continue
                         try:
-                            await progress_callback(bytes_done, file_size)
+                            unit_map = {
+                                "B": 1, "KIB": 1024, "MIB": 1024**2, "GIB": 1024**3,
+                                "KB": 1000, "MB": 1000**2, "GB": 1000**3, "TIB": 1024**4,
+                            }
+                            done_val = float(m.group(1))
+                            done_mult = unit_map.get(m.group(2).upper(), 1)
+                            bytes_done = int(done_val * done_mult)
+                            speed_str = m.group(6) or "--"
+                            eta_str = m.group(7) or "--"
+
+                            now = _time.monotonic()
+                            if now - _last_cb >= 2.0:
+                                _last_cb = now
+                                try:
+                                    await progress_callback(bytes_done, file_size, speed_str, eta_str)
+                                except TypeError:
+                                    await progress_callback(bytes_done, file_size)
+                                except Exception:
+                                    pass
                         except Exception:
                             pass
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    continue
                 except Exception:
-                    pass
+                    break
 
         # Wait for upload + progress reader concurrently
         try:

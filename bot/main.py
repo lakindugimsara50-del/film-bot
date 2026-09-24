@@ -80,11 +80,13 @@ _PYROGRAM_WORKERS = 16 if _on_colab_env else 4
 
 app = Client(
     name="film_bot",
+    in_memory=True,
     api_id=config.API_ID,
     api_hash=config.API_HASH,
     bot_token=config.BOT_TOKEN,
     workers=_PYROGRAM_WORKERS,
 )
+
 
 
 # ── Health & Status Web Server ────────────────────────────────────────────────
@@ -303,9 +305,10 @@ async def status_handler(client: Client, message: Message) -> None:
     )
 
 
-BOT_VERSION = "v2.6.1-drive-only-test"
-BOT_COMMIT = "drive-only-mode"
-BOT_FEATURES = "✅ Drive-Only Upload Mode (TG Paused) | ✅ Fast Remux (15s) | ✅ Immediate Web Publish | ✅ Multi-Quality"
+BOT_VERSION = "v2.6.2-turbo-inmemory"
+BOT_COMMIT = "inmemory-session"
+BOT_FEATURES = "✅ In-Memory Session (No SQLite Lock) | ✅ Drive-Only Upload Mode | ✅ Fast Remux (15s) | ✅ Immediate Web Publish"
+
 
 
 

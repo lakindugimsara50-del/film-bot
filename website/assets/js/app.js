@@ -38,13 +38,15 @@ async function loadMovies() {
   }
 
   try {
-    const res = await fetch(SITE_CONFIG.moviesPath);
+    const cacheBuster = `?_t=${Date.now()}`;
+    const res = await fetch(`${SITE_CONFIG.moviesPath}${cacheBuster}`);
     if (res.ok) {
       const data = await res.json();
       siteData = data.site || siteData;
       allMovies = Array.isArray(data.movies) ? data.movies : allMovies;
     }
   } catch (e) {
+
     console.info('Using local FILMSUB_DATA fallback (file:/// safe).');
   }
 }

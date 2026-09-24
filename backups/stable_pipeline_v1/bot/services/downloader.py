@@ -17,7 +17,6 @@ import os
 import re
 import shutil
 import time
-import urllib.parse
 from typing import Callable, Optional
 
 import aiofiles
@@ -154,9 +153,6 @@ async def _download_aria2c_http(
         "-k", "1M",
         "--min-split-size=1M",
         "--max-connection-per-server=16",
-        "--file-allocation=none",
-        "--disk-cache=64M",
-        "--stream-piece-selector=inorder",
         "--check-certificate=false",
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "--summary-interval=1",
@@ -554,17 +550,12 @@ async def download_torrent(
         "--dir", dest_dir,
         "--check-certificate=false",
         "--seed-time=0",
-        "-x", "16",
-        "-s", "16",
-        "-j", "16",
-        "--min-split-size=1M",
         "--max-connection-per-server=16",
         "--split=16",
         "--enable-dht=true",
         "--enable-peer-exchange=true",
         "--bt-enable-lpd=true",
-        "--bt-max-peers=120",
-        "--bt-request-peer-speed-limit=10M",
+        "--bt-max-peers=100",
         "--file-allocation=none",
         f"--disk-cache={_disk_cache}",
         "--peer-id-prefix=-qB4520-",

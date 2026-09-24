@@ -744,133 +744,146 @@ async def _execute_leech(
                     candidate_bytes = candidate.size_bytes or 0
                     is_season_pack = bool(candidate.extra and candidate.extra.get("is_season_pack"))
                     ep_hint = f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None
+                    # If file is larger than 1.95 GB (and not a full season pack) and PikPak is configured, use PikPak directly
                     prefer_pikpak = (
                         not is_season_pack
                         and candidate_bytes > int(1.95 * 1024 * 1024 * 1024)
                         and pikpak_service.is_configured()
                     )
 
-                    async def _attempt_cloud_debrid(dest_folder: str, sub_task_key: str) -> Optional[str]:
-                        nonlocal cloud_service_name, cloud_res
-                        c_res = None
-                        # 1. Try PikPak first if file > 1.95GB
-                        if prefer_pikpak:
-                            log.info("[LeechService] Large file (>1.95GB). Using PikPak Cloud Debrid...")
-                            cloud_service_name = "PikPak"
-                            async def _pikpak_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
-                                try:
-                                    await status_msg.edit_text(
-                                        f"☁️ <b>PikPak Cloud Debrid (10GB Tier) ක්‍රියාත්මකයි...</b>\n\n"
-                                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                                        f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
-                                        f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
-                                        parse_mode=ParseMode.HTML,
-                                        reply_markup=kb_cancel,
-                                    )
-                                except Exception:
-                                    pass
+                    # 1. Try PikPak first if file > 1.95GB
+                    if prefer_pikpak:
+                        log.info("[LeechService] Large file (>1.95GB). Using PikPak Cloud Debrid...")
+                        cloud_service_name = "PikPak"
+                        async def _pikpak_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+                            try:
+                                await status_msg.edit_text(
+                                    f"☁️ <b>PikPak Cloud Debrid (10GB Tier) ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
+                                    f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
+                            except Exception:
+                                pass
 
-                            c_res = await pikpak_service.convert_magnet_to_direct_url(
-                                magnet_link=mag_to_use,
-                                progress_callback=_pikpak_progress,
-                                episode_hint=ep_hint,
+                        cloud_res = await pikpak_service.convert_magnet_to_direct_url(
+                            magnet_link=mag_to_use,
+                            progress_callback=_pikpak_progress,
+                            episode_hint=ep_hint,
+                        )
+
+                    # 2. Try Seedr if not preferred PikPak (or if PikPak didn't resolve)
+                    can_try_seedr = seedr_service.seedr_client.is_configured() and not prefer_pikpak
+                    if can_try_seedr and is_season_pack:
+                        log.info(
+                            "[LeechService] Candidate '%s' is a season pack. Skipping Seedr 2.0 GB tier (using direct single-file aria2c).",
+                            candidate.method_name,
+                        )
+                        can_try_seedr = False
+                    elif can_try_seedr and candidate_bytes > int(2.05 * 1024 * 1024 * 1024):
+                        log.warning(
+                            "[LeechService] Candidate size (%s) exceeds Seedr 2.05 GB tier. Skipping Seedr attempt.",
+                            downloader.format_bytes(candidate_bytes)
+                        )
+                        can_try_seedr = False
+
+                    if not cloud_res and can_try_seedr:
+                        log.info("[LeechService] Attempting Seedr.cc Cloud Debrid conversion...")
+                        cloud_service_name = "Seedr"
+                        async def _seedr_progress(status_str: str) -> None:
+                            try:
+                                await status_msg.edit_text(
+                                    f"☁️ <b>Seedr Cloud Debrid ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ {status_str}",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
+                            except Exception:
+                                pass
+
+                        cloud_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
+                            magnet_url=mag_to_use,
+                            progress_callback=_seedr_progress,
+                            episode_hint=ep_hint,
+                        )
+
+                    # 3. Fallback to PikPak if Seedr failed or was full (for non-season-pack releases)
+                    if not cloud_res and not is_season_pack and pikpak_service.is_configured() and not prefer_pikpak:
+                        log.info("[LeechService] Seedr conversion failed/full. Falling back to PikPak Cloud Debrid...")
+                        cloud_service_name = "PikPak"
+                        async def _pikpak_progress2(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+                            try:
+                                await status_msg.edit_text(
+                                    f"☁️ <b>PikPak Cloud Debrid (Fallback) ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
+                                    f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
+                            except Exception:
+                                pass
+
+                        cloud_res = await pikpak_service.convert_magnet_to_direct_url(
+                            magnet_link=mag_to_use,
+                            progress_callback=_pikpak_progress2,
+                            episode_hint=ep_hint,
+                        )
+
+                    if cloud_res and cloud_res.get("direct_url"):
+                        log.info("[LeechService] Downloading via %s direct HTTPS link: %s", cloud_service_name, cloud_res.get("file_name"))
+                        clean_name = cloud_res.get("file_name") or f"{_slugify(title, year)}.mp4"
+                        local_file = await downloader.download_http(
+                            url=cloud_res["direct_url"],
+                            dest_dir=temp_dir,
+                            filename=clean_name,
+                            task_key=task_key,
+                            progress_callback=_download_progress,
+                        )
+                        # Clean up cloud storage immediately after download
+                        if cloud_service_name == "PikPak":
+                            asyncio.create_task(pikpak_service.clean_storage())
+                        else:
+                            asyncio.create_task(seedr_service.seedr_client.clean_storage())
+
+                    # If cloud debrid (Seedr/PikPak) was not used or failed to resolve, fall back to direct VPS aria2c
+                    if not local_file:
+                        if seedr_service.seedr_client.is_configured() or pikpak_service.is_configured():
+                            log.info(
+                                "[LeechService] Cloud debrid unavailable/failed for '%s'. Falling back to direct VPS aria2c torrent download...",
+                                candidate.method_name,
                             )
+                        cloud_service_name = "VPS aria2c"
 
-                        # 2. Try Seedr if not preferred PikPak (or if PikPak didn't resolve)
-                        can_try_seedr = seedr_service.seedr_client.is_configured() and not prefer_pikpak
-                        if can_try_seedr and is_season_pack:
-                            can_try_seedr = False
-                        elif can_try_seedr and candidate_bytes > int(2.05 * 1024 * 1024 * 1024):
-                            can_try_seedr = False
-
-                        if not c_res and can_try_seedr:
-                            log.info("[LeechService] Attempting Seedr.cc Cloud Debrid conversion...")
-                            cloud_service_name = "Seedr"
-                            async def _seedr_progress(status_str: str) -> None:
-                                try:
-                                    await status_msg.edit_text(
-                                        f"☁️ <b>Seedr Cloud Debrid ක්‍රියාත්මකයි...</b>\n\n"
-                                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                                        f"⚡ {status_str}",
-                                        parse_mode=ParseMode.HTML,
-                                        reply_markup=kb_cancel,
-                                    )
-                                except Exception:
-                                    pass
-
-                            c_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
-                                magnet_url=mag_to_use,
-                                progress_callback=_seedr_progress,
-                                episode_hint=ep_hint,
-                            )
-
-                        # 3. Fallback to PikPak if Seedr failed or was full
-                        if not c_res and not is_season_pack and pikpak_service.is_configured() and not prefer_pikpak:
-                            log.info("[LeechService] Seedr conversion failed/full. Falling back to PikPak Cloud Debrid...")
-                            cloud_service_name = "PikPak"
-                            async def _pikpak_progress2(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
-                                try:
-                                    await status_msg.edit_text(
-                                        f"☁️ <b>PikPak Cloud Debrid (Fallback) ක්‍රියාත්මකයි...</b>\n\n"
-                                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                                        f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
-                                        f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
-                                        parse_mode=ParseMode.HTML,
-                                        reply_markup=kb_cancel,
-                                    )
-                                except Exception:
-                                    pass
-
-                            c_res = await pikpak_service.convert_magnet_to_direct_url(
-                                magnet_link=mag_to_use,
-                                progress_callback=_pikpak_progress2,
-                                episode_hint=ep_hint,
-                            )
-
-                        cloud_res = c_res
-                        if c_res and c_res.get("direct_url"):
-                            log.info("[LeechService] Downloading via %s 16x aria2c link: %s", cloud_service_name, c_res.get("file_name"))
-                            clean_name = c_res.get("file_name") or f"{_slugify(title, year)}.mp4"
-                            dl_path = await downloader.download_http(
-                                url=c_res["direct_url"],
-                                dest_dir=dest_folder,
-                                filename=clean_name,
-                                task_key=sub_task_key,
-                                progress_callback=_download_progress,
-                            )
-                            if cloud_service_name == "PikPak":
-                                asyncio.create_task(pikpak_service.clean_storage())
-                            else:
-                                asyncio.create_task(seedr_service.seedr_client.clean_storage())
-                            return dl_path
-                        return None
-
-                    async def _attempt_direct_aria2c(dest_folder: str, sub_task_key: str) -> Optional[str]:
                         c_bytes = candidate.size_bytes or 0
                         is_single_ep = bool(is_series and season and episode)
                         _max_local_gb = 4.5 if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else 1.85
                         if not is_single_ep and c_bytes > int(_max_local_gb * 1024 * 1024 * 1024):
                             log.warning(
-                                "[LeechService] Candidate %s (%s) exceeds safe limit (%.2f GB).",
+                                "[LeechService] Candidate %s (%s) exceeds safe limit (%.2f GB). Skipping to prevent crash.",
                                 candidate.method_name,
                                 downloader.format_bytes(c_bytes),
                                 _max_local_gb,
                             )
-                            return None
+                            continue
 
+                        # Ensure enough free space exists
                         try:
-                            free_disk = shutil.disk_usage(dest_folder).free
+                            free_disk = shutil.disk_usage(temp_dir).free
                             needed_bytes = (min(c_bytes, 850 * 1024 * 1024) if is_single_ep else c_bytes) + 400 * 1024 * 1024
                             if c_bytes > 0 and free_disk < needed_bytes:
                                 log.warning(
-                                    "[LeechService] Candidate %s (%s) exceeds available disk (%s).",
+                                    "[LeechService] Candidate %s (%s) exceeds available VPS disk (%s). Skipping to prevent container crash.",
                                     candidate.method_name,
                                     downloader.format_bytes(c_bytes),
                                     downloader.format_bytes(free_disk),
                                 )
-                                return None
-                        except Exception:
-                            pass
+                                continue
+                        except Exception as d_check_err:
+                            log.debug("[LeechService] Disk check: %s", d_check_err)
 
                         tor_source = (
                             candidate.extra.get("torrent_url")
@@ -882,70 +895,14 @@ async def _execute_leech(
                             if (candidate.extra and candidate.extra.get("file_idx") is not None)
                             else None
                         )
-                        return await downloader.download_torrent(
+                        local_file = await downloader.download_torrent(
                             magnet_or_torrent=tor_source,
-                            dest_dir=dest_folder,
-                            task_key=sub_task_key,
+                            dest_dir=temp_dir,
+                            task_key=task_key,
                             progress_callback=_download_progress,
-                            episode_hint=ep_hint,
+                            episode_hint=f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None,
                             select_file_idx=sel_idx,
                         )
-
-                    has_cloud_debrid = seedr_service.seedr_client.is_configured() or pikpak_service.is_configured()
-                    seed_count = int((candidate.extra or {}).get("seeders") or (candidate.extra or {}).get("seeds") or 0)
-                    _is_colab_env = os.path.exists("/content") or os.path.isdir("/dev/shm")
-                    should_race = (
-                        getattr(config, "ENABLE_TORRENT_RACING", True)
-                        and has_cloud_debrid
-                        and bool(downloader.find_aria2c())
-                        and (_is_colab_env or seed_count >= 15 or candidate.method == "yts")
-                    )
-
-                    if should_race:
-                        log.info(
-                            "[LeechService] Racing Direct aria2c (seeds=%d) vs Cloud Debrid concurrently for '%s'...",
-                            seed_count, candidate.method_name
-                        )
-                        race_aria_dir = os.path.join(temp_dir, "race_aria")
-                        race_cloud_dir = os.path.join(temp_dir, "race_cloud")
-                        os.makedirs(race_aria_dir, exist_ok=True)
-                        os.makedirs(race_cloud_dir, exist_ok=True)
-
-                        t_aria = asyncio.create_task(_attempt_direct_aria2c(race_aria_dir, f"{task_key}_aria"))
-                        t_cloud = asyncio.create_task(_attempt_cloud_debrid(race_cloud_dir, f"{task_key}_cloud"))
-
-                        done, pending = await asyncio.wait({t_aria, t_cloud}, return_when=asyncio.FIRST_COMPLETED)
-                        for d_task in done:
-                            try:
-                                res_path = d_task.result()
-                                if res_path and os.path.exists(res_path) and os.path.getsize(res_path) > 0:
-                                    local_file = res_path
-                                    break
-                            except Exception as r_err:
-                                log.debug("[LeechService] First finished race branch error: %s", r_err)
-
-                        if local_file:
-                            for p_task in pending:
-                                p_task.cancel()
-                            await downloader.cancel_active_download(f"{task_key}_aria")
-                            await downloader.cancel_active_download(f"{task_key}_cloud")
-                        elif pending:
-                            for p_task in pending:
-                                try:
-                                    res_path2 = await p_task
-                                    if res_path2 and os.path.exists(res_path2) and os.path.getsize(res_path2) > 0:
-                                        local_file = res_path2
-                                        break
-                                except Exception as r_err2:
-                                    log.debug("[LeechService] Second race branch error: %s", r_err2)
-                    else:
-                        if has_cloud_debrid:
-                            local_file = await _attempt_cloud_debrid(temp_dir, task_key)
-                        if not local_file:
-                            cloud_service_name = "VPS aria2c"
-                            local_file = await _attempt_direct_aria2c(temp_dir, task_key)
-                            if not local_file:
-                                continue
                 elif candidate.method == "telegram":
                     # Download telegram media
                     tg_file_id = candidate.source_url
@@ -1105,9 +1062,9 @@ async def _execute_leech(
             else:
                 log.warning("[LeechService] Insufficient free space for remuxing. Keeping original file.")
 
-        # Single-Pass 12GB RAM Multi-Quality (720p, 480p, 360p) Burn-In Variant Generation
+        # Optional 12GB RAM Multi-Quality (720p, 480p, 360p) Burn-In Variant Generation
         variant_files: dict[str, str] = {}
-        if getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
+        if getattr(config, "ENABLE_MULTI_QUALITY_RAM", False):
             try:
                 variant_files = await video_service.generate_multi_quality_variants_ram(
                     input_path=local_file,
@@ -1119,22 +1076,16 @@ async def _execute_leech(
             except Exception as mq_err:
                 log.warning("[LeechService] Multi-quality RAM variant generation skipped: %s", mq_err)
 
-        # ── Step 3 & 4: Parallel Upload to Google Drive (1080p/720p/480p/360p) + Telegram Channel ──
+        # ── Step 3: Fast Parallel Upload to Telegram Channel ──────────────────
         file_size = os.path.getsize(local_file)
         file_name = os.path.basename(local_file)
         size_str = downloader.format_bytes(file_size)
 
-        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
-        if "yoursite.lk" in base_site:
-            base_site = "https://filmsub.pages.dev"
-        site_url = f"{base_site}/movie.html?id={slug}"
-
         task_tracker.tracker.set_step(
-            user_id, f"4/4 - Parallel Cloud Drive + Telegram Upload ({size_str})..."
+            user_id, f"4/4 - Google Drive CDN Upload ({size_str})..."
         )
 
         last_upload_edit = 0.0
-        _last_drive_edit = 0.0
 
         async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
             nonlocal last_upload_edit
@@ -1143,18 +1094,38 @@ async def _execute_leech(
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
                 text = (
-                    f"📤 <b>පියවර 4/5: Google Drive CDN + Telegram සමගාමී Upload වෙමින්...</b>\n\n"
+                    f"📤 <b>පියවර 5/5: Telegram Film Channel වෙත Upload වෙමින්...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                     f"⚡ <b>Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
-                    f"☁️ <i>1080p / 720p / 480p / 360p Cloud + Telegram Parallel Upload</i>"
+                    f"☁️ <i>Telegram Private Storage වෙත සෘජුවම සුරැකේ.</i>"
                 )
                 try:
                     await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
                 except Exception as up_err:
                     log.debug("[LeechService] Upload progress edit ignored: %s", up_err)
+
+        # ── Step 4: Upload to High-Speed Cloud Drive (OneDrive / Google Drive) ──
+        cloud_upload_res = None
+
+        _last_drive_edit = 0.0
+        _drive_file_size = os.path.getsize(local_file)
+
+        # Initial notification that Google Drive upload has begun
+        try:
+            await status_msg.edit_text(
+                f"☁️ <b>පියවර 4/5: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
+                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
+                f"⚡ <b>Google Drive අධිවේගී Server වෙත සම්බන්ධ වෙමින් පවතී...</b>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_cancel,
+            )
+        except Exception:
+            pass
 
         async def _drive_upload_progress(
             done_bytes: int,
@@ -1173,13 +1144,13 @@ async def _execute_leech(
             total_str = downloader.format_bytes(total_bytes)
             speed_display = f"⚡ <b>Drive Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n" if speed_str != "--" else ""
             txt = (
-                f"☁️ <b>පියවර 4/5: Google Drive CDN + Telegram Parallel Upload...</b>\n\n"
+                f"☁️ <b>පියවර 4/5: Google Drive CDN Storage වෙත Upload වෙමින්...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                 f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                 f"{speed_display}"
-                f"☁️ <i>FilmSub_Movies → Google Drive & Telegram Multi-Stream Storage</i>"
+                f"☁️ <i>FilmSub_Movies → Google Drive Storage</i>"
             )
             try:
                 await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -1187,113 +1158,48 @@ async def _execute_leech(
                 pass
 
         try:
-            await status_msg.edit_text(
-                f"☁️ <b>පියවර 4/5: Google Drive CDN (1080p/720p/480p/360p) + Telegram Parallel Upload...</b>\n\n"
-                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                f"📁 <b>ගොනුව:</b> <code>{file_name}</code> ({size_str})\n"
-                f"⚡ <b>සියලුම Quality ගොනු එකවර අධිවේගීව Upload වෙමින් පවතී...</b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=kb_cancel,
+            cloud_upload_res = await drive_manager.upload_movie(
+                local_path=local_file,
+                movie_slug=slug,
+                movie_title=display_title,
+                filename=f"{slug}.mp4",
+                progress_callback=_drive_upload_progress,
             )
-        except Exception:
-            pass
 
-        cloud_upload_res = None
-        variant_cloud_urls: dict[str, dict[str, Any]] = {}
-        ENABLE_TELEGRAM_VIDEO_UPLOAD = True
-        target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
-        file_id = ""
-        stream_url = ""
-        message_id = 0
-
-        async def _task_upload_drive_1080() -> None:
-            nonlocal cloud_upload_res
-            try:
-                cloud_upload_res = await drive_manager.upload_movie(
-                    local_path=local_file,
-                    movie_slug=slug,
-                    movie_title=display_title,
-                    filename=f"{slug}.mp4",
-                    progress_callback=_drive_upload_progress,
-                )
-                if cloud_upload_res:
-                    log.info("[LeechService] Movie '%s' (1080p) uploaded to Cloud Drive: %s", slug, cloud_upload_res.get("stream_url"))
-            except Exception as c_err:
-                log.warning("[LeechService] Cloud Drive 1080p upload skipped/failed: %s", c_err)
-
-        async def _task_upload_drive_variant(q_label: str, q_path: str) -> None:
-            if not os.path.exists(q_path):
-                return
-            try:
-                q_bytes = os.path.getsize(q_path)
-                q_res = await drive_manager.upload_movie(
-                    local_path=q_path,
-                    movie_slug=f"{slug}-{q_label}",
-                    movie_title=f"{display_title} ({q_label})",
-                    filename=f"{slug}-{q_label}.mp4",
-                )
-                if q_res:
-                    variant_cloud_urls[q_label] = {
-                        "file_id": q_res.get("file_id", ""),
-                        "stream_url": q_res.get("stream_url", ""),
-                        "download_url": q_res.get("download_url", ""),
-                        "size": downloader.format_bytes(q_bytes),
-                        "size_bytes": q_bytes,
-                    }
-                    log.info("[LeechService] Variant '%s-%s' (%s) uploaded to Cloud Drive: %s",
-                             slug, q_label, downloader.format_bytes(q_bytes), q_res.get("file_id"))
-            except Exception as q_up_err:
-                log.debug("[LeechService] Variant %s upload skipped: %s", q_label, q_up_err)
-
-        async def _task_upload_telegram() -> None:
-            nonlocal file_id, stream_url, message_id
-            if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
-                return
-            if file_size > int(1.95 * 1024 * 1024 * 1024):
-                log.info("[LeechService] File size %.2f GB > 1.95 GB. Posting Drive link to Telegram channel.", file_size / (1024**3))
-                try:
-                    msg = await client.send_message(
-                        chat_id=target_channel,
-                        text=(
-                            f"🎬 <b>{display_title}</b>\n\n"
-                            f"📦 <b>Size:</b> {size_str} (High Definition 1080p)\n"
-                            f"⚡ <b>Google Drive Ultra HD:</b> <a href=\"{site_url}\">Watch Online & Download</a>"
-                        ),
-                        parse_mode=ParseMode.HTML,
-                        disable_web_page_preview=False,
-                    )
-                    message_id = msg.id
-                except Exception as t_err:
-                    log.warning("[LeechService] Channel link post error: %s", t_err)
-            else:
-                try:
-                    upload_res = await telegram_upload.upload_video_file(
-                        bot_client=client,
-                        file_path=local_file,
-                        target_chat=target_channel,
-                        caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
-                        progress_callback=_upload_progress,
-                        fallback_chat=0,
-                    )
-                    file_id = upload_res.get("file_id", "")
-                    stream_url = upload_res.get("stream_url", "")
-                    message_id = upload_res.get("message_id", 0)
-                except Exception as tg_err:
-                    log.warning("[LeechService] Telegram upload note: %s", tg_err)
-
-        # Execute all uploads (Drive 1080p + Drive 720p/480p/360p + Telegram 1080p) concurrently!
-        parallel_upload_tasks = [
-            _task_upload_drive_1080(),
-            _task_upload_telegram(),
-        ]
-        for q_label, q_path in variant_files.items():
-            parallel_upload_tasks.append(_task_upload_drive_variant(q_label, q_path))
-
-        await asyncio.gather(*parallel_upload_tasks, return_exceptions=True)
+            if cloud_upload_res:
+                log.info("[LeechService] Movie '%s' uploaded to Cloud Drive: %s", slug, cloud_upload_res.get("stream_url"))
+        except Exception as c_err:
+            log.warning("[LeechService] Cloud Drive upload skipped/failed: %s", c_err)
 
         cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
         cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
         primary_stream = cloud_stream or ""
+
+        variant_cloud_urls: dict[str, dict[str, str]] = {}
+        if variant_files:
+            for q_label, q_path in variant_files.items():
+                if os.path.exists(q_path):
+                    try:
+                        q_res = await drive_manager.upload_movie(
+                            local_path=q_path,
+                            movie_slug=f"{slug}-{q_label}",
+                            movie_title=f"{display_title} ({q_label})",
+                            filename=f"{slug}-{q_label}.mp4",
+                        )
+                        if q_res:
+                            variant_cloud_urls[q_label] = {
+                                "stream_url": q_res.get("stream_url", ""),
+                                "download_url": q_res.get("download_url", ""),
+                                "size": downloader.format_bytes(os.path.getsize(q_path)),
+                            }
+                    except Exception as q_up_err:
+                        log.debug("[LeechService] Variant %s upload skipped: %s", q_label, q_up_err)
+
+        # ── Step 3b: Prepare Movie Payload & Publish to Website Immediately ──
+        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        if "yoursite.lk" in base_site:
+            base_site = "https://filmsub.pages.dev"
+        site_url = f"{base_site}/movie.html?id={slug}"
 
         # Publish Sinhala VTT subtitle to GitHub/website & generate inline data:text/vtt URI
         sub_text = (
@@ -1320,6 +1226,7 @@ async def _execute_leech(
                     repo=getattr(config, "GITHUB_REPO", ""),
                 )
                 if uploaded_sub_url and len(sub_text) > 16000:
+                    # Use hosted VTT URL for large subtitle files while keeping data_uri for instant load
                     default_sub_url = uploaded_sub_url
             except Exception as up_sub_err:
                 log.debug("[LeechService] Subtitle upload fallback to inline VTT: %s", up_sub_err)
@@ -1327,24 +1234,19 @@ async def _execute_leech(
         file_ext = os.path.splitext(file_name)[1].lstrip(".").upper() or "MP4"
         stream_type = "video/mp4" if file_ext == "MP4" else "video/x-matroska"
 
-        sz_360 = variant_cloud_urls.get("360p", {}).get("size_bytes") or int(file_size * 0.18)
-        sz_480 = variant_cloud_urls.get("480p", {}).get("size_bytes") or int(file_size * 0.32)
-        sz_720 = variant_cloud_urls.get("720p", {}).get("size_bytes") or int(file_size * 0.55)
+        sz_360 = int(file_size * 0.18)
+        sz_480 = int(file_size * 0.28)
+        sz_720 = int(file_size * 0.55)
         sz_1080 = file_size
 
         streams_list = []
         downloads_list = []
         qualities_map = {}
-        drive_file_id = ""
-
-        def _extract_drive_id_str(u: str) -> str:
-            if not u:
-                return ""
-            m = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", u)
-            return m.group(1) if m else ""
 
         if cloud_stream:
-            drive_file_id = (cloud_upload_res.get("file_id") if cloud_upload_res else "") or _extract_drive_id_str(cloud_stream)
+            # Extract Drive file ID if present to build multi-quality chunk stream & direct links
+            drive_id_match = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", cloud_stream)
+            drive_file_id = drive_id_match.group(1) if drive_id_match else ""
 
             if drive_file_id:
                 chunk_stream_url = f"/api/stream?id={drive_file_id}&q=auto"
@@ -1368,17 +1270,18 @@ async def _execute_leech(
                     "quality": "1080p",
                 })
 
-                def _resolve_variant_drive_id(q_key: str) -> str:
-                    v_info = variant_cloud_urls.get(q_key, {})
-                    v_id = v_info.get("file_id") or _extract_drive_id_str(v_info.get("stream_url") or v_info.get("download_url") or "")
-                    return v_id or drive_file_id
+                def _resolve_variant_chunk_url(q_key: str) -> str:
+                    v_url = variant_cloud_urls.get(q_key, {}).get("stream_url") or ""
+                    v_match = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", v_url)
+                    v_id = v_match.group(1) if v_match else drive_file_id
+                    return f"/api/stream?id={v_id}&q={q_key}"
 
                 qualities_map = {
                     "auto": f"/api/stream?id={drive_file_id}&q=auto",
                     "1080p": f"/api/stream?id={drive_file_id}&q=1080p",
-                    "720p": f"/api/stream?id={_resolve_variant_drive_id('720p')}&q=720p",
-                    "480p": f"/api/stream?id={_resolve_variant_drive_id('480p')}&q=480p",
-                    "360p": f"/api/stream?id={_resolve_variant_drive_id('360p')}&q=360p",
+                    "720p": _resolve_variant_chunk_url("720p"),
+                    "480p": _resolve_variant_chunk_url("480p"),
+                    "360p": _resolve_variant_chunk_url("360p"),
                 }
             else:
                 streams_list.append({
@@ -1396,17 +1299,16 @@ async def _execute_leech(
                     "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or cloud_stream,
                 }
 
-            tmdb_id_val = str(tmdb_meta.get("tmdb_id") or "").strip()
-            ext_id = str(imdb_id or tmdb_id_val or "").strip()
+            ext_id = str(imdb_id or tmdb_id or "").strip()
             if ext_id:
-                s_num = season or 1
-                e_num = episode or 1
+                s_num = season_num or 1
+                e_num = episode_num or 1
                 vidsrc_url = (
                     f"https://vidsrc.xyz/embed/tv/{ext_id}/{s_num}/{e_num}"
                     if is_series
                     else f"https://vidsrc.xyz/embed/movie/{ext_id}"
                 )
-                tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id_val) else ""
+                tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id) else ""
                 multiembed_url = (
                     f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}&s={s_num}&e={e_num}"
                     if is_series
@@ -1427,20 +1329,11 @@ async def _execute_leech(
                     "stream_url": multiembed_url,
                 })
 
-            encoded_title = urllib.parse.quote(display_title)
-            dl_url_1080 = (
-                f"/api/download?id={drive_file_id}&q=1080p&title={encoded_title}"
-                if drive_file_id
-                else (cloud_download or cloud_stream)
-            )
             downloads_list.append({
                 "quality": "1080p",
                 "label": "1080p Full HD (Sinhala Sub Merged)",
                 "size": downloader.format_bytes(sz_1080),
-                "size_bytes": sz_1080,
-                "drive_id": drive_file_id,
-                "url": dl_url_1080,
-                "raw_url": cloud_download or cloud_stream,
+                "url": cloud_download or cloud_stream,
                 "format": file_ext,
                 "host": "Google Drive",
                 "sub_merged": True,
@@ -1450,48 +1343,38 @@ async def _execute_leech(
         base_dl_url = cloud_download or cloud_stream
         if base_dl_url:
             sep = "&" if "?" in base_dl_url else "?"
-            encoded_title = urllib.parse.quote(display_title)
-            for q_tier, q_label_desc, q_def_sz, q_vq in (
-                ("720p", "720p HD (Sinhala Sub Merged)", sz_720, "hd720"),
-                ("480p", "480p SD (Sinhala Sub Merged)", sz_480, "large"),
-                ("360p", "360p Data Saver (Sinhala Sub Merged)", sz_360, "medium"),
-            ):
-                v_info = variant_cloud_urls.get(q_tier, {})
-                v_drive_id = v_info.get("file_id") or _extract_drive_id_str(v_info.get("download_url") or v_info.get("stream_url") or "") or drive_file_id
-                v_sz_bytes = v_info.get("size_bytes") or q_def_sz
-                v_sz_str = v_info.get("size") or downloader.format_bytes(v_sz_bytes)
-                v_direct_url = (
-                    f"/api/download?id={v_drive_id}&q={q_tier}&title={encoded_title}&size={v_sz_bytes}"
-                    if v_drive_id
-                    else (v_info.get("download_url") or f"{base_dl_url}{sep}vq={q_vq}")
-                )
-                downloads_list.append({
-                    "quality": q_tier,
-                    "label": q_label_desc,
-                    "size": v_sz_str,
-                    "size_bytes": v_sz_bytes,
-                    "drive_id": v_drive_id,
-                    "url": v_direct_url,
-                    "raw_url": v_info.get("download_url") or f"https://drive.google.com/uc?export=download&id={v_drive_id}" if v_drive_id else f"{base_dl_url}{sep}vq={q_vq}",
+            downloads_list.extend([
+                {
+                    "quality": "720p",
+                    "label": "720p HD (Sinhala Sub Merged)",
+                    "size": variant_cloud_urls.get("720p", {}).get("size") or downloader.format_bytes(sz_720),
+                    "url": variant_cloud_urls.get("720p", {}).get("download_url") or f"{base_dl_url}{sep}vq=hd720",
                     "format": file_ext,
                     "host": "Google Drive",
                     "sub_merged": True,
                     "subtitle_merged": True,
-                })
-
-        if stream_url:
-            downloads_list.append({
-                "quality": "1080p (Telegram Download)",
-                "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
-                "size": downloader.format_bytes(sz_1080),
-                "size_bytes": sz_1080,
-                "url": stream_url,
-                "format": file_ext,
-                "host": "Telegram",
-                "download_only": True,
-                "sub_merged": True,
-                "subtitle_merged": True,
-            })
+                },
+                {
+                    "quality": "480p",
+                    "label": "480p SD (Sinhala Sub Merged)",
+                    "size": variant_cloud_urls.get("480p", {}).get("size") or downloader.format_bytes(sz_480),
+                    "url": variant_cloud_urls.get("480p", {}).get("download_url") or f"{base_dl_url}{sep}vq=large",
+                    "format": file_ext,
+                    "host": "Google Drive",
+                    "sub_merged": True,
+                    "subtitle_merged": True,
+                },
+                {
+                    "quality": "360p",
+                    "label": "360p Data Saver (Sinhala Sub Merged)",
+                    "size": variant_cloud_urls.get("360p", {}).get("size") or downloader.format_bytes(sz_360),
+                    "url": variant_cloud_urls.get("360p", {}).get("download_url") or f"{base_dl_url}{sep}vq=medium",
+                    "format": file_ext,
+                    "host": "Google Drive",
+                    "sub_merged": True,
+                    "subtitle_merged": True,
+                },
+            ])
 
         raw_dur = tmdb_meta.get("duration", 120)
         dur_str = f"{raw_dur} min" if isinstance(raw_dur, int) else (str(raw_dur) if str(raw_dur).endswith("min") else f"{raw_dur} min")
@@ -1529,11 +1412,10 @@ async def _execute_leech(
             "cast": tmdb_meta.get("cast", []),
             "featured": False,
             "trending": True,
-            "file_id": file_id,
-            "message_id": message_id,
+            "file_id": "",
+            "message_id": 0,
             "file_name": file_name,
             "file_size": file_size,
-            "drive_file_id": drive_file_id,
             "stream_url": primary_stream,
             "streams": streams_list,
             "qualities": qualities_map,
@@ -1553,6 +1435,79 @@ async def _execute_leech(
             "added_at": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
             "added_by": "bot_auto_leech",
         }
+
+        # ── Step 5: Upload to Telegram Channel ──
+        ENABLE_TELEGRAM_VIDEO_UPLOAD = True  # Re-enabled: Google Drive CDN + Telegram dual storage
+
+        target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
+        file_id = ""
+        stream_url = ""
+        message_id = 0
+
+        if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
+            log.info("[LeechService] Telegram video upload is disabled.")
+        elif file_size > int(1.95 * 1024 * 1024 * 1024):
+            # Telegram Bot API limit is 2000 MB. If larger, post Drive download link to channel instead of hanging
+            log.info("[LeechService] File size %.2f GB > 1.95 GB. Posting Drive link to Telegram channel.", file_size / (1024**3))
+            try:
+                msg = await client.send_message(
+                    chat_id=target_channel,
+                    text=(
+                        f"🎬 <b>{display_title}</b>\n\n"
+                        f"📦 <b>Size:</b> {size_str} (High Definition 1080p)\n"
+                        f"⚡ <b>Google Drive Ultra HD:</b> <a href=\"{site_url}\">Watch Online & Download</a>"
+                    ),
+                    parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=False,
+                )
+                message_id = msg.id
+            except Exception as t_err:
+                log.warning("[LeechService] Channel link post error: %s", t_err)
+        else:
+            task_tracker.tracker.set_step(user_id, "Step 5/5 - Telegram Channel Upload")
+            try:
+                await status_msg.edit_text(
+                    f"📤 <b>පියවර 5/5: Telegram Film Channel වෙත Upload වෙමින් පවතී...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                    f"📦 <b>ප්‍රමාණය:</b> {size_str}\n"
+                    f"⚡ <b>Telegram Storage Channel වෙත සම්බන්ධ වෙමින් පවතී...</b>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_cancel,
+                )
+            except Exception:
+                pass
+
+            try:
+                upload_res = await telegram_upload.upload_video_file(
+                    bot_client=client,
+                    file_path=local_file,
+                    target_chat=target_channel,
+                    caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
+                    progress_callback=_upload_progress,
+                    fallback_chat=0,
+                )
+                file_id = upload_res.get("file_id", "")
+                stream_url = upload_res.get("stream_url", "")
+                message_id = upload_res.get("message_id", 0)
+
+                # Append Telegram download link to downloads list if available
+                if stream_url:
+                    downloads_list.append({
+                        "quality": "1080p (Telegram Download)",
+                        "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
+                        "size": downloader.format_bytes(sz_1080),
+                        "url": stream_url,
+                        "format": file_ext,
+                        "host": "Telegram",
+                        "download_only": True,
+                        "sub_merged": True,
+                        "subtitle_merged": True,
+                    })
+                    movie_entry["file_id"] = file_id
+                    movie_entry["message_id"] = message_id
+            except Exception as tg_err:
+                log.warning("[LeechService] Telegram upload note: %s", tg_err)
 
         # ── Step 6: Immediate VPS Disk Cleanup ────────────────────────────────
         try:

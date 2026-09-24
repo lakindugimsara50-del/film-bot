@@ -135,8 +135,6 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const rawId = url.searchParams.get('id') || url.searchParams.get('url') || '';
   const quality = url.searchParams.get('q') || 'auto';
-  const isDownload = url.searchParams.get('download') === '1' || url.searchParams.get('dl') === '1';
-  const titleParam = url.searchParams.get('title') || 'Movie';
   const fileId = extractDriveId(rawId);
 
   if (!fileId) {
@@ -147,9 +145,7 @@ export async function onRequest(context) {
   }
 
   const rawClientRange = request.headers.get('Range');
-  const { range: effectiveRange, isHeadProbe, chunkSize } = isDownload
-    ? { range: rawClientRange || '', isHeadProbe: false, chunkSize: 0 }
-    : normalizeRangeHeader(rawClientRange, quality, method);
+  const { range: effectiveRange, isHeadProbe, chunkSize } = normalizeRangeHeader(rawClientRange, quality, method);
 
   try {
     const upstream = await fetchDriveStream(fileId, effectiveRange, request.signal);
@@ -170,15 +166,8 @@ export async function onRequest(context) {
     respHeaders.set('Content-Type', 'video/mp4');
     respHeaders.set('Accept-Ranges', 'bytes');
     respHeaders.set('X-Stream-Quality', String(quality));
-    if (isDownload) {
-      const safeTitle = String(titleParam).replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim() || 'Movie';
-      const safeQ = String(quality === 'auto' ? '1080p' : quality).replace(/[^a-zA-Z0-9]/g, '') || '1080p';
-      const dlName = `${safeTitle} [${safeQ}] - FilmSub.mp4`;
-      respHeaders.set('Content-Disposition', `attachment; filename="${dlName.replace(/[^\x20-\x7E]/g, '')}"; filename*=UTF-8''${encodeURIComponent(dlName)}`);
-    } else {
-      respHeaders.set('X-Chunk-Size', String(chunkSize));
-      respHeaders.set('Cache-Control', 'public, max-age=3600');
-    }
+    respHeaders.set('X-Chunk-Size', String(chunkSize));
+    respHeaders.set('Cache-Control', 'public, max-age=3600');
     respHeaders.set('X-Content-Type-Options', 'nosniff');
 
     const contentRange = upstream.headers.get('Content-Range');

@@ -503,45 +503,25 @@ async function loadParsedSubtitles(movie) {
 }
 
 // ---- Download Link Normalization ----
-function normalizeDriveDownloadUrl(url, quality, movieTitle) {
+function normalizeDriveDownloadUrl(url) {
   if (!url) return '';
-  const str = String(url).trim();
-  const q = String(quality || '1080p').replace(/[^a-zA-Z0-9]/g, '') || '1080p';
-  const t = String(movieTitle || 'Movie').trim() || 'Movie';
-
-  if (str.startsWith('/api/download')) {
-    return str;
+  if (url.includes('drive.google.com/file/d/')) {
+    const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
   }
-
-  let driveId = '';
-  if (/^[a-zA-Z0-9_-]{15,60}$/.test(str)) {
-    driveId = str;
-  } else if (str.includes('drive.google.com') || str.includes('drive.usercontent.google.com') || str.includes('/api/stream')) {
-    const m1 = str.match(/\/d\/([a-zA-Z0-9_-]{15,60})/);
-    const m2 = str.match(/[?&]id=([a-zA-Z0-9_-]{15,60})/);
-    driveId = (m1 && m1[1]) || (m2 && m2[1]) || '';
-  }
-
-  if (driveId) {
-    return `/api/download?id=${encodeURIComponent(driveId)}&q=${encodeURIComponent(q)}&title=${encodeURIComponent(t)}`;
-  }
-  return str;
+  return url;
 }
 
 function getMovieDownloads(movie) {
   if (!movie) return [];
   const rawDls = Array.isArray(movie.downloads) ? [...movie.downloads] : [];
-  const displayTitle = movie.title
-    ? (movie.type === 'series' && movie.season && movie.episode
-        ? `${movie.title} S${String(movie.season).padStart(2, '0')}E${String(movie.episode).padStart(2, '0')}`
-        : `${movie.title}${movie.year ? ' (' + movie.year + ')' : ''}`)
-    : 'Movie';
 
-  let primaryUrl = movie.drive_file_id || movie.stream_url || '';
+  let primaryUrl = movie.stream_url || '';
   if (!primaryUrl && rawDls.length > 0) {
     const cloudEntry = rawDls.find(d => d.url && !d.url.includes('t.me/'));
-    primaryUrl = cloudEntry ? (cloudEntry.drive_id || cloudEntry.url) : rawDls[0].url;
+    primaryUrl = cloudEntry ? cloudEntry.url : rawDls[0].url;
   }
+  const directBaseUrl = normalizeDriveDownloadUrl(primaryUrl);
 
   let baseMb = 1450;
   if (movie.file_size && movie.file_size > 0) {
@@ -564,28 +544,25 @@ function getMovieDownloads(movie) {
   const enriched = [];
   targetQualities.forEach(tq => {
     const match = rawDls.find(d => String(d.quality || '').toLowerCase().includes(tq.q.toLowerCase()) && !d.download_only && d.host !== 'Telegram');
-    const qStreamUrl = (movie.qualities && movie.qualities[tq.q]) || '';
     if (match) {
-      const targetSource = match.drive_id || match.url || qStreamUrl || primaryUrl;
-      const cleanUrl = normalizeDriveDownloadUrl(targetSource, tq.q, displayTitle);
+      const cleanUrl = normalizeDriveDownloadUrl(match.url || directBaseUrl);
       enriched.push({
         ...match,
         quality: tq.q,
         url: cleanUrl,
         size: match.size || fmtSize(baseMb * tq.ratio),
         format: 'MP4 (සිංහල Sub Merged)',
-        host: match.host || 'Google Drive',
         sub_merged: true,
         subtitle_merged: true
       });
-    } else if (primaryUrl || qStreamUrl) {
-      const cleanUrl = normalizeDriveDownloadUrl(qStreamUrl || primaryUrl, tq.q, displayTitle);
+    } else if (directBaseUrl) {
+      const sep = directBaseUrl.includes('?') ? '&' : '?';
       enriched.push({
         quality: tq.q,
         size: fmtSize(baseMb * tq.ratio),
-        url: cleanUrl,
+        url: `${directBaseUrl}${sep}vq=${tq.vq}`,
         format: 'MP4 (සිංහල Sub Merged)',
-        host: 'Google Drive',
+        host: directBaseUrl.includes('drive.google') ? 'Google Drive' : 'Direct',
         sub_merged: true,
         subtitle_merged: true
       });

@@ -63,49 +63,6 @@ def get_video_duration(file_path: str, ffmpeg_bin: str) -> float:
     return 0.0
 
 
-_CACHED_HW_ENCODER: Optional[str] = None
-
-
-def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
-    """
-    Auto-detect if NVIDIA GPU hardware encoder (h264_nvenc on Google Colab T4/L4)
-    is available and functional. Falls back to 'libx264' on CPU-only hosts.
-    """
-    global _CACHED_HW_ENCODER
-    if _CACHED_HW_ENCODER is not None:
-        return _CACHED_HW_ENCODER
-
-    exe = ffmpeg_bin or get_ffmpeg_binary()
-    if not exe:
-        _CACHED_HW_ENCODER = "libx264"
-        return _CACHED_HW_ENCODER
-
-    try:
-        probe = subprocess.run(
-            [
-                exe,
-                "-hide_banner",
-                "-f", "lavfi",
-                "-i", "nullsrc=s=256x256:d=0.04",
-                "-c:v", "h264_nvenc",
-                "-f", "null",
-                "-",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=4,
-        )
-        if probe.returncode == 0:
-            _CACHED_HW_ENCODER = "h264_nvenc"
-            log.info("[VideoService] Hardware GPU acceleration detected: h264_nvenc enabled!")
-            return _CACHED_HW_ENCODER
-    except Exception:
-        pass
-
-    _CACHED_HW_ENCODER = "libx264"
-    return _CACHED_HW_ENCODER
-
-
 async def compress_smart_1080p(
     input_path: str,
     output_path: str,
@@ -114,29 +71,14 @@ async def compress_smart_1080p(
 ) -> bool:
     """
     Compress video to high-efficiency 1080p MP4 in 12GB RAM (/dev/shm).
-    If input is already <= 1.95 GB, performs instant stream-copy remux (-c:v copy)
-    in ~4 seconds without re-encoding video.
-    When > 1.95 GB, uses GPU h264_nvenc (if available) or ultrafast libx264.
+    Keeps 1080p resolution while reducing file size to ~1.1GB - 1.4GB.
+    When sub_path is provided, burns Sinhala subtitles into the video frames AND
+    embeds dual default+forced mov_text tracks in the same single FFmpeg pass.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
         log.error("[VideoService] FFmpeg binary not found. Cannot compress.")
         return False
-
-    # Fast-path: Never re-encode 1080p video if already <= 1.95 GB!
-    if os.path.exists(input_path) and os.path.getsize(input_path) <= MAX_TELEGRAM_BOT_SIZE:
-        log.info("[VideoService] Input <= 1.95 GB (%d bytes). Using instant stream-copy remux (-c:v copy)!", os.path.getsize(input_path))
-        ok = await ensure_web_streamable(input_path, output_path, sub_path=sub_path)
-        if ok:
-            if progress_callback:
-                try:
-                    if asyncio.iscoroutinefunction(progress_callback):
-                        await progress_callback(100.0, "100.0%")
-                    else:
-                        progress_callback(100.0, "100.0%")
-                except Exception:
-                    pass
-            return True
 
     duration = get_video_duration(input_path, ffmpeg_bin)
     log.info("[VideoService] Compressing '%s' (duration=%.1fs) -> '%s'", input_path, duration, output_path)
@@ -155,16 +97,16 @@ async def compress_smart_1080p(
     scale_base = "scale=-2:'min(1080,ih)'"
     scale_filter = f"subtitles=sub_burn_1080.srt,{scale_base}" if has_sub else scale_base
 
-    hw_enc = detect_hw_encoder(ffmpeg_bin)
-    _threads = "0"
-    _preset = "p1" if hw_enc == "h264_nvenc" else "ultrafast"
-    log.info("[VideoService] encoder=%s preset=%s threads=%s has_sub=%s", hw_enc, _preset, _threads, has_sub)
+    # Auto-detect CPU cores; use ultrafast preset on Colab for 3-5x speed improvement
+    _on_colab = os.path.exists('/content') or os.path.isdir('/dev/shm')
+    _threads = '0'  # Use all available CPU cores
+    _preset = 'ultrafast' if _on_colab else 'veryfast'
+    log.info('[VideoService] on_colab=%s preset=%s threads=%s has_sub=%s', _on_colab, _preset, _threads, has_sub)
 
     cmd = [
         ffmpeg_bin,
         "-y",
         "-hide_banner",
-        "-threads", _threads,
         "-i", os.path.abspath(input_path),
     ]
     if has_sub:
@@ -182,27 +124,14 @@ async def compress_smart_1080p(
             "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
             "-disposition:s:1", "default+forced",
         ])
-    cmd.extend(["-vf", scale_filter])
-    if hw_enc == "h264_nvenc":
-        cmd.extend([
-            "-c:v", "h264_nvenc",
-            "-preset", "p1",
-            "-rc", "vbr",
-            "-cq", "24",
-            "-maxrate", "3500k",
-            "-bufsize", "4000k",
-        ])
-    else:
-        cmd.extend([
-            "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-tune", "fastdecode",
-            "-crf", "23",
-            "-threads", _threads,
-            "-maxrate", "3500k",
-            "-bufsize", "4000k",
-        ])
     cmd.extend([
+        "-vf", scale_filter,
+        "-c:v", "libx264",
+        "-preset", _preset,
+        "-crf", "23",
+        "-threads", _threads,
+        "-maxrate", "3500k",
+        "-bufsize", "4000k",
         "-pix_fmt", "yuv420p",
         "-c:a", "aac",
         "-b:a", "128k",
@@ -715,32 +644,6 @@ async def generate_multi_quality_variants_ram(
     if not target_q_list:
         return {}
 
-    hw_enc = detect_hw_encoder(ffmpeg_bin)
-    num_q = len(target_q_list)
-
-    # Build a SINGLE-PASS filter_complex with split=N so input video is decoded ONLY ONCE
-    # and Sinhala subtitles (if present) are rendered ONLY ONCE prior to splitting!
-    if num_q == 1:
-        q0 = target_q_list[0]
-        h0 = profiles[q0]["height"]
-        filter_complex = (
-            f"[0:v:0]subtitles=sub_burn_multi.srt,scale=-2:'min({h0},ih)'[v_{q0}]"
-            if has_sub
-            else f"[0:v:0]scale=-2:'min({h0},ih)'[v_{q0}]"
-        )
-    else:
-        split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
-        split_head = (
-            f"[0:v:0]subtitles=sub_burn_multi.srt,split={num_q}{split_labels}"
-            if has_sub
-            else f"[0:v:0]split={num_q}{split_labels}"
-        )
-        scale_branches = ";".join(
-            f"[sp_{q}]scale=-2:'min({profiles[q]['height']},ih)'[v_{q}]"
-            for q in target_q_list
-        )
-        filter_complex = f"{split_head};{scale_branches}"
-
     cmd = [
         ffmpeg_bin,
         "-y",
@@ -751,15 +654,15 @@ async def generate_multi_quality_variants_ram(
     if has_sub:
         cmd.extend(["-i", os.path.abspath(sub_path)])
 
-    cmd.extend(["-filter_complex", filter_complex])
-
     out_paths: dict[str, str] = {}
     for q in target_q_list:
         prof = profiles[q]
         out_file = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
         out_paths[q] = out_file
+        scale_base = f"scale=-2:'min({prof['height']},ih)'"
+        scale_f = f"subtitles=sub_burn_multi.srt,{scale_base}" if has_sub else scale_base
         cmd.extend([
-            "-map", f"[v_{q}]",
+            "-map", "0:v:0",
             "-map", "0:a:0?",
         ])
         if has_sub:
@@ -774,25 +677,13 @@ async def generate_multi_quality_variants_ram(
                 "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
                 "-disposition:s:1", "default+forced",
             ])
-        if hw_enc == "h264_nvenc":
-            cmd.extend([
-                "-c:v", "h264_nvenc",
-                "-preset", "p1",
-                "-rc", "vbr",
-                "-cq", prof["crf"],
-                "-maxrate", prof["maxrate"],
-                "-bufsize", prof["bufsize"],
-            ])
-        else:
-            cmd.extend([
-                "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-tune", "fastdecode",
-                "-crf", prof["crf"],
-                "-maxrate", prof["maxrate"],
-                "-bufsize", prof["bufsize"],
-            ])
         cmd.extend([
+            "-vf", scale_f,
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-crf", prof["crf"],
+            "-maxrate", prof["maxrate"],
+            "-bufsize", prof["bufsize"],
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", prof["abitrate"],

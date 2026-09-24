@@ -19,20 +19,45 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__
 DEFAULT_CONF_FILE = os.path.join(DATA_DIR, "rclone.conf")
 
 
+_CACHED_RCLONE_BIN: Optional[str] = None
+
+
 def find_rclone_binary() -> str:
     """Find the path to rclone binary across Windows, Linux, and custom download paths."""
-    # 1. System PATH
+    global _CACHED_RCLONE_BIN
+    if _CACHED_RCLONE_BIN:
+        return _CACHED_RCLONE_BIN
+
+    # 1. Project bin/ directory
+    project_bin = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "bin"))
+    for cand in (os.path.join(project_bin, "rclone.exe"), os.path.join(project_bin, "rclone")):
+        if os.path.exists(cand):
+            _CACHED_RCLONE_BIN = cand
+            return cand
+
+    # 2. System PATH
     found = shutil.which("rclone")
     if found:
+        _CACHED_RCLONE_BIN = found
         return found
 
-    # 2. Windows Downloads directory fallback
+    # 3. Windows Downloads directory fallback (shallow check)
     win_dl = os.path.expanduser(r"~\Downloads")
     if os.path.exists(win_dl):
-        for root, _, files in os.walk(win_dl):
-            if "rclone.exe" in files:
-                return os.path.join(root, "rclone.exe")
+        try:
+            for entry in os.scandir(win_dl):
+                if entry.is_file() and entry.name.lower() == "rclone.exe":
+                    _CACHED_RCLONE_BIN = entry.path
+                    return entry.path
+                elif entry.is_dir() and "rclone" in entry.name.lower():
+                    sub_exe = os.path.join(entry.path, "rclone.exe")
+                    if os.path.exists(sub_exe):
+                        _CACHED_RCLONE_BIN = sub_exe
+                        return sub_exe
+        except Exception:
+            pass
 
+    _CACHED_RCLONE_BIN = "rclone"
     return "rclone"
 
 
@@ -128,8 +153,10 @@ class RcloneDriveClient:
             "copyto",
             local_path,
             remote_dest,
-            "--transfers", "4",
+            "--transfers", "8",
+            "--checkers", "8",
             "--drive-chunk-size", "128M",
+            "--buffer-size", "64M",
             "--stats", "3s",
             "--stats-one-line",
             "-v",

@@ -1,12 +1,12 @@
-﻿/* ============================================================
-   FilmSub – download.js | Download Countdown System
+/* ============================================================
+   FilmSub – download.js | One-Click Instant Direct Download Engine
    ============================================================ */
 
 'use strict';
 
 (function () {
-  // Constants
-  const COUNTDOWN_SECONDS = 5;
+  // Fast 1-second preparation for instant user-friendly UX (no annoying long waits, no Drive OK screen)
+  const COUNTDOWN_SECONDS = 1;
   const CIRCUMFERENCE = 283; // 2 * pi * 45
 
   // State
@@ -17,6 +17,43 @@
 
   // DOM refs (created lazily)
   let overlay = null;
+  let downloadIframe = null;
+
+  // ---- Convert any Google Drive link into our Edge /api/download endpoint ----
+  function toDirectDownloadUrl(rawUrl, quality, movieTitle) {
+    if (!rawUrl || rawUrl === '#') return '#';
+    const str = String(rawUrl).trim();
+    const q = String(quality || '1080p').replace(/[^a-zA-Z0-9]/g, '') || '1080p';
+    const t = String(movieTitle || 'Movie').trim() || 'Movie';
+
+    // Already pointing to /api/download
+    if (str.startsWith('/api/download') || str.includes('/api/download?')) {
+      try {
+        const u = new URL(str, window.location.origin);
+        if (!u.searchParams.get('q') && q) u.searchParams.set('q', q);
+        if (!u.searchParams.get('title') && t) u.searchParams.set('title', t);
+        return u.pathname + u.search;
+      } catch (e) {
+        return str;
+      }
+    }
+
+    // Extract Google Drive file ID if present
+    let driveId = '';
+    if (/^[a-zA-Z0-9_-]{15,60}$/.test(str)) {
+      driveId = str;
+    } else if (str.includes('drive.google.com') || str.includes('drive.usercontent.google.com') || str.includes('/api/stream')) {
+      const m1 = str.match(/\/d\/([a-zA-Z0-9_-]{15,60})/);
+      const m2 = str.match(/[?&]id=([a-zA-Z0-9_-]{15,60})/);
+      driveId = (m1 && m1[1]) || (m2 && m2[1]) || '';
+    }
+
+    if (driveId) {
+      return `/api/download?id=${encodeURIComponent(driveId)}&q=${encodeURIComponent(q)}&title=${encodeURIComponent(t)}`;
+    }
+
+    return str;
+  }
 
   // ---- Init ----
   document.addEventListener('DOMContentLoaded', () => {
@@ -37,10 +74,10 @@
     overlay.innerHTML = `
       <div class="countdown-box" role="document">
         <div class="countdown-icon">
-          <i class="fa-solid fa-download"></i>
+          <i class="fa-solid fa-cloud-arrow-down"></i>
         </div>
-        <div class="countdown-title">Preparing Your Download</div>
-        <div class="countdown-sub" id="cd-quality-label">Please wait while we redirect you...</div>
+        <div class="countdown-title" id="cd-main-title">Starting Direct Download...</div>
+        <div class="countdown-sub" id="cd-quality-label">Connecting to High-Speed Edge CDN...</div>
 
         <div class="countdown-ring-wrap" id="cd-ring-shown">
           <svg class="countdown-ring" viewBox="0 0 100 100">
@@ -50,13 +87,13 @@
           <div class="countdown-number" id="cd-number">${COUNTDOWN_SECONDS}</div>
         </div>
 
-        <a id="cd-get-link" class="countdown-get-link btn" href="#" target="_blank" rel="noopener noreferrer">
+        <a id="cd-get-link" class="countdown-get-link btn" href="#" download>
           <i class="fa-solid fa-download"></i>
-          Get Download Link
+          Click Here if Download Didn't Start
         </a>
 
         <button class="countdown-close" id="cd-close-btn" type="button">
-          <i class="fa-solid fa-xmark"></i> Cancel
+          <i class="fa-solid fa-xmark"></i> Close
         </button>
       </div>`;
 
@@ -76,34 +113,35 @@
     });
   }
 
-  // ---- Show Countdown ----
+  // ---- Show & Trigger Instant Download ----
   function show(url, quality, movieTitle) {
-    pendingURL = url || '#';
-    pendingQuality = quality || '';
-    pendingTitle = movieTitle || '';
+    pendingQuality = quality || '1080p';
+    pendingTitle = movieTitle || 'Movie';
+    pendingURL = toDirectDownloadUrl(url, pendingQuality, pendingTitle);
 
     buildOverlay();
 
-    // Reset state
     clearInterval(countdownTimer);
     let remaining = COUNTDOWN_SECONDS;
 
+    const mainTitleEl = document.getElementById('cd-main-title');
     const numberEl = document.getElementById('cd-number');
     const ringEl = document.getElementById('cd-ring-progress');
     const ringWrap = document.getElementById('cd-ring-shown');
     const getLinkEl = document.getElementById('cd-get-link');
     const qualityLabel = document.getElementById('cd-quality-label');
 
-    if (qualityLabel) qualityLabel.textContent = quality
-      ? `Preparing ${quality} download for "${movieTitle || 'this movie'}"...`
-      : 'Please wait while we prepare your download...';
+    if (mainTitleEl) mainTitleEl.textContent = `Downloading ${pendingQuality} MP4`;
+    if (qualityLabel) {
+      qualityLabel.textContent = `Starting "${pendingTitle}" (${pendingQuality} • Sinhala Sub Merged)...`;
+    }
 
     if (numberEl) numberEl.textContent = remaining;
     if (ringEl) { ringEl.style.strokeDashoffset = '0'; ringEl.style.transition = 'none'; }
     if (ringWrap) ringWrap.style.display = 'block';
     if (getLinkEl) {
       getLinkEl.classList.remove('visible');
-      getLinkEl.href = '#';
+      getLinkEl.href = pendingURL;
     }
 
     // Show overlay
@@ -111,7 +149,10 @@
     document.body.classList.add('no-scroll');
     overlay.focus();
 
-    // Animate ring immediately
+    // Trigger browser download immediately via hidden iframe / anchor (zero Drive warning page!)
+    triggerDownload(pendingURL, pendingQuality, pendingTitle);
+
+    // Animate ring
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (ringEl) {
@@ -121,39 +162,50 @@
       });
     });
 
-    // Tick
     countdownTimer = setInterval(() => {
       remaining--;
-      if (numberEl) numberEl.textContent = remaining;
+      if (numberEl) numberEl.textContent = Math.max(0, remaining);
 
       if (remaining <= 0) {
         clearInterval(countdownTimer);
-        // Hide ring, show button
         if (ringWrap) ringWrap.style.display = 'none';
         if (getLinkEl) {
           getLinkEl.href = pendingURL;
           getLinkEl.classList.add('visible');
-
-          // Auto-trigger download
-          triggerDownload(pendingURL, pendingQuality);
         }
-        if (qualityLabel) qualityLabel.textContent = 'Your download is ready!';
+        if (mainTitleEl) mainTitleEl.textContent = 'Download Started! ✅';
+        if (qualityLabel) {
+          qualityLabel.textContent = `Your ${pendingQuality} download has started in your browser. Enjoy watching!`;
+        }
+        // Auto-close modal after 3.5s once download is underway
+        setTimeout(() => {
+          if (overlay && overlay.classList.contains('active')) {
+            closeCountdown();
+          }
+        }, 3500);
       }
-    }, 1000);
+    }, 800);
   }
 
-  // ---- Auto trigger download ----
-  function triggerDownload(url, quality) {
+  // ---- Trigger Native Browser Download without New-Tab Popup or Drive Warning ----
+  function triggerDownload(url, quality, title) {
     if (!url || url === '#') return;
-    // Create a temp anchor and click it
+    const directUrl = toDirectDownloadUrl(url, quality, title);
+    const cleanTitle = String(title || 'Movie').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim() || 'Movie';
+    const cleanQ = String(quality || '1080p').replace(/[^a-zA-Z0-9]/g, '') || '1080p';
+    const fileName = `${cleanTitle} [${cleanQ}] - FilmSub.mp4`;
+
+    // For same-origin /api/download endpoints, trigger an anchor with download attribute
+    // and fallback iframe so mobile & desktop browsers start saving immediately.
     const a = document.createElement('a');
-    a.href = url;
-    a.download = quality ? `FilmSub-${quality}.mp4` : 'FilmSub-download.mp4';
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    a.href = directUrl;
+    a.setAttribute('download', fileName);
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    setTimeout(() => {
+      if (a.parentNode) a.parentNode.removeChild(a);
+    }, 1000);
   }
 
   // ---- Close ----
@@ -165,5 +217,9 @@
   }
 
   // ---- Expose ----
-  window.FilmSubDownload = { show, close: closeCountdown };
+  window.FilmSubDownload = {
+    show,
+    close: closeCountdown,
+    toDirectDownloadUrl,
+  };
 })();

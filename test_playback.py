@@ -1,5 +1,14 @@
+import os
+import re
+import socket
 import sys
+import threading
 import time
+import urllib.parse
+import urllib.request
+from http.server import SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
+from http.server import HTTPServer
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -7,7 +16,67 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 
+class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+
+
+class LocalFilmSubHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        website_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'website')
+        super().__init__(*args, directory=website_dir, **kwargs)
+
+    def log_message(self, format, *args):
+        pass
+
+    def do_GET(self):
+        if self.path.startswith('/api/stream'):
+            self._handle_stream_proxy()
+            return
+        super().do_GET()
+
+    def _handle_stream_proxy(self):
+        parsed = urllib.parse.urlparse(self.path)
+        qs = urllib.parse.parse_qs(parsed.query)
+        file_id = (qs.get('id') or [''])[0].strip()
+        quality = (qs.get('q') or ['auto'])[0].strip().lower()
+        if not file_id:
+            self.send_response(400)
+            self.end_headers()
+            return
+
+        sample_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'website', 'assets', 'sample_stream.mp4')
+        with open(sample_path, 'rb') as f:
+            full_bytes = f.read()
+        total_len = len(full_bytes)
+
+        raw_range = self.headers.get('Range') or ''
+        m = re.match(r'^bytes=(\d+)-(\d*)$', raw_range)
+        start = int(m.group(1)) if m else 0
+        end = int(m.group(2)) if (m and m.group(2)) else (total_len - 1)
+        end = min(end, total_len - 1)
+        chunk = full_bytes[start:end + 1]
+
+        self.send_response(206)
+        self.send_header('Content-Type', 'video/mp4')
+        self.send_header('Accept-Ranges', 'bytes')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('X-Stream-Quality', quality)
+        self.send_header('X-Drive-File-Id', file_id)
+        self.send_header('Content-Range', f'bytes {start}-{end}/{total_len}')
+        self.send_header('Content-Length', str(len(chunk)))
+        self.end_headers()
+        self.wfile.write(chunk)
+
+
+def _ensure_server_on_8000():
+    srv = ThreadingHTTPServer(('127.0.0.1', 8000), LocalFilmSubHandler)
+    t = threading.Thread(target=srv.serve_forever, daemon=True)
+    t.start()
+    return srv
+
+
 def run_tests():
+    local_srv = _ensure_server_on_8000()
     options = Options()
     options.add_argument('--headless=new')
     options.add_argument('--no-sandbox')
@@ -117,7 +186,7 @@ def run_tests():
             print(f"Testing URL: http://localhost:8000/movie.html?id={gdrive_slug} (Google Drive Super Player)")
             print(f"==========================================")
             driver.get(f'http://localhost:8000/movie.html?id={gdrive_slug}')
-            for _ in range(25):
+            for _ in range(30):
                 ready = driver.execute_script("""
                     const p = typeof videojs !== 'undefined' && videojs.getPlayer('filmsubPlayer');
                     return !!(p && p.readyState && p.readyState() >= 1);
@@ -151,17 +220,54 @@ def run_tests():
             assert super_check['serverTabsCount'] >= 5, f"Expected at least 5 multi-server + VIP backup tabs, got {super_check['serverTabsCount']}"
             assert super_check['inPlayerQualityBtn'], "Expected in-player quality gear button inside Video.js control bar"
             assert super_check['subOverlay'], "Expected Sinhala subtitle overlay inside player"
+            assert super_check['readyState'] == 4 and (super_check['duration'] or 0) > 0, f"Expected readyState == 4 and duration > 0 on /api/stream, got {super_check}"
+            assert '/api/stream?id=' in super_check['currentSrc'], f"Expected /api/stream?id= in currentSrc, got {super_check['currentSrc']}"
 
-            # Test quality switch to 480p
+            # Test quality switch to 480p (strictly verify /api/stream?id=...&q=480p, never sample_stream.mp4)
             driver.execute_script("document.querySelector('.q-pill[data-quality=\"480p\"]').click();")
             time.sleep(1)
             new_src = driver.execute_script("return videojs.getPlayer('filmsubPlayer').currentSrc();")
             print(f"[OK] Quality switch to 480p updated src: {new_src}")
-            assert 'q=480p' in new_src or 'sample_stream' in new_src, f"Expected 480p chunk query in src, got {new_src}"
+            assert 'q=480p' in new_src and 'sample_stream' not in new_src, f"Expected strict 480p chunk query in src, got {new_src}"
+
+            # Test UTF-16LE with BOM .SRT decoding, cue replacement in Video.js textTrack, and +0.5s sync offset
+            sub_edge_check = driver.execute_script("""
+                const srtText = "1\\r\\n00:00:02,000 --> 00:00:06,000\\r\\nසිංහල UTF-16 පරීක්ෂාව 1\\r\\n\\r\\n2\\r\\n00:00:07,000 --> 00:00:11,000\\r\\nසිංහල UTF-16 පරීක්ෂාව 2\\r\\n";
+                const utf16Bytes = new Uint8Array(2 + srtText.length * 2);
+                utf16Bytes[0] = 0xFF;
+                utf16Bytes[1] = 0xFE;
+                for (let i = 0; i < srtText.length; i++) {
+                    const code = srtText.charCodeAt(i);
+                    utf16Bytes[2 + i * 2] = code & 0xFF;
+                    utf16Bytes[2 + i * 2 + 1] = (code >> 8) & 0xFF;
+                }
+                const decoded = decodeSubtitleBuffer(utf16Bytes.buffer);
+                const vtt = convertSrtToVttText(decoded);
+                const cues = parseVttToCues(vtt);
+                parsedSubCues = cues;
+                syncSubtitles();
+                const p = videojs.getPlayer('filmsubPlayer');
+                const tt = p.textTracks()[0];
+                const initialStart = tt.cues[0].startTime;
+                document.getElementById('btn-sub-sync-plus').click();
+                const shiftedStart = tt.cues[0].startTime;
+                return {
+                    cuesCount: tt.cues.length,
+                    firstText: tt.cues[0].text,
+                    initialStart,
+                    shiftedStart
+                };
+            """)
+            print(f"[OK] UTF-16LE .SRT & Sync check: {sub_edge_check}")
+            assert sub_edge_check['cuesCount'] == 2, f"Expected 2 replaced cues from UTF-16LE SRT, got {sub_edge_check}"
+            assert 'සිංහල UTF-16' in sub_edge_check['firstText'], f"Expected Sinhala text in decoded UTF-16 cue, got {sub_edge_check}"
+            assert abs((sub_edge_check['shiftedStart'] - sub_edge_check['initialStart']) - 0.5) < 0.05, f"Expected +0.5s shift on VTTCue, got {sub_edge_check}"
 
         print("\n>>> ALL TESTS PASSED SUCCESSFULLY! <<<")
     finally:
         driver.quit()
+        if local_srv:
+            local_srv.shutdown()
 
 if __name__ == '__main__':
     run_tests()

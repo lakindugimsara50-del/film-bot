@@ -1,4 +1,4 @@
-window.FILMSUB_DATA = {
+window.__MOVIES_DATA__ = {
   "movies": [
     {
       "id": "the-100-2014-s01e01",
@@ -115,9 +115,35 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview"
+          "mode": "super_chunk",
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "stream_url": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=auto",
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/tv/tt2661044/1/1"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt2661044&s=1&e=1"
         }
       ],
       "downloads": [
@@ -176,37 +202,13 @@ window.FILMSUB_DATA = {
       "added_at": "2026-09-24T08:55:52Z",
       "added_by": "bot_auto_leech",
       "qualities": {
-        "1080p": {
-          "label": "1080p Full HD",
-          "size": "1.4 GB",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
-          "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
-        },
-        "720p": {
-          "label": "720p HD",
-          "size": "350 MB",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
-          "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
-        },
-        "480p": {
-          "label": "480p SD",
-          "size": "200 MB",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
-          "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
-        },
-        "360p": {
-          "label": "360p Data Saver",
-          "size": "120 MB",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
-          "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
-        },
-        "auto": {
-          "label": "Auto (Adaptive)",
-          "size": "1.4 GB",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
-          "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
-        }
-      }
+        "auto": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=auto",
+        "1080p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=1080p",
+        "720p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=720p",
+        "480p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=480p",
+        "360p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=360p"
+      },
+      "drive_file_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
     },
     {
       "id": "one-last-shot-2026",
@@ -271,17 +273,35 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview",
+          "mode": "super_chunk",
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+          "stream_url": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+          "stream_url": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/movie/tt37971717"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt37971717"
         }
       ],
       "downloads": [
@@ -343,12 +363,13 @@ window.FILMSUB_DATA = {
       "has_sinhala_sub": true,
       "sub_merged": true,
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview",
-        "1080p": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview?vq=medium"
-      }
+        "auto": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=auto",
+        "1080p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=1080p",
+        "720p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=720p",
+        "480p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=480p",
+        "360p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=360p"
+      },
+      "drive_file_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz"
     },
     {
       "id": "dc-2026",
@@ -414,17 +435,35 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview",
+          "mode": "super_chunk",
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+          "stream_url": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
+          "stream_url": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/movie/tt37501035"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt37501035"
         }
       ],
       "downloads": [
@@ -486,12 +525,13 @@ window.FILMSUB_DATA = {
       "has_sinhala_sub": true,
       "sub_merged": true,
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview",
-        "1080p": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview?vq=medium"
-      }
+        "auto": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=auto",
+        "1080p": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=1080p",
+        "720p": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=720p",
+        "480p": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=480p",
+        "360p": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=360p"
+      },
+      "drive_file_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g"
     },
     {
       "id": "fuze-2026",
@@ -536,17 +576,35 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview",
+          "mode": "super_chunk",
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "stream_url": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+          "stream_url": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/movie/1242265"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=1242265&tmdb=1"
         }
       ],
       "downloads": [
@@ -608,12 +666,13 @@ window.FILMSUB_DATA = {
       "has_sinhala_sub": true,
       "sub_merged": true,
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview",
-        "1080p": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview?vq=medium"
-      }
+        "auto": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=auto",
+        "1080p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=1080p",
+        "720p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=720p",
+        "480p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=480p",
+        "360p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=360p"
+      },
+      "drive_file_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C"
     },
     {
       "id": "the-beekeeper-2024",
@@ -679,17 +738,35 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview",
+          "mode": "super_chunk",
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "stream_url": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "stream_url": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/movie/tt15314262"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt15314262"
         }
       ],
       "downloads": [
@@ -751,12 +828,13 @@ window.FILMSUB_DATA = {
       "has_sinhala_sub": true,
       "sub_merged": true,
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview",
-        "1080p": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview?vq=medium"
-      }
+        "auto": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=auto",
+        "1080p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=1080p",
+        "720p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=720p",
+        "480p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=480p",
+        "360p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=360p"
+      },
+      "drive_file_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI"
     },
     {
       "id": "premalu-2024",
@@ -821,17 +899,35 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview",
+          "mode": "super_chunk",
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+          "stream_url": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+          "stream_url": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/movie/tt28288786"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt28288786"
         }
       ],
       "downloads": [
@@ -893,12 +989,13 @@ window.FILMSUB_DATA = {
       "has_sinhala_sub": true,
       "sub_merged": true,
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview",
-        "1080p": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview?vq=medium"
-      }
+        "auto": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=auto",
+        "1080p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=1080p",
+        "720p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=720p",
+        "480p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=480p",
+        "360p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=360p"
+      },
+      "drive_file_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88"
     },
     {
       "id": "game-of-thrones-2011-s01e01",
@@ -1023,25 +1120,43 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
+          "mode": "super_chunk",
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "stream_url": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "stream_url": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/tv/tt0944947/1/1"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=1&e=1"
         }
       ],
       "qualities": {
-        "auto": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
-        "1080p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview?vq=medium"
+        "auto": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
+        "1080p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=1080p",
+        "720p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=720p",
+        "480p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=480p",
+        "360p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=360p"
       },
       "downloads": [
         {
@@ -1109,7 +1224,8 @@ window.FILMSUB_DATA = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s01e01",
       "added_date": "2026-09-24",
       "added_at": "2026-09-24T13:44:53Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "drive_file_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
     },
     {
       "id": "game-of-thrones-2011-s01e02",
@@ -1234,25 +1350,43 @@ window.FILMSUB_DATA = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
+          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
           "type": "video/mp4",
-          "stream_url": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview",
+          "mode": "super_chunk",
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+          "stream_url": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=auto",
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-          "type": "video/mp4",
-          "stream_url": "https://drive.google.com/uc?export=download&id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "type": "embed",
+          "embed": true,
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+          "stream_url": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview",
           "quality": "1080p"
+        },
+        {
+          "server": "Server 3",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/tv/tt0944947/1/2"
+        },
+        {
+          "server": "Server 4",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=1&e=2"
         }
       ],
       "qualities": {
-        "auto": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview",
-        "1080p": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview?vq=hd1080",
-        "720p": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview?vq=hd720",
-        "480p": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview?vq=large",
-        "360p": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview?vq=medium"
+        "auto": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=auto",
+        "1080p": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=1080p",
+        "720p": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=720p",
+        "480p": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=480p",
+        "360p": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=360p"
       },
       "downloads": [
         {
@@ -1530,4 +1664,3 @@ window.FILMSUB_DATA = {
   ],
   "last_updated": "2026-09-24T18:26:43Z"
 };
-window.MOVIES_DATA = window.FILMSUB_DATA;

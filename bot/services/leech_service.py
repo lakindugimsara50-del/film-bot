@@ -1269,12 +1269,19 @@ async def _execute_leech(
                     "stream_url": drive_preview_url,
                     "quality": "1080p",
                 })
+
+                def _resolve_variant_chunk_url(q_key: str) -> str:
+                    v_url = variant_cloud_urls.get(q_key, {}).get("stream_url") or ""
+                    v_match = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", v_url)
+                    v_id = v_match.group(1) if v_match else drive_file_id
+                    return f"/api/stream?id={v_id}&q={q_key}"
+
                 qualities_map = {
                     "auto": f"/api/stream?id={drive_file_id}&q=auto",
                     "1080p": f"/api/stream?id={drive_file_id}&q=1080p",
-                    "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or f"/api/stream?id={drive_file_id}&q=720p",
-                    "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or f"/api/stream?id={drive_file_id}&q=480p",
-                    "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or f"/api/stream?id={drive_file_id}&q=360p",
+                    "720p": _resolve_variant_chunk_url("720p"),
+                    "480p": _resolve_variant_chunk_url("480p"),
+                    "360p": _resolve_variant_chunk_url("360p"),
                 }
             else:
                 streams_list.append({
@@ -1291,6 +1298,36 @@ async def _execute_leech(
                     "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or cloud_stream,
                     "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or cloud_stream,
                 }
+
+            ext_id = str(imdb_id or tmdb_id or "").strip()
+            if ext_id:
+                s_num = season_num or 1
+                e_num = episode_num or 1
+                vidsrc_url = (
+                    f"https://vidsrc.xyz/embed/tv/{ext_id}/{s_num}/{e_num}"
+                    if is_series
+                    else f"https://vidsrc.xyz/embed/movie/{ext_id}"
+                )
+                tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id) else ""
+                multiembed_url = (
+                    f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}&s={s_num}&e={e_num}"
+                    if is_series
+                    else f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}"
+                )
+                streams_list.append({
+                    "server": f"Server {len(streams_list) + 1}",
+                    "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+                    "type": "embed",
+                    "embed": True,
+                    "stream_url": vidsrc_url,
+                })
+                streams_list.append({
+                    "server": f"Server {len(streams_list) + 1}",
+                    "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+                    "type": "embed",
+                    "embed": True,
+                    "stream_url": multiembed_url,
+                })
 
             downloads_list.append({
                 "quality": "1080p",

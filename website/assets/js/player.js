@@ -51,6 +51,7 @@ const SUB_COLORS = ['#ffeb3b', '#ffffff', '#00e5ff', '#46d369'];
 
 let stallTimestamps = [];
 let activeStallTimer = null;
+let lastAutoSwitchEpoch = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await waitForFilmSub();
@@ -150,6 +151,7 @@ function extractMovieDriveId(movie) {
 
   if (Array.isArray(movie.streams)) {
     for (const s of movie.streams) {
+      if (s && s.drive_id) return s.drive_id;
       const id = extractDriveFileIdFromUrl(s.stream_url || s.url || '');
       if (id) return id;
     }
@@ -171,16 +173,32 @@ function extractMovieDriveId(movie) {
   return '';
 }
 
+function extractDriveIdForQuality(movie, quality) {
+  if (!movie) return '';
+  const qNorm = String(quality || 'auto').toLowerCase();
+  if (movie.qualities && typeof movie.qualities === 'object') {
+    const qEntry = movie.qualities[qNorm] || movie.qualities[qNorm.toUpperCase()];
+    if (qEntry) {
+      if (typeof qEntry === 'object' && qEntry.drive_id) return qEntry.drive_id;
+      const u = typeof qEntry === 'string' ? qEntry : (qEntry.stream_url || qEntry.download_url || '');
+      const qId = extractDriveFileIdFromUrl(u);
+      if (qId) return qId;
+    }
+  }
+  if (Array.isArray(movie.downloads) && qNorm !== 'auto') {
+    const matchedDl = movie.downloads.find(d => String(d.quality || '').toLowerCase().includes(qNorm) && !d.download_only);
+    if (matchedDl && matchedDl.url) {
+      const dId = extractDriveFileIdFromUrl(matchedDl.url);
+      if (dId) return dId;
+    }
+  }
+  return extractMovieDriveId(movie);
+}
+
 function buildChunkStreamUrl(driveId, quality) {
   if (!driveId) return '';
   const q = encodeURIComponent(String(quality || 'auto').toLowerCase());
   const id = encodeURIComponent(driveId);
-  const host = (window.location.hostname || '').toLowerCase();
-  // When running on a local static server (python -m http.server), route chunk stream requests
-  // through the deployed Cloudflare Pages Function on filmsub.pages.dev (which has CORS: *)
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return `https://filmsub.pages.dev/api/stream?id=${id}&q=${q}`;
-  }
   return `/api/stream?id=${id}&q=${q}`;
 }
 
@@ -199,14 +217,14 @@ function getMovieStreams(movie) {
   // 1. Primary Google Drive Movie -> Server 1 (Super Player Chunk Stream) + Server 2 (Google Drive CDN Player)
   if (driveId) {
     const activeQ = selectedQuality === 'auto' ? currentEffectiveQuality : selectedQuality;
+    const qDriveId = extractDriveIdForQuality(movie, activeQ) || driveId;
     list.push({
       server: 'Server 1',
       label: '⚡ Super Player (Chunk Stream • Auto Sub)',
       mode: 'super_chunk',
       type: 'video/mp4',
-      drive_id: driveId,
-      stream_url: buildChunkStreamUrl(driveId, activeQ),
-      fallback_mp4: 'assets/sample_stream.mp4',
+      drive_id: qDriveId,
+      stream_url: buildChunkStreamUrl(qDriveId, activeQ),
     });
     list.push({
       server: 'Server 2',
@@ -380,9 +398,37 @@ function parseVttTime(ts) {
   return 0;
 }
 
+function decodeSubtitleBuffer(buffer) {
+  if (!buffer) return '';
+  if (typeof buffer === 'string') {
+    return buffer.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  }
+  const bytes = new Uint8Array(buffer);
+  let encoding = 'utf-8';
+  let offset = 0;
+  if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+    encoding = 'utf-16le';
+    offset = 2;
+  } else if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+    encoding = 'utf-16be';
+    offset = 2;
+  } else if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    encoding = 'utf-8';
+    offset = 3;
+  }
+  try {
+    const decoder = new TextDecoder(encoding);
+    return decoder.decode(bytes.subarray(offset)).replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  } catch (e) {
+    const fallbackDec = new TextDecoder('utf-8');
+    return fallbackDec.decode(bytes).replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  }
+}
+
 function parseVttToCues(rawText) {
   if (!rawText) return [];
-  const lines = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const sanitized = String(rawText).replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  const lines = sanitized.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const cues = [];
   let i = 0;
   while (i < lines.length) {
@@ -414,7 +460,7 @@ function parseVttToCues(rawText) {
 
 function convertSrtToVttText(rawText) {
   if (!rawText) return 'WEBVTT\n\n';
-  const cleaned = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  const cleaned = String(rawText).replace(/^\uFEFF/, '').replace(/\u0000/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   if (cleaned.startsWith('WEBVTT')) return cleaned;
   const vttBody = cleaned.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
   return 'WEBVTT\n\n' + vttBody;
@@ -438,8 +484,9 @@ async function loadParsedSubtitles(movie) {
       } else if (subUrl) {
         const resp = await fetch(subUrl);
         if (resp.ok) {
-          const text = await resp.text();
-          const parsed = parseVttToCues(text);
+          const buf = await resp.arrayBuffer();
+          const text = decodeSubtitleBuffer(buf);
+          const parsed = parseVttToCues(convertSrtToVttText(text));
           if (parsed.length > 0) {
             parsedSubCues = parsed;
             return parsed;
@@ -677,6 +724,9 @@ function updateQualitySpeedBadge(q) {
 
 function applyQualitySwitch(targetQuality, opts = {}) {
   const isAutoDowngrade = Boolean(opts.isAutoDowngrade);
+  const prevEffectiveQuality = currentEffectiveQuality;
+  const prevDriveId = extractDriveIdForQuality(currentMovie, prevEffectiveQuality);
+
   if (!isAutoDowngrade) {
     selectedQuality = targetQuality;
     if (targetQuality === 'auto') {
@@ -686,6 +736,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     }
   } else {
     currentEffectiveQuality = targetQuality;
+    lastAutoSwitchEpoch = Date.now();
   }
 
   updateQualitySpeedBadge(selectedQuality);
@@ -695,15 +746,15 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     headerQual.textContent = `${currentEffectiveQuality.toUpperCase()} WEB-DL`;
   }
 
-  const driveId = extractMovieDriveId(currentMovie);
+  const newDriveId = extractDriveIdForQuality(currentMovie, currentEffectiveQuality);
 
   // 1. If Video.js Super Player is active, switch chunk stream quality and preserve exact currentTime
   if (vjsPlayer && typeof vjsPlayer.currentTime === 'function') {
     const curTime = vjsPlayer.currentTime() || 0;
     const wasPaused = vjsPlayer.paused();
     let newSrc = '';
-    if (driveId) {
-      newSrc = buildChunkStreamUrl(driveId, currentEffectiveQuality);
+    if (newDriveId) {
+      newSrc = buildChunkStreamUrl(newDriveId, currentEffectiveQuality);
     } else {
       const downloads = getMovieDownloads(currentMovie);
       const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(currentEffectiveQuality.toLowerCase()) && !d.download_only);
@@ -712,7 +763,13 @@ function applyQualitySwitch(targetQuality, opts = {}) {
       }
     }
 
-    if (newSrc) {
+    // Only reload vjsPlayer.src if user explicitly requested a switch (!isAutoDowngrade)
+    // OR if a distinct per-resolution Drive File ID exists (newDriveId !== prevDriveId).
+    // If isAutoDowngrade is true on a single-file Drive movie (newDriveId === prevDriveId),
+    // avoid resetting vjsPlayer.src so the browser's already-buffered media bytes are preserved.
+    const shouldReloadSrc = !isAutoDowngrade || (newDriveId && prevDriveId && newDriveId !== prevDriveId);
+
+    if (newSrc && shouldReloadSrc) {
       vjsPlayer.src({ src: newSrc, type: 'video/mp4' });
       vjsPlayer.one('loadedmetadata', () => {
         try {
@@ -783,7 +840,8 @@ function initAdaptiveQuality(movie) {
 
 /**
  * Attaches real-time buffer stall & frame-drop monitoring to Video.js.
- * Automatically steps down quality (1080p -> 720p -> 480p -> 360p) if lagging.
+ * Automatically steps down quality (1080p -> 720p -> 480p -> 360p) if lagging,
+ * while ignoring user timeline seeks and initial moov metadata probing.
  */
 function attachAdaptiveStallMonitor(player) {
   if (!player) return;
@@ -794,6 +852,8 @@ function attachAdaptiveStallMonitor(player) {
   }
 
   const triggerStepDownIfNeeded = () => {
+    if (selectedQuality !== 'auto') return;
+    if (Date.now() - lastAutoSwitchEpoch < 12000) return;
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx !== -1 && idx < QUALITY_LADDER.length - 1) {
       const nextLower = QUALITY_LADDER[idx + 1];
@@ -801,25 +861,38 @@ function attachAdaptiveStallMonitor(player) {
     }
   };
 
+  player.on('seeking', () => {
+    if (activeStallTimer) {
+      clearTimeout(activeStallTimer);
+      activeStallTimer = null;
+    }
+  });
+
   player.on('waiting', () => {
+    if (selectedQuality !== 'auto') return;
+    // Never count user timeline scrubbing or initial t=0 moov header fetch as a network lag stall
+    if (player.seeking && player.seeking()) return;
+    const curT = typeof player.currentTime === 'function' ? (player.currentTime() || 0) : 0;
+    if (curT < 2.0) return;
+
     const now = Date.now();
     stallTimestamps = stallTimestamps.filter(t => (now - t) < 20000);
     stallTimestamps.push(now);
 
-    // If 2+ stalls occurred within 20 seconds, step down quality immediately
+    // If 2+ real playback stalls occurred within 20 seconds, step down quality immediately
     if (stallTimestamps.length >= 2) {
       stallTimestamps = [];
       triggerStepDownIfNeeded();
       return;
     }
 
-    // Or if a single buffer stall persists longer than 2.4 seconds, auto step-down
+    // Or if a single mid-playback buffer stall persists longer than 3.2 seconds, auto step-down
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
-      if (player && !player.paused()) {
+      if (player && !player.paused() && !(player.seeking && player.seeking())) {
         triggerStepDownIfNeeded();
       }
-    }, 2400);
+    }, 3200);
   });
 
   player.on('playing', () => {
@@ -859,9 +932,9 @@ function applySubtitleVisualStyle() {
       color: ${colorHex} !important;
       font-size: ${Math.round(100 * sizeObj.scale)}% !important;
     }
-    .video-js .vjs-text-track-cue > div {
-      color: ${colorHex} !important;
-      font-size: calc(clamp(14px, 2.2vw, 22px) * ${sizeObj.scale}) !important;
+    .video-js .vjs-text-track-display {
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   `;
 }
@@ -902,6 +975,7 @@ function initSubtitleControls(movie) {
   if (minusBtn) {
     minusBtn.addEventListener('click', () => {
       liveSubOffsetSec -= 0.5;
+      syncSubtitles();
       FilmSub.showToast(`Subtitle Sync: ${liveSubOffsetSec >= 0 ? '+' : ''}${liveSubOffsetSec.toFixed(1)}s`, 'info');
     });
   }
@@ -909,6 +983,7 @@ function initSubtitleControls(movie) {
   if (plusBtn) {
     plusBtn.addEventListener('click', () => {
       liveSubOffsetSec += 0.5;
+      syncSubtitles();
       FilmSub.showToast(`Subtitle Sync: ${liveSubOffsetSec >= 0 ? '+' : ''}${liveSubOffsetSec.toFixed(1)}s`, 'info');
     });
   }
@@ -936,7 +1011,7 @@ function initSubtitleControls(movie) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        const rawText = String(reader.result || '');
+        const rawText = decodeSubtitleBuffer(reader.result);
         const vttText = convertSrtToVttText(rawText);
         const newCues = parseVttToCues(vttText);
         if (newCues.length > 0) {
@@ -944,13 +1019,15 @@ function initSubtitleControls(movie) {
           liveSubEnabled = true;
           if (toggleBtn) toggleBtn.classList.add('active');
           if (stateSpan) stateSpan.textContent = 'ON';
+          const overlay = document.getElementById('fs-sub-overlay');
+          if (overlay) overlay.style.display = 'flex';
           syncSubtitles();
           FilmSub.showToast(`✅ උපසිරැසි ගොනුව (${file.name}) සාර්ථකව Video එකට ඇතුළත් කරන ලදී! (${newCues.length} cues)`, 'success');
         } else {
           FilmSub.showToast('Could not parse subtitle file. Please use a valid .SRT or .VTT file.', 'error');
         }
       };
-      reader.readAsText(file, 'utf-8');
+      reader.readAsArrayBuffer(file);
     });
   }
 
@@ -1014,10 +1091,10 @@ async function mountLiveSubtitleOverlay(playerEl, movie) {
 
     let currentSec = 0;
     if (vjsPlayer && typeof vjsPlayer.currentTime === 'function') {
-      currentSec = (vjsPlayer.currentTime() || 0) + liveSubOffsetSec;
+      currentSec = Math.max(0, (vjsPlayer.currentTime() || 0) + liveSubOffsetSec);
     } else {
       const maxCueEnd = parsedSubCues.length > 0 ? Math.max(45, parsedSubCues[parsedSubCues.length - 1].end + 4) : 45;
-      currentSec = (((Date.now() - liveSubStartEpoch) / 1000) + liveSubOffsetSec) % maxCueEnd;
+      currentSec = Math.max(0, (((Date.now() - liveSubStartEpoch) / 1000) + liveSubOffsetSec)) % maxCueEnd;
     }
 
     const activeCue = parsedSubCues.find(c => currentSec >= c.start && currentSec <= c.end);
@@ -1125,8 +1202,8 @@ function renderStreamEmbed(playerEl, stream, movie) {
 
   const revealIframe = () => {
     setTimeout(() => {
-      if (iframeEl) iframeEl.style.opacity = '1';
-      if (loaderEl) loaderEl.classList.add('hidden');
+      if (iframeEl && iframeEl.isConnected) iframeEl.style.opacity = '1';
+      if (loaderEl && loaderEl.isConnected) loaderEl.classList.add('hidden');
     }, 260);
   };
 
@@ -1287,19 +1364,39 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.on('canplay', hideLoader);
     vjsPlayer.on('playing', hideLoader);
 
-    // Seamless fallback if chunk proxy or direct stream encounters an upstream error
-    let fallbackAttempted = false;
+    // Low-bandwidth watchdog: if raw MP4 header over /api/stream is still at readyState 0 after 8.5s
+    // (e.g. on ultra-slow <0.3Mbps mobile data where a 4.5MB tail moov atom takes >60s),
+    // automatically switch to Server 2 (Google Drive CDN Adaptive Stream) so playback starts immediately.
+    const slowHeaderWatchdog = setTimeout(() => {
+      if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 && stream.mode === 'super_chunk') {
+        const streams = getMovieStreams(movie);
+        if (streams.length > 1 && currentStreamIdx === 0) {
+          FilmSub.showToast('⚡ අන්තර්ජාල වේගය අනුව Google Drive High-Speed CDN (Server 2) වෙත ස්වයංක්‍රීයව මාරු විය!', 'info');
+          const tabsEl = document.getElementById('server-tabs');
+          if (tabsEl) {
+            tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
+            const btn = tabsEl.querySelector('button[data-index="1"]');
+            if (btn) btn.classList.add('active');
+          }
+          loadStream(movie, 1);
+        }
+      }
+    }, 8500);
+
+    vjsPlayer.on('dispose', () => {
+      clearTimeout(slowHeaderWatchdog);
+    });
+
+    // Seamless retry & multi-server fallback if chunk proxy or direct stream encounters an upstream error
+    let retryAttempted = false;
     vjsPlayer.on('error', () => {
       const errDisplay = playerEl.querySelector('.vjs-error-display');
       if (errDisplay) errDisplay.style.display = 'none';
 
-      // If Super Chunk stream encountered a network/CORS block during local offline test,
-      // fallback first to local sample_stream.mp4 so Video.js stays live and playable,
-      // or switch to Server 2 (Google Drive CDN Player).
-      if (!fallbackAttempted && stream.fallback_mp4) {
-        fallbackAttempted = true;
-        console.info('Super Player falling back to local faststart buffer stream...');
-        vjsPlayer.src({ src: stream.fallback_mp4, type: 'video/mp4' });
+      if (!retryAttempted && stream.mode === 'super_chunk' && stream.drive_id) {
+        retryAttempted = true;
+        const retryUrl = buildChunkStreamUrl(stream.drive_id, '360p') + '&retry=1';
+        vjsPlayer.src({ src: retryUrl, type: 'video/mp4' });
         vjsPlayer.one('loadedmetadata', () => {
           hideLoader();
           syncSubtitles();
@@ -1364,7 +1461,8 @@ function renderPlayerFallback(playerEl, movie) {
 
 /**
  * Ensures Video.js textTracks have active Sinhala cues populated both via <track>
- * AND programmatic VTTCue injection so subtitles are 100% embedded in the video frame.
+ * AND programmatic VTTCue replacement so subtitles (including custom .SRT uploads
+ * and -0.5s/+0.5s sync offsets) are 100% embedded in the video frame.
  */
 function syncSubtitles() {
   if (!vjsPlayer) return;
@@ -1387,13 +1485,25 @@ function syncSubtitles() {
       if (targetTrack) targetTrack.mode = liveSubEnabled ? 'showing' : 'disabled';
     }
 
-    // Programmatically populate VTTCues if track has 0 cues so cues are immediately present
-    if (targetTrack && (!targetTrack.cues || targetTrack.cues.length === 0) && parsedSubCues.length > 0) {
+    // Always replace existing cues with parsedSubCues shifted by liveSubOffsetSec
+    // so custom .SRT uploads and -0.5s/+0.5s sync buttons update the native track immediately.
+    if (targetTrack && parsedSubCues.length > 0) {
       const CueClass = window.VTTCue || window.TextTrackCue;
       if (CueClass && typeof targetTrack.addCue === 'function') {
+        if (typeof targetTrack.removeCue === 'function' && targetTrack.cues) {
+          while (targetTrack.cues.length > 0) {
+            try {
+              targetTrack.removeCue(targetTrack.cues[0]);
+            } catch (e) {
+              break;
+            }
+          }
+        }
         parsedSubCues.forEach(c => {
           try {
-            const cue = new CueClass(c.start + liveSubOffsetSec, c.end + liveSubOffsetSec, c.plainText || c.text.replace(/<br\s*\/?>/gi, '\n'));
+            const adjStart = Math.max(0, c.start + liveSubOffsetSec);
+            const adjEnd = Math.max(adjStart + 0.2, c.end + liveSubOffsetSec);
+            const cue = new CueClass(adjStart, adjEnd, c.plainText || c.text.replace(/<br\s*\/?>/gi, '\n'));
             targetTrack.addCue(cue);
           } catch (e) {}
         });

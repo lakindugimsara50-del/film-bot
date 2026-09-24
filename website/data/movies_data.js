@@ -87,7 +87,120 @@ window.FILMSUB_DATA = {
       "added_date": "2026-09-23",
       "added_at": "2026-09-23T22:39:35Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-beekeeper-2024",
+      "slug": "the-beekeeper-2024",
+      "title": "The Beekeeper",
+      "title_si": "",
+      "year": 2024,
+      "imdb": "7.3",
+      "rating": "7.3",
+      "imdb_id": "tt15314262",
+      "tmdb_id": "866398",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/A7EByudX0eOzlkQ2FIbogzyazm2.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/A7EByudX0eOzlkQ2FIbogzyazm2.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/f0ACHVpV707zqu4etZrXnWNdSgL.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/f0ACHVpV707zqu4etZrXnWNdSgL.jpg",
+      "genres": [
+        "Action",
+        "Crime",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "quality": "1080p",
+      "duration": "106 min",
+      "description": "One man's campaign for vengeance takes on national stakes after he is revealed to be a former operative of a powerful and clandestine organization known as Beekeepers.",
+      "director": "David Ayer",
+      "cast": [
+        {
+          "name": "Jason Statham",
+          "character": "Adam Clay"
+        },
+        {
+          "name": "Emmy Raver-Lampman",
+          "character": "Agent Verona Parker"
+        },
+        {
+          "name": "Josh Hutcherson",
+          "character": "Derek Danforth"
+        },
+        {
+          "name": "Jeremy Irons",
+          "character": "Wallace Westwyld"
+        },
+        {
+          "name": "Bobby Naderi",
+          "character": "Agent Matt Wiley"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "",
+      "message_id": 0,
+      "file_name": "sub_web_the-beekeeper-2024.mp4",
+      "file_size": 1507744796,
+      "stream_url": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Server 1 (Google Drive Ultra HD)",
+          "type": "video/mp4",
+          "stream_url": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview"
+        }
+      ],
+      "downloads": [
+        {
+          "quality": "1080p (Cloud High-Speed)",
+          "size": "1.4 GB",
+          "url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "format": "MP4",
+          "host": "Google Drive"
+        },
+        {
+          "quality": "720p",
+          "size": "790.8 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "format": "MP4",
+          "host": "Direct"
+        },
+        {
+          "quality": "480p",
+          "size": "402.6 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "format": "MP4",
+          "host": "Direct"
+        },
+        {
+          "quality": "360p",
+          "size": "258.8 MB",
+          "url": "https://drive.google.com/uc?export=download&id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+          "format": "MP4",
+          "host": "Direct"
+        }
+      ],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "Sinhala Subtitle",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A1%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A06.000%0AFilmSub.lk%20%E0%B7%80%E0%B7%99%E0%B6%AD%E0%B7%92%E0%B6%B1%E0%B7%8A%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%0A%0A2%0A00%3A00%3A07.000%20--%3E%2000%3A00%3A15.000%0AThe%20Beekeeper%20%282024%29%20%E0%B6%B1%E0%B7%90%E0%B6%BB%E0%B6%B9%E0%B7%93%E0%B6%B8%E0%B6%A7%20%E0%B7%83%E0%B7%8A%E0%B6%AD%E0%B7%96%E0%B6%AD%E0%B7%92%E0%B6%BA%E0%B7%92%21",
+          "default": true
+        }
+      ],
+      "source_method": "torrent",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-beekeeper-2024",
+      "added_date": "2026-09-24",
+      "added_at": "2026-09-24T07:09:37Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-24T05:45:31Z"
+  "last_updated": "2026-09-24T07:09:37Z"
 };

@@ -742,8 +742,14 @@ async def _execute_leech(
                         mag_to_use = candidate.extra.get("magnet")
 
                     candidate_bytes = candidate.size_bytes or 0
-                    # If file is larger than 1.95 GB and PikPak is configured, use PikPak directly (10GB capacity)
-                    prefer_pikpak = candidate_bytes > int(1.95 * 1024 * 1024 * 1024) and pikpak_service.is_configured()
+                    is_season_pack = bool(candidate.extra and candidate.extra.get("is_season_pack"))
+                    ep_hint = f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None
+                    # If file is larger than 1.95 GB (and not a full season pack) and PikPak is configured, use PikPak directly
+                    prefer_pikpak = (
+                        not is_season_pack
+                        and candidate_bytes > int(1.95 * 1024 * 1024 * 1024)
+                        and pikpak_service.is_configured()
+                    )
 
                     # 1. Try PikPak first if file > 1.95GB
                     if prefer_pikpak:
@@ -765,20 +771,20 @@ async def _execute_leech(
                         cloud_res = await pikpak_service.convert_magnet_to_direct_url(
                             magnet_link=mag_to_use,
                             progress_callback=_pikpak_progress,
+                            episode_hint=ep_hint,
                         )
 
                     # 2. Try Seedr if not preferred PikPak (or if PikPak didn't resolve)
-                    is_season_pack = bool(candidate.extra and candidate.extra.get("is_season_pack"))
                     can_try_seedr = seedr_service.seedr_client.is_configured() and not prefer_pikpak
                     if can_try_seedr and is_season_pack:
                         log.info(
-                            "[LeechService] Candidate '%s' is a season pack. Skipping Seedr 2.0 GB tier (using PikPak or direct single-file aria2c).",
+                            "[LeechService] Candidate '%s' is a season pack. Skipping Seedr 2.0 GB tier (using direct single-file aria2c).",
                             candidate.method_name,
                         )
                         can_try_seedr = False
-                    elif can_try_seedr and candidate_bytes > int(2.0 * 1024 * 1024 * 1024):
+                    elif can_try_seedr and candidate_bytes > int(2.05 * 1024 * 1024 * 1024):
                         log.warning(
-                            "[LeechService] Candidate size (%s) exceeds Seedr 2.0 GB tier. Skipping Seedr attempt.",
+                            "[LeechService] Candidate size (%s) exceeds Seedr 2.05 GB tier. Skipping Seedr attempt.",
                             downloader.format_bytes(candidate_bytes)
                         )
                         can_try_seedr = False
@@ -798,15 +804,14 @@ async def _execute_leech(
                             except Exception:
                                 pass
 
-                        ep_hint = f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None
                         cloud_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
                             magnet_url=mag_to_use,
                             progress_callback=_seedr_progress,
                             episode_hint=ep_hint,
                         )
 
-                    # 3. Fallback to PikPak if Seedr failed or was full
-                    if not cloud_res and pikpak_service.is_configured() and not prefer_pikpak:
+                    # 3. Fallback to PikPak if Seedr failed or was full (for non-season-pack releases)
+                    if not cloud_res and not is_season_pack and pikpak_service.is_configured() and not prefer_pikpak:
                         log.info("[LeechService] Seedr conversion failed/full. Falling back to PikPak Cloud Debrid...")
                         cloud_service_name = "PikPak"
                         async def _pikpak_progress2(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
@@ -825,6 +830,7 @@ async def _execute_leech(
                         cloud_res = await pikpak_service.convert_magnet_to_direct_url(
                             magnet_link=mag_to_use,
                             progress_callback=_pikpak_progress2,
+                            episode_hint=ep_hint,
                         )
 
                     if cloud_res and cloud_res.get("direct_url"):
@@ -1440,11 +1446,14 @@ async def _execute_leech(
                 if stream_url:
                     downloads_list.append({
                         "quality": "1080p (Telegram Download)",
+                        "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
                         "size": downloader.format_bytes(sz_1080),
                         "url": stream_url,
                         "format": file_ext,
                         "host": "Telegram",
                         "download_only": True,
+                        "sub_merged": True,
+                        "subtitle_merged": True,
                     })
                     movie_entry["file_id"] = file_id
                     movie_entry["message_id"] = message_id

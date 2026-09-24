@@ -118,6 +118,7 @@ class PikPakService:
         magnet_link: str,
         progress_callback: Optional[Callable] = None,
         timeout: int = 500,
+        episode_hint: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Submit a torrent/magnet to PikPak, wait for cloud completion,
@@ -203,7 +204,7 @@ class PikPakService:
 
             log.info("[PikPak] Task %s completed! Locating video file (file_id=%s)...", task_id, file_id)
 
-            # Locate largest video file
+            # Locate target episode or largest video file
             file_name = "video.mp4"
             file_size = 0
 
@@ -215,7 +216,12 @@ class PikPakService:
             video_files = [f for f in files if f.get("name", "").lower().endswith(video_exts)]
 
             if video_files:
-                # Pick largest video file in the folder
+                if episode_hint:
+                    from services import downloader
+                    ep_matches = [f for f in video_files if downloader.matches_episode_filename(f.get("name", ""), episode_hint)]
+                    if ep_matches:
+                        video_files = ep_matches
+                # Pick largest matching video file in the folder
                 video_files.sort(key=lambda x: int(x.get("size", 0)), reverse=True)
                 chosen = video_files[0]
                 target_file_id = chosen["id"]

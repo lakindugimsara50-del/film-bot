@@ -987,7 +987,7 @@ window.FILMSUB_DATA = {
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
       "sub_merged": true,
-      "quality": "480p",
+      "quality": "1080p",
       "duration": "62 min",
       "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
       "director": "David Benioff, D. B. Weiss",
@@ -1086,11 +1086,14 @@ window.FILMSUB_DATA = {
         },
         {
           "quality": "1080p (Telegram Download)",
+          "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
           "size": "546.8 MB",
           "url": "https://stream.yourdomain.workers.dev/stream/channel/-1004325759505/43",
           "format": "MP4",
           "host": "Telegram",
-          "download_only": true
+          "download_only": true,
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
       "subtitles": [

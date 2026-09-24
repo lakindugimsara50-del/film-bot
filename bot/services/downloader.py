@@ -479,7 +479,7 @@ async def download_torrent(
         except Exception as tf_err:
             log.warning("[Downloader] Could not pre-fetch .torrent (%s), falling back to URL/magnet", tf_err)
 
-    live_trackers = ",".join([
+    tracker_list = [
         "udp://tracker.opentrackr.org:1337/announce",
         "http://tracker.opentrackr.org:1337/announce",
         "udp://open.tracker.cl:1337/announce",
@@ -493,7 +493,13 @@ async def download_torrent(
         "udp://movies.zsw.ca:6969/announce",
         "https://tracker.tamersunion.org:443/announce",
         "https://tracker.gbitt.info:443/announce",
-    ])
+    ]
+    if magnet_or_torrent.startswith("magnet:"):
+        for tr_m in re.findall(r"[?&]tr=([^&]+)", magnet_or_torrent):
+            dec_tr = urllib.parse.unquote(tr_m).strip()
+            if dec_tr and dec_tr not in tracker_list:
+                tracker_list.append(dec_tr)
+    live_trackers = ",".join(tracker_list)
 
     # Check if episode_hint or select_file_idx is provided and inspect file list via aria2c --show-files
     target_file_idx = select_file_idx
@@ -502,10 +508,11 @@ async def download_torrent(
             detected_idx = await find_episode_file_index_from_torrent(aria2_bin, torrent_arg, episode_hint) if episode_hint else None
             target_file_idx = detected_idx or select_file_idx
         elif torrent_arg.startswith("magnet:"):
-            # Fetch metadata (.torrent) quickly (up to 18s) with DHT & PEX enabled to inspect file list
+            # Fetch metadata (.torrent) quickly (up to 18s) with DHT, PEX & HTTPS tracker support to inspect file list
             meta_cmd = [
                 aria2_bin,
                 "--dir", dest_dir,
+                "--check-certificate=false",
                 "--bt-metadata-only=true",
                 "--bt-save-metadata=true",
                 "--enable-dht=true",
@@ -541,6 +548,7 @@ async def download_torrent(
     cmd = [
         aria2_bin,
         "--dir", dest_dir,
+        "--check-certificate=false",
         "--seed-time=0",
         "--max-connection-per-server=16",
         "--split=16",
@@ -597,7 +605,7 @@ async def download_torrent(
             for line_str in lines:
                 line_str = line_str.strip()
                 match = regex.search(line_str)
-                if match and progress_callback:
+                if match:
                     done_str, total_str, pct_str, dl_speed, eta = match.groups()
                     pct = float(pct_str)
                     speed_formatted = f"{dl_speed}/s"
@@ -618,20 +626,24 @@ async def download_torrent(
                                 pass
                         raise RuntimeError(f"Torrent size ({total_str}) exceeds safe limit ({_safe_limit_gb} GB)")
 
-                    if pct > 0 or ("0B" not in done_str and "0.0" not in done_str):
+                    if pct > 0 or parse_size_str(done_str) > 0 or parse_size_str(dl_speed) > 0:
                         has_started_download = True
-                    try:
-                        await progress_callback(pct, done_str, total_str, speed_formatted, eta_formatted)
-                    except Exception:
-                        pass
-                elif progress_callback and ("CN:" in line_str or "metadata" in line_str.lower()):
+                    if progress_callback:
+                        try:
+                            await progress_callback(pct, done_str, total_str, speed_formatted, eta_formatted)
+                        except Exception:
+                            pass
+                elif "CN:" in line_str or "metadata" in line_str.lower():
                     meta_match = meta_regex.search(line_str)
                     peers_count = meta_match.group(1) if meta_match else "1"
                     speed_val = (meta_match.group(2) + "/s") if (meta_match and meta_match.group(2)) else "0 B/s"
-                    try:
-                        await progress_callback(0.0, "0 B", "Connecting...", speed_val, f"Peers: {peers_count}")
-                    except Exception:
-                        pass
+                    if meta_match and meta_match.group(2) and parse_size_str(meta_match.group(2)) > 0:
+                        has_started_download = True
+                    if progress_callback:
+                        try:
+                            await progress_callback(0.0, "0 B", "Connecting...", speed_val, f"Peers: {peers_count}")
+                        except Exception:
+                            pass
 
             # Fail fast if torrent has 0 seeds and cannot start downloading within 40 seconds
             if not has_started_download and (time.time() - start_wait_time > 40.0):

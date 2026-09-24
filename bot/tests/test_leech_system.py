@@ -910,13 +910,21 @@ class TestLeechService(unittest.TestCase):
                 os.remove(tf_path)
 
     def test_extract_quality_strict_480p_and_ds4k(self):
-        """Verify untagged HDTV/XviD/SD releases are classified as 480p and DS4K 1080p as 1080p."""
+        """Verify untagged HDTV/XviD/SD/CAM/NEW ENG releases are classified as 480p and DS4K 1080p as 1080p."""
         self.assertEqual(
             torrent_finder.extract_quality_from_name("Game of Thrones S01E01 HDTV XviD-FEVER [eztv]"),
             "480p",
         )
         self.assertEqual(
             torrent_finder.extract_quality_from_name("Game.of.Thrones.S01E01.WEB-DL.x264-GROUP"),
+            "480p",
+        )
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Oppenheimer (2023) NEW ENG 1080p HQ-CAM AAC - QRips"),
+            "480p",
+        )
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Oppenheimer (2023) NEW ENG 1080p.MP4.InfosPack022"),
             "480p",
         )
         self.assertEqual(
@@ -933,7 +941,7 @@ class TestLeechService(unittest.TestCase):
         )
 
     def test_torrent_finder_excludes_480p_and_prioritizes_single_episode_hd(self):
-        """Verify 480p/SD torrents are excluded and standalone HD episodes rank above season packs."""
+        """Verify 480p/SD torrents are excluded, 1080p single episode ranks #1, 1080p pack #2, and 720p #3."""
         async def run_test():
             mock_apibay = MagicMock()
             mock_apibay.status_code = 200
@@ -952,14 +960,14 @@ class TestLeechService(unittest.TestCase):
                     "seeders": "300",
                     "size": str(int(350 * 1024**2)),
                 },
-                # Standalone 720p single episode with 9 seeds (MUST be included and ranked above season pack)
+                # Standalone 720p single episode with 9 seeds (MUST be included as >=720p fallback after 1080p)
                 {
                     "name": "Game of Thrones S01E01 720p HDTV x264-CTU [eztv]",
                     "info_hash": "HASH_720P_SINGLE",
                     "seeders": "9",
                     "size": str(int(1.45 * 1024**3)),
                 },
-                # Standalone 1080p single episode with 6 seeds (MUST rank #1 above 720p single episode)
+                # Standalone 1080p single episode with 6 seeds (MUST rank #1 ahead of 1080p season pack)
                 {
                     "name": "Game of Thrones S01E01 1080p WEB-DL x265",
                     "info_hash": "HASH_1080P_SINGLE",
@@ -972,7 +980,7 @@ class TestLeechService(unittest.TestCase):
             mock_torrentio.status_code = 200
             mock_torrentio.json.return_value = {
                 "streams": [
-                    # Season pack 1080p with 789 seeds
+                    # Season pack 1080p with 789 seeds (MUST rank #2: after 1080p single episode, ahead of 720p!)
                     {
                         "name": "Torrentio\n1080p",
                         "title": "Game.of.Thrones.SEASON.01.S01.COMPLETE.1080p.BluRay.x265-PSA\nGame.of.Thrones.S01E01.1080p.mkv\n👤 789 💾 1.08 GB ⚙️ 1337x",
@@ -1012,21 +1020,57 @@ class TestLeechService(unittest.TestCase):
                 self.assertNotIn("hash_480p_xvid", hashes)
                 self.assertNotIn("hash_480p_explicit", hashes)
                 self.assertNotIn("hash_wrong_show", hashes)
-                # Standalone 1080p single episode should be #1, standalone 720p #2, season pack #3
+                # 1080p single episode #1, 1080p high-seed pack #2, 720p single episode #3
                 self.assertEqual(results[0]["hash"], "hash_1080p_single")
                 self.assertFalse(results[0]["is_season_pack"])
-                self.assertEqual(results[1]["hash"], "hash_720p_single")
-                self.assertFalse(results[1]["is_season_pack"])
-                self.assertEqual(results[2]["hash"], "hash_1080p_pack")
-                self.assertTrue(results[2]["is_season_pack"])
+                self.assertEqual(results[1]["hash"], "hash_1080p_pack")
+                self.assertTrue(results[1]["is_season_pack"])
+                self.assertEqual(results[2]["hash"], "hash_720p_single")
+                self.assertFalse(results[2]["is_season_pack"])
 
         asyncio.run(run_test())
 
     def test_movie_collection_pack_excluded_and_1080p_prioritized_in_leech_service(self):
-        """Verify multi-movie packs are rejected and find_all_candidates prioritizes 1080p for movies."""
+        """Verify multi-movie packs and wrong documentary titles are rejected and 1080p is prioritized."""
         self.assertTrue(torrent_finder.is_movie_collection_pack("Imdb top 263 movies 1080p", "Inception"))
         self.assertTrue(torrent_finder.is_movie_collection_pack("Inception & Prestige Complete Collection 1080p", "Inception"))
         self.assertFalse(torrent_finder.is_movie_collection_pack("Inception (2010) [1080p] [BluRay] [YTS.MX]", "Inception"))
+
+        # Verify is_valid_movie_title blocks wrong movie prefixes and documentary spinoffs
+        self.assertFalse(
+            torrent_finder.is_valid_movie_title(
+                "www.Torrenting.com   -    To End All War Oppenheimer The Atomic Bomb (2023) 1080p",
+                "Oppenheimer",
+                year=2023,
+            )
+        )
+        self.assertFalse(
+            torrent_finder.is_valid_movie_title(
+                "To.End.All.War.Oppenheimer.and.the.Atomic.Bomb.2023.1080p.WEBRip.x264",
+                "Oppenheimer",
+                year=2023,
+            )
+        )
+        self.assertFalse(
+            torrent_finder.is_valid_movie_title(
+                "Game of Thrones: The Last Watch (2019) 1080p",
+                "Game of Thrones",
+            )
+        )
+        self.assertTrue(
+            torrent_finder.is_valid_movie_title(
+                "Oppenheimer.2023.1080p.BluRay.DD5.1.x264-GalaxyRG",
+                "Oppenheimer",
+                year=2023,
+            )
+        )
+        self.assertTrue(
+            torrent_finder.is_valid_movie_title(
+                "Inception (2010) [1080p] [BluRay] [YTS.MX]",
+                "Inception",
+                year=2010,
+            )
+        )
 
         async def run_candidates_test():
             fake_ddl = {

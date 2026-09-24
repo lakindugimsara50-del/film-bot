@@ -122,32 +122,44 @@ window.SINHALASUB_MOVIES_DATA = {
       ],
       "downloads": [
         {
+          "quality": "1080p",
+          "size": "1.4 GB",
+          "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+          "format": "MP4",
+          "host": "Google Drive",
+          "subtitle_merged": true
+        },
+        {
           "quality": "1080p (Cloud High-Speed)",
           "size": "1.4 GB",
           "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
-          "host": "Google Drive"
+          "host": "Google Drive",
+          "subtitle_merged": true
         },
         {
           "quality": "720p",
           "size": "765.0 MB",
           "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
-          "host": "Direct"
+          "host": "Direct",
+          "subtitle_merged": true
         },
         {
           "quality": "480p",
           "size": "389.4 MB",
           "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
-          "host": "Direct"
+          "host": "Direct",
+          "subtitle_merged": true
         },
         {
           "quality": "360p",
           "size": "250.4 MB",
           "url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "format": "MP4",
-          "host": "Direct"
+          "host": "Direct",
+          "subtitle_merged": true
         }
       ],
       "subtitles": [
@@ -185,6 +197,12 @@ window.SINHALASUB_MOVIES_DATA = {
         "360p": {
           "label": "360p Data Saver",
           "size": "120 MB",
+          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
+          "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
+        },
+        "auto": {
+          "label": "Auto (Adaptive)",
+          "size": "1.4 GB",
           "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
           "download_url": "https://drive.google.com/uc?export=download&id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
         }

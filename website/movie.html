@@ -20,24 +20,62 @@
   <!-- Site CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
 
-  <!-- Extra player overrides -->
+  <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <style>
+    #video-player-container,
+    .player-container,
+    .player-iframe-wrap,
+    .video-js,
+    .video-js video,
+    .player-iframe-wrap iframe {
+      background-color: #000000 !important;
+      color-scheme: dark !important;
+    }
     .video-js .vjs-big-play-button {
       background: var(--accent) !important;
-      border: none !important;
+      border: 2px solid rgba(255,255,255,0.85) !important;
       border-radius: 50% !important;
       width: 68px !important;
       height: 68px !important;
-      line-height: 68px !important;
+      line-height: 64px !important;
       margin-top: -34px !important;
       margin-left: -34px !important;
+      box-shadow: 0 0 28px rgba(229, 9, 20, 0.75) !important;
+      transition: transform 0.2s ease, background 0.2s ease !important;
     }
-    .video-js .vjs-big-play-button:hover { background: var(--accent-dark) !important; }
-    .video-js .vjs-control-bar { background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%); }
-    .video-js .vjs-play-progress { background: var(--accent); }
-    .video-js .vjs-slider { background: rgba(255,255,255,0.15); }
-    .vjs-theme-fantasy .vjs-play-progress:before { color: var(--accent); }
-    .video-js { font-size: 14px; }
+    .video-js .vjs-big-play-button:hover {
+      background: var(--accent-dark) !important;
+      transform: scale(1.08);
+    }
+    .video-js .vjs-control-bar {
+      background: linear-gradient(0deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.6) 65%, transparent 100%) !important;
+      height: 44px !important;
+      padding: 0 8px !important;
+    }
+    .video-js .vjs-play-progress { background: var(--accent) !important; }
+    .video-js .vjs-load-progress { background: rgba(255,255,255,0.28) !important; }
+    .video-js .vjs-slider { background: rgba(255,255,255,0.16) !important; }
+    .vjs-theme-fantasy .vjs-play-progress:before { color: var(--accent) !important; }
+    .video-js { font-size: 14px; font-family: 'Noto Sans Sinhala', 'Roboto', sans-serif !important; }
+    /* CineSubz-style native WebVTT cue styling inside video frame */
+    .video-js video::cue {
+      background-color: rgba(0, 0, 0, 0.82);
+      color: #ffeb3b;
+      font-family: 'Noto Sans Sinhala', 'Roboto', sans-serif;
+      font-weight: 700;
+      text-shadow: 0 2px 4px #000000, 0 0 8px #000000;
+    }
+    .video-js .vjs-text-track-cue > div {
+      background-color: rgba(0, 0, 0, 0.82) !important;
+      color: #ffeb3b !important;
+      font-family: 'Noto Sans Sinhala', 'Roboto', sans-serif !important;
+      font-weight: 700 !important;
+      padding: 4px 12px !important;
+      border-radius: 6px !important;
+      text-shadow: 0 2px 4px #000000 !important;
+      font-size: clamp(14px, 2.2vw, 22px) !important;
+      line-height: 1.45 !important;
+    }
   </style>
 </head>
 <body>
@@ -187,6 +225,19 @@
             </button>
             <button type="button" class="sub-ctrl-btn" id="btn-sub-sync-minus" title="Subtitle Delay -0.5s">-0.5s</button>
             <button type="button" class="sub-ctrl-btn" id="btn-sub-sync-plus" title="Subtitle Advance +0.5s">+0.5s</button>
+            <button type="button" class="sub-ctrl-btn" id="btn-sub-size" title="Change Subtitle Font Size">
+              <i class="fa-solid fa-text-height"></i> <span id="sub-size-label">100%</span>
+            </button>
+            <button type="button" class="sub-ctrl-btn" id="btn-sub-color" title="Change Subtitle Color">
+              <i class="fa-solid fa-palette"></i>
+            </button>
+            <label class="sub-ctrl-btn" for="custom-sub-upload" title="Load Custom .SRT or .VTT Subtitle File" style="cursor:pointer;margin:0">
+              <i class="fa-solid fa-folder-open"></i> .SRT
+              <input type="file" id="custom-sub-upload" accept=".srt,.vtt" style="display:none">
+            </label>
+            <button type="button" class="sub-ctrl-btn" id="btn-player-fullscreen" title="Fullscreen with Sinhala Subtitles">
+              <i class="fa-solid fa-expand"></i>
+            </button>
           </div>
         </div>
 
@@ -393,9 +444,9 @@
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20260924_gdrive_fix"></script>
-<script src="assets/js/app.js?v=20260924_gdrive_fix"></script>
-<script src="assets/js/download.js?v=20260924_gdrive_fix"></script>
-<script src="assets/js/player.js?v=20260924_gdrive_fix"></script>
+<script src="data/movies_data.js?v=20260924_super_player_v2"></script>
+<script src="assets/js/app.js?v=20260924_super_player_v2"></script>
+<script src="assets/js/download.js?v=20260924_super_player_v2"></script>
+<script src="assets/js/player.js?v=20260924_super_player_v2"></script>
 </body>
 </html>

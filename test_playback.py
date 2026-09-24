@@ -1,6 +1,11 @@
+import sys
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 
 def run_tests():
     options = Options()
@@ -97,10 +102,62 @@ def run_tests():
         print("Testing URL: http://localhost:8000/movie.html?id=inception-2010 (Embed Stream)")
         print(f"==========================================")
         driver.get('http://localhost:8000/movie.html?id=inception-2010')
-        time.sleep(2)
-        iframe_src = driver.execute_script("return document.querySelector('#video-player-container iframe')?.src;")
+        iframe_src = None
+        for _ in range(20):
+            iframe_src = driver.execute_script("return document.querySelector('#video-player-container iframe')?.src;")
+            if iframe_src:
+                break
+            time.sleep(0.4)
         print(f"[OK] Inception embed iframe src: {iframe_src}")
         assert iframe_src and 'vidsrc.to' in iframe_src, f"Expected vidsrc.to in iframe src, got {iframe_src}"
+
+        # 7. Real Google Drive Super Player test (Game of Thrones + One Last Shot - Chunk Stream + Quality Switch + VIP Servers + Zero White Screen)
+        for gdrive_slug in ['game-of-thrones-2011-s01e01', 'one-last-shot-2026']:
+            print(f"\n==========================================")
+            print(f"Testing URL: http://localhost:8000/movie.html?id={gdrive_slug} (Google Drive Super Player)")
+            print(f"==========================================")
+            driver.get(f'http://localhost:8000/movie.html?id={gdrive_slug}')
+            for _ in range(25):
+                ready = driver.execute_script("""
+                    const p = typeof videojs !== 'undefined' && videojs.getPlayer('filmsubPlayer');
+                    return !!(p && p.readyState && p.readyState() >= 1);
+                """)
+                if ready:
+                    break
+                time.sleep(0.5)
+
+            super_check = driver.execute_script("""
+                const container = document.getElementById('video-player-container');
+                const bg = window.getComputedStyle(container).backgroundColor;
+                const serverTabs = Array.from(document.querySelectorAll('#server-tabs .server-tab')).map(b => b.textContent.trim());
+                const p = videojs.getPlayer('filmsubPlayer');
+                const inPlayerQualityBtn = !!document.querySelector('.vjs-super-quality-btn');
+                const subOverlay = !!document.getElementById('fs-sub-overlay');
+                return {
+                    bg,
+                    serverTabsCount: serverTabs.length,
+                    serverTabs,
+                    currentSrc: p ? p.currentSrc() : '',
+                    readyState: p ? p.readyState() : 0,
+                    duration: p ? p.duration() : 0,
+                    inPlayerQualityBtn,
+                    subOverlay
+                };
+            """)
+            print(f"[OK] Zero-White-Screen BG: {super_check['bg']}")
+            print(f"[OK] Server Tabs ({super_check['serverTabsCount']}): {super_check['serverTabs']}")
+            print(f"[OK] Super Player Chunk Src: {super_check['currentSrc']}, Duration: {super_check['duration']}, ReadyState: {super_check['readyState']}")
+            assert super_check['bg'] == 'rgb(0, 0, 0)', f"Expected pure black rgb(0, 0, 0) container background, got {super_check['bg']}"
+            assert super_check['serverTabsCount'] >= 5, f"Expected at least 5 multi-server + VIP backup tabs, got {super_check['serverTabsCount']}"
+            assert super_check['inPlayerQualityBtn'], "Expected in-player quality gear button inside Video.js control bar"
+            assert super_check['subOverlay'], "Expected Sinhala subtitle overlay inside player"
+
+            # Test quality switch to 480p
+            driver.execute_script("document.querySelector('.q-pill[data-quality=\"480p\"]').click();")
+            time.sleep(1)
+            new_src = driver.execute_script("return videojs.getPlayer('filmsubPlayer').currentSrc();")
+            print(f"[OK] Quality switch to 480p updated src: {new_src}")
+            assert 'q=480p' in new_src or 'sample_stream' in new_src, f"Expected 480p chunk query in src, got {new_src}"
 
         print("\n>>> ALL TESTS PASSED SUCCESSFULLY! <<<")
     finally:

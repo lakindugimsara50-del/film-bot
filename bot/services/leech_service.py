@@ -1244,34 +1244,46 @@ async def _execute_leech(
         qualities_map = {}
 
         if cloud_stream:
-            # Extract Drive file ID if present to build multi-quality stream & direct links
+            # Extract Drive file ID if present to build multi-quality chunk stream & direct links
             drive_id_match = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", cloud_stream)
             drive_file_id = drive_id_match.group(1) if drive_id_match else ""
 
-            streams_list.append({
-                "server": "Server 1",
-                "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
-                "type": stream_type,
-                "stream_url": cloud_stream,
-                "quality": "1080p",
-            })
             if drive_file_id:
-                direct_drive_mp4 = f"https://drive.google.com/uc?export=download&id={drive_file_id}"
+                chunk_stream_url = f"/api/stream?id={drive_file_id}&q=auto"
+                drive_preview_url = f"https://drive.google.com/file/d/{drive_file_id}/preview"
+                streams_list.append({
+                    "server": "Server 1",
+                    "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+                    "type": "video/mp4",
+                    "mode": "super_chunk",
+                    "drive_id": drive_file_id,
+                    "stream_url": chunk_stream_url,
+                    "quality": "1080p",
+                })
                 streams_list.append({
                     "server": "Server 2",
-                    "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
-                    "type": "video/mp4",
-                    "stream_url": direct_drive_mp4,
+                    "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+                    "type": "embed",
+                    "embed": True,
+                    "drive_id": drive_file_id,
+                    "stream_url": drive_preview_url,
                     "quality": "1080p",
                 })
                 qualities_map = {
-                    "auto": f"https://drive.google.com/file/d/{drive_file_id}/preview",
-                    "1080p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd1080",
-                    "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd720",
-                    "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=large",
-                    "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=medium",
+                    "auto": f"/api/stream?id={drive_file_id}&q=auto",
+                    "1080p": f"/api/stream?id={drive_file_id}&q=1080p",
+                    "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or f"/api/stream?id={drive_file_id}&q=720p",
+                    "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or f"/api/stream?id={drive_file_id}&q=480p",
+                    "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or f"/api/stream?id={drive_file_id}&q=360p",
                 }
             else:
+                streams_list.append({
+                    "server": "Server 1",
+                    "label": "⚡ Super Player (Ultra HD + Auto Sub)",
+                    "type": stream_type,
+                    "stream_url": cloud_stream,
+                    "quality": "1080p",
+                })
                 qualities_map = {
                     "auto": cloud_stream,
                     "1080p": cloud_stream,

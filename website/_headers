@@ -77,6 +77,17 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
 
+/api/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: Range, Content-Type, Accept, Origin
+  Access-Control-Expose-Headers: Content-Length, Content-Range, Accept-Ranges, Content-Type
+
+/*.mp4
+  Access-Control-Allow-Origin: *
+  Accept-Ranges: bytes
+  Content-Type: video/mp4
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Sitemap + robots
 # ══════════════════════════════════════════════════════════════════════════════

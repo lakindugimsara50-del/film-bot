@@ -235,6 +235,8 @@ async def find_all_candidates(
             return None
 
     async def _fetch_ddl():
+        if is_series or season is not None or episode is not None:
+            return None
         try:
             return await method3_ddl.search(title=title, year=year, imdb_id=imdb_id)
         except Exception as exc:
@@ -288,44 +290,48 @@ async def find_all_candidates(
 
     # 1. Process Telegram match
     if tg_res and isinstance(tg_res, dict) and tg_res.get("file_id"):
-        candidates.append(
-            LeechCandidate(
-                method="telegram",
-                method_name=tg_res.get("server_label", "Telegram Channel"),
-                source_url=tg_res["file_id"],
-                quality=tg_res.get("quality", "1080p"),
-                size=downloader.format_bytes(tg_res.get("file_size", 0)),
-                size_bytes=tg_res.get("file_size", 0),
-                extra=tg_res,
+        tg_q = str(tg_res.get("quality", "1080p"))
+        if tg_q.lower() not in ("480p", "360p", "sd"):
+            candidates.append(
+                LeechCandidate(
+                    method="telegram",
+                    method_name=tg_res.get("server_label", "Telegram Channel"),
+                    source_url=tg_res["file_id"],
+                    quality=tg_q,
+                    size=downloader.format_bytes(tg_res.get("file_size", 0)),
+                    size_bytes=tg_res.get("file_size", 0),
+                    extra=tg_res,
+                )
             )
-        )
-        log.info("[LeechService] Method 1 yielded Telegram candidate.")
+            log.info("[LeechService] Method 1 yielded Telegram candidate.")
 
     # 2. Process DDL matches
     if ddl_res and isinstance(ddl_res, dict) and ddl_res.get("downloads"):
-        for d in ddl_res["downloads"]:
-            url = d.get("direct_url") or d.get("url")
-            host = d.get("host", "DDL").title()
-            if url:
-                candidates.append(
-                    LeechCandidate(
-                        method="ddl",
-                        method_name=f"DDL Direct ({host})",
-                        source_url=url,
-                        quality=ddl_res.get("quality", "1080p"),
-                        size=ddl_res.get("size", "Unknown"),
-                        extra=d,
+        ddl_q = str(ddl_res.get("quality", "1080p"))
+        if ddl_q.lower() not in ("480p", "360p", "sd"):
+            for d in ddl_res["downloads"]:
+                url = d.get("direct_url") or d.get("url")
+                host = d.get("host", "DDL").title()
+                if url:
+                    candidates.append(
+                        LeechCandidate(
+                            method="ddl",
+                            method_name=f"DDL Direct ({host})",
+                            source_url=url,
+                            quality=ddl_q,
+                            size=ddl_res.get("size", "Unknown"),
+                            extra=d,
+                        )
                     )
-                )
-        log.info("[LeechService] Method 2 yielded %d candidate(s).", len(ddl_res["downloads"]))
+            log.info("[LeechService] Method 2 yielded %d candidate(s).", len(ddl_res["downloads"]))
 
     # 3. Process Multi-source Torrents (Torrentio / Apibay / EZTV / TorrentsCSV / YTS)
     if tor_list:
         for tor in tor_list:
             source_url = tor.get("magnet") or tor.get("torrent_url")
-            if source_url:
+            q = str(tor.get("quality", "1080p"))
+            if source_url and q.lower() not in ("480p", "360p", "sd"):
                 prov = tor.get("provider", "Torrent")
-                q = tor.get("quality", "1080p")
                 candidates.append(
                     LeechCandidate(
                         method=tor.get("method", "torrent"),
@@ -338,6 +344,11 @@ async def find_all_candidates(
                     )
                 )
         log.info("[LeechService] Method 3 yielded %d candidate(s).", len(tor_list))
+
+    # For movies, strictly prioritize 1080p candidates over 720p candidates
+    if not is_series and season is None and episode is None:
+        if any("1080" in str(c.quality) for c in candidates):
+            candidates.sort(key=lambda c: 0 if "1080" in str(c.quality) else 1)
 
     log.info("[LeechService] Total candidates acquired: %d", len(candidates))
     return candidates
@@ -757,8 +768,15 @@ async def _execute_leech(
                         )
 
                     # 2. Try Seedr if not preferred PikPak (or if PikPak didn't resolve)
+                    is_season_pack = bool(candidate.extra and candidate.extra.get("is_season_pack"))
                     can_try_seedr = seedr_service.seedr_client.is_configured() and not prefer_pikpak
-                    if can_try_seedr and candidate_bytes > int(2.0 * 1024 * 1024 * 1024):
+                    if can_try_seedr and is_season_pack:
+                        log.info(
+                            "[LeechService] Candidate '%s' is a season pack. Skipping Seedr 2.0 GB tier (using PikPak or direct single-file aria2c).",
+                            candidate.method_name,
+                        )
+                        can_try_seedr = False
+                    elif can_try_seedr and candidate_bytes > int(2.0 * 1024 * 1024 * 1024):
                         log.warning(
                             "[LeechService] Candidate size (%s) exceeds Seedr 2.0 GB tier. Skipping Seedr attempt.",
                             downloader.format_bytes(candidate_bytes)
@@ -861,12 +879,23 @@ async def _execute_leech(
                         except Exception as d_check_err:
                             log.debug("[LeechService] Disk check: %s", d_check_err)
 
+                        tor_source = (
+                            candidate.extra.get("torrent_url")
+                            if (candidate.extra and candidate.extra.get("torrent_url"))
+                            else candidate.source_url
+                        )
+                        sel_idx = (
+                            int(candidate.extra["file_idx"]) + 1
+                            if (candidate.extra and candidate.extra.get("file_idx") is not None)
+                            else None
+                        )
                         local_file = await downloader.download_torrent(
-                            magnet_or_torrent=candidate.source_url,
+                            magnet_or_torrent=tor_source,
                             dest_dir=temp_dir,
                             task_key=task_key,
                             progress_callback=_download_progress,
                             episode_hint=f"S{season:02d}E{episode:02d}" if (is_series and season and episode) else None,
+                            select_file_idx=sel_idx,
                         )
                 elif candidate.method == "telegram":
                     # Download telegram media

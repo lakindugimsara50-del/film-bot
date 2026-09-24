@@ -909,7 +909,157 @@ class TestLeechService(unittest.TestCase):
             if os.path.exists(tf_path):
                 os.remove(tf_path)
 
+    def test_extract_quality_strict_480p_and_ds4k(self):
+        """Verify untagged HDTV/XviD/SD releases are classified as 480p and DS4K 1080p as 1080p."""
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Game of Thrones S01E01 HDTV XviD-FEVER [eztv]"),
+            "480p",
+        )
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Game.of.Thrones.S01E01.WEB-DL.x264-GROUP"),
+            "480p",
+        )
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Game of Thrones S01E01 720p HDTV x264-CTU [eztv]"),
+            "720p",
+        )
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Inception.2010.1080p.DS4K.BluRay.x265"),
+            "1080p",
+        )
+        self.assertEqual(
+            torrent_finder.extract_quality_from_name("Inception.2010.2160p.UHD.BluRay"),
+            "2160p",
+        )
+
+    def test_torrent_finder_excludes_480p_and_prioritizes_single_episode_hd(self):
+        """Verify 480p/SD torrents are excluded and standalone HD episodes rank above season packs."""
+        async def run_test():
+            mock_apibay = MagicMock()
+            mock_apibay.status_code = 200
+            mock_apibay.json.return_value = [
+                # 480p untagged XviD release with high seeds (MUST be excluded!)
+                {
+                    "name": "Game of Thrones S01E01 HDTV XviD-FEVER [eztv]",
+                    "info_hash": "HASH_480P_XVID",
+                    "seeders": "500",
+                    "size": str(int(550 * 1024**2)),
+                },
+                # Explicit 480p release (MUST be excluded!)
+                {
+                    "name": "Game of Thrones S01E01 480p WEB-DL x264",
+                    "info_hash": "HASH_480P_EXPLICIT",
+                    "seeders": "300",
+                    "size": str(int(350 * 1024**2)),
+                },
+                # Standalone 720p single episode with 9 seeds (MUST be included and ranked above season pack)
+                {
+                    "name": "Game of Thrones S01E01 720p HDTV x264-CTU [eztv]",
+                    "info_hash": "HASH_720P_SINGLE",
+                    "seeders": "9",
+                    "size": str(int(1.45 * 1024**3)),
+                },
+                # Standalone 1080p single episode with 6 seeds (MUST rank #1 above 720p single episode)
+                {
+                    "name": "Game of Thrones S01E01 1080p WEB-DL x265",
+                    "info_hash": "HASH_1080P_SINGLE",
+                    "seeders": "6",
+                    "size": str(int(1.6 * 1024**3)),
+                },
+            ]
+
+            mock_torrentio = MagicMock()
+            mock_torrentio.status_code = 200
+            mock_torrentio.json.return_value = {
+                "streams": [
+                    # Season pack 1080p with 789 seeds
+                    {
+                        "name": "Torrentio\n1080p",
+                        "title": "Game.of.Thrones.SEASON.01.S01.COMPLETE.1080p.BluRay.x265-PSA\nGame.of.Thrones.S01E01.1080p.mkv\n👤 789 💾 1.08 GB ⚙️ 1337x",
+                        "infoHash": "HASH_1080P_PACK",
+                        "fileIdx": 0,
+                    },
+                    # Wrong series title from Torrentio ("The Game 2025 S01E01") -> MUST be excluded!
+                    {
+                        "name": "Torrentio\n1080p",
+                        "title": "The.Game.2025.S01E01.1080p.HEVC.x265\n👤 50 💾 900 MB ⚙️ ThePirateBay",
+                        "infoHash": "HASH_WRONG_SHOW",
+                    },
+                ]
+            }
+
+            def fake_get(url, *args, **kwargs):
+                u = str(url)
+                if "apibay" in u:
+                    return mock_apibay
+                if "torrentio" in u:
+                    return mock_torrentio
+                m = MagicMock()
+                m.status_code = 200
+                m.json.return_value = {"torrents": []}
+                return m
+
+            with patch("httpx.AsyncClient.get", side_effect=fake_get):
+                results = await torrent_finder.search_all_torrents(
+                    title="Game of Thrones",
+                    imdb_id="tt0944947",
+                    season=1,
+                    episode=1,
+                    is_series=True,
+                )
+                hashes = [r["hash"] for r in results]
+                # 480p and wrong show must be completely excluded
+                self.assertNotIn("hash_480p_xvid", hashes)
+                self.assertNotIn("hash_480p_explicit", hashes)
+                self.assertNotIn("hash_wrong_show", hashes)
+                # Standalone 1080p single episode should be #1, standalone 720p #2, season pack #3
+                self.assertEqual(results[0]["hash"], "hash_1080p_single")
+                self.assertFalse(results[0]["is_season_pack"])
+                self.assertEqual(results[1]["hash"], "hash_720p_single")
+                self.assertFalse(results[1]["is_season_pack"])
+                self.assertEqual(results[2]["hash"], "hash_1080p_pack")
+                self.assertTrue(results[2]["is_season_pack"])
+
+        asyncio.run(run_test())
+
+    def test_movie_collection_pack_excluded_and_1080p_prioritized_in_leech_service(self):
+        """Verify multi-movie packs are rejected and find_all_candidates prioritizes 1080p for movies."""
+        self.assertTrue(torrent_finder.is_movie_collection_pack("Imdb top 263 movies 1080p", "Inception"))
+        self.assertTrue(torrent_finder.is_movie_collection_pack("Inception & Prestige Complete Collection 1080p", "Inception"))
+        self.assertFalse(torrent_finder.is_movie_collection_pack("Inception (2010) [1080p] [BluRay] [YTS.MX]", "Inception"))
+
+        async def run_candidates_test():
+            fake_ddl = {
+                "quality": "720p",
+                "size": "850 MB",
+                "downloads": [{"direct_url": "https://pixeldrain.com/api/file/abc", "host": "pixeldrain"}],
+            }
+            fake_torrents = [
+                {
+                    "title": "Inception (2010) [1080p]",
+                    "magnet": "magnet:?xt=urn:btih:HASH1080",
+                    "hash": "hash1080",
+                    "quality": "1080p",
+                    "size": "1.8 GB",
+                    "size_bytes": int(1.8 * 1024**3),
+                    "seeds": 500,
+                    "provider": "YTS",
+                    "method": "yts",
+                }
+            ]
+            with patch("services.scrapers.method1_telegram.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.method3_ddl.search", new_callable=AsyncMock, return_value=fake_ddl), \
+                 patch("services.scrapers.torrent_finder.search_all_torrents", new_callable=AsyncMock, return_value=fake_torrents):
+                cands = await leech_service.find_all_candidates(title="Inception", year=2010, is_series=False)
+                self.assertEqual(len(cands), 2)
+                # 1080p torrent must be prioritized ahead of 720p DDL for movies
+                self.assertEqual(cands[0].quality, "1080p")
+                self.assertEqual(cands[1].quality, "720p")
+
+        asyncio.run(run_candidates_test())
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

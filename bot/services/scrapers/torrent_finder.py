@@ -33,57 +33,90 @@ DEFAULT_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-# High-speed public trackers to attach to all magnet links
+# High-speed public trackers (both UDP and HTTP/HTTPS for firewall resilience)
 PUBLIC_TRACKERS = [
     "udp://tracker.opentrackr.org:1337/announce",
+    "http://tracker.opentrackr.org:1337/announce",
     "udp://open.stealth.si:80/announce",
     "udp://tracker.torrent.eu.org:451/announce",
     "udp://tracker.openbittorrent.com:6969/announce",
-    "udp://tracker.openbittorrent.com:80/announce",
+    "http://tracker.openbittorrent.com:80/announce",
     "udp://open.tracker.cl:1337/announce",
     "udp://explodie.org:6969/announce",
     "udp://tracker.moeking.me:6969/announce",
     "udp://p4p.arenabg.com:1337/announce",
     "udp://movies.zsw.ca:6969/announce",
+    "https://tracker.tamersunion.org:443/announce",
+    "https://tracker.gbitt.info:443/announce",
     "udp://9.rarbg.to:2710/announce",
 ]
 
 # File size boundaries
 MIN_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB minimum to avoid posters/soundtracks/samples
-MAX_FILE_SIZE_BYTES = int(1.95 * 1024 * 1024 * 1024)  # 1.95 GB limit: guaranteed 100% Seedr-compatible & safe for Render disk
-SEEDR_SAFE_SIZE_BYTES = int(1.90 * 1024 * 1024 * 1024)
+MAX_FILE_SIZE_BYTES = int(2.05 * 1024 * 1024 * 1024)  # 2.05 GB limit: Seedr-compatible & safe for Render disk
+SEEDR_SAFE_SIZE_BYTES = int(1.95 * 1024 * 1024 * 1024)
 
-# Regex patterns identifying non-video junk files
+# Regex patterns identifying non-video junk files, subtitle packs, soundtracks, and 3D SBS
 JUNK_EXTENSIONS = [
     r"\.jpg\b", r"\.jpeg\b", r"\.png\b", r"\.gif\b",
     r"\.mp3\b", r"\.flac\b", r"\.wav\b", r"\.aac\b",
     r"\.pdf\b", r"\.epub\b", r"\.mobi\b",
     r"\.txt\b", r"\.nfo\b", r"\.exe\b", r"\.zip\b", r"\.rar\b",
     r"\bsoundtrack\b", r"\bost\b", r"\balbum\b", r"\bdiscography\b",
-    r"\bwallpaper\b", r"\bposter\b",
+    r"\bmusic\s+from\b", r"\bmotion\s+picture\s+score\b", r"\boriginal\s+score\b",
+    r"\bsous[\s._-]*titres\b", r"\bsubpack\b", r"\bsubtitles[\s._-]*only\b",
+    r"\b3d[\s._-]*(?:full[\s._-]*)?sbs\b", r"\bhalf[\s._-]*sbs\b", r"\bhsbs\b",
+    r"\bwallpaper\b", r"\bposter\b", r"\baudiobook\b",
+]
+
+# Patterns identifying multi-movie collection packs to avoid when searching for a single film
+MOVIE_COLLECTION_PATTERNS = [
+    r"\b(?:top|imdb)\s*\d{2,3}\s*movies\b",
+    r"\b(?:trilogy|quadrilogy|pentalogy|hexalogy|anthology|duology)\b",
+    r"\b(?:filmography|filmografi)\b",
+    r"\bmovie\s*collection\b",
+    r"\bcomplete\s*collection\b",
+    r"\b\d+\s*peliculas\b",
 ]
 
 
 def is_junk_release(name: str) -> bool:
-    """Check if the release is a non-video asset (poster, soundtrack, text, executable)."""
+    """Check if the release is a non-video asset (poster, soundtrack, text, executable, 3D SBS)."""
     name_lower = name.lower()
     return any(re.search(pat, name_lower) for pat in JUNK_EXTENSIONS)
 
 
+def is_movie_collection_pack(name: str, target_title: str = "") -> bool:
+    """Detect multi-movie mega-packs (e.g. 'IMDb Top 263 Movies', 'Filmography', 'Trilogy') unless requested."""
+    n = name.lower()
+    t = (target_title or "").lower()
+    for pat in MOVIE_COLLECTION_PATTERNS:
+        if re.search(pat, n) and not re.search(pat, t):
+            return True
+    return False
+
+
 def get_release_penalty(name: str) -> int:
-    """Return penalty points for commentary tracks, samples, or low-quality CAM/TS recordings."""
+    """Return penalty points for commentary tracks, samples, foreign dubs, or low-quality CAM/TS recordings."""
     n = name.lower()
     penalty = 0
     if "rifftrax" in n or "commentary" in n or "audio commentary" in n:
         penalty += 1000
-    if "sample" in n or "trailer" in n or "preview" in n or "extras" in n:
+    if "sample" in n or "trailer" in n or "preview" in n or "extras" in n or "censored" in n:
         penalty += 2000
-    if any(k in n for k in ["telesync", "hdts", "hd-ts", "camrip", "hdcam", "hd-cam", "cam-rip", "workprint"]):
-        penalty += 500
-    elif re.search(r"\b(cam|ts)\b", n):
-        penalty += 500
-    if any(k in n for k in ["swesub", "nordic", "latino", "french", "german", "ita", "sub ita", "hindi dubbed", "tamil dubbed"]):
-        penalty += 40
+    if any(k in n for k in ["telesync", "hdts", "hd-ts", "camrip", "hdcam", "hd-cam", "cam-rip", "workprint", "dvdscr", "screener"]):
+        penalty += 1000
+    elif re.search(r"\b(cam|ts|tc)\b", n):
+        penalty += 1000
+    if any(k in n for k in [
+        "swesub", "nordic", "norsub", "dansub", "latino", "french", "truefrench", "vostfr", "saison",
+        "german", "deutsch", "ita", "sub ita", "italiano", "stagioni", "trono di spade",
+        "castellano", "temporada", "juego de tronos", "espanol", "español",
+        "dublado", "lektor", "arabic-sub",
+    ]):
+        penalty += 250
+    if re.search(r"[а-яА-Я]", name):
+        penalty += 300
     return penalty
 
 
@@ -96,17 +129,60 @@ def build_magnet_uri(info_hash: str, title: str) -> str:
 
 
 def extract_quality_from_name(name: str) -> str:
-    """Extract standard resolution/quality tag from a release name."""
+    """
+    Extract standard resolution/quality tag from a release name.
+    Strictly identifies 1080p, 720p, 2160p, and classifies SD / untagged releases as 480p
+    so that SD torrents are never falsely promoted to 720p HD.
+    """
     n = name.lower()
-    if "2160p" in n or "4k" in n or "uhd" in n:
-        return "2160p"
-    if "1080p" in n or "1080i" in n:
-        return "1080p"
-    if "720p" in n or "720" in n:
-        return "720p"
-    if "480p" in n or "dvdrip" in n or "xvid" in n or "hdtv" in n or "webrip" in n:
+    # Explicit SD / low-resolution markers
+    if re.search(r"\b(480p|480i|360p|240p|406p|540p|576p|sd|dvdrip|xvid|divx|tvrip|vcd|svcd|camrip|hdcam|telesync|hdts|dvdscr)\b", n):
         return "480p"
-    return "720p"
+    if n.endswith(".avi") or ".avi " in n:
+        return "480p"
+    # Check 1080p and 720p BEFORE 4K so tags like '720p DS4K' are accurately classified as 720p
+    if re.search(r"\b(1080p|1080i|1920x1080|fhd|fullhd|full-hd|m1080|bd1080)\b", n) or "1080p" in n:
+        return "1080p"
+    if re.search(r"\b(720p|720i|1280x720|hd720)\b", n) or "720p" in n:
+        return "720p"
+    if re.search(r"\b(2160p|4k|uhd|3840x2160)\b", n):
+        return "2160p"
+    # Untagged HDTV / WEBRip / BDRip without 720p/1080p or completely untagged releases are SD (480p)
+    return "480p"
+
+
+def is_exact_single_episode(name: str, season: Optional[int], episode: Optional[int]) -> bool:
+    """
+    Return True if the release name represents a single-episode release (e.g. S01E01, 1x01)
+    rather than a full season pack or multi-season pack.
+    """
+    if season is None or episode is None:
+        return False
+    n = name.lower()
+    # Reject if it explicitly mentions multi-season or full-season pack keywords
+    if re.search(r"\b(complete|integrale|temporada|saison|stagioni|seasons?\s*\d+\s*[-~to]+\s*\d+|s0?\d+\s*[-~]\s*s?0?\d+)\b", n):
+        return False
+    # Reject if it is an episode range (e.g. S01E01-E10, S01E01-10)
+    if re.search(rf"\bs0?{season}\s*e(?:p)?0?{episode}\s*(?:[-~]|[-~]?e(?:p)?)\s*\d+\b", n):
+        return False
+    if re.search(rf"\b0?{season}x0?{episode}\s*(?:[-~]|[-~]?\d{{1,2}}x|[-~]?x)\s*\d+\b", n):
+        return False
+
+    exact_patterns = [
+        rf"\bs0?{season}e0?{episode}\b",
+        rf"\bs0?{season}\s*ep?0?{episode}\b",
+        rf"\b0?{season}x0?{episode}\b",
+        rf"season\s*0?{season}.*?episode\s*0?{episode}\b",
+        rf"s0?{season}[\s._-]+e0?{episode}\b",
+    ]
+    return any(re.search(p, n) for p in exact_patterns)
+
+
+def is_season_pack_release(name: str, season: Optional[int], episode: Optional[int]) -> bool:
+    """Return True if a series release is a season/multi-episode pack rather than a single episode."""
+    if season is None and episode is None:
+        return False
+    return not is_exact_single_episode(name, season, episode)
 
 
 def matches_season_episode(name: str, season: Optional[int], episode: Optional[int]) -> bool:
@@ -228,7 +304,7 @@ def calculate_relevance_score(
     season: Optional[int] = None,
     episode: Optional[int] = None,
 ) -> int:
-    """Compute title relevance score penalizing commentary and CAM releases."""
+    """Compute title relevance score penalizing commentary, foreign dubs, and CAM releases."""
     score = 100
     clean_n = re.sub(r"[._-]", " ", tor_name).lower()
     clean_target = re.sub(r"[._-]", " ", target_title).lower()
@@ -239,10 +315,13 @@ def calculate_relevance_score(
         score += 30
 
     if is_series and season is not None and episode is not None:
-        # Boost exact episode release over full season packs
-        exact_pat = rf"\bs0?{season}[\s._-]*e(?:p)?0?{episode}\b|\b0?{season}x0?{episode}\b"
-        if re.search(exact_pat, tor_name.lower()):
-            score += 15
+        # Boost exact single-episode release significantly over season packs
+        if is_exact_single_episode(tor_name, season, episode):
+            score += 35
+        else:
+            exact_pat = rf"\bs0?{season}[\s._-]*e(?:p)?0?{episode}\b|\b0?{season}x0?{episode}\b"
+            if re.search(exact_pat, tor_name.lower()):
+                score += 15
 
     penalty = get_release_penalty(tor_name)
     score -= penalty
@@ -260,7 +339,7 @@ async def search_torrentio(
     """
     Search Torrentio global aggregator (aggregates 1337x, EZTV, YTS, ThePirateBay,
     KickassTorrents, TorrentGalaxy, MagnetDL, Torrent9, Rutor, etc.).
-    Supports both movies and TV series episodes.
+    Supports both movies and TV series episodes, strictly filtering out 480p/SD/CAM.
     """
     clean_id = (imdb_id or "").strip()
     if not clean_id:
@@ -271,48 +350,80 @@ async def search_torrentio(
     if is_series or (season is not None and episode is not None):
         s_num = season or 1
         e_num = episode or 1
-        url = f"https://torrentio.strem.fun/stream/series/{clean_id}:{s_num}:{e_num}.json"
+        urls = [
+            f"https://torrentio.strem.fun/qualityfilter=480p,scr,cam,unknown|sizefilter=2.2GB/stream/series/{clean_id}:{s_num}:{e_num}.json",
+            f"https://torrentio.strem.fun/stream/series/{clean_id}:{s_num}:{e_num}.json",
+        ]
     else:
-        url = f"https://torrentio.strem.fun/stream/movie/{clean_id}.json"
+        urls = [
+            f"https://torrentio.strem.fun/qualityfilter=480p,scr,cam,unknown|sizefilter=2.2GB/stream/movie/{clean_id}.json",
+            f"https://torrentio.strem.fun/stream/movie/{clean_id}.json",
+        ]
 
-    log.info("[TorrentFinder] Torrentio querying: %s (target='%s')", url, target_title)
+    log.info("[TorrentFinder] Torrentio querying: %s (target='%s')", urls[0], target_title)
     candidates: list[dict] = []
+    seen_hashes: set[str] = set()
     headers = DEFAULT_HEADERS
 
-    data = None
-    for attempt in range(2):
-        try:
-            async with httpx.AsyncClient(headers=headers, timeout=12, follow_redirects=True) as client:
-                resp = await client.get(url)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    break
-                else:
-                    log.warning("[TorrentFinder] Torrentio HTTP %d on %s (attempt %d)", resp.status_code, url, attempt + 1)
+    raw_streams: list[dict] = []
+    async with httpx.AsyncClient(headers=headers, timeout=12, follow_redirects=True) as client:
+        for url in urls:
+            for attempt in range(2):
+                try:
+                    resp = await client.get(url)
+                    if resp.status_code == 200:
+                        st = resp.json().get("streams", [])
+                        if st:
+                            raw_streams.extend(st)
+                        break
+                    else:
+                        log.warning("[TorrentFinder] Torrentio HTTP %d on %s (attempt %d)", resp.status_code, url, attempt + 1)
+                        if attempt == 0:
+                            await asyncio.sleep(1.5)
+                except Exception as exc:
+                    log.warning("[TorrentFinder] Torrentio attempt %d error: %s", attempt + 1, exc)
                     if attempt == 0:
-                        await asyncio.sleep(2.0)
-        except Exception as exc:
-            log.warning("[TorrentFinder] Torrentio attempt %d error: %s", attempt + 1, exc)
-            if attempt == 0:
-                await asyncio.sleep(2.0)
+                        await asyncio.sleep(1.5)
 
-    if not data:
+    if not raw_streams:
         return []
 
     try:
-        streams = data.get("streams", [])
-        for s in streams:
+        from services.downloader import format_bytes
+
+        for s in raw_streams:
             info_hash = s.get("infoHash", "").strip().lower()
-            if not info_hash or len(info_hash) != 40:
+            if not info_hash or len(info_hash) < 8 or info_hash in seen_hashes:
                 continue
 
             tf = s.get("title", "")
             nf = s.get("name", "")
             lines = [line.strip() for line in tf.split("\n") if line.strip()]
-            release_name = lines[0] if lines else target_title
+            content_lines = [
+                l for l in lines
+                if not any(icon in l for icon in ("👤", "💾", "⚙️", "🇬🇧", "🇫🇷", "🇪🇸", "🇮🇹", "🇩🇪", "🇷🇺", "🇵🇹", "🇮🇳", "🇸🇦", "🇲🇽", "🇭🇺"))
+            ]
+            pack_title = content_lines[0] if content_lines else (lines[0] if lines else target_title)
+            episode_file = content_lines[1] if len(content_lines) > 1 else pack_title
 
-            if is_junk_release(release_name):
+            if is_junk_release(pack_title) or is_junk_release(episode_file):
                 continue
+
+            # Validate title relevance and reject wrong shows or multi-movie collection packs
+            if target_title:
+                if is_series or season is not None or episode is not None:
+                    if not title_matches(pack_title, target_title):
+                        continue
+                    if not (
+                        is_valid_series_title(pack_title, target_title, season, episode)
+                        or is_valid_series_title(episode_file, target_title, season, episode)
+                    ):
+                        continue
+                else:
+                    if not title_matches(pack_title, target_title):
+                        continue
+                    if is_movie_collection_pack(pack_title, target_title):
+                        continue
 
             # Parse seeders: 👤 (\d+)
             seeds_m = re.search(r"👤\s*(\d+)", tf)
@@ -334,20 +445,41 @@ async def search_torrentio(
             if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
                 continue
 
-            # Parse provider: ⚙️\s*([^\n\r]+)
+            quality = extract_quality_from_name(f"{nf} {pack_title} {episode_file}")
+            # Strictly enforce >= 720p HD quality (reject 480p / SD)
+            if quality == "480p":
+                continue
+
+            # Parse upstream indexer from ⚙️
             prov_m = re.search(r"⚙️\s*([^\n\r]+)", tf)
-            provider = prov_m.group(1).strip() if prov_m else "Torrentio"
+            sub_prov = prov_m.group(1).strip() if prov_m else ""
+            provider = f"Torrentio ({sub_prov})" if sub_prov and "torrentio" not in sub_prov.lower() else "Torrentio"
 
-            quality = extract_quality_from_name(f"{nf} {tf}")
-            magnet = build_magnet_uri(info_hash, release_name)
-            from services.downloader import format_bytes
+            is_season_pack = bool(
+                (is_series or season is not None or episode is not None)
+                and (len(content_lines) > 1 or is_season_pack_release(pack_title, season, episode))
+            )
 
-            rel_score = calculate_relevance_score(release_name, target_title, is_series=is_series)
+            if is_season_pack and episode_file != pack_title:
+                ep_base = episode_file.replace("\\", "/").split("/")[-1]
+                display_name = f"{pack_title} [{ep_base}]"
+            else:
+                display_name = pack_title
+
+            seen_hashes.add(info_hash)
+            magnet = build_magnet_uri(info_hash, pack_title)
+            rel_score = calculate_relevance_score(
+                display_name,
+                target_title or pack_title,
+                is_series=is_series,
+                season=season,
+                episode=episode,
+            )
 
             candidates.append({
                 "method": "torrent",
                 "provider": provider,
-                "title": release_name,
+                "title": display_name,
                 "quality": quality,
                 "size": format_bytes(size_bytes),
                 "size_bytes": size_bytes,
@@ -358,10 +490,11 @@ async def search_torrentio(
                 "peers": 0,
                 "relevance_score": rel_score,
                 "file_idx": s.get("fileIdx"),
+                "is_season_pack": is_season_pack,
             })
 
         if candidates:
-            log.info("[TorrentFinder] Torrentio yielded %d valid candidate(s).", len(candidates))
+            log.info("[TorrentFinder] Torrentio yielded %d valid HD candidate(s).", len(candidates))
     except Exception as exc:
         log.warning("[TorrentFinder] Torrentio error: %s", exc)
 
@@ -378,7 +511,7 @@ async def search_apibay(
 ) -> list[dict]:
     """
     Search The Pirate Bay via the official Apibay JSON API.
-    Supports movies (both old and new) and TV series episodes.
+    Supports movies (both old and new) and TV series episodes, strictly filtering out 480p/SD.
     """
     candidates: list[dict] = []
     seen_hashes: set[str] = set()
@@ -420,8 +553,10 @@ async def search_apibay(
                         if info_hash in seen_hashes:
                             continue
 
-                        # Filter junk extensions
+                        # Filter junk extensions and multi-movie collection packs
                         if is_junk_release(name):
+                            continue
+                        if not is_series and is_movie_collection_pack(name, show_name):
                             continue
 
                         # Series prefix / title validation
@@ -431,6 +566,11 @@ async def search_apibay(
                         else:
                             if not title_matches(name, show_name):
                                 continue
+
+                        quality = extract_quality_from_name(name)
+                        # Strictly reject 480p / SD torrents
+                        if quality == "480p":
+                            continue
 
                         try:
                             size_bytes = int(it.get("size", 0))
@@ -450,8 +590,9 @@ async def search_apibay(
                         except (ValueError, TypeError):
                             leechers = 0
 
+                        is_season_pack = is_season_pack_release(name, season, episode) if is_series else False
+
                         seen_hashes.add(info_hash)
-                        quality = extract_quality_from_name(name)
                         magnet = build_magnet_uri(info_hash, name)
                         from services.downloader import format_bytes
 
@@ -462,6 +603,8 @@ async def search_apibay(
                             season=season,
                             episode=episode,
                         )
+                        if is_season_pack:
+                            rel_score -= 60
 
                         candidates.append({
                             "method": "torrent",
@@ -476,14 +619,17 @@ async def search_apibay(
                             "seeds": seeders,
                             "peers": leechers,
                             "relevance_score": rel_score,
+                            "is_season_pack": is_season_pack,
                         })
 
                     if candidates:
-                        log.info("[TorrentFinder] Apibay query '%s' yielded %d valid candidate(s).", q, len(candidates))
+                        log.info("[TorrentFinder] Apibay query '%s' yielded %d valid HD candidate(s).", q, len(candidates))
                         break
                 except Exception as exc:
                     log.warning("[TorrentFinder] Apibay error on %s for '%s': %s", base_url, q, exc)
                     continue
+            if candidates:
+                break
 
     return candidates
 
@@ -497,7 +643,7 @@ async def search_eztv(
 ) -> list[dict]:
     """
     Search EZTV API for television series releases.
-    Filters specifically for requested season & episode, checking page 1 and page 2.
+    Filters specifically for requested season & episode and >= 720p HD quality.
     """
     log.info("[TorrentFinder] EZTV searching: title='%s', imdb_id=%s, S%sE%s", title, imdb_id, season, episode)
     candidates: list[dict] = []
@@ -509,7 +655,7 @@ async def search_eztv(
 
     clean_imdb = (imdb_id or "").lstrip("t")
 
-    async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=4.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=6.0, follow_redirects=True) as client:
         for base_url in eztv_bases:
             try:
                 pages_to_check = [1, 2] if clean_imdb else [1]
@@ -551,6 +697,10 @@ async def search_eztv(
                             if str(tor_episode) != str(episode) and not matches_season_episode(tor_title, season, episode):
                                 continue
 
+                        quality = extract_quality_from_name(tor_title)
+                        if quality == "480p":
+                            continue
+
                         try:
                             size_bytes = int(tor.get("size_bytes", 0))
                         except (ValueError, TypeError):
@@ -559,7 +709,7 @@ async def search_eztv(
                         if size_bytes < MIN_FILE_SIZE_BYTES or size_bytes > max_size_bytes:
                             continue
 
-                        info_hash = tor.get("hash", "").strip()
+                        info_hash = tor.get("hash", "").strip().lower()
                         magnet = tor.get("magnet_url") or (build_magnet_uri(info_hash, tor_title) if info_hash else "")
                         if not magnet:
                             continue
@@ -574,10 +724,16 @@ async def search_eztv(
                         except (ValueError, TypeError):
                             peers = 0
 
-                        quality = extract_quality_from_name(tor_title)
                         from services.downloader import format_bytes
 
-                        rel_score = calculate_relevance_score(tor_title, title, is_series=True)
+                        rel_score = calculate_relevance_score(
+                            tor_title,
+                            title,
+                            is_series=True,
+                            season=season,
+                            episode=episode,
+                        )
+                        is_season_pack = is_season_pack_release(tor_title, season, episode)
 
                         candidates.append({
                             "method": "torrent",
@@ -592,10 +748,11 @@ async def search_eztv(
                             "seeds": seeds,
                             "peers": peers,
                             "relevance_score": rel_score,
+                            "is_season_pack": is_season_pack,
                         })
 
                 if candidates:
-                    log.info("[TorrentFinder] EZTV yielded %d valid candidate(s).", len(candidates))
+                    log.info("[TorrentFinder] EZTV yielded %d valid HD candidate(s).", len(candidates))
                     break
 
             except Exception as exc:
@@ -615,7 +772,7 @@ async def search_torrents_csv(
 ) -> list[dict]:
     """
     Search Torrents-CSV public open torrent index.
-    Covers movies and TV series with infohash and seeds.
+    Covers movies and TV series with infohash and seeds, strictly filtering out 480p/SD.
     """
     candidates: list[dict] = []
     seen_hashes: set[str] = set()
@@ -646,8 +803,10 @@ async def search_torrents_csv(
                         if info_hash in seen_hashes:
                             continue
 
-                        # Filter junk extensions (like .jpg posters)
+                        # Filter junk extensions and movie collection packs
                         if is_junk_release(name):
+                            continue
+                        if not is_series and is_movie_collection_pack(name, show_name):
                             continue
 
                         # Series prefix / title validation
@@ -657,6 +816,10 @@ async def search_torrents_csv(
                         else:
                             if not title_matches(name, show_name):
                                 continue
+
+                        quality = extract_quality_from_name(name)
+                        if quality == "480p":
+                            continue
 
                         try:
                             size_bytes = int(it.get("size_bytes", 0))
@@ -676,12 +839,21 @@ async def search_torrents_csv(
                         except (ValueError, TypeError):
                             leechers = 0
 
+                        is_season_pack = is_season_pack_release(name, season, episode) if is_series else False
+
                         seen_hashes.add(info_hash)
-                        quality = extract_quality_from_name(name)
                         magnet = build_magnet_uri(info_hash, name)
                         from services.downloader import format_bytes
 
-                        rel_score = calculate_relevance_score(name, show_name, is_series=is_series)
+                        rel_score = calculate_relevance_score(
+                            name,
+                            show_name,
+                            is_series=is_series,
+                            season=season,
+                            episode=episode,
+                        )
+                        if is_season_pack:
+                            rel_score -= 60
 
                         candidates.append({
                             "method": "torrent",
@@ -696,10 +868,11 @@ async def search_torrents_csv(
                             "seeds": seeders,
                             "peers": leechers,
                             "relevance_score": rel_score,
+                            "is_season_pack": is_season_pack,
                         })
 
                     if candidates:
-                        log.info("[TorrentFinder] Torrents-CSV query '%s' yielded %d valid candidate(s).", q, len(candidates))
+                        log.info("[TorrentFinder] Torrents-CSV query '%s' yielded %d valid HD candidate(s).", q, len(candidates))
                         break
             except Exception as exc:
                 log.warning("[TorrentFinder] Torrents-CSV error on '%s': %s", q, exc)
@@ -734,48 +907,58 @@ async def search_all_torrents(
 ) -> list[dict]:
     """
     Aggregates results from multiple torrent sources:
-    - If TV series: Torrentio (1337x/EZTV/Galaxy/TPB) + EZTV + Apibay + Torrents-CSV
-    - If Movie: Torrentio + YTS + Apibay + Torrents-CSV
+    - If TV series: Torrentio (1337x/EZTV/Galaxy/RARBG/TPB) + EZTV + Torrents-CSV + Apibay
+    - If Movie: YTS + Torrentio + Torrents-CSV + Apibay
 
-    Deduplicates by infohash and sorts by:
-    1. Tier 2: Size <= 2.05 GB (100% Seedr cloud compatible)
-    2. Relevance score: exact show/movie name, penalizing commentary/samples/CAM
-    3. Active seeds: alive torrents (>0 seeds) rank far above dead torrents
-    4. Quality: 1080p > 720p > 4K > 480p
-    5. Raw seed count
+    Strictly enforces:
+    - TV Series: >= 720p quality (1080p & 720p HD only; 480p/SD is strictly rejected)
+    - Movies: 1080p quality strictly prioritized (480p/SD is strictly rejected)
+    - Single-episode / single-file Seedr-compatible releases prioritized ahead of season packs
     """
     clean_title = re.sub(r"[._-]", " ", title).strip()
+    series_flag = bool(is_series or season is not None or episode is not None)
 
     # If imdb_id is missing, auto-resolve it via Cinemeta so Torrentio can be leveraged
     if not imdb_id:
-        imdb_id = await resolve_imdb_cinemeta(clean_title, is_series=is_series or season is not None)
+        imdb_id = await resolve_imdb_cinemeta(clean_title, is_series=series_flag)
         if imdb_id:
             log.info("[TorrentFinder] Resolved IMDb ID for '%s': %s", clean_title, imdb_id)
 
     tasks = []
 
-    if is_series or season is not None or episode is not None:
+    if series_flag:
         # Construct specific search query for series episode
         ep_tag = ""
         alt_ep_tag = ""
+        spaced_ep_tag = ""
         if season is not None and episode is not None:
             ep_tag = f"S{season:02d}E{episode:02d}"
             alt_ep_tag = f"{season}x{episode:02d}"
+            spaced_ep_tag = f"S{season:02d} E{episode:02d}"
         elif season is not None:
             ep_tag = f"S{season:02d}"
         elif episode is not None:
             ep_tag = f"E{episode:02d}"
 
         series_query = f"{clean_title} {ep_tag}".strip()
-        alt_series_queries = [f"{clean_title} {alt_ep_tag}".strip()] if alt_ep_tag else []
-        if season is not None:
+        alt_series_queries = []
+        if ep_tag:
+            for q_cand in (
+                f"{clean_title} {ep_tag} 1080p",
+                f"{clean_title} {ep_tag} 720p",
+                f"{clean_title} {spaced_ep_tag}".strip() if spaced_ep_tag else "",
+                f"{clean_title} {alt_ep_tag}".strip() if alt_ep_tag else "",
+            ):
+                if q_cand and q_cand not in alt_series_queries and q_cand != series_query:
+                    alt_series_queries.append(q_cand)
+        if season is not None and episode is None:
             s_q = f"{clean_title} S{season:02d}"
             if s_q not in alt_series_queries and s_q != series_query:
                 alt_series_queries.append(s_q)
-        if clean_title not in alt_series_queries and clean_title != series_query:
-            alt_series_queries.append(clean_title)
 
-        # 1. Torrentio (if imdb_id) - Highest quality multi-tracker aggregator
+        # 1. EZTV API (specialized TV indexer with .torrent URLs)
+        tasks.append(search_eztv(clean_title, imdb_id=imdb_id, season=season, episode=episode, max_size_bytes=max_size_bytes))
+        # 2. Torrentio (if imdb_id) - Highest quality multi-tracker aggregator
         if imdb_id:
             tasks.append(search_torrentio(
                 imdb_id=imdb_id,
@@ -785,18 +968,18 @@ async def search_all_torrents(
                 target_title=clean_title,
                 max_size_bytes=max_size_bytes,
             ))
-        # 2. EZTV API
-        tasks.append(search_eztv(clean_title, imdb_id=imdb_id, season=season, episode=episode, max_size_bytes=max_size_bytes))
-        # 3. Apibay
-        tasks.append(search_apibay(series_query, target_show_title=clean_title, season=season, episode=episode, alternate_queries=alt_series_queries, max_size_bytes=max_size_bytes))
-        # 4. Torrents-CSV
+        # 3. Torrents-CSV
         tasks.append(search_torrents_csv(series_query, target_show_title=clean_title, season=season, episode=episode, alternate_queries=alt_series_queries, max_size_bytes=max_size_bytes))
+        # 4. Apibay
+        tasks.append(search_apibay(series_query, target_show_title=clean_title, season=season, episode=episode, alternate_queries=alt_series_queries, max_size_bytes=max_size_bytes))
     else:
         # Movie search
         movie_query = f"{clean_title} {year}" if year else clean_title
-        alt_movie_queries = [clean_title] if year else []
+        alt_movie_queries = [f"{movie_query} 1080p", clean_title] if year else [f"{clean_title} 1080p"]
 
-        # 1. Torrentio (if imdb_id)
+        # 1. YTS (First so official YTS .torrent URLs and metadata are preserved on hash deduplication)
+        tasks.append(method_yts.search(clean_title, year=year, imdb_id=imdb_id, max_size_bytes=max_size_bytes))
+        # 2. Torrentio (if imdb_id)
         if imdb_id:
             tasks.append(search_torrentio(
                 imdb_id=imdb_id,
@@ -804,43 +987,60 @@ async def search_all_torrents(
                 target_title=clean_title,
                 max_size_bytes=max_size_bytes,
             ))
-        # 2. YTS
-        tasks.append(method_yts.search(clean_title, year=year, imdb_id=imdb_id, max_size_bytes=max_size_bytes))
-        # 3. Apibay
-        tasks.append(search_apibay(movie_query, alternate_queries=alt_movie_queries, max_size_bytes=max_size_bytes))
-        # 4. Torrents-CSV
+        # 3. Torrents-CSV
         tasks.append(search_torrents_csv(movie_query, alternate_queries=alt_movie_queries, max_size_bytes=max_size_bytes))
+        # 4. Apibay
+        tasks.append(search_apibay(movie_query, alternate_queries=alt_movie_queries, max_size_bytes=max_size_bytes))
 
     results_lists = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_torrents: list[dict] = []
-    seen_hashes: set[str] = set()
+    hash_to_tor: dict[str, dict] = {}
 
     for res in results_lists:
         if isinstance(res, list):
             for tor in res:
+                q_str = tor.get("quality", "").lower()
+                # Strictly exclude 480p / SD across all sources
+                if "480" in q_str:
+                    continue
+
                 tor.setdefault("provider", "YTS" if tor.get("method") == "yts" else "Torrent")
                 if "relevance_score" not in tor:
                     tor["relevance_score"] = calculate_relevance_score(
                         tor.get("title", ""),
                         clean_title,
-                        is_series=is_series,
+                        is_series=series_flag,
                         season=season,
                         episode=episode,
                     )
+                if "is_season_pack" not in tor:
+                    tor["is_season_pack"] = is_season_pack_release(tor.get("title", ""), season, episode) if series_flag else False
+
                 h = tor.get("hash", "").strip().lower()
-                if h and h in seen_hashes:
+                if h and h in hash_to_tor:
+                    existing = hash_to_tor[h]
+                    # Merge missing torrent_url or file_idx or higher seed count from duplicate indexer
+                    if tor.get("torrent_url") and not existing.get("torrent_url"):
+                        existing["torrent_url"] = tor["torrent_url"]
+                    if tor.get("file_idx") is not None and existing.get("file_idx") is None:
+                        existing["file_idx"] = tor["file_idx"]
+                    if tor.get("seeds", 0) > existing.get("seeds", 0):
+                        existing["seeds"] = tor["seeds"]
+                    if existing.get("provider") == "ThePirateBay" and tor.get("provider") != "ThePirateBay":
+                        existing["provider"] = tor["provider"]
                     continue
+
                 if h:
-                    seen_hashes.add(h)
+                    hash_to_tor[h] = tor
                 all_torrents.append(tor)
 
-    log.info("[TorrentFinder] Total raw torrent candidates collected: %d", len(all_torrents))
+    log.info("[TorrentFinder] Total HD torrent candidates collected: %d", len(all_torrents))
 
-    def _rank_torrent(tor: dict) -> tuple[int, int, int, int, int]:
+    def _rank_torrent(tor: dict) -> tuple[int, int, int, int, int, int, int]:
         sz = tor.get("size_bytes", 0)
-        # Tier 2: 50MB <= sz <= 1.90GB (100% Seedr cloud compatible)
-        # Tier 1: 1.90GB < sz <= max_size_bytes (<= 1.95GB)
+        # Tier 2: 50MB <= sz <= 1.95GB (100% Seedr cloud compatible)
+        # Tier 1: 1.95GB < sz <= max_size_bytes (<= 2.05GB / PikPak / FFmpeg Smart 1080p)
         # Tier 0: < 50MB or > max_size_bytes
         if MIN_FILE_SIZE_BYTES <= sz <= SEEDR_SAFE_SIZE_BYTES:
             seedr_tier = 2
@@ -850,10 +1050,18 @@ async def search_all_torrents(
             seedr_tier = 0
 
         rel_score = tor.get("relevance_score", 0)
+        # 1. Clean release check: genuine English/matching release without commentary/Rifftrax/CAM/foreign dub penalties
+        is_clean = 1 if rel_score >= 80 else 0
 
+        # 2. Active seeds check: alive torrents (>0 seeds) always rank above dead 0-seed torrents
         seeds = tor.get("seeds", 0)
         has_seeds = 1 if seeds > 0 else 0
 
+        # 3. Single-episode / single-movie release check:
+        # True single-episode releases (not season packs) can be downloaded directly by Seedr (2GB cap) AND aria2c
+        is_single_release = 0 if tor.get("is_season_pack", False) else 1
+
+        # 4. Quality score: 1080p strictly prioritized above 720p, and both above 4K
         q = tor.get("quality", "").lower()
         if "1080" in q:
             q_score = 4
@@ -861,18 +1069,19 @@ async def search_all_torrents(
             q_score = 3
         elif "2160" in q or "4k" in q:
             q_score = 2
-        elif "480" in q:
-            q_score = 1
         else:
             q_score = 1
 
-        # Priority order:
-        # 1. seedr_tier (under 2GB for fast cloud / light VPS)
-        # 2. has_seeds (TORRENTS WITH ACTIVE SEEDS ALWAYS COME FIRST!)
-        # 3. seeds (more seeds = much faster download speed!)
-        # 4. relevance score (exact show title match, no commentary)
-        # 5. quality score (1080p > 720p)
-        return (seedr_tier, has_seeds, seeds, rel_score, q_score)
+        # 5. Provider reliability tier: prefer YTS / EZTV / Torrentio / TorrentsCSV over raw ThePirateBay
+        prov = tor.get("provider", "").lower()
+        if "yts" in prov or "eztv" in prov or "torrentio" in prov:
+            prov_tier = 2
+        elif "torrentscsv" in prov:
+            prov_tier = 1
+        else:
+            prov_tier = 0
+
+        return (is_clean, has_seeds, is_single_release, seedr_tier, q_score, seeds, prov_tier)
 
     all_torrents.sort(key=_rank_torrent, reverse=True)
     return all_torrents

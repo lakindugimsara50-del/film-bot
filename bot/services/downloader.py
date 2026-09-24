@@ -445,6 +445,7 @@ async def download_torrent(
     task_key: str = "",
     progress_callback: Optional[Callable] = None,
     episode_hint: Optional[str] = None,
+    select_file_idx: Optional[int] = None,
 ) -> str:
     """
     Download a torrent or magnet link directly to dest_dir using aria2c.
@@ -470,7 +471,7 @@ async def download_torrent(
             log.info("[Downloader] Pre-fetching .torrent file from: %s", magnet_or_torrent[:80])
             async with httpx.AsyncClient(timeout=15, follow_redirects=True) as h_client:
                 r = await h_client.get(magnet_or_torrent, headers={"User-Agent": "Mozilla/5.0"})
-                if r.status_code == 200 and len(r.content) > 100:
+                if r.status_code == 200 and len(r.content) > 100 and b"announce" in r.content[:2048]:
                     with open(local_torrent_path, "wb") as f_out:
                         f_out.write(r.content)
                     torrent_arg = local_torrent_path
@@ -480,6 +481,7 @@ async def download_torrent(
 
     live_trackers = ",".join([
         "udp://tracker.opentrackr.org:1337/announce",
+        "http://tracker.opentrackr.org:1337/announce",
         "udp://open.tracker.cl:1337/announce",
         "udp://tracker.openbittorrent.com:6969/announce",
         "http://tracker.openbittorrent.com:80/announce",
@@ -489,21 +491,27 @@ async def download_torrent(
         "udp://tracker.moeking.me:6969/announce",
         "udp://p4p.arenabg.com:1337/announce",
         "udp://movies.zsw.ca:6969/announce",
+        "https://tracker.tamersunion.org:443/announce",
+        "https://tracker.gbitt.info:443/announce",
     ])
 
-    # Check if episode_hint is provided and inspect file list via aria2c --show-files
-    target_file_idx = None
-    if episode_hint:
+    # Check if episode_hint or select_file_idx is provided and inspect file list via aria2c --show-files
+    target_file_idx = select_file_idx
+    if episode_hint or select_file_idx:
         if os.path.isfile(torrent_arg):
-            target_file_idx = await find_episode_file_index_from_torrent(aria2_bin, torrent_arg, episode_hint)
+            detected_idx = await find_episode_file_index_from_torrent(aria2_bin, torrent_arg, episode_hint) if episode_hint else None
+            target_file_idx = detected_idx or select_file_idx
         elif torrent_arg.startswith("magnet:"):
-            # Attempt to fetch metadata (.torrent) quickly (up to 12s) to inspect file list
+            # Fetch metadata (.torrent) quickly (up to 18s) with DHT & PEX enabled to inspect file list
             meta_cmd = [
                 aria2_bin,
                 "--dir", dest_dir,
                 "--bt-metadata-only=true",
                 "--bt-save-metadata=true",
-                "--bt-stop-timeout=12",
+                "--enable-dht=true",
+                "--enable-peer-exchange=true",
+                "--bt-enable-lpd=true",
+                "--bt-stop-timeout=18",
                 "--console-log-level=warn",
                 f"--bt-tracker={live_trackers}",
                 torrent_arg,
@@ -514,11 +522,12 @@ async def download_torrent(
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                await asyncio.wait_for(meta_proc.communicate(), timeout=12.0)
+                await asyncio.wait_for(meta_proc.communicate(), timeout=18.0)
                 for f in os.listdir(dest_dir):
                     if f.endswith(".torrent"):
                         saved_torrent = os.path.join(dest_dir, f)
-                        target_file_idx = await find_episode_file_index_from_torrent(aria2_bin, saved_torrent, episode_hint)
+                        detected_idx = await find_episode_file_index_from_torrent(aria2_bin, saved_torrent, episode_hint) if episode_hint else None
+                        target_file_idx = detected_idx or select_file_idx
                         if target_file_idx:
                             torrent_arg = saved_torrent
                             break

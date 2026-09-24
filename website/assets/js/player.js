@@ -171,15 +171,30 @@ function buildDefaultSinhalaVttDataUri(movie) {
   return 'data:text/vtt;charset=utf-8,' + encodeURIComponent(vtt);
 }
 
+function _isValidSubUrl(u) {
+  if (!u || typeof u !== 'string') return false;
+  if (u === 'data:text/vtt;...' || u.length < 22) return false;
+  return true;
+}
+
 function getMovieSubtitles(movie) {
   if (!movie) return [];
+  const defaultUri = buildDefaultSinhalaVttDataUri(movie);
   if (Array.isArray(movie.subtitles) && movie.subtitles.length > 0) {
-    return movie.subtitles;
+    return movie.subtitles.map((sub, idx) => ({
+      ...sub,
+      language: sub.language || 'Sinhala',
+      srclang: sub.srclang || 'si',
+      label: sub.label || 'සිංහල උපසිරැසි (Sinhala)',
+      url: _isValidSubUrl(sub.url) ? sub.url : defaultUri,
+      default: sub.default !== undefined ? sub.default : (idx === 0)
+    }));
   }
-  if (movie.subtitle_url) {
+  if (_isValidSubUrl(movie.subtitle_url)) {
     return [
       {
-        language: movie.lang || "si",
+        language: movie.lang || "Sinhala",
+        srclang: "si",
         label: "සිංහල උපසිරැසි (Sinhala)",
         url: movie.subtitle_url,
         default: true
@@ -188,12 +203,22 @@ function getMovieSubtitles(movie) {
   }
   return [
     {
-      language: "si",
+      language: "Sinhala",
+      srclang: "si",
       label: "සිංහල උපසිරැසි (Sinhala Auto)",
-      url: buildDefaultSinhalaVttDataUri(movie),
+      url: defaultUri,
       default: true
     }
   ];
+}
+
+function normalizeDriveDownloadUrl(url) {
+  if (!url) return '';
+  if (url.includes('drive.google.com/file/d/')) {
+    const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+  }
+  return url;
 }
 
 function getMovieDownloads(movie) {
@@ -207,13 +232,7 @@ function getMovieDownloads(movie) {
     primaryUrl = cloudEntry ? cloudEntry.url : rawDls[0].url;
   }
   // Convert Google Drive /preview to direct download URL if needed
-  let directBaseUrl = primaryUrl;
-  if (directBaseUrl && directBaseUrl.includes('drive.google.com')) {
-    const m = directBaseUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || directBaseUrl.match(/id=([a-zA-Z0-9_-]+)/);
-    if (m) {
-      directBaseUrl = `https://drive.google.com/uc?export=download&id=${m[1]}`;
-    }
-  }
+  let directBaseUrl = normalizeDriveDownloadUrl(primaryUrl);
 
   let baseMb = 1450;
   if (movie.file_size && movie.file_size > 0) {
@@ -233,19 +252,18 @@ function getMovieDownloads(movie) {
     { q: '360p',  ratio: 0.18, vq: 'medium' }
   ];
 
-  const existingQualities = new Set(
-    rawDls.filter(d => !d.download_only && d.host !== 'Telegram').map(d => String(d.quality || '').toLowerCase())
-  );
-
   const enriched = [];
   targetQualities.forEach(tq => {
-    const match = rawDls.find(d => String(d.quality || '').toLowerCase() === tq.q.toLowerCase() && !d.download_only && d.host !== 'Telegram');
+    const match = rawDls.find(d => String(d.quality || '').toLowerCase().includes(tq.q.toLowerCase()) && !d.download_only && d.host !== 'Telegram');
     if (match) {
+      const cleanUrl = normalizeDriveDownloadUrl(match.url || directBaseUrl);
       enriched.push({
         ...match,
         quality: tq.q,
+        url: cleanUrl,
         size: match.size || fmtSize(baseMb * tq.ratio),
         format: 'MP4 (සිංහල Sub Merged)',
+        sub_merged: true,
         subtitle_merged: true
       });
     } else if (directBaseUrl) {
@@ -253,9 +271,10 @@ function getMovieDownloads(movie) {
       enriched.push({
         quality: tq.q,
         size: fmtSize(baseMb * tq.ratio),
-        url: `${directBaseUrl}${sep}rq=${tq.q}`,
+        url: `${directBaseUrl}${sep}vq=${tq.vq}`,
         format: 'MP4 (සිංහල Sub Merged)',
-        host: directBaseUrl.includes('drive.google') ? 'Cloud CDN' : 'Direct',
+        host: directBaseUrl.includes('drive.google') ? 'Google Drive' : 'Direct',
+        sub_merged: true,
         subtitle_merged: true
       });
     }
@@ -267,6 +286,7 @@ function getMovieDownloads(movie) {
       enriched.push({
         ...d,
         format: d.format || 'MP4 (සිංහල Sub Merged)',
+        sub_merged: true,
         subtitle_merged: true
       });
     }
@@ -407,16 +427,20 @@ function initAdaptiveQuality(movie) {
         headerQual.textContent = `${selectedQuality.toUpperCase()} WEB-DL`;
       }
 
-      // 1. If Video.js direct player is active, switch source and preserve playback position + Sinhala subtitles
+      // 1. Check movie.qualities map first if available
+      const qMapUrl = (movie && movie.qualities && movie.qualities[selectedQuality]) || '';
+
+      // 2. If Video.js direct player is active, switch source and preserve playback position + Sinhala subtitles
       const downloads = getMovieDownloads(movie);
       const targetQ = selectedQuality === 'auto' ? '1080p' : selectedQuality;
-      const matched = downloads.find(d => String(d.quality || '').toLowerCase() === targetQ.toLowerCase() && !d.download_only);
+      const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(targetQ.toLowerCase()) && !d.download_only);
 
       if (vjsPlayer) {
         const curTime = vjsPlayer.currentTime() || 0;
         const wasPaused = vjsPlayer.paused();
-        if (matched && matched.url && !matched.url.includes('drive.google.com/uc')) {
-          vjsPlayer.src({ src: matched.url, type: 'video/mp4' });
+        const candidateDirectUrl = (qMapUrl && !qMapUrl.includes('/preview')) ? qMapUrl : (matched && matched.url ? matched.url : '');
+        if (candidateDirectUrl && !candidateDirectUrl.includes('drive.google.com/uc')) {
+          vjsPlayer.src({ src: candidateDirectUrl, type: 'video/mp4' });
           vjsPlayer.one('loadedmetadata', () => {
             try { vjsPlayer.currentTime(curTime); } catch (e) {}
             syncSubtitles();
@@ -429,11 +453,11 @@ function initAdaptiveQuality(movie) {
         return;
       }
 
-      // 2. If Google Drive / Cloud Embed iframe is active, apply vq parameter to iframe
+      // 3. If Google Drive / Cloud Embed iframe is active, apply movie.qualities[selectedQuality] or vq parameter
       const driveIframe = document.getElementById('player-drive-iframe');
       if (driveIframe && driveIframe.dataset.baseEmbed) {
         const vq = mapQualityToDriveVq(selectedQuality);
-        const base = driveIframe.dataset.baseEmbed;
+        const base = (qMapUrl && qMapUrl.includes('drive.google.com')) ? qMapUrl.split('?')[0] : driveIframe.dataset.baseEmbed;
         const sep = base.includes('?') ? '&' : '?';
         driveIframe.src = `${base}${sep}vq=${vq}&hl=si`;
         FilmSub.showToast(`Quality switched to ${selectedQuality.toUpperCase()} (${vq.toUpperCase()}) • සිංහල උපසිරැසි ON`, 'info');
@@ -589,6 +613,13 @@ async function mountLiveSubtitleOverlay(playerEl, movie) {
       subBoxEl.style.display = 'none';
       return;
     }
+
+    // When Video.js is active and sync offset is 0, native <track default> renders cues directly — avoid double overlay
+    if (vjsPlayer && typeof vjsPlayer.currentTime === 'function' && Math.abs(liveSubOffsetSec) < 0.05) {
+      subBoxEl.style.display = 'none';
+      return;
+    }
+
     subBoxEl.style.display = 'flex';
 
     let currentSec = 0;
@@ -1221,7 +1252,11 @@ function renderDownloadSection(movie) {
         const url = btn.dataset.url;
         const quality = btn.dataset.quality;
         if (url && url !== '#') {
-          window.FilmSubDownload && window.FilmSubDownload.show(url, quality, movie.title);
+          if (window.FilmSubDownload && typeof window.FilmSubDownload.show === 'function') {
+            window.FilmSubDownload.show(url, quality, movie.title);
+          } else {
+            window.open(url, '_blank', 'noopener');
+          }
         }
       });
     });

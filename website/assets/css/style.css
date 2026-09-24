@@ -1707,10 +1707,10 @@ main > .section:first-of-type {
 .hero.compact-hero {
   position: relative;
   height: auto !important;
-  min-height: 300px !important;
+  min-height: 280px !important;
   max-height: 390px !important;
   margin-top: var(--header-h);
-  padding: 28px 4% !important;
+  padding: 24px 4% !important;
   display: flex !important;
   align-items: center !important;
   overflow: hidden;
@@ -1719,14 +1719,22 @@ main > .section:first-of-type {
 .hero.compact-hero + #trending-section {
   padding-top: 18px !important;
 }
+.hero.compact-hero .hero-content,
 .hero-content-row {
   position: relative;
   z-index: 2;
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
   gap: 22px;
   max-width: 880px;
   width: 100%;
+  padding: 0 !important;
+}
+.hero-poster-mini-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 .hero-poster-mini {
   width: 118px;
@@ -1737,11 +1745,13 @@ main > .section:first-of-type {
   border: 1px solid rgba(255, 255, 255, 0.16);
   flex-shrink: 0;
 }
+.hero.compact-hero .hero-info-main,
 .hero-info-col {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
+  flex: 1;
 }
 .hero.compact-hero .hero-badge {
   margin-bottom: 2px;
@@ -1777,11 +1787,14 @@ main > .section:first-of-type {
 }
 .hero.compact-hero .hero-actions {
   gap: 10px;
+  flex-wrap: nowrap;
 }
+.btn-hero,
 .btn-compact {
   padding: 8px 16px !important;
   font-size: 13px !important;
   border-radius: 6px !important;
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -1938,17 +1951,19 @@ main > .section:first-of-type {
   /* 1. Compact Mobile Hero Spotlight (Never Oversized) */
   .hero.compact-hero {
     display: flex !important;
-    min-height: 168px !important;
-    max-height: 210px !important;
+    min-height: 156px !important;
+    max-height: 215px !important;
     padding: 12px 14px !important;
     margin-top: var(--header-h) !important;
   }
+  .hero.compact-hero .hero-content,
   .hero-content-row {
-    gap: 12px;
+    gap: 12px !important;
+    padding: 0 !important;
   }
   .hero-poster-mini {
-    width: 76px;
-    height: 114px;
+    width: 78px;
+    height: 116px;
     border-radius: 6px;
   }
   .hero.compact-hero .hero-badge {
@@ -1977,12 +1992,13 @@ main > .section:first-of-type {
   }
   .hero.compact-hero .hero-meta {
     gap: 4px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .hero.compact-hero .hero-meta .badge {
     font-size: 10px;
     padding: 2px 6px;
   }
+  .btn-hero,
   .btn-compact {
     padding: 6px 12px !important;
     font-size: 11.5px !important;

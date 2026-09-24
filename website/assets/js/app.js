@@ -30,11 +30,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ---- Load Movies ----
+function _isValidMovieEntry(m) {
+  if (!m || !m.title) return false;
+  const hasPoster = Boolean(m.poster || m.poster_url);
+  const hasMedia = Boolean(
+    m.stream_url ||
+    (Array.isArray(m.streams) && m.streams.length > 0) ||
+    (Array.isArray(m.downloads) && m.downloads.length > 0) ||
+    (m.qualities && Object.keys(m.qualities).length > 0)
+  );
+  return hasPoster || hasMedia;
+}
+
 async function loadMovies() {
   // 1. Initial baseline from pre-loaded script tag
+  let baselineMovies = [];
   if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
     siteData = window.FILMSUB_DATA.site || {};
-    allMovies = window.FILMSUB_DATA.movies;
+    baselineMovies = window.FILMSUB_DATA.movies.filter(_isValidMovieEntry);
+    allMovies = baselineMovies.length > 0 ? baselineMovies : window.FILMSUB_DATA.movies;
   }
 
   const cacheBuster = `?_t=${Date.now()}`;
@@ -49,10 +63,23 @@ async function loadMovies() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.movies) && data.movies.length > 0) {
-          siteData = data.site || siteData;
-          allMovies = data.movies;
-          fetched = true;
-          break;
+          const validRemote = data.movies.filter(_isValidMovieEntry);
+          if (validRemote.length > 0) {
+            siteData = data.site || siteData;
+            // Merge any baseline movies not in validRemote so local catalog is never lost
+            const seenSlugs = new Set(validRemote.map(m => String(m.slug || m.id || '').toLowerCase()));
+            const merged = [...validRemote];
+            baselineMovies.forEach(bm => {
+              const s = String(bm.slug || bm.id || '').toLowerCase();
+              if (s && !seenSlugs.has(s)) {
+                seenSlugs.add(s);
+                merged.push(bm);
+              }
+            });
+            allMovies = merged;
+            fetched = true;
+            break;
+          }
         }
       }
     } catch (e) {
@@ -73,10 +100,12 @@ function getNewReleases() {
   return [...allMovies].sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, 20);
 }
 function getTrending() {
-  return allMovies.filter(m => m.trending).slice(0, 20);
+  const tr = allMovies.filter(m => m.trending);
+  return (tr.length > 0 ? tr : allMovies).slice(0, 20);
 }
 function getSinhalaFilms() {
-  return allMovies.filter(m => (Array.isArray(m.subtitles) && m.subtitles.length > 0) || m.subtitle_url).slice(0, 20);
+  const sf = allMovies.filter(m => (Array.isArray(m.subtitles) && m.subtitles.length > 0) || m.subtitle_url || m.has_sinhala_sub);
+  return (sf.length > 0 ? sf : allMovies).slice(0, 20);
 }
 function getRelated(movie) {
   if (!movie) return [];

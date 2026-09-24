@@ -942,12 +942,12 @@ async def _execute_leech(
             log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
 
         # 2. Compress or Single-Pass Remux + Soft-Sub Merge in 12GB RAM (/dev/shm)
-        if not _on_colab and curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
+        if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
             log.info(
-                "[LeechService] File size %.2f GB exceeds 1.95 GB limit on non-Colab env. Starting Smart 1080p compression...",
+                "[LeechService] File size %.2f GB exceeds 1.95 GB limit. Starting 12GB RAM Smart 1080p compression + Sinhala sub merge...",
                 curr_size / (1024 * 1024 * 1024),
             )
-            task_tracker.tracker.set_step(user_id, "Smart 1080p Compression (FFmpeg)...")
+            task_tracker.tracker.set_step(user_id, "Smart 1080p Compression + Sub Merge (FFmpeg)...")
             compressed_file = os.path.join(temp_dir, f"compressed_{slug}.mp4")
             last_comp_edit = 0.0
 
@@ -958,35 +958,31 @@ async def _execute_leech(
                     last_comp_edit = now
                     p_bar = downloader.format_progress_bar(pct)
                     c_text = (
-                        f"⚙️ <b>1080p Quality සුරකිමින් Telegram සඳහා සකසමින් පවතී...</b>\n\n"
+                        f"⚙️ <b>12GB RAM 1080p Quality & සිංහල Sub Merge සකසමින් පවතී...</b>\n\n"
                         f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
                         f"📊 <b>සැකසුම් ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                        f"💡 <i>1080p Full HD තත්ත්වය ඒ ආකාරයෙන්ම තබා ගනිමින් File Size එක 1.2GB දක්වා අඩු කෙරේ.</i>"
+                        f"💡 <i>1080p Full HD තත්ත්වය සහ සිංහල උපසිරැසි Video එකටම Merge කරමින් File Size එක 1.2GB දක්වා අඩු කෙරේ.</i>"
                     )
                     try:
                         await status_msg.edit_text(c_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
                     except Exception:
                         pass
 
-            ok = await video_service.compress_smart_1080p(local_file, compressed_file, _compress_prog)
+            ok = await video_service.compress_smart_1080p(
+                local_file,
+                compressed_file,
+                _compress_prog,
+                sub_path=sub_srt_path,
+            )
             if ok and os.path.exists(compressed_file) and os.path.getsize(compressed_file) > 0:
                 try:
                     os.remove(local_file)
                 except Exception:
                     pass
                 local_file = compressed_file
-                # Soft-embed Sinhala subtitle into the compressed MP4
-                if sub_srt_path and os.path.exists(sub_srt_path):
-                    sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
-                    if await video_service.embed_subtitles_soft(local_file, sub_srt_path, sub_muxed):
-                        try:
-                            os.remove(local_file)
-                        except Exception:
-                            pass
-                        local_file = sub_muxed
         else:
             # On Colab (12GB RAM /dev/shm) or file <= 1.95GB:
-            # Single-pass MKV/AVI/MP4 -> Web-Streamable MP4 (+faststart) + Stereo AAC + Sinhala Subtitle Merge!
+            # Single-pass MKV/AVI/MP4 -> Web-Streamable MP4 (+faststart) + Stereo AAC + Dual Sinhala Subtitle Merge!
             ext = os.path.splitext(local_file)[1].lower()
             try:
                 free_disk = shutil.disk_usage(temp_dir).free
@@ -1030,6 +1026,20 @@ async def _execute_leech(
                         local_file = sub_muxed
             else:
                 log.warning("[LeechService] Insufficient free space for remuxing. Keeping original file.")
+
+        # Optional 12GB RAM Multi-Quality (720p, 480p, 360p) Burn-In Variant Generation
+        variant_files: dict[str, str] = {}
+        if getattr(config, "ENABLE_MULTI_QUALITY_RAM", False):
+            try:
+                variant_files = await video_service.generate_multi_quality_variants_ram(
+                    input_path=local_file,
+                    output_dir=temp_dir,
+                    slug=slug,
+                    sub_path=sub_srt_path,
+                    qualities=("720p", "480p", "360p"),
+                )
+            except Exception as mq_err:
+                log.warning("[LeechService] Multi-quality RAM variant generation skipped: %s", mq_err)
 
         # ── Step 3: Fast Parallel Upload to Telegram Channel ──────────────────
         file_size = os.path.getsize(local_file)
@@ -1130,6 +1140,26 @@ async def _execute_leech(
         cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""
         primary_stream = cloud_stream or ""
 
+        variant_cloud_urls: dict[str, dict[str, str]] = {}
+        if variant_files:
+            for q_label, q_path in variant_files.items():
+                if os.path.exists(q_path):
+                    try:
+                        q_res = await drive_manager.upload_movie(
+                            local_path=q_path,
+                            movie_slug=f"{slug}-{q_label}",
+                            movie_title=f"{display_title} ({q_label})",
+                            filename=f"{slug}-{q_label}.mp4",
+                        )
+                        if q_res:
+                            variant_cloud_urls[q_label] = {
+                                "stream_url": q_res.get("stream_url", ""),
+                                "download_url": q_res.get("download_url", ""),
+                                "size": downloader.format_bytes(os.path.getsize(q_path)),
+                            }
+                    except Exception as q_up_err:
+                        log.debug("[LeechService] Variant %s upload skipped: %s", q_label, q_up_err)
+
         # ── Step 3b: Prepare Movie Payload & Publish to Website Immediately ──
         base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
         if "yoursite.lk" in base_site:
@@ -1202,17 +1232,17 @@ async def _execute_leech(
                 qualities_map = {
                     "auto": f"https://drive.google.com/file/d/{drive_file_id}/preview",
                     "1080p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd1080",
-                    "720p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd720",
-                    "480p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=large",
-                    "360p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=medium",
+                    "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd720",
+                    "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=large",
+                    "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=medium",
                 }
             else:
                 qualities_map = {
                     "auto": cloud_stream,
                     "1080p": cloud_stream,
-                    "720p": cloud_stream,
-                    "480p": cloud_stream,
-                    "360p": cloud_stream,
+                    "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or cloud_stream,
+                    "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or cloud_stream,
+                    "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or cloud_stream,
                 }
 
             downloads_list.append({
@@ -1223,6 +1253,7 @@ async def _execute_leech(
                 "format": file_ext,
                 "host": "Google Drive",
                 "sub_merged": True,
+                "subtitle_merged": True,
             })
 
         base_dl_url = cloud_download or cloud_stream
@@ -1232,29 +1263,32 @@ async def _execute_leech(
                 {
                     "quality": "720p",
                     "label": "720p HD (Sinhala Sub Merged)",
-                    "size": downloader.format_bytes(sz_720),
-                    "url": f"{base_dl_url}{sep}vq=hd720",
+                    "size": variant_cloud_urls.get("720p", {}).get("size") or downloader.format_bytes(sz_720),
+                    "url": variant_cloud_urls.get("720p", {}).get("download_url") or f"{base_dl_url}{sep}vq=hd720",
                     "format": file_ext,
                     "host": "Google Drive",
                     "sub_merged": True,
+                    "subtitle_merged": True,
                 },
                 {
                     "quality": "480p",
                     "label": "480p SD (Sinhala Sub Merged)",
-                    "size": downloader.format_bytes(sz_480),
-                    "url": f"{base_dl_url}{sep}vq=large",
+                    "size": variant_cloud_urls.get("480p", {}).get("size") or downloader.format_bytes(sz_480),
+                    "url": variant_cloud_urls.get("480p", {}).get("download_url") or f"{base_dl_url}{sep}vq=large",
                     "format": file_ext,
                     "host": "Google Drive",
                     "sub_merged": True,
+                    "subtitle_merged": True,
                 },
                 {
                     "quality": "360p",
                     "label": "360p Data Saver (Sinhala Sub Merged)",
-                    "size": downloader.format_bytes(sz_360),
-                    "url": f"{base_dl_url}{sep}vq=medium",
+                    "size": variant_cloud_urls.get("360p", {}).get("size") or downloader.format_bytes(sz_360),
+                    "url": variant_cloud_urls.get("360p", {}).get("download_url") or f"{base_dl_url}{sep}vq=medium",
                     "format": file_ext,
                     "host": "Google Drive",
                     "sub_merged": True,
+                    "subtitle_merged": True,
                 },
             ])
 

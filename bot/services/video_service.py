@@ -67,11 +67,13 @@ async def compress_smart_1080p(
     input_path: str,
     output_path: str,
     progress_callback: Optional[Callable[[float, str], None]] = None,
+    sub_path: Optional[str] = None,
 ) -> bool:
     """
-    Compress video to high-efficiency 1080p MP4.
+    Compress video to high-efficiency 1080p MP4 in 12GB RAM (/dev/shm).
     Keeps 1080p resolution while reducing file size to ~1.1GB - 1.4GB.
-    Uses libx264 CRF 23, preset veryfast, aac 128k, movflags +faststart.
+    When sub_path is provided, burns Sinhala subtitles into the video frames AND
+    embeds dual default+forced mov_text tracks in the same single FFmpeg pass.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
@@ -81,20 +83,48 @@ async def compress_smart_1080p(
     duration = get_video_duration(input_path, ffmpeg_bin)
     log.info("[VideoService] Compressing '%s' (duration=%.1fs) -> '%s'", input_path, duration, output_path)
 
-    # Filter: scale to 1080p max height if larger, otherwise keep original
-    scale_filter = "scale=-2:min'(1080,ih)':force_original_aspect_ratio=decrease"
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    local_burn_srt = os.path.join(out_dir, "sub_burn_1080.srt")
+    if has_sub:
+        try:
+            shutil.copyfile(sub_path, local_burn_srt)
+        except Exception:
+            has_sub = False
+
+    # Filter: scale to 1080p max height if larger, plus burn-in Sinhala subtitles if available
+    scale_base = "scale=-2:'min(1080,ih)'"
+    scale_filter = f"subtitles=sub_burn_1080.srt,{scale_base}" if has_sub else scale_base
 
     # Auto-detect CPU cores; use ultrafast preset on Colab for 3-5x speed improvement
-    _on_colab = os.path.exists('/content')
+    _on_colab = os.path.exists('/content') or os.path.isdir('/dev/shm')
     _threads = '0'  # Use all available CPU cores
     _preset = 'ultrafast' if _on_colab else 'veryfast'
-    log.info('[VideoService] on_colab=%s preset=%s threads=%s', _on_colab, _preset, _threads)
+    log.info('[VideoService] on_colab=%s preset=%s threads=%s has_sub=%s', _on_colab, _preset, _threads, has_sub)
 
     cmd = [
         ffmpeg_bin,
         "-y",
         "-hide_banner",
-        "-i", input_path,
+        "-i", os.path.abspath(input_path),
+    ]
+    if has_sub:
+        cmd.extend([
+            "-i", os.path.abspath(sub_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-map", "1:0",
+            "-map", "1:0",
+            "-c:s", "mov_text",
+            "-metadata:s:s:0", "language=eng",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
+            "-disposition:s:0", "default+forced",
+            "-metadata:s:s:1", "language=sin",
+            "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+            "-disposition:s:1", "default+forced",
+        ])
+    cmd.extend([
         "-vf", scale_filter,
         "-c:v", "libx264",
         "-preset", _preset,
@@ -107,20 +137,22 @@ async def compress_smart_1080p(
         "-b:a", "128k",
         "-ac", "2",
         "-movflags", "+faststart",
-        output_path,
-    ]
+        os.path.abspath(output_path),
+    ])
 
     def _cleanup_output() -> None:
-        if os.path.exists(output_path):
-            try:
-                os.remove(output_path)
-            except Exception:
-                pass
+        for p in (output_path, local_burn_srt):
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
 
     proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
+            cwd=out_dir,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -131,13 +163,16 @@ async def compress_smart_1080p(
         async def _read_stderr():
             nonlocal last_pct
             while True:
-                line = await proc.stderr.readline()
-                if not line:
+                if hasattr(proc.stderr, "read"):
+                    chunk = await proc.stderr.read(4096)
+                else:
+                    chunk = await proc.stderr.readline()
+                if not chunk:
                     break
-                decoded = line.decode("utf-8", errors="replace")
-                m = time_pattern.search(decoded)
-                if m and duration > 0:
-                    h, mm, ss = m.groups()
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                matches = time_pattern.findall(decoded)
+                if matches and duration > 0:
+                    h, mm, ss = matches[-1]
                     cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
                     pct = min(99.0, (cur_secs / duration) * 100.0)
                     if pct - last_pct >= 2.0:
@@ -152,9 +187,14 @@ async def compress_smart_1080p(
                                 pass
 
         await asyncio.gather(proc.wait(), _read_stderr())
+        if os.path.exists(local_burn_srt):
+            try:
+                os.remove(local_burn_srt)
+            except Exception:
+                pass
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            orig_sz = os.path.getsize(input_path) / (1024 * 1024)
+            orig_sz = max(1, os.path.getsize(input_path)) / (1024 * 1024)
             new_sz = os.path.getsize(output_path) / (1024 * 1024)
             log.info("[VideoService] Compression SUCCESS: %.1f MB -> %.1f MB (%.1f%% reduction)",
                      orig_sz, new_sz, (1 - new_sz / orig_sz) * 100)
@@ -291,6 +331,8 @@ async def ensure_web_streamable(
 
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
     _threads = "0"  # Use all CPU threads & RAM buffer
+    input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    min_valid_size = min(512 * 1024, max(1024, int(input_size * 0.25)))
 
     # Inspect input audio codec quickly so we don't copy AC3/EAC3/DTS into MP4 (which causes silent playback in browsers)
     needs_aac_transcode = False
@@ -328,12 +370,16 @@ async def ensure_web_streamable(
                 "-map", "0:v:0",
                 "-map", "0:a:0?",
                 "-map", "1:0",
+                "-map", "1:0",
                 "-c:v", "copy",
                 "-c:a", "copy",
                 "-c:s", "mov_text",
-                "-metadata:s:s:0", "language=sin",
-                "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                "-metadata:s:s:0", "language=eng",
+                "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
                 "-disposition:s:0", "default+forced",
+                "-metadata:s:s:1", "language=sin",
+                "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+                "-disposition:s:1", "default+forced",
             ])
         else:
             cmd_copy.extend([
@@ -357,7 +403,7 @@ async def ensure_web_streamable(
                 stderr=asyncio.subprocess.DEVNULL,
             )
             await asyncio.wait_for(proc.wait(), timeout=180.0)
-            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 512 * 1024:
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) >= min_valid_size:
                 log.info("[VideoService] Fast RAM remux (copy + sub=%s) succeeded: %s", has_sub, output_path)
                 return True
             _cleanup_output()
@@ -382,7 +428,7 @@ async def ensure_web_streamable(
                     pass
 
     # For files > 1.2 GB on low-CPU non-Colab environments without /dev/shm, skip CPU audio transcode
-    file_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    file_size = input_size
     _has_ram_disk = os.path.isdir("/dev/shm") or os.path.exists("/content")
     if not _has_ram_disk and file_size > 1.2 * 1024 * 1024 * 1024:
         log.warning(
@@ -392,7 +438,7 @@ async def ensure_web_streamable(
         _cleanup_output()
         return False
 
-    # Attempt 2: Video stream-copy + Multi-threaded Stereo AAC 160k audio + Sinhala subtitle + faststart
+    # Attempt 2: Video stream-copy + Multi-threaded Stereo AAC 160k audio + Dual Sinhala subtitle + faststart
     cmd_aac = [
         ffmpeg_bin,
         "-y",
@@ -406,14 +452,18 @@ async def ensure_web_streamable(
             "-map", "0:v:0",
             "-map", "0:a:0?",
             "-map", "1:0",
+            "-map", "1:0",
             "-c:v", "copy",
             "-c:a", "aac",
             "-b:a", "160k",
             "-ac", "2",
             "-c:s", "mov_text",
-            "-metadata:s:s:0", "language=sin",
-            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+            "-metadata:s:s:0", "language=eng",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
             "-disposition:s:0", "default+forced",
+            "-metadata:s:s:1", "language=sin",
+            "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+            "-disposition:s:1", "default+forced",
         ])
     else:
         cmd_aac.extend([
@@ -439,7 +489,7 @@ async def ensure_web_streamable(
             stderr=asyncio.subprocess.DEVNULL,
         )
         await asyncio.wait_for(proc.wait(), timeout=360.0)
-        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 512 * 1024:
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) >= min_valid_size:
             log.info("[VideoService] AAC audio + MP4 remux (sub=%s) succeeded: %s", has_sub, output_path)
             return True
         _cleanup_output()
@@ -469,8 +519,8 @@ async def ensure_web_streamable(
 async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str) -> bool:
     """
     Soft-embed Sinhala subtitles into video container (MP4 mov_text or MKV subrip)
-    with explicit stream mapping (-map 0:v:0 -map 0:a:0? -map 1:0), default+forced disposition,
-    and +faststart so web browsers and native media players (VLC, MX Player, Gallery, Smart TVs)
+    with dual eng+sin default+forced tracks and +faststart so ALL web browsers and
+    native media players (English-locale Android/iOS, VLC, MX Player, Smart TVs)
     automatically display Sinhala subtitles immediately upon playback.
     """
     ffmpeg_bin = get_ffmpeg_binary()
@@ -491,12 +541,16 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
         "-map", "0:v:0",
         "-map", "0:a:0?",
         "-map", "1:0",
+        "-map", "1:0",
         "-c:v", "copy",
         "-c:a", "copy",
         "-c:s", sub_codec,
-        "-metadata:s:s:0", "language=sin",
-        "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+        "-metadata:s:s:0", "language=eng",
+        "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
         "-disposition:s:0", "default+forced",
+        "-metadata:s:s:1", "language=sin",
+        "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+        "-disposition:s:1", "default+forced",
     ]
     if is_mp4:
         cmd.extend(["-movflags", "+faststart"])
@@ -553,7 +607,8 @@ async def generate_multi_quality_variants_ram(
     """
     Leverage 12GB RAM (/dev/shm) and all CPU cores (-threads 0 -preset ultrafast)
     to generate multi-quality MP4 streams/downloads (720p, 480p, 360p) in a single
-    FFmpeg multi-output pass with embedded Sinhala subtitles and +faststart.
+    FFmpeg multi-output pass with BOTH burned-in Sinhala subtitles AND dual default+forced
+    mov_text tracks plus +faststart.
     Returns a dict mapping quality label (e.g. '720p') -> generated local file path.
     """
     if base_stem:
@@ -564,9 +619,19 @@ async def generate_multi_quality_variants_ram(
     if not ffmpeg_bin or not os.path.exists(input_path):
         return {}
 
-    os.makedirs(output_dir, exist_ok=True)
+    abs_out_dir = os.path.abspath(output_dir)
+    os.makedirs(abs_out_dir, exist_ok=True)
     duration = get_video_duration(input_path, ffmpeg_bin)
+    input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    min_valid_size = min(256 * 1024, max(1024, int(input_size * 0.05)))
+
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    local_burn_srt = os.path.join(abs_out_dir, "sub_burn_multi.srt")
+    if has_sub:
+        try:
+            shutil.copyfile(sub_path, local_burn_srt)
+        except Exception:
+            has_sub = False
 
     # Resolution & bitrate profile per quality tier
     profiles = {
@@ -575,8 +640,8 @@ async def generate_multi_quality_variants_ram(
         "360p": {"height": 360, "crf": "28", "maxrate": "550k",  "bufsize": "900k",  "abitrate": "64k"},
     }
 
-    target_qualities = [q for q in qualities if q in profiles]
-    if not target_qualities:
+    target_q_list = [q for q in qualities if q in profiles]
+    if not target_q_list:
         return {}
 
     cmd = [
@@ -584,17 +649,18 @@ async def generate_multi_quality_variants_ram(
         "-y",
         "-hide_banner",
         "-threads", "0",
-        "-i", input_path,
+        "-i", os.path.abspath(input_path),
     ]
     if has_sub:
-        cmd.extend(["-i", sub_path])
+        cmd.extend(["-i", os.path.abspath(sub_path)])
 
     out_paths: dict[str, str] = {}
-    for q in target_qualities:
+    for q in target_q_list:
         prof = profiles[q]
-        out_file = os.path.join(output_dir, f"{slug}-{q}.mp4")
+        out_file = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
         out_paths[q] = out_file
-        scale_f = f"scale=-2:min'({prof['height']},ih)':force_original_aspect_ratio=decrease"
+        scale_base = f"scale=-2:'min({prof['height']},ih)'"
+        scale_f = f"subtitles=sub_burn_multi.srt,{scale_base}" if has_sub else scale_base
         cmd.extend([
             "-map", "0:v:0",
             "-map", "0:a:0?",
@@ -602,10 +668,14 @@ async def generate_multi_quality_variants_ram(
         if has_sub:
             cmd.extend([
                 "-map", "1:0",
+                "-map", "1:0",
                 "-c:s", "mov_text",
-                "-metadata:s:s:0", "language=sin",
-                "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                "-metadata:s:s:0", "language=eng",
+                "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
                 "-disposition:s:0", "default+forced",
+                "-metadata:s:s:1", "language=sin",
+                "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+                "-disposition:s:1", "default+forced",
             ])
         cmd.extend([
             "-vf", scale_f,
@@ -626,6 +696,7 @@ async def generate_multi_quality_variants_ram(
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
+            cwd=abs_out_dir,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -635,13 +706,16 @@ async def generate_multi_quality_variants_ram(
         async def _read_stderr():
             nonlocal last_pct
             while True:
-                line = await proc.stderr.readline()
-                if not line:
+                if hasattr(proc.stderr, "read"):
+                    chunk = await proc.stderr.read(4096)
+                else:
+                    chunk = await proc.stderr.readline()
+                if not chunk:
                     break
-                decoded = line.decode("utf-8", errors="replace")
-                m = time_pattern.search(decoded)
-                if m and duration > 0:
-                    h, mm, ss = m.groups()
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                matches = time_pattern.findall(decoded)
+                if matches and duration > 0:
+                    h, mm, ss = matches[-1]
                     cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
                     pct = min(99.0, (cur_secs / duration) * 100.0)
                     if pct - last_pct >= 3.0:
@@ -656,9 +730,14 @@ async def generate_multi_quality_variants_ram(
                                 pass
 
         await asyncio.gather(proc.wait(), _read_stderr())
+        if os.path.exists(local_burn_srt):
+            try:
+                os.remove(local_burn_srt)
+            except Exception:
+                pass
         valid_outputs = {
             q: p for q, p in out_paths.items()
-            if os.path.exists(p) and os.path.getsize(p) > 256 * 1024
+            if os.path.exists(p) and os.path.getsize(p) >= min_valid_size
         }
         log.info("[VideoService] Multi-quality RAM generation complete: %s", list(valid_outputs.keys()))
         return valid_outputs
@@ -666,6 +745,11 @@ async def generate_multi_quality_variants_ram(
         log.warning("[VideoService] Multi-quality generation skipped/failed: %s", exc)
         return {}
     finally:
+        if os.path.exists(local_burn_srt):
+            try:
+                os.remove(local_burn_srt)
+            except Exception:
+                pass
         if proc and proc.returncode is None:
             try:
                 proc.terminate()

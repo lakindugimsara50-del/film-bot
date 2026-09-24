@@ -30,8 +30,20 @@ GITHUB_TOKEN = getattr(config, "GITHUB_TOKEN", "")
 GITHUB_REPO = getattr(config, "GITHUB_REPO", "username/repo")
 
 
+def _get_active_token() -> str:
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return ""
+    return GITHUB_TOKEN if GITHUB_TOKEN is not None else ""
+
+
+def _get_active_repo() -> str:
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return ""
+    return GITHUB_REPO if GITHUB_REPO is not None else ""
+
+
 def _get_headers() -> dict:
-    token = GITHUB_TOKEN or getattr(config, "GITHUB_TOKEN", "") or ""
+    token = _get_active_token()
     return {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github+json",
@@ -50,8 +62,8 @@ async def get_movies_json() -> tuple[dict, str]:
     """
     Fetch the current movies.json from GitHub (or local file fallback).
     """
-    token = GITHUB_TOKEN or getattr(config, "GITHUB_TOKEN", "") or ""
-    repo = GITHUB_REPO or getattr(config, "GITHUB_REPO", "") or ""
+    token = _get_active_token()
+    repo = _get_active_repo()
     if not token or repo in ("", "username/repo"):
         if os.path.exists(_LOCAL_MOVIES_PATH):
             with open(_LOCAL_MOVIES_PATH, "r", encoding="utf-8") as f:
@@ -122,8 +134,8 @@ async def add_movie(movie: dict) -> bool:
     except Exception as exc:
         log.warning("Could not write movies locally: %s", exc)
 
-    token = GITHUB_TOKEN or getattr(config, "GITHUB_TOKEN", "") or ""
-    repo = GITHUB_REPO or getattr(config, "GITHUB_REPO", "") or ""
+    token = _get_active_token()
+    repo = _get_active_repo()
     if not token or repo in ("", "username/repo"):
         # Fallback to local only
         return True
@@ -168,7 +180,7 @@ async def add_movie(movie: dict) -> bool:
 
     # Also sync movies_data.js to GitHub
     try:
-        js_content = f"window.FILMSUB_DATA = {updated_json};\n"
+        js_content = f"window.FILMSUB_DATA = {updated_json};\nwindow.MOVIES_DATA = window.FILMSUB_DATA;\n"
         await upload_file(
             content=js_content.encode("utf-8"),
             path=_MOVIES_DATA_JS_PATH,
@@ -199,7 +211,10 @@ async def upload_file(
     Returns:
         The public raw.githubusercontent.com URL to the file.
     """
-    repo = GITHUB_REPO or getattr(config, "GITHUB_REPO", "") or ""
+    token = _get_active_token()
+    repo = _get_active_repo()
+    if not token or repo in ("", "username/repo"):
+        return ""
     headers = _get_headers()
     api_url = f"{_API_BASE}/repos/{repo}/contents/{path}"
     encoded = base64.b64encode(content).decode("ascii")

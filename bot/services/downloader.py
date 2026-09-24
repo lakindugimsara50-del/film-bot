@@ -525,6 +525,10 @@ async def download_torrent(
             except Exception as meta_err:
                 log.debug("[Downloader] Magnet metadata fetch skipped/timed out: %s", meta_err)
 
+    _high_ram_env = os.path.exists("/content") or os.path.isdir("/dev/shm")
+    _disk_cache = "128M" if _high_ram_env else "16M"
+    _safe_limit_gb = 4.5 if _high_ram_env else 1.85
+
     cmd = [
         aria2_bin,
         "--dir", dest_dir,
@@ -536,7 +540,7 @@ async def download_torrent(
         "--bt-enable-lpd=true",
         "--bt-max-peers=100",
         "--file-allocation=none",
-        "--disk-cache=16M",
+        f"--disk-cache={_disk_cache}",
         "--peer-id-prefix=-qB4520-",
         "--user-agent=qBittorrent/4.5.2",
         f"--bt-tracker={live_trackers}",
@@ -590,13 +594,12 @@ async def download_torrent(
                     speed_formatted = f"{dl_speed}/s"
                     eta_formatted = eta or "N/A"
 
-                    # Hard protection for Render container disk: abort if torrent total size > 1.85 GB
-                    # (skip if target file is specifically selected, as total_str reflects whole torrent)
+                    # Hard protection for container disk: abort if torrent total size exceeds safe limit
                     total_bytes = parse_size_str(total_str)
-                    if not target_file_idx and total_bytes > int(1.85 * 1024 * 1024 * 1024):
+                    if not target_file_idx and total_bytes > int(_safe_limit_gb * 1024 * 1024 * 1024):
                         log.warning(
-                            "[Downloader] Torrent total size %s (%s) exceeds Render disk safe limit (1.85 GB). Aborting to prevent container crash.",
-                            total_str, format_bytes(total_bytes)
+                            "[Downloader] Torrent total size %s (%s) exceeds safe limit (%.2f GB). Aborting to prevent crash.",
+                            total_str, format_bytes(total_bytes), _safe_limit_gb
                         )
                         if proc and proc.returncode is None:
                             try:
@@ -604,7 +607,7 @@ async def download_torrent(
                                 proc.kill()
                             except Exception:
                                 pass
-                        raise RuntimeError(f"Torrent size ({total_str}) exceeds Render safe limit (1.85 GB)")
+                        raise RuntimeError(f"Torrent size ({total_str}) exceeds safe limit ({_safe_limit_gb} GB)")
 
                     if pct > 0 or ("0B" not in done_str and "0.0" not in done_str):
                         has_started_download = True

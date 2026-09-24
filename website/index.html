@@ -109,7 +109,34 @@
   </a>
 </nav>
 
-<!-- ========== 1. TRENDING NOW (Top Row: 2-Col on mobile, CineSubz style) ========== -->
+<!-- ========== COMPACT HERO SPOTLIGHT (Mobile & Desktop Responsive) ========== -->
+<section class="hero compact-hero" id="hero-section" aria-label="Featured Movie">
+  <div class="hero-backdrop"></div>
+  <div class="hero-gradient"></div>
+  <div class="hero-content">
+    <div class="hero-poster-mini-wrap">
+      <img id="hero-poster-mini" class="hero-poster-mini" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='180' viewBox='0 0 120 180'%3E%3Crect width='120' height='180' fill='%231f1f1f'/%3E%3C/svg%3E" alt="Featured Poster">
+    </div>
+    <div class="hero-info-main">
+      <div class="hero-badge" id="hero-badge"><i class="fa-solid fa-bolt"></i> Featured</div>
+      <h1 class="hero-title" id="hero-title">Loading...</h1>
+      <p class="hero-title-si" id="hero-title-si"></p>
+      <div class="hero-meta" id="hero-meta"></div>
+      <div class="hero-genres" id="hero-genres"></div>
+      <p class="hero-description" id="hero-description"></p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary btn-hero" id="hero-watch-btn">
+          <i class="fa-solid fa-circle-play"></i> Watch Now
+        </a>
+        <a href="#" class="btn btn-secondary btn-hero" id="hero-download-btn">
+          <i class="fa-solid fa-cloud-arrow-down"></i> Download
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 1. TRENDING NOW (Top Row: Compact Carousel on Mobile, CineSubz style) ========== -->
 <section class="section trending-section" id="trending-section" aria-label="Trending Now">
   <div class="section-header">
     <h2 class="section-title"><i class="fa-solid fa-fire" style="color:var(--accent)"></i> Trending Now (නැරඹුම් ප්‍රමුඛ)</h2>
@@ -118,7 +145,7 @@
   <div class="carousel-wrap">
     <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
     <div class="carousel-track trending-track" id="trending-track" role="list">
-      <!-- Injected by JS: 2 cards on mobile with rank watermark -->
+      <!-- Injected by JS -->
     </div>
     <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
   </div>

@@ -175,10 +175,30 @@
           </div>
         </div>
 
-        <!-- Player Subtitle Notice -->
-        <div class="player-notice">
-          <i class="fa-solid fa-circle-info"></i>
-          <span>සිංහල උපසිරැසි (Sinhala Subtitles) සඳහා Player එකේ පහළ ඇති <strong>CC</strong> බොත්තමෙන් "Sinhala" තෝරන්න. උපරිම අත්දැකීමක් සඳහා Fullscreen භාවිතා කරන්න.</span>
+        <!-- Player Subtitle & Audio Notice + Live Sub Controls -->
+        <div class="player-notice" id="player-notice-bar">
+          <div class="player-notice-left">
+            <i class="fa-solid fa-closed-captioning" style="color:var(--accent)"></i>
+            <span><strong>සිංහල උපසිරැසි (Auto-Play ON):</strong> Video එකේ සිංහල උපසිරැසි ස්වයංක්‍රීයව ක්‍රියාත්මක වේ. Download කරන Video වලද උපසිරැසි Video එක තුළම (Merged MP4) අන්තර්ගත වේ.</span>
+          </div>
+          <div class="player-sub-controls" id="player-sub-controls">
+            <button type="button" class="sub-ctrl-btn active" id="btn-toggle-live-sub" title="Toggle Sinhala Subtitles">
+              <i class="fa-solid fa-closed-captioning"></i> සිංහල Sub: <span id="live-sub-state">ON</span>
+            </button>
+            <button type="button" class="sub-ctrl-btn" id="btn-sub-sync-minus" title="Subtitle Delay -0.5s">-0.5s</button>
+            <button type="button" class="sub-ctrl-btn" id="btn-sub-sync-plus" title="Subtitle Advance +0.5s">+0.5s</button>
+          </div>
+        </div>
+
+        <!-- Quick Multi-Quality Download Strip (1080p / 720p / 480p / 360p + Sub Merged) -->
+        <div class="quick-dl-strip" id="quick-dl-strip">
+          <div class="quick-dl-label">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
+            <span>Quick Download (සිංහල Sub Merged MP4):</span>
+          </div>
+          <div class="quick-dl-buttons" id="quick-dl-buttons">
+            <!-- Populated dynamically by player.js with 1080p, 720p, 480p, 360p -->
+          </div>
         </div>
       </div>
     </div>

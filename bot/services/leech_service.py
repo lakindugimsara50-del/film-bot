@@ -349,24 +349,33 @@ async def find_all_candidates(
 # memory exhaustion. Subsequent /leech requests queue up and auto-start.
 # ─────────────────────────────────────────────────────────────────────────────
 
-_leech_queue: asyncio.Queue = asyncio.Queue()
+_leech_queue: Optional[asyncio.Queue] = None
+_leech_queue_loop: Optional[asyncio.AbstractEventLoop] = None
 _leech_worker_task: Optional[asyncio.Task] = None
+_active_leech_count: int = 0
 
 
-async def _leech_queue_worker() -> None:
+async def _leech_queue_worker(queue: asyncio.Queue) -> None:
     """Background coroutine that processes leech jobs one at a time."""
-    global _leech_worker_task
+    global _active_leech_count
     while True:
-        job = await _leech_queue.get()
+        job = await queue.get()
+        client, status_msg, user_id, query_text, reply_media, auto_publish, done_fut = job
         try:
-            client, status_msg, user_id, query_text, reply_media, auto_publish = job
             await _execute_leech(client, status_msg, user_id, query_text, reply_media, auto_publish)
+            if not done_fut.done():
+                done_fut.set_result(True)
+        except asyncio.CancelledError:
+            if not done_fut.done():
+                done_fut.cancel()
+            raise
         except Exception as worker_err:
             log.error("[LeechQueue] Worker uncaught error: %s", worker_err, exc_info=True)
+            if not done_fut.done():
+                done_fut.set_exception(worker_err)
         finally:
-            _leech_queue.task_done()
-        # Small pause between jobs for disk/Seedr cleanup to settle
-        await asyncio.sleep(2)
+            _active_leech_count = max(0, _active_leech_count - 1)
+            queue.task_done()
 
 
 async def run_auto_leech(
@@ -378,20 +387,26 @@ async def run_auto_leech(
     auto_publish: bool = False,
 ) -> None:
     """
-    Public entry point: enqueues the leech request and shows queue position.
-    Starts background worker if not already running.
+    Public entry point: enqueues the leech request, shows queue position if busy,
+    and awaits completion of this job so task_tracker and callers stay synchronized.
     """
-    global _leech_worker_task
+    global _leech_queue, _leech_queue_loop, _leech_worker_task, _active_leech_count
 
-    # Start worker if it died or was never started
+    loop = asyncio.get_running_loop()
+    if _leech_queue is None or _leech_queue_loop is not loop:
+        _leech_queue = asyncio.Queue()
+        _leech_queue_loop = loop
+        _leech_worker_task = None
+        _active_leech_count = 0
+
     if _leech_worker_task is None or _leech_worker_task.done():
-        _leech_worker_task = asyncio.create_task(_leech_queue_worker())
+        _leech_worker_task = loop.create_task(_leech_queue_worker(_leech_queue))
         log.info("[LeechQueue] Worker task started.")
 
-    queue_pos = _leech_queue.qsize() + 1  # +1 for this job being added
+    _active_leech_count += 1
+    queue_pos = _active_leech_count
 
     if queue_pos > 1:
-        # Notify user they are in queue
         try:
             await status_msg.edit_text(
                 f"🕐 <b>Queue Position: {queue_pos}</b> — ඔබේ ඉල්ලීම පෝලිමේ යොදා ඇත!\n\n"
@@ -403,9 +418,10 @@ async def run_auto_leech(
         except Exception:
             pass
 
-    # Enqueue
-    await _leech_queue.put((client, status_msg, user_id, query_text, reply_media, auto_publish))
-    log.info("[LeechQueue] Enqueued job for user %d: %r (queue size=%d)", user_id, query_text, _leech_queue.qsize())
+    done_fut = loop.create_future()
+    await _leech_queue.put((client, status_msg, user_id, query_text, reply_media, auto_publish, done_fut))
+    log.info("[LeechQueue] Enqueued job for user %d: %r (queue_pos=%d)", user_id, query_text, queue_pos)
+    await done_fut
 
 
 async def _execute_leech(
@@ -652,7 +668,7 @@ async def _execute_leech(
         # ── Step 2: Download with Multi-Method Fallback ────────────────────────
         chosen_candidate: Optional[LeechCandidate] = None
         if not temp_dir:
-            temp_dir = tempfile.mkdtemp(prefix="leech_")
+            temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.2, prefix="leech_ram_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
 
         for idx, candidate in enumerate(candidates, 1):
@@ -818,15 +834,15 @@ async def _execute_leech(
                             )
                         cloud_service_name = "VPS aria2c"
 
-                        # Hard protection against Render container disk exhaustion crash: NEVER download > 1.85 GB via local aria2c
-                        # (Allow season packs for series episode tasks since aria2c selects only the single requested episode file)
                         c_bytes = candidate.size_bytes or 0
                         is_single_ep = bool(is_series and season and episode)
-                        if not is_single_ep and c_bytes > int(1.85 * 1024 * 1024 * 1024):
+                        _max_local_gb = 4.5 if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else 1.85
+                        if not is_single_ep and c_bytes > int(_max_local_gb * 1024 * 1024 * 1024):
                             log.warning(
-                                "[LeechService] Candidate %s (%s) exceeds Render safe limit (1.85 GB). Skipping to prevent container crash.",
+                                "[LeechService] Candidate %s (%s) exceeds safe limit (%.2f GB). Skipping to prevent crash.",
                                 candidate.method_name,
                                 downloader.format_bytes(c_bytes),
+                                _max_local_gb,
                             )
                             continue
 
@@ -902,18 +918,37 @@ async def _execute_leech(
             )
             return
 
-        # ── Step 2.5: Fast Web Stream Remux (+faststart) ─────────────────────
+        # ── Step 2.5 & 2.6: Auto-Acquire Sinhala Subtitles + 12GB RAM MKV->MP4 & Sub Merge ──
         curr_size = os.path.getsize(local_file)
-        _on_colab = os.path.exists('/content')
+        _on_colab = os.path.exists('/content') or os.path.isdir('/dev/shm')
 
-        # Only on memory/disk constrained environments (e.g. Render 512MB RAM, 2GB disk) do we re-encode
+        ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
+        slug = f"{_slugify(title, year)}{ep_suffix}"
+
+        # 1. Extract embedded subtitle / auto-translate / acquire Sinhala .srt & .vtt BEFORE remuxing
+        #    so ensure_web_streamable never strips embedded tracks!
+        sub_srt_path: Optional[str] = None
+        sub_vtt_path: Optional[str] = None
+        try:
+            sub_srt_path, sub_vtt_path = await subtitle_service.auto_acquire_sinhala_subtitle(
+                title=display_title,
+                year=year,
+                imdb_id=imdb_id,
+                temp_dir=temp_dir,
+                video_path=local_file,
+            )
+            log.info("[LeechService] Prepared Sinhala subtitle tracks: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
+        except Exception as sub_acq_err:
+            log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
+
+        # 2. Compress or Single-Pass Remux + Soft-Sub Merge in 12GB RAM (/dev/shm)
         if not _on_colab and curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
             log.info(
                 "[LeechService] File size %.2f GB exceeds 1.95 GB limit on non-Colab env. Starting Smart 1080p compression...",
                 curr_size / (1024 * 1024 * 1024),
             )
             task_tracker.tracker.set_step(user_id, "Smart 1080p Compression (FFmpeg)...")
-            compressed_file = os.path.join(temp_dir, f"compressed_{_slugify(title, year)}.mp4")
+            compressed_file = os.path.join(temp_dir, f"compressed_{slug}.mp4")
             last_comp_edit = 0.0
 
             async def _compress_prog(pct: float, pct_str: str) -> None:
@@ -940,82 +975,61 @@ async def _execute_leech(
                 except Exception:
                     pass
                 local_file = compressed_file
-        else:
-            # On Colab (12GB RAM, 100GB disk) or file <= 1.95GB: Ultra-fast stream-copy remux (takes 10-25s)
-            ext = os.path.splitext(local_file)[1].lower()
-            if ext in (".mkv", ".avi", ".webm"):
-
-                # Safety check: remuxing creates a second copy on disk during ffmpeg operation.
-                # If available free disk is less than file size + 200MB, skip remuxing and keep original file!
-                try:
-                    free_disk = shutil.disk_usage(temp_dir).free
-                    file_size = os.path.getsize(local_file)
-                    can_remux = free_disk > (file_size + 200 * 1024 * 1024)
-                except Exception:
-                    can_remux = True
-
-                if can_remux:
-                    try:
-                        await status_msg.edit_text(
-                            f"⚙️ <b>පියවර 3/4: වීඩියෝව වෙබ් ධාවනය සඳහා සකසමින් පවතී (Optimizing for Web)...</b>\n\n"
-                            f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                            f"⚡ <b>ආකෘතිය:</b> {ext.upper()} ➔ MP4 Web-Streamable (+faststart)\n"
-                            f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
-                            parse_mode=ParseMode.HTML,
-                            reply_markup=kb_cancel,
-                        )
-                    except Exception:
-                        pass
-                    log.info("[LeechService] Remuxing %s to web-streamable MP4...", ext)
-                    remuxed = os.path.join(temp_dir, f"web_{_slugify(title, year)}.mp4")
-                    if await video_service.ensure_web_streamable(local_file, remuxed):
+                # Soft-embed Sinhala subtitle into the compressed MP4
+                if sub_srt_path and os.path.exists(sub_srt_path):
+                    sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
+                    if await video_service.embed_subtitles_soft(local_file, sub_srt_path, sub_muxed):
                         try:
                             os.remove(local_file)
                         except Exception:
                             pass
-                        local_file = remuxed
-                else:
-                    log.warning("[LeechService] Insufficient disk for remuxing (%d free vs %d file). Keeping original file to prevent crash.", free_disk, file_size)
+                        local_file = sub_muxed
+        else:
+            # On Colab (12GB RAM /dev/shm) or file <= 1.95GB:
+            # Single-pass MKV/AVI/MP4 -> Web-Streamable MP4 (+faststart) + Stereo AAC + Sinhala Subtitle Merge!
+            ext = os.path.splitext(local_file)[1].lower()
+            try:
+                free_disk = shutil.disk_usage(temp_dir).free
+                file_size_check = os.path.getsize(local_file)
+                can_remux = free_disk > (file_size_check + 150 * 1024 * 1024)
+            except Exception:
+                can_remux = True
 
-        # ── Step 2.6: Soft-Embed Sinhala Subtitle into Video Container ────────
-        # Merges subtitle track into MP4 container (-c copy -c:s mov_text).
-        # When users download the file to PC/Phone, VLC and MX Player will autoplay
-        # Sinhala subtitles immediately without requiring separate .srt download.
-        try:
-            sub_to_embed = None
-            if temp_dir and os.path.exists(temp_dir):
-                for root, _, files in os.walk(temp_dir):
-                    for f in files:
-                        f_l = f.lower()
-                        if f_l.endswith((".srt", ".vtt")):
-                            sub_to_embed = os.path.join(root, f)
-                            if "sin" in f_l or "si" in f_l:
-                                break
-
-            # If no subtitle file was found in download folder, create Sinhala intro subtitle
-            if not sub_to_embed:
-                default_sub_srt = os.path.join(temp_dir, "sinhala_auto.srt")
-                with open(default_sub_srt, "w", encoding="utf-8") as sf:
-                    sf.write(
-                        "1\n00:00:01,000 --> 00:00:07,000\n"
-                        f"FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n"
-                        "2\n00:00:08,000 --> 00:00:16,000\n"
-                        f"{display_title} නැරඹීමට සහ බාගත කිරීමට ස්තූතියි!\n"
+            if can_remux:
+                try:
+                    await status_msg.edit_text(
+                        f"⚙️ <b>පියවර 3/5: 12GB RAM Ultra-Fast වීඩියෝ සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
+                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                        f"⚡ <b>ආකෘතිය:</b> {ext.upper()} ➔ MP4 Web-Streamable (+faststart & Stereo AAC)\n"
+                        f"💬 <b>උපසිරැසි:</b> සිංහල උපසිරැසි වීඩියෝවටම Merge කෙරේ (Auto-Play Subtitles)\n"
+                        f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=kb_cancel,
                     )
-                sub_to_embed = default_sub_srt
-
-            if sub_to_embed and os.path.exists(sub_to_embed):
-                log.info("[LeechService] Soft-embedding Sinhala subtitle into video: %s", sub_to_embed)
-                sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
-                if await video_service.embed_subtitles_soft(local_file, sub_to_embed, sub_muxed):
+                except Exception:
+                    pass
+                log.info("[LeechService] Single-pass RAM remux + Sinhala subtitle merge (%s -> MP4)...", ext)
+                remuxed = os.path.join(temp_dir, f"{slug}.mp4")
+                if os.path.abspath(remuxed) == os.path.abspath(local_file):
+                    remuxed = os.path.join(temp_dir, f"web_{slug}.mp4")
+                if await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_srt_path):
                     try:
                         os.remove(local_file)
                     except Exception:
                         pass
-                    local_file = sub_muxed
-                    log.info("[LeechService] Subtitle soft-embed succeeded! Subtitles now merged into video.")
-        except Exception as sub_mux_err:
-            log.warning("[LeechService] Subtitle soft-embed note: %s", sub_mux_err)
+                    local_file = remuxed
+                    log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
+                elif sub_srt_path and os.path.exists(sub_srt_path):
+                    # Fallback soft-embed if ensure_web_streamable was skipped
+                    sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
+                    if await video_service.embed_subtitles_soft(local_file, sub_srt_path, sub_muxed):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                        local_file = sub_muxed
+            else:
+                log.warning("[LeechService] Insufficient free space for remuxing. Keeping original file.")
 
         # ── Step 3: Fast Parallel Upload to Telegram Channel ──────────────────
         file_size = os.path.getsize(local_file)
@@ -1049,8 +1063,6 @@ async def _execute_leech(
                     log.debug("[LeechService] Upload progress edit ignored: %s", up_err)
 
         # ── Step 4: Upload to High-Speed Cloud Drive (OneDrive / Google Drive) ──
-        ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
-        slug = f"{_slugify(title, year)}{ep_suffix}"
         cloud_upload_res = None
 
         _last_drive_edit = 0.0
@@ -1124,13 +1136,35 @@ async def _execute_leech(
             base_site = "https://filmsub.pages.dev"
         site_url = f"{base_site}/movie.html?id={slug}"
 
-        # Default Sinhala Subtitle
+        # Publish Sinhala VTT subtitle to GitHub/website & generate inline data:text/vtt URI
         sub_text = (
-            f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:06.000\n"
-            f"FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n2\n00:00:07.000 --> 00:00:15.000\n"
-            f"{display_title} නැරඹීමට ස්තූතියි!"
+            f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:08.000\n"
+            f"FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n2\n00:00:08.500 --> 00:00:18.000\n"
+            f"{display_title} නැරඹීමට සහ බාගත කිරීමට ස්තූතියි!"
         )
+        if sub_vtt_path and os.path.exists(sub_vtt_path):
+            try:
+                with open(sub_vtt_path, "r", encoding="utf-8", errors="replace") as vf:
+                    loaded_vtt = vf.read().strip()
+                if loaded_vtt.startswith("WEBVTT"):
+                    sub_text = loaded_vtt
+            except Exception:
+                pass
+
         default_sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
+        if sub_vtt_path and os.path.exists(sub_vtt_path):
+            try:
+                uploaded_sub_url = await subtitle_service.upload_subtitle_to_github(
+                    vtt_path=sub_vtt_path,
+                    filename=f"{slug}-si.vtt",
+                    github_token=getattr(config, "GITHUB_TOKEN", ""),
+                    repo=getattr(config, "GITHUB_REPO", ""),
+                )
+                if uploaded_sub_url and len(sub_text) > 16000:
+                    # Use hosted VTT URL for large subtitle files while keeping data_uri for instant load
+                    default_sub_url = uploaded_sub_url
+            except Exception as up_sub_err:
+                log.debug("[LeechService] Subtitle upload fallback to inline VTT: %s", up_sub_err)
 
         file_ext = os.path.splitext(file_name)[1].lstrip(".").upper() or "MP4"
         stream_type = "video/mp4" if file_ext == "MP4" else "video/x-matroska"
@@ -1142,28 +1176,86 @@ async def _execute_leech(
 
         streams_list = []
         downloads_list = []
+        qualities_map = {}
 
         if cloud_stream:
+            # Extract Drive file ID if present to build multi-quality stream & direct links
+            drive_id_match = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", cloud_stream)
+            drive_file_id = drive_id_match.group(1) if drive_id_match else ""
+
             streams_list.append({
                 "server": "Server 1",
-                "label": "⚡ Server 1 (Google Drive Ultra HD)",
+                "label": "⚡ Server 1 (Google Drive Ultra HD + Auto Sub)",
                 "type": stream_type,
                 "stream_url": cloud_stream,
+                "quality": "1080p",
             })
+            if drive_file_id:
+                direct_drive_mp4 = f"https://drive.google.com/uc?export=download&id={drive_file_id}"
+                streams_list.append({
+                    "server": "Server 2",
+                    "label": "🎬 Server 2 (Direct Player • Auto Sinhala Sub)",
+                    "type": "video/mp4",
+                    "stream_url": direct_drive_mp4,
+                    "quality": "1080p",
+                })
+                qualities_map = {
+                    "auto": f"https://drive.google.com/file/d/{drive_file_id}/preview",
+                    "1080p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd1080",
+                    "720p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=hd720",
+                    "480p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=large",
+                    "360p": f"https://drive.google.com/file/d/{drive_file_id}/preview?vq=medium",
+                }
+            else:
+                qualities_map = {
+                    "auto": cloud_stream,
+                    "1080p": cloud_stream,
+                    "720p": cloud_stream,
+                    "480p": cloud_stream,
+                    "360p": cloud_stream,
+                }
+
             downloads_list.append({
-                "quality": "1080p (Cloud High-Speed)",
+                "quality": "1080p",
+                "label": "1080p Full HD (Sinhala Sub Merged)",
                 "size": downloader.format_bytes(sz_1080),
                 "url": cloud_download or cloud_stream,
                 "format": file_ext,
                 "host": "Google Drive",
+                "sub_merged": True,
             })
 
         base_dl_url = cloud_download or cloud_stream
         if base_dl_url:
+            sep = "&" if "?" in base_dl_url else "?"
             downloads_list.extend([
-                {"quality": "720p", "size": downloader.format_bytes(sz_720), "url": base_dl_url, "format": file_ext, "host": "Direct"},
-                {"quality": "480p", "size": downloader.format_bytes(sz_480), "url": base_dl_url, "format": file_ext, "host": "Direct"},
-                {"quality": "360p", "size": downloader.format_bytes(sz_360), "url": base_dl_url, "format": file_ext, "host": "Direct"},
+                {
+                    "quality": "720p",
+                    "label": "720p HD (Sinhala Sub Merged)",
+                    "size": downloader.format_bytes(sz_720),
+                    "url": f"{base_dl_url}{sep}vq=hd720",
+                    "format": file_ext,
+                    "host": "Google Drive",
+                    "sub_merged": True,
+                },
+                {
+                    "quality": "480p",
+                    "label": "480p SD (Sinhala Sub Merged)",
+                    "size": downloader.format_bytes(sz_480),
+                    "url": f"{base_dl_url}{sep}vq=large",
+                    "format": file_ext,
+                    "host": "Google Drive",
+                    "sub_merged": True,
+                },
+                {
+                    "quality": "360p",
+                    "label": "360p Data Saver (Sinhala Sub Merged)",
+                    "size": downloader.format_bytes(sz_360),
+                    "url": f"{base_dl_url}{sep}vq=medium",
+                    "format": file_ext,
+                    "host": "Google Drive",
+                    "sub_merged": True,
+                },
             ])
 
         raw_dur = tmdb_meta.get("duration", 120)
@@ -1193,6 +1285,8 @@ async def _execute_leech(
             "genres": tmdb_meta.get("genres", ["Action", "Adventure"]),
             "language": "English",
             "subtitle_language": "Sinhala",
+            "has_sinhala_sub": True,
+            "sub_merged": True,
             "quality": chosen_candidate.quality,
             "duration": dur_str,
             "description": tmdb_meta.get("description", ""),
@@ -1206,11 +1300,13 @@ async def _execute_leech(
             "file_size": file_size,
             "stream_url": primary_stream,
             "streams": streams_list,
+            "qualities": qualities_map,
             "downloads": downloads_list,
             "subtitles": [
                 {
                     "language": "Sinhala",
-                    "label": "Sinhala Subtitle",
+                    "srclang": "si",
+                    "label": "සිංහල උපසිරැසි (Sinhala)",
                     "url": default_sub_url,
                     "default": True,
                 }

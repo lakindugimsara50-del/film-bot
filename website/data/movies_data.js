@@ -22,3 +22,4 @@ window.FILMSUB_DATA = {
   ],
   "last_updated": "2026-09-24T08:47:18Z"
 };
+window.MOVIES_DATA = window.FILMSUB_DATA;

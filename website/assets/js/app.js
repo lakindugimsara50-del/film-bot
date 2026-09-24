@@ -135,8 +135,16 @@ function renderHero() {
   const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i>${durationVal}</span>` : '';
   const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${g}</a>`).join('');
 
-  document.querySelector('.hero-backdrop').style.backgroundImage = `url('${backdrop}')`;
-  document.getElementById('hero-badge').textContent = 'Featured';
+  const posterEl = document.getElementById('hero-poster-mini');
+  if (posterEl) {
+    posterEl.src = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
+    posterEl.alt = movie.title || 'Featured Movie';
+    posterEl.onerror = () => { posterEl.src = SITE_CONFIG.defaultPoster; };
+  }
+  const backdropEl = document.querySelector('.hero-backdrop');
+  if (backdropEl) backdropEl.style.backgroundImage = `url('${backdrop}')`;
+  const badgeEl = document.getElementById('hero-badge');
+  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-fire"></i> Featured • සිංහල උපසිරැසි`;
   document.getElementById('hero-title').textContent = movie.title || '';
   document.getElementById('hero-title-si').textContent = movie.title_si || '';
   document.getElementById('hero-meta').innerHTML = `${imdb}${quality}${year}${duration}`;

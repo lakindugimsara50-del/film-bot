@@ -11,6 +11,8 @@ Tracks:
 import asyncio
 import datetime
 import logging
+import os
+import shutil
 from typing import Optional, Dict, Any
 
 log = logging.getLogger(__name__)
@@ -147,7 +149,6 @@ class TaskTracker:
 
             # Clean temporary folder if tracked
             if target_info.temp_dir and os.path.exists(target_info.temp_dir):
-                import shutil
                 shutil.rmtree(target_info.temp_dir, ignore_errors=True)
                 log.info("Temp dir %s deleted on cancellation.", target_info.temp_dir)
 

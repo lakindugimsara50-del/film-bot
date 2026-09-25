@@ -921,6 +921,7 @@ async def generate_multi_quality_variants_ram(
         strategies.append(("libx264", False, False))
 
     proc = None
+    valid_outputs: dict[str, str] = {}
     try:
         for attempt_idx, (enc_choice, burn_choice, soft_choice) in enumerate(strategies):
             cmd, out_paths = _build_multi_cmd(enc_choice, burn_choice, soft_choice)

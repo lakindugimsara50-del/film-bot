@@ -1,4 +1,4 @@
-﻿"""
+"""
 find_handler.py - /find and /search command handler.
 
 Triggers the 4-method cascading movie finder and presents results

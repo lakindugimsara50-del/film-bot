@@ -37,7 +37,7 @@ def parse_telegram_message_link(url: str) -> Optional[tuple[Any, int]]:
     m_priv = re.match(r"https?://t\.me/c/(\d+)/(\d+)", url)
     if m_priv:
         raw_id, msg_id = int(m_priv.group(1)), int(m_priv.group(2))
-        chat_id = -1000000000000 - raw_id if raw_id > 0 else raw_id
+        chat_id = int(f"-100{raw_id}") if raw_id > 0 else raw_id
         return chat_id, msg_id
 
     # Public channel link

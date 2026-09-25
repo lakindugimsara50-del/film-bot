@@ -1,1 +1,1 @@
-﻿# scrapers package
+# scrapers package

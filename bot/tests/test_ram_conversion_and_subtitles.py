@@ -227,3 +227,40 @@ def test_website_movies_json_and_movies_data_js_have_multi_quality_and_sinhala_s
         assert len(subs) >= 1, f"Missing subtitles in {m.get('title')}"
         assert subs[0].get("default") is True
         assert subs[0].get("url"), f"Empty subtitle URL in {m.get('title')}"
+
+
+def test_task_tracker_temp_dir_cleanup_and_safety(tmp_path):
+    from services.task_tracker import tracker, TaskStatus
+    dummy_dir = tmp_path / "leech_test_temp"
+    dummy_dir.mkdir()
+    dummy_file = dummy_dir / "sample.txt"
+    dummy_file.write_text("temp_data")
+    assert dummy_dir.exists()
+
+    user_id = 998877
+    tracker.start_task(user_id=user_id, title="Test Cleanup Movie")
+    tracker.set_metadata(user_id=user_id, temp_dir=str(dummy_dir))
+
+    # Cancel task and verify temp_dir is deleted without NameError
+    cancelled = tracker.cancel_task(user_id=user_id)
+    assert cancelled is True
+    assert not dummy_dir.exists(), "temp_dir should be cleanly deleted on task cancellation"
+
+
+def test_telegram_channel_id_parsing_accuracy():
+    from services.scrapers.method1_telegram import parse_telegram_message_link
+    # Standard 10-digit channel ID
+    chat_id, msg_id = parse_telegram_message_link("https://t.me/c/1234567890/42")
+    assert chat_id == -1001234567890
+    assert msg_id == 42
+
+    # 10-digit channel ID like private channel -1004325759505
+    chat_id2, msg_id2 = parse_telegram_message_link("https://t.me/c/4325759505/14")
+    assert chat_id2 == -1004325759505
+    assert msg_id2 == 14
+
+    # Public username link
+    user, pub_msg_id = parse_telegram_message_link("https://t.me/my_channel/99")
+    assert user == "my_channel"
+    assert pub_msg_id == 99
+

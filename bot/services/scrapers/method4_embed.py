@@ -1,4 +1,4 @@
-﻿"""
+"""
 method4_embed.py - Method 4: Multi-Server Embed Extractor (Vidsrc / AutoEmbed).
 
 Generates embed URLs from public streaming aggregators using IMDb ID or title.

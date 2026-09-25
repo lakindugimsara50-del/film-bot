@@ -1,4 +1,4 @@
-﻿"""
+"""
 method2_consumet.py - Method 2: Consumet / FlixHQ Streaming API.
 
 Queries an open-source Consumet API instance to get direct .mp4 / .m3u8

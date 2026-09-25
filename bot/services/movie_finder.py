@@ -1,4 +1,4 @@
-﻿"""
+"""
 movie_finder.py - Ultra Cascading Movie Finder Orchestrator.
 
 Tries 4 acquisition methods in priority order, gracefully falling back

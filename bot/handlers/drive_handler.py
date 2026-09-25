@@ -30,100 +30,103 @@ def _is_admin(user_id: int) -> bool:
     return auth_service.is_owner(user_id) or auth_service.is_authorized(user_id)
 
 
+async def drives_command(client: Client, message: Message) -> None:
+    """Show status of all connected Cloud Drives or handle subcommands."""
+    if not _is_admin(message.from_user.id if message.from_user else 0):
+        await message.reply_text("⛔ මෙම විධානය භාවිත කළ හැක්කේ Administrators ලට පමණි.")
+        return
+
+    text = message.text or message.caption or ""
+    args = text.strip().split()
+    subcommand = args[1].lower() if len(args) > 1 else ""
+
+    # Subcommand: /drives offline
+    if subcommand in ("offline", "lost", "inactive"):
+        await _show_offline_movies(client, message)
+        return
+
+    # Subcommand: /drives list <drive_id>
+    if subcommand == "list" and len(args) > 2:
+        drive_id = args[2]
+        await _list_drive_movies(client, message, drive_id)
+        return
+
+    # Default: Show summary of all connected drives
+    wait_msg = await message.reply_text("🔍 Cloud Drive තත්ත්වයන් පරීක්ෂා කරමින් පවතී...")
+    try:
+        # Check if drive_manager is ready
+        if not drive_manager._initialized:
+            await wait_msg.edit_text(
+                "⏳ <b>Drive Manager තවමත් ආරම්භ වෙමින් පවතී...</b>\n\n"
+                "තත්පර 30ක් රැඳී නැවත /drives ටයිප් කරන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        statuses = await drive_manager.get_drives_status()
+        if not statuses:
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("➕ Google Drive Add කරන්න", callback_data="adddrive:gdrive")],
+                [InlineKeyboardButton("➕ OneDrive Add කරන්න", callback_data="adddrive:onedrive")],
+            ])
+            text = (
+                "☁️ <b>Cloud Drive Storage තත්ත්වය</b>\n\n"
+                "ℹ️ තවමත් කිසිදු Cloud Drive එකක් සම්බන්ධ කර නොමැත.\n\n"
+                "<b>නව Drive එකක් එක් කිරීමට:</b>\n"
+                "• <code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
+                "• <code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>"
+            )
+            await wait_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+            return
+
+        lines = ["☁️ <b>සම්බන්ධිත Cloud Drive ගිණුම් තත්ත්වය</b>\n"]
+        total_quota = 0.0
+        total_used = 0.0
+        remove_buttons = []
+
+        for d in statuses:
+            icon = "✅" if d["is_active"] else "❌"
+            p_name = "Microsoft OneDrive" if d["provider"] == "onedrive" else "Google Drive"
+            status_text = "Active (සක්‍රිය)" if d["is_active"] else f"Offline ({d.get('error', 'Error')[:40]})"
+
+            lines.append(
+                f"{icon} <b>{d['name']}</b> ({p_name})\n"
+                f"   • ID: <code>{d['drive_id']}</code>\n"
+                f"   • තත්ත්වය: {status_text}\n"
+                f"   • මුළු ඉඩ: {d['total_gb']} GB\n"
+                f"   • භාවිත කළ: {d['used_gb']} GB\n"
+                f"   • නිදහස් ඉඩ: <b>{d['remaining_gb']} GB</b>\n"
+                f"   • ගබඩා කළ චිත්‍රපට: <b>{d['movie_count']}</b>\n"
+            )
+            total_quota += d["total_gb"]
+            total_used += d["used_gb"]
+            remove_buttons.append(
+                [InlineKeyboardButton(f"🗑 Remove: {d['name']}", callback_data=f"rmdrive:{d['drive_id']}")]
+            )
+
+        lines.append(
+            f"📊 <b>මුළු Cloud Storage:</b> {round(total_used, 1)} GB / {round(total_quota, 1)} GB\n\n"
+            f"<b>විධාන:</b>\n"
+            f"• <code>/drives list &lt;drive_id&gt;</code> — Drive එකේ ඇති චිත්‍රපට\n"
+            f"• <code>/drives offline</code> — අක්‍රිය Drive සහ බලපෑ චිත්‍රපට\n"
+            f"• <code>/rmdrive &lt;drive_id&gt;</code> — Drive ඉවත් කිරීම"
+        )
+
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("➕ නව Drive Add කරන්න", callback_data="adddrive:new")],
+            *remove_buttons,
+        ])
+        await wait_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=kb)
+
+    except Exception as exc:
+        log.error("[DriveHandler] Error checking drives: %s", exc)
+        await wait_msg.edit_text(f"❌ දෝෂයක් සිදුවිය: {exc}")
+
+
 def register(app: Client) -> None:
     """Register all Cloud Drive management handlers."""
 
-    @app.on_message(filters.command(["drives", "storage"]))
-    async def drives_command(client: Client, message: Message) -> None:
-        """Show status of all connected Cloud Drives or handle subcommands."""
-        if not _is_admin(message.from_user.id if message.from_user else 0):
-            await message.reply_text("⛔ මෙම විධානය භාවිත කළ හැක්කේ Administrators ලට පමණි.")
-            return
-
-        args = message.text.strip().split()
-        subcommand = args[1].lower() if len(args) > 1 else ""
-
-        # Subcommand: /drives offline
-        if subcommand in ("offline", "lost", "inactive"):
-            await _show_offline_movies(client, message)
-            return
-
-        # Subcommand: /drives list <drive_id>
-        if subcommand == "list" and len(args) > 2:
-            drive_id = args[2]
-            await _list_drive_movies(client, message, drive_id)
-            return
-
-        # Default: Show summary of all connected drives
-        wait_msg = await message.reply_text("🔍 Cloud Drive තත්ත්වයන් පරීක්ෂා කරමින් පවතී...")
-        try:
-            # Check if drive_manager is ready
-            if not drive_manager._initialized:
-                await wait_msg.edit_text(
-                    "⏳ <b>Drive Manager තවමත් ආරම්භ වෙමින් පවතී...</b>\n\n"
-                    "තත්පර 30ක් රැඳී නැවත /drives ටයිප් කරන්න.",
-                    parse_mode=ParseMode.HTML,
-                )
-                return
-
-            statuses = await drive_manager.get_drives_status()
-            if not statuses:
-                kb = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("➕ Google Drive Add කරන්න", callback_data="adddrive:gdrive")],
-                    [InlineKeyboardButton("➕ OneDrive Add කරන්න", callback_data="adddrive:onedrive")],
-                ])
-                text = (
-                    "☁️ <b>Cloud Drive Storage තත්ත්වය</b>\n\n"
-                    "ℹ️ තවමත් කිසිදු Cloud Drive එකක් සම්බන්ධ කර නොමැත.\n\n"
-                    "<b>නව Drive එකක් එක් කිරීමට:</b>\n"
-                    "• <code>/adddrive gdrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>\n"
-                    "• <code>/adddrive onedrive &lt;id&gt; &lt;name&gt; &lt;refresh_token&gt;</code>"
-                )
-                await wait_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
-                return
-
-            lines = ["☁️ <b>සම්බන්ධිත Cloud Drive ගිණුම් තත්ත්වය</b>\n"]
-            total_quota = 0.0
-            total_used = 0.0
-            remove_buttons = []
-
-            for d in statuses:
-                icon = "✅" if d["is_active"] else "❌"
-                p_name = "Microsoft OneDrive" if d["provider"] == "onedrive" else "Google Drive"
-                status_text = "Active (සක්‍රිය)" if d["is_active"] else f"Offline ({d.get('error', 'Error')[:40]})"
-
-                lines.append(
-                    f"{icon} <b>{d['name']}</b> ({p_name})\n"
-                    f"   • ID: <code>{d['drive_id']}</code>\n"
-                    f"   • තත්ත්වය: {status_text}\n"
-                    f"   • මුළු ඉඩ: {d['total_gb']} GB\n"
-                    f"   • භාවිත කළ: {d['used_gb']} GB\n"
-                    f"   • නිදහස් ඉඩ: <b>{d['remaining_gb']} GB</b>\n"
-                    f"   • ගබඩා කළ චිත්‍රපට: <b>{d['movie_count']}</b>\n"
-                )
-                total_quota += d["total_gb"]
-                total_used += d["used_gb"]
-                remove_buttons.append(
-                    [InlineKeyboardButton(f"🗑 Remove: {d['name']}", callback_data=f"rmdrive:{d['drive_id']}")]
-                )
-
-            lines.append(
-                f"📊 <b>මුළු Cloud Storage:</b> {round(total_used, 1)} GB / {round(total_quota, 1)} GB\n\n"
-                f"<b>විධාන:</b>\n"
-                f"• <code>/drives list &lt;drive_id&gt;</code> — Drive එකේ ඇති චිත්‍රපට\n"
-                f"• <code>/drives offline</code> — අක්‍රිය Drive සහ බලපෑ චිත්‍රපට\n"
-                f"• <code>/rmdrive &lt;drive_id&gt;</code> — Drive ඉවත් කිරීම"
-            )
-
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("➕ නව Drive Add කරන්න", callback_data="adddrive:new")],
-                *remove_buttons,
-            ])
-            await wait_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=kb)
-
-        except Exception as exc:
-            log.error("[DriveHandler] Error checking drives: %s", exc)
-            await wait_msg.edit_text(f"❌ දෝෂයක් සිදුවිය: {exc}")
+    app.on_message(filters.command(["drives", "storage"]))(drives_command)
 
     @app.on_message(filters.command(["adddrive"]))
     async def adddrive_command(client: Client, message: Message) -> None:

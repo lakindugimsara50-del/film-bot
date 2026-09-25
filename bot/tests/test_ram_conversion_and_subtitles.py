@@ -259,8 +259,56 @@ def test_telegram_channel_id_parsing_accuracy():
     assert chat_id2 == -1004325759505
     assert msg_id2 == 14
 
+    # 100-prefixed channel ID in URL (e.g. https://t.me/c/1004325759505/14)
+    chat_id3, msg_id3 = parse_telegram_message_link("https://t.me/c/1004325759505/14")
+    assert chat_id3 == -1004325759505
+    assert msg_id3 == 14
+
     # Public username link
     user, pub_msg_id = parse_telegram_message_link("https://t.me/my_channel/99")
     assert user == "my_channel"
     assert pub_msg_id == 99
+
+
+@pytest.mark.asyncio
+async def test_drives_command_import_and_execution():
+    from unittest.mock import AsyncMock, MagicMock
+    from handlers.drive_handler import drives_command
+
+    client = MagicMock()
+    message = MagicMock()
+    message.from_user.id = 12345
+    message.text = "/drives"
+    message.reply_text = AsyncMock()
+
+    # Unauthorized user gets access denied gracefully
+    await drives_command(client, message)
+    message.reply_text.assert_awaited()
+    assert "Administrators" in message.reply_text.call_args[0][0]
+
+    # Safe against None text
+    message.text = None
+    message.caption = None
+    message.reply_text.reset_mock()
+    await drives_command(client, message)
+    message.reply_text.assert_awaited()
+
+
+def test_search_js_exists_and_filters_type():
+    import json
+    import subprocess
+    from pathlib import Path
+
+    js_file = Path(__file__).resolve().parents[2] / "website" / "assets" / "js" / "search.js"
+    assert js_file.exists(), "website/assets/js/search.js must exist"
+
+    # Run node check on search.js
+    res = subprocess.run(["node", "--check", str(js_file)], capture_output=True, text=True)
+    assert res.returncode == 0, f"search.js syntax error: {res.stderr}"
+
+    # Verify search.html references search.js
+    html_file = Path(__file__).resolve().parents[2] / "website" / "search.html"
+    html_content = html_file.read_text(encoding="utf-8")
+    assert 'src="assets/js/search.js"' in html_content, "search.html must link assets/js/search.js"
+
 

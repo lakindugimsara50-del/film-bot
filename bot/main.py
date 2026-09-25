@@ -289,7 +289,7 @@ async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
         await help_handler(client, fake_msg)
     elif action == "drives":
         await query.answer()
-        from handlers.drive_admin import drives_command
+        from handlers.drive_handler import drives_command
         fake_msg = query.message
         fake_msg.from_user = query.from_user
         await drives_command(client, fake_msg)

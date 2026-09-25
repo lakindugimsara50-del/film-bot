@@ -13,6 +13,7 @@ Provides:
 import base64
 import json
 import logging
+import os
 from datetime import datetime, timezone
 
 import httpx
@@ -52,8 +53,6 @@ def _get_headers() -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-import os
-
 _LOCAL_MOVIES_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "website", "data", "movies.json")
 )

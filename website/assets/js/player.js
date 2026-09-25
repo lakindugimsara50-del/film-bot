@@ -204,6 +204,7 @@ function buildChunkStreamUrl(driveId, quality) {
 
 /**
  * Builds the complete Multi-Server & External Backup ("Bahirawa Players") stream list.
+ * Prioritizes Telegram Cloud HD & Super Player as Server 1, backed by VIP HD servers.
  * Ensures every movie & TV episode works seamlessly across Laptop, PC, Mobile, and Tablet.
  */
 function getMovieStreams(movie) {
@@ -213,60 +214,36 @@ function getMovieStreams(movie) {
   const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0);
   const sNum = currentSeason || movie.season || 1;
   const eNum = currentEpisode || movie.episode || 1;
+  const primaryUrl = movie.stream_url || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].stream_url) || '';
 
-  // 1. Primary Google Drive Movie -> Server 1 (Super Player Chunk Stream) + Server 2 (Google Drive CDN Player)
-  if (driveId) {
+  // 1. Server 1: Primary Telegram Cloud Stream OR High-Speed Direct MP4 Stream
+  if (movie.message_id || (primaryUrl && (primaryUrl.includes('/stream/') || primaryUrl.endsWith('.mp4')))) {
+    const tgUrl = primaryUrl || `/stream/channel/-1004325759505/${movie.message_id}`;
+    list.push({
+      server: 'Server 1',
+      label: '⚡ Super Player (Telegram Cloud HD • Auto Sub)',
+      mode: 'telegram_stream',
+      type: 'video/mp4',
+      stream_url: tgUrl,
+      message_id: movie.message_id || 0,
+      file_id: movie.file_id || '',
+      quality: '1080p',
+    });
+  } else if (driveId) {
     const activeQ = selectedQuality === 'auto' ? currentEffectiveQuality : selectedQuality;
     const qDriveId = extractDriveIdForQuality(movie, activeQ) || driveId;
     list.push({
       server: 'Server 1',
-      label: '⚡ Super Player (Chunk Stream • Auto Sub)',
+      label: '⚡ Super Player (Cloud HD • Auto Sub)',
       mode: 'super_chunk',
       type: 'video/mp4',
       drive_id: qDriveId,
       stream_url: buildChunkStreamUrl(qDriveId, activeQ),
+      quality: '1080p',
     });
-    list.push({
-      server: 'Server 2',
-      label: '☁️ Drive Player (Google CDN • Auto Sub)',
-      mode: 'drive_embed',
-      type: 'embed',
-      embed: true,
-      drive_id: driveId,
-      stream_url: `https://drive.google.com/file/d/${driveId}/preview`,
-    });
-  } else {
-    // Non-Drive movie (e.g. direct MP4 or explicit embed stream)
-    const primaryUrl = movie.stream_url || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].stream_url) || '';
-    const isExplicitEmbed = (
-      primaryUrl.includes('vidsrc') ||
-      primaryUrl.includes('multiembed') ||
-      primaryUrl.includes('2embed') ||
-      primaryUrl.includes('autoembed') ||
-      (Array.isArray(movie.streams) && movie.streams[0] && (movie.streams[0].type === 'embed' || movie.streams[0].embed === true))
-    );
-
-    if (primaryUrl && isExplicitEmbed) {
-      list.push({
-        server: 'Server 1',
-        label: '🌐 VIP Player 1 (Primary Embed • Auto Sub)',
-        mode: 'external_embed',
-        type: 'embed',
-        embed: true,
-        stream_url: primaryUrl,
-      });
-    } else if (primaryUrl && !primaryUrl.includes('t.me/')) {
-      list.push({
-        server: 'Server 1',
-        label: '⚡ Super Player (Ultra HD • Auto Sub)',
-        mode: 'direct_mp4',
-        type: 'video/mp4',
-        stream_url: primaryUrl,
-      });
-    }
   }
 
-  // 2. External Multi-Server Backup Players ("Bahirawa Players" - VidSrc, MultiEmbed, AutoEmbed, 2Embed)
+  // 2. External Multi-Server Backup Players ("Bahirawa Players" - VidSrc, SuperEmbed, AutoEmbed)
   const imdbId = (movie.imdb_id || '').trim();
   const tmdbId = String(movie.tmdb_id || '').trim();
   const extId = imdbId || tmdbId;
@@ -275,16 +252,14 @@ function getMovieStreams(movie) {
     const vidsrcUrl = isSeries
       ? `https://vidsrc.xyz/embed/tv/${extId}/${sNum}/${eNum}`
       : `https://vidsrc.xyz/embed/movie/${extId}`;
-    if (!list.some(s => s.stream_url === vidsrcUrl)) {
-      list.push({
-        server: `Server ${list.length + 1}`,
-        label: `🌐 VIP Player ${list.length} (VidSrc Pro • Multi-Quality)`,
-        mode: 'external_embed',
-        type: 'embed',
-        embed: true,
-        stream_url: vidsrcUrl,
-      });
-    }
+    list.push({
+      server: `Server ${list.length + 1}`,
+      label: `🌐 VIP Player 1 (VidSrc Pro • Multi-Quality HD)`,
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: vidsrcUrl,
+    });
 
     const useTmdbParam = (!imdbId && tmdbId) ? '&tmdb=1' : '';
     const multiEmbedUrl = isSeries
@@ -292,7 +267,7 @@ function getMovieStreams(movie) {
       : `https://multiembed.mov/?video_id=${extId}${useTmdbParam}`;
     list.push({
       server: `Server ${list.length + 1}`,
-      label: `🎬 VIP Player ${list.length} (SuperEmbed • Fast HD)`,
+      label: `🎬 VIP Player 2 (SuperEmbed • Fast HD)`,
       mode: 'external_embed',
       type: 'embed',
       embed: true,
@@ -304,11 +279,24 @@ function getMovieStreams(movie) {
       : `https://player.autoembed.cc/embed/movie/${extId}`;
     list.push({
       server: `Server ${list.length + 1}`,
-      label: `🚀 VIP Player ${list.length} (AutoEmbed Global)`,
+      label: `🚀 VIP Player 3 (AutoEmbed Global)`,
       mode: 'external_embed',
       type: 'embed',
       embed: true,
       stream_url: autoEmbedUrl,
+    });
+  }
+
+  // 3. Google Drive Archive Player (if available as secondary/backup server)
+  if (driveId && !list.some(s => s.drive_id === driveId && s.mode === 'drive_embed')) {
+    list.push({
+      server: `Server ${list.length + 1}`,
+      label: '☁️ Drive Player (Google Archive • Auto Sub)',
+      mode: 'drive_embed',
+      type: 'embed',
+      embed: true,
+      drive_id: driveId,
+      stream_url: `https://drive.google.com/file/d/${driveId}/preview`,
     });
   }
 
@@ -1387,14 +1375,15 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.on('canplay', hideLoader);
     vjsPlayer.on('playing', hideLoader);
 
-    // Low-bandwidth watchdog: if raw MP4 header over /api/stream is still at readyState 0 after 8.5s
-    // (e.g. on ultra-slow <0.3Mbps mobile data where a 4.5MB tail moov atom takes >60s),
-    // automatically switch to Server 2 (Google Drive CDN Adaptive Stream) so playback starts immediately.
+    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 4.5s
+    // (e.g. stream server sleeping or ultra-slow network),
+    // automatically switch to VIP Backup Server (Server 2) so playback starts with zero interruption.
     const slowHeaderWatchdog = setTimeout(() => {
-      if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 && stream.mode === 'super_chunk') {
+      if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
+          (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         const streams = getMovieStreams(movie);
         if (streams.length > 1 && currentStreamIdx === 0) {
-          FilmSub.showToast('⚡ අන්තර්ජාල වේගය අනුව Google Drive High-Speed CDN (Server 2) වෙත ස්වයංක්‍රීයව මාරු විය!', 'info');
+          FilmSub.showToast('⚡ සුපිරි වේගවත් VIP Backup Server වෙත ස්වයංක්‍රීයව මාරු විය!', 'info');
           const tabsEl = document.getElementById('server-tabs');
           if (tabsEl) {
             tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
@@ -1404,7 +1393,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           loadStream(movie, 1);
         }
       }
-    }, 8500);
+    }, 4500);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);

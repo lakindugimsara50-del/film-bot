@@ -1118,12 +1118,12 @@ async def _execute_leech(
         site_url = f"{base_site}/movie.html?id={slug}"
 
         task_tracker.tracker.set_step(
-            user_id, f"4/4 - Parallel Multi-Quality RAM Encode + Cloud Drive & Telegram Upload ({size_str})..."
+            user_id, f"3/3 - Telegram Cloud HD Upload ({size_str})..."
         )
 
         last_upload_edit = 0.0
         _last_drive_edit = 0.0
-        _mq_progress_str = "Starting 720p/480p/360p RAM Split..."
+        _mq_progress_str = ""
 
         async def _mq_progress_cb(pct: float, pct_str: str) -> None:
             nonlocal _mq_progress_str
@@ -1136,14 +1136,13 @@ async def _execute_leech(
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
                 text = (
-                    f"📤 <b>පියවර 4/5: Google Drive CDN + Telegram සමගාමී Upload වෙමින්...</b>\n\n"
+                    f"📤 <b>පියවර 3/3: Telegram Cloud HD වෙත Upload වෙමින්...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                     f"⚡ <b>Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
-                    f"⚙️ <b>Multi-Quality:</b> {_mq_progress_str}\n"
-                    f"☁️ <i>1080p / 720p / 480p / 360p Cloud + Telegram Parallel Pipeline</i>"
+                    f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
                 )
                 try:
                     await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -1167,14 +1166,11 @@ async def _execute_leech(
             total_str = downloader.format_bytes(total_bytes)
             speed_display = f"⚡ <b>Drive Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n" if speed_str != "--" else ""
             txt = (
-                f"☁️ <b>පියවර 4/5: Google Drive CDN + Telegram Parallel Upload...</b>\n\n"
+                f"☁️ <b>Google Drive Backup Upload වෙමින්...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                 f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                 f"{speed_display}"
-                f"⚙️ <b>Multi-Quality:</b> {_mq_progress_str}\n"
-                f"☁️ <i>FilmSub_Movies → Google Drive & Telegram Multi-Stream Storage</i>"
             )
             try:
                 await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -1183,10 +1179,10 @@ async def _execute_leech(
 
         try:
             await status_msg.edit_text(
-                f"☁️ <b>පියවර 4/5: Google Drive CDN (1080p/720p/480p/360p) + Telegram Parallel Pipeline...</b>\n\n"
+                f"📤 <b>පියවර 3/3: Telegram Cloud HD වෙත Upload කිරීම ආරම්භ විය...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📁 <b>ගොනුව:</b> <code>{file_name}</code> ({size_str})\n"
-                f"⚡ <b>1080p Upload වන අතරතුරම 720p / 480p / 360p ගොනු RAM තුළ සැකසී එකවර Upload වේ...</b>",
+                f"⚡ <b>FastStart MP4 + සිංහල උපසිරැසි සමඟින් Private Channel වෙත Upload වේ...</b>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb_cancel,
             )
@@ -1204,6 +1200,9 @@ async def _execute_leech(
 
         async def _task_upload_drive_1080() -> None:
             nonlocal cloud_upload_res
+            if not getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
+                log.info("[LeechService] Google Drive upload disabled (protecting Google accounts). Using Telegram Primary Cloud.")
+                return
             try:
                 cloud_upload_res = await drive_manager.upload_movie(
                     local_path=local_file,
@@ -1243,7 +1242,7 @@ async def _execute_leech(
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
-            if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
+            if not getattr(config, "ENABLE_GDRIVE_UPLOAD", False) or not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
                 variant_files = await video_service.generate_multi_quality_variants_ram(
@@ -1360,153 +1359,132 @@ async def _execute_leech(
             m = re.search(r"(?:/d/|id=)([a-zA-Z0-9_-]{15,})", u)
             return m.group(1) if m else ""
 
+        # ── Primary Stream & Server Priority Selection ─────────────────────────────
+        # Telegram Cloud is the #1 Primary Storage (100% immune to Google account strikes)
+        primary_stream = stream_url or cloud_stream or ""
+
+        # 1. Server 1: Telegram Cloud HD Super Player
+        if stream_url:
+            streams_list.append({
+                "server": "Server 1",
+                "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+                "type": "video/mp4",
+                "mode": "telegram_stream",
+                "stream_url": stream_url,
+                "file_id": file_id,
+                "message_id": message_id,
+                "quality": "1080p",
+            })
+            qualities_map = {
+                "auto": stream_url,
+                "1080p": stream_url,
+                "720p": stream_url,
+                "480p": stream_url,
+                "360p": stream_url,
+            }
+
+        # 2. If Google Drive upload was explicitly enabled and succeeded, add as backup Server
         if cloud_stream:
             drive_file_id = (cloud_upload_res.get("file_id") if cloud_upload_res else "") or _extract_drive_id_str(cloud_stream)
-
             if drive_file_id:
-                chunk_stream_url = f"/api/stream?id={drive_file_id}&q=auto"
-                drive_preview_url = f"https://drive.google.com/file/d/{drive_file_id}/preview"
+                drive_server_num = len(streams_list) + 1
                 streams_list.append({
-                    "server": "Server 1",
-                    "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
-                    "type": "video/mp4",
-                    "mode": "super_chunk",
-                    "drive_id": drive_file_id,
-                    "stream_url": chunk_stream_url,
-                    "quality": "1080p",
-                })
-                streams_list.append({
-                    "server": "Server 2",
-                    "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+                    "server": f"Server {drive_server_num}",
+                    "label": "☁️ Drive Player (Google Archive • Auto Sub)",
                     "type": "embed",
                     "embed": True,
                     "drive_id": drive_file_id,
-                    "stream_url": drive_preview_url,
+                    "stream_url": f"https://drive.google.com/file/d/{drive_file_id}/preview",
                     "quality": "1080p",
                 })
 
-                def _resolve_variant_drive_id(q_key: str) -> str:
-                    v_info = variant_cloud_urls.get(q_key, {})
-                    v_id = v_info.get("file_id") or _extract_drive_id_str(v_info.get("stream_url") or v_info.get("download_url") or "")
-                    return v_id or drive_file_id
-
-                qualities_map = {
-                    "auto": f"/api/stream?id={drive_file_id}&q=auto",
-                    "1080p": f"/api/stream?id={drive_file_id}&q=1080p",
-                    "720p": f"/api/stream?id={_resolve_variant_drive_id('720p')}&q=720p",
-                    "480p": f"/api/stream?id={_resolve_variant_drive_id('480p')}&q=480p",
-                    "360p": f"/api/stream?id={_resolve_variant_drive_id('360p')}&q=360p",
-                }
-            else:
-                streams_list.append({
-                    "server": "Server 1",
-                    "label": "⚡ Super Player (Ultra HD + Auto Sub)",
-                    "type": stream_type,
-                    "stream_url": cloud_stream,
-                    "quality": "1080p",
-                })
-                qualities_map = {
-                    "auto": cloud_stream,
-                    "1080p": cloud_stream,
-                    "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or cloud_stream,
-                    "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or cloud_stream,
-                    "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or cloud_stream,
-                }
-
-            tmdb_id_val = str(tmdb_meta.get("tmdb_id") or "").strip()
-            ext_id = str(imdb_id or tmdb_id_val or "").strip()
-            if ext_id:
-                s_num = season or 1
-                e_num = episode or 1
-                vidsrc_url = (
-                    f"https://vidsrc.xyz/embed/tv/{ext_id}/{s_num}/{e_num}"
-                    if is_series
-                    else f"https://vidsrc.xyz/embed/movie/{ext_id}"
-                )
-                tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id_val) else ""
-                multiembed_url = (
-                    f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}&s={s_num}&e={e_num}"
-                    if is_series
-                    else f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}"
-                )
-                streams_list.append({
-                    "server": f"Server {len(streams_list) + 1}",
-                    "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
-                    "type": "embed",
-                    "embed": True,
-                    "stream_url": vidsrc_url,
-                })
-                streams_list.append({
-                    "server": f"Server {len(streams_list) + 1}",
-                    "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-                    "type": "embed",
-                    "embed": True,
-                    "stream_url": multiembed_url,
-                })
-
-            encoded_title = urllib.parse.quote(display_title)
-            dl_url_1080 = (
-                f"/api/download?id={drive_file_id}&q=1080p&title={encoded_title}&size={sz_1080}"
-                if drive_file_id
-                else (cloud_download or cloud_stream)
+        # 3. External Multi-Server VIP Players (VidSrc, SuperEmbed, AutoEmbed)
+        tmdb_id_val = str(tmdb_meta.get("tmdb_id") or "").strip()
+        ext_id = str(imdb_id or tmdb_id_val or "").strip()
+        if ext_id:
+            s_num = season or 1
+            e_num = episode or 1
+            vidsrc_url = (
+                f"https://vidsrc.xyz/embed/tv/{ext_id}/{s_num}/{e_num}"
+                if is_series
+                else f"https://vidsrc.xyz/embed/movie/{ext_id}"
             )
-            downloads_list.append({
+            tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id_val) else ""
+            multiembed_url = (
+                f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}&s={s_num}&e={e_num}"
+                if is_series
+                else f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}"
+            )
+            streams_list.append({
+                "server": f"Server {len(streams_list) + 1}",
+                "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+                "type": "embed",
+                "embed": True,
+                "stream_url": vidsrc_url,
+            })
+            streams_list.append({
+                "server": f"Server {len(streams_list) + 1}",
+                "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+                "type": "embed",
+                "embed": True,
+                "stream_url": multiembed_url,
+            })
+
+        # If streams_list is still empty (e.g. testing), add a placeholder direct MP4 entry
+        if not streams_list and primary_stream:
+            streams_list.append({
+                "server": "Server 1",
+                "label": "⚡ Super Player (Ultra HD • Auto Sub)",
+                "type": "video/mp4",
+                "stream_url": primary_stream,
                 "quality": "1080p",
-                "label": "1080p Full HD (Sinhala Sub Merged)",
+            })
+
+        # ── Downloads Construction ────────────────────────────────────────────────
+        # Telegram App / Web Direct Download (High-speed, zero file size limits)
+        tg_channel_id_clean = str(abs(target_channel))
+        if tg_channel_id_clean.startswith("100"):
+            tg_channel_id_clean = tg_channel_id_clean[3:]
+        tg_post_link = f"https://t.me/c/{tg_channel_id_clean}/{message_id}" if message_id else ""
+
+        if stream_url or tg_post_link:
+            downloads_list.append({
+                "quality": "1080p (Telegram Direct)",
+                "label": "1080p Full HD (Telegram App / Web • Fast)",
                 "size": downloader.format_bytes(sz_1080),
                 "size_bytes": sz_1080,
-                "drive_id": drive_file_id,
-                "url": dl_url_1080,
-                "raw_url": cloud_download or cloud_stream,
+                "url": tg_post_link or stream_url,
+                "stream_url": stream_url,
                 "format": file_ext,
-                "host": "Google Drive",
+                "host": "Telegram",
                 "sub_merged": True,
                 "subtitle_merged": True,
             })
 
-        base_dl_url = cloud_download or cloud_stream
-        if base_dl_url:
-            sep = "&" if "?" in base_dl_url else "?"
-            encoded_title = urllib.parse.quote(display_title)
-            for q_tier, q_label_desc, q_def_sz, q_vq in (
-                ("720p", "720p HD (Sinhala Sub Merged)", sz_720, "hd720"),
-                ("480p", "480p SD (Sinhala Sub Merged)", sz_480, "large"),
-                ("360p", "360p Data Saver (Sinhala Sub Merged)", sz_360, "medium"),
-            ):
-                v_info = variant_cloud_urls.get(q_tier, {})
-                v_drive_id = v_info.get("file_id") or _extract_drive_id_str(v_info.get("download_url") or v_info.get("stream_url") or "") or drive_file_id
-                is_dedicated = "1" if (v_drive_id and v_drive_id != drive_file_id) else "0"
-                v_sz_bytes = v_info.get("size_bytes") or q_def_sz
-                v_sz_str = v_info.get("size") or downloader.format_bytes(v_sz_bytes)
-                v_direct_url = (
-                    f"/api/download?id={v_drive_id}&q={q_tier}&title={encoded_title}&size={v_sz_bytes}" + ("&dedicated=1" if is_dedicated == "1" else "")
-                    if v_drive_id
-                    else (v_info.get("download_url") or f"{base_dl_url}{sep}vq={q_vq}")
-                )
-                downloads_list.append({
-                    "quality": q_tier,
-                    "label": q_label_desc,
-                    "size": v_sz_str,
-                    "size_bytes": v_sz_bytes,
-                    "drive_id": v_drive_id,
-                    "url": v_direct_url,
-                    "raw_url": v_info.get("download_url") or f"https://drive.google.com/uc?export=download&id={v_drive_id}" if v_drive_id else f"{base_dl_url}{sep}vq={q_vq}",
-                    "format": file_ext,
-                    "host": "Google Drive",
-                    "sub_merged": True,
-                    "subtitle_merged": True,
-                })
-
-        if stream_url:
+        # Multi-quality web download variants
+        encoded_title = urllib.parse.quote(display_title)
+        if drive_file_id:
             downloads_list.append({
-                "quality": "1080p (Telegram Download)",
-                "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
+                "quality": "1080p",
+                "label": "1080p Full HD (Web Download • Sinhala Sub)",
+                "size": downloader.format_bytes(sz_1080),
+                "size_bytes": sz_1080,
+                "drive_id": drive_file_id,
+                "url": f"/api/download?id={drive_file_id}&q=1080p&title={encoded_title}&size={sz_1080}",
+                "format": file_ext,
+                "host": "Direct Web",
+                "sub_merged": True,
+                "subtitle_merged": True,
+            })
+        elif stream_url:
+            downloads_list.append({
+                "quality": "1080p (Web Stream)",
+                "label": "1080p Full HD (Direct HTTP Stream)",
                 "size": downloader.format_bytes(sz_1080),
                 "size_bytes": sz_1080,
                 "url": stream_url,
                 "format": file_ext,
-                "host": "Telegram",
-                "download_only": True,
+                "host": "Direct Web",
                 "sub_merged": True,
                 "subtitle_merged": True,
             })

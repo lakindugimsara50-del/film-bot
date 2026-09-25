@@ -87,10 +87,10 @@ SEEDR_TOKEN: str = os.getenv("SEEDR_TOKEN", "")
 PIKPAK_USER: str = os.getenv("PIKPAK_USER", "lakindugimsara50@gmail.com")
 PIKPAK_PASS: str = os.getenv("PIKPAK_PASS", "Indika@2122138")
 
-# ── High-Speed Pipeline Optimization Flags ──────────────────────────────────
-# Generate true distinct 720p, 480p, 360p MP4 variants in single-pass /dev/shm RAM
-ENABLE_MULTI_QUALITY_RAM: bool = os.getenv("ENABLE_MULTI_QUALITY_RAM", "true").strip().lower() in ("1", "true", "yes")
-# Race direct aria2c against Seedr/PikPak Cloud Debrid to eliminate double-hop caching delay
-ENABLE_TORRENT_RACING: bool = os.getenv("ENABLE_TORRENT_RACING", "true").strip().lower() in ("1", "true", "yes")
+# ── Storage & Streaming Architecture Flags ─────────────────────────────────
+# By default, Google Drive uploads are disabled to 100% protect accounts from automated hash strikes.
+ENABLE_GDRIVE_UPLOAD: bool = os.getenv("ENABLE_GDRIVE_UPLOAD", "false").strip().lower() in ("1", "true", "yes")
+# Telegram Cloud is the #1 Primary Storage & Stream Host (unlimited cloud, 100% immune to Google strikes)
+ENABLE_TELEGRAM_PRIMARY: bool = True
 
 

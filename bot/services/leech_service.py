@@ -1022,6 +1022,7 @@ async def _execute_leech(
             log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
 
         # 2. Compress or Single-Pass Remux + Soft-Sub Merge in 12GB RAM (/dev/shm)
+        is_faststart_done = False
         if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
             log.info(
                 "[LeechService] File size %.2f GB exceeds 1.95 GB limit. Starting 12GB RAM Smart 1080p compression + Sinhala sub merge...",
@@ -1060,6 +1061,7 @@ async def _execute_leech(
                 except Exception:
                     pass
                 local_file = compressed_file
+                is_faststart_done = True
         else:
             # On Colab (12GB RAM /dev/shm) or file <= 1.95GB:
             # Single-pass MKV/AVI/MP4 -> Web-Streamable MP4 (+faststart) + Stereo AAC + Dual Sinhala Subtitle Merge!
@@ -1094,6 +1096,7 @@ async def _execute_leech(
                     except Exception:
                         pass
                     local_file = remuxed
+                    is_faststart_done = True
                     log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
                 elif sub_srt_path and os.path.exists(sub_srt_path):
                     # Fallback soft-embed if ensure_web_streamable was skipped
@@ -1104,8 +1107,24 @@ async def _execute_leech(
                         except Exception:
                             pass
                         local_file = sub_muxed
+                        is_faststart_done = sub_muxed.lower().endswith(".mp4")
             else:
                 log.warning("[LeechService] Insufficient free space for remuxing. Keeping original file.")
+
+        # 2.7 FastStart (+faststart) Remux: Guarantee moov atom is relocated to byte 0 for <300ms instant streaming
+        if not is_faststart_done:
+            faststart_out = os.path.join(temp_dir, f"faststart_{slug}.mp4")
+            if os.path.abspath(faststart_out) == os.path.abspath(local_file):
+                faststart_out = os.path.join(temp_dir, f"fs_{slug}.mp4")
+            log.info("[LeechService] Executing FastStart (+faststart) copy remux for instant zero-lag streaming...")
+            if await video_service.apply_faststart(local_file, faststart_out):
+                try:
+                    os.remove(local_file)
+                except Exception:
+                    pass
+                local_file = faststart_out
+                is_faststart_done = True
+                log.info("[LeechService] FastStart copy remux complete: moov atom relocated to byte 0 (%s)", local_file)
 
         # ── Step 3 & 4: Overlapped Multi-Quality RAM Encoding + Parallel Cloud Drive & Telegram Upload ──
         file_size = os.path.getsize(local_file)

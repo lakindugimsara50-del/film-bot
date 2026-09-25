@@ -47,11 +47,11 @@ app.add_middleware(
     expose_headers=["Content-Length", "Content-Range", "Accept-Ranges", "Content-Disposition", "X-Stream-Cached"],
 )
 
-# ── 8MB In-Memory Header Cache ────────────────────────────────────────────────
-# LRU Cache storing up to 30 movies × 8MB (~240MB RAM max).
-# Colab has 12GB RAM, so this is blazing fast and lightweight.
-MAX_HEADER_CACHE_SIZE = 30
-MAX_HEADER_CACHE_BYTES = 8 * 1024 * 1024  # 8 MiB per movie
+# ── 16MB In-Memory Header Cache ───────────────────────────────────────────────
+# LRU Cache storing up to 40 movies × 16MB (~640MB RAM max).
+# VPS / Colab (12GB RAM) provides instant (<50ms) first-frame playback.
+MAX_HEADER_CACHE_SIZE = 40
+MAX_HEADER_CACHE_BYTES = 16 * 1024 * 1024  # 16 MiB per movie (<50ms first-frame response)
 _HEADER_CACHE: OrderedDict[str, bytearray] = OrderedDict()
 _CACHE_LOCK = asyncio.Lock()
 
@@ -60,17 +60,20 @@ def _get_cache_key(chat_id: Union[int, str], message_id: int) -> str:
     return f"{chat_id}:{message_id}"
 
 
-async def _save_to_header_cache(key: str, data: bytes) -> None:
+async def _save_to_header_cache(key: str, data: bytes, offset: int = 0) -> None:
     async with _CACHE_LOCK:
         if key in _HEADER_CACHE:
             buf = _HEADER_CACHE[key]
-            if len(buf) < MAX_HEADER_CACHE_BYTES:
-                remaining = MAX_HEADER_CACHE_BYTES - len(buf)
-                buf.extend(data[:remaining])
+            if offset <= len(buf) and len(buf) < MAX_HEADER_CACHE_BYTES:
+                data_to_add = data[len(buf) - offset:]
+                if data_to_add:
+                    remaining = MAX_HEADER_CACHE_BYTES - len(buf)
+                    buf.extend(data_to_add[:remaining])
         else:
-            if len(_HEADER_CACHE) >= MAX_HEADER_CACHE_SIZE:
-                _HEADER_CACHE.popitem(last=False)
-            _HEADER_CACHE[key] = bytearray(data[:MAX_HEADER_CACHE_BYTES])
+            if offset == 0:
+                if len(_HEADER_CACHE) >= MAX_HEADER_CACHE_SIZE:
+                    _HEADER_CACHE.popitem(last=False)
+                _HEADER_CACHE[key] = bytearray(data[:MAX_HEADER_CACHE_BYTES])
 
 
 async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[bytes]:
@@ -120,7 +123,7 @@ async def stream_status() -> dict:
     status["service"] = "Telegram Cloud Streaming Edge Proxy (Ultra-Smooth v3.0)"
     status["status"] = "ready" if status["connected_clients"] > 0 else "initializing"
     status["header_cache_entries"] = len(_HEADER_CACHE)
-    status["max_cache_mb"] = MAX_HEADER_CACHE_SIZE * 8
+    status["max_cache_mb"] = MAX_HEADER_CACHE_SIZE * (MAX_HEADER_CACHE_BYTES // (1024 * 1024))
     return status
 
 
@@ -137,8 +140,8 @@ async def _cached_stream_generator(
 ) -> AsyncGenerator[bytes, None]:
     """
     Yields video bytes for range [start, end].
-    If the start range is cached in memory, yields from RAM instantly,
-    then streams any remaining bytes directly from Telegram MTProto.
+    If the start range is cached in memory, yields from RAM instantly (<50ms),
+    then streams any remaining bytes directly from Telegram MTProto with parallel pipelining.
     """
     cur_pos = start
     cached_part = await _get_from_header_cache(cache_key, cur_pos, end)
@@ -149,17 +152,18 @@ async def _cached_stream_generator(
 
     if cur_pos <= end:
         chunk_buffer = bytearray()
+        stream_start_pos = cur_pos
         try:
             async for chunk in stream_pool.stream_media_chunks(msg_obj, cur_pos, end):
                 if not chunk:
                     break
-                # Populate cache if reading from the start of the movie
-                if start == 0 and len(chunk_buffer) < MAX_HEADER_CACHE_BYTES:
+                # Populate 16MB RAM cache if reading within initial movie header portion
+                if stream_start_pos < MAX_HEADER_CACHE_BYTES and len(chunk_buffer) < MAX_HEADER_CACHE_BYTES:
                     chunk_buffer.extend(chunk)
                 yield chunk
 
-            if chunk_buffer and start == 0:
-                await _save_to_header_cache(cache_key, bytes(chunk_buffer))
+            if chunk_buffer and stream_start_pos < MAX_HEADER_CACHE_BYTES:
+                await _save_to_header_cache(cache_key, bytes(chunk_buffer), offset=stream_start_pos)
         except asyncio.CancelledError:
             log.debug("[StreamServer] Client aborted stream range %d-%d for %s", start, end, cache_key)
             return
@@ -197,14 +201,14 @@ async def stream_channel_message(
     range_header = request.headers.get("range")
     start, end = _parse_range(range_header, file_size)
 
-    # Pre-buffering: Serve at least 4 MiB per response so the browser pre-buffers fast.
+    # Pre-buffering: Serve at least 8 MiB per response so the browser pre-buffers fast.
     # This is the secret to smooth CineSubz/Netflix-like zero-lag playback.
-    MIN_SERVE = 4 * 1024 * 1024  # 4 MiB minimum response
+    MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
     if not range_header:
-        # Initial request without range -> serve first 4-8 MiB
+        # Initial request without range -> serve first 8 MiB
         end = min(start + MIN_SERVE - 1, file_size - 1)
     elif (end - start + 1) < MIN_SERVE and end < file_size - 1:
-        # Browser asked for tiny range -> expand to at least 4 MiB
+        # Browser asked for tiny range -> expand to at least 8 MiB
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
     content_length = end - start + 1
@@ -219,7 +223,7 @@ async def stream_channel_message(
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Disposition, X-Stream-Cached",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
     }
 
     if dl == 1:
@@ -264,7 +268,7 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
     }
 
     if request.method == "HEAD":

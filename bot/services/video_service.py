@@ -665,6 +665,81 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
                 pass
 
 
+async def apply_faststart(input_path: str, output_path: str) -> bool:
+    """
+    Execute an ultra-fast stream-copy remux relocating the MP4 moov atom to byte 0:
+    ffmpeg -y -hide_banner -threads 0 -i input.mp4 -c copy -movflags +faststart output.mp4
+
+    Relocates the metadata index from the tail to byte 0 in <3-5 seconds without re-encoding,
+    enabling browsers and Video.js to start playback in <300ms.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(input_path):
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(input_path),
+        "-c", "copy",
+        "-max_muxing_queue_size", "9999",
+        "-movflags", "+faststart",
+        os.path.abspath(output_path),
+    ]
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] FastStart (+faststart) copy remux success: %s", output_path)
+            return True
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+        return False
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        log.warning("[VideoService] FastStart copy remux error: %s", exc)
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
 async def generate_multi_quality_variants_ram(
     input_path: str,
     output_dir: str,

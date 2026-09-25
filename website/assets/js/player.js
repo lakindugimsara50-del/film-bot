@@ -221,7 +221,7 @@ function getMovieStreams(movie) {
     const tgUrl = primaryUrl || `/stream/channel/-1004325759505/${movie.message_id}`;
     list.push({
       server: 'Server 1',
-      label: '⚡ Super Player (Telegram Cloud HD • Auto Sub)',
+      label: '⚡ Telegram Super Player (Cloud HD • Auto Sub)',
       mode: 'telegram_stream',
       type: 'video/mp4',
       stream_url: tgUrl,
@@ -234,7 +234,7 @@ function getMovieStreams(movie) {
     const qDriveId = extractDriveIdForQuality(movie, activeQ) || driveId;
     list.push({
       server: 'Server 1',
-      label: '⚡ Super Player (Cloud HD • Auto Sub)',
+      label: '⚡ Telegram Super Player (Cloud HD • Auto Sub)',
       mode: 'super_chunk',
       type: 'video/mp4',
       drive_id: qDriveId,
@@ -243,7 +243,7 @@ function getMovieStreams(movie) {
     });
   }
 
-  // 2. External Multi-Server Backup Players ("Bahirawa Players" - VidSrc, SuperEmbed, AutoEmbed)
+  // 2. External Multi-Server Backup Players (Server 2: VidSrc Pro, Server 3: SuperEmbed, Server 4: AutoEmbed)
   const imdbId = (movie.imdb_id || '').trim();
   const tmdbId = String(movie.tmdb_id || '').trim();
   const extId = imdbId || tmdbId;
@@ -253,8 +253,8 @@ function getMovieStreams(movie) {
       ? `https://vidsrc.xyz/embed/tv/${extId}/${sNum}/${eNum}`
       : `https://vidsrc.xyz/embed/movie/${extId}`;
     list.push({
-      server: `Server ${list.length + 1}`,
-      label: `🌐 VIP Player 1 (VidSrc Pro • Multi-Quality HD)`,
+      server: 'Server 2',
+      label: '🌐 VidSrc Pro (Multi-Quality HD)',
       mode: 'external_embed',
       type: 'embed',
       embed: true,
@@ -266,8 +266,8 @@ function getMovieStreams(movie) {
       ? `https://multiembed.mov/?video_id=${extId}${useTmdbParam}&s=${sNum}&e=${eNum}`
       : `https://multiembed.mov/?video_id=${extId}${useTmdbParam}`;
     list.push({
-      server: `Server ${list.length + 1}`,
-      label: `🎬 VIP Player 2 (SuperEmbed • Fast HD)`,
+      server: 'Server 3',
+      label: '🎬 SuperEmbed (Fast VIP HD)',
       mode: 'external_embed',
       type: 'embed',
       embed: true,
@@ -278,8 +278,8 @@ function getMovieStreams(movie) {
       ? `https://player.autoembed.cc/embed/tv/${extId}/${sNum}/${eNum}`
       : `https://player.autoembed.cc/embed/movie/${extId}`;
     list.push({
-      server: `Server ${list.length + 1}`,
-      label: `🚀 VIP Player 3 (AutoEmbed Global)`,
+      server: 'Server 4',
+      label: '🚀 AutoEmbed (Global Stream HD)',
       mode: 'external_embed',
       type: 'embed',
       embed: true,
@@ -897,13 +897,21 @@ function attachAdaptiveStallMonitor(player) {
       return;
     }
 
-    // Or if a single mid-playback buffer stall persists longer than 3.2 seconds, auto step-down
+    // Or if a single mid-playback buffer stall persists longer than 2.6 seconds, auto step-down & stall recovery nudge
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
       if (player && !player.paused() && !(player.seeking && player.seeking())) {
         triggerStepDownIfNeeded();
+        // Intelligent stall recovery: if playback is stalled on a keyframe gap, nudge playhead slightly
+        try {
+          const t = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+          if (t > 0) {
+            player.currentTime(t + 0.05);
+            player.play().catch(() => {});
+          }
+        } catch (e) {}
       }
-    }, 3200);
+    }, 2600);
   });
 
   player.on('playing', () => {
@@ -1335,8 +1343,12 @@ function createVjsPlayer(playerEl, stream, movie) {
           enableLowInitialPlaylist: true,
           limitRenditionByPlayerDimensions: false,
           useNetworkInformationApi: true,
-          bandwidth: 6000000,
-          bufferBasedABR: true
+          bandwidth: 10000000,
+          bufferBasedABR: true,
+          maxBufferLength: 60,
+          minBufferLength: 12,
+          maxBufferSize: 64 * 1024 * 1024,
+          experimentalBufferClipping: false
         },
         nativeVideoTracks: true,
         nativeAudioTracks: true,
@@ -1355,7 +1367,10 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.ready(() => {
       try {
         if (vjsPlayer.tech_ && vjsPlayer.tech_.el_) {
-          vjsPlayer.tech_.el_.setAttribute('preload', 'auto');
+          const el = vjsPlayer.tech_.el_;
+          el.setAttribute('preload', 'auto');
+          el.setAttribute('playsinline', '');
+          el.setAttribute('webkit-playsinline', '');
         }
       } catch (e) {}
 
@@ -1363,7 +1378,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       syncSubtitles();
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
-      setTimeout(hideLoader, 700);
+      setTimeout(hideLoader, 600);
       try { vjsPlayer.play().catch(() => {}); } catch (e) {}
     });
 
@@ -1375,15 +1390,15 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.on('canplay', hideLoader);
     vjsPlayer.on('playing', hideLoader);
 
-    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 4.5s
-    // (e.g. stream server sleeping or ultra-slow network),
-    // automatically switch to VIP Backup Server (Server 2) so playback starts with zero interruption.
+    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 3.8s
+    // (e.g. stream server sleeping / warming up or ultra-slow network),
+    // automatically switch to Server 2 (VidSrc Pro) so playback starts with zero white screen and zero interruption.
     const slowHeaderWatchdog = setTimeout(() => {
       if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         const streams = getMovieStreams(movie);
         if (streams.length > 1 && currentStreamIdx === 0) {
-          FilmSub.showToast('⚡ සුපිරි වේගවත් VIP Backup Server වෙත ස්වයංක්‍රීයව මාරු විය!', 'info');
+          FilmSub.showToast('⚡ Stream server warming up — instant failover to VidSrc Pro...', 'info');
           const tabsEl = document.getElementById('server-tabs');
           if (tabsEl) {
             tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
@@ -1393,18 +1408,19 @@ function createVjsPlayer(playerEl, stream, movie) {
           loadStream(movie, 1);
         }
       }
-    }, 4500);
+    }, 3800);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);
     });
 
-    // Seamless retry & multi-server fallback if chunk proxy or direct stream encounters an upstream error
+    // Seamless retry & multi-server failover matrix if stream encounters upstream error
     let retryAttempted = false;
     vjsPlayer.on('error', () => {
       const errDisplay = playerEl.querySelector('.vjs-error-display');
       if (errDisplay) errDisplay.style.display = 'none';
 
+      clearTimeout(slowHeaderWatchdog);
       if (!retryAttempted && stream.mode === 'super_chunk' && stream.drive_id) {
         retryAttempted = true;
         const retryUrl = buildChunkStreamUrl(stream.drive_id, '360p') + '&retry=1';
@@ -1420,7 +1436,8 @@ function createVjsPlayer(playerEl, stream, movie) {
       const streams = getMovieStreams(movie);
       if (streams.length > 1 && currentStreamIdx < streams.length - 1) {
         const nextIdx = currentStreamIdx + 1;
-        FilmSub.showToast('⚡ ස්වයංක්‍රීයව Backup Server වෙත සම්බන්ධ වෙමින් පවතී...', 'info');
+        const nextServer = streams[nextIdx];
+        FilmSub.showToast(`⚡ Stream server warming up — instant failover to ${nextServer.label || 'VidSrc Pro'}...`, 'info');
         const tabsEl = document.getElementById('server-tabs');
         if (tabsEl) {
           tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));

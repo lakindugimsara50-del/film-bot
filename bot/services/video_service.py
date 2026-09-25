@@ -704,6 +704,40 @@ async def apply_faststart(input_path: str, output_path: str) -> bool:
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             log.info("[VideoService] FastStart (+faststart) copy remux success: %s", output_path)
             return True
+
+        # Fallback: if pure -c copy failed (e.g. due to incompatible subtitle/attachment streams in MKV/MP4),
+        # copy only video and audio streams to MP4 container with +faststart
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+        cmd_fallback = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(input_path),
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            os.path.abspath(output_path),
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_fallback,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] FastStart (+faststart) fallback remux success: %s", output_path)
+            return True
+
         if os.path.exists(output_path):
             try:
                 os.remove(output_path)

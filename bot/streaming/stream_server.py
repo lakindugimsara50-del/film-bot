@@ -63,6 +63,7 @@ def _get_cache_key(chat_id: Union[int, str], message_id: int) -> str:
 async def _save_to_header_cache(key: str, data: bytes, offset: int = 0) -> None:
     async with _CACHE_LOCK:
         if key in _HEADER_CACHE:
+            _HEADER_CACHE.move_to_end(key)
             buf = _HEADER_CACHE[key]
             if offset <= len(buf) and len(buf) < MAX_HEADER_CACHE_BYTES:
                 data_to_add = data[len(buf) - offset:]
@@ -80,6 +81,7 @@ async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[byt
     async with _CACHE_LOCK:
         if key not in _HEADER_CACHE:
             return None
+        _HEADER_CACHE.move_to_end(key)
         buf = _HEADER_CACHE[key]
         if start < len(buf):
             slice_end = min(end + 1, len(buf))
@@ -161,14 +163,17 @@ async def _cached_stream_generator(
                 if stream_start_pos < MAX_HEADER_CACHE_BYTES and len(chunk_buffer) < MAX_HEADER_CACHE_BYTES:
                     chunk_buffer.extend(chunk)
                 yield chunk
-
-            if chunk_buffer and stream_start_pos < MAX_HEADER_CACHE_BYTES:
-                await _save_to_header_cache(cache_key, bytes(chunk_buffer), offset=stream_start_pos)
         except asyncio.CancelledError:
             log.debug("[StreamServer] Client aborted stream range %d-%d for %s", start, end, cache_key)
             return
         except Exception as exc:
             log.error("[StreamServer] Streaming error for %s: %s", cache_key, exc)
+        finally:
+            if chunk_buffer and stream_start_pos < MAX_HEADER_CACHE_BYTES:
+                try:
+                    await _save_to_header_cache(cache_key, bytes(chunk_buffer), offset=stream_start_pos)
+                except Exception:
+                    pass
 
 
 @stream_router.get("/stream/channel/{chat_id}/{message_id}")
@@ -204,7 +209,12 @@ async def stream_channel_message(
     # Pre-buffering: Serve at least 8 MiB per response so the browser pre-buffers fast.
     # This is the secret to smooth CineSubz/Netflix-like zero-lag playback.
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
-    if not range_header:
+    if dl == 1:
+        # Full file one-click download: do not truncate range unless client sent an explicit Range
+        if not range_header:
+            start = 0
+            end = file_size - 1
+    elif not range_header:
         # Initial request without range -> serve first 8 MiB
         end = min(start + MIN_SERVE - 1, file_size - 1)
     elif (end - start + 1) < MIN_SERVE and end < file_size - 1:
@@ -213,12 +223,12 @@ async def stream_channel_message(
 
     content_length = end - start + 1
     cache_key = _get_cache_key(chat_id, message_id)
+    is_partial = bool(range_header) or (not dl and end < file_size - 1)
 
     headers = {
         "Content-Type": mime_type,
         "Content-Length": str(content_length),
         "Accept-Ranges": "bytes",
-        "Content-Range": f"bytes {start}-{end}/{file_size}",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
@@ -226,16 +236,19 @@ async def stream_channel_message(
         "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
     }
 
+    if is_partial:
+        headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+
     if dl == 1:
         clean_name = re.sub(r'[^\w\s\-\.\(\)]', '', file_name).strip() or f"movie_{message_id}.mp4"
         headers["Content-Disposition"] = f'attachment; filename="{clean_name}"'
 
     if request.method == "HEAD":
-        return Response(status_code=200 if not range_header else 206, headers=headers)
+        return Response(status_code=206 if is_partial else 200, headers=headers)
 
     return StreamingResponse(
         _cached_stream_generator(cache_key, msg, start, end),
-        status_code=206 if range_header else 200,
+        status_code=206 if is_partial else 200,
         headers=headers,
         media_type=mime_type,
     )
@@ -252,18 +265,26 @@ async def download_channel_message(chat_id: str, message_id: int, request: Reque
 @stream_router.head("/stream/file/{file_id}")
 @stream_router.head("/stream/{file_id}")
 async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] = None) -> Response:
-    """Stream directly by Telegram file_id."""
+    """Stream directly by Telegram file_id with 16MB RAM header caching."""
     file_size = size or 1563733824
 
     range_header = request.headers.get("range")
     start, end = _parse_range(range_header, file_size)
+
+    MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
+    if not range_header:
+        end = min(start + MIN_SERVE - 1, file_size - 1)
+    elif (end - start + 1) < MIN_SERVE and end < file_size - 1:
+        end = min(start + MIN_SERVE - 1, file_size - 1)
+
     content_length = end - start + 1
+    cache_key = f"file:{file_id}"
+    is_partial = bool(range_header) or (end < file_size - 1)
 
     headers = {
         "Content-Type": "video/mp4",
         "Content-Length": str(content_length),
         "Accept-Ranges": "bytes",
-        "Content-Range": f"bytes {start}-{end}/{file_size}",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
@@ -271,12 +292,15 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
         "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
     }
 
+    if is_partial:
+        headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+
     if request.method == "HEAD":
-        return Response(status_code=200 if not range_header else 206, headers=headers)
+        return Response(status_code=206 if is_partial else 200, headers=headers)
 
     return StreamingResponse(
-        stream_pool.stream_media_chunks(file_id, start, end),
-        status_code=206 if range_header else 200,
+        _cached_stream_generator(cache_key, file_id, start, end),
+        status_code=206 if is_partial else 200,
         headers=headers,
         media_type="video/mp4",
     )

@@ -253,7 +253,7 @@ function getMovieStreams(movie) {
       ? `https://vidsrc.xyz/embed/tv/${extId}/${sNum}/${eNum}`
       : `https://vidsrc.xyz/embed/movie/${extId}`;
     list.push({
-      server: 'Server 2',
+      server: `Server ${list.length + 1}`,
       label: '🌐 VidSrc Pro (Multi-Quality HD)',
       mode: 'external_embed',
       type: 'embed',
@@ -266,7 +266,7 @@ function getMovieStreams(movie) {
       ? `https://multiembed.mov/?video_id=${extId}${useTmdbParam}&s=${sNum}&e=${eNum}`
       : `https://multiembed.mov/?video_id=${extId}${useTmdbParam}`;
     list.push({
-      server: 'Server 3',
+      server: `Server ${list.length + 1}`,
       label: '🎬 SuperEmbed (Fast VIP HD)',
       mode: 'external_embed',
       type: 'embed',
@@ -278,7 +278,7 @@ function getMovieStreams(movie) {
       ? `https://player.autoembed.cc/embed/tv/${extId}/${sNum}/${eNum}`
       : `https://player.autoembed.cc/embed/movie/${extId}`;
     list.push({
-      server: 'Server 4',
+      server: `Server ${list.length + 1}`,
       label: '🚀 AutoEmbed (Global Stream HD)',
       mode: 'external_embed',
       type: 'embed',
@@ -880,28 +880,31 @@ function attachAdaptiveStallMonitor(player) {
   });
 
   player.on('waiting', () => {
-    if (selectedQuality !== 'auto') return;
     // Never count user timeline scrubbing or initial t=0 moov header fetch as a network lag stall
     if (player.seeking && player.seeking()) return;
     const curT = typeof player.currentTime === 'function' ? (player.currentTime() || 0) : 0;
     if (curT < 2.0) return;
 
-    const now = Date.now();
-    stallTimestamps = stallTimestamps.filter(t => (now - t) < 20000);
-    stallTimestamps.push(now);
+    if (selectedQuality === 'auto') {
+      const now = Date.now();
+      stallTimestamps = stallTimestamps.filter(t => (now - t) < 20000);
+      stallTimestamps.push(now);
 
-    // If 2+ real playback stalls occurred within 20 seconds, step down quality immediately
-    if (stallTimestamps.length >= 2) {
-      stallTimestamps = [];
-      triggerStepDownIfNeeded();
-      return;
+      // If 2+ real playback stalls occurred within 20 seconds, step down quality immediately
+      if (stallTimestamps.length >= 2) {
+        stallTimestamps = [];
+        triggerStepDownIfNeeded();
+        return;
+      }
     }
 
     // Or if a single mid-playback buffer stall persists longer than 2.6 seconds, auto step-down & stall recovery nudge
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
       if (player && !player.paused() && !(player.seeking && player.seeking())) {
-        triggerStepDownIfNeeded();
+        if (selectedQuality === 'auto') {
+          triggerStepDownIfNeeded();
+        }
         // Intelligent stall recovery: if playback is stalled on a keyframe gap, nudge playhead slightly
         try {
           const t = typeof player.currentTime === 'function' ? player.currentTime() : 0;

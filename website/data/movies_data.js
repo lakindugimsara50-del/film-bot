@@ -2828,7 +2828,300 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-26",
       "added_at": "2026-09-26T19:47:52Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "game-of-thrones-2011-s02e02",
+      "slug": "game-of-thrones-2011-s02e02",
+      "title": "Game of Thrones",
+      "title_si": "",
+      "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt0944947",
+      "tmdb_id": "1399",
+      "type": "series",
+      "season": 2,
+      "episode": 2,
+      "episode_title": "The Night Lands",
+      "number_of_seasons": 8,
+      "number_of_episodes": 73,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/wgfKiqzuMrFIkU1M68DDDY8kGC1.jpg",
+          "air_date": "2011-04-17"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/9xfNkPwDOqyeUvfNhs1XlWA0esP.jpg",
+          "air_date": "2012-04-01"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/5MkZjRnCKiIGn3bkXrXfndEzqOU.jpg",
+          "air_date": "2013-03-31"
+        },
+        {
+          "season_number": 4,
+          "name": "Season 4",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/jXIMScXE4J4EVHUba1JgxZnWbo4.jpg",
+          "air_date": "2014-04-06"
+        },
+        {
+          "season_number": 5,
+          "name": "Season 5",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/7Q1Hy1AHxAzA2lsmzEMBvuWTX0x.jpg",
+          "air_date": "2015-04-12"
+        },
+        {
+          "season_number": 6,
+          "name": "Season 6",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/p1udLh0gfqyZFmXBGa393gk8go5.jpg",
+          "air_date": "2016-04-24"
+        },
+        {
+          "season_number": 7,
+          "name": "Season 7",
+          "episode_count": 7,
+          "poster_url": "https://image.tmdb.org/t/p/w500/oX51n32QyHeFP5kErksemJsJljL.jpg",
+          "air_date": "2017-07-16"
+        },
+        {
+          "season_number": 8,
+          "name": "Season 8",
+          "episode_count": 6,
+          "poster_url": "https://image.tmdb.org/t/p/w500/yToCshWmirenreC6mrHwFAScFNJ.jpg",
+          "air_date": "2019-04-14"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "quality": "1080p",
+      "duration": "54 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADQWq4LQXWQumzi7b4Mpsq41H0ZoF1AAJBHwACRyjJVZArR2ae1hcoHgQ",
+      "message_id": 65,
+      "file_name": "game-of-thrones-2011-s02e02.mp4",
+      "file_size": 1407697486,
+      "drive_file_id": "",
+      "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADQWq4LQXWQumzi7b4Mpsq41H0ZoF1AAJBHwACRyjJVZArR2ae1hcoHgQ",
+          "message_id": 65,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/tv/tt0944947/2/2"
+        },
+        {
+          "server": "Server 3",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=2&e=2"
+        }
+      ],
+      "qualities": {
+        "auto": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+        "1080p": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+        "720p": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/66",
+        "480p": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/67",
+        "360p": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/68"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1407697486,
+          "url": "https://t.me/c/4325759505/65",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "592.1 MB",
+          "size_bytes": 620872929,
+          "url": "https://t.me/c/4325759505/66",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/66",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "341.7 MB",
+          "size_bytes": 358323542,
+          "url": "https://t.me/c/4325759505/67",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/67",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p (Telegram Direct)",
+          "label": "360p Data Saver (Telegram Channel • Fast)",
+          "size": "217.1 MB",
+          "size_bytes": 227686188,
+          "url": "https://t.me/c/4325759505/68",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/68",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1407697486,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s02e02_1080p",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "592.1 MB",
+          "size_bytes": 620872929,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s02e02_720p",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/66",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "341.7 MB",
+          "size_bytes": 358323542,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s02e02_480p",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/67",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "217.1 MB",
+          "size_bytes": 227686188,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s02e02_360p",
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/68",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADQWq4LQXWQumzi7b4Mpsq41H0ZoF1AAJBHwACRyjJVZArR2ae1hcoHgQ",
+          "message_id": 65,
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/65",
+          "size_bytes": 1407697486
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADQmq4M3RYIq9ODjgWnpjyWDoN57zEAAJCHwACRyjJVWpExdGX1GOjHgQ",
+          "message_id": 66,
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/66",
+          "size_bytes": 620872929
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADQ2q4M_SzBwkB1VRFHYOC2Ia7TUE0AAJDHwACRyjJVW0NXmdTBIdXHgQ",
+          "message_id": 67,
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/67",
+          "size_bytes": 358323542
+        },
+        "360p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADRGq4ND7PY7A-A84AASSjPVrksbcnHgACRB8AAkcoyVVpCSvEKxDfsB4E",
+          "message_id": 68,
+          "stream_url": "https://explicitly-tex-candy-drug.trycloudflare.com/stream/channel/-1004325759505/68",
+          "size_bytes": 227686188
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A06.000%0AFilmSub.lk%20%E2%80%94%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%20%28Auto%20Sinhala%20Subtitles%29%0A%0A00%3A16%3A42.290%20--%3E%2000%3A16%3A44.790%0AThey%20killed%20his%20soul%21%0A%0A00%3A16%3A46.760%20--%3E%2000%3A16%3A49.060%0AThey%20cannot%20kill%20his%20soul.%0A%0A00%3A16%3A49.800%20--%3E%2000%3A16%3A51.340%0AThey%20did%21%0A%0A00%3A16%3A51.510%20--%3E%2000%3A16%3A53.640%0AThey%20butchered%20him%20like%20an%20animal.%0A%0A00%3A16%3A54.640%20--%3E%2000%3A16%3A57.350%0AThey%20did%20not%20burn%20his%20body.%0A%0A00%3A16%3A57.640%20--%3E%2000%3A17%3A02.350%0AHe%20can%20never%20join%20his%20ancestors%20in%20the%20night%20lands.%0A%0A00%3A17%3A03.440%20--%3E%2000%3A17%3A06.520%0AWe%20will%20build%20him%20a%20funeral%20pyre.%0A%0A00%3A17%3A13.490%20--%3E%2000%3A17%3A15.160%0AAnd%20I%20promise%20you%2C%0A%0A00%3A17%3A15.660%20--%3E%2000%3A17%3A17.910%0ARakharo%20will%20ride%20with%20his%20ancestors%20tonight.",
+          "default": true
+        }
+      ],
+      "source_method": "torrent",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s02e02",
+      "added_date": "2026-09-26",
+      "added_at": "2026-09-26T21:08:15Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-26T19:47:53Z"
+  "last_updated": "2026-09-26T21:08:17Z"
 };

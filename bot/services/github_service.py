@@ -108,6 +108,12 @@ async def add_movie(movie: dict) -> bool:
             log.error("Could not fetch movies.json before adding movie: %s", exc)
             return False
 
+        # ── Ensure added_at and added_date are populated for website homepage sorting ─
+        if not movie.get("added_at"):
+            movie["added_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if not movie.get("added_date"):
+            movie["added_date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
         # ── Append or update in place and update the timestamp ───────────────────
         movies: list = content_dict.setdefault("movies", [])
         existing_idx = None

@@ -681,7 +681,7 @@ async def _execute_leech(
         # ── Step 2: Download with Multi-Method Fallback ────────────────────────
         chosen_candidate: Optional[LeechCandidate] = None
         if not temp_dir:
-            temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.2, prefix="leech_ram_")
+            temp_dir = video_service.get_optimal_work_dir(min_free_gb=4.5, prefix="leech_ram_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
 
         for idx, candidate in enumerate(candidates, 1):
@@ -1041,10 +1041,10 @@ async def _execute_leech(
             p_bar = downloader.format_progress_bar(pct)
             sub_lbl = "සිංහල උපසිරැසි Soft-Mux වේ" if sub_to_merge else "උපසිරැසි රහිතව"
             txt = (
-                f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.85GB Ceiling)...</b>\n\n"
+                f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.40GB Safe Ceiling)...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                f"📦 <b>ඉලක්කය:</b> 1.85 GB (Telegram Bot 2GB Limit Safe)\n"
+                f"📦 <b>ඉලක්කය:</b> 1.40 GB (Telegram Bot 2GB Limit Safe)\n"
                 f"💬 <b>උපසිරැසි:</b> {sub_lbl}\n"
                 f"⚡ <i>Multi-Core NVENC/CPU High-Speed Encoding</i>"
             )
@@ -1061,7 +1061,7 @@ async def _execute_leech(
                     f"⚙️ <b>පියවර 3/5: Fast 1080p Compression ආරම්භ විය...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📦 <b>මූලික ප්‍රමාණය:</b> {downloader.format_bytes(curr_size)} (> 1.95 GB Limit)\n"
-                    f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.85 GB (Telegram Safe)\n"
+                    f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.40 GB (Telegram Safe)\n"
                     f"⚡ <b>ක්‍රමය:</b> Multi-Core H.264 Fast Transcoding + Subtitle Muxing\n"
                     f"⏳ මිනිත්තු කිහිපයක් රැඳී සිටින්න...",
                     parse_mode=ParseMode.HTML,
@@ -1073,7 +1073,7 @@ async def _execute_leech(
             comp_ok = await video_service.compress_video(
                 input_path=local_file,
                 output_path=remuxed,
-                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
                 sub_path=sub_to_merge,
             )
@@ -1203,7 +1203,7 @@ async def _execute_leech(
                 is_faststart_done = True
                 log.info("[LeechService] FastStart copy remux complete: moov atom relocated to byte 0 (%s)", local_file)
 
-        # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.85GB
+        # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.40GB
         if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
             log.warning("[LeechService] File %s (%d bytes) exceeds Telegram 1.95GB limit after remux. Compressing...",
                         local_file, os.path.getsize(local_file))
@@ -1212,7 +1212,7 @@ async def _execute_leech(
             comp_ok = await video_service.compress_video(
                 input_path=local_file,
                 output_path=comp_guard_out,
-                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
                 sub_path=sub_to_merge,
             )
@@ -1356,6 +1356,28 @@ async def _execute_leech(
             except Exception as q_up_err:
                 log.debug("[LeechService] Variant %s upload skipped: %s", q_label, q_up_err)
 
+        variant_tg_info: dict[str, dict] = {}
+
+        async def _task_upload_tg_variant(q_label: str, q_path: str) -> None:
+            if not os.path.exists(q_path):
+                return
+            try:
+                log.info("[LeechService] Uploading variant '%s' to Telegram channel...", q_label)
+                var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
+                up_res = await telegram_upload.upload_video_file(
+                    bot_client=client,
+                    file_path=q_path,
+                    target_chat=target_channel,
+                    caption=var_caption,
+                    progress_callback=None,
+                    fallback_chat=0,
+                )
+                if up_res and up_res.get("file_id"):
+                    variant_tg_info[q_label] = up_res
+                    log.info("[LeechService] Telegram upload for variant %s succeeded: msg_id=%s", q_label, up_res.get("message_id"))
+            except Exception as tg_v_err:
+                log.warning("[LeechService] Telegram upload for variant %s skipped/failed: %s", q_label, tg_v_err)
+
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
@@ -1370,6 +1392,13 @@ async def _execute_leech(
                     progress_callback=_mq_progress_cb,
                 )
                 _mq_progress_str = "720p/480p/360p Complete ✅"
+                # Upload variants to Telegram channel if enabled
+                if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
+                    _mq_progress_str = "720p/480p/360p Uploading to Telegram..."
+                    for ql, qp in variant_files.items():
+                        await _task_upload_tg_variant(ql, qp)
+                    _mq_progress_str = "Telegram Multi-Quality Complete ✅"
+
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
                     _mq_progress_str = "720p/480p/360p Uploading to Drive..."
                     await asyncio.gather(
@@ -1440,10 +1469,38 @@ async def _execute_leech(
         file_ext = os.path.splitext(file_name)[1].lstrip(".").upper() or "MP4"
         stream_type = "video/mp4" if file_ext == "MP4" else "video/x-matroska"
 
-        sz_360 = variant_cloud_urls.get("360p", {}).get("size_bytes") or int(file_size * 0.18)
-        sz_480 = variant_cloud_urls.get("480p", {}).get("size_bytes") or int(file_size * 0.32)
-        sz_720 = variant_cloud_urls.get("720p", {}).get("size_bytes") or int(file_size * 0.55)
+        if "720p" in variant_files and os.path.exists(variant_files["720p"]):
+            sz_720 = os.path.getsize(variant_files["720p"])
+        elif variant_cloud_urls.get("720p", {}).get("size_bytes"):
+            sz_720 = variant_cloud_urls["720p"]["size_bytes"]
+        elif variant_tg_info.get("720p", {}).get("file_size"):
+            sz_720 = variant_tg_info["720p"]["file_size"]
+        else:
+            sz_720 = int(file_size * 0.55)
+
+        if "480p" in variant_files and os.path.exists(variant_files["480p"]):
+            sz_480 = os.path.getsize(variant_files["480p"])
+        elif variant_cloud_urls.get("480p", {}).get("size_bytes"):
+            sz_480 = variant_cloud_urls["480p"]["size_bytes"]
+        elif variant_tg_info.get("480p", {}).get("file_size"):
+            sz_480 = variant_tg_info["480p"]["file_size"]
+        else:
+            sz_480 = int(file_size * 0.32)
+
+        if "360p" in variant_files and os.path.exists(variant_files["360p"]):
+            sz_360 = os.path.getsize(variant_files["360p"])
+        elif variant_cloud_urls.get("360p", {}).get("size_bytes"):
+            sz_360 = variant_cloud_urls["360p"]["size_bytes"]
+        elif variant_tg_info.get("360p", {}).get("file_size"):
+            sz_360 = variant_tg_info["360p"]["file_size"]
+        else:
+            sz_360 = int(file_size * 0.18)
+
         sz_1080 = file_size
+
+        stream_720 = variant_tg_info.get("720p", {}).get("stream_url") or variant_cloud_urls.get("720p", {}).get("stream_url") or stream_url
+        stream_480 = variant_tg_info.get("480p", {}).get("stream_url") or variant_cloud_urls.get("480p", {}).get("stream_url") or stream_url
+        stream_360 = variant_tg_info.get("360p", {}).get("stream_url") or variant_cloud_urls.get("360p", {}).get("stream_url") or stream_url
 
         streams_list = []
         downloads_list = []
@@ -1475,9 +1532,9 @@ async def _execute_leech(
             qualities_map = {
                 "auto": stream_url,
                 "1080p": stream_url,
-                "720p": stream_url,
-                "480p": stream_url,
-                "360p": stream_url,
+                "720p": stream_720,
+                "480p": stream_480,
+                "360p": stream_360,
             }
 
         # 2. If Google Drive upload was explicitly enabled and succeeded, add as backup Server
@@ -1537,21 +1594,73 @@ async def _execute_leech(
                 "quality": "1080p",
             })
 
+        try:
+            _bot_me = getattr(client, "me", None)
+            bot_username = _bot_me.username if (_bot_me and getattr(_bot_me, "username", None)) else "Filmsinhala200Bot"
+        except Exception:
+            bot_username = "Filmsinhala200Bot"
+
+        variant_media = {
+            "1080p": {
+                "file_id": file_id,
+                "message_id": message_id,
+                "stream_url": stream_url,
+                "size_bytes": sz_1080,
+            },
+            "720p": {
+                "file_id": variant_tg_info.get("720p", {}).get("file_id", ""),
+                "message_id": variant_tg_info.get("720p", {}).get("message_id", 0),
+                "stream_url": stream_720,
+                "size_bytes": sz_720,
+            },
+            "480p": {
+                "file_id": variant_tg_info.get("480p", {}).get("file_id", ""),
+                "message_id": variant_tg_info.get("480p", {}).get("message_id", 0),
+                "stream_url": stream_480,
+                "size_bytes": sz_480,
+            },
+            "360p": {
+                "file_id": variant_tg_info.get("360p", {}).get("file_id", ""),
+                "message_id": variant_tg_info.get("360p", {}).get("message_id", 0),
+                "stream_url": stream_360,
+                "size_bytes": sz_360,
+            },
+        }
+
         # ── Downloads Construction ────────────────────────────────────────────────
-        # Telegram App / Web Direct Download (High-speed, zero file size limits)
         tg_channel_id_clean = str(abs(target_channel))
         if tg_channel_id_clean.startswith("100"):
             tg_channel_id_clean = tg_channel_id_clean[3:]
         tg_post_link = f"https://t.me/c/{tg_channel_id_clean}/{message_id}" if message_id else ""
 
-        if stream_url or tg_post_link:
+        if tg_post_link:
             downloads_list.append({
                 "quality": "1080p (Telegram Direct)",
-                "label": "1080p Full HD (Telegram App / Web • Fast)",
+                "label": "1080p Full HD (Telegram Channel • Fast)",
                 "size": downloader.format_bytes(sz_1080),
                 "size_bytes": sz_1080,
-                "url": tg_post_link or stream_url,
+                "url": tg_post_link,
                 "stream_url": stream_url,
+                "format": file_ext,
+                "host": "Telegram",
+                "sub_merged": has_sinhala,
+                "subtitle_merged": has_sinhala,
+            })
+
+        # Multi-quality bot deep-link downloads (High-speed, direct file delivery from bot)
+        for q_k, q_lbl, sz_val, s_url in [
+            ("1080p", "1080p Full HD (Telegram Bot / Cloud)", sz_1080, stream_url),
+            ("720p", "720p HD (Telegram Bot / Cloud)", sz_720, stream_720),
+            ("480p", "480p SD (Telegram Bot / Cloud)", sz_480, stream_480),
+            ("360p", "360p Data Saver (Telegram Bot / Cloud)", sz_360, stream_360),
+        ]:
+            downloads_list.append({
+                "quality": q_k,
+                "label": q_lbl,
+                "size": downloader.format_bytes(sz_val),
+                "size_bytes": sz_val,
+                "url": f"https://t.me/{bot_username}?start=dl_{slug}_{q_k}",
+                "stream_url": s_url or "",
                 "format": file_ext,
                 "host": "Telegram",
                 "sub_merged": has_sinhala,
@@ -1562,7 +1671,7 @@ async def _execute_leech(
         encoded_title = urllib.parse.quote(display_title)
         if drive_file_id:
             downloads_list.append({
-                "quality": "1080p",
+                "quality": "1080p (Drive Web)",
                 "label": "1080p Full HD (Web Download • Sinhala Sub)",
                 "size": downloader.format_bytes(sz_1080),
                 "size_bytes": sz_1080,
@@ -1573,50 +1682,14 @@ async def _execute_leech(
                 "sub_merged": has_sinhala,
                 "subtitle_merged": has_sinhala,
             })
-        elif stream_url:
-            downloads_list.append({
-                "quality": "1080p (Web Stream)",
-                "label": "1080p Full HD (Direct HTTP Stream)",
-                "size": downloader.format_bytes(sz_1080),
-                "size_bytes": sz_1080,
-                "url": stream_url,
-                "format": file_ext,
-                "host": "Direct Web",
-                "sub_merged": has_sinhala,
-                "subtitle_merged": has_sinhala,
-            })
 
-        # Ensure multi-quality download variants (1080p, 720p, 480p, 360p) are always present
-        existing_q = {d.get("quality") for d in downloads_list}
-        dl_fallback_url = tg_post_link or stream_url
-        if dl_fallback_url:
-            for q_k, q_lbl, sz_val in [
-                ("1080p", "1080p Full HD (Telegram App / Web • Fast)", sz_1080),
-                ("720p", "720p HD (Telegram App / Web • Fast)", sz_720),
-                ("480p", "480p SD (Telegram App / Web • Fast)", sz_480),
-                ("360p", "360p Data Saver (Telegram App / Web • Fast)", sz_360),
-            ]:
-                if q_k not in existing_q:
-                    downloads_list.append({
-                        "quality": q_k,
-                        "label": q_lbl,
-                        "size": downloader.format_bytes(sz_val),
-                        "size_bytes": sz_val,
-                        "url": dl_fallback_url,
-                        "stream_url": stream_url or "",
-                        "format": file_ext,
-                        "host": "Telegram" if tg_post_link else "Direct Web",
-                        "sub_merged": has_sinhala,
-                        "subtitle_merged": has_sinhala,
-                    })
-
-        if not qualities_map and dl_fallback_url:
+        if not qualities_map:
             qualities_map = {
-                "auto": dl_fallback_url,
-                "1080p": dl_fallback_url,
-                "720p": dl_fallback_url,
-                "480p": dl_fallback_url,
-                "360p": dl_fallback_url,
+                "auto": stream_url or primary_stream,
+                "1080p": stream_url or primary_stream,
+                "720p": stream_720 or stream_url or primary_stream,
+                "480p": stream_480 or stream_url or primary_stream,
+                "360p": stream_360 or stream_url or primary_stream,
             }
 
         raw_dur = tmdb_meta.get("duration", 120)
@@ -1664,6 +1737,7 @@ async def _execute_leech(
             "streams": streams_list,
             "qualities": qualities_map,
             "downloads": downloads_list,
+            "variant_media": variant_media,
             "subtitles": [
                 {
                     "language": "Sinhala",
@@ -1716,6 +1790,7 @@ async def _execute_leech(
             "meta": tmdb_meta,
             "movie_entry": movie_entry,
             "channel_id": target_channel,
+            "variant_media": variant_media,
         })
 
         # CRITICAL SAFETY GATE: Ensure video was successfully uploaded to Telegram before announcing/publishing

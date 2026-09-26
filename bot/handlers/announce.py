@@ -6,6 +6,7 @@ followers see it immediately.
 """
 
 import logging
+import re
 import textwrap
 from typing import Any, Optional
 
@@ -109,19 +110,33 @@ def _build_message(movie: dict) -> str:
 
     # ── Download buttons (per resolution entry) ───────────────────────────────
     download_parts: list[str] = []
+    seen_labels = set()
     downloads = movie.get("downloads", [])
     if downloads:
-        for d in downloads:
+        # Prioritize bot deep-link downloads (?start=dl_) over private channel links (https://t.me/c/)
+        sorted_dls = sorted(
+            downloads,
+            key=lambda d: 0 if "?start=dl_" in d.get("url", "") else (1 if not d.get("url", "").startswith("https://t.me/c/") else 2)
+        )
+        for d in sorted_dls:
             label = d.get("quality", "")
             dl_url = d.get("url", "")
             if label and dl_url:
-                download_parts.append(f'<a href="{dl_url}">[{label}]</a>')
+                m_q = re.search(r"\b(1080p|720p|480p|360p)\b", label, re.I)
+                btn_lbl = m_q.group(1) if m_q else label
+                if btn_lbl not in seen_labels:
+                    seen_labels.add(btn_lbl)
+                    download_parts.append(f'<a href="{dl_url}">[{btn_lbl}]</a>')
     else:
         for f in files:
             label = f.get("quality", "")
             dl_url = f.get("url", "") or f.get("stream_url", "")
             if label and dl_url:
-                download_parts.append(f'<a href="{dl_url}">[{label}]</a>')
+                m_q = re.search(r"\b(1080p|720p|480p|360p)\b", label, re.I)
+                btn_lbl = m_q.group(1) if m_q else label
+                if btn_lbl not in seen_labels:
+                    seen_labels.add(btn_lbl)
+                    download_parts.append(f'<a href="{dl_url}">[{btn_lbl}]</a>')
 
     download_line = "⬇️ Download:  " + "  ".join(download_parts) if download_parts else ""
 

@@ -173,7 +173,7 @@ class TestPipelineUpgrade(unittest.TestCase):
                     self.assertTrue(res)
                     self.assertTrue(mock_comp.called)
                     self.assertEqual(mock_comp.call_args[1]["input_path"], in_path)
-                    self.assertEqual(mock_comp.call_args[1]["target_size_bytes"], int(1.85 * 1024 * 1024 * 1024))
+                    self.assertEqual(mock_comp.call_args[1]["target_size_bytes"], int(1.40 * 1024 * 1024 * 1024))
             finally:
                 if os.path.exists(in_path):
                     os.remove(in_path)
@@ -182,6 +182,135 @@ class TestPipelineUpgrade(unittest.TestCase):
 
         asyncio.run(_check())
 
+    def test_tracker_injection_seedr_and_pikpak(self):
+        from bot.services.seedr_service import inject_trackers_into_magnet as seedr_inject
+        from bot.services.pikpak_service import inject_trackers_into_magnet as pikpak_inject
+
+        raw_magnet = "magnet:?xt=urn:btih:d3b07384d113edec49eaa6238ad5ff00"
+        mod_seedr = seedr_inject(raw_magnet)
+        mod_pikpak = pikpak_inject(raw_magnet)
+
+        self.assertIn("tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce", mod_seedr)
+        self.assertIn("tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce", mod_pikpak)
+
+        # Non-magnet URLs should not be modified
+        self.assertEqual(seedr_inject("https://example.com/file.mp4"), "https://example.com/file.mp4")
+        self.assertEqual(pikpak_inject("https://example.com/file.mp4"), "https://example.com/file.mp4")
+
+    def test_bot_deliver_movie_quality_deep_link(self):
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from bot.main import deliver_movie_quality
+
+        async def _check_dl():
+            mock_client = MagicMock()
+            mock_client.copy_message = AsyncMock(return_value=True)
+            mock_client.send_message = AsyncMock(return_value=True)
+
+            mock_movie = {
+                "title": "Ice Age",
+                "year": 2002,
+                "slug": "ice-age-01",
+                "channel_id": -1004325759505,
+                "message_id": 53,
+                "variant_media": {
+                    "1080p": {"message_id": 53, "file_id": "FID_1080", "size_bytes": 1327543170},
+                    "720p": {"message_id": 54, "file_id": "FID_720", "size_bytes": 750000000},
+                    "480p": {"message_id": 55, "file_id": "FID_480", "size_bytes": 420000000},
+                    "360p": {"message_id": 56, "file_id": "FID_360", "size_bytes": 220000000},
+                }
+            }
+
+            with patch("bot.main._find_movie_by_slug_or_title", AsyncMock(return_value=mock_movie)):
+                # 1. User requests 720p directly: should copy message_id 54
+                await deliver_movie_quality(mock_client, 12345, "ice-age-01", "720p")
+                mock_client.copy_message.assert_called_once()
+                self.assertEqual(mock_client.copy_message.call_args[1]["message_id"], 54)
+                self.assertIn("720p", mock_client.copy_message.call_args[1]["caption"])
+
+                # 2. User requests without quality: should send keyboard with all 4 qualities
+                mock_client.send_message.reset_mock()
+                await deliver_movie_quality(mock_client, 12345, "ice-age-01", None)
+                mock_client.send_message.assert_called_once()
+                sent_kb = mock_client.send_message.call_args[1]["reply_markup"]
+                kb_data = [btn.callback_data for row in sent_kb.inline_keyboard for btn in row if btn.callback_data]
+                self.assertIn("dl_q:ice-age-01:1080p", kb_data)
+                self.assertIn("dl_q:ice-age-01:720p", kb_data)
+                self.assertIn("dl_q:ice-age-01:480p", kb_data)
+                self.assertIn("dl_q:ice-age-01:360p", kb_data)
+
+        asyncio.run(_check_dl())
+
+    def test_announce_prioritizes_bot_deep_links(self):
+        from bot.handlers.announce import _build_message
+
+        movie = {
+            "title": "K.G.F: Chapter 2",
+            "year": 2022,
+            "rating": "8.3",
+            "genres": ["Action", "Crime", "Drama"],
+            "duration": 168,
+            "description": "In the blood-soaked Kolar Gold Fields, Rocky's name strikes fear into his foes.",
+            "slug": "kgf-chapter-2-2022",
+            "quality": "1080p",
+            "lang": "Sinhala Sub",
+            "downloads": [
+                {
+                    "quality": "1080p (Telegram Direct)",
+                    "url": "https://t.me/c/4325759505/100",
+                },
+                {
+                    "quality": "1080p",
+                    "url": "https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_1080p",
+                },
+                {
+                    "quality": "720p",
+                    "url": "https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_720p",
+                },
+                {
+                    "quality": "480p",
+                    "url": "https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_480p",
+                },
+                {
+                    "quality": "360p",
+                    "url": "https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_360p",
+                },
+            ]
+        }
+
+        msg = _build_message(movie)
+        # Verify 1080p button links to the bot deep-link, NOT the private channel link
+        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_1080p">[1080p]</a>', msg)
+        self.assertNotIn('<a href="https://t.me/c/4325759505/100">[1080p]</a>', msg)
+        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_720p">[720p]</a>', msg)
+        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_480p">[480p]</a>', msg)
+        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_360p">[360p]</a>', msg)
+
+    def test_deliver_movie_quality_recovers_channel_id_from_stream_url(self):
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from bot.main import deliver_movie_quality
+
+        async def _check():
+            mock_client = MagicMock()
+            mock_client.copy_message = AsyncMock(return_value=True)
+
+            mock_movie = {
+                "title": "K.G.F Chapter 2",
+                "year": 2022,
+                "slug": "kgf-2",
+                # Note: channel_id is missing/None
+                "stream_url": "https://stream.filmsub.lk/stream/channel/-1004325759505/88",
+            }
+
+            with patch("bot.main._find_movie_by_slug_or_title", AsyncMock(return_value=mock_movie)), \
+                 patch("bot.config.PRIVATE_CHANNEL_ID", 0):
+                await deliver_movie_quality(mock_client, 999, "kgf-2", "1080p")
+                mock_client.copy_message.assert_called_once()
+                self.assertEqual(mock_client.copy_message.call_args[1]["from_chat_id"], -1004325759505)
+                self.assertEqual(mock_client.copy_message.call_args[1]["message_id"], 88)
+
+        asyncio.run(_check())
+
 
 if __name__ == "__main__":
     unittest.main()
+

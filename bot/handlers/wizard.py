@@ -816,6 +816,20 @@ async def _handle_sub_file(client: Client, message: Message, session: dict) -> N
     if file_path.lower().endswith(".srt"):
         vtt_path = subtitle_service.srt_to_vtt(file_path)
 
+    # Validate genuine Sinhala subtitle
+    if not subtitle_service.is_genuine_sinhala_subtitle(vtt_path) and not subtitle_service.is_genuine_sinhala_subtitle(file_path):
+        kb_skip = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⏩ උපසිරැසි රහිතව Publish කරන්න", callback_data="wiz:skip_sub")],
+        ])
+        await msg.edit_text(
+            "❌ <b>මෙම ගොනුව තුළ සිංහල උපසිරැසි (Sinhala Subtitle) හමු නොවීය!</b>\n\n"
+            "⚠️ ඉංග්‍රීසි හෝ වෙනත් භාෂාවක උපසිරැසි සිංහල ලෙස එක් කළ නොහැක.\n"
+            "කරුණාකර නිවැරදි සිංහල .srt/.vtt ගොනුවක් එවන්න, නැතහොත් උපසිරැසි රහිතව ඉදිරියට යන්න.",
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb_skip,
+        )
+        return
+
     # Read VTT content to build data URI (free, fast, self-contained)
     with open(vtt_path, "r", encoding="utf-8", errors="replace") as f:
         vtt_text = f.read()
@@ -850,6 +864,18 @@ async def _handle_sub_url(client: Client, message: Message, session: dict, text:
     try:
         srt_path = await subtitle_service.download_subtitle(text)
         vtt_path = subtitle_service.srt_to_vtt(srt_path)
+        if not subtitle_service.is_genuine_sinhala_subtitle(vtt_path) and not subtitle_service.is_genuine_sinhala_subtitle(srt_path):
+            kb_skip = InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏩ උපසිරැසි රහිතව Publish කරන්න", callback_data="wiz:skip_sub")],
+            ])
+            await msg.edit_text(
+                "❌ <b>ලබාදුන් Link එක තුළ සිංහල උපසිරැසි (Sinhala Subtitle) හමු නොවීය!</b>\n\n"
+                "⚠️ ඉංග්‍රීසි හෝ වෙනත් භාෂාවක උපසිරැසි සිංහල ලෙස එක් කළ නොහැක.\n"
+                "කරුණාකර නිවැරදි සිංහල Subtitle Link එකක් එවන්න, නැතහොත් උපසිරැසි රහිතව ඉදිරියට යන්න.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_skip,
+            )
+            return
         with open(vtt_path, "r", encoding="utf-8", errors="replace") as f:
             sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(f.read())}"
     except Exception as exc:

@@ -150,14 +150,20 @@ async def _download_aria2c_http(
         aria2_bin,
         "-x", "16",
         "-s", "16",
+        "--split=16",
         "-j", "16",
         "-k", "1M",
         "--min-split-size=1M",
         "--max-connection-per-server=16",
         "--optimize-concurrent-downloads=true",
         "--file-allocation=none",
-        "--disk-cache=64M",
+        "--disk-cache=128M" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "--disk-cache=64M",
         "--continue=true",
+        "--conditional-get=true",
+        "--timeout=30",
+        "--connect-timeout=15",
+        "--max-tries=5",
+        "--retry-wait=2",
         "--check-certificate=false",
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "--summary-interval=1",
@@ -268,7 +274,10 @@ async def _download_httpx(
     filename: Optional[str],
     progress_callback: Optional[Callable],
 ) -> str:
-    """Stream download via httpx with live speed and ETA calculations."""
+    """
+    High-speed HTTP download via httpx with multi-connection parallel chunk acceleration (8-16 workers)
+    and graceful single-stream fallback.
+    """
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -278,47 +287,136 @@ async def _download_httpx(
     }
 
     timeout_config = httpx.Timeout(connect=25.0, read=120.0, write=30.0, pool=30.0)
+
+    # 1. Probe headers to detect filename and file size
+    out_name = filename or ""
+    total_size = 0
+    accept_ranges = False
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_config, headers=headers) as client:
+        try:
+            head_resp = await client.head(url)
+            if head_resp.status_code == 200:
+                total_size = int(head_resp.headers.get("content-length", 0))
+                accept_ranges = "bytes" in head_resp.headers.get("accept-ranges", "").lower()
+                cd = head_resp.headers.get("content-disposition", "")
+                cd_m = re.search(r'filename="?([^";]+)"?', cd)
+                if cd_m and not out_name:
+                    out_name = cd_m.group(1).strip()
+        except Exception:
+            pass
+
+    if not out_name:
+        out_name = url.split("/")[-1].split("?")[0] or "movie.mp4"
+    if not os.path.splitext(out_name)[1]:
+        out_name += ".mp4"
+
+    local_path = os.path.join(dest_dir, out_name)
+
+    # 2. If file size >= 20MB and server supports ranges, use 8-16 parallel range workers!
+    if total_size >= 20 * 1024 * 1024 and accept_ranges:
+        try:
+            num_workers = 16 if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else 8
+            part_size = total_size // num_workers
+            downloaded = [0] * num_workers
+            start_time = time.time()
+            last_notify = 0.0
+
+            with open(local_path, "wb") as f_init:
+                f_init.truncate(total_size)
+
+            async def _worker(worker_idx: int, start_byte: int, end_byte: int):
+                nonlocal last_notify
+                w_headers = dict(headers)
+                w_headers["Range"] = f"bytes={start_byte}-{end_byte}"
+                async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_config, headers=w_headers) as w_client:
+                    async with w_client.stream("GET", url) as w_resp:
+                        if w_resp.status_code != 206:
+                            raise RuntimeError(f"Range request returned status {w_resp.status_code} instead of 206")
+                        cur_pos = start_byte
+                        async with aiofiles.open(local_path, "r+b") as fh:
+                            async for chunk in w_resp.aiter_bytes(_CHUNK_SIZE):
+                                await fh.seek(cur_pos)
+                                await fh.write(chunk)
+                                cur_pos += len(chunk)
+                                downloaded[worker_idx] += len(chunk)
+
+                                now = time.time()
+                                if progress_callback and (now - last_notify >= 2.5):
+                                    last_notify = now
+                                    tot_dl = sum(downloaded)
+                                    elapsed = max(0.001, now - start_time)
+                                    speed_bytes = tot_dl / elapsed
+                                    speed_str = f"{format_bytes(speed_bytes)}/s"
+                                    pct = min(100.0, (tot_dl / total_size * 100.0))
+                                    eta_seconds = int((total_size - tot_dl) / speed_bytes) if speed_bytes > 0 else 0
+                                    eta_str = f"{eta_seconds}s" if eta_seconds < 60 else f"{eta_seconds // 60}m {eta_seconds % 60}s"
+                                    try:
+                                        if asyncio.iscoroutinefunction(progress_callback):
+                                            asyncio.create_task(progress_callback(
+                                                pct, format_bytes(tot_dl), format_bytes(total_size), speed_str, eta_str
+                                            ))
+                                        else:
+                                            progress_callback(pct, format_bytes(tot_dl), format_bytes(total_size), speed_str, eta_str)
+                                    except Exception:
+                                        pass
+
+            tasks = []
+            for i in range(num_workers):
+                sb = i * part_size
+                eb = (sb + part_size - 1) if (i < num_workers - 1) else (total_size - 1)
+                tasks.append(_worker(i, sb, eb))
+
+            log.info("[Downloader] Starting %d-worker parallel chunk HTTP download for %s (%s)",
+                     num_workers, out_name, format_bytes(total_size))
+            await asyncio.gather(*tasks)
+
+            if os.path.exists(local_path) and os.path.getsize(local_path) >= total_size:
+                log.info("[Downloader] Parallel HTTP download completed: %s (%s)", out_name, format_bytes(total_size))
+                return local_path
+        except Exception as p_err:
+            log.warning("[Downloader] Parallel chunk download fallback to single stream: %s", p_err)
+            if os.path.exists(local_path):
+                try:
+                    os.remove(local_path)
+                except Exception:
+                    pass
+
+    # 3. Fallback: single-stream GET
     async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_config, headers=headers) as client:
         async with client.stream("GET", url) as resp:
             resp.raise_for_status()
 
             cd = resp.headers.get("content-disposition", "")
             cd_match = re.search(r'filename="?([^";]+)"?', cd)
-            if cd_match:
+            if cd_match and not out_name:
                 out_name = cd_match.group(1).strip()
-            elif filename:
-                out_name = filename
-            else:
-                out_name = url.split("/")[-1].split("?")[0] or "movie.mp4"
-
-            if not os.path.splitext(out_name)[1]:
-                out_name += ".mp4"
 
             local_path = os.path.join(dest_dir, out_name)
-            total = int(resp.headers.get("content-length", 0))
-            downloaded = 0
+            total = int(resp.headers.get("content-length", 0)) or total_size
+            downloaded_cnt = 0
             start_time = time.time()
             last_notify = 0.0
 
             async with aiofiles.open(local_path, "wb") as fh:
                 async for chunk in resp.aiter_bytes(_CHUNK_SIZE):
                     await fh.write(chunk)
-                    downloaded += len(chunk)
+                    downloaded_cnt += len(chunk)
 
                     now = time.time()
-                    if progress_callback and ((now - last_notify >= 2.5) or (total and downloaded >= total)):
+                    if progress_callback and ((now - last_notify >= 2.5) or (total and downloaded_cnt >= total)):
                         last_notify = now
                         elapsed = max(0.001, now - start_time)
-                        speed_bytes = downloaded / elapsed
+                        speed_bytes = downloaded_cnt / elapsed
                         speed_str = f"{format_bytes(speed_bytes)}/s"
-                        pct = (downloaded / total * 100.0) if total else 0.0
-                        eta_seconds = int((total - downloaded) / speed_bytes) if (total and speed_bytes > 0) else 0
+                        pct = (downloaded_cnt / total * 100.0) if total else 0.0
+                        eta_seconds = int((total - downloaded_cnt) / speed_bytes) if (total and speed_bytes > 0) else 0
                         eta_str = f"{eta_seconds}s" if eta_seconds < 60 else f"{eta_seconds // 60}m {eta_seconds % 60}s"
                         try:
                             if asyncio.iscoroutinefunction(progress_callback):
                                 asyncio.create_task(progress_callback(
                                     pct,
-                                    format_bytes(downloaded),
+                                    format_bytes(downloaded_cnt),
                                     format_bytes(total) if total else "Unknown",
                                     speed_str,
                                     eta_str,
@@ -326,7 +424,7 @@ async def _download_httpx(
                             else:
                                 progress_callback(
                                     pct,
-                                    format_bytes(downloaded),
+                                    format_bytes(downloaded_cnt),
                                     format_bytes(total) if total else "Unknown",
                                     speed_str,
                                     eta_str,

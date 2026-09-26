@@ -195,9 +195,186 @@ def start_health_server_thread(port: int) -> threading.Thread:
 # Built-in command handlers
 # ─────────────────────────────────────────────────────────────────────────────
 
+import re
+from services import draft_service, github_service
+
+
+async def _find_movie_by_slug_or_title(query: str) -> Optional[dict]:
+    """Look up movie in movies.json or drafts by slug or title."""
+    if not query:
+        return None
+    q = query.strip().lower()
+    clean_q = re.sub(r"[\W_]+", "", q)
+    try:
+        data, _ = await github_service.get_movies_json()
+        movies = data.get("movies", [])
+    except Exception:
+        movies = []
+
+    # 1. Exact or normalized match in movies.json
+    for m in movies:
+        m_slug = (m.get("slug") or m.get("id") or "").lower()
+        m_title = (m.get("title") or "").lower()
+        clean_slug = re.sub(r"[\W_]+", "", m_slug)
+        clean_title = re.sub(r"[\W_]+", "", m_title)
+        if q == m_slug or q == m_title or clean_q == clean_slug or clean_q == clean_title or (len(clean_q) >= 3 and (clean_q in clean_slug or clean_slug in clean_q or clean_q in clean_title)):
+            return m
+
+    # 2. Check saved drafts
+    try:
+        drafts = draft_service.list_drafts()
+        for d in drafts:
+            m_entry = d.get("movie_entry") or {}
+            d_slug = (m_entry.get("slug") or d.get("id") or "").lower()
+            d_title = (d.get("title_hint") or d.get("movie_name") or "").lower()
+            clean_dslug = re.sub(r"[\W_]+", "", d_slug)
+            clean_dtitle = re.sub(r"[\W_]+", "", d_title)
+            if q == d_slug or q == d_title or clean_q == clean_dslug or clean_q == clean_dtitle:
+                res = dict(m_entry) if m_entry else dict(d)
+                res["channel_id"] = d.get("channel_id")
+                return res
+    except Exception:
+        pass
+    return None
+
+
+async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality: Optional[str] = None) -> None:
+    """Send requested movie quality directly to user via Telegram copy_message or send_video."""
+    movie = await _find_movie_by_slug_or_title(slug)
+    if not movie:
+        await client.send_message(
+            chat_id,
+            f"❌ <b>'{slug}'</b> චිත්‍රපටය සොයාගත නොහැකි විය.\n\n🌐 වෙබ් අඩවිය: https://filmsub.pages.dev",
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    title = movie.get("title") or "Movie"
+    year = movie.get("year") or ""
+    display_title = f"{title} ({year})" if year else title
+    vm = movie.get("variant_media") or {}
+    ch_id = movie.get("channel_id") or config.PRIVATE_CHANNEL_ID
+
+    valid_qualities = ["1080p", "720p", "480p", "360p"]
+    norm_q = (quality or "").lower().strip()
+    if norm_q not in [q.lower() for q in valid_qualities]:
+        # Quality not specified: present inline keyboard with resolution buttons
+        buttons = []
+        for q_tag in valid_qualities:
+            q_info = vm.get(q_tag) or {}
+            sz = ""
+            if q_info.get("size_bytes"):
+                from services.downloader import format_bytes
+                sz = f" ({format_bytes(q_info['size_bytes'])})"
+            buttons.append([InlineKeyboardButton(f"📥 {q_tag} HD Download{sz}", callback_data=f"dl_q:{movie.get('slug', slug)}:{q_tag}")])
+        buttons.append([InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=f"https://filmsub.pages.dev/movie.html?id={movie.get('slug', slug)}")])
+        kb = InlineKeyboardMarkup(buttons)
+        await client.send_message(
+            chat_id,
+            f"🎬 <b>{display_title}</b>\n\n⚡ බාගත කිරීමට අවශ්‍ය Video Quality එක තෝරන්න (Select Download Quality):",
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb,
+        )
+        return
+
+    target_q = next((q for q in valid_qualities if q.lower() == norm_q), "1080p")
+    target_info = vm.get(target_q) or {}
+    target_msg_id = target_info.get("message_id")
+    target_file_id = target_info.get("file_id")
+
+    # Fallback to main file if specific resolution is not separate
+    if not target_msg_id and not target_file_id:
+        target_msg_id = movie.get("message_id")
+        target_file_id = movie.get("file_id")
+        target_q = movie.get("quality", "1080p")
+
+    # Resilient channel ID and message ID resolution from stream_url or downloads
+    if not ch_id or not target_msg_id:
+        url_candidates = [
+            movie.get("stream_url", ""),
+            *(d.get("stream_url", "") for d in movie.get("downloads", []) if isinstance(d, dict)),
+            *(d.get("url", "") for d in movie.get("downloads", []) if isinstance(d, dict)),
+            *(s.get("stream_url", "") for s in movie.get("streams", []) if isinstance(s, dict)),
+        ]
+        for u in url_candidates:
+            if not u:
+                continue
+            m_ch = re.search(r"/stream/channel/(-?\d+)/(\d+)", u)
+            if m_ch:
+                if not ch_id:
+                    ch_id = int(m_ch.group(1))
+                if not target_msg_id:
+                    target_msg_id = int(m_ch.group(2))
+                break
+            m_tg = re.search(r"t\.me/c/(\d+)/(\d+)", u)
+            if m_tg:
+                if not ch_id:
+                    ch_id = int(f"-100{m_tg.group(1)}")
+                if not target_msg_id:
+                    target_msg_id = int(m_tg.group(2))
+                break
+
+    caption = (
+        f"🎬 <b>{display_title} [{target_q}]</b>\n\n"
+        f"⚡ <b>Quality:</b> {target_q} (High-Speed Telegram Cloud)\n"
+        f"💬 <b>සිංහල උපසිරැසි:</b> Video එකටම Soft-Mux කර ඇත\n"
+        f"🌐 <b>Watch Online:</b> https://filmsub.pages.dev/movie.html?id={movie.get('slug', slug)}"
+    )
+
+    if target_msg_id and ch_id:
+        try:
+            await client.copy_message(
+                chat_id=chat_id,
+                from_chat_id=ch_id,
+                message_id=target_msg_id,
+                caption=caption,
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        except Exception as copy_err:
+            log.warning("[MainBot] copy_message error (%s). Trying send_video...", copy_err)
+
+    if target_file_id:
+        try:
+            await client.send_video(
+                chat_id=chat_id,
+                video=target_file_id,
+                caption=caption,
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        except Exception as vid_err:
+            log.error("[MainBot] send_video error: %s", vid_err)
+
+    s_url = target_info.get("stream_url") or movie.get("stream_url")
+    if s_url:
+        await client.send_message(
+            chat_id,
+            f"🎬 <b>{display_title} [{target_q}]</b>\n\n"
+            f"⚡ <b>Direct Stream/Download URL:</b>\n{s_url}\n\n"
+            f"🌐 <b>Website:</b> https://filmsub.pages.dev/movie.html?id={movie.get('slug', slug)}",
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    await client.send_message(chat_id, f"⚠️ {display_title} සඳහා Telegram video file එක ලබාගත නොහැකි විය.", parse_mode=ParseMode.HTML)
+
+
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client: Client, message: Message) -> None:
-    """Greet new users warmly in Sinhala."""
+    """Greet new users or route /start dl_<slug>_<quality> deep links."""
+    command_parts = message.command
+    if len(command_parts) > 1 and command_parts[1].startswith("dl_"):
+        param = command_parts[1][3:].strip()
+        req_q = None
+        for q_cand in ["1080p", "720p", "480p", "360p"]:
+            if param.lower().endswith(f"_{q_cand.lower()}"):
+                req_q = q_cand
+                param = param[:-len(f"_{q_cand.lower()}")]
+                break
+        await deliver_movie_quality(client, message.chat.id, param, req_q)
+        return
+
     user_name = message.from_user.first_name if message.from_user else "යාලුවා"
     kb = InlineKeyboardMarkup([
         [
@@ -225,6 +402,35 @@ async def start_handler(client: Client, message: Message) -> None:
         reply_markup=kb,
         disable_web_page_preview=True,
     )
+
+
+@app.on_callback_query(filters.regex(r"^dl_q:"))
+async def dl_quality_callback(client: Client, query: CallbackQuery) -> None:
+    """Deliver requested video quality directly to user upon button click."""
+    await query.answer("ගොනුව එවමින් පවතී...")
+    parts = query.data.split(":", 2)
+    if len(parts) >= 3:
+        slug, quality = parts[1], parts[2]
+        await deliver_movie_quality(client, query.message.chat.id, slug, quality)
+
+
+@app.on_message(filters.command(["dl", "download"]) & filters.private)
+async def dl_command_handler(client: Client, message: Message) -> None:
+    """Download movie quality directly: /dl <movie_name_or_slug> [1080p|720p|480p|360p]"""
+    tokens = (message.text or "").split()
+    if len(tokens) < 2:
+        await message.reply_text(
+            "📥 <b>Movie Download විධානය භාවිතා කරන ආකාරය:</b>\n\n"
+            "• <code>/dl &lt;Movie Name or Slug&gt;</code>\n"
+            "• <code>/dl &lt;Movie Name or Slug&gt; 720p</code>\n"
+            "• <code>/dl ice-age-01 480p</code>\n\n"
+            "💡 <i>නම ලබාදුන් පසු ඔබට අවශ්‍ය Quality එක (1080p/720p/480p/360p) තෝරාගත හැක.</i>",
+            parse_mode=ParseMode.HTML,
+        )
+        return
+    query_text = tokens[1].strip()
+    quality = tokens[2].strip() if len(tokens) >= 3 else None
+    await deliver_movie_quality(client, message.chat.id, query_text, quality)
 
 
 @app.on_message(filters.command("help"))

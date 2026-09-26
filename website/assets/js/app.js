@@ -97,15 +97,32 @@ function getFeatured() {
   return allMovies.find(m => m.featured) || allMovies[0] || null;
 }
 function getNewReleases() {
-  return [...allMovies].sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, 20);
+  return [...allMovies].sort((a, b) => {
+    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
+    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
+    if (timeB !== timeA) return timeB - timeA;
+    return (b.year || 0) - (a.year || 0);
+  }).slice(0, 20);
 }
 function getTrending() {
   const tr = allMovies.filter(m => m.trending);
-  return (tr.length > 0 ? tr : allMovies).slice(0, 20);
+  const list = tr.length > 0 ? tr : allMovies;
+  return [...list].sort((a, b) => {
+    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
+    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
+    if (timeB !== timeA) return timeB - timeA;
+    return (b.year || 0) - (a.year || 0);
+  }).slice(0, 20);
 }
 function getSinhalaFilms() {
   const sf = allMovies.filter(m => (Array.isArray(m.subtitles) && m.subtitles.length > 0) || m.subtitle_url || m.has_sinhala_sub);
-  return (sf.length > 0 ? sf : allMovies).slice(0, 20);
+  const list = sf.length > 0 ? sf : allMovies;
+  return [...list].sort((a, b) => {
+    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
+    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
+    if (timeB !== timeA) return timeB - timeA;
+    return (b.year || 0) - (a.year || 0);
+  }).slice(0, 20);
 }
 function getRelated(movie) {
   if (!movie) return [];

@@ -767,10 +767,25 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     if (newDriveId) {
       newSrc = buildChunkStreamUrl(newDriveId, currentEffectiveQuality);
     } else {
-      const downloads = getMovieDownloads(currentMovie);
-      const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(currentEffectiveQuality.toLowerCase()) && !d.download_only);
-      if (matched && matched.url && !matched.url.includes('drive.google.com/uc')) {
-        newSrc = matched.url;
+      const qNorm = String(currentEffectiveQuality || '').toLowerCase();
+      if (currentMovie && currentMovie.qualities && typeof currentMovie.qualities === 'object') {
+        const qVal = currentMovie.qualities[qNorm] || currentMovie.qualities[currentEffectiveQuality];
+        if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
+          newSrc = qVal;
+        } else if (qVal && typeof qVal === 'object' && qVal.stream_url && !qVal.stream_url.includes('t.me')) {
+          newSrc = qVal.stream_url;
+        }
+      }
+      if (!newSrc) {
+        const downloads = getMovieDownloads(currentMovie);
+        const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(currentEffectiveQuality.toLowerCase()) && !d.download_only);
+        if (matched) {
+          if (matched.stream_url && !matched.stream_url.includes('t.me')) {
+            newSrc = matched.stream_url;
+          } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
+            newSrc = matched.url;
+          }
+        }
       }
     }
 

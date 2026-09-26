@@ -153,6 +153,16 @@ def register(app: Client) -> None:
                     await status_msg.edit_text("❌ උපසිරැසි Link එකක් හෝ .srt/.vtt file එකක් හමු නොවීය.")
                     return
 
+                # Validate genuine Sinhala characters (prevent attaching English as Sinhala)
+                if not subtitle_service.is_genuine_sinhala_subtitle(local_vtt) and not subtitle_service.is_genuine_sinhala_subtitle(local_srt):
+                    await status_msg.edit_text(
+                        "❌ <b>මෙම උපසිරැසි ගොනුව තුළ සිංහල උපසිරැසි (Sinhala Unicode) අඩංගු නොවේ!</b>\n\n"
+                        "⚠️ ඉංග්‍රීසි හෝ වෙනත් භාෂාවක උපසිරැසි ගොනුවක් සිංහල උපසිරැසි ලෙස පිළිගත නොහැක.\n"
+                        "කරුණාකර නියම සිංහල .srt හෝ .vtt ගොනුවක් Upload කරන්න.",
+                        parse_mode=ParseMode.HTML,
+                    )
+                    return
+
                 # Read VTT content
                 with open(local_vtt, "r", encoding="utf-8", errors="replace") as vf:
                     vtt_text = vf.read()

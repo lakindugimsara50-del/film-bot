@@ -21,6 +21,37 @@ log = logging.getLogger(__name__)
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 CREDS_FILE = os.path.join(DATA_DIR, "pikpak_creds.json")
 
+import urllib.parse
+
+PUBLIC_TRACKERS = [
+    "udp://tracker.opentrackr.org:1337/announce",
+    "udp://open.tracker.cl:1337/announce",
+    "udp://opentracker.i2p.rocks:6969/announce",
+    "udp://tracker.torrent.eu.org:451/announce",
+    "udp://open.stealth.si:80/announce",
+    "udp://explodie.org:6969/announce",
+    "udp://tracker.dler.org:6969/announce",
+    "udp://p4p.arenabg.com:1337/announce",
+    "https://tracker.tamersunion.org:443/announce",
+    "https://tracker.gbitt.info:443/announce",
+]
+
+
+def inject_trackers_into_magnet(magnet_url: str) -> str:
+    """Ensure magnet link contains high-speed public trackers for instant cloud seed discovery."""
+    if not magnet_url or not magnet_url.startswith("magnet:"):
+        return magnet_url
+    existing_trs = set(re.findall(r"[?&]tr=([^&]+)", magnet_url))
+    added_params = []
+    for tr in PUBLIC_TRACKERS:
+        enc_tr = urllib.parse.quote(tr, safe="")
+        if enc_tr not in existing_trs and tr not in existing_trs:
+            added_params.append(f"tr={enc_tr}")
+    if added_params:
+        sep = "&" if "?" in magnet_url else "?"
+        return magnet_url + sep + "&".join(added_params)
+    return magnet_url
+
 
 class PikPakService:
     """Async client for PikPak cloud torrent and direct download service."""
@@ -136,8 +167,9 @@ class PikPakService:
             except Exception as c_err:
                 log.warning("[PikPak] Pre-conversion cleanup warning: %s", c_err)
 
-            log.info("[PikPak] Submitting magnet to PikPak cloud...")
-            res = await client.offline_download(file_url=magnet_link)
+            log.info("[PikPak] Submitting magnet to PikPak cloud with public trackers...")
+            mag_with_trackers = inject_trackers_into_magnet(magnet_link)
+            res = await client.offline_download(file_url=mag_with_trackers)
             log.info("[PikPak] Offline download response: %s", res)
 
             task = res.get("task", {})

@@ -16,6 +16,37 @@ SEEDR_TOKEN_URL = "https://www.seedr.cc/oauth_test/token.php"
 SEEDR_RESOURCE_URL = "https://www.seedr.cc/oauth_test/resource.php"
 SEEDR_CLIENT_ID = "seedr_xbmc"
 
+import urllib.parse
+
+PUBLIC_TRACKERS = [
+    "udp://tracker.opentrackr.org:1337/announce",
+    "udp://open.tracker.cl:1337/announce",
+    "udp://opentracker.i2p.rocks:6969/announce",
+    "udp://tracker.torrent.eu.org:451/announce",
+    "udp://open.stealth.si:80/announce",
+    "udp://explodie.org:6969/announce",
+    "udp://tracker.dler.org:6969/announce",
+    "udp://p4p.arenabg.com:1337/announce",
+    "https://tracker.tamersunion.org:443/announce",
+    "https://tracker.gbitt.info:443/announce",
+]
+
+
+def inject_trackers_into_magnet(magnet_url: str) -> str:
+    """Ensure magnet link contains high-speed public trackers for instant cloud seed discovery."""
+    if not magnet_url or not magnet_url.startswith("magnet:"):
+        return magnet_url
+    existing_trs = set(re.findall(r"[?&]tr=([^&]+)", magnet_url))
+    added_params = []
+    for tr in PUBLIC_TRACKERS:
+        enc_tr = urllib.parse.quote(tr, safe="")
+        if enc_tr not in existing_trs and tr not in existing_trs:
+            added_params.append(f"tr={enc_tr}")
+    if added_params:
+        sep = "&" if "?" in magnet_url else "?"
+        return magnet_url + sep + "&".join(added_params)
+    return magnet_url
+
 
 class SeedrService:
     """Async client for Seedr.cc cloud torrent debrid service."""
@@ -96,6 +127,9 @@ class SeedrService:
             else:
                 log.warning("[Seedr] Invalid magnet URL provided: %s", magnet_url)
                 return None
+
+        # Inject high-speed trackers to eliminate 0-seeder / slow DHT cloud discovery
+        magnet_url = inject_trackers_into_magnet(magnet_url)
 
         # Step 1: Clean any existing files in Seedr to ensure 2GB quota is free
         # Step 1: Clean any existing files in Seedr to ensure 2GB quota is free

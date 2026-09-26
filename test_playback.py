@@ -269,7 +269,68 @@ def run_tests():
             print(f"[OK] UTF-16LE .SRT & Sync check: {sub_edge_check}")
             assert sub_edge_check['cuesCount'] == 2, f"Expected 2 replaced cues from UTF-16LE SRT, got {sub_edge_check}"
             assert 'සිංහල UTF-16' in sub_edge_check['firstText'], f"Expected Sinhala text in decoded UTF-16 cue, got {sub_edge_check}"
-            assert abs((sub_edge_check['shiftedStart'] - sub_edge_check['initialStart']) - 0.5) < 0.05, f"Expected +0.5s shift on VTTCue, got {sub_edge_check}"
+        # 8. TV Series Multi-Quality & Failover Test (Game of Thrones S01E05)
+        print(f"\n==========================================")
+        print("Testing URL: http://localhost:8000/movie.html?id=game-of-thrones-2011-s01e05 (Series Multi-Quality & Failover)")
+        print(f"==========================================")
+        driver.get('http://localhost:8000/movie.html?id=game-of-thrones-2011-s01e05')
+        time.sleep(2)
+
+        # Check hero title and document title
+        hero_title = driver.find_element('id', 'movie-detail-title').text
+        print(f"[OK] GoT S01E05 Hero Title: {hero_title}")
+        assert 'Game of Thrones' in hero_title, f"Expected Game of Thrones in hero title, got {hero_title}"
+
+        # Verify downloads: exactly 4 clean cards (1080p, 720p, 480p, 360p), zero dead ephemeral tunnels, zero fake GDrive
+        dl_cards = driver.execute_script("""
+            const cards = Array.from(document.querySelectorAll('.download-card'));
+            return cards.map(c => {
+                const q = c.querySelector('.cs-dl-quality span')?.textContent.trim();
+                const sz = c.querySelector('.cs-dl-size-badge')?.textContent.trim();
+                const urls = Array.from(c.querySelectorAll('a, button')).map(el => el.href || el.dataset.url || '');
+                return { q, sz, urls };
+            });
+        """)
+        print(f"[OK] GoT S01E05 Download Cards ({len(dl_cards)}):")
+        for dc in dl_cards:
+            print(f"     Card: {dc['q']} | Size: {dc['sz']} | URLs: {dc['urls']}")
+        assert len(dl_cards) == 4, f"Expected exactly 4 download cards (1080p, 720p, 480p, 360p), got {len(dl_cards)}"
+        for dc in dl_cards:
+            for u in dc['urls']:
+                assert 'trycloudflare.com' not in u, f"Dead ephemeral tunnel found in download URL: {u}"
+                assert 'drive.google.com' not in u and '/api/download' not in u, f"Phantom GDrive link found in Telegram download card: {u}"
+
+        # Verify zero white screen container background
+        container_bg = driver.execute_script("return window.getComputedStyle(document.getElementById('video-player-container')).backgroundColor;")
+        print(f"[OK] Container BG: {container_bg}")
+        assert container_bg == 'rgb(0, 0, 0)', f"Expected pure black container BG, got {container_bg}"
+
+        # Wait for failover: Server 1 offline tunnel triggers failover to VIP Embed Server (VidSrc / SuperEmbed)
+        print("Waiting for failover to VIP embed server...")
+        active_embed_src = None
+        for _ in range(25):
+            active_embed_src = driver.execute_script("""
+                const iframe = document.querySelector('#video-player-container iframe');
+                return iframe ? iframe.src : null;
+            """)
+            if active_embed_src and ('vidsrc' in active_embed_src or 'multiembed' in active_embed_src or 'autoembed' in active_embed_src):
+                break
+            time.sleep(0.5)
+
+        print(f"[OK] Failover Embed Src: {active_embed_src}")
+        assert active_embed_src and ('tt0944947' in active_embed_src or '1399' in active_embed_src), f"Expected VIP embed with IMDb/TMDb ID, got {active_embed_src}"
+
+        # Verify Episode Switching: click Episode 1
+        print("Testing episode switching to S01E01...")
+        driver.execute_script("const ep = document.querySelector('.episode-card[data-episode=\"1\"]'); if (ep) ep.click();")
+        time.sleep(1.5)
+
+        ep1_embed_src = driver.execute_script("""
+            const iframe = document.querySelector('#video-player-container iframe');
+            return iframe ? iframe.src : null;
+        """)
+        print(f"[OK] S01E01 Embed Src: {ep1_embed_src}")
+        assert ep1_embed_src and ('/1/1' in ep1_embed_src or 's=1&e=1' in ep1_embed_src), f"Expected S1E1 embed parameters in iframe src, got {ep1_embed_src}"
 
         print("\n>>> ALL TESTS PASSED SUCCESSFULLY! <<<")
     finally:

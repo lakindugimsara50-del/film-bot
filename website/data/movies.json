@@ -1953,7 +1953,118 @@
       "added_by": "bot_auto_leech",
       "drive_file_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
       "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry"
+    },
+    {
+      "id": "kgf-chapter-1-2018",
+      "slug": "kgf-chapter-1-2018",
+      "title": "K.G.F: Chapter 1",
+      "title_si": "",
+      "year": 2018,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt7838252",
+      "tmdb_id": "564147",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/ltHlJwvxKv7d0ooCiKSAvfwV9tX.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/ltHlJwvxKv7d0ooCiKSAvfwV9tX.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4i1ofsSpfTuswHXcgPtXbZrSnoe.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4i1ofsSpfTuswHXcgPtXbZrSnoe.jpg",
+      "genres": [
+        "Action",
+        "Thriller",
+        "Adventure",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "quality": "1080p",
+      "duration": "156 min",
+      "description": "A period drama set in the 1970s, KGF follows the story of a fierce rebel who rises against the brutal oppression in Kolar Gold Fields and becomes the symbol of hope to legions of downtrodden people.",
+      "director": "Prashanth Neel",
+      "cast": [
+        {
+          "name": "Yash",
+          "character": "Rocky / Raja Krishnappa Bairya"
+        },
+        {
+          "name": "Srinidhi Shetty",
+          "character": "Reena"
+        },
+        {
+          "name": "Ramachandra Raju",
+          "character": "Garuda"
+        },
+        {
+          "name": "Archana Jois",
+          "character": "Shanthamma / Rocky's Mother"
+        },
+        {
+          "name": "Anant Nag",
+          "character": "Anand Ingalagi"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "",
+      "message_id": 51,
+      "file_name": "faststart_kgf-chapter-1-2018.mp4",
+      "file_size": 2770083531,
+      "drive_file_id": "",
+      "stream_url": "",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidsrc.xyz/embed/movie/tt7838252"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://multiembed.mov/?video_id=tt7838252"
+        }
+      ],
+      "qualities": {},
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram App / Web • Fast)",
+          "size": "2.6 GB",
+          "size_bytes": 2770083531,
+          "url": "https://t.me/c/4325759505/51",
+          "stream_url": "",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A08.000%0A%F0%9F%8E%AC%20K.G.F%3A%20Chapter%201%20%282018%29%20%282018%29%20%E2%80%94%20FilmSub.lk%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%0A%0A00%3A00%3A08.500%20--%3E%2000%3A00%3A18.000%0A%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B7%8A%E0%B7%80%E0%B6%BA%E0%B6%82%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%93%E0%B6%BA%E0%B7%80%20%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%92%E0%B6%BA%E0%B7%8F%E0%B6%AD%E0%B7%8A%E0%B6%B8%E0%B6%9A%E0%B6%BA%E0%B7%92%20%28Auto%20Sinhala%20Subtitles%20Enabled%29%0A%0A00%3A00%3A18.500%20--%3E%2000%3A00%3A30.000%0A1080p%20/%20720p%20/%20480p%20/%20360p%20High-Speed%20Cloud%20Streaming%20%26%20Download%0A%0A00%3A00%3A30.500%20--%3E%2000%3A00%3A45.000%0AK.G.F%3A%20Chapter%201%20%282018%29%20%282018%29%20%E2%80%94%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%80%E0%B7%93%E0%B6%A9%E0%B7%92%E0%B6%BA%E0%B7%9D%E0%B7%80%E0%B6%A7%E0%B6%B8%20Merge%20%E0%B6%9A%E0%B6%BB%20%E0%B6%87%E0%B6%AD",
+          "default": true
+        }
+      ],
+      "source_method": "yts",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=kgf-chapter-1-2018",
+      "added_date": "2026-09-26",
+      "added_at": "2026-09-26T08:23:27Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-24T18:55:48Z"
+  "last_updated": "2026-09-26T08:23:29Z"
 }

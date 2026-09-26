@@ -1021,95 +1021,55 @@ async def _execute_leech(
         except Exception as sub_acq_err:
             log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
 
-        # 2. Compress or Single-Pass Remux + Soft-Sub Merge in 12GB RAM (/dev/shm)
+        # 2. Instantaneous Stream Copy Remux + Soft-Sub Merge (3-5 seconds)
         is_faststart_done = False
-        if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
-            log.info(
-                "[LeechService] File size %.2f GB exceeds 1.95 GB limit. Starting 12GB RAM Smart 1080p compression + Sinhala sub merge...",
-                curr_size / (1024 * 1024 * 1024),
-            )
-            task_tracker.tracker.set_step(user_id, "Smart 1080p Compression + Sub Merge (FFmpeg)...")
-            compressed_file = os.path.join(temp_dir, f"compressed_{slug}.mp4")
-            last_comp_edit = 0.0
+        ext = os.path.splitext(local_file)[1].lower()
+        remuxed = os.path.join(temp_dir, f"{slug}.mp4")
+        if os.path.abspath(remuxed) == os.path.abspath(local_file):
+            remuxed = os.path.join(temp_dir, f"web_{slug}.mp4")
 
-            async def _compress_prog(pct: float, pct_str: str) -> None:
-                nonlocal last_comp_edit
-                now = time.time()
-                if now - last_comp_edit >= 3.0:
-                    last_comp_edit = now
-                    p_bar = downloader.format_progress_bar(pct)
-                    c_text = (
-                        f"⚙️ <b>12GB RAM 1080p Quality & සිංහල Sub Merge සකසමින් පවතී...</b>\n\n"
-                        f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
-                        f"📊 <b>සැකසුම් ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                        f"💡 <i>1080p Full HD තත්ත්වය සහ සිංහල උපසිරැසි Video එකටම Merge කරමින් File Size එක 1.2GB දක්වා අඩු කෙරේ.</i>"
-                    )
-                    try:
-                        await status_msg.edit_text(c_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                    except Exception:
-                        pass
-
-            ok = await video_service.compress_smart_1080p(
-                local_file,
-                compressed_file,
-                _compress_prog,
-                sub_path=sub_srt_path,
+        try:
+            await status_msg.edit_text(
+                f"⚙️ <b>පියවර 3/5: Ultra-Fast Stream Copy සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
+                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                f"⚡ <b>ක්‍රමය:</b> Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)\n"
+                f"💬 <b>උපසිරැසි:</b> සිංහල උපසිරැසි Video එකටම Soft-Mux කෙරේ (Default Track)\n"
+                f"⏳ තත්පර 3-5ක් රැඳී සිටින්න...",
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb_cancel,
             )
-            if ok and os.path.exists(compressed_file) and os.path.getsize(compressed_file) > 0:
+        except Exception:
+            pass
+
+        task_tracker.tracker.set_step(user_id, "Instant Stream Copy + Sub Mux (FFmpeg)...")
+        log.info("[LeechService] Executing instantaneous stream-copy muxing (%s -> MP4, sub=%s)...", ext, sub_srt_path)
+
+        if await video_service.stream_copy_subtitles(local_file, sub_srt_path, remuxed, disposition="default"):
+            try:
+                os.remove(local_file)
+            except Exception:
+                pass
+            local_file = remuxed
+            is_faststart_done = True
+            log.info("[LeechService] Instantaneous stream-copy muxing succeeded: %s", local_file)
+        elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_srt_path):
+            try:
+                os.remove(local_file)
+            except Exception:
+                pass
+            local_file = remuxed
+            is_faststart_done = True
+            log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
+        elif sub_srt_path and os.path.exists(sub_srt_path):
+            # Fallback soft-embed if stream-copy was skipped
+            sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
+            if await video_service.embed_subtitles_soft(local_file, sub_srt_path, sub_muxed, disposition="default"):
                 try:
                     os.remove(local_file)
                 except Exception:
                     pass
-                local_file = compressed_file
-                is_faststart_done = True
-        else:
-            # On Colab (12GB RAM /dev/shm) or file <= 1.95GB:
-            # Single-pass MKV/AVI/MP4 -> Web-Streamable MP4 (+faststart) + Stereo AAC + Dual Sinhala Subtitle Merge!
-            ext = os.path.splitext(local_file)[1].lower()
-            try:
-                free_disk = shutil.disk_usage(temp_dir).free
-                file_size_check = os.path.getsize(local_file)
-                can_remux = free_disk > (file_size_check + 150 * 1024 * 1024)
-            except Exception:
-                can_remux = True
-
-            if can_remux:
-                try:
-                    await status_msg.edit_text(
-                        f"⚙️ <b>පියවර 3/5: 12GB RAM Ultra-Fast වීඩියෝ සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
-                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                        f"⚡ <b>ආකෘතිය:</b> {ext.upper()} ➔ MP4 Web-Streamable (+faststart & Stereo AAC)\n"
-                        f"💬 <b>උපසිරැසි:</b> සිංහල උපසිරැසි වීඩියෝවටම Merge කෙරේ (Auto-Play Subtitles)\n"
-                        f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=kb_cancel,
-                    )
-                except Exception:
-                    pass
-                log.info("[LeechService] Single-pass RAM remux + Sinhala subtitle merge (%s -> MP4)...", ext)
-                remuxed = os.path.join(temp_dir, f"{slug}.mp4")
-                if os.path.abspath(remuxed) == os.path.abspath(local_file):
-                    remuxed = os.path.join(temp_dir, f"web_{slug}.mp4")
-                if await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_srt_path):
-                    try:
-                        os.remove(local_file)
-                    except Exception:
-                        pass
-                    local_file = remuxed
-                    is_faststart_done = True
-                    log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
-                elif sub_srt_path and os.path.exists(sub_srt_path):
-                    # Fallback soft-embed if ensure_web_streamable was skipped
-                    sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
-                    if await video_service.embed_subtitles_soft(local_file, sub_srt_path, sub_muxed):
-                        try:
-                            os.remove(local_file)
-                        except Exception:
-                            pass
-                        local_file = sub_muxed
-                        is_faststart_done = sub_muxed.lower().endswith(".mp4")
-            else:
-                log.warning("[LeechService] Insufficient free space for remuxing. Keeping original file.")
+                local_file = sub_muxed
+                is_faststart_done = sub_muxed.lower().endswith(".mp4")
 
         # 2.7 FastStart (+faststart) Remux: Guarantee moov atom is relocated to byte 0 for <300ms instant streaming
         if not is_faststart_done:

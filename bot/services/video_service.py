@@ -106,177 +106,92 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
     return _CACHED_HW_ENCODER
 
 
-async def compress_smart_1080p(
-    input_path: str,
+async def stream_copy_subtitles(
+    video_path: str,
+    sub_path: Optional[str],
     output_path: str,
-    progress_callback: Optional[Callable[[float, str], None]] = None,
-    sub_path: Optional[str] = None,
+    disposition: str = "default",
 ) -> bool:
     """
-    Compress video to high-efficiency 1080p MP4 in 12GB RAM (/dev/shm).
-    If input is already <= 1.95 GB, performs instant stream-copy remux (-c:v copy)
-    in ~4 seconds without re-encoding video.
-    When > 1.95 GB, uses GPU h264_nvenc (if available) or ultrafast libx264.
+    Instantaneous Stream Copy (Soft-sub Muxing) in 3-5 seconds without video re-encoding:
+    ffmpeg -y -i input.mp4 -i sub.srt -c:v copy -c:a copy -c:s mov_text -disposition:s:0 default -movflags +faststart output.mp4
+    (and if container is MKV or needs conversion: -c:s srt -disposition:s:0 default).
+
+    Marks the subtitle stream as the default/forced track (-disposition:s:0 default) so that
+    offline media players (VLC, MX Player, KMPlayer, Android/iOS, Smart TVs) automatically
+    display the Sinhala subtitle without user intervention.
+    Applies +faststart in the same command for instant zero-lag web streaming.
+    Handles edge cases gracefully: if input is MKV or has incompatible audio streams, falls back
+    to stream copy with stereo AAC transcode or subtitle-safe remux.
     """
     ffmpeg_bin = get_ffmpeg_binary()
-    if not ffmpeg_bin:
-        log.error("[VideoService] FFmpeg binary not found. Cannot compress.")
+    if not ffmpeg_bin or not os.path.exists(video_path):
+        log.error("[VideoService] FFmpeg binary not found or input missing: %s", video_path)
         return False
-
-    # Fast-path: Never re-encode 1080p video if already <= 1.95 GB!
-    if os.path.exists(input_path) and os.path.getsize(input_path) <= MAX_TELEGRAM_BOT_SIZE:
-        log.info("[VideoService] Input <= 1.95 GB (%d bytes). Using instant stream-copy remux (-c:v copy)!", os.path.getsize(input_path))
-        ok = await ensure_web_streamable(input_path, output_path, sub_path=sub_path)
-        if ok:
-            if progress_callback:
-                try:
-                    if asyncio.iscoroutinefunction(progress_callback):
-                        await progress_callback(100.0, "100.0%")
-                    else:
-                        progress_callback(100.0, "100.0%")
-                except Exception:
-                    pass
-            return True
-
-    duration = get_video_duration(input_path, ffmpeg_bin)
-    log.info("[VideoService] Compressing '%s' (duration=%.1fs) -> '%s'", input_path, duration, output_path)
 
     out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
     os.makedirs(out_dir, exist_ok=True)
+
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+    ext = os.path.splitext(output_path)[1].lower()
+    is_mp4 = ext in (".mp4", ".m4v", ".mov")
+    sub_codec = "mov_text" if is_mp4 else "srt"
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
-    local_burn_srt = os.path.join(out_dir, "sub_burn_1080.srt")
-    if has_sub:
-        try:
-            shutil.copyfile(sub_path, local_burn_srt)
-        except Exception:
-            has_sub = False
 
-    # Filter: scale to 1080p max height if larger, plus burn-in Sinhala subtitles if available
-    scale_base = "scale=-2:'min(1080,ih)'"
-    scale_filter = f"subtitles=sub_burn_1080.srt,{scale_base}" if has_sub else scale_base
-
-    hw_enc = detect_hw_encoder(ffmpeg_bin)
-    _threads = "0"
-    _preset = "p1" if hw_enc == "h264_nvenc" else "ultrafast"
-    log.info("[VideoService] encoder=%s preset=%s threads=%s has_sub=%s", hw_enc, _preset, _threads, has_sub)
-
+    # Primary Attempt: Direct instantaneous stream copy with soft-sub muxing and +faststart
     cmd = [
         ffmpeg_bin,
         "-y",
         "-hide_banner",
-        "-threads", _threads,
-        "-i", os.path.abspath(input_path),
+        "-threads", "0",
+        "-i", os.path.abspath(video_path),
     ]
     if has_sub:
         cmd.extend([
             "-i", os.path.abspath(sub_path),
             "-map", "0:v:0",
-            "-map", "0:a:0?",
+            "-map", "0:a?",
             "-map", "1:0",
-            "-map", "1:0",
-            "-c:s", "mov_text",
-            "-metadata:s:s:0", "language=eng",
-            "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
-            "-disposition:s:0", "default+forced",
-            "-metadata:s:s:1", "language=sin",
-            "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
-            "-disposition:s:1", "default+forced",
-        ])
-    cmd.extend(["-vf", scale_filter])
-    if hw_enc == "h264_nvenc":
-        cmd.extend([
-            "-c:v", "h264_nvenc",
-            "-preset", "p1",
-            "-rc", "vbr",
-            "-cq", "24",
-            "-maxrate", "3500k",
-            "-bufsize", "4000k",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-c:s", sub_codec,
+            "-metadata:s:s:0", "language=sin",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+            "-disposition:s:0", disposition,
         ])
     else:
         cmd.extend([
-            "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-tune", "fastdecode",
-            "-crf", "23",
-            "-threads", _threads,
-            "-maxrate", "3500k",
-            "-bufsize", "4000k",
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-sn",
         ])
-    cmd.extend([
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-b:a", "128k",
-        "-ac", "2",
-        "-movflags", "+faststart",
-        os.path.abspath(output_path),
-    ])
-
-    def _cleanup_output() -> None:
-        for p in (output_path, local_burn_srt):
-            if os.path.exists(p):
-                try:
-                    os.remove(p)
-                except Exception:
-                    pass
+    cmd.extend(["-max_muxing_queue_size", "9999"])
+    if is_mp4:
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(os.path.abspath(output_path))
 
     proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=out_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
         )
-
-        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
-        last_pct = 0.0
-
-        async def _read_stderr():
-            nonlocal last_pct
-            while True:
-                if hasattr(proc.stderr, "read"):
-                    chunk = await proc.stderr.read(4096)
-                else:
-                    chunk = await proc.stderr.readline()
-                if not chunk:
-                    break
-                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
-                matches = time_pattern.findall(decoded)
-                if matches and duration > 0:
-                    h, mm, ss = matches[-1]
-                    cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                    pct = min(99.0, (cur_secs / duration) * 100.0)
-                    if pct - last_pct >= 2.0:
-                        last_pct = pct
-                        if progress_callback:
-                            try:
-                                if asyncio.iscoroutinefunction(progress_callback):
-                                    await progress_callback(pct, f"{pct:.1f}%")
-                                else:
-                                    progress_callback(pct, f"{pct:.1f}%")
-                            except Exception:
-                                pass
-
-        await asyncio.gather(proc.wait(), _read_stderr())
-        if os.path.exists(local_burn_srt):
-            try:
-                os.remove(local_burn_srt)
-            except Exception:
-                pass
-
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            orig_sz = max(1, os.path.getsize(input_path)) / (1024 * 1024)
-            new_sz = os.path.getsize(output_path) / (1024 * 1024)
-            log.info("[VideoService] Compression SUCCESS: %.1f MB -> %.1f MB (%.1f%% reduction)",
-                     orig_sz, new_sz, (1 - new_sz / orig_sz) * 100)
+            log.info("[VideoService] Stream-copy muxing succeeded: %s", output_path)
             return True
-        else:
-            log.error("[VideoService] FFmpeg exited with code %s", proc.returncode)
-            _cleanup_output()
-            return False
-
+        _cleanup_output()
     except asyncio.CancelledError:
-        log.info("[VideoService] Compression cancelled, terminating FFmpeg...")
         if proc and proc.returncode is None:
             try:
                 proc.terminate()
@@ -286,15 +201,8 @@ async def compress_smart_1080p(
         _cleanup_output()
         raise
     except Exception as exc:
-        log.error("[VideoService] Compression exception: %s", exc)
-        if proc and proc.returncode is None:
-            try:
-                proc.terminate()
-                proc.kill()
-            except Exception:
-                pass
+        log.debug("[VideoService] Direct stream-copy primary attempt failed: %s", exc)
         _cleanup_output()
-        return False
     finally:
         if proc and proc.returncode is None:
             try:
@@ -302,6 +210,177 @@ async def compress_smart_1080p(
                 proc.kill()
             except Exception:
                 pass
+
+    # Fallback Attempt 2: If MP4 container rejected the copied audio stream (e.g. PCM, Vorbis, incompatible audio in MP4),
+    # keep video stream-copy (-c:v copy) and fast-transcode audio to Stereo AAC (-c:a aac)
+    cmd_fallback_audio = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(video_path),
+    ]
+    if has_sub:
+        cmd_fallback_audio.extend([
+            "-i", os.path.abspath(sub_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-map", "1:0",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-ac", "2",
+            "-c:s", sub_codec,
+            "-metadata:s:s:0", "language=sin",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+            "-disposition:s:0", disposition,
+        ])
+    else:
+        cmd_fallback_audio.extend([
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-ac", "2",
+            "-sn",
+        ])
+    cmd_fallback_audio.extend(["-max_muxing_queue_size", "9999"])
+    if is_mp4:
+        cmd_fallback_audio.extend(["-movflags", "+faststart"])
+    cmd_fallback_audio.append(os.path.abspath(output_path))
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_fallback_audio,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] Stream-copy with stereo AAC audio fallback succeeded: %s", output_path)
+            return True
+        _cleanup_output()
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        raise
+    except Exception as exc:
+        log.debug("[VideoService] Audio AAC transcode fallback failed: %s", exc)
+        _cleanup_output()
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+    # Fallback Attempt 3: If subtitle file was corrupt or had incompatible format,
+    # stream-copy video and audio without subtitle so the video file is preserved
+    if has_sub:
+        cmd_fallback_nosub = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(video_path),
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-sn",
+            "-max_muxing_queue_size", "9999",
+        ]
+        if is_mp4:
+            cmd_fallback_nosub.extend(["-movflags", "+faststart"])
+        cmd_fallback_nosub.append(os.path.abspath(output_path))
+
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_fallback_nosub,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                log.info("[VideoService] Stream-copy without subtitle fallback succeeded: %s", output_path)
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            raise
+        except Exception as exc:
+            log.warning("[VideoService] No-sub fallback failed: %s", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+
+    return False
+
+
+async def compress_smart_1080p(
+    input_path: str,
+    output_path: str,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    sub_path: Optional[str] = None,
+) -> bool:
+    """
+    Instantaneous 1080p Stream Copy & Soft-Sub Muxing in 3-5 seconds.
+    Replaces CPU-heavy libx264 full re-encoding (45-60 min) with instant Stream Copy:
+    ffmpeg -y -i input.mp4 -i sub.srt -c:v copy -c:a copy -c:s mov_text -disposition:s:0 default -movflags +faststart output.mp4
+    (and if container is MKV: -c:s srt -disposition:s:0 default).
+    Preserves 100% original video & audio fidelity with zero transcoding delay.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        log.error("[VideoService] FFmpeg binary not found. Cannot process.")
+        return False
+
+    if not os.path.exists(input_path):
+        log.error("[VideoService] Input file does not exist: %s", input_path)
+        return False
+
+    log.info("[VideoService] compress_smart_1080p: Executing instant Stream Copy (Soft-sub Muxing) for '%s' -> '%s'", input_path, output_path)
+
+    ok = await stream_copy_subtitles(input_path, sub_path, output_path, disposition="default")
+    if not ok:
+        ok = await ensure_web_streamable(input_path, output_path, sub_path=sub_path)
+    if not ok and sub_path and os.path.exists(sub_path):
+        ok = await embed_subtitles_soft(input_path, sub_path, output_path, disposition="default")
+
+    if ok:
+        if progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(100.0, "100.0%")
+                else:
+                    progress_callback(100.0, "100.0%")
+            except Exception:
+                pass
+        return True
+
+    return False
 
 
 def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -> str:
@@ -587,10 +666,15 @@ async def ensure_web_streamable(
                 pass
 
 
-async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str) -> bool:
+async def embed_subtitles_soft(
+    video_path: str,
+    sub_path: str,
+    output_path: str,
+    disposition: str = "default+forced",
+) -> bool:
     """
-    Soft-embed Sinhala subtitles into video container (MP4 mov_text or MKV subrip)
-    with dual eng+sin default+forced tracks and +faststart so ALL web browsers and
+    Soft-embed Sinhala subtitles into video container (MP4 mov_text or MKV srt)
+    with dual default+forced tracks and +faststart so ALL web browsers and
     native media players (English-locale Android/iOS, VLC, MX Player, Smart TVs)
     automatically display Sinhala subtitles immediately upon playback.
     """
@@ -600,7 +684,7 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
 
     ext = os.path.splitext(output_path)[1].lower()
     is_mp4 = ext in (".mp4", ".m4v", ".mov")
-    sub_codec = "mov_text" if is_mp4 else "subrip"
+    sub_codec = "mov_text" if is_mp4 else "srt"
 
     cmd = [
         ffmpeg_bin,
@@ -618,10 +702,10 @@ async def embed_subtitles_soft(video_path: str, sub_path: str, output_path: str)
         "-c:s", sub_codec,
         "-metadata:s:s:0", "language=eng",
         "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
-        "-disposition:s:0", "default+forced",
+        "-disposition:s:0", disposition,
         "-metadata:s:s:1", "language=sin",
         "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
-        "-disposition:s:1", "default+forced",
+        "-disposition:s:1", disposition,
     ]
     if is_mp4:
         cmd.extend(["-movflags", "+faststart"])

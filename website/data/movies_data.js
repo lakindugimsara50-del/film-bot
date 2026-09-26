@@ -2188,6 +2188,54 @@ window.FILMSUB_DATA = {
           "host": "Direct Web",
           "sub_merged": true,
           "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram App / Web • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1327543170,
+          "url": "https://t.me/c/4325759505/53",
+          "stream_url": "https://remembered-alphabetical-prince-rover.trycloudflare.com/stream/channel/-1004325759505/53",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram App / Web • Fast)",
+          "size": "696.3 MB",
+          "size_bytes": 730148743,
+          "url": "https://t.me/c/4325759505/53",
+          "stream_url": "https://remembered-alphabetical-prince-rover.trycloudflare.com/stream/channel/-1004325759505/53",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram App / Web • Fast)",
+          "size": "405.1 MB",
+          "size_bytes": 424813814,
+          "url": "https://t.me/c/4325759505/53",
+          "stream_url": "https://remembered-alphabetical-prince-rover.trycloudflare.com/stream/channel/-1004325759505/53",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram App / Web • Fast)",
+          "size": "227.9 MB",
+          "size_bytes": 238957770,
+          "url": "https://t.me/c/4325759505/53",
+          "stream_url": "https://remembered-alphabetical-prince-rover.trycloudflare.com/stream/channel/-1004325759505/53",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
       "subtitles": [

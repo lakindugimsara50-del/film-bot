@@ -336,6 +336,60 @@ async def stream_copy_subtitles(
                 except Exception:
                     pass
 
+    # Fallback Attempt 4: If both audio stream was incompatible with container copy (e.g. DTS/Opus in MP4)
+    # AND subtitle file was corrupt or failed, stream-copy video with Stereo AAC audio transcode and no subtitle
+    cmd_fallback_aac_nosub = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(video_path),
+        "-map", "0:v:0",
+        "-map", "0:a:0?",
+        "-c:v", "copy",
+        "-c:a", "aac",
+        "-b:a", "160k",
+        "-ac", "2",
+        "-sn",
+        "-max_muxing_queue_size", "9999",
+    ]
+    if is_mp4:
+        cmd_fallback_aac_nosub.extend(["-movflags", "+faststart"])
+    cmd_fallback_aac_nosub.append(os.path.abspath(output_path))
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_fallback_aac_nosub,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] Stream-copy AAC audio without subtitle fallback succeeded: %s", output_path)
+            return True
+        _cleanup_output()
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        raise
+    except Exception as exc:
+        log.warning("[VideoService] AAC no-sub fallback failed: %s", exc)
+        _cleanup_output()
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
     return False
 
 

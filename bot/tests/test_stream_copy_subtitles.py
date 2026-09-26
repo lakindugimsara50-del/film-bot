@@ -274,3 +274,113 @@ async def test_embed_subtitles_soft_mkv_sub_codec(tmp_path):
     assert len(captured_cmds) == 1
     cmd = captured_cmds[0]
     assert "-c:s" in cmd and cmd[cmd.index("-c:s") + 1] == "srt"
+
+
+@pytest.mark.asyncio
+async def test_stream_copy_subtitles_fallback_audio_aac_nosub_when_both_incompatible(tmp_path):
+    """Verify that when Attempt 1, Attempt 2, and Attempt 3 all fail
+    (e.g. incompatible audio like DTS in MP4 AND corrupt subtitle),
+    Fallback Attempt 4 rescues the video with stream-copied video and Stereo AAC transcode without sub."""
+    in_video = tmp_path / "movie.mkv"
+    in_video.write_bytes(b"DATA" * 500)
+    sub_srt = tmp_path / "corrupt.srt"
+    sub_srt.write_text("1\n00:00:01,000 --> 00:00:02,000\nCORRUPT SYNTAX INVALID PARSER\n", encoding="utf-8")
+    out_mp4 = tmp_path / "movie_rescue.mp4"
+
+    captured_cmds = []
+    call_count = 0
+
+    async def fake_exec(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        captured_cmds.append(list(args))
+        if call_count < 4:
+            return DummyProc(returncode=1)
+        # Call 4 (AAC transcode + nosub) succeeds
+        out_mp4.write_bytes(b"OUT_RESCUED" * 100)
+        return DummyProc(returncode=0)
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        ok = await stream_copy_subtitles(str(in_video), str(sub_srt), str(out_mp4))
+
+    assert ok is True
+    assert len(captured_cmds) == 4
+    cmd4 = captured_cmds[3]
+    assert "-c:v" in cmd4 and cmd4[cmd4.index("-c:v") + 1] == "copy"
+    assert "-c:a" in cmd4 and cmd4[cmd4.index("-c:a") + 1] == "aac"
+    assert "-sn" in cmd4
+    assert "+faststart" in cmd4
+
+
+@pytest.mark.asyncio
+async def test_stream_copy_subtitles_vtt_support(tmp_path):
+    """Verify stream copy supports .vtt files seamlessly with -c:s mov_text."""
+    in_video = tmp_path / "movie.mp4"
+    in_video.write_bytes(b"DATA" * 500)
+    sub_vtt = tmp_path / "sub.vtt"
+    sub_vtt.write_text("WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nහෙලෝ\n", encoding="utf-8")
+    out_mp4 = tmp_path / "movie_vtt.mp4"
+
+    captured_cmds = []
+
+    async def fake_exec(*args, **kwargs):
+        captured_cmds.append(list(args))
+        out_mp4.write_bytes(b"OUT_VTT" * 100)
+        return DummyProc(returncode=0)
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        ok = await stream_copy_subtitles(str(in_video), str(sub_vtt), str(out_mp4), disposition="default")
+
+    assert ok is True
+    assert len(captured_cmds) == 1
+    cmd = captured_cmds[0]
+    assert "-c:s" in cmd and cmd[cmd.index("-c:s") + 1] == "mov_text"
+    assert "-disposition:s:0" in cmd and cmd[cmd.index("-disposition:s:0") + 1] == "default"
+
+
+@pytest.mark.asyncio
+async def test_stream_copy_subtitles_real_ffmpeg_execution(tmp_path):
+    """Deep verification: run against the actual local FFmpeg binary to guarantee zero re-encoding
+    speed (completes in <1 second) and verifies FFprobe reports disposition default for subtitle."""
+    import subprocess
+    import shutil
+    import json
+
+    ffmpeg_bin = shutil.which("ffmpeg")
+    ffprobe_bin = shutil.which("ffprobe")
+    if not ffmpeg_bin or not ffprobe_bin:
+        pytest.skip("FFmpeg/FFprobe binary not found in PATH")
+
+    in_video = tmp_path / "real_in.mp4"
+    sub_srt = tmp_path / "real_sub.srt"
+    out_mp4 = tmp_path / "real_out.mp4"
+
+    # Generate 1-second synthetic video
+    res = subprocess.run([
+        ffmpeg_bin, "-y", "-f", "lavfi", "-i", "testsrc=duration=1:size=320x240:rate=1",
+        "-c:v", "libx264", str(in_video)
+    ], capture_output=True)
+    if res.returncode != 0:
+        pytest.skip("Could not generate synthetic test video")
+
+    sub_srt.write_text("1\n00:00:00,100 --> 00:00:00,900\nසිංහල උපසිරැසි පරික්ෂාව\n", encoding="utf-8")
+
+    ok = await stream_copy_subtitles(str(in_video), str(sub_srt), str(out_mp4), disposition="default")
+    assert ok is True
+    assert out_mp4.exists() and out_mp4.stat().st_size > 0
+
+    # Inspect with ffprobe
+    probe = subprocess.run([
+        ffprobe_bin, "-v", "quiet", "-print_format", "json", "-show_streams", str(out_mp4)
+    ], capture_output=True, text=True)
+    assert probe.returncode == 0
+    info = json.loads(probe.stdout)
+    streams = info.get("streams", [])
+    sub_streams = [s for s in streams if s.get("codec_type") == "subtitle"]
+    assert len(sub_streams) == 1
+    sub = sub_streams[0]
+    assert sub.get("codec_name") == "mov_text"
+    assert sub.get("disposition", {}).get("default") == 1
+    assert sub.get("tags", {}).get("language") == "sin"

@@ -2110,13 +2110,13 @@
     {
       "id": "ice-age-01",
       "slug": "ice-age-01",
-      "title": "ice age 01",
-      "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "title": "Ice Age",
+      "title_si": "අයිස් ඒජ්",
+      "year": 2002,
+      "imdb": "7.4",
+      "rating": "7.4",
+      "imdb_id": "tt0268380",
+      "tmdb_id": "425",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -2124,20 +2124,46 @@
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/gLhHHZUzeseRXShoDyC4VqLgsNv.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/gLhHHZUzeseRXShoDyC4VqLgsNv.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/8pwIhymsxfAVjrAE7syDjQULn37.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/8pwIhymsxfAVjrAE7syDjQULn37.jpg",
+      "genres": [
+        "Animation",
+        "Comedy",
+        "Family",
+        "Adventure"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
       "sub_merged": true,
       "quality": "1080p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "81 min",
+      "description": "Manny the mammoth, Sid the loquacious sloth, and Diego the sabre-toothed tiger go on a comical quest to return a human baby back to his father, across a world on the brink of an ice age.",
+      "director": "Chris Wedge",
+      "cast": [
+        {
+          "name": "Ray Romano",
+          "character": "Manfred 'Manny' (voice)"
+        },
+        {
+          "name": "John Leguizamo",
+          "character": "Sid (voice)"
+        },
+        {
+          "name": "Denis Leary",
+          "character": "Diego (voice)"
+        },
+        {
+          "name": "Goran Višnjić",
+          "character": "Soto (voice)"
+        },
+        {
+          "name": "Jack Black",
+          "character": "Zeke (voice)"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADNWq3gust6L4IKE-ui1g0D4v6VIWSAALUIAACpPu4VR341LA2Go9FHgQ",

@@ -11,6 +11,7 @@ import logging
 import re
 import os
 import base64
+from typing import Optional, Tuple
 
 import httpx
 
@@ -25,6 +26,27 @@ FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ
 00:00:07,000 --> 00:00:12,000
 නැරඹීමට සහ බාගත කිරීමට ස්තූතියි!
 """
+
+# ─────────────────────────────────────────────────────────────────────────────
+def is_genuine_sinhala_subtitle(content_or_path: Optional[str]) -> bool:
+    """
+    Verify whether a subtitle file path or raw string contains genuine Sinhala Unicode
+    characters (U+0D80..U+0DFF).
+    Requires at least 15 Sinhala characters to reject English/foreign subtitles or
+    isolated stray symbols.
+    """
+    if not content_or_path:
+        return False
+    text = content_or_path
+    if os.path.isfile(content_or_path):
+        try:
+            with open(content_or_path, "r", encoding="utf-8", errors="replace") as f:
+                text = f.read(150000)
+        except Exception:
+            return False
+    sinhala_matches = re.findall(r"[\u0D80-\u0DFF]", text)
+    return len(sinhala_matches) >= 15
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 async def download_subtitle(url: str, save_path: str = "/tmp/sub.srt") -> str:
@@ -391,18 +413,15 @@ async def auto_acquire_sinhala_subtitle(
     imdb_id: str = None,
     temp_dir: str = "/tmp",
     video_path: str = None,
-) -> tuple[str, str]:
+) -> tuple[Optional[str], Optional[str]]:
     """
-    Automatically find, extract, or generate a synchronized Sinhala (.srt and .vtt) subtitle
+    Automatically find, extract, or translate a synchronized Sinhala (.srt and .vtt) subtitle
     for a movie or episode.
-    Order of priority:
-      1. Existing .srt / .vtt file downloaded alongside the torrent/video in temp_dir
-      2. Embedded subtitle stream inside video_path (extracted via FFmpeg in RAM)
-      3. Online subtitle search (YIFYSubtitles / YTS-Subs by IMDb ID) + Sinhala translation
-      4. Rich Sinhala fallback subtitle (.srt + .vtt)
+    Only genuinely Sinhala subtitles (containing Unicode characters U+0D80..U+0DFF) are accepted.
+    Never substitutes English or foreign subtitles without genuine Sinhala translation.
 
     Returns:
-      (srt_path, vtt_path)
+      (srt_path, vtt_path) if genuine Sinhala subtitle found/produced, else (None, None).
     """
     os.makedirs(temp_dir, exist_ok=True)
     final_srt = os.path.join(temp_dir, "sinhala_merged.srt")
@@ -410,7 +429,7 @@ async def auto_acquire_sinhala_subtitle(
 
     candidate_sub = None
 
-    # 1. Check temp_dir for any .srt or .vtt files
+    # 1. Check temp_dir for any existing Sinhala .srt or .vtt files first
     for root, _, files in os.walk(temp_dir):
         for f in files:
             f_l = f.lower()
@@ -418,14 +437,28 @@ async def auto_acquire_sinhala_subtitle(
                 continue
             if f_l.endswith((".srt", ".vtt")):
                 p = os.path.join(root, f)
-                if os.path.getsize(p) > 64:
+                if os.path.getsize(p) > 64 and is_genuine_sinhala_subtitle(p):
                     candidate_sub = p
-                    if "sin" in f_l or "si" in f_l:
-                        break
-        if candidate_sub and ("sin" in os.path.basename(candidate_sub).lower()):
+                    break
+        if candidate_sub:
             break
 
-    # 2. If no external subtitle file found, try extracting embedded subtitle track from video container
+    # 2. Check other subtitle files in temp_dir that can be translated
+    if not candidate_sub:
+        for root, _, files in os.walk(temp_dir):
+            for f in files:
+                f_l = f.lower()
+                if f_l in ("sinhala_merged.srt", "sinhala_merged.vtt", "sinhala_auto.srt"):
+                    continue
+                if f_l.endswith((".srt", ".vtt")):
+                    p = os.path.join(root, f)
+                    if os.path.getsize(p) > 64:
+                        candidate_sub = p
+                        break
+            if candidate_sub:
+                break
+
+    # 3. If no external subtitle file found, try extracting embedded subtitle track from video container
     if not candidate_sub and video_path and os.path.exists(video_path):
         try:
             from services import video_service
@@ -436,7 +469,7 @@ async def auto_acquire_sinhala_subtitle(
         except Exception as ex_err:
             log.debug("[SubtitleService] Embedded subtitle extraction skipped: %s", ex_err)
 
-    # 3. If still no subtitle, search online (YIFYSubtitles / YTS-Subs) by IMDb ID
+    # 4. If still no subtitle, search online (YIFYSubtitles / YTS-Subs) by IMDb ID
     if not candidate_sub and imdb_id:
         try:
             online_srt = await fetch_online_subtitle_srt(title=title, year=year, imdb_id=imdb_id, temp_dir=temp_dir)
@@ -445,24 +478,32 @@ async def auto_acquire_sinhala_subtitle(
         except Exception as on_err:
             log.debug("[SubtitleService] Online subtitle step skipped: %s", on_err)
 
-    # 4. If we have a candidate subtitle (.srt or .vtt), convert & translate to Sinhala if needed
+    # 5. Process candidate subtitle: verify genuine Sinhala or attempt translation
     if candidate_sub and os.path.exists(candidate_sub):
         try:
             if candidate_sub.lower().endswith(".vtt"):
                 candidate_sub = vtt_to_srt(candidate_sub)
-            await translate_srt_to_sinhala(candidate_sub, final_srt)
-            if os.path.exists(final_srt) and os.path.getsize(final_srt) > 32:
+            if is_genuine_sinhala_subtitle(candidate_sub):
+                import shutil
+                shutil.copyfile(candidate_sub, final_srt)
                 final_vtt = srt_to_vtt(final_srt)
+                log.info("[SubtitleService] Genuine Sinhala subtitle confirmed: %s", final_srt)
                 return final_srt, final_vtt
+
+            # If not Sinhala, attempt translation to Sinhala
+            translated = await translate_srt_to_sinhala(candidate_sub, final_srt)
+            if is_genuine_sinhala_subtitle(translated) and os.path.exists(translated) and os.path.getsize(translated) > 32:
+                final_vtt = srt_to_vtt(translated)
+                log.info("[SubtitleService] Successfully translated subtitle to genuine Sinhala: %s", translated)
+                return translated, final_vtt
+            else:
+                log.warning("[SubtitleService] Subtitle translation did not yield genuine Sinhala content.")
         except Exception as conv_err:
             log.warning("[SubtitleService] Candidate subtitle processing error: %s", conv_err)
 
-    # 5. Fallback: Generate clean Sinhala SRT & VTT
-    fallback_srt_content = generate_fallback_sinhala_srt(title, year)
-    with open(final_srt, "w", encoding="utf-8") as fh:
-        fh.write(fallback_srt_content)
-    final_vtt = srt_to_vtt(final_srt)
-    return final_srt, final_vtt
+    # 6. No genuine Sinhala subtitle found: DO NOT substitute English and DO NOT create fake dummy subtitles
+    log.info("[SubtitleService] No genuine Sinhala subtitle found for '%s'. Subtitle merging will be skipped.", title)
+    return None, None
 
 
 def generate_fallback_sinhala_srt(title: str, year: int = None) -> str:

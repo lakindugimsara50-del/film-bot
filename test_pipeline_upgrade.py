@@ -128,6 +128,60 @@ class TestPipelineUpgrade(unittest.TestCase):
 
         asyncio.run(_run())
 
+    def test_is_genuine_sinhala_subtitle(self):
+        from bot.services.subtitle_service import is_genuine_sinhala_subtitle
+
+        # Genuine Sinhala text with > 15 characters
+        sinhala_text = "මෙම චිත්‍රපටය සිංහල උපසිරැසි සමඟ නරඹන්න සහ බාගත කරන්න."
+        self.assertTrue(is_genuine_sinhala_subtitle(sinhala_text))
+
+        # English-only subtitle
+        english_text = "WEBVTT\n\n1\n00:00:01.000 --> 00:00:04.000\nHello world, this is an English subtitle track.\n"
+        self.assertFalse(is_genuine_sinhala_subtitle(english_text))
+
+        # Empty or too short
+        self.assertFalse(is_genuine_sinhala_subtitle(""))
+        self.assertFalse(is_genuine_sinhala_subtitle(None))
+        self.assertFalse(is_genuine_sinhala_subtitle("සිංහල"))
+
+    def test_tmdb_query_normalization(self):
+        from bot.services import tmdb_service
+
+        async def _check_tmdb():
+            meta = await tmdb_service.fetch_metadata("ice age 01")
+            self.assertEqual(meta.get("title"), "Ice Age")
+            self.assertEqual(meta.get("year"), 2002)
+            self.assertTrue(meta.get("poster_url"))
+
+        asyncio.run(_check_tmdb())
+
+    def test_compress_smart_1080p_oversized_routing(self):
+        from unittest.mock import patch, AsyncMock
+        from bot.services.video_service import compress_smart_1080p, MAX_TELEGRAM_BOT_SIZE
+
+        async def _check():
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+                f.write(b"dummy_data")
+                in_path = f.name
+            out_path = in_path + ".out.mp4"
+
+            try:
+                # Mock size to simulate 2.3 GB KGF Chapter 2 file
+                with patch("os.path.getsize", return_value=int(2.3 * 1024 * 1024 * 1024)), \
+                     patch("bot.services.video_service.compress_video", AsyncMock(return_value=True)) as mock_comp:
+                    res = await compress_smart_1080p(in_path, out_path)
+                    self.assertTrue(res)
+                    self.assertTrue(mock_comp.called)
+                    self.assertEqual(mock_comp.call_args[1]["input_path"], in_path)
+                    self.assertEqual(mock_comp.call_args[1]["target_size_bytes"], int(1.85 * 1024 * 1024 * 1024))
+            finally:
+                if os.path.exists(in_path):
+                    os.remove(in_path)
+                if os.path.exists(out_path):
+                    os.remove(out_path)
+
+        asyncio.run(_check())
+
 
 if __name__ == "__main__":
     unittest.main()

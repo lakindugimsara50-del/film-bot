@@ -393,6 +393,207 @@ async def stream_copy_subtitles(
     return False
 
 
+async def compress_video(
+    input_path: str,
+    output_path: str,
+    target_size_bytes: int = int(1.85 * 1024 * 1024 * 1024),
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    sub_path: Optional[str] = None,
+) -> bool:
+    """
+    Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB) down to strictly <= 1.95GB
+    (target 1.85GB default) using multi-core CPU (-preset veryfast -threads 0) or GPU NVENC.
+    Calculates exact target bitrate from video duration to guarantee the output never exceeds
+    the Telegram Bot 1.95GB limit.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        log.error("[VideoService] FFmpeg binary not found. Cannot compress.")
+        return False
+
+    if not os.path.exists(input_path):
+        log.error("[VideoService] Input file does not exist: %s", input_path)
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+    duration = get_video_duration(input_path, ffmpeg_bin)
+    in_bytes = os.path.getsize(input_path)
+    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, size=%d bytes) -> '%s' (target=%d bytes)",
+             input_path, duration, in_bytes, output_path, target_size_bytes)
+
+    # Calculate optimal target bitrate
+    audio_bps = 128_000
+    if duration > 10.0:
+        usable_bits = int(target_size_bytes * 8 * 0.95)
+        total_bps = usable_bits / duration
+        video_bps = max(400_000, int(total_bps - audio_bps))
+        v_bitrate_k = int(video_bps / 1000)
+    else:
+        v_bitrate_k = 1800
+
+    maxrate_k = int(v_bitrate_k * 1.15)
+    bufsize_k = int(v_bitrate_k * 2)
+
+    hw_enc = detect_hw_encoder(ffmpeg_bin)
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    ext = os.path.splitext(output_path)[1].lower()
+    is_mp4 = ext in (".mp4", ".m4v", ".mov")
+    sub_codec = "mov_text" if is_mp4 else "srt"
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(input_path),
+    ]
+
+    if has_sub:
+        cmd.extend([
+            "-i", os.path.abspath(sub_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-map", "1:0",
+            "-c:s", sub_codec,
+            "-metadata:s:s:0", "language=sin",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+            "-disposition:s:0", "default",
+        ])
+    else:
+        cmd.extend([
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-sn",
+        ])
+
+    if hw_enc == "h264_nvenc":
+        cmd.extend([
+            "-c:v", "h264_nvenc",
+            "-preset", "p4",
+            "-rc", "vbr",
+            "-b:v", f"{v_bitrate_k}k",
+            "-maxrate", f"{maxrate_k}k",
+            "-bufsize", f"{bufsize_k}k",
+        ])
+    else:
+        cmd.extend([
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-threads", "0",
+            "-b:v", f"{v_bitrate_k}k",
+            "-maxrate", f"{maxrate_k}k",
+            "-bufsize", f"{bufsize_k}k",
+            "-pix_fmt", "yuv420p",
+        ])
+
+    cmd.extend([
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-ac", "2",
+        "-max_muxing_queue_size", "9999",
+    ])
+    if is_mp4:
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(os.path.abspath(output_path))
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        last_pct = 0.0
+
+        async def _read_stderr():
+            nonlocal last_pct
+            while True:
+                if hasattr(proc.stderr, "read"):
+                    chunk = await proc.stderr.read(4096)
+                else:
+                    chunk = await proc.stderr.readline()
+                if not chunk:
+                    break
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                matches = time_pattern.findall(decoded)
+                if matches and duration > 0:
+                    h, mm, ss = matches[-1]
+                    cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                    pct = min(99.0, (cur_secs / duration) * 100.0)
+                    if pct - last_pct >= 2.0:
+                        last_pct = pct
+                        if progress_callback:
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    await progress_callback(pct, f"{pct:.1f}%")
+                                else:
+                                    progress_callback(pct, f"{pct:.1f}%")
+                            except Exception:
+                                pass
+
+        await asyncio.gather(proc.wait(), _read_stderr())
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            out_sz = os.path.getsize(output_path)
+            log.info("[VideoService] compress_video SUCCESS: %d bytes (<= %d MAX_TELEGRAM_BOT_SIZE)", out_sz, MAX_TELEGRAM_BOT_SIZE)
+            if out_sz <= MAX_TELEGRAM_BOT_SIZE:
+                if progress_callback:
+                    try:
+                        if asyncio.iscoroutinefunction(progress_callback):
+                            await progress_callback(100.0, "100.0%")
+                        else:
+                            progress_callback(100.0, "100.0%")
+                    except Exception:
+                        pass
+                return True
+            else:
+                log.warning("[VideoService] Compressed size %d bytes exceeded MAX_TELEGRAM_BOT_SIZE %d", out_sz, MAX_TELEGRAM_BOT_SIZE)
+                _cleanup_output()
+                return False
+        else:
+            log.error("[VideoService] FFmpeg exited with code %s", proc.returncode)
+            _cleanup_output()
+            return False
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        raise
+    except Exception as exc:
+        log.error("[VideoService] compress_video exception: %s", exc)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
 async def compress_smart_1080p(
     input_path: str,
     output_path: str,
@@ -400,11 +601,12 @@ async def compress_smart_1080p(
     sub_path: Optional[str] = None,
 ) -> bool:
     """
-    Instantaneous 1080p Stream Copy & Soft-Sub Muxing in 3-5 seconds.
-    Replaces CPU-heavy libx264 full re-encoding (45-60 min) with instant Stream Copy:
-    ffmpeg -y -i input.mp4 -i sub.srt -c:v copy -c:a copy -c:s mov_text -disposition:s:0 default -movflags +faststart output.mp4
-    (and if container is MKV: -c:s srt -disposition:s:0 default).
-    Preserves 100% original video & audio fidelity with zero transcoding delay.
+    Intelligent 1080p Processing:
+    1. If file size <= 1.95GB (MAX_TELEGRAM_BOT_SIZE):
+       Executes instantaneous Stream Copy & Soft-Sub Muxing in 3-5 seconds.
+    2. If file size > 1.95GB (bloated video like KGF Chapter 2 - 2.3GB):
+       Executes fast multi-core compression (compress_video) targeting 1.85GB,
+       guaranteeing output <= 1.95GB in minutes (-preset veryfast -threads 0).
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
@@ -415,6 +617,17 @@ async def compress_smart_1080p(
         log.error("[VideoService] Input file does not exist: %s", input_path)
         return False
 
+    in_size = os.path.getsize(input_path)
+    if in_size > MAX_TELEGRAM_BOT_SIZE:
+        log.info("[VideoService] Input file %s (%d bytes) > 1.95GB ceiling. Routing to fast compress_video...", input_path, in_size)
+        return await compress_video(
+            input_path=input_path,
+            output_path=output_path,
+            target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+            progress_callback=progress_callback,
+            sub_path=sub_path,
+        )
+
     log.info("[VideoService] compress_smart_1080p: Executing instant Stream Copy (Soft-sub Muxing) for '%s' -> '%s'", input_path, output_path)
 
     ok = await stream_copy_subtitles(input_path, sub_path, output_path, disposition="default")
@@ -423,7 +636,17 @@ async def compress_smart_1080p(
     if not ok and sub_path and os.path.exists(sub_path):
         ok = await embed_subtitles_soft(input_path, sub_path, output_path, disposition="default")
 
-    if ok:
+    if ok and os.path.exists(output_path):
+        out_sz = os.path.getsize(output_path)
+        if out_sz > MAX_TELEGRAM_BOT_SIZE:
+            log.warning("[VideoService] Stream copy output %d bytes > 1.95GB limit. Compressing...", out_sz)
+            return await compress_video(
+                input_path=input_path,
+                output_path=output_path,
+                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                progress_callback=progress_callback,
+                sub_path=sub_path,
+            )
         if progress_callback:
             try:
                 if asyncio.iscoroutinefunction(progress_callback):

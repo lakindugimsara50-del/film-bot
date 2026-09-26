@@ -92,5 +92,10 @@ PIKPAK_PASS: str = os.getenv("PIKPAK_PASS", "Indika@2122138")
 ENABLE_GDRIVE_UPLOAD: bool = os.getenv("ENABLE_GDRIVE_UPLOAD", "false").strip().lower() in ("1", "true", "yes")
 # Telegram Cloud is the #1 Primary Storage & Stream Host (unlimited cloud, 100% immune to Google strikes)
 ENABLE_TELEGRAM_PRIMARY: bool = True
+# Enable multi-quality (720p/480p/360p) RAM encoding pipeline
+ENABLE_MULTI_QUALITY_RAM: bool = os.getenv("ENABLE_MULTI_QUALITY_RAM", "true").strip().lower() in ("1", "true", "yes")
+# Enable torrent racing (direct aria2c vs cloud debrid)
+ENABLE_TORRENT_RACING: bool = os.getenv("ENABLE_TORRENT_RACING", "true").strip().lower() in ("1", "true", "yes")
+
 
 

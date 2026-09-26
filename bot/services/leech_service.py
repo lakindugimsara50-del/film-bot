@@ -1021,7 +1021,9 @@ async def _execute_leech(
         except Exception as sub_acq_err:
             log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
 
-        # 2. Instantaneous Stream Copy Remux + Soft-Sub Merge (3-5 seconds)
+        # 2. Intelligent Video Processing & Subtitle Muxing
+        # If file exceeds Telegram limit (1.95 GB), compress directly targeting 1.85 GB
+        # Otherwise, perform instant stream copy remux in 3-5 seconds
         is_faststart_done = False
         ext = os.path.splitext(local_file)[1].lower()
         final_mp4 = os.path.join(temp_dir, f"{slug}.mp4")
@@ -1029,50 +1031,137 @@ async def _execute_leech(
 
         sub_to_merge = sub_srt_path if (sub_srt_path and os.path.exists(sub_srt_path)) else (sub_vtt_path if (sub_vtt_path and os.path.exists(sub_vtt_path)) else None)
 
-        try:
-            await status_msg.edit_text(
-                f"⚙️ <b>පියවර 3/5: Ultra-Fast Stream Copy සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
+        _last_comp_edit = 0.0
+        async def _compress_progress(pct: float, pct_str: str) -> None:
+            nonlocal _last_comp_edit
+            now = time.time()
+            if (now - _last_comp_edit < 3.0) and pct < 100.0:
+                return
+            _last_comp_edit = now
+            p_bar = downloader.format_progress_bar(pct)
+            sub_lbl = "සිංහල උපසිරැසි Soft-Mux වේ" if sub_to_merge else "උපසිරැසි රහිතව"
+            txt = (
+                f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.85GB Ceiling)...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                f"⚡ <b>ක්‍රමය:</b> Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)\n"
-                f"💬 <b>උපසිරැසි:</b> සිංහල උපසිරැසි Video එකටම Soft-Mux කෙරේ (Default Track)\n"
-                f"⏳ තත්පර 3-5ක් රැඳී සිටින්න...",
-                parse_mode=ParseMode.HTML,
-                reply_markup=kb_cancel,
+                f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
+                f"📦 <b>ඉලක්කය:</b> 1.85 GB (Telegram Bot 2GB Limit Safe)\n"
+                f"💬 <b>උපසිරැසි:</b> {sub_lbl}\n"
+                f"⚡ <i>Multi-Core NVENC/CPU High-Speed Encoding</i>"
             )
-        except Exception:
-            pass
+            try:
+                await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+            except Exception:
+                pass
 
-        task_tracker.tracker.set_step(user_id, "Instant Stream Copy + Sub Mux (FFmpeg)...")
-        log.info("[LeechService] Executing instantaneous stream-copy muxing (%s -> MP4, sub=%s)...", ext, sub_to_merge)
+        if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
+            log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression...", downloader.format_bytes(curr_size))
+            task_tracker.tracker.set_step(user_id, "Fast 1080p Compression (FFmpeg)...")
+            try:
+                await status_msg.edit_text(
+                    f"⚙️ <b>පියවර 3/5: Fast 1080p Compression ආරම්භ විය...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"📦 <b>මූලික ප්‍රමාණය:</b> {downloader.format_bytes(curr_size)} (> 1.95 GB Limit)\n"
+                    f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.85 GB (Telegram Safe)\n"
+                    f"⚡ <b>ක්‍රමය:</b> Multi-Core H.264 Fast Transcoding + Subtitle Muxing\n"
+                    f"⏳ මිනිත්තු කිහිපයක් රැඳී සිටින්න...",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_cancel,
+                )
+            except Exception:
+                pass
 
-        if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remuxed, disposition="default"):
-            if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
-                try:
-                    os.remove(local_file)
-                except Exception:
-                    pass
-            if os.path.abspath(remuxed) != os.path.abspath(final_mp4):
-                try:
-                    shutil.move(remuxed, final_mp4)
-                    remuxed = final_mp4
-                except Exception:
-                    pass
-            local_file = remuxed
-            is_faststart_done = True
-            log.info("[LeechService] Instantaneous stream-copy muxing succeeded: %s", local_file)
-        elif ext in (".mkv", ".webm", ".avi"):
-            # Edge case: input is MKV or another container with video/audio streams rejected by MP4.
-            # Perform instantaneous stream-copy preserving the native container with Sinhala soft-subs (-c:s srt -disposition:s:0 default)
-            remux_native = os.path.join(temp_dir, f"remux_{slug}{ext}")
-            if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remux_native, disposition="default"):
-                if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remux_native):
+            comp_ok = await video_service.compress_video(
+                input_path=local_file,
+                output_path=remuxed,
+                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                progress_callback=_compress_progress,
+                sub_path=sub_to_merge,
+            )
+            if comp_ok and os.path.exists(remuxed) and os.path.getsize(remuxed) <= video_service.MAX_TELEGRAM_BOT_SIZE:
+                if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                     try:
                         os.remove(local_file)
                     except Exception:
                         pass
-                local_file = remux_native
-                is_faststart_done = ext == ".mp4"
-                log.info("[LeechService] Native container stream-copy muxing succeeded: %s", local_file)
+                if os.path.abspath(remuxed) != os.path.abspath(final_mp4):
+                    try:
+                        shutil.move(remuxed, final_mp4)
+                        remuxed = final_mp4
+                    except Exception:
+                        pass
+                local_file = remuxed
+                is_faststart_done = True
+                log.info("[LeechService] Direct compression succeeded: %s (%s)", local_file, downloader.format_bytes(os.path.getsize(local_file)))
+        else:
+            # File is <= 1.95 GB: Instantaneous Stream Copy Remux + Soft-Sub Merge (3-5 seconds)
+            try:
+                await status_msg.edit_text(
+                    f"⚙️ <b>පියවර 3/5: Ultra-Fast Stream Copy සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"⚡ <b>ක්‍රමය:</b> Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)\n"
+                    f"💬 <b>උපසිරැසි:</b> {'සිංහල උපසිරැසි Video එකටම Soft-Mux කෙරේ' if sub_to_merge else 'උපසිරැසි රහිතව Remux වේ'}\n"
+                    f"⏳ තත්පර 3-5ක් රැඳී සිටින්න...",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_cancel,
+                )
+            except Exception:
+                pass
+
+            task_tracker.tracker.set_step(user_id, "Instant Stream Copy + Sub Mux (FFmpeg)...")
+            log.info("[LeechService] Executing instantaneous stream-copy muxing (%s -> MP4, sub=%s)...", ext, sub_to_merge)
+
+            if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remuxed, disposition="default"):
+                if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
+                    try:
+                        os.remove(local_file)
+                    except Exception:
+                        pass
+                if os.path.abspath(remuxed) != os.path.abspath(final_mp4):
+                    try:
+                        shutil.move(remuxed, final_mp4)
+                        remuxed = final_mp4
+                    except Exception:
+                        pass
+                local_file = remuxed
+                is_faststart_done = True
+                log.info("[LeechService] Instantaneous stream-copy muxing succeeded: %s", local_file)
+            elif ext in (".mkv", ".webm", ".avi"):
+                # Edge case: input is MKV or another container with video/audio streams rejected by MP4.
+                # Perform instantaneous stream-copy preserving the native container with Sinhala soft-subs (-c:s srt -disposition:s:0 default)
+                remux_native = os.path.join(temp_dir, f"remux_{slug}{ext}")
+                if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remux_native, disposition="default"):
+                    if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remux_native):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                    local_file = remux_native
+                    is_faststart_done = ext == ".mp4"
+                    log.info("[LeechService] Native container stream-copy muxing succeeded: %s", local_file)
+                elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
+                    if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                    if os.path.abspath(remuxed) != os.path.abspath(final_mp4):
+                        try:
+                            shutil.move(remuxed, final_mp4)
+                            remuxed = final_mp4
+                        except Exception:
+                            pass
+                    local_file = remuxed
+                    is_faststart_done = True
+                    log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
+                elif sub_to_merge and os.path.exists(sub_to_merge):
+                    sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
+                    if await video_service.embed_subtitles_soft(local_file, sub_to_merge, sub_muxed, disposition="default"):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                        local_file = sub_muxed
+                        is_faststart_done = sub_muxed.lower().endswith(".mp4")
             elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
                 if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                     try:
@@ -1089,6 +1178,7 @@ async def _execute_leech(
                 is_faststart_done = True
                 log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
             elif sub_to_merge and os.path.exists(sub_to_merge):
+                # Fallback soft-embed if stream-copy was skipped
                 sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
                 if await video_service.embed_subtitles_soft(local_file, sub_to_merge, sub_muxed, disposition="default"):
                     try:
@@ -1097,31 +1187,6 @@ async def _execute_leech(
                         pass
                     local_file = sub_muxed
                     is_faststart_done = sub_muxed.lower().endswith(".mp4")
-        elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
-            if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
-                try:
-                    os.remove(local_file)
-                except Exception:
-                    pass
-            if os.path.abspath(remuxed) != os.path.abspath(final_mp4):
-                try:
-                    shutil.move(remuxed, final_mp4)
-                    remuxed = final_mp4
-                except Exception:
-                    pass
-            local_file = remuxed
-            is_faststart_done = True
-            log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
-        elif sub_to_merge and os.path.exists(sub_to_merge):
-            # Fallback soft-embed if stream-copy was skipped
-            sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
-            if await video_service.embed_subtitles_soft(local_file, sub_to_merge, sub_muxed, disposition="default"):
-                try:
-                    os.remove(local_file)
-                except Exception:
-                    pass
-                local_file = sub_muxed
-                is_faststart_done = sub_muxed.lower().endswith(".mp4")
 
         # 2.7 FastStart (+faststart) Remux: Guarantee moov atom is relocated to byte 0 for <300ms instant streaming
         if not is_faststart_done and local_file.lower().endswith((".mp4", ".m4v", ".mov")):
@@ -1137,6 +1202,26 @@ async def _execute_leech(
                 local_file = faststart_out
                 is_faststart_done = True
                 log.info("[LeechService] FastStart copy remux complete: moov atom relocated to byte 0 (%s)", local_file)
+
+        # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.85GB
+        if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
+            log.warning("[LeechService] File %s (%d bytes) exceeds Telegram 1.95GB limit after remux. Compressing...",
+                        local_file, os.path.getsize(local_file))
+            task_tracker.tracker.set_step(user_id, "Compressing video <= 1.95GB...")
+            comp_guard_out = os.path.join(temp_dir, f"guard_comp_{slug}.mp4")
+            comp_ok = await video_service.compress_video(
+                input_path=local_file,
+                output_path=comp_guard_out,
+                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                progress_callback=_compress_progress,
+                sub_path=sub_to_merge,
+            )
+            if comp_ok and os.path.exists(comp_guard_out) and os.path.getsize(comp_guard_out) <= video_service.MAX_TELEGRAM_BOT_SIZE:
+                try:
+                    os.remove(local_file)
+                except Exception:
+                    pass
+                local_file = comp_guard_out
 
         # ── Step 3 & 4: Overlapped Multi-Quality RAM Encoding + Parallel Cloud Drive & Telegram Upload ──
         file_size = os.path.getsize(local_file)
@@ -1273,7 +1358,7 @@ async def _execute_leech(
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
-            if not getattr(config, "ENABLE_GDRIVE_UPLOAD", False) or not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
+            if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
                 variant_files = await video_service.generate_multi_quality_variants_ram(
@@ -1284,13 +1369,14 @@ async def _execute_leech(
                     qualities=("720p", "480p", "360p"),
                     progress_callback=_mq_progress_cb,
                 )
-                _mq_progress_str = "720p/480p/360p Uploading to Drive..."
-                if variant_files:
+                _mq_progress_str = "720p/480p/360p Complete ✅"
+                if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
+                    _mq_progress_str = "720p/480p/360p Uploading to Drive..."
                     await asyncio.gather(
                         *[_task_upload_drive_variant(ql, qp) for ql, qp in variant_files.items()],
                         return_exceptions=True,
                     )
-                _mq_progress_str = "720p/480p/360p Complete ✅"
+                    _mq_progress_str = "720p/480p/360p Complete ✅"
             except Exception as mq_err:
                 log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
 
@@ -1298,37 +1384,20 @@ async def _execute_leech(
             nonlocal file_id, stream_url, message_id
             if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
                 return
-            if file_size > int(1.95 * 1024 * 1024 * 1024):
-                log.info("[LeechService] File size %.2f GB > 1.95 GB. Posting Drive link to Telegram channel.", file_size / (1024**3))
-                try:
-                    msg = await client.send_message(
-                        chat_id=target_channel,
-                        text=(
-                            f"🎬 <b>{display_title}</b>\n\n"
-                            f"📦 <b>Size:</b> {size_str} (High Definition 1080p)\n"
-                            f"⚡ <b>Google Drive Ultra HD:</b> <a href=\"{site_url}\">Watch Online & Download</a>"
-                        ),
-                        parse_mode=ParseMode.HTML,
-                        disable_web_page_preview=False,
-                    )
-                    message_id = msg.id
-                except Exception as t_err:
-                    log.warning("[LeechService] Channel link post error: %s", t_err)
-            else:
-                try:
-                    upload_res = await telegram_upload.upload_video_file(
-                        bot_client=client,
-                        file_path=local_file,
-                        target_chat=target_channel,
-                        caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
-                        progress_callback=_upload_progress,
-                        fallback_chat=0,
-                    )
-                    file_id = upload_res.get("file_id", "")
-                    stream_url = upload_res.get("stream_url", "")
-                    message_id = upload_res.get("message_id", 0)
-                except Exception as tg_err:
-                    log.warning("[LeechService] Telegram upload note: %s", tg_err)
+            try:
+                upload_res = await telegram_upload.upload_video_file(
+                    bot_client=client,
+                    file_path=local_file,
+                    target_chat=target_channel,
+                    caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
+                    progress_callback=_upload_progress,
+                    fallback_chat=0,
+                )
+                file_id = upload_res.get("file_id", "")
+                stream_url = upload_res.get("stream_url", "")
+                message_id = upload_res.get("message_id", 0)
+            except Exception as tg_err:
+                log.error("[LeechService] Telegram upload failed: %s", tg_err)
 
         # Execute Drive 1080p upload, Telegram 1080p upload, and 720p/480p/360p RAM Encode+Upload concurrently!
         await asyncio.gather(
@@ -1343,12 +1412,10 @@ async def _execute_leech(
         primary_stream = cloud_stream or ""
 
         # Publish Sinhala VTT subtitle to GitHub/website & generate inline data:text/vtt URI
-        sub_text = (
-            f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:08.000\n"
-            f"FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n2\n00:00:08.500 --> 00:00:18.000\n"
-            f"{display_title} නැරඹීමට සහ බාගත කිරීමට ස්තූතියි!"
-        )
-        if sub_vtt_path and os.path.exists(sub_vtt_path):
+        has_sinhala = bool(sub_to_merge and os.path.exists(sub_to_merge))
+        sub_text = ""
+        default_sub_url = ""
+        if has_sinhala and sub_vtt_path and os.path.exists(sub_vtt_path):
             try:
                 with open(sub_vtt_path, "r", encoding="utf-8", errors="replace") as vf:
                     loaded_vtt = vf.read().strip()
@@ -1356,20 +1423,19 @@ async def _execute_leech(
                     sub_text = loaded_vtt
             except Exception:
                 pass
-
-        default_sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
-        if sub_vtt_path and os.path.exists(sub_vtt_path):
-            try:
-                uploaded_sub_url = await subtitle_service.upload_subtitle_to_github(
-                    vtt_path=sub_vtt_path,
-                    filename=f"{slug}-si.vtt",
-                    github_token=getattr(config, "GITHUB_TOKEN", ""),
-                    repo=getattr(config, "GITHUB_REPO", ""),
-                )
-                if uploaded_sub_url and len(sub_text) > 16000:
-                    default_sub_url = uploaded_sub_url
-            except Exception as up_sub_err:
-                log.debug("[LeechService] Subtitle upload fallback to inline VTT: %s", up_sub_err)
+            if sub_text:
+                default_sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
+                try:
+                    uploaded_sub_url = await subtitle_service.upload_subtitle_to_github(
+                        vtt_path=sub_vtt_path,
+                        filename=f"{slug}-si.vtt",
+                        github_token=getattr(config, "GITHUB_TOKEN", ""),
+                        repo=getattr(config, "GITHUB_REPO", ""),
+                    )
+                    if uploaded_sub_url and len(sub_text) > 16000:
+                        default_sub_url = uploaded_sub_url
+                except Exception as up_sub_err:
+                    log.debug("[LeechService] Subtitle upload fallback to inline VTT: %s", up_sub_err)
 
         file_ext = os.path.splitext(file_name)[1].lstrip(".").upper() or "MP4"
         stream_type = "video/mp4" if file_ext == "MP4" else "video/x-matroska"
@@ -1488,8 +1554,8 @@ async def _execute_leech(
                 "stream_url": stream_url,
                 "format": file_ext,
                 "host": "Telegram",
-                "sub_merged": True,
-                "subtitle_merged": True,
+                "sub_merged": has_sinhala,
+                "subtitle_merged": has_sinhala,
             })
 
         # Multi-quality web download variants
@@ -1504,8 +1570,8 @@ async def _execute_leech(
                 "url": f"/api/download?id={drive_file_id}&q=1080p&title={encoded_title}&size={sz_1080}",
                 "format": file_ext,
                 "host": "Direct Web",
-                "sub_merged": True,
-                "subtitle_merged": True,
+                "sub_merged": has_sinhala,
+                "subtitle_merged": has_sinhala,
             })
         elif stream_url:
             downloads_list.append({
@@ -1516,8 +1582,8 @@ async def _execute_leech(
                 "url": stream_url,
                 "format": file_ext,
                 "host": "Direct Web",
-                "sub_merged": True,
-                "subtitle_merged": True,
+                "sub_merged": has_sinhala,
+                "subtitle_merged": has_sinhala,
             })
 
         # Ensure multi-quality download variants (1080p, 720p, 480p, 360p) are always present
@@ -1540,8 +1606,8 @@ async def _execute_leech(
                         "stream_url": stream_url or "",
                         "format": file_ext,
                         "host": "Telegram" if tg_post_link else "Direct Web",
-                        "sub_merged": True,
-                        "subtitle_merged": True,
+                        "sub_merged": has_sinhala,
+                        "subtitle_merged": has_sinhala,
                     })
 
         if not qualities_map and dl_fallback_url:
@@ -1580,8 +1646,8 @@ async def _execute_leech(
             "genres": tmdb_meta.get("genres", ["Action", "Adventure"]),
             "language": "English",
             "subtitle_language": "Sinhala",
-            "has_sinhala_sub": True,
-            "sub_merged": True,
+            "has_sinhala_sub": has_sinhala,
+            "sub_merged": has_sinhala,
             "quality": chosen_candidate.quality,
             "duration": dur_str,
             "description": tmdb_meta.get("description", ""),
@@ -1606,7 +1672,7 @@ async def _execute_leech(
                     "url": default_sub_url,
                     "default": True,
                 }
-            ],
+            ] if (has_sinhala and default_sub_url) else [],
             "source_method": chosen_candidate.method,
             "site_url": site_url,
             "added_date": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%d"),
@@ -1652,6 +1718,24 @@ async def _execute_leech(
             "channel_id": target_channel,
         })
 
+        # CRITICAL SAFETY GATE: Ensure video was successfully uploaded to Telegram before announcing/publishing
+        if not message_id or message_id == 0 or not stream_url:
+            log.error("[LeechService] Telegram upload failed or stream_url missing: msg_id=%s, stream=%s", message_id, stream_url)
+            task_tracker.tracker.complete_task(user_id)
+            err_text = (
+                f"❌ <b>Telegram Cloud HD Upload අසාර්ථක විය!</b>\n\n"
+                f"{media_icon} <b>{display_title}</b>\n"
+                f"📦 <b>ප්‍රමාණය:</b> {size_str}\n\n"
+                f"⚠️ Video ගොනුව Telegram වෙත upload වීම සම්පූර්ණ නොවූ බැවින්, වෙබ් අඩවියට හෝ ප්‍රසිද්ධ Channel එකට දෝෂ සහිත links පළ කිරීම වළක්වන ලදී.\n"
+                f"💾 <b>Draft ID:</b> <code>{draft_id}</code> ලෙස සුරකින ලදී.\n\n"
+                f"💡 කරුණාකර නැවත උත්සාහ කරන්න හෝ Bot log පරීක්ෂා කරන්න."
+            )
+            try:
+                await status_msg.edit_text(err_text, parse_mode=ParseMode.HTML)
+            except Exception:
+                pass
+            return
+
         imdb_val = movie_entry.get("imdb", "8.0")
         genres_val = ", ".join(movie_entry.get("genres", [])[:3])
 
@@ -1679,18 +1763,22 @@ async def _execute_leech(
                 [InlineKeyboardButton("💬 Subtitle එක් කරන්න (Add Sub)", callback_data=f"leech_act:sub_posted:{slug}")],
             ])
 
+            sub_status_text = "💬 <b>සිංහල උපසිරැසි:</b> Video එකට Soft-Mux විය ✅\n" if has_sinhala else "⚠️ <b>සිංහල උපසිරැසි:</b> නිවැරදි සිංහල උපසිරැසි හමු නොවීය\n"
+            sub_hint_text = f"💡 <i>සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>" if not has_sinhala else f"💡 <i>වෙනත් සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>"
+
             await status_msg.edit_text(
                 f"🎉 <b>Ultra Auto-Leech සාර්ථකව නිම විය!</b>\n\n"
                 f"{media_icon} <b>{display_title}</b>\n"
                 f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
                 f"📦 <b>ප්‍රමාණය:</b> {size_str} | 🎭 <b>කාණ්ඩ:</b> {genres_val}\n"
+                f"{sub_status_text}"
                 f"☁️ <b>Google Drive CDN:</b> Ultra Fast Cloud Stream Ready ✅\n"
                 f"✈️ <b>Telegram Storage:</b> Filmhost Channel වෙත Upload විය ✅\n"
                 f"🧹 <b>Seedr & VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කෙරිණි)\n\n"
                 f"🌐 <b>Live Link:</b> <a href=\"{site_url}\">{site_url}</a>\n"
                 f"📢 <b>Telegram Channel:</b> Announcement Post කරන ලදී!\n"
                 f"⚡ <b>Cloudflare Pages:</b> Auto-deployed!\n\n"
-                f"💡 <i>පසුව සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>",
+                f"{sub_hint_text}",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb_done,
                 disable_web_page_preview=False,
@@ -1705,12 +1793,14 @@ async def _execute_leech(
                 ],
                 [
                     InlineKeyboardButton("💬 Subtitle දැන්ම දාන්න (.srt)", callback_data=f"leech_act:sub:{draft_id}"),
-                    InlineKeyboardButton("⏩ පසුව දාන්නම් (Default Sub)", callback_data=f"leech_act:pub:{draft_id}"),
+                    InlineKeyboardButton("⏩ පසුව දාන්නම් (No Sub)", callback_data=f"leech_act:pub:{draft_id}"),
                 ],
                 [
                     InlineKeyboardButton("💾 Draft ලෙස තබන්න (Channel Only)", callback_data=f"leech_act:draft:{draft_id}"),
                 ]
             ])
+
+            sub_choice_desc = "• <b>🚀 Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (සිංහල උපසිරැසි සමඟ)\n" if has_sinhala else "• <b>🚀 Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (උපසිරැසි රහිතව)\n"
 
             await status_msg.edit_text(
                 f"👋 <b>චිත්‍රපටය සාර්ථකව Download කර Channel එකට Upload විය!</b> 🎉\n\n"
@@ -1722,7 +1812,7 @@ async def _execute_leech(
                 f"✈️ <b>Telegram Storage:</b> Filmhost Channel වෙත සුරැකිණි ✅\n"
                 f"🧹 <b>VPS Storage:</b> 100% Free (තාවකාලික ගොනු ඉවත් කරන ලදී)\n\n"
                 f"<b>දැන් ඔබට කුමක් කිරීමට අවශ්‍යද? පහතින් තෝරන්න:</b>\n\n"
-                f"• <b>🚀 Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (Default සිංහල උපසිරැසි සමඟ)\n"
+                f"{sub_choice_desc}"
                 f"• <b>💬 Subtitle දාන්න:</b> ඔබ සතු .srt / .vtt උපසිරැසි ගොනුව Upload කර Publish කරයි\n"
                 f"• <b>⏩ පසුව දාන්නම්:</b> වෙබ් අඩවියට දැන්ම දමා පසුව <code>/sub</code> මඟින් Subtitle දමයි\n"
                 f"• <b>💾 Draft ලෙස තබන්න:</b> වෙබ් අඩවියට නොදමා Channel එකේ පමණක් තබයි",

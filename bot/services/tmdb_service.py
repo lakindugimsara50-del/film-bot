@@ -64,6 +64,9 @@ async def fetch_metadata(
         flags=re.IGNORECASE,
     ).strip() or query
 
+    # Normalize zero-padded numbers like "ice age 01" -> "ice age 1"
+    clean_query = re.sub(r"\b0+(\d+)\b", r"\1", clean_query).strip()
+
     async with httpx.AsyncClient(timeout=20) as client:
         selected_media_type = "tv" if is_series else None
         selected_item = None
@@ -125,7 +128,7 @@ async def fetch_metadata(
                     selected_media_type = "movie"
 
         if not selected_item:
-            # Fallback: try search/movie directly
+            # Fallback 1: try search/movie directly
             params = {"api_key": TMDB_API_KEY, "query": clean_query, "language": "en-US", "include_adult": False}
             if year:
                 params["year"] = year
@@ -133,6 +136,21 @@ async def fetch_metadata(
             if resp.status_code == 200 and resp.json().get("results"):
                 selected_item = resp.json()["results"][0]
                 selected_media_type = "movie"
+
+        if not selected_item:
+            # Fallback 2: If query ends with a number (e.g. "ice age 1"), try stripping it (e.g. "ice age")
+            stripped_query = re.sub(r"\s+\d+$", "", clean_query).strip()
+            if stripped_query and stripped_query != clean_query:
+                log.info("TMDB: Retrying with stripped query '%s'", stripped_query)
+                resp = await client.get(
+                    f"{_BASE}/search/multi",
+                    params={"api_key": TMDB_API_KEY, "query": stripped_query, "language": "en-US"},
+                )
+                if resp.status_code == 200:
+                    cand = [it for it in resp.json().get("results", []) if it.get("media_type") in ("movie", "tv")]
+                    if cand:
+                        selected_item = cand[0]
+                        selected_media_type = selected_item.get("media_type")
 
         if not selected_item:
             log.warning("TMDB: No movie or TV results for '%s' (%s)", clean_query, year)

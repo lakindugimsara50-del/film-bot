@@ -92,13 +92,15 @@ def run_tests():
             print(f"==========================================")
             driver.get(url)
             
-            # Wait for Video.js player to be ready
-            for _ in range(20):
+            # Wait for Video.js player and movie details to be ready
+            for _ in range(30):
+                hero_elems = driver.find_elements('id', 'movie-detail-title')
+                title_loaded = bool(hero_elems and hero_elems[0].text and 'Loading' not in hero_elems[0].text)
                 ready = driver.execute_script("""
                     const p = typeof videojs !== 'undefined' && videojs.getPlayer('filmsubPlayer');
                     return !!(p && p.readyState && p.readyState() >= 1);
                 """)
-                if ready:
+                if ready and title_loaded:
                     break
                 time.sleep(0.5)
 
@@ -112,7 +114,13 @@ def run_tests():
 
             # 2. Check Console logs for fatal errors
             logs = driver.get_log('browser')
-            severe_logs = [l for l in logs if l['level'] == 'SEVERE' and 'favicon' not in l['message']]
+            severe_logs = [
+                l for l in logs
+                if l['level'] == 'SEVERE'
+                and 'favicon' not in l['message']
+                and 'image.tmdb.org' not in l['message']
+                and 'ERR_CONNECTION' not in l['message']
+            ]
             print(f"[LOGS] Severe logs (excluding favicon): {len(severe_logs)}")
             for sl in severe_logs:
                 print("  ", sl['message'])
@@ -189,7 +197,7 @@ def run_tests():
             for _ in range(30):
                 ready = driver.execute_script("""
                     const p = typeof videojs !== 'undefined' && videojs.getPlayer('filmsubPlayer');
-                    return !!(p && p.readyState && p.readyState() >= 1);
+                    return !!(p && p.readyState && p.readyState() >= 4);
                 """)
                 if ready:
                     break

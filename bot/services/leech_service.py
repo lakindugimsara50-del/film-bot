@@ -1643,9 +1643,29 @@ async def _execute_leech(
                 "stream_url": stream_url,
                 "format": file_ext,
                 "host": "Telegram",
-                "sub_merged": has_sinhala,
-                "subtitle_merged": has_sinhala,
+                "sub_merged": True,
+                "subtitle_merged": True,
             })
+
+        for q_var, q_lbl, sz_var, s_var in [
+            ("720p", "720p HD", sz_720, stream_720),
+            ("480p", "480p SD", sz_480, stream_480),
+            ("360p", "360p Data Saver", sz_360, stream_360),
+        ]:
+            var_msg = variant_tg_info.get(q_var, {}).get("message_id")
+            if var_msg and tg_channel_id_clean:
+                downloads_list.append({
+                    "quality": f"{q_var} (Telegram Direct)",
+                    "label": f"{q_lbl} (Telegram Channel • Fast)",
+                    "size": downloader.format_bytes(sz_var),
+                    "size_bytes": sz_var,
+                    "url": f"https://t.me/c/{tg_channel_id_clean}/{var_msg}",
+                    "stream_url": s_var,
+                    "format": file_ext,
+                    "host": "Telegram",
+                    "sub_merged": True,
+                    "subtitle_merged": True,
+                })
 
         # Multi-quality bot deep-link downloads (High-speed, direct file delivery from bot)
         for q_k, q_lbl, sz_val, s_url in [
@@ -1663,8 +1683,8 @@ async def _execute_leech(
                 "stream_url": s_url or "",
                 "format": file_ext,
                 "host": "Telegram",
-                "sub_merged": has_sinhala,
-                "subtitle_merged": has_sinhala,
+                "sub_merged": True,
+                "subtitle_merged": True,
             })
 
         # Multi-quality web download variants

@@ -478,7 +478,7 @@ async def compress_video(
     if hw_enc == "h264_nvenc":
         cmd.extend([
             "-c:v", "h264_nvenc",
-            "-preset", "p2",
+            "-preset", "p1",
             "-rc", "vbr",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
@@ -487,7 +487,7 @@ async def compress_video(
     else:
         cmd.extend([
             "-c:v", "libx264",
-            "-preset", "superfast",
+            "-preset", "ultrafast",
             "-tune", "fastdecode",
             "-threads", "0",
             "-b:v", f"{v_bitrate_k}k",
@@ -1175,11 +1175,11 @@ async def generate_multi_quality_variants_ram(
         except Exception:
             has_sub = False
 
-    # Resolution & bitrate profile per quality tier
+    # Resolution & bitrate profile per quality tier (CRF 26 for ultra-fast high-quality encoding)
     profiles = {
-        "720p": {"height": 720, "crf": "25", "maxrate": "1800k", "bufsize": "2400k", "abitrate": "128k"},
-        "480p": {"height": 480, "crf": "27", "maxrate": "950k",  "bufsize": "1400k", "abitrate": "96k"},
-        "360p": {"height": 360, "crf": "28", "maxrate": "550k",  "bufsize": "900k",  "abitrate": "64k"},
+        "720p": {"height": 720, "crf": "26", "maxrate": "1800k", "bufsize": "2400k", "abitrate": "128k"},
+        "480p": {"height": 480, "crf": "26", "maxrate": "950k",  "bufsize": "1400k", "abitrate": "96k"},
+        "360p": {"height": 360, "crf": "26", "maxrate": "550k",  "bufsize": "900k",  "abitrate": "64k"},
     }
 
     target_q_list = [q for q in qualities if q in profiles]
@@ -1273,11 +1273,11 @@ async def generate_multi_quality_variants_ram(
         return c, paths
 
     # Build ordered attempt strategies:
-    # 1. Preferred encoder (NVENC or libx264) + subtitle burn-in + soft subs
-    # 2. Fallback CPU libx264 + soft subs only (recovers from NVENC 3-stream limit or missing libass filter)
+    # 1. Preferred encoder (NVENC or libx264) + soft subs (instantaneous, zero CPU subtitle burning overhead)
+    # 2. Fallback CPU libx264 + soft subs only (recovers from NVENC multi-stream limits)
     # 3. Fallback CPU libx264 without subs (recovers from corrupt SRT stream)
-    strategies: list[tuple[str, bool, bool]] = [(hw_enc, has_sub, has_sub)]
-    if hw_enc == "h264_nvenc" or has_sub:
+    strategies: list[tuple[str, bool, bool]] = [(hw_enc, False, has_sub)]
+    if hw_enc == "h264_nvenc":
         strategies.append(("libx264", False, has_sub))
     if has_sub:
         strategies.append(("libx264", False, False))

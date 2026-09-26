@@ -317,7 +317,7 @@ function generateMovieCard(movie, opts = {}) {
     <a href="${url}" class="${cardClass}" title="${escHtml(movie.title || '')}">
       <div class="card-poster">
         <img src="${escHtml(poster)}" alt="${escHtml(movie.title || '')}" loading="lazy"
-             onerror="this.src='${SITE_CONFIG.defaultPoster}'">
+             onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
         ${quality}
         ${imdb}
         ${rank}

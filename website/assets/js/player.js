@@ -69,14 +69,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  currentSeason = currentMovie.season || 1;
-  currentEpisode = currentMovie.episode || 1;
+  // Robust season & episode extraction from URL slug (e.g. s01e05, 1x05) or query params (?s=1&e=5)
+  const slugEpMatch = slug.match(/[-_.]s(\d+)[-_.]?e(\d+)/i) || slug.match(/[-_.](\d+)x(\d+)/i);
+  if (slugEpMatch) {
+    currentSeason = parseInt(slugEpMatch[1], 10);
+    currentEpisode = parseInt(slugEpMatch[2], 10);
+  } else {
+    currentSeason = currentMovie.season || 1;
+    currentEpisode = currentMovie.episode || 1;
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  const qSeason = urlParams.get('s') || urlParams.get('season');
+  const qEpisode = urlParams.get('e') || urlParams.get('ep') || urlParams.get('episode');
+  if (qSeason) currentSeason = parseInt(qSeason, 10);
+  if (qEpisode) currentEpisode = parseInt(qEpisode, 10);
 
   const initialNet = detectNetworkSpeed();
   currentEffectiveQuality = initialNet.recommendedQuality;
 
   FilmSub.trackView(slug);
-  document.title = `${currentMovie.title || 'Movie'} (${currentMovie.year || ''}) Sinhala Subtitles – FilmSub`;
+  const isSeriesSlug = currentMovie.type === 'series' || currentSeason > 1 || currentEpisode > 1 || Boolean(slugEpMatch);
+  if (isSeriesSlug) {
+    document.title = `${currentMovie.title || 'Series'} S${String(currentSeason).padStart(2, '0')}E${String(currentEpisode).padStart(2, '0')} Sinhala Subtitles – FilmSub`;
+  } else {
+    document.title = `${currentMovie.title || 'Movie'} (${currentMovie.year || ''}) Sinhala Subtitles – FilmSub`;
+  }
 
   renderBreadcrumb(currentMovie);
   renderPageHeader(currentMovie);
@@ -211,13 +228,24 @@ function getMovieStreams(movie) {
   if (!movie) return [];
   const list = [];
   const driveId = extractMovieDriveId(movie);
-  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0);
+  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || currentSeason > 1 || currentEpisode > 1;
   const sNum = currentSeason || movie.season || 1;
   const eNum = currentEpisode || movie.episode || 1;
   const primaryUrl = movie.stream_url || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].stream_url) || '';
 
-  // 1. Server 1: Primary Telegram Cloud Stream OR High-Speed Direct MP4 Stream
-  if (movie.message_id || (primaryUrl && (primaryUrl.includes('/stream/') || primaryUrl.endsWith('.mp4')))) {
+  // 0. Pre-configured embed streams (e.g. Inception vidsrc.to / custom VIP embed)
+  if (primaryUrl && (primaryUrl.includes('vidsrc.to') || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].type === 'embed'))) {
+    const s0 = (Array.isArray(movie.streams) && movie.streams[0]) || {};
+    list.push({
+      server: 'Server 1',
+      label: s0.label || '🌐 VIP Player 1 (VidSrc Embed)',
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: s0.stream_url || primaryUrl,
+    });
+  } else if (movie.message_id || (primaryUrl && (primaryUrl.includes('/stream/') || primaryUrl.endsWith('.mp4')))) {
+    // 1. Server 1: Primary Telegram Cloud Stream OR High-Speed Direct MP4 Stream
     const tgUrl = primaryUrl || `/stream/channel/-1004325759505/${movie.message_id}`;
     list.push({
       server: 'Server 1',
@@ -243,28 +271,73 @@ function getMovieStreams(movie) {
     });
   }
 
-  // 2. External Multi-Server Backup Players (Server 2: VidSrc Pro, Server 3: SuperEmbed, Server 4: AutoEmbed)
-  const imdbId = (movie.imdb_id || '').trim();
-  const tmdbId = String(movie.tmdb_id || '').trim();
-  const extId = imdbId || tmdbId;
+  // 2. External Multi-Server Backup Players (VidSrc Pro, SuperEmbed, AutoEmbed)
+  let imdbId = (movie.imdb_id || '').trim();
+  let tmdbId = String(movie.tmdb_id || '').trim();
+
+  // Resolve extId from other movies with same title if missing
+  if ((!imdbId && !tmdbId) && window.FilmSub && typeof FilmSub.getAllMovies === 'function') {
+    const normT = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matchedOther = FilmSub.getAllMovies().find(m => {
+      const otherT = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return otherT && (otherT === normT || normT.startsWith(otherT) || otherT.startsWith(normT)) && (m.imdb_id || m.tmdb_id);
+    });
+    if (matchedOther) {
+      if (!imdbId && matchedOther.imdb_id) imdbId = matchedOther.imdb_id.trim();
+      if (!tmdbId && matchedOther.tmdb_id) tmdbId = String(matchedOther.tmdb_id).trim();
+    }
+  }
+
+  // Fallback catalog for common popular titles
+  if (!imdbId && !tmdbId) {
+    const titleKey = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const FALLBACK_EXT_IDS = {
+      'gameofthrones': { imdb: 'tt0944947', tmdb: '1399' },
+      'the100': { imdb: 'tt2661044', tmdb: '48866' },
+      'breakingbad': { imdb: 'tt0903747', tmdb: '1396' },
+      'interstellar': { imdb: 'tt0816692', tmdb: '157336' },
+      'inception': { imdb: 'tt1375666', tmdb: '27205' },
+      'thebeekeeper': { imdb: 'tt22314842', tmdb: '1072790' },
+      'premalu': { imdb: 'tt29584346', tmdb: '1196162' },
+      'feed': { imdb: 'tt2268719', tmdb: '' },
+      'fuze': { imdb: 'tt31003460', tmdb: '' },
+      'onelastshot': { imdb: 'tt33446071', tmdb: '1607127' },
+      'kgfchapter1': { imdb: 'tt7838252', tmdb: '' },
+      'iceage': { imdb: 'tt0268380', tmdb: '' },
+      'dc': { imdb: 'tt28249950', tmdb: '' },
+    };
+    for (const [k, ids] of Object.entries(FALLBACK_EXT_IDS)) {
+      if (titleKey.includes(k) || k.includes(titleKey)) {
+        if (!imdbId && ids.imdb) imdbId = ids.imdb;
+        if (!tmdbId && ids.tmdb) tmdbId = ids.tmdb;
+        break;
+      }
+    }
+  }
+
+  const extId = imdbId || tmdbId || encodeURIComponent(movie.title || '');
 
   if (extId) {
-    const vidsrcUrl = isSeries
-      ? `https://vidsrc.xyz/embed/tv/${extId}/${sNum}/${eNum}`
-      : `https://vidsrc.xyz/embed/movie/${extId}`;
-    list.push({
-      server: `Server ${list.length + 1}`,
-      label: '🌐 VidSrc Pro (Multi-Quality HD)',
-      mode: 'external_embed',
-      type: 'embed',
-      embed: true,
-      stream_url: vidsrcUrl,
-    });
+    const vidsrcId = imdbId || tmdbId;
+    if (vidsrcId && !list.some(s => s.stream_url && (s.stream_url.includes('vidsrc.xyz') || s.stream_url.includes('vidsrc.to')))) {
+      const vidsrcUrl = isSeries
+        ? `https://vidsrc.xyz/embed/tv/${vidsrcId}/${sNum}/${eNum}`
+        : `https://vidsrc.xyz/embed/movie/${vidsrcId}`;
+      list.push({
+        server: `Server ${list.length + 1}`,
+        label: '🌐 VidSrc Pro (Multi-Quality HD)',
+        mode: 'external_embed',
+        type: 'embed',
+        embed: true,
+        stream_url: vidsrcUrl,
+      });
+    }
 
     const useTmdbParam = (!imdbId && tmdbId) ? '&tmdb=1' : '';
+    const multiEmbedId = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
     const multiEmbedUrl = isSeries
-      ? `https://multiembed.mov/?video_id=${extId}${useTmdbParam}&s=${sNum}&e=${eNum}`
-      : `https://multiembed.mov/?video_id=${extId}${useTmdbParam}`;
+      ? `https://multiembed.mov/?video_id=${multiEmbedId}${useTmdbParam}&s=${sNum}&e=${eNum}`
+      : `https://multiembed.mov/?video_id=${multiEmbedId}${useTmdbParam}`;
     list.push({
       server: `Server ${list.length + 1}`,
       label: '🎬 SuperEmbed (Fast VIP HD)',
@@ -274,9 +347,10 @@ function getMovieStreams(movie) {
       stream_url: multiEmbedUrl,
     });
 
+    const autoEmbedId = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
     const autoEmbedUrl = isSeries
-      ? `https://player.autoembed.cc/embed/tv/${extId}/${sNum}/${eNum}`
-      : `https://player.autoembed.cc/embed/movie/${extId}`;
+      ? `https://player.autoembed.cc/embed/tv/${autoEmbedId}/${sNum}/${eNum}`
+      : `https://player.autoembed.cc/embed/movie/${autoEmbedId}`;
     list.push({
       server: `Server ${list.length + 1}`,
       label: '🚀 AutoEmbed (Global Stream HD)',
@@ -516,6 +590,12 @@ function normalizeDriveDownloadUrl(url, quality, movieTitle) {
   return str;
 }
 
+function formatBytesFromBytes(bytes) {
+  if (!bytes || bytes <= 0) return '';
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${Math.max(95, Math.round(mb))} MB`;
+}
+
 function getMovieDownloads(movie) {
   if (!movie) return [];
   const rawDls = Array.isArray(movie.downloads) ? [...movie.downloads] : [];
@@ -525,73 +605,137 @@ function getMovieDownloads(movie) {
         : `${movie.title}${movie.year ? ' (' + movie.year + ')' : ''}`)
     : 'Movie';
 
-  let primaryUrl = movie.drive_file_id || movie.stream_url || '';
-  if (!primaryUrl && rawDls.length > 0) {
-    const cloudEntry = rawDls.find(d => d.url && !d.url.includes('t.me/'));
-    primaryUrl = cloudEntry ? (cloudEntry.drive_id || cloudEntry.url) : rawDls[0].url;
-  }
+  const results = [];
+  const seenKeys = new Set();
 
-  let baseMb = 1450;
-  if (movie.file_size && movie.file_size > 0) {
-    baseMb = movie.file_size / (1024 * 1024);
-  } else if (rawDls.length > 0 && rawDls[0].size) {
-    const sm = String(rawDls[0].size).match(/([\d.]+)\s*(GB|MB)/i);
-    if (sm) {
-      baseMb = parseFloat(sm[1]) * (sm[2].toUpperCase() === 'GB' ? 1024 : 1);
-    }
-  }
+  const addDownloadCard = (card) => {
+    if (!card || !card.url) return;
+    const key = `${(card.quality || '').toLowerCase()}|${(card.host || '').toLowerCase()}|${card.url}`;
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+    results.push({
+      ...card,
+      format: card.format || 'MP4 (සිංහල Sub Merged)',
+      sub_merged: true,
+      subtitle_merged: true,
+    });
+  };
 
-  const fmtSize = (mb) => mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${Math.max(95, Math.round(mb))} MB`;
-  const targetQualities = [
-    { q: '1080p', ratio: 1.0, vq: 'hd1080' },
-    { q: '720p',  ratio: 0.55, vq: 'hd720' },
-    { q: '480p',  ratio: 0.32, vq: 'large' },
-    { q: '360p',  ratio: 0.18, vq: 'medium' }
-  ];
-
-  const enriched = [];
-  targetQualities.forEach(tq => {
-    const match = rawDls.find(d => String(d.quality || '').toLowerCase().includes(tq.q.toLowerCase()) && !d.download_only && d.host !== 'Telegram');
-    const qStreamUrl = (movie.qualities && movie.qualities[tq.q]) || '';
-    if (match) {
-      const targetSource = match.drive_id || match.url || qStreamUrl || primaryUrl;
-      const cleanUrl = normalizeDriveDownloadUrl(targetSource, tq.q, displayTitle);
-      enriched.push({
-        ...match,
-        quality: tq.q,
-        url: cleanUrl,
-        size: match.size || fmtSize(baseMb * tq.ratio),
-        format: 'MP4 (සිංහල Sub Merged)',
-        host: match.host || 'Google Drive',
-        sub_merged: true,
-        subtitle_merged: true
-      });
-    } else if (primaryUrl || qStreamUrl) {
-      const cleanUrl = normalizeDriveDownloadUrl(qStreamUrl || primaryUrl, tq.q, displayTitle);
-      enriched.push({
-        quality: tq.q,
-        size: fmtSize(baseMb * tq.ratio),
-        url: cleanUrl,
-        format: 'MP4 (සිංහල Sub Merged)',
-        host: 'Google Drive',
-        sub_merged: true,
-        subtitle_merged: true
-      });
-    }
-  });
-
+  // 1. Process explicit real downloads from movie metadata
   rawDls.forEach(d => {
-    if (d.download_only || d.host === 'Telegram') {
-      enriched.push({
-        ...d,
-        format: d.format || 'MP4 (සිංහල Sub Merged)',
-        sub_merged: true,
-        subtitle_merged: true
-      });
+    if (!d || !d.url) return;
+    const isTg = d.host === 'Telegram' || d.download_only || d.url.includes('t.me');
+    const isDirect = d.host === 'Direct' || d.host === 'Direct Web' || d.url.includes('/stream/') || d.url.endsWith('.mp4');
+    const isGdrive = d.host === 'Google Drive' || d.url.includes('/api/download') || d.url.includes('drive.google.com');
+
+    // Never show phantom lower-quality GDrive cards that point to non-existent /api/download files
+    if (isGdrive) {
+      const qNorm = String(d.quality || '').toLowerCase();
+      if (d.url.includes('/api/download')) {
+        if (qNorm.includes('720p') || qNorm.includes('480p') || qNorm.includes('360p')) {
+          return; // Skip phantom lower quality GDrive card
+        }
+        if (movie.message_id || movie.file_id || rawDls.some(x => x.host === 'Telegram')) {
+          return; // Prefer real Telegram cloud over dead GDrive download
+        }
+      }
     }
+
+    addDownloadCard(d);
   });
 
-  return enriched;
+  // 2. Generate genuine Telegram downloads from Cloud HD metadata
+  const botUsername = 'Filmsinhala200Bot';
+  const vm = movie.variant_media;
+  let chClean = '4325759505';
+  const mUrl = movie.stream_url || (rawDls.find(d => d.url && d.url.includes('/stream/channel/')) || {}).url || '';
+  const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
+  if (mMatch) {
+    const rawId = mMatch[1].replace(/^-?100/, '').replace(/^-/, '');
+    if (rawId) chClean = rawId;
+  }
+
+  if (vm && typeof vm === 'object') {
+    ['1080p', '720p', '480p', '360p'].forEach(q => {
+      const vInfo = vm[q];
+      if (vInfo && typeof vInfo === 'object') {
+        const msgId = vInfo.message_id;
+        const fileId = vInfo.file_id;
+        const sUrl = vInfo.stream_url;
+        const szBytes = vInfo.size_bytes;
+        const szStr = szBytes ? formatBytesFromBytes(szBytes) : '';
+
+        if (msgId) {
+          addDownloadCard({
+            quality: `${q} (Telegram Channel)`,
+            label: `${q} HD (Telegram Channel • Fast)`,
+            size: szStr,
+            url: `https://t.me/c/${chClean}/${msgId}`,
+            stream_url: sUrl || '',
+            format: 'MP4',
+            host: 'Telegram',
+          });
+        }
+        if (msgId || fileId) {
+          addDownloadCard({
+            quality: `${q} (Telegram Bot)`,
+            label: `${q} HD (Telegram Bot / Cloud)`,
+            size: szStr,
+            url: `https://t.me/${botUsername}?start=dl_${movie.slug}_${q}`,
+            stream_url: sUrl || '',
+            format: 'MP4',
+            host: 'Telegram',
+          });
+        }
+        if (sUrl && (sUrl.startsWith('http') || sUrl.startsWith('/stream/'))) {
+          addDownloadCard({
+            quality: `${q} (Direct Stream)`,
+            label: `${q} HD (High-Speed Direct Stream)`,
+            size: szStr,
+            url: sUrl,
+            format: 'MP4',
+            host: 'Direct',
+          });
+        }
+      }
+    });
+  } else if (movie.message_id) {
+    const sz1080 = movie.file_size ? formatBytesFromBytes(movie.file_size) : '';
+    addDownloadCard({
+      quality: '1080p (Telegram Channel)',
+      label: '1080p Full HD (Telegram Channel • Fast)',
+      size: sz1080,
+      url: `https://t.me/c/${chClean}/${movie.message_id}`,
+      stream_url: movie.stream_url || '',
+      format: 'MP4',
+      host: 'Telegram',
+    });
+    addDownloadCard({
+      quality: '1080p (Telegram Bot)',
+      label: '1080p Full HD (Telegram Bot / Cloud)',
+      size: sz1080,
+      url: `https://t.me/${botUsername}?start=dl_${movie.slug}_1080p`,
+      stream_url: movie.stream_url || '',
+      format: 'MP4',
+      host: 'Telegram',
+    });
+  }
+
+  // 3. If primary stream_url is a direct MP4 or stream link, ensure direct download card is rendered
+  if (movie.stream_url && (movie.stream_url.endsWith('.mp4') || movie.stream_url.includes('/stream/'))) {
+    const qStr = movie.quality || '1080p';
+    const szStr = movie.file_size ? formatBytesFromBytes(movie.file_size) : (movie.size || '');
+    addDownloadCard({
+      quality: qStr,
+      label: `${qStr} Full HD (Direct High-Speed Stream)`,
+      size: szStr,
+      url: movie.stream_url,
+      format: 'MP4',
+      host: 'Direct',
+    });
+  }
+
+  return results;
 }
 
 // ---- 1. Breadcrumb & 2. Page Header ----
@@ -1230,7 +1374,7 @@ function renderStreamEmbed(playerEl, stream, movie) {
               webkitallowfullscreen="true"
               mozallowfullscreen="true"
               playsinline="true"
-              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;background:#000000 !important;opacity:0;transition:opacity 0.35s ease">
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;background:#000000 !important;color-scheme:dark;opacity:0;transition:opacity 0.35s ease">
       </iframe>
     </div>`;
 
@@ -1408,15 +1552,15 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.on('canplay', hideLoader);
     vjsPlayer.on('playing', hideLoader);
 
-    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 3.8s
-    // (e.g. stream server sleeping / warming up or ultra-slow network),
-    // automatically switch to Server 2 (VidSrc Pro) so playback starts with zero white screen and zero interruption.
+    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 4.5s
+    // (e.g. stream server sleeping / warming up, Colab proxy offline, or ultra-slow network),
+    // automatically switch to Server 2 (VidSrc Pro / SuperEmbed) so playback starts with zero white screen and zero interruption.
     const slowHeaderWatchdog = setTimeout(() => {
       if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         const streams = getMovieStreams(movie);
         if (streams.length > 1 && currentStreamIdx === 0) {
-          FilmSub.showToast('⚡ Stream server warming up — instant failover to VidSrc Pro...', 'info');
+          FilmSub.showToast('⚡ Server 1 warming up — auto-switching to Server 2...', 'info');
           const tabsEl = document.getElementById('server-tabs');
           if (tabsEl) {
             tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
@@ -1426,7 +1570,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           loadStream(movie, 1);
         }
       }
-    }, 3800);
+    }, 4500);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);
@@ -1455,7 +1599,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       if (streams.length > 1 && currentStreamIdx < streams.length - 1) {
         const nextIdx = currentStreamIdx + 1;
         const nextServer = streams[nextIdx];
-        FilmSub.showToast(`⚡ Stream server warming up — instant failover to ${nextServer.label || 'VidSrc Pro'}...`, 'info');
+        FilmSub.showToast(`⚡ Stream server connecting — auto-switching to ${nextServer.label || 'Server 2'}...`, 'info');
         const tabsEl = document.getElementById('server-tabs');
         if (tabsEl) {
           tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));

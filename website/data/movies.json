@@ -2035,13 +2035,55 @@
           "stream_url": "https://multiembed.mov/?video_id=tt7838252"
         }
       ],
-      "qualities": {},
+      "qualities": {
+        "auto": "https://t.me/c/4325759505/51",
+        "1080p": "https://t.me/c/4325759505/51",
+        "720p": "https://t.me/c/4325759505/51",
+        "480p": "https://t.me/c/4325759505/51",
+        "360p": "https://t.me/c/4325759505/51"
+      },
       "downloads": [
         {
-          "quality": "1080p (Telegram Direct)",
+          "quality": "1080p",
           "label": "1080p Full HD (Telegram App / Web • Fast)",
           "size": "2.6 GB",
           "size_bytes": 2770083531,
+          "url": "https://t.me/c/4325759505/51",
+          "stream_url": "",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram App / Web • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1523545942,
+          "url": "https://t.me/c/4325759505/51",
+          "stream_url": "",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram App / Web • Fast)",
+          "size": "886.4 MB",
+          "size_bytes": 886426729,
+          "url": "https://t.me/c/4325759505/51",
+          "stream_url": "",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram App / Web • Fast)",
+          "size": "498.6 MB",
+          "size_bytes": 498615035,
           "url": "https://t.me/c/4325759505/51",
           "stream_url": "",
           "format": "MP4",

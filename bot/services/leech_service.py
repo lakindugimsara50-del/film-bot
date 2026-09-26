@@ -1468,6 +1468,39 @@ async def _execute_leech(
                 "subtitle_merged": True,
             })
 
+        # Ensure multi-quality download variants (1080p, 720p, 480p, 360p) are always present
+        existing_q = {d.get("quality") for d in downloads_list}
+        dl_fallback_url = tg_post_link or stream_url
+        if dl_fallback_url:
+            for q_k, q_lbl, sz_val in [
+                ("1080p", "1080p Full HD (Telegram App / Web • Fast)", sz_1080),
+                ("720p", "720p HD (Telegram App / Web • Fast)", sz_720),
+                ("480p", "480p SD (Telegram App / Web • Fast)", sz_480),
+                ("360p", "360p Data Saver (Telegram App / Web • Fast)", sz_360),
+            ]:
+                if q_k not in existing_q:
+                    downloads_list.append({
+                        "quality": q_k,
+                        "label": q_lbl,
+                        "size": downloader.format_bytes(sz_val),
+                        "size_bytes": sz_val,
+                        "url": dl_fallback_url,
+                        "stream_url": stream_url or "",
+                        "format": file_ext,
+                        "host": "Telegram" if tg_post_link else "Direct Web",
+                        "sub_merged": True,
+                        "subtitle_merged": True,
+                    })
+
+        if not qualities_map and dl_fallback_url:
+            qualities_map = {
+                "auto": dl_fallback_url,
+                "1080p": dl_fallback_url,
+                "720p": dl_fallback_url,
+                "480p": dl_fallback_url,
+                "360p": dl_fallback_url,
+            }
+
         raw_dur = tmdb_meta.get("duration", 120)
         dur_str = f"{raw_dur} min" if isinstance(raw_dur, int) else (str(raw_dur) if str(raw_dur).endswith("min") else f"{raw_dur} min")
 

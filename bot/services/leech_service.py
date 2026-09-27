@@ -1367,13 +1367,15 @@ async def _execute_leech(
             try:
                 log.info("[LeechService] Uploading variant '%s' to Telegram channel...", q_label)
                 var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
-                up_res = await telegram_upload.upload_video_file(
-                    bot_client=client,
+                from services.upload_pool import upload_pool
+                up_res = await upload_pool.upload_with_pool(
                     file_path=q_path,
                     target_chat=target_channel,
+                    quality=q_label,
                     caption=var_caption,
+                    file_name=os.path.basename(q_path),
                     progress_callback=None,
-                    fallback_chat=0,
+                    fallback_client=client,
                 )
                 if up_res and up_res.get("file_id"):
                     variant_tg_info[q_label] = up_res
@@ -1420,13 +1422,15 @@ async def _execute_leech(
             if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
                 return
             try:
-                upload_res = await telegram_upload.upload_video_file(
-                    bot_client=client,
+                from services.upload_pool import upload_pool
+                upload_res = await upload_pool.upload_with_pool(
                     file_path=local_file,
                     target_chat=target_channel,
+                    quality="1080p",
                     caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
+                    file_name=os.path.basename(local_file),
                     progress_callback=_upload_progress,
-                    fallback_chat=0,
+                    fallback_client=client,
                 )
                 file_id = upload_res.get("file_id", "")
                 stream_url = upload_res.get("stream_url", "")

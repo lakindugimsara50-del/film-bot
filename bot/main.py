@@ -137,12 +137,20 @@ async def status_endpoint() -> dict:
     except Exception:
         pass
 
+    upload_pool_info = {}
+    try:
+        from services.upload_pool import upload_pool as _up
+        upload_pool_info = _up.get_status()
+    except Exception:
+        pass
+
     return {
         "status": "running" if bot_connected else "stopped",
         "bot_status": "online" if bot_connected else "offline",
         "bot": "@Filmsinhala200Bot",
         "seedr_pool_accounts": seedr_count,
         "active_tasks": active_tasks,
+        "upload_pool": upload_pool_info,
     }
 
 
@@ -649,6 +657,16 @@ async def _on_start(client: Client) -> None:
         log.info("[StreamPool] Streaming pool initialized with main bot client.")
     except Exception as sp_err:
         log.warning("[StreamPool] Failed to initialize extra sessions in streaming pool: %s", sp_err)
+
+    # Initialize upload pool with session files for parallel multi-quality uploads
+    try:
+        from services.upload_pool import upload_pool as _upload_pool
+        _upload_pool.set_main_client(client)
+        # Background init so startup isn't delayed
+        asyncio.create_task(_upload_pool.init(config.API_ID, config.API_HASH))
+        log.info("[UploadPool] Parallel upload pool initialization started in background.")
+    except Exception as up_err:
+        log.warning("[UploadPool] Failed to start upload pool init: %s", up_err)
 
     # Notify admins that the bot restarted
     service_name = os.getenv("RENDER_SERVICE_NAME", "") or os.getenv("RENDER_INSTANCE_ID", "")

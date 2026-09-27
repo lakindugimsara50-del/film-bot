@@ -346,6 +346,7 @@ function getMovieStreams(movie) {
   // Server 2: 🎬 VIP Player 1 (Fast HD) - Modern VidLink / AutoEmbed Ultra HD
   // =========================================================================
   let s2SubParam = movie.subtitle_url ? `?primaryColor=ffeb3b&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
+  let s2Url = '';
   if (isSeries) {
     if (tmdbId) {
       s2Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s2SubParam}`;

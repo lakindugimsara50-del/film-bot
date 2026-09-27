@@ -3930,7 +3930,83 @@
       "telegram_status": "queued",
       "subtitle_url": "",
       "added_date": "2026-09-27"
+    },
+    {
+      "id": "cars-on-the-road-2022",
+      "slug": "cars-on-the-road-2022",
+      "title": "Cars on the Road",
+      "title_si": "",
+      "year": 2022,
+      "imdb_id": "tt11981568",
+      "tmdb_id": "114502",
+      "type": "series",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "poster_url": "https://image.tmdb.org/t/p/w500/6QXirTPUQecr1BAEfgVSXPD1np0.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/u2s4grihC8ayQFf9y9bc7fM7PUq.jpg",
+      "genres": [
+        "Family",
+        "Comedy",
+        "Kids",
+        "Animation",
+        "Action & Adventure"
+      ],
+      "language": "en",
+      "description": "Lightning McQueen and his best friend Mater head east from Radiator Springs on a cross-country road trip to meet up with Mater’s sister.",
+      "director": "Unknown",
+      "cast": [
+        {
+          "name": "Owen Wilson",
+          "character": "Lightning McQueen (voice)"
+        },
+        {
+          "name": "Larry the Cable Guy",
+          "character": "Mater (voice)"
+        }
+      ],
+      "rating": "7.4",
+      "number_of_seasons": 1,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 9,
+          "poster_url": "https://image.tmdb.org/t/p/w500/18F0s7w2HNytx8h3SGdkdzH3AWn.jpg",
+          "air_date": "2022-09-08"
+        }
+      ],
+      "featured": false,
+      "trending": false,
+      "added_at": "2026-09-27T09:42:17Z",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/114502/1/1"
+        },
+        {
+          "server": "Server 2",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt11981568/1/1"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt11981568&s=1&e=1"
+        }
+      ],
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "",
+      "added_date": "2026-09-27"
     }
   ],
-  "last_updated": "2026-09-27T09:40:34Z"
+  "last_updated": "2026-09-27T09:42:18Z"
 }

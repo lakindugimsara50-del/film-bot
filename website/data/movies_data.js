@@ -5459,16 +5459,6 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "stream_url": "https://tract-proposition-golf-entrepreneurs.trycloudflare.com/stream/channel/-1004325759505/99",
       "streams": [
         {
-          "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
-          "type": "video/mp4",
-          "mode": "telegram_stream",
-          "stream_url": "https://tract-proposition-golf-entrepreneurs.trycloudflare.com/stream/channel/-1004325759505/99",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADY2q5gSYUUN8jQHvuuP6--rW5Wf5DAAJxJQACRyjRVQ9JY04QGYAnHgQ",
-          "message_id": 99,
-          "quality": "1080p"
-        },
-        {
           "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
@@ -5557,6 +5547,62 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.19 GB",
+          "size_bytes": 1278897989,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "0.66 GB",
+          "size_bytes": 703393893,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADY2q5gSYUUN8jQHvuuP6--rW5Wf5DAAJxJQACRyjRVQ9JY04QGYAnHgQ",
+          "message_id": 99,
+          "url": "https://t.me/c/4325759505/99",
+          "telegram_url": "https://t.me/c/4325759505/99",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD",
+          "size": "0.38 GB",
+          "size_bytes": 409247356,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Mobile",
+          "size": "0.21 GB",
+          "size_bytes": 230201638,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -5590,7 +5636,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e09",
       "added_date": "2026-09-27",
       "added_at": "2026-09-27T20:48:39Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "telegram_status": "complete"
     }
   ],
   "last_updated": "2026-09-27T20:48:40Z"

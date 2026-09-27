@@ -143,6 +143,18 @@ function findMovieBySlug(slug) {
   });
   if (found) return found;
 
+  // 1b. Series base slug match: e.g. "game-of-thrones-2011-s02e03" -> base "game-of-thrones-2011" or "game-of-thrones"
+  const baseEpSlug = clean.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '');
+  if (baseEpSlug && baseEpSlug !== clean) {
+    const normBase = baseEpSlug.replace(/[^a-z0-9]/g, '');
+    found = allMovies.find(m => {
+      const mSlug = (m.slug || '').toLowerCase().replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+      const mId = String(m.id || '').toLowerCase().replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+      return mSlug === normBase || mId === normBase || (normBase && (mSlug.startsWith(normBase) || normBase.startsWith(mSlug)));
+    });
+    if (found) return found;
+  }
+
   // 2. Prefix / Episode match (e.g. game-of-thrones-2011-s01e01 matches game-of-thrones)
   const normS = clean.replace(/[^a-z0-9]/g, '');
   found = allMovies.find(m => {
@@ -164,6 +176,40 @@ function findMovieBySlug(slug) {
 
   // 4. Built-in deep-link / verification fallback catalog (never pollutes homepage carousels)
   const fallbackCatalog = {
+    'gameofthrones': {
+      id: 'game-of-thrones-2011-s01e01',
+      slug: 'game-of-thrones-2011-s01e01',
+      title: 'Game of Thrones',
+      title_si: 'ගේම් ඔෆ් ත්‍රෝන්ස්',
+      year: 2011,
+      imdb: '9.2',
+      imdb_id: 'tt0944947',
+      tmdb_id: '1399',
+      type: 'series',
+      quality: '1080p',
+      number_of_seasons: 8,
+      number_of_episodes: 73,
+      poster: 'https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg',
+      backdrop: 'https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg',
+      description: 'Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north.'
+    },
+    'gameofthrones2011': {
+      id: 'game-of-thrones-2011-s01e01',
+      slug: 'game-of-thrones-2011-s01e01',
+      title: 'Game of Thrones',
+      title_si: 'ගේම් ඔෆ් ත්‍රෝන්ස්',
+      year: 2011,
+      imdb: '9.2',
+      imdb_id: 'tt0944947',
+      tmdb_id: '1399',
+      type: 'series',
+      quality: '1080p',
+      number_of_seasons: 8,
+      number_of_episodes: 73,
+      poster: 'https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg',
+      backdrop: 'https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg',
+      description: 'Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north.'
+    },
     'interstellar': {
       id: 'interstellar-2014',
       slug: 'interstellar-2014',

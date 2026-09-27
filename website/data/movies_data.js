@@ -115,35 +115,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
           "stream_url": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-          "stream_url": "https://drive.google.com/file/d/1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/tv/48866/1/1"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/tv/tt2661044/1/1"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt2661044&s=1&e=1"
+          "stream_url": "https://www.2embed.cc/embedtv/tt2661044&s=1&e=1"
         }
       ],
       "downloads": [
@@ -286,35 +277,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
           "stream_url": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-          "stream_url": "https://drive.google.com/file/d/1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/movie/1607127"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/movie/tt37971717"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt37971717"
+          "stream_url": "https://www.2embed.cc/embed/tt37971717"
         }
       ],
       "downloads": [
@@ -461,35 +443,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
           "stream_url": "/api/stream?id=1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g",
-          "stream_url": "https://drive.google.com/file/d/1twmgGk7CRqLWhUQtBhRD7z7V8qiMNC9g/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/movie/1479832"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/movie/tt37501035"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt37501035"
+          "stream_url": "https://www.2embed.cc/embed/tt37501035"
         }
       ],
       "downloads": [
@@ -580,7 +553,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "year": 2025,
       "imdb": "7.1",
       "rating": "7.1",
-      "imdb_id": "",
+      "imdb_id": "tt31003460",
       "tmdb_id": "1242265",
       "type": "movie",
       "season": null,
@@ -615,35 +588,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
           "stream_url": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-          "stream_url": "https://drive.google.com/file/d/1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/movie/1242265"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/movie/1242265"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=1242265&tmdb=1"
+          "stream_url": "https://www.2embed.cc/embed/tt31003460"
         }
       ],
       "downloads": [
@@ -790,35 +754,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
           "stream_url": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-          "stream_url": "https://drive.google.com/file/d/1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/movie/866398"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/movie/tt15314262"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt15314262"
+          "stream_url": "https://www.2embed.cc/embed/tt15314262"
         }
       ],
       "downloads": [
@@ -964,35 +919,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
           "stream_url": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-          "stream_url": "https://drive.google.com/file/d/1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/movie/1149791"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/movie/tt28288786"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt28288786"
+          "stream_url": "https://www.2embed.cc/embed/tt28288786"
         }
       ],
       "downloads": [
@@ -1198,35 +1144,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "stream_url": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-          "stream_url": "https://drive.google.com/file/d/1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/tv/1399/1/1"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/tv/tt0944947/1/1"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=1&e=1"
+          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=1&e=1"
         }
       ],
       "qualities": {
@@ -1441,35 +1378,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
           "stream_url": "/api/stream?id=192FAwPgWUzoATLVChoJ9ekEPhDBh029n&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-          "stream_url": "https://drive.google.com/file/d/192FAwPgWUzoATLVChoJ9ekEPhDBh029n/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/tv/1399/1/2"
         },
         {
           "server": "Server 3",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/tv/tt0944947/1/2"
-        },
-        {
-          "server": "Server 4",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=1&e=2"
+          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=1&e=2"
         }
       ],
       "qualities": {
@@ -1678,21 +1606,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
           "stream_url": "/api/stream?id=1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-          "stream_url": "https://drive.google.com/file/d/1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/tv/48866/1/2"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt2661044&s=1&e=2"
         }
       ],
       "qualities": {
@@ -1848,21 +1781,26 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Chunk Stream • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "super_chunk",
-          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
           "stream_url": "/api/stream?id=167IKl-kbZIXgP91eO4Ftq97Chqtzusry&q=auto",
-          "quality": "1080p"
+          "quality": "1080p",
+          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry"
         },
         {
           "server": "Server 2",
-          "label": "☁️ Drive Player (Google CDN • Auto Sub)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-          "stream_url": "https://drive.google.com/file/d/167IKl-kbZIXgP91eO4Ftq97Chqtzusry/preview",
-          "quality": "1080p"
+          "stream_url": "https://vidlink.pro/movie/1128204"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt30505578"
         }
       ],
       "qualities": {
@@ -2022,17 +1960,25 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/movie/tt7838252"
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "",
+          "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt7838252"
+          "stream_url": "https://vidlink.pro/movie/564147"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt7838252"
         }
       ],
       "qualities": {
@@ -2175,13 +2121,25 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
           "stream_url": "https://remembered-alphabetical-prince-rover.trycloudflare.com/stream/channel/-1004325759505/53",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADNWq3gust6L4IKE-ui1g0D4v6VIWSAALUIAACpPu4VR341LA2Go9FHgQ",
-          "message_id": 53,
           "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/425"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt0268380"
         }
       ],
       "qualities": {
@@ -2403,27 +2361,25 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
           "stream_url": "https://damaged-aye-metals-marking.trycloudflare.com/stream/channel/-1004325759505/55",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADN2q39UdgSmH85tmaixrXyey2XgABJwACQSEAAqT7wFXHxkNbFeEiBh4E",
-          "message_id": 55,
           "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidsrc.xyz/embed/tv/tt0944947/1/5"
+          "stream_url": "https://vidlink.pro/tv/1399/1/5"
         },
         {
           "server": "Server 3",
-          "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=1&e=5"
+          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=1&e=5"
         }
       ],
       "qualities": {

@@ -407,66 +407,225 @@ def _empty_metadata(query: str, year: int = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-async def fetch_by_imdb_id(imdb_id: str) -> dict:
+from datetime import datetime, timezone
+
+async def _build_movie_dict_from_tmdb(item: dict, imdb_id: str) -> dict:
+    tmdb_id = item["id"]
+    async with httpx.AsyncClient(timeout=20) as client:
+        det_resp = await client.get(f"{_BASE}/movie/{tmdb_id}", params={"api_key": TMDB_API_KEY, "language": "en-US"})
+        det_resp.raise_for_status()
+        details = det_resp.json()
+        
+        cred_resp = await client.get(f"{_BASE}/movie/{tmdb_id}/credits", params={"api_key": TMDB_API_KEY})
+        credits = cred_resp.json() if cred_resp.status_code == 200 else {}
+        
+    title = details.get("title", item.get("title", ""))
+    year = int(details.get("release_date", "0000")[:4]) if details.get("release_date") else 0
+    import re
+    slug = re.sub(r'[^a-z0-9]+', '-', f"{title} {year}".lower()).strip('-')
+
+    genres = [g["name"] for g in details.get("genres", [])]
+    cast = [{"name": c["name"], "character": c.get("character", "")} for c in credits.get("cast", [])[:5]]
+    director = ", ".join(c["name"] for c in credits.get("crew", []) if c.get("job") == "Director") or "Unknown"
+    
+    poster_path = details.get("poster_path") or item.get("poster_path")
+    poster_url = f"{_IMG_W500}{poster_path}" if poster_path else ""
+    backdrop_path = details.get("backdrop_path") or item.get("backdrop_path")
+    backdrop_url = f"{_IMG_ORIG}{backdrop_path}" if backdrop_path else ""
+
+    streams = [
+        {
+            "server": "Server 1",
+            "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": f"https://vidlink.pro/movie/{tmdb_id}"
+        },
+        {
+            "server": "Server 2",
+            "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": f"https://player.autoembed.cc/embed/movie/{imdb_id}"
+        },
+        {
+            "server": "Server 3",
+            "label": "🚀 VIP Player 3 (2Embed Fast)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": f"https://www.2embed.cc/embed/{imdb_id}"
+        }
+    ]
+
+    return {
+        "id": slug,
+        "slug": slug,
+        "title": title,
+        "title_si": "",
+        "year": year,
+        "imdb_id": imdb_id,
+        "tmdb_id": str(tmdb_id),
+        "type": "movie",
+        "season": None,
+        "episode": None,
+        "episode_title": "",
+        "poster_url": poster_url,
+        "backdrop_url": backdrop_url,
+        "genres": genres,
+        "language": details.get("original_language", "en"),
+        "description": details.get("overview", ""),
+        "director": director,
+        "cast": cast,
+        "rating": str(round(details.get("vote_average", 0), 1)),
+        "number_of_seasons": 0,
+        "seasons": [],
+        "featured": False,
+        "trending": False,
+        "added_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "streams": streams,
+        "downloads": [],
+        "telegram_status": "queued",
+        "subtitle_url": ""
+    }
+
+async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = None, episode: int = None) -> dict:
+    tmdb_id = item["id"]
+    async with httpx.AsyncClient(timeout=20) as client:
+        det_resp = await client.get(f"{_BASE}/tv/{tmdb_id}", params={"api_key": TMDB_API_KEY, "language": "en-US"})
+        det_resp.raise_for_status()
+        details = det_resp.json()
+        
+        cred_resp = await client.get(f"{_BASE}/tv/{tmdb_id}/credits", params={"api_key": TMDB_API_KEY})
+        credits = cred_resp.json() if cred_resp.status_code == 200 else {}
+        
+        episode_title = ""
+        if season and episode:
+            ep_resp = await client.get(f"{_BASE}/tv/{tmdb_id}/season/{season}/episode/{episode}", params={"api_key": TMDB_API_KEY, "language": "en-US"})
+            if ep_resp.status_code == 200:
+                episode_title = ep_resp.json().get("name", "")
+
+    title = details.get("name", item.get("name", ""))
+    year = int(details.get("first_air_date", "0000")[:4]) if details.get("first_air_date") else 0
+    import re
+    base_slug = re.sub(r'[^a-z0-9]+', '-', f"{title} {year}".lower()).strip('-')
+    
+    if season and episode:
+        slug = f"{base_slug}-s{season:02d}e{episode:02d}"
+    else:
+        slug = base_slug
+
+    genres = [g["name"] for g in details.get("genres", [])]
+    cast = [{"name": c["name"], "character": c.get("character", "")} for c in credits.get("cast", [])[:5]]
+    director = ", ".join(c["name"] for c in details.get("created_by", [])) or "Unknown"
+    
+    poster_path = details.get("poster_path") or item.get("poster_path")
+    poster_url = f"{_IMG_W500}{poster_path}" if poster_path else ""
+    backdrop_path = details.get("backdrop_path") or item.get("backdrop_path")
+    backdrop_url = f"{_IMG_ORIG}{backdrop_path}" if backdrop_path else ""
+
+    S = season or 1
+    E = episode or 1
+
+    streams = [
+        {
+            "server": "Server 1",
+            "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": f"https://vidlink.pro/tv/{tmdb_id}/{S}/{E}"
+        },
+        {
+            "server": "Server 2",
+            "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": f"https://player.autoembed.cc/embed/tv/{imdb_id}/{S}/{E}"
+        },
+        {
+            "server": "Server 3",
+            "label": "🚀 VIP Player 3 (2Embed Fast)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": f"https://www.2embed.cc/embedtv/{imdb_id}&s={S}&e={E}"
+        }
+    ]
+    
+    raw_seasons = details.get("seasons", [])
+    seasons_list = []
+    for s in raw_seasons:
+        if s.get("season_number", 0) > 0:
+            seasons_list.append({
+                "season_number": s.get("season_number"),
+                "name": s.get("name", f"Season {s.get('season_number')}"),
+                "episode_count": s.get("episode_count", 0),
+                "poster_url": f"{_IMG_W500}{s.get('poster_path')}" if s.get("poster_path") else "",
+                "air_date": s.get("air_date", ""),
+            })
+
+    return {
+        "id": slug,
+        "slug": slug,
+        "title": title,
+        "title_si": "",
+        "year": year,
+        "imdb_id": imdb_id,
+        "tmdb_id": str(tmdb_id),
+        "type": "series",
+        "season": season,
+        "episode": episode,
+        "episode_title": episode_title,
+        "poster_url": poster_url,
+        "backdrop_url": backdrop_url,
+        "genres": genres,
+        "language": details.get("original_language", "en"),
+        "description": details.get("overview", ""),
+        "director": director,
+        "cast": cast,
+        "rating": str(round(details.get("vote_average", 0), 1)),
+        "number_of_seasons": details.get("number_of_seasons", len(seasons_list)),
+        "seasons": seasons_list,
+        "featured": False,
+        "trending": False,
+        "added_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "streams": streams,
+        "downloads": [],
+        "telegram_status": "queued",
+        "subtitle_url": ""
+    }
+
+async def fetch_by_imdb_id(
+    imdb_id: str,
+    season: int = None,
+    episode: int = None,
+) -> dict:
     """
-    Resolve an IMDb ID (e.g. 'tt1375666' or 'tt0944947') to full TMDB metadata.
-    Supports both movies and TV shows/episodes.
+    Lookup movie or TV series by IMDb ID using TMDB's /find endpoint.
+    Returns the same rich dict format as fetch_metadata().
     """
-    if not imdb_id or not TMDB_API_KEY:
-        return _empty_metadata(imdb_id)
+    async with httpx.AsyncClient(timeout=20) as client:
+        find_resp = await client.get(
+            f"{_BASE}/find/{imdb_id}",
+            params={"api_key": TMDB_API_KEY, "external_source": "imdb_id", "language": "en-US"}
+        )
+        if find_resp.status_code != 200:
+            raise RuntimeError(f"TMDB /find failed: {find_resp.status_code}")
+        find_data = find_resp.json()
 
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(
-                f"{_BASE}/find/{imdb_id}",
-                params={"api_key": TMDB_API_KEY, "external_source": "imdb_id"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
+    movie_results = find_data.get("movie_results", [])
+    tv_results = find_data.get("tv_results", [])
 
-            movie_results = data.get("movie_results", [])
-            tv_results = data.get("tv_results", [])
-            tv_ep_results = data.get("tv_episode_results", [])
-
-            if tv_ep_results:
-                ep = tv_ep_results[0]
-                show_id = ep.get("show_id")
-                req_season = ep.get("season_number", 1)
-                req_episode = ep.get("episode_number", 1)
-                show_resp = await client.get(f"{_BASE}/tv/{show_id}", params={"api_key": TMDB_API_KEY, "language": "en-US"})
-                if show_resp.status_code == 200:
-                    meta = await _fetch_tv_metadata(client, show_resp.json())
-                    meta["current_season"] = req_season
-                    meta["current_episode"] = req_episode
-                    meta["episode_title"] = ep.get("name", "")
-                    meta["imdb_id"] = imdb_id
-                    return meta
-
-            if tv_results:
-                top_tv = tv_results[0]
-                tv_pop = float(top_tv.get("popularity", 0))
-                movie_pop = float(movie_results[0].get("popularity", 0)) if movie_results else 0
-                if tv_pop >= movie_pop or not movie_results:
-                    meta = await _fetch_tv_metadata(client, top_tv)
-                    meta["current_season"] = 1
-                    meta["current_episode"] = 1
-                    meta["imdb_id"] = imdb_id
-                    return meta
-
-            if movie_results:
-                movie = movie_results[0]
-                title = movie.get("title", "")
-                year_str = movie.get("release_date", "")[:4]
-                year = int(year_str) if year_str.isdigit() else None
-                log.info("TMDB: Resolved IMDb %s -> tmdb_id=%s title=%r", imdb_id, movie.get("id"), title)
-                meta = await fetch_metadata(title, year)
-                if not meta.get("imdb_id"):
-                    meta["imdb_id"] = imdb_id
-                return meta
-
-            log.warning("TMDB: No movie or TV results for IMDb ID: %s", imdb_id)
-            return _empty_metadata(imdb_id)
-
-    except Exception as exc:
-        log.warning("fetch_by_imdb_id failed for %s: %s", imdb_id, exc)
-        return _empty_metadata(imdb_id)
+    if movie_results:
+        item = movie_results[0]
+        return await _build_movie_dict_from_tmdb(item, imdb_id=imdb_id)
+    elif tv_results:
+        item = tv_results[0]
+        return await _build_series_dict_from_tmdb(item, imdb_id=imdb_id, season=season, episode=episode)
+    else:
+        tv_ep_results = find_data.get("tv_episode_results", [])
+        if tv_ep_results:
+            ep = tv_ep_results[0]
+            show_id = ep.get("show_id")
+            s = ep.get("season_number", 1)
+            e = ep.get("episode_number", 1)
+            return await _build_series_dict_from_tmdb({"id": show_id, "name": ep.get("name", "")}, imdb_id=imdb_id, season=season or s, episode=episode or e)
+        raise RuntimeError(f"IMDb ID {imdb_id} not found on TMDB.")

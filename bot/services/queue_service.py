@@ -29,6 +29,8 @@ class QueueItem:
     client: Client
     title: str
     auto_publish: bool = False
+    movie_slug: str = ""
+    imdb_id: str = ""
 
 
 class QueueService:
@@ -57,6 +59,8 @@ class QueueService:
         reply_media: Optional[dict] = None,
         title_hint: str = "",
         auto_publish: bool = False,
+        movie_slug: str = "",
+        imdb_id: str = "",
     ) -> int:
         """
         Add a movie request to the queue.
@@ -75,6 +79,8 @@ class QueueService:
             client=client,
             title=title,
             auto_publish=auto_publish,
+            movie_slug=movie_slug,
+            imdb_id=imdb_id,
         )
 
         # Track in task tracker immediately so /cancel or /status knows about it
@@ -169,6 +175,14 @@ class QueueService:
 
                 try:
                     await leech_task
+                    if item.movie_slug:
+                        try:
+                            from services.stage2_patcher import patch_movie_downloads
+                            upload_results = task_tracker.tracker.get_upload_results(item.user_id)
+                            if upload_results:
+                                await patch_movie_downloads(item.movie_slug, upload_results)
+                        except Exception as patch_err:
+                            log.error("[QueueService] Stage2 patch error: %s", patch_err)
                 except asyncio.CancelledError:
                     log.info("[QueueService] Task cancelled for user %s: %s", item.user_id, item.title)
                 except Exception as exc:

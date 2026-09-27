@@ -132,39 +132,55 @@ async def add_movie(movie: dict) -> bool:
             "%Y-%m-%dT%H:%M:%SZ"
         )
 
-        updated_json = json.dumps(content_dict, ensure_ascii=False, indent=2)
-
-        # 1. Always write locally so local files are up-to-date
-        try:
-            os.makedirs(os.path.dirname(_LOCAL_MOVIES_PATH), exist_ok=True)
-            with open(_LOCAL_MOVIES_PATH, "w", encoding="utf-8") as f:
-                f.write(updated_json)
-            js_path = os.path.join(os.path.dirname(_LOCAL_MOVIES_PATH), "movies_data.js")
-            with open(js_path, "w", encoding="utf-8") as f:
-                f.write("window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = " + updated_json + ";\n")
-            log.info("movies.json & movies_data.js updated LOCALLY. Movie '%s' added.", movie.get("title", "?"))
-        except Exception as exc:
-            log.warning("Could not write movies locally: %s", exc)
-
-        if not token or repo in ("", "username/repo"):
-            # Fallback to local only
+        msg = f"Add movie: {movie.get('title', 'Unknown')} ({movie.get('year', '')})"
+        ok = await _commit_movies_json(content_dict, sha, msg)
+        if ok:
             return True
+        elif attempt < 3:
+            import asyncio
+            await asyncio.sleep(1.0 * attempt)
+        else:
+            return False
+    return True
 
-        # If sha is local, fetch current remote sha
-        if sha == "local":
-            try:
-                url_meta = f"{_API_BASE}/repos/{repo}/contents/{_MOVIES_PATH}"
-                async with httpx.AsyncClient(timeout=20) as client:
-                    r_meta = await client.get(url_meta, headers=_get_headers())
-                    if r_meta.status_code == 200:
-                        sha = r_meta.json().get("sha", "")
-            except Exception:
-                pass
 
-        encoded = base64.b64encode(updated_json.encode("utf-8")).decode("ascii")
+async def _commit_movies_json(content_dict: dict, sha: str, commit_message: str) -> bool:
+    """Internal: commit movies.json and movies_data.js to GitHub."""
+    token = _get_active_token()
+    repo = _get_active_repo()
+    updated_json = json.dumps(content_dict, ensure_ascii=False, indent=2)
 
+    # 1. Always write locally so local files are up-to-date
+    try:
+        os.makedirs(os.path.dirname(_LOCAL_MOVIES_PATH), exist_ok=True)
+        with open(_LOCAL_MOVIES_PATH, "w", encoding="utf-8") as f:
+            f.write(updated_json)
+        js_path = os.path.join(os.path.dirname(_LOCAL_MOVIES_PATH), "movies_data.js")
+        with open(js_path, "w", encoding="utf-8") as f:
+            f.write("window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = " + updated_json + ";\n")
+        log.info("movies.json & movies_data.js updated LOCALLY.")
+    except Exception as exc:
+        log.warning("Could not write movies locally: %s", exc)
+
+    if not token or repo in ("", "username/repo"):
+        return True
+
+    # If sha is local, fetch current remote sha
+    if sha == "local":
+        try:
+            url_meta = f"{_API_BASE}/repos/{repo}/contents/{_MOVIES_PATH}"
+            async with httpx.AsyncClient(timeout=20) as client:
+                r_meta = await client.get(url_meta, headers=_get_headers())
+                if r_meta.status_code == 200:
+                    sha = r_meta.json().get("sha", "")
+        except Exception:
+            pass
+
+    encoded = base64.b64encode(updated_json.encode("utf-8")).decode("ascii")
+
+    for attempt in range(1, 4):
         payload = {
-            "message": f"Add movie: {movie.get('title', 'Unknown')} ({movie.get('year', '')})",
+            "message": commit_message,
             "content": encoded,
             "branch": "main",
         }
@@ -177,31 +193,35 @@ async def add_movie(movie: dict) -> bool:
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.put(url, headers=headers, json=payload)
                 resp.raise_for_status()
-            log.info("movies.json updated on GitHub repo %s. Movie '%s' added.", repo, movie.get("title", "?"))
+            log.info("movies.json updated on GitHub repo %s.", repo)
             break
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 409 and attempt < 3:
                 log.warning("[GitHubService] SHA conflict (HTTP 409) updating movies.json (attempt %d/3). Retrying...", attempt)
                 import asyncio
                 await asyncio.sleep(1.0 * attempt)
+                try:
+                    url_meta = f"{_API_BASE}/repos/{repo}/contents/{_MOVIES_PATH}"
+                    async with httpx.AsyncClient(timeout=20) as client2:
+                        r_meta = await client2.get(url_meta, headers=_get_headers())
+                        if r_meta.status_code == 200:
+                            sha = r_meta.json().get("sha", "")
+                except Exception:
+                    pass
                 continue
-            log.error(
-                "GitHub PUT movies.json failed (HTTP %s): %s",
-                exc.response.status_code,
-                exc.response.text,
-            )
+            log.error("GitHub PUT movies.json failed (HTTP %s): %s", exc.response.status_code, exc.response.text)
             return False
         except Exception as exc:
             log.error("Unexpected error updating movies.json: %s", exc)
             return False
 
-    # Also sync movies_data.js to GitHub with retry
+    # Also sync movies_data.js
     try:
         js_content = f"window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {updated_json};\n"
         await upload_file(
             content=js_content.encode("utf-8"),
             path=_MOVIES_DATA_JS_PATH,
-            message=f"Sync movies_data.js for {movie.get('title', 'Unknown')}",
+            message=commit_message,
         )
     except Exception as js_err:
         log.warning("Could not sync movies_data.js to GitHub: %s", js_err)

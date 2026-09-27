@@ -132,6 +132,16 @@ def register(app: Client) -> None:
             )
             return
 
+        # ── INTERCEPT IMDb ID for Re-mux / Add flow ────────────────────────────
+        if query_name and re.match(r'^tt\d{5,10}$', query_name, re.IGNORECASE):
+            from handlers.add_imdb import _parse_add_args, _handle_add_imdb
+            args_text = re.sub(r'^/(?:sub|addsub|subtitle)\s*', '', text, flags=re.IGNORECASE).strip()
+            args = _parse_add_args(args_text)
+            if args.get("imdb_id"):
+                await _handle_add_imdb(client, message, args)
+                return
+        # ───────────────────────────────────────────────────────────────────────
+
         status_msg = await message.reply_text("⏳ <b>උපසිරැසි ගොනුව සකසමින් පවතී...</b>", parse_mode=ParseMode.HTML)
 
         with tempfile.TemporaryDirectory(prefix="sub_upload_") as tmpdir:

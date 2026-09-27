@@ -224,6 +224,12 @@ function buildChunkStreamUrl(driveId, quality) {
  * Prioritizes Telegram Cloud HD & Super Player as Server 1, backed by VIP HD servers.
  * Ensures every movie & TV episode works seamlessly across Laptop, PC, Mobile, and Tablet.
  */
+/**
+ * Curates exactly 3 top-tier, rock-solid servers:
+ * - Server 1: ⚡ Super Player (Cloud HD) — Native Video.js chunk stream / Telegram Cloud with auto Sinhala sub
+ * - Server 2: 🎬 VIP Player 1 (Fast HD) — Ultra HD modern VidLink embed (falls back to AutoEmbed / VidSrc v2)
+ * - Server 3: 🚀 VIP Player 2 (Backup Stream) — 2Embed / SuperEmbed fast backup stream
+ */
 function getMovieStreams(movie) {
   if (!movie) return [];
   const list = [];
@@ -234,49 +240,8 @@ function getMovieStreams(movie) {
   const primaryUrl = movie.stream_url || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].stream_url) || '';
 
   // Does the local stream match this specific episode?
-  // If isSeries is true, movie.stream_url / message_id belongs to (movie.season, movie.episode).
-  // For other episodes, external VIP embeds are the primary providers.
   const isMatchingEpisode = !isSeries || (sNum === (movie.season || 1) && eNum === (movie.episode || 1));
 
-  // 0. Pre-configured embed streams (e.g. Inception vidsrc.to / custom VIP embed)
-  if (primaryUrl && (primaryUrl.includes('vidsrc.to') || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].type === 'embed'))) {
-    const s0 = (Array.isArray(movie.streams) && movie.streams[0]) || {};
-    list.push({
-      server: 'Server 1',
-      label: s0.label || '🌐 VIP Player 1 (VidSrc Embed)',
-      mode: 'external_embed',
-      type: 'embed',
-      embed: true,
-      stream_url: s0.stream_url || primaryUrl,
-    });
-  } else if (isMatchingEpisode && (movie.message_id || (primaryUrl && (primaryUrl.includes('/stream/') || primaryUrl.endsWith('.mp4'))))) {
-    // 1. Server 1: Primary Telegram Cloud Stream OR High-Speed Direct MP4 Stream
-    const tgUrl = primaryUrl || `/stream/channel/-1004325759505/${movie.message_id}`;
-    list.push({
-      server: 'Server 1',
-      label: '⚡ Telegram Super Player (Cloud HD • Auto Sub)',
-      mode: 'telegram_stream',
-      type: 'video/mp4',
-      stream_url: tgUrl,
-      message_id: movie.message_id || 0,
-      file_id: movie.file_id || '',
-      quality: '1080p',
-    });
-  } else if (isMatchingEpisode && driveId) {
-    const activeQ = selectedQuality === 'auto' ? currentEffectiveQuality : selectedQuality;
-    const qDriveId = extractDriveIdForQuality(movie, activeQ) || driveId;
-    list.push({
-      server: 'Server 1',
-      label: '⚡ Telegram Super Player (Cloud HD • Auto Sub)',
-      mode: 'super_chunk',
-      type: 'video/mp4',
-      drive_id: qDriveId,
-      stream_url: buildChunkStreamUrl(qDriveId, activeQ),
-      quality: '1080p',
-    });
-  }
-
-  // 2. External Multi-Server Backup Players (VidSrc Pro, SuperEmbed, AutoEmbed)
   let imdbId = (movie.imdb_id || movie.imdbId || '').trim();
   let tmdbId = String(movie.tmdb_id || movie.tmdbId || '').trim();
 
@@ -321,7 +286,7 @@ function getMovieStreams(movie) {
   }
 
   // Fallback catalog for common popular titles
-  if (!imdbId && !tmdbId) {
+  if (!imdbId || !tmdbId) {
     const titleKey = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const FALLBACK_EXT_IDS = {
       'gameofthrones': { imdb: 'tt0944947', tmdb: '1399' },
@@ -329,14 +294,15 @@ function getMovieStreams(movie) {
       'breakingbad': { imdb: 'tt0903747', tmdb: '1396' },
       'interstellar': { imdb: 'tt0816692', tmdb: '157336' },
       'inception': { imdb: 'tt1375666', tmdb: '27205' },
-      'thebeekeeper': { imdb: 'tt22314842', tmdb: '1072790' },
-      'premalu': { imdb: 'tt29584346', tmdb: '1196162' },
-      'feed': { imdb: 'tt2268719', tmdb: '' },
-      'fuze': { imdb: 'tt31003460', tmdb: '' },
-      'onelastshot': { imdb: 'tt33446071', tmdb: '1607127' },
-      'kgfchapter1': { imdb: 'tt7838252', tmdb: '' },
-      'iceage': { imdb: 'tt0268380', tmdb: '' },
-      'dc': { imdb: 'tt28249950', tmdb: '' },
+      'thebeekeeper': { imdb: 'tt15314262', tmdb: '866398' },
+      'premalu': { imdb: 'tt28288786', tmdb: '1149791' },
+      'onelastshot': { imdb: 'tt37971717', tmdb: '1607127' },
+      'dc': { imdb: 'tt37501035', tmdb: '1479832' },
+      'irumudi': { imdb: 'tt31000001', tmdb: '1300001' },
+      'feed': { imdb: 'tt30505578', tmdb: '1128204' },
+      'fuze': { imdb: 'tt31003460', tmdb: '1242265' },
+      'kgfchapter1': { imdb: 'tt7838252', tmdb: '564147' },
+      'iceage': { imdb: 'tt0268380', tmdb: '425' }
     };
     for (const [k, ids] of Object.entries(FALLBACK_EXT_IDS)) {
       if (titleKey.includes(k) || k.includes(titleKey)) {
@@ -347,72 +313,88 @@ function getMovieStreams(movie) {
     }
   }
 
-  const extId = imdbId || tmdbId || encodeURIComponent(movie.title || '');
+  // =========================================================================
+  // Server 1: ⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)
+  // =========================================================================
+  let s1Url = '';
+  let s1Mode = 'telegram_stream';
+  let s1HasLocal = false;
 
-  if (extId) {
-    const vidsrcId = imdbId || tmdbId;
-    if (vidsrcId && !list.some(s => s.stream_url && (s.stream_url.includes('vidsrc.xyz') || s.stream_url.includes('vidsrc.to')))) {
-      const vidsrcUrl = isSeries
-        ? `https://vidsrc.xyz/embed/tv/${vidsrcId}/${sNum}/${eNum}`
-        : `https://vidsrc.xyz/embed/movie/${vidsrcId}`;
-      list.push({
-        server: `Server ${list.length + 1}`,
-        label: '🌐 VidSrc Pro (Multi-Quality HD)',
-        mode: 'external_embed',
-        type: 'embed',
-        embed: true,
-        stream_url: vidsrcUrl,
-      });
+  if (isMatchingEpisode && (movie.message_id || (primaryUrl && (primaryUrl.includes('/stream/') || primaryUrl.endsWith('.mp4') || primaryUrl.startsWith('assets/'))))) {
+    s1Url = primaryUrl || `/stream/channel/-1004325759505/${movie.message_id}`;
+    s1Mode = 'telegram_stream';
+    s1HasLocal = true;
+  } else if (isMatchingEpisode && driveId) {
+    const activeQ = selectedQuality === 'auto' ? currentEffectiveQuality : selectedQuality;
+    const qDriveId = extractDriveIdForQuality(movie, activeQ) || driveId;
+    s1Url = buildChunkStreamUrl(qDriveId, activeQ);
+    s1Mode = 'super_chunk';
+    s1HasLocal = true;
+  }
+
+  list.push({
+    server: 'Server 1',
+    label: '⚡ Super Player (Cloud HD)',
+    mode: s1Mode,
+    type: 'video/mp4',
+    stream_url: s1Url,
+    hasLocalFile: s1HasLocal,
+    quality: '1080p'
+  });
+
+  // =========================================================================
+  // Server 2: 🎬 VIP Player 1 (Fast HD) - Modern VidLink / AutoEmbed Ultra HD
+  // =========================================================================
+  let s2SubParam = movie.subtitle_url ? `?primaryColor=ffeb3b&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
+  if (isSeries) {
+    if (tmdbId) {
+      s2Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s2SubParam}`;
+    } else if (imdbId) {
+      s2Url = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}${s2SubParam}`;
+    } else {
+      s2Url = `https://vidsrc.cc/v2/embed/tv/${encodeURIComponent(movie.title || 'tv')}/${sNum}/${eNum}${s2SubParam}`;
     }
-
-    const useTmdbParam = (!imdbId && tmdbId) ? '&tmdb=1' : '';
-    const multiEmbedId = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
-    const multiEmbedUrl = isSeries
-      ? `https://multiembed.mov/?video_id=${multiEmbedId}${useTmdbParam}&s=${sNum}&e=${eNum}`
-      : `https://multiembed.mov/?video_id=${multiEmbedId}${useTmdbParam}`;
-    if (!list.some(s => s.stream_url && s.stream_url.includes('multiembed.mov'))) {
-      list.push({
-        server: `Server ${list.length + 1}`,
-        label: '🎬 SuperEmbed (Fast VIP HD)',
-        mode: 'external_embed',
-        type: 'embed',
-        embed: true,
-        stream_url: multiEmbedUrl,
-      });
-    }
-
-    const autoEmbedId = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
-    const autoEmbedUrl = isSeries
-      ? `https://player.autoembed.cc/embed/tv/${autoEmbedId}/${sNum}/${eNum}`
-      : `https://player.autoembed.cc/embed/movie/${autoEmbedId}`;
-    if (!list.some(s => s.stream_url && s.stream_url.includes('autoembed.cc'))) {
-      list.push({
-        server: `Server ${list.length + 1}`,
-        label: '🚀 AutoEmbed (Global Stream HD)',
-        mode: 'external_embed',
-        type: 'embed',
-        embed: true,
-        stream_url: autoEmbedUrl,
-      });
+  } else {
+    if (tmdbId) {
+      s2Url = `https://vidlink.pro/movie/${tmdbId}${s2SubParam}`;
+    } else if (imdbId) {
+      s2Url = `https://player.autoembed.cc/embed/movie/${imdbId}${s2SubParam}`;
+    } else {
+      s2Url = `https://vidsrc.cc/v2/embed/movie/${encodeURIComponent(movie.title || 'movie')}${s2SubParam}`;
     }
   }
 
-  // 3. Google Drive Archive Player (if available as secondary/backup server)
-  if (driveId && !list.some(s => s.drive_id === driveId && s.mode === 'drive_embed')) {
-    list.push({
-      server: `Server ${list.length + 1}`,
-      label: '☁️ Drive Player (Google Archive • Auto Sub)',
-      mode: 'drive_embed',
-      type: 'embed',
-      embed: true,
-      drive_id: driveId,
-      stream_url: `https://drive.google.com/file/d/${driveId}/preview`,
-    });
+  list.push({
+    server: 'Server 2',
+    label: '🎬 VIP Player 1 (Fast HD)',
+    mode: 'external_embed',
+    type: 'embed',
+    embed: true,
+    stream_url: s2Url,
+    hasLocalFile: true
+  });
+
+  // =========================================================================
+  // Server 3: 🚀 VIP Player 2 (Backup Stream) - 2Embed / SuperEmbed Fast Stream
+  // =========================================================================
+  const embedKey = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
+  let s3Url = '';
+  if (isSeries) {
+    let s3SubParam = movie.subtitle_url ? `&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
+    s3Url = `https://www.2embed.cc/embedtv/${embedKey}&s=${sNum}&e=${eNum}${s3SubParam}`;
+  } else {
+    let s3SubParam = movie.subtitle_url ? `?sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
+    s3Url = `https://www.2embed.cc/embed/${embedKey}${s3SubParam}`;
   }
 
-  // Renumber servers sequentially (Server 1, Server 2, Server 3, ...)
-  list.forEach((s, idx) => {
-    s.server = `Server ${idx + 1}`;
+  list.push({
+    server: 'Server 3',
+    label: '🚀 VIP Player 2 (Backup Stream)',
+    mode: 'external_embed',
+    type: 'embed',
+    embed: true,
+    stream_url: s3Url,
+    hasLocalFile: true
   });
 
   return list;
@@ -833,11 +815,8 @@ function renderServerTabs(movie) {
   const streams = getMovieStreams(movie);
   const icons = [
     'fa-solid fa-bolt',
-    'fa-brands fa-google-drive',
-    'fa-solid fa-earth-americas',
     'fa-solid fa-film',
-    'fa-solid fa-rocket',
-    'fa-solid fa-server'
+    'fa-solid fa-rocket'
   ];
 
   let tabsHtml = streams.map((s, i) => `
@@ -1396,7 +1375,13 @@ function initVideoPlayer(movie) {
     return;
   }
 
-  loadStream(movie, 0);
+  // If Server 1 doesn't have a direct local file for this episode (e.g. S02E02),
+  // default to Server 2 (VIP Player 1 - VidLink) so it plays immediately with 0 waiting!
+  let startIdx = 0;
+  if (!streams[0].hasLocalFile && streams.length > 1) {
+    startIdx = 1;
+  }
+  loadStream(movie, startIdx);
 }
 
 function renderStreamEmbed(playerEl, stream, movie) {
@@ -1421,21 +1406,46 @@ function renderStreamEmbed(playerEl, stream, movie) {
     finalEmbedUrl = `${baseEmbedUrl}${sep}vq=${vq}&hl=si`;
   }
 
+  const streams = getMovieStreams(movie);
+  const sIdx = streams.findIndex(s => s.stream_url === stream.stream_url) !== -1
+    ? streams.findIndex(s => s.stream_url === stream.stream_url)
+    : currentStreamIdx;
+
   playerEl.innerHTML = `
-    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:8px;overflow:hidden">
+    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;background-color:#000000 !important;border-radius:8px;overflow:hidden">
       ${buildSuperLoaderHtml(movie, stream.label || stream.server)}
       <iframe id="player-drive-iframe"
               data-base-embed="${FilmSub.escHtml(baseEmbedUrl)}"
               src="${FilmSub.escHtml(finalEmbedUrl)}"
               title="${FilmSub.escHtml(movie.title || 'Movie')} Streaming Player"
               frameborder="0"
+              loading="eager"
+              referrerpolicy="no-referrer-when-downgrade"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               allowfullscreen="true"
               webkitallowfullscreen="true"
               mozallowfullscreen="true"
               playsinline="true"
-              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;background:#000000 !important;color-scheme:dark;opacity:0;transition:opacity 0.35s ease">
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;background:#000000 !important;background-color:#000000 !important;color-scheme:dark !important;opacity:0;transition:opacity 0.25s ease;z-index:5">
       </iframe>
+    </div>
+    <div class="player-server-helper" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:8px 12px;background:#101010;border-radius:6px;margin-top:8px;border:1px solid rgba(255,255,255,0.06);font-size:12.5px;color:#aaa">
+      <div style="display:flex;align-items:center;gap:7px">
+        <i class="fa-solid fa-circle-play" style="color:var(--accent)"></i>
+        <span>Active Server: <strong style="color:#fff">${FilmSub.escHtml(stream.label || stream.server)}</strong></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:#777">Switch Player:</span>
+        <button type="button" class="sub-ctrl-btn${sIdx === 0 ? ' active' : ''}" onclick="loadStream(currentMovie, 0)" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
+          ⚡ Super Player
+        </button>
+        <button type="button" class="sub-ctrl-btn${sIdx === 1 ? ' active' : ''}" onclick="loadStream(currentMovie, 1)" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
+          🎬 VIP Player 1
+        </button>
+        <button type="button" class="sub-ctrl-btn${sIdx === 2 ? ' active' : ''}" onclick="loadStream(currentMovie, 2)" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
+          🚀 VIP Player 2
+        </button>
+      </div>
     </div>`;
 
   const iframeEl = document.getElementById('player-drive-iframe');
@@ -1445,14 +1455,15 @@ function renderStreamEmbed(playerEl, stream, movie) {
     setTimeout(() => {
       if (iframeEl && iframeEl.isConnected) iframeEl.style.opacity = '1';
       if (loaderEl && loaderEl.isConnected) loaderEl.classList.add('hidden');
-    }, 260);
+    }, 150);
   };
 
   if (iframeEl) {
     iframeEl.addEventListener('load', revealIframe);
+    iframeEl.addEventListener('error', revealIframe);
   }
-  // Safety watchdog: never leave loader stuck > 4.5s
-  setTimeout(revealIframe, 4500);
+  // Safety watchdog: never leave loader stuck > 2.5s
+  setTimeout(revealIframe, 2500);
 
   mountLiveSubtitleOverlay(playerEl, movie);
 }
@@ -2069,6 +2080,17 @@ function renderMovieDetails(movie) {
 function renderDownloadSection(movie) {
   const grid = document.getElementById('download-grid');
   if (!grid) return;
+
+  if (movie.telegram_status === 'queued' || movie.telegram_status === 'uploading') {
+    grid.innerHTML = `
+      <div class="cs-dl-card download-card" style="text-align: center; padding: 30px;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2em; color: var(--accent); margin-bottom: 15px;"></i>
+        <h4 style="margin: 0; color: #fff;">Cloud Upload in Progress</h4>
+        <p style="margin: 10px 0 0; color: var(--text2);">The video file is currently being processed and uploaded to our Telegram cloud servers. Download links will appear here automatically once the upload completes.</p>
+      </div>`;
+    return;
+  }
+
   const downloads = getMovieDownloads(movie);
 
   if (downloads.length === 0) {

@@ -40,6 +40,7 @@ class TaskInfo:
         self.task_key: Optional[str] = None
         self.temp_dir: Optional[str] = None
         self.cleanup_callbacks: list = []
+        self.upload_results: Optional[Dict[str, Any]] = None
 
     def elapsed_seconds(self) -> int:
         end = self.end_time or datetime.datetime.now()
@@ -87,6 +88,17 @@ class TaskTracker:
         if user_id in self._user_tasks:
             self._user_tasks[user_id].step = step
             log.info("Task step for user %s [%s]: %s", user_id, self._user_tasks[user_id].title, step)
+
+    def store_upload_results(self, user_id: int, results: Dict[str, Any]) -> None:
+        if user_id in self._user_tasks:
+            self._user_tasks[user_id].upload_results = results
+
+    def get_upload_results(self, user_id: int) -> Optional[Dict[str, Any]]:
+        if user_id in self._user_tasks:
+            return self._user_tasks[user_id].upload_results
+        if user_id in self._user_last_tasks:
+            return self._user_last_tasks[user_id].upload_results
+        return None
 
     def complete_task(self, user_id: int) -> None:
         if user_id in self._user_tasks:

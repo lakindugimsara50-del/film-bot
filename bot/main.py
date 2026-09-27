@@ -573,6 +573,10 @@ async def ping_handler(client: Client, message: Message) -> None:
 
 def _register_handlers() -> None:
     """Import and register all handlers from the handlers package."""
+    from handlers import add_imdb
+    add_imdb.register(app)
+    log.info("Handler registered: add_imdb (/add, /queue, /addsession)")
+
     from handlers import wizard
     wizard.register(app)
     log.info("Handler registered: wizard (/add, /drafts, video detection)")

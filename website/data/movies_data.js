@@ -4722,16 +4722,6 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "stream_url": "https://approximately-duplicate-typically-whole.trycloudflare.com/stream/channel/-1004325759505/87",
       "streams": [
         {
-          "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
-          "type": "video/mp4",
-          "mode": "telegram_stream",
-          "stream_url": "https://approximately-duplicate-typically-whole.trycloudflare.com/stream/channel/-1004325759505/87",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADV2q5FXAnutRtHOi2aQUNGJc8TsYyAAKjJAACRyjRVZSEfHOn9gFkHgQ",
-          "message_id": 87,
-          "quality": "1080p"
-        },
-        {
           "server": "Server 2",
           "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
           "type": "embed",
@@ -4813,6 +4803,62 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.06 GB",
+          "size_bytes": 1141361099,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "1.06 GB",
+          "size_bytes": 1141361099,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADV2q5FXAnutRtHOi2aQUNGJc8TsYyAAKjJAACRyjRVZSEfHOn9gFkHgQ",
+          "message_id": 87,
+          "url": "https://t.me/c/4325759505/87",
+          "telegram_url": "https://t.me/c/4325759505/87",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD",
+          "size": "0.34 GB",
+          "size_bytes": 365235551,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Mobile",
+          "size": "0.19 GB",
+          "size_bytes": 205444997,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -4846,7 +4892,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e06",
       "added_date": "2026-09-27",
       "added_at": "2026-09-27T13:09:05Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "telegram_status": "complete"
     }
   ],
   "last_updated": "2026-09-27T13:09:07Z"

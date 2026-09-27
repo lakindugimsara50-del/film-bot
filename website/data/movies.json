@@ -4106,7 +4106,85 @@
       "telegram_status": "queued",
       "subtitle_url": "",
       "added_date": "2026-09-27"
+    },
+    {
+      "id": "resident-evil-2026",
+      "slug": "resident-evil-2026",
+      "title": "Resident Evil",
+      "title_si": "",
+      "year": 2026,
+      "imdb_id": "tt35538033",
+      "tmdb_id": "1423191",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "poster_url": "https://image.tmdb.org/t/p/w500/i7UyjfPio0VFHB9rBUZSFyhOoM8.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/3icyRAqgakNcQn6aDVz9libFmBA.jpg",
+      "genres": [
+        "Horror",
+        "Science Fiction",
+        "Adventure"
+      ],
+      "language": "en",
+      "description": "Medical courier Bryan unwittingly finds himself fighting for survival as one fateful, horrifying night collapses around him in chaos.",
+      "director": "Zach Cregger",
+      "cast": [
+        {
+          "name": "Austin Abrams",
+          "character": "Bryan"
+        },
+        {
+          "name": "Paul Walter Hauser",
+          "character": "Paul"
+        },
+        {
+          "name": "Kali Reis",
+          "character": "Maxine"
+        },
+        {
+          "name": "Zach Cherry",
+          "character": "Carl"
+        },
+        {
+          "name": "Johnno Wilson",
+          "character": "Officer Wilson"
+        }
+      ],
+      "rating": "7.3",
+      "number_of_seasons": 0,
+      "seasons": [],
+      "featured": false,
+      "trending": false,
+      "added_at": "2026-09-27T09:52:27Z",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1423191"
+        },
+        {
+          "server": "Server 2",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt35538033"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35538033"
+        }
+      ],
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "",
+      "added_date": "2026-09-27"
     }
   ],
-  "last_updated": "2026-09-27T09:48:08Z"
+  "last_updated": "2026-09-27T09:52:28Z"
 }

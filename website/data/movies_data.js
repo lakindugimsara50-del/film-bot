@@ -3775,7 +3775,85 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "added_date": "2026-09-27"
+    },
+    {
+      "id": "photographer-2026",
+      "slug": "photographer-2026",
+      "title": "Photographer",
+      "title_si": "",
+      "year": 2026,
+      "imdb_id": "tt43727339",
+      "tmdb_id": "1740942",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "poster_url": "https://image.tmdb.org/t/p/w500/2viJLcdWykkcagEfHpGZupbZiq4.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/lvz5TgLlSLEvN0tQHJrOJisyBF8.jpg",
+      "genres": [
+        "Fantasy",
+        "Mystery",
+        "Thriller"
+      ],
+      "language": "ta",
+      "description": "Photographer follows Veera, a troubled and obsessive photographer determined to prove his worth in a world that has long dismissed him. Driven by ambition and haunted by a painful past, he ventures deep into Mathikettan Solai, a mysterious reserve forest, to capture a rare and elusive natural phenomenon that could change his life forever.",
+      "director": "Ashraf A",
+      "cast": [
+        {
+          "name": "Ashraf A",
+          "character": "Veera"
+        },
+        {
+          "name": "Janani Samathanam",
+          "character": "Dharshini"
+        },
+        {
+          "name": "Karunakaran",
+          "character": "Kabilan"
+        },
+        {
+          "name": "Devi Mahesh",
+          "character": ""
+        },
+        {
+          "name": "Aadukalam Naren",
+          "character": "Sengutavan"
+        }
+      ],
+      "rating": "0.0",
+      "number_of_seasons": 0,
+      "seasons": [],
+      "featured": false,
+      "trending": false,
+      "added_at": "2026-09-27T09:37:15Z",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1740942"
+        },
+        {
+          "server": "Server 2",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt43727339"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt43727339"
+        }
+      ],
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "",
+      "added_date": "2026-09-27"
     }
   ],
-  "last_updated": "2026-09-27T09:34:29Z"
+  "last_updated": "2026-09-27T09:37:16Z"
 };

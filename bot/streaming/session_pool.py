@@ -35,9 +35,11 @@ class TelegramStreamPool:
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client running in main.py."""
         self._main_client = client
+        if hasattr(client, "max_concurrent_transmissions"):
+            client.max_concurrent_transmissions = 10
         if client not in self.clients:
             self.clients.insert(0, client)
-            log.info("[StreamPool] Registered main bot client into streaming pool.")
+            log.info("[StreamPool] Registered main bot client into streaming pool (10x transmission enabled).")
 
     async def init_extra_sessions(self, api_id: int, api_hash: str, sessions_dir: str = "bot/sessions") -> None:
         """
@@ -66,10 +68,11 @@ class TelegramStreamPool:
                         api_id=api_id,
                         api_hash=api_hash,
                         no_updates=True,
+                        max_concurrent_transmissions=10,
                     )
                     await c.start()
                     self.clients.append(c)
-                    log.info("[StreamPool] Loaded extra session file: %s", base_name)
+                    log.info("[StreamPool] Loaded extra session file: %s (10x transmission enabled)", base_name)
                 except Exception as exc:
                     log.warning("[StreamPool] Could not start session '%s': %s", base_name, exc)
 
@@ -90,10 +93,11 @@ class TelegramStreamPool:
                         api_id=api_id,
                         api_hash=api_hash,
                         no_updates=True,
+                        max_concurrent_transmissions=10,
                     )
                     await c.start()
                     self.clients.append(c)
-                    log.info("[StreamPool] Loaded session string #%d into streaming pool.", i)
+                    log.info("[StreamPool] Loaded session string #%d into streaming pool (10x transmission enabled).", i)
                 except Exception as exc:
                     log.warning("[StreamPool] Could not start session string #%d: %s", i, exc)
 

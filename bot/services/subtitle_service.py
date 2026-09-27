@@ -143,8 +143,8 @@ def srt_to_vtt(srt_path: str) -> str:
 async def upload_subtitle_to_github(
     vtt_path: str,
     filename: str,
-    github_token: str,
-    repo: str,
+    github_token: Optional[str] = None,
+    repo: Optional[str] = None,
 ) -> str:
     """
     Upload a .vtt subtitle file to the GitHub repo under /subs/{filename}.
@@ -156,14 +156,28 @@ async def upload_subtitle_to_github(
     Args:
         vtt_path:     Local path to the .vtt file.
         filename:     Desired filename in the repo (e.g. 'avatar-3-si.vtt').
-        github_token: Personal access token with repo scope.
-        repo:         'owner/repo' string.
+        github_token: Personal access token with repo scope (defaults to config.GITHUB_TOKEN).
+        repo:         'owner/repo' string (defaults to config.GITHUB_REPO).
 
     Returns:
         The raw.githubusercontent.com public URL for the uploaded file.
     """
     if not os.path.isfile(vtt_path):
         raise FileNotFoundError(f"VTT file not found: {vtt_path}")
+
+    if not github_token:
+        try:
+            import config
+            github_token = getattr(config, "GITHUB_TOKEN", "")
+        except Exception:
+            github_token = os.getenv("GITHUB_TOKEN", "")
+
+    if not repo:
+        try:
+            import config
+            repo = getattr(config, "GITHUB_REPO", "lakindugimsara50-del/film-bot")
+        except Exception:
+            repo = os.getenv("GITHUB_REPO", "lakindugimsara50-del/film-bot")
 
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return f"subs/{filename}"

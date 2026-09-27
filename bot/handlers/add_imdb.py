@@ -166,10 +166,25 @@ def register(app: Client) -> None:
                 slug = sess["slug"]
                 season = sess.get("season")
                 episode = sess.get("episode")
-                ep_sfx = f"-s{season:02d}e{episode:02d}" if season and episode else ""
                 fname = f"{slug}{ep_sfx}-si.vtt"
 
-                vtt_github_url = await subtitle_service.upload_subtitle_to_github(local_vtt, fname)
+                # Cache local subtitle in system temp so Stage 2 FFmpeg can mux it directly into video
+                try:
+                    import shutil
+                    cached_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
+                    if os.path.exists(local_srt) and os.path.getsize(local_srt) > 0:
+                        shutil.copyfile(local_srt, cached_srt)
+                    elif os.path.exists(local_vtt) and os.path.getsize(local_vtt) > 0:
+                        shutil.copyfile(local_vtt, os.path.join(tempfile.gettempdir(), f"sub_{slug}.vtt"))
+                except Exception as c_err:
+                    log.warning("[AddImdb] Failed to cache subtitle for Stage 2: %s", c_err)
+
+                vtt_github_url = await subtitle_service.upload_subtitle_to_github(
+                    vtt_path=local_vtt,
+                    filename=fname,
+                    github_token=getattr(config, "GITHUB_TOKEN", ""),
+                    repo=getattr(config, "GITHUB_REPO", ""),
+                )
                 sess["vtt_github_url"] = vtt_github_url
 
                 # Update live website VidLink embed player with ?sub.Sinhala=
@@ -288,10 +303,15 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                     srt_path = os.path.join(tmpdir, "sub.srt")
                     local_path = await subtitle_service.download_subtitle(subtitle_url, srt_path)
                     if local_path and subtitle_service.is_genuine_sinhala_subtitle(local_path):
-                        vtt_path = await subtitle_service.srt_to_vtt(local_path)
+                        vtt_path = subtitle_service.srt_to_vtt(local_path)
                         ep_sfx = f"-s{season:02d}e{episode:02d}" if season and episode else ""
                         fname = f"{slug}{ep_sfx}-si.vtt"
-                        vtt_github_url = await subtitle_service.upload_subtitle_to_github(vtt_path, fname)
+                        vtt_github_url = await subtitle_service.upload_subtitle_to_github(
+                            vtt_path=vtt_path,
+                            filename=fname,
+                            github_token=getattr(config, "GITHUB_TOKEN", ""),
+                            repo=getattr(config, "GITHUB_REPO", ""),
+                        )
             except Exception as sub_err:
                 log.warning("[AddImdb] Inline subtitle error (continuing): %s", sub_err)
 

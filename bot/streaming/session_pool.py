@@ -70,9 +70,21 @@ class TelegramStreamPool:
                         no_updates=True,
                         max_concurrent_transmissions=10,
                     )
-                    await c.start()
-                    self.clients.append(c)
-                    log.info("[StreamPool] Loaded extra session file: %s (10x transmission enabled)", base_name)
+                    is_auth = await c.connect()
+                    if not is_auth:
+                        await c.disconnect()
+                        continue
+                    try:
+                        await c.initialize()
+                        await c.get_me()
+                        self.clients.append(c)
+                        log.info("[StreamPool] Loaded extra session file: %s (10x transmission enabled)", base_name)
+                    except Exception as auth_e:
+                        if c.is_initialized:
+                            await c.stop()
+                        elif c.is_connected:
+                            await c.disconnect()
+                        log.warning("[StreamPool] Could not start session '%s': %s", base_name, auth_e)
                 except Exception as exc:
                     log.warning("[StreamPool] Could not start session '%s': %s", base_name, exc)
 

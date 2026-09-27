@@ -191,19 +191,53 @@ class TelegramUploadPool:
                     no_updates=True,
                     max_concurrent_transmissions=10,
                 )
-                await c.start()
-                self.clients.append(c)
+                is_auth = await c.connect()
+                if not is_auth:
+                    await c.disconnect()
+                    log.warning("[UploadPool] Session '%s' is not authorized. Skipping.", base_name)
+                    continue
+
+                try:
+                    await c.initialize()
+                except Exception as init_err:
+                    await c.disconnect()
+                    log.warning("[UploadPool] Session '%s' init error: %s. Skipping.", base_name, init_err)
+                    continue
+
+                try:
+                    await c.get_me()
+                    self.clients.append(c)
+                except SessionPasswordNeeded:
+                    try:
+                        await c.check_password(password)
+                        self.clients.append(c)
+                        log.info("[UploadPool] 2FA OK for session: %s", base_name)
+                    except Exception as pw_err:
+                        if c.is_initialized:
+                            await c.stop()
+                        elif c.is_connected:
+                            await c.disconnect()
+                        log.warning("[UploadPool] 2FA failed for session '%s': %s", base_name, pw_err)
+                        continue
+                except Exception as auth_err:
+                    if c.is_initialized:
+                        await c.stop()
+                    elif c.is_connected:
+                        await c.disconnect()
+                    log.warning("[UploadPool] Session '%s' auth error (%s). Skipping.", base_name, auth_err)
+                    continue
+
                 if (idx + 1) % 10 == 0 or idx == 0:
                     log.info("[UploadPool] Loaded %d/%d upload sessions...", len(self.clients), len(session_files))
-            except SessionPasswordNeeded:
-                # Session requires 2FA cloud password — provide it
-                try:
-                    await c.check_password(password)
-                    self.clients.append(c)
-                    log.info("[UploadPool] 2FA OK for session: %s", base_name)
-                except Exception as pw_err:
-                    log.warning("[UploadPool] 2FA failed for session '%s': %s", base_name, pw_err)
             except Exception as exc:
+                try:
+                    if 'c' in locals():
+                        if c.is_initialized:
+                            await c.stop()
+                        elif c.is_connected:
+                            await c.disconnect()
+                except Exception:
+                    pass
                 log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
 
         log.info("[UploadPool] Total active upload clients in pool: %d", len(self.clients))

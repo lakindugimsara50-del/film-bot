@@ -443,6 +443,22 @@ async def auto_acquire_sinhala_subtitle(
 
     candidate_sub = None
 
+    # 0. Check system temp directory for cached subtitle files matching this session (uploaded in Stage 1)
+    try:
+        import tempfile as _tf
+        sys_temp = _tf.gettempdir()
+        if os.path.exists(sys_temp):
+            for fname in os.listdir(sys_temp):
+                fl = fname.lower()
+                if fl.startswith("sub_") and fl.endswith((".srt", ".vtt")):
+                    full_p = os.path.join(sys_temp, fname)
+                    if os.path.exists(full_p) and os.path.getsize(full_p) > 64 and is_genuine_sinhala_subtitle(full_p):
+                        candidate_sub = full_p
+                        log.info("[SubtitleService] Found cached Sinhala subtitle in system temp: %s", full_p)
+                        break
+    except Exception as cache_scan_err:
+        log.debug("[SubtitleService] Cache scan note: %s", cache_scan_err)
+
     # 1. Check temp_dir for any existing Sinhala .srt or .vtt files first
     for root, _, files in os.walk(temp_dir):
         for f in files:

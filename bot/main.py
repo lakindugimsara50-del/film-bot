@@ -697,6 +697,29 @@ async def main() -> None:
     port = int(os.getenv("PORT", 7860))
     start_health_server_thread(port)
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # DUAL-BOT CONFLICT PREVENTION:
+    # If running on Render, DO NOT start Pyrogram client polling.
+    # Google Colab is the primary high-spec bot runner (12GB RAM, 100GB Disk).
+    # Running both Render and Colab simultaneously causes duplicate message replies,
+    # callback query timeouts ("Session expired"), and broken uploads.
+    # Render stays healthy responding 200 OK on port 7860 without touching Telegram.
+    # ─────────────────────────────────────────────────────────────────────────
+    is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
+    enable_render_bot = os.getenv("ENABLE_RENDER_BOT", "false").lower() in ("true", "1", "yes")
+
+    if is_render and not enable_render_bot:
+        log.warning(
+            "[Main] Render environment detected! Telegram Bot polling is DISABLED on Render. "
+            "FastAPI health server is listening on port %d to keep Render service Healthy. "
+            "All Telegram bot operations run exclusively on Google Colab (12GB RAM). "
+            "To enable bot on Render instead, set ENABLE_RENDER_BOT=true in Render environment variables.",
+            port,
+        )
+        # Sleep forever to keep the FastAPI thread active and responsive
+        while True:
+            await asyncio.sleep(3600)
+
     # Start Async FIFO queue worker
     try:
         from services.queue_service import queue_service

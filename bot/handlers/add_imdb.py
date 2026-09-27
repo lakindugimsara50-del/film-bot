@@ -85,8 +85,36 @@ def register(app: Client) -> None:
 
         sess = PENDING_IMDB_SESSIONS.get(user_id)
         if not sess or sess.get("slug") != slug:
-            await query.answer("⚠️ Session එක කල් ඉකුත් වී ඇත.", show_alert=True)
-            return
+            # Auto-recover session from movies.json so inline buttons never expire
+            recovered = None
+            try:
+                data, _ = await github_service.get_movies_json()
+                for m in data.get("movies", []):
+                    if m.get("slug") == slug or m.get("id") == slug:
+                        recovered = {
+                            "user_id": user_id,
+                            "imdb_id": m.get("imdb_id", ""),
+                            "season": m.get("season"),
+                            "episode": m.get("episode"),
+                            "title": m.get("title", ""),
+                            "year": m.get("year", ""),
+                            "slug": slug,
+                            "meta": m,
+                            "site_url": m.get("site_url", f"https://filmsub.pages.dev/movie.html?id={slug}"),
+                            "vtt_github_url": m.get("subtitle_url", ""),
+                            "waiting_sub": False,
+                        }
+                        break
+            except Exception as rec_err:
+                log.warning("[AddImdb] Session auto-recovery from movies.json failed: %s", rec_err)
+
+            if recovered:
+                sess = recovered
+                PENDING_IMDB_SESSIONS[user_id] = sess
+                log.info("[AddImdb] Successfully auto-recovered session for '%s'", slug)
+            else:
+                await query.answer("⚠️ Session එක කල් ඉකුත් වී ඇත. නැවත /add කරන්න.", show_alert=True)
+                return
 
         await query.answer()
 
@@ -104,6 +132,7 @@ def register(app: Client) -> None:
 
         elif action == "add":
             sess["waiting_sub"] = True
+            PENDING_IMDB_SESSIONS[user_id] = sess
             await query.message.reply_text(
                 f"📥 <b>සිංහල උපසිරැසි (.srt හෝ .vtt) ගොනුවක් බලාපොරොත්තු වේ...</b>\n\n"
                 f"🎬 <b>{sess['title']} ({sess['year']})</b> සඳහා:\n"
@@ -117,6 +146,33 @@ def register(app: Client) -> None:
     async def imdb_sub_input_handler(client: Client, message: Message):
         user_id = message.from_user.id if message.from_user else 0
         sess = PENDING_IMDB_SESSIONS.get(user_id)
+
+        # If user didn't explicitly click "Add Subtitle" button or session was cleared,
+        # check if there's any queued movie in movies.json waiting for subtitle upload
+        if not sess:
+            try:
+                data, _ = await github_service.get_movies_json()
+                for m in data.get("movies", []):
+                    if m.get("telegram_status") == "queued" or not m.get("has_sinhala_sub"):
+                        sess = {
+                            "user_id": user_id,
+                            "imdb_id": m.get("imdb_id", ""),
+                            "season": m.get("season"),
+                            "episode": m.get("episode"),
+                            "title": m.get("title", ""),
+                            "year": m.get("year", ""),
+                            "slug": m.get("slug", ""),
+                            "meta": m,
+                            "site_url": m.get("site_url", f"https://filmsub.pages.dev/movie.html?id={m.get('slug', '')}"),
+                            "vtt_github_url": m.get("subtitle_url", ""),
+                            "waiting_sub": True,
+                        }
+                        PENDING_IMDB_SESSIONS[user_id] = sess
+                        log.info("[AddImdb] Auto-matched subtitle to queued movie: %s", m.get("title"))
+                        break
+            except Exception as auto_rec:
+                log.warning("[AddImdb] Auto-matching queued movie note: %s", auto_rec)
+
         if not sess or not sess.get("waiting_sub"):
             message.continue_propagation()
             return
@@ -127,8 +183,10 @@ def register(app: Client) -> None:
 
         sub_url = ""
         is_sub_doc = False
-        if target_doc and (target_doc.file_name or "").lower().endswith((".srt", ".vtt")):
-            is_sub_doc = True
+        if target_doc:
+            fname_lower = (target_doc.file_name or "").lower()
+            if fname_lower.endswith((".srt", ".vtt", ".sub", ".txt")) or target_doc.file_size < 10 * 1024 * 1024:
+                is_sub_doc = True
         elif text_val.startswith(("http://", "https://")):
             sub_url = text_val
         else:
@@ -166,6 +224,7 @@ def register(app: Client) -> None:
                 slug = sess["slug"]
                 season = sess.get("season")
                 episode = sess.get("episode")
+                ep_sfx = f"-s{season:02d}e{episode:02d}" if season and episode else ""
                 fname = f"{slug}{ep_sfx}-si.vtt"
 
                 # Cache local subtitle in system temp so Stage 2 FFmpeg can mux it directly into video

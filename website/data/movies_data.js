@@ -5039,46 +5039,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 3,
       "episode": 8,
       "episode_title": "Second Sons",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -5137,40 +5107,188 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": false,
+      "sub_merged": false,
+      "quality": "720p",
+      "duration": "57 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-09-27T20:29:55Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADYGq5fdaUyZe2M-uAtupLwwY3dvKzAAJwJQACRyjRVZ3zgRp9dRm9HgQ",
+      "message_id": 96,
+      "file_name": "Game.of.Thrones.S03E08.720p.HDTV.x264-EVOLVE.mkv",
+      "file_size": 1360763578,
+      "drive_file_id": "",
+      "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
       "streams": [
         {
           "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADYGq5fdaUyZe2M-uAtupLwwY3dvKzAAJwJQACRyjRVZ3zgRp9dRm9HgQ",
+          "message_id": 96,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://vidlink.pro/tv/1399/3/8"
         },
         {
-          "server": "Server 2",
+          "server": "Server 3",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://autoembed.co/tv/imdb/tt0944947-3-8"
         },
         {
-          "server": "Server 3",
+          "server": "Server 4",
           "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=3&e=8"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "",
+      "qualities": {
+        "auto": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+        "1080p": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+        "720p": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+        "480p": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+        "360p": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1360763578,
+          "url": "https://t.me/c/4325759505/96",
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1360763578,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s03e08_1080p",
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "713.7 MB",
+          "size_bytes": 748419967,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s03e08_720p",
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "415.3 MB",
+          "size_bytes": 435444344,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s03e08_480p",
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "233.6 MB",
+          "size_bytes": 244937444,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s03e08_360p",
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "size_bytes": 1360763578
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADYGq5fdaUyZe2M-uAtupLwwY3dvKzAAJwJQACRyjRVZ3zgRp9dRm9HgQ",
+          "message_id": 96,
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "size_bytes": 748419967
+        },
+        "480p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "size_bytes": 435444344
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://along-leaving-advertise-attorney.trycloudflare.com/stream/channel/-1004325759505/96",
+          "size_bytes": 244937444
+        }
+      },
+      "subtitles": [],
+      "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e08",
-      "channel_post_id": 95,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "added_at": "2026-09-27T20:34:30Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-27T20:29:56Z"
+  "last_updated": "2026-09-27T20:34:31Z"
 };

@@ -322,7 +322,7 @@ function getMovieStreams(movie) {
     if (tmdbId) {
       s1Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s1SubParam}`;
     } else if (imdbId) {
-      s1Url = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}${s1SubParam}`;
+      s1Url = `https://autoembed.co/tv/imdb/${imdbId}-${sNum}-${eNum}${s1SubParam}`;
     } else {
       s1Url = `https://vidlink.pro/tv/1399/${sNum}/${eNum}${s1SubParam}`;
     }
@@ -330,7 +330,7 @@ function getMovieStreams(movie) {
     if (tmdbId) {
       s1Url = `https://vidlink.pro/movie/${tmdbId}${s1SubParam}`;
     } else if (imdbId) {
-      s1Url = `https://player.autoembed.cc/embed/movie/${imdbId}${s1SubParam}`;
+      s1Url = `https://autoembed.co/movie/imdb/${imdbId}${s1SubParam}`;
     } else {
       s1Url = `https://vidlink.pro/movie/564147${s1SubParam}`;
     }
@@ -351,9 +351,9 @@ function getMovieStreams(movie) {
   // =========================================================================
   let s2Url = '';
   if (isSeries) {
-    s2Url = imdbId ? `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}` : (tmdbId ? `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${sNum}/${eNum}` : s1Url);
+    s2Url = imdbId ? `https://autoembed.co/tv/imdb/${imdbId}-${sNum}-${eNum}` : (tmdbId ? `https://autoembed.co/tv/tmdb/${tmdbId}-${sNum}-${eNum}` : s1Url);
   } else {
-    s2Url = imdbId ? `https://player.autoembed.cc/embed/movie/${imdbId}` : (tmdbId ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : s1Url);
+    s2Url = imdbId ? `https://autoembed.co/movie/imdb/${imdbId}` : (tmdbId ? `https://autoembed.co/movie/tmdb/${tmdbId}` : s1Url);
   }
 
   list.push({
@@ -367,21 +367,19 @@ function getMovieStreams(movie) {
   });
 
   // =========================================================================
-  // Server 3: 🚀 VIP Player 3 (2Embed Fast Backup)
+  // Server 3: 🚀 VIP Player 3 (MultiEmbed Fast Backup)
   // =========================================================================
   const embedKey = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
   let s3Url = '';
   if (isSeries) {
-    let s3SubParam = movie.subtitle_url ? `&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
-    s3Url = `https://www.2embed.cc/embedtv/${embedKey}&s=${sNum}&e=${eNum}${s3SubParam}`;
+    s3Url = `https://multiembed.mov/?video_id=${embedKey}&s=${sNum}&e=${eNum}`;
   } else {
-    let s3SubParam = movie.subtitle_url ? `?sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
-    s3Url = `https://www.2embed.cc/embed/${embedKey}${s3SubParam}`;
+    s3Url = `https://multiembed.mov/?video_id=${embedKey}`;
   }
 
   list.push({
     server: 'Server 3',
-    label: '🚀 VIP Player 3 (2Embed Fast)',
+    label: '🚀 VIP Player 3 (MultiEmbed Fast)',
     mode: 'external_embed',
     type: 'embed',
     embed: true,

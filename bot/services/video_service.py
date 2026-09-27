@@ -63,6 +63,31 @@ def get_video_duration(file_path: str, ffmpeg_bin: str) -> float:
     return 0.0
 
 
+def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tuple[int, int]:
+    """Extract (width, height) resolution using ffmpeg -i."""
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return (0, 0)
+    try:
+        cmd = [exe, "-hide_banner", "-i", file_path]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+        match = re.search(r",\s*(\d{3,5})x(\d{3,5})(?:,\s*|\s*\[|\s*)", proc.stderr)
+        if match:
+            w, h = match.groups()
+            return (int(w), int(h))
+    except Exception as exc:
+        log.debug("[VideoService] Could not parse resolution: %s", exc)
+    return (0, 0)
+
+
 _CACHED_HW_ENCODER: Optional[str] = None
 
 
@@ -1186,6 +1211,25 @@ async def generate_multi_quality_variants_ram(
     if not target_q_list:
         return {}
 
+    valid_outputs: dict[str, str] = {}
+    src_w, src_h = get_video_resolution(input_path, ffmpeg_bin)
+
+    # If source is already <= 720p (e.g. HDTV / 720p WEB-DL), do not re-encode 720p.
+    # Instant stream-copy in 2 seconds, freeing up FFmpeg to encode only 480p!
+    if src_h > 0 and src_h <= 720 and "720p" in target_q_list:
+        direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
+        try:
+            ok_copy = await apply_faststart(input_path, direct_720_path)
+            if ok_copy and os.path.exists(direct_720_path) and os.path.getsize(direct_720_path) >= min_valid_size:
+                valid_outputs["720p"] = direct_720_path
+                log.info("[VideoService] Source is already <= 720p (%dx%d). Instant 720p copy applied in seconds: %s", src_w, src_h, direct_720_path)
+        except Exception as e720:
+            log.debug("[VideoService] Direct 720p copy note: %s", e720)
+        target_q_list = [q for q in target_q_list if q != "720p"]
+
+    if not target_q_list:
+        return valid_outputs
+
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     num_q = len(target_q_list)
 
@@ -1322,12 +1366,22 @@ async def generate_multi_quality_variants_ram(
                                 except Exception:
                                     pass
 
-            await asyncio.gather(proc.wait(), _read_stderr())
-            valid_outputs = {
-                q: p for q, p in out_paths.items()
-                if os.path.exists(p) and os.path.getsize(p) >= min_valid_size
-            }
-            if len(valid_outputs) == len(target_q_list):
+            try:
+                await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=240.0)
+            except asyncio.TimeoutError:
+                log.warning("[VideoService] Multi-quality FFmpeg timed out (240s) — terminating process")
+                if proc and proc.returncode is None:
+                    try:
+                        proc.terminate()
+                        proc.kill()
+                    except Exception:
+                        pass
+
+            for q, p in out_paths.items():
+                if os.path.exists(p) and os.path.getsize(p) >= min_valid_size:
+                    valid_outputs[q] = p
+
+            if all(q in valid_outputs for q in target_q_list):
                 log.info(
                     "[VideoService] Multi-quality RAM generation complete (attempt %d, encoder=%s, burn=%s): %s",
                     attempt_idx + 1, enc_choice, burn_choice, list(valid_outputs.keys()),

@@ -421,12 +421,160 @@ async def fetch_online_subtitle_srt(
     return ""
 
 
+async def fetch_sri_lankan_sinhala_subtitle(
+    title: str,
+    year: Optional[int] = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    temp_dir: str = "/tmp",
+) -> Optional[str]:
+    """
+    Search Sri Lankan subtitle platforms (PirateLK, etc.) for genuine Sinhala subtitles (.srt).
+    Downloads and extracts the specific episode or movie subtitle file into temp_dir.
+    """
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return None
+
+    import io
+    import urllib.parse
+    import zipfile
+    from bs4 import BeautifulSoup
+
+    clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", title).strip()
+    search_terms = clean_title.split()
+    if not search_terms:
+        return None
+
+    if season and episode:
+        q_str = f"{clean_title} Season {season}"
+    else:
+        q_str = f"{clean_title} {year}" if year else clean_title
+
+    log.info("[SubtitleService] Searching Sri Lankan subtitle sources for '%s'...", q_str)
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+    try:
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=12.0) as client:
+            search_url = f"https://piratelk.com/?s={urllib.parse.quote_plus(q_str)}"
+            resp = await client.get(search_url)
+            if resp.status_code != 200 and season:
+                resp = await client.get(f"https://piratelk.com/?s={urllib.parse.quote_plus(clean_title)}")
+
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                candidate_posts = []
+                for a in soup.select("article a, h2 a, .entry-title a"):
+                    href = a.get("href")
+                    if href and "piratelk.com/" in href and not any(x in href for x in ["/category/", "/tag/", "/author/", "/page/", "#"]):
+                        p_title = a.get_text(strip=True).lower()
+                        if season:
+                            s_token = f"season {season}"
+                            s_token_padded = f"season {season:02d}"
+                            s_token_short = f"s{season:02d}"
+                            if s_token in p_title or s_token_padded in p_title or s_token_short in p_title or "complete" in p_title or "series" in p_title:
+                                candidate_posts.insert(0, href)
+                            else:
+                                candidate_posts.append(href)
+                        else:
+                            candidate_posts.append(href)
+
+                seen_posts = []
+                for cp in candidate_posts:
+                    if cp not in seen_posts:
+                        seen_posts.append(cp)
+
+                for post_url in seen_posts[:4]:
+                    try:
+                        p_resp = await client.get(post_url)
+                        if p_resp.status_code != 200:
+                            continue
+                        p_soup = BeautifulSoup(p_resp.text, "html.parser")
+
+                        if season:
+                            s_target = f"season {season:02d}"
+                            s_alt = f"season {season}"
+                            for sa in p_soup.find_all("a", href=True):
+                                sa_text = sa.get_text(strip=True).lower()
+                                sa_href = sa["href"]
+                                if (s_target in sa_text or s_alt in sa_text) and "piratelk.com/" in sa_href:
+                                    s_resp = await client.get(sa_href)
+                                    if s_resp.status_code == 200:
+                                        p_soup = BeautifulSoup(s_resp.text, "html.parser")
+                                        break
+
+                        dl_link = None
+                        for da in p_soup.find_all("a", href=True):
+                            dh = da["href"]
+                            if "/download/" in dh or ".zip" in dh:
+                                if not any(ign in dh for ign in ["/category/", "/tag/", "usersdrive", "mega.nz"]):
+                                    dl_link = dh
+                                    break
+
+                        if not dl_link:
+                            continue
+
+                        z_resp = await client.get(dl_link)
+                        if z_resp.status_code != 200 or len(z_resp.content) < 512:
+                            continue
+
+                        with zipfile.ZipFile(io.BytesIO(z_resp.content)) as zf:
+                            srt_members = [m for m in zf.namelist() if m.lower().endswith(".srt")]
+                            if not srt_members:
+                                continue
+
+                            chosen_member = None
+                            if season and episode:
+                                ep_patterns = [
+                                    re.compile(rf"[Ss]{season:02d}[Ee]{episode:02d}", re.IGNORECASE),
+                                    re.compile(rf"[Ss]{season}[Ee]{episode:02d}", re.IGNORECASE),
+                                    re.compile(rf"{season}x{episode:02d}", re.IGNORECASE),
+                                    re.compile(rf"episode[\s._-]*{episode:02d}", re.IGNORECASE),
+                                    re.compile(rf"episode[\s._-]*{episode}\b", re.IGNORECASE),
+                                    re.compile(rf"e{episode:02d}\b", re.IGNORECASE),
+                                ]
+                                for pat in ep_patterns:
+                                    for sm in srt_members:
+                                        if pat.search(sm):
+                                            chosen_member = sm
+                                            break
+                                    if chosen_member:
+                                        break
+                            if not chosen_member:
+                                chosen_member = srt_members[0]
+
+                            out_srt = os.path.join(temp_dir, f"sri_lanka_sub_{os.path.basename(chosen_member)}")
+                            with open(out_srt, "wb") as out_f:
+                                out_f.write(zf.read(chosen_member))
+
+                            if os.path.exists(out_srt) and os.path.getsize(out_srt) > 64:
+                                if is_genuine_sinhala_subtitle(out_srt):
+                                    log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
+                                    return out_srt
+                    except Exception as post_err:
+                        log.debug("[SubtitleService] Sri Lankan post inspect note: %s", post_err)
+    except Exception as scrape_err:
+        log.warning("[SubtitleService] Sri Lankan subtitle scraping note: %s", scrape_err)
+
+    return None
+
+
 async def auto_acquire_sinhala_subtitle(
     title: str,
     year: int = None,
     imdb_id: str = None,
     temp_dir: str = "/tmp",
     video_path: str = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Automatically find, extract, or translate a synchronized Sinhala (.srt and .vtt) subtitle
@@ -488,7 +636,23 @@ async def auto_acquire_sinhala_subtitle(
             if candidate_sub:
                 break
 
-    # 3. If no external subtitle file found, try extracting embedded subtitle track from video container
+    # 3. Search Sri Lankan subtitle sources (PirateLK, etc.) for authentic Sinhala subtitles
+    if not candidate_sub:
+        try:
+            sl_sub = await fetch_sri_lankan_sinhala_subtitle(
+                title=title,
+                year=year,
+                season=season,
+                episode=episode,
+                temp_dir=temp_dir,
+            )
+            if sl_sub and os.path.exists(sl_sub) and is_genuine_sinhala_subtitle(sl_sub):
+                candidate_sub = sl_sub
+                log.info("[SubtitleService] Selected authentic Sri Lankan Sinhala subtitle: %s", sl_sub)
+        except Exception as sl_err:
+            log.debug("[SubtitleService] Sri Lankan subtitle step skipped: %s", sl_err)
+
+    # 4. If no external subtitle file found, try extracting embedded subtitle track from video container
     if not candidate_sub and video_path and os.path.exists(video_path):
         try:
             from services import video_service

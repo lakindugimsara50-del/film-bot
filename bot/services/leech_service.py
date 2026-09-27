@@ -1019,6 +1019,8 @@ async def _execute_leech(
                 imdb_id=imdb_id,
                 temp_dir=temp_dir,
                 video_path=local_file,
+                season=season,
+                episode=episode,
             )
             log.info("[LeechService] Prepared Sinhala subtitle tracks: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
         except Exception as sub_acq_err:
@@ -1562,17 +1564,26 @@ async def _execute_leech(
                     "quality": "1080p",
                 })
 
-        # 3. External Multi-Server VIP Players (VidSrc, SuperEmbed, AutoEmbed)
+        # 3. External Multi-Server VIP Players (VidLink, AutoEmbed, MultiEmbed)
         tmdb_id_val = str(tmdb_meta.get("tmdb_id") or "").strip()
         ext_id = str(imdb_id or tmdb_id_val or "").strip()
         if ext_id:
             s_num = season or 1
             e_num = episode or 1
-            vidsrc_url = (
-                f"https://vidsrc.xyz/embed/tv/{ext_id}/{s_num}/{e_num}"
+            # VIP 1: VidLink Pro Ultra HD
+            target_tmdb = tmdb_id_val or ext_id
+            vidlink_url = (
+                f"https://vidlink.pro/tv/{target_tmdb}/{s_num}/{e_num}"
                 if is_series
-                else f"https://vidsrc.xyz/embed/movie/{ext_id}"
+                else f"https://vidlink.pro/movie/{target_tmdb}"
             )
+            # VIP 2: AutoEmbed HD
+            autoembed_url = (
+                f"https://autoembed.co/tv/imdb/{ext_id}-{s_num}-{e_num}"
+                if is_series
+                else f"https://autoembed.co/movie/imdb/{ext_id}"
+            )
+            # VIP 3: MultiEmbed Fast
             tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id_val) else ""
             multiembed_url = (
                 f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}&s={s_num}&e={e_num}"
@@ -1581,14 +1592,21 @@ async def _execute_leech(
             )
             streams_list.append({
                 "server": f"Server {len(streams_list) + 1}",
-                "label": "🌐 VIP Player 1 (VidSrc Pro • Multi-Quality)",
+                "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
                 "type": "embed",
                 "embed": True,
-                "stream_url": vidsrc_url,
+                "stream_url": vidlink_url,
             })
             streams_list.append({
                 "server": f"Server {len(streams_list) + 1}",
-                "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
+                "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+                "type": "embed",
+                "embed": True,
+                "stream_url": autoembed_url,
+            })
+            streams_list.append({
+                "server": f"Server {len(streams_list) + 1}",
+                "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
                 "type": "embed",
                 "embed": True,
                 "stream_url": multiembed_url,

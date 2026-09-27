@@ -1643,9 +1643,11 @@ async def _execute_leech(
         tg_post_link = f"https://t.me/c/{tg_channel_id_clean}/{message_id}" if message_id else ""
 
         if tg_post_link:
+            q_title = "720p HD (Telegram Channel • Fast)" if is_series else "1080p Full HD (Telegram Channel • Fast)"
+            q_name = "720p (Telegram Direct)" if is_series else "1080p (Telegram Direct)"
             downloads_list.append({
-                "quality": "1080p (Telegram Direct)",
-                "label": "1080p Full HD (Telegram Channel • Fast)",
+                "quality": q_name,
+                "label": q_title,
                 "size": downloader.format_bytes(sz_1080),
                 "size_bytes": sz_1080,
                 "url": tg_post_link,

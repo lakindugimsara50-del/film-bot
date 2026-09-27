@@ -161,7 +161,7 @@ def _build_message(movie: dict) -> str:
         )
         for d in sorted_dls:
             label = d.get("quality", "")
-            dl_url = d.get("url", "")
+            dl_url = d.get("telegram_url", "") or d.get("url", "")
             if label and dl_url:
                 m_q = re.search(r"\b(1080p|720p|480p|360p)\b", label, re.I)
                 btn_lbl = m_q.group(1) if m_q else label
@@ -171,7 +171,7 @@ def _build_message(movie: dict) -> str:
     else:
         for f in files:
             label = f.get("quality", "")
-            dl_url = f.get("url", "") or f.get("stream_url", "")
+            dl_url = f.get("telegram_url", "") or f.get("url", "") or f.get("stream_url", "")
             if label and dl_url:
                 m_q = re.search(r"\b(1080p|720p|480p|360p)\b", label, re.I)
                 btn_lbl = m_q.group(1) if m_q else label
@@ -179,7 +179,12 @@ def _build_message(movie: dict) -> str:
                     seen_labels.add(btn_lbl)
                     download_parts.append(f'<a href="{dl_url}">[{btn_lbl}]</a>')
 
-    download_line = "⬇️ Download:  " + "  ".join(download_parts) if download_parts else ""
+    if download_parts:
+        download_line = "⬇️ Download:  " + "  ".join(download_parts)
+    elif movie.get("telegram_status") in ("queued", "uploading"):
+        download_line = "⏳ <b>Telegram Downloads:</b> <i>Upload වෙමින් පවතී... (Soon)</i>"
+    else:
+        download_line = ""
 
     # ── Assemble the message ──────────────────────────────────────────────────
     lines = [

@@ -314,7 +314,42 @@ function getMovieStreams(movie) {
   }
 
   // =========================================================================
-  // Server 1: 🎬 VIP Player 1 (VidLink Pro Ultra HD • Auto Sinhala Sub)
+  // Server 1 & 2: CineSubz CS Player & Evo Player (if available in movie data)
+  // =========================================================================
+  const existingStreams = Array.isArray(movie.streams) ? movie.streams : [];
+  const csEntry = existingStreams.find(s => s && (s.label || '').includes('CS Player') || (s.stream_url || '').includes('setwenna') || (s.stream_url || '').includes('csplayer')) || (movie.cs_player ? { stream_url: movie.cs_player } : null);
+  const evoEntry = existingStreams.find(s => s && (s.label || '').includes('Evo Player') || (s.stream_url || '').includes('evostream')) || (movie.evo_player ? { stream_url: movie.evo_player } : null);
+
+  let srvCounter = 1;
+
+  if (csEntry && csEntry.stream_url) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: '🎬 CS Player (CineSubz Direct HD • Sinhala Sub)',
+      mode: 'direct_mp4',
+      type: 'video/mp4',
+      stream_url: csEntry.stream_url,
+      hasLocalFile: true,
+      sub_merged: true,
+    });
+    srvCounter++;
+  }
+
+  if (evoEntry && evoEntry.stream_url) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: '⚡ Evo Player (EvoStream Fast Stream)',
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: evoEntry.stream_url,
+      hasLocalFile: true,
+    });
+    srvCounter++;
+  }
+
+  // =========================================================================
+  // VIP Player 1: 🎬 VidLink Pro Ultra HD (Auto Sinhala Sub)
   // =========================================================================
   let s1SubParam = movie.subtitle_url ? `?primaryColor=ffeb3b&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
   let s1Url = '';
@@ -337,17 +372,18 @@ function getMovieStreams(movie) {
   }
 
   list.push({
-    server: 'Server 1',
-    label: '🎬 VIP Player 1 (VidLink Pro Ultra HD)',
+    server: `Server ${srvCounter}`,
+    label: `🎬 VIP Player 1 (VidLink Pro Ultra HD)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
     stream_url: s1Url,
-    hasLocalFile: true
+    hasLocalFile: true,
   });
+  srvCounter++;
 
   // =========================================================================
-  // Server 2: ⚡ VIP Player 2 (AutoEmbed Global HD)
+  // VIP Player 2: ⚡ AutoEmbed Global HD
   // =========================================================================
   let s2Url = '';
   if (isSeries) {
@@ -357,17 +393,18 @@ function getMovieStreams(movie) {
   }
 
   list.push({
-    server: 'Server 2',
-    label: '⚡ VIP Player 2 (AutoEmbed HD)',
+    server: `Server ${srvCounter}`,
+    label: `⚡ VIP Player 2 (AutoEmbed HD)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
     stream_url: s2Url,
-    hasLocalFile: true
+    hasLocalFile: true,
   });
+  srvCounter++;
 
   // =========================================================================
-  // Server 3: 🚀 VIP Player 3 (MultiEmbed Fast Backup)
+  // VIP Player 3: 🚀 MultiEmbed Fast Backup
   // =========================================================================
   const embedKey = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
   let s3Url = '';
@@ -378,13 +415,13 @@ function getMovieStreams(movie) {
   }
 
   list.push({
-    server: 'Server 3',
-    label: '🚀 VIP Player 3 (MultiEmbed Fast)',
+    server: `Server ${srvCounter}`,
+    label: `🚀 VIP Player 3 (MultiEmbed Fast)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
     stream_url: s3Url,
-    hasLocalFile: true
+    hasLocalFile: true,
   });
 
   return list;
@@ -804,9 +841,12 @@ function renderServerTabs(movie) {
   if (!tabsEl) return;
   const streams = getMovieStreams(movie);
   const icons = [
+    'fa-solid fa-play',
     'fa-solid fa-bolt',
     'fa-solid fa-film',
-    'fa-solid fa-rocket'
+    'fa-solid fa-rocket',
+    'fa-solid fa-server',
+    'fa-solid fa-circle-play'
   ];
 
   let tabsHtml = streams.map((s, i) => `
@@ -1424,17 +1464,13 @@ function renderStreamEmbed(playerEl, stream, movie) {
         <i class="fa-solid fa-circle-play" style="color:var(--accent)"></i>
         <span>Active Server: <strong style="color:#fff">${FilmSub.escHtml(stream.label || stream.server)}</strong></span>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span style="color:#777">Switch Player:</span>
-        <button type="button" class="sub-ctrl-btn${sIdx === 0 ? ' active' : ''}" onclick="loadStream(currentMovie, 0)" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
-          ⚡ Super Player
-        </button>
-        <button type="button" class="sub-ctrl-btn${sIdx === 1 ? ' active' : ''}" onclick="loadStream(currentMovie, 1)" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
-          🎬 VIP Player 1
-        </button>
-        <button type="button" class="sub-ctrl-btn${sIdx === 2 ? ' active' : ''}" onclick="loadStream(currentMovie, 2)" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
-          🚀 VIP Player 2
-        </button>
+        ${streams.map((st, i) => `
+          <button type="button" class="sub-ctrl-btn${sIdx === i ? ' active' : ''}" onclick="loadStream(currentMovie, ${i})" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
+            ${FilmSub.escHtml((st.label || st.server || `Server ${i + 1}`).split('(')[0].trim())}
+          </button>
+        `).join('')}
       </div>
     </div>`;
 

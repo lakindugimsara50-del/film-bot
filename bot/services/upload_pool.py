@@ -24,6 +24,7 @@ import sqlite3
 from typing import Dict, List, Optional
 
 from pyrogram import Client
+from pyrogram.enums import ParseMode
 from pyrogram.errors import SessionPasswordNeeded
 from services import telegram_upload
 
@@ -170,83 +171,103 @@ class TelegramUploadPool:
             return
 
         password = os.getenv("SESSION_2FA_PASSWORD", "2122138")
-        log.info("[UploadPool] Loading %d session files from %s ...", len(session_files), sessions_dir)
+        log.info("[UploadPool] Loading %d session files concurrently from %s ...", len(session_files), sessions_dir)
 
-        for idx, s_path in enumerate(session_files):
+        sem = asyncio.Semaphore(10)
+
+        async def _load_one(s_path: str):
             base_name = os.path.splitext(os.path.basename(s_path))[0]
             session_prefix = os.path.join(sessions_dir, base_name)
 
-            # Skip if already loaded
             if any(getattr(c, "name", "") == session_prefix for c in self.clients):
-                continue
+                return
 
-            try:
-                # Ensure session database is in Pyrogram SQLite format (migrates Telethon format if needed)
-                _ensure_pyrogram_session(s_path, api_id)
-
-                c = Client(
-                    name=session_prefix,
-                    api_id=api_id,
-                    api_hash=api_hash,
-                    no_updates=True,
-                    max_concurrent_transmissions=10,
-                )
-                is_auth = await c.connect()
-                if not is_auth:
-                    await c.disconnect()
-                    log.warning("[UploadPool] Session '%s' is not authorized. Skipping.", base_name)
-                    continue
-
+            async with sem:
                 try:
-                    await c.initialize()
-                except Exception as init_err:
-                    await c.disconnect()
-                    log.warning("[UploadPool] Session '%s' init error: %s. Skipping.", base_name, init_err)
-                    continue
+                    # Ensure session database is in Pyrogram SQLite format (migrates Telethon format if needed)
+                    _ensure_pyrogram_session(s_path, api_id)
 
-                try:
-                    await c.get_me()
-                    self.clients.append(c)
-                except SessionPasswordNeeded:
-                    try:
-                        await c.check_password(password)
-                        self.clients.append(c)
-                        log.info("[UploadPool] 2FA OK for session: %s", base_name)
-                    except Exception as pw_err:
-                        if c.is_initialized:
-                            await c.stop()
-                        elif c.is_connected:
-                            await c.disconnect()
-                        log.warning("[UploadPool] 2FA failed for session '%s': %s", base_name, pw_err)
-                        continue
-                except Exception as auth_err:
-                    if c.is_initialized:
-                        await c.stop()
-                    elif c.is_connected:
+                    c = Client(
+                        name=session_prefix,
+                        api_id=api_id,
+                        api_hash=api_hash,
+                        no_updates=True,
+                        max_concurrent_transmissions=10,
+                    )
+                    is_auth = await c.connect()
+                    if not is_auth:
                         await c.disconnect()
-                    log.warning("[UploadPool] Session '%s' auth error (%s). Skipping.", base_name, auth_err)
-                    continue
+                        log.warning("[UploadPool] Session '%s' is not authorized. Skipping.", base_name)
+                        return
 
-                if (idx + 1) % 10 == 0 or idx == 0:
-                    log.info("[UploadPool] Loaded %d/%d upload sessions...", len(self.clients), len(session_files))
-            except Exception as exc:
-                try:
-                    if 'c' in locals():
+                    try:
+                        await c.initialize()
+                    except Exception as init_err:
+                        await c.disconnect()
+                        log.warning("[UploadPool] Session '%s' init error: %s. Skipping.", base_name, init_err)
+                        return
+
+                    try:
+                        await c.get_me()
+                        self.clients.append(c)
+                    except SessionPasswordNeeded:
+                        try:
+                            await c.check_password(password)
+                            self.clients.append(c)
+                            log.info("[UploadPool] 2FA OK for session: %s", base_name)
+                        except Exception as pw_err:
+                            if c.is_initialized:
+                                await c.stop()
+                            elif c.is_connected:
+                                await c.disconnect()
+                            log.warning("[UploadPool] 2FA failed for session '%s': %s", base_name, pw_err)
+                            return
+                    except Exception as auth_err:
                         if c.is_initialized:
                             await c.stop()
                         elif c.is_connected:
                             await c.disconnect()
-                except Exception:
-                    pass
-                log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
+                        log.warning("[UploadPool] Session '%s' auth error (%s). Skipping.", base_name, auth_err)
+                        return
+                except Exception as exc:
+                    try:
+                        if 'c' in locals():
+                            if c.is_initialized:
+                                await c.stop()
+                            elif c.is_connected:
+                                await c.disconnect()
+                    except Exception:
+                        pass
+                    log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
 
-        log.info("[UploadPool] Total active upload clients in pool: %d", len(self.clients))
+        await asyncio.gather(*[_load_one(sp) for sp in session_files])
+        log.info("[UploadPool] Total active upload clients in pool: %d/%d", len(self.clients), len(session_files))
 
         if target_channel:
             try:
                 await self.join_channel(target_channel)
             except Exception as j_err:
                 log.warning("[UploadPool] Channel auto-join error: %s", j_err)
+
+        # Notify admins that session pool is loaded and ready
+        if self._main_client and getattr(self._main_client, "is_connected", False):
+            import config
+            for admin_id in getattr(config, "ADMIN_IDS", []):
+                try:
+                    await self._main_client.send_message(
+                        chat_id=admin_id,
+                        text=(
+                            f"✅ <b>Telegram Upload Pool Ready!</b>\n\n"
+                            f"👥 <b>Connected Accounts:</b> <code>{len(self.clients)}/{len(session_files)}</code>\n"
+                            f"🔴 <b>1080p Tier:</b> <code>Sessions 1–34</code>\n"
+                            f"🟡 <b>720p Tier:</b>  <code>Sessions 35–67</code>\n"
+                            f"🟢 <b>480p Tier:</b>  <code>Sessions 68–100</code>\n"
+                            f"⚡ <b>Channel:</b> Auto-joined & verified."
+                        ),
+                        parse_mode=ParseMode.HTML,
+                    )
+                except Exception as alert_err:
+                    log.debug("[UploadPool] Admin alert note: %s", alert_err)
 
     async def join_channel(self, target_channel: int) -> None:
         """Auto-join all loaded userbot sessions to the target Telegram channel so they can post."""
@@ -269,21 +290,21 @@ class TelegramUploadPool:
             return
 
         log.info("[UploadPool] Auto-joining %d sessions to channel %s...", len(self.clients), target_channel)
-        joined = 0
-        for c in self.clients:
-            if not getattr(c, "is_connected", False):
-                continue
-            try:
-                await c.join_chat(invite_link)
-                joined += 1
-            except Exception as j_err:
-                err_s = str(j_err).lower()
-                if "already" in err_s or "user_already_participant" in err_s:
-                    joined += 1
-                else:
-                    log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
+        join_sem = asyncio.Semaphore(8)
 
-        log.info("[UploadPool] %d/%d sessions verified in channel %s.", joined, len(self.clients), target_channel)
+        async def _join_one(c: Client):
+            if not getattr(c, "is_connected", False):
+                return
+            async with join_sem:
+                try:
+                    await c.join_chat(invite_link)
+                except Exception as j_err:
+                    err_s = str(j_err).lower()
+                    if "already" not in err_s and "user_already_participant" not in err_s:
+                        log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
+
+        await asyncio.gather(*[_join_one(c) for c in self.clients], return_exceptions=True)
+        log.info("[UploadPool] %d sessions verified in channel %s.", len(self.clients), target_channel)
 
     async def get_client_for_quality(
         self,

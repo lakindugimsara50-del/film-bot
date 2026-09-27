@@ -1473,7 +1473,7 @@ async def _execute_leech(
                         github_token=getattr(config, "GITHUB_TOKEN", ""),
                         repo=getattr(config, "GITHUB_REPO", ""),
                     )
-                    if uploaded_sub_url and len(sub_text) > 16000:
+                    if uploaded_sub_url:
                         default_sub_url = uploaded_sub_url
                 except Exception as up_sub_err:
                     log.debug("[LeechService] Subtitle upload fallback to inline VTT: %s", up_sub_err)
@@ -1656,7 +1656,7 @@ async def _execute_leech(
         }
 
         # Store in task_tracker so QueueService / Stage2Patcher can retrieve it
-        task_tracker.tracker.store_upload_results(user_id, variant_media)
+        task_tracker.tracker.store_upload_results(user_id, variant_media, subtitle_url=default_sub_url)
 
         # ── Downloads Construction ────────────────────────────────────────────────
         tg_channel_id_clean = str(abs(target_channel))

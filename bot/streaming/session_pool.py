@@ -15,7 +15,7 @@ import os
 from typing import AsyncGenerator, Dict, List, Optional, Union
 
 from pyrogram import Client, types
-from pyrogram.errors import FloodWait, PeerIdInvalid
+from pyrogram.errors import FloodWait, PeerIdInvalid, SessionPasswordNeeded
 
 log = logging.getLogger(__name__)
 
@@ -41,11 +41,16 @@ class TelegramStreamPool:
             self.clients.insert(0, client)
             log.info("[StreamPool] Registered main bot client into streaming pool (10x transmission enabled).")
 
-    async def init_extra_sessions(self, api_id: int, api_hash: str, sessions_dir: str = "bot/sessions") -> None:
+    async def init_extra_sessions(self, api_id: int, api_hash: str, sessions_dir: str = None) -> None:
         """
         Detect and start any additional Pyrogram .session files in sessions_dir
-        or SESSION_STRINGS env variable (e.g. for 20+ session scaling).
+        or SESSION_STRINGS env variable (e.g. for 20+ to 100 session scaling).
         """
+        if not sessions_dir or sessions_dir == "bot/sessions":
+            _streaming_dir = os.path.dirname(os.path.abspath(__file__))
+            _bot_dir = os.path.dirname(_streaming_dir)
+            sessions_dir = os.path.join(_bot_dir, "sessions")
+
         # Ensure sessions directory exists
         if not os.path.exists(sessions_dir):
             try:
@@ -53,40 +58,72 @@ class TelegramStreamPool:
             except Exception:
                 pass
 
+        password = os.getenv("SESSION_2FA_PASSWORD", "2122138")
+
         # 1. Check directory for .session files
         if os.path.exists(sessions_dir):
-            session_files = glob.glob(os.path.join(sessions_dir, "*.session"))
-            for s_path in session_files:
-                base_name = os.path.splitext(os.path.basename(s_path))[0]
-                session_prefix = os.path.join(sessions_dir, base_name)
-                # Skip if already loaded
-                if any(getattr(c, "name", "") == session_prefix for c in self.clients):
-                    continue
-                try:
-                    c = Client(
-                        name=session_prefix,
-                        api_id=api_id,
-                        api_hash=api_hash,
-                        no_updates=True,
-                        max_concurrent_transmissions=10,
-                    )
-                    is_auth = await c.connect()
-                    if not is_auth:
-                        await c.disconnect()
-                        continue
-                    try:
-                        await c.initialize()
-                        await c.get_me()
-                        self.clients.append(c)
-                        log.info("[StreamPool] Loaded extra session file: %s (10x transmission enabled)", base_name)
-                    except Exception as auth_e:
-                        if c.is_initialized:
-                            await c.stop()
-                        elif c.is_connected:
-                            await c.disconnect()
-                        log.warning("[StreamPool] Could not start session '%s': %s", base_name, auth_e)
-                except Exception as exc:
-                    log.warning("[StreamPool] Could not start session '%s': %s", base_name, exc)
+            session_files = sorted(glob.glob(os.path.join(sessions_dir, "*.session")))
+            if session_files:
+                log.info("[StreamPool] Concurrently loading %d streaming sessions from %s...", len(session_files), sessions_dir)
+                sem = asyncio.Semaphore(10)
+
+                async def _load_one(s_path: str):
+                    base_name = os.path.splitext(os.path.basename(s_path))[0]
+                    session_prefix = os.path.join(sessions_dir, base_name)
+                    # Skip if already loaded
+                    if any(getattr(c, "name", "") == session_prefix for c in self.clients):
+                        return
+                    async with sem:
+                        try:
+                            try:
+                                from services.upload_pool import _ensure_pyrogram_session
+                                _ensure_pyrogram_session(s_path, api_id)
+                            except Exception:
+                                pass
+
+                            c = Client(
+                                name=session_prefix,
+                                api_id=api_id,
+                                api_hash=api_hash,
+                                no_updates=True,
+                                max_concurrent_transmissions=10,
+                            )
+                            is_auth = await c.connect()
+                            if not is_auth:
+                                await c.disconnect()
+                                return
+                            try:
+                                await c.initialize()
+                            except Exception as init_e:
+                                await c.disconnect()
+                                log.warning("[StreamPool] Session '%s' init error: %s", base_name, init_e)
+                                return
+
+                            try:
+                                await c.get_me()
+                                self.clients.append(c)
+                                log.info("[StreamPool] Loaded extra session file: %s (10x transmission enabled)", base_name)
+                            except SessionPasswordNeeded:
+                                try:
+                                    await c.check_password(password)
+                                    self.clients.append(c)
+                                    log.info("[StreamPool] 2FA OK for stream session: %s", base_name)
+                                except Exception as pw_e:
+                                    if c.is_initialized:
+                                        await c.stop()
+                                    elif c.is_connected:
+                                        await c.disconnect()
+                                    log.warning("[StreamPool] 2FA failed for stream session '%s': %s", base_name, pw_e)
+                            except Exception as auth_e:
+                                if c.is_initialized:
+                                    await c.stop()
+                                elif c.is_connected:
+                                    await c.disconnect()
+                                log.warning("[StreamPool] Could not start session '%s': %s", base_name, auth_e)
+                        except Exception as exc:
+                            log.warning("[StreamPool] Could not start session '%s': %s", base_name, exc)
+
+                await asyncio.gather(*[_load_one(sp) for sp in session_files])
 
         # 2. Check SESSION_STRINGS env (comma-separated session strings)
         raw_strings = os.getenv("SESSION_STRINGS", "").strip()

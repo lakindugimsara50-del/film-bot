@@ -41,6 +41,7 @@ class TaskInfo:
         self.temp_dir: Optional[str] = None
         self.cleanup_callbacks: list = []
         self.upload_results: Optional[Dict[str, Any]] = None
+        self.subtitle_url: Optional[str] = None
 
     def elapsed_seconds(self) -> int:
         end = self.end_time or datetime.datetime.now()
@@ -89,15 +90,24 @@ class TaskTracker:
             self._user_tasks[user_id].step = step
             log.info("Task step for user %s [%s]: %s", user_id, self._user_tasks[user_id].title, step)
 
-    def store_upload_results(self, user_id: int, results: Dict[str, Any]) -> None:
+    def store_upload_results(self, user_id: int, results: Dict[str, Any], subtitle_url: Optional[str] = None) -> None:
         if user_id in self._user_tasks:
             self._user_tasks[user_id].upload_results = results
+            if subtitle_url:
+                self._user_tasks[user_id].subtitle_url = subtitle_url
 
     def get_upload_results(self, user_id: int) -> Optional[Dict[str, Any]]:
         if user_id in self._user_tasks:
             return self._user_tasks[user_id].upload_results
         if user_id in self._user_last_tasks:
             return self._user_last_tasks[user_id].upload_results
+        return None
+
+    def get_subtitle_url(self, user_id: int) -> Optional[str]:
+        if user_id in self._user_tasks:
+            return self._user_tasks[user_id].subtitle_url
+        if user_id in self._user_last_tasks:
+            return self._user_last_tasks[user_id].subtitle_url
         return None
 
     def complete_task(self, user_id: int) -> None:

@@ -441,6 +441,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
     from bs4 import BeautifulSoup
 
     clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", title).strip()
+    slug_title = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
     search_terms = clean_title.split()
     if not search_terms:
         return None
@@ -462,6 +463,22 @@ async def fetch_sri_lankan_sinhala_subtitle(
         "Accept-Language": "en-US,en;q=0.9",
     }
 
+    # 1. Generate high-probability direct PirateLK URL slugs
+    direct_candidates = []
+    if season:
+        direct_candidates.extend([
+            f"https://piratelk.com/{slug_title}-complete-season-{season:02d}-with-sinhala-subtitles/",
+            f"https://piratelk.com/{slug_title}-season-{season:02d}-with-sinhala-subtitles/",
+            f"https://piratelk.com/{slug_title}-complete-season-{season}-with-sinhala-subtitles/",
+            f"https://piratelk.com/{slug_title}-season-{season}-with-sinhala-subtitles/",
+        ])
+    else:
+        if year:
+            direct_candidates.append(f"https://piratelk.com/{slug_title}-{year}-with-sinhala-subtitles/")
+        direct_candidates.append(f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/")
+
+    candidate_posts = list(direct_candidates)
+
     try:
         async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=12.0) as client:
             search_url = f"https://piratelk.com/?s={urllib.parse.quote_plus(q_str)}"
@@ -471,96 +488,107 @@ async def fetch_sri_lankan_sinhala_subtitle(
 
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, "html.parser")
-                candidate_posts = []
                 for a in soup.select("article a, h2 a, .entry-title a"):
                     href = a.get("href")
                     if href and "piratelk.com/" in href and not any(x in href for x in ["/category/", "/tag/", "/author/", "/page/", "#"]):
                         p_title = a.get_text(strip=True).lower()
+                        p_href_lower = href.lower()
                         if season:
                             s_token = f"season {season}"
                             s_token_padded = f"season {season:02d}"
                             s_token_short = f"s{season:02d}"
-                            if s_token in p_title or s_token_padded in p_title or s_token_short in p_title or "complete" in p_title or "series" in p_title:
-                                candidate_posts.insert(0, href)
-                            else:
+                            # Strict season validation: candidate MUST belong to the target season
+                            if s_token in p_title or s_token_padded in p_title or s_token_short in p_title or \
+                               s_token in p_href_lower or s_token_padded in p_href_lower or s_token_short in p_href_lower:
                                 candidate_posts.append(href)
                         else:
                             candidate_posts.append(href)
 
-                seen_posts = []
-                for cp in candidate_posts:
-                    if cp not in seen_posts:
-                        seen_posts.append(cp)
+            seen_posts = []
+            for cp in candidate_posts:
+                if cp not in seen_posts:
+                    seen_posts.append(cp)
 
-                for post_url in seen_posts[:4]:
-                    try:
-                        p_resp = await client.get(post_url)
-                        if p_resp.status_code != 200:
-                            continue
-                        p_soup = BeautifulSoup(p_resp.text, "html.parser")
+            for post_url in seen_posts[:6]:
+                try:
+                    p_resp = await client.get(post_url)
+                    if p_resp.status_code != 200:
+                        continue
+                    p_soup = BeautifulSoup(p_resp.text, "html.parser")
 
-                        if season:
-                            s_target = f"season {season:02d}"
-                            s_alt = f"season {season}"
-                            for sa in p_soup.find_all("a", href=True):
-                                sa_text = sa.get_text(strip=True).lower()
-                                sa_href = sa["href"]
-                                if (s_target in sa_text or s_alt in sa_text) and "piratelk.com/" in sa_href:
-                                    s_resp = await client.get(sa_href)
-                                    if s_resp.status_code == 200:
-                                        p_soup = BeautifulSoup(s_resp.text, "html.parser")
-                                        break
-
-                        dl_link = None
-                        for da in p_soup.find_all("a", href=True):
-                            dh = da["href"]
-                            if "/download/" in dh or ".zip" in dh:
-                                if not any(ign in dh for ign in ["/category/", "/tag/", "usersdrive", "mega.nz"]):
-                                    dl_link = dh
+                    is_season_page = bool(
+                        season and (
+                            f"season-{season:02d}" in post_url.lower()
+                            or f"season-{season}" in post_url.lower()
+                        )
+                    )
+                    if season and not is_season_page:
+                        s_target = f"season {season:02d}"
+                        s_alt = f"season {season}"
+                        for sa in p_soup.find_all("a", href=True):
+                            sa_text = sa.get_text(strip=True).lower()
+                            sa_href = sa["href"]
+                            if "/download/" in sa_href or ".zip" in sa_href:
+                                continue  # Do not treat zip download links as HTML pages
+                            if (s_target in sa_text or s_alt in sa_text) and "piratelk.com/" in sa_href:
+                                s_resp = await client.get(sa_href)
+                                if s_resp.status_code == 200:
+                                    p_soup = BeautifulSoup(s_resp.text, "html.parser")
                                     break
 
-                        if not dl_link:
+                    dl_link = None
+                    for da in p_soup.find_all("a", href=True):
+                        dh = da["href"]
+                        if "/download/" in dh or ".zip" in dh:
+                            if not any(ign in dh for ign in ["/category/", "/tag/", "usersdrive", "mega.nz"]):
+                                dl_link = dh
+                                break
+
+                    if not dl_link:
+                        continue
+
+                    z_resp = await client.get(dl_link)
+                    if z_resp.status_code != 200 or len(z_resp.content) < 512:
+                        continue
+
+                    with zipfile.ZipFile(io.BytesIO(z_resp.content)) as zf:
+                        srt_members = [m for m in zf.namelist() if m.lower().endswith(".srt")]
+                        if not srt_members:
                             continue
 
-                        z_resp = await client.get(dl_link)
-                        if z_resp.status_code != 200 or len(z_resp.content) < 512:
-                            continue
-
-                        with zipfile.ZipFile(io.BytesIO(z_resp.content)) as zf:
-                            srt_members = [m for m in zf.namelist() if m.lower().endswith(".srt")]
-                            if not srt_members:
-                                continue
-
-                            chosen_member = None
-                            if season and episode:
-                                ep_patterns = [
-                                    re.compile(rf"[Ss]{season:02d}[Ee]{episode:02d}", re.IGNORECASE),
-                                    re.compile(rf"[Ss]{season}[Ee]{episode:02d}", re.IGNORECASE),
-                                    re.compile(rf"{season}x{episode:02d}", re.IGNORECASE),
-                                    re.compile(rf"episode[\s._-]*{episode:02d}", re.IGNORECASE),
-                                    re.compile(rf"episode[\s._-]*{episode}\b", re.IGNORECASE),
-                                    re.compile(rf"e{episode:02d}\b", re.IGNORECASE),
-                                ]
-                                for pat in ep_patterns:
-                                    for sm in srt_members:
-                                        if pat.search(sm):
-                                            chosen_member = sm
-                                            break
-                                    if chosen_member:
+                        chosen_member = None
+                        if season and episode:
+                            # Strict season + episode matching inside ZIP
+                            ep_patterns = [
+                                re.compile(rf"[Ss]{season:02d}[\s._-]*[Ee]{episode:02d}", re.IGNORECASE),
+                                re.compile(rf"[Ss]{season}[\s._-]*[Ee]{episode:02d}", re.IGNORECASE),
+                                re.compile(rf"{season}x{episode:02d}", re.IGNORECASE),
+                                re.compile(rf"season[\s._-]*0?{season}.*episode[\s._-]*0?{episode}\b", re.IGNORECASE),
+                                re.compile(rf"s0?{season}.*e0?{episode}\b", re.IGNORECASE),
+                            ]
+                            for pat in ep_patterns:
+                                for sm in srt_members:
+                                    if pat.search(sm):
+                                        chosen_member = sm
                                         break
-                            if not chosen_member:
-                                chosen_member = srt_members[0]
+                                if chosen_member:
+                                    break
+                        else:
+                            chosen_member = srt_members[0]
 
-                            out_srt = os.path.join(temp_dir, f"sri_lanka_sub_{os.path.basename(chosen_member)}")
-                            with open(out_srt, "wb") as out_f:
-                                out_f.write(zf.read(chosen_member))
+                        if not chosen_member:
+                            continue
 
-                            if os.path.exists(out_srt) and os.path.getsize(out_srt) > 64:
-                                if is_genuine_sinhala_subtitle(out_srt):
-                                    log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
-                                    return out_srt
-                    except Exception as post_err:
-                        log.debug("[SubtitleService] Sri Lankan post inspect note: %s", post_err)
+                        out_srt = os.path.join(temp_dir, f"sri_lanka_sub_{os.path.basename(chosen_member)}")
+                        with open(out_srt, "wb") as out_f:
+                            out_f.write(zf.read(chosen_member))
+
+                        if os.path.exists(out_srt) and os.path.getsize(out_srt) > 64:
+                            if is_genuine_sinhala_subtitle(out_srt):
+                                log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
+                                return out_srt
+                except Exception as post_err:
+                    log.debug("[SubtitleService] Sri Lankan post inspect note: %s", post_err)
     except Exception as scrape_err:
         log.warning("[SubtitleService] Sri Lankan subtitle scraping note: %s", scrape_err)
 

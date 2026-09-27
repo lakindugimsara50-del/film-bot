@@ -97,11 +97,23 @@ async def patch_movie_downloads(
     
     if subtitle_url:
         target["subtitle_url"] = subtitle_url
+        target["has_sinhala_sub"] = True
+        target["sub_merged"] = True
+        target["subtitles"] = [
+            {
+                "language": "Sinhala",
+                "label": "සිංහල",
+                "url": subtitle_url,
+                "default": True,
+                "srclang": "si",
+            }
+        ]
         # Update VidLink stream with sub injection
-        for stream in target["streams"]:
+        for stream in target.get("streams", []):
             url = stream.get("stream_url", "")
             if "vidlink.pro" in url and "sub.Sinhala" not in url:
-                stream["stream_url"] = f"{url}?sub.Sinhala={urllib.parse.quote(subtitle_url, safe='')}"
+                sep = "&" if "?" in url else "?"
+                stream["stream_url"] = f"{url}{sep}sub.Sinhala={urllib.parse.quote(subtitle_url, safe='')}"
     
     # Commit to GitHub
     await github_service._commit_movies_json(

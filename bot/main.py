@@ -30,6 +30,8 @@ import uvicorn
 
 import config
 
+BOT_VERSION = "v2.8.0-cs-evo-pool98-subfix"
+
 # Ensure Windows console streams support UTF-8 encoding (Sinhala text)
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -110,6 +112,7 @@ web_app.include_router(stream_router)
 async def root() -> dict:
     return {
         "status": "running",
+        "version": BOT_VERSION,
         "bot": "@Filmsinhala200Bot",
         "service": "Telegram Movie Leech & Stream Bot",
     }
@@ -117,7 +120,7 @@ async def root() -> dict:
 
 @web_app.get("/health")
 async def health() -> dict:
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": BOT_VERSION}
 
 
 @web_app.get("/status")
@@ -144,13 +147,22 @@ async def status_endpoint() -> dict:
     except Exception:
         pass
 
+    stream_pool_info = {}
+    try:
+        from streaming.session_pool import stream_pool as _sp
+        stream_pool_info = _sp.get_status()
+    except Exception:
+        pass
+
     return {
         "status": "running" if bot_connected else "stopped",
         "bot_status": "online" if bot_connected else "offline",
+        "version": BOT_VERSION,
         "bot": "@Filmsinhala200Bot",
         "seedr_pool_accounts": seedr_count,
         "active_tasks": active_tasks,
         "upload_pool": upload_pool_info,
+        "stream_pool": stream_pool_info,
     }
 
 
@@ -732,8 +744,11 @@ async def _on_start(client: Client) -> None:
             await client.send_message(
                 chat_id=admin_id,
                 text=(
-                    f"🤖 <b>Film Bot started!</b>{service_tag}\n"
+                    f"🤖 <b>Film Bot started!</b> (<code>{BOT_VERSION}</code>){service_tag}\n"
                     f"Bot: @{me.username}\n"
+                    f"🔥 CineSubz CS & Evo Players Active\n"
+                    f"🔥 PirateLK Auto Subtitle Engine Active\n"
+                    f"👥 98-Session Upload & Stream Pool Active\n"
                     "Use /help to see available commands."
                 ),
                 parse_mode=ParseMode.HTML,

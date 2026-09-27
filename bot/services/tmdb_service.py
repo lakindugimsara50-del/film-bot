@@ -433,29 +433,63 @@ async def _build_movie_dict_from_tmdb(item: dict, imdb_id: str) -> dict:
     backdrop_path = details.get("backdrop_path") or item.get("backdrop_path")
     backdrop_url = f"{_IMG_ORIG}{backdrop_path}" if backdrop_path else ""
 
-    streams = [
+    # ── Resolve CineSubz CS Player and Evo Player ─────────────────────────
+    cs_player = None
+    evo_player = None
+    try:
+        from services import cinesubz_service
+        cs_res = await cinesubz_service.resolve_cinesubz_players(title, year=year)
+        cs_player = cs_res.get("cs_player")
+        evo_player = cs_res.get("evo_player")
+    except Exception as cs_err:
+        log.debug("[TMDBService] CineSubz movie lookup note: %s", cs_err)
+
+    streams = []
+    srv_i = 1
+    if cs_player:
+        streams.append({
+            "server": f"Server {srv_i}",
+            "label": "🎬 CS Player (CineSubz Direct HD • Sinhala Sub)",
+            "type": "video/mp4",
+            "stream_url": cs_player,
+            "quality": "HD",
+            "sub_merged": True,
+        })
+        srv_i += 1
+
+    if evo_player:
+        streams.append({
+            "server": f"Server {srv_i}",
+            "label": "⚡ Evo Player (EvoStream Fast Stream)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": evo_player,
+        })
+        srv_i += 1
+
+    streams.extend([
         {
-            "server": "Server 1",
+            "server": f"Server {srv_i}",
             "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://vidlink.pro/movie/{tmdb_id}"
+            "stream_url": f"https://vidlink.pro/movie/{tmdb_id}",
         },
         {
-            "server": "Server 2",
+            "server": f"Server {srv_i + 1}",
             "label": "⚡ VIP Player 2 (AutoEmbed HD)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://autoembed.co/movie/imdb/{imdb_id}" if imdb_id else f"https://autoembed.co/movie/tmdb/{tmdb_id}"
+            "stream_url": f"https://autoembed.co/movie/imdb/{imdb_id}" if imdb_id else f"https://autoembed.co/movie/tmdb/{tmdb_id}",
         },
         {
-            "server": "Server 3",
+            "server": f"Server {srv_i + 2}",
             "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://multiembed.mov/?video_id={imdb_id}" if imdb_id else f"https://multiembed.mov/?video_id={tmdb_id}&tmdb=1"
-        }
-    ]
+            "stream_url": f"https://multiembed.mov/?video_id={imdb_id}" if imdb_id else f"https://multiembed.mov/?video_id={tmdb_id}&tmdb=1",
+        },
+    ])
 
     return {
         "id": slug,
@@ -485,7 +519,9 @@ async def _build_movie_dict_from_tmdb(item: dict, imdb_id: str) -> dict:
         "streams": streams,
         "downloads": [],
         "telegram_status": "queued",
-        "subtitle_url": ""
+        "subtitle_url": "",
+        "cs_player": cs_player,
+        "evo_player": evo_player,
     }
 
 async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = None, episode: int = None) -> dict:
@@ -526,29 +562,63 @@ async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = N
     S = season or 1
     E = episode or 1
 
-    streams = [
+    # ── Resolve CineSubz CS Player and Evo Player ─────────────────────────
+    cs_player = None
+    evo_player = None
+    try:
+        from services import cinesubz_service
+        cs_res = await cinesubz_service.resolve_cinesubz_players(title, year=year, season=S, episode=E)
+        cs_player = cs_res.get("cs_player")
+        evo_player = cs_res.get("evo_player")
+    except Exception as cs_err:
+        log.debug("[TMDBService] CineSubz series lookup note: %s", cs_err)
+
+    streams = []
+    srv_i = 1
+    if cs_player:
+        streams.append({
+            "server": f"Server {srv_i}",
+            "label": "🎬 CS Player (CineSubz Direct HD • Sinhala Sub)",
+            "type": "video/mp4",
+            "stream_url": cs_player,
+            "quality": "HD",
+            "sub_merged": True,
+        })
+        srv_i += 1
+
+    if evo_player:
+        streams.append({
+            "server": f"Server {srv_i}",
+            "label": "⚡ Evo Player (EvoStream Fast Stream)",
+            "type": "embed",
+            "embed": True,
+            "stream_url": evo_player,
+        })
+        srv_i += 1
+
+    streams.extend([
         {
-            "server": "Server 1",
+            "server": f"Server {srv_i}",
             "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://vidlink.pro/tv/{tmdb_id}/{S}/{E}"
+            "stream_url": f"https://vidlink.pro/tv/{tmdb_id}/{S}/{E}",
         },
         {
-            "server": "Server 2",
+            "server": f"Server {srv_i + 1}",
             "label": "⚡ VIP Player 2 (AutoEmbed HD)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://autoembed.co/tv/imdb/{imdb_id}-{S}-{E}" if imdb_id else f"https://autoembed.co/tv/tmdb/{tmdb_id}-{S}-{E}"
+            "stream_url": f"https://autoembed.co/tv/imdb/{imdb_id}-{S}-{E}" if imdb_id else f"https://autoembed.co/tv/tmdb/{tmdb_id}-{S}-{E}",
         },
         {
-            "server": "Server 3",
+            "server": f"Server {srv_i + 2}",
             "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://multiembed.mov/?video_id={imdb_id}&s={S}&e={E}" if imdb_id else f"https://multiembed.mov/?video_id={tmdb_id}&tmdb=1&s={S}&e={E}"
-        }
-    ]
+            "stream_url": f"https://multiembed.mov/?video_id={imdb_id}&s={S}&e={E}" if imdb_id else f"https://multiembed.mov/?video_id={tmdb_id}&tmdb=1&s={S}&e={E}",
+        },
+    ])
     
     raw_seasons = details.get("seasons", [])
     seasons_list = []
@@ -590,7 +660,9 @@ async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = N
         "streams": streams,
         "downloads": [],
         "telegram_status": "queued",
-        "subtitle_url": ""
+        "subtitle_url": "",
+        "cs_player": cs_player,
+        "evo_player": evo_player,
     }
 
 async def fetch_by_imdb_id(

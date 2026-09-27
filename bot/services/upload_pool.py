@@ -20,6 +20,7 @@ import asyncio
 import glob
 import logging
 import os
+import sqlite3
 from typing import Dict, List, Optional
 
 from pyrogram import Client
@@ -27,6 +28,90 @@ from pyrogram.errors import SessionPasswordNeeded
 from services import telegram_upload
 
 log = logging.getLogger(__name__)
+
+
+def _ensure_pyrogram_session(session_path: str, api_id: int) -> None:
+    """
+    Check if session_path is a Telethon SQLite session format and convert it in-place
+    to Pyrogram format so that Pyrogram starts without 'no such column: number' errors.
+    """
+    try:
+        conn = sqlite3.connect(session_path)
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='version'")
+        if not cur.fetchone():
+            conn.close()
+            return
+        cur.execute("PRAGMA table_info(version)")
+        cols = [c[1] for c in cur.fetchall()]
+        if "number" in cols:
+            conn.close()
+            return  # Already Pyrogram format
+        cur.execute("PRAGMA table_info(sessions)")
+        s_cols = [c[1] for c in cur.fetchall()]
+        if "auth_key" not in s_cols:
+            conn.close()
+            return
+        cur.execute("SELECT dc_id, auth_key FROM sessions")
+        s_row = cur.fetchone()
+        if not s_row:
+            conn.close()
+            return
+        dc_id, auth_key = s_row[0], s_row[1]
+        user_id = 0
+        access_hash = 0
+        username = None
+        phone = None
+        try:
+            cur.execute("SELECT id, hash, username, phone FROM entities WHERE id != 0 LIMIT 1")
+            ent = cur.fetchone()
+            if ent:
+                user_id, access_hash, username, phone = ent[0], ent[1], ent[2], ent[3]
+        except Exception:
+            pass
+        cur.execute("DROP TABLE IF EXISTS sessions")
+        cur.execute("DROP TABLE IF EXISTS entities")
+        cur.execute("DROP TABLE IF EXISTS sent_files")
+        cur.execute("DROP TABLE IF EXISTS update_state")
+        cur.execute("DROP TABLE IF EXISTS version")
+        cur.executescript("""
+        CREATE TABLE sessions (
+            dc_id INTEGER PRIMARY KEY,
+            api_id INTEGER,
+            test_mode INTEGER,
+            auth_key BLOB,
+            date INTEGER NOT NULL,
+            user_id INTEGER,
+            is_bot INTEGER
+        );
+        CREATE TABLE peers (
+            id INTEGER PRIMARY KEY,
+            access_hash INTEGER,
+            type INTEGER NOT NULL,
+            username TEXT,
+            phone_number TEXT,
+            last_update_on INTEGER NOT NULL DEFAULT (CAST(STRFTIME('%s', 'now') AS INTEGER))
+        );
+        CREATE TABLE version (
+            number INTEGER PRIMARY KEY
+        );
+        """)
+        cur.execute("INSERT INTO version VALUES (?)", (3,))
+        cur.execute(
+            "INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (dc_id, api_id, 0, auth_key, 0, user_id, 0)
+        )
+        if user_id:
+            cur.execute(
+                "INSERT INTO peers (id, access_hash, type, username, phone_number) VALUES (?, ?, ?, ?, ?)",
+                (user_id, access_hash, 1, username, str(phone) if phone else None)
+            )
+        conn.commit()
+        conn.close()
+        log.info("[UploadPool] Converted Telethon session '%s' to Pyrogram format", os.path.basename(session_path))
+    except Exception as conv_err:
+        log.warning("[UploadPool] Note while checking session format for '%s': %s", session_path, conv_err)
+
 
 # Quality tier → (start_index, end_index) within the sorted session list (inclusive)
 _QUALITY_TIERS: Dict[str, tuple] = {
@@ -96,6 +181,9 @@ class TelegramUploadPool:
                 continue
 
             try:
+                # Ensure session database is in Pyrogram SQLite format (migrates Telethon format if needed)
+                _ensure_pyrogram_session(s_path, api_id)
+
                 c = Client(
                     name=session_prefix,
                     api_id=api_id,

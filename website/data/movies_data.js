@@ -4429,7 +4429,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-27T10:52:05Z",
+      "added_at": "2026-09-27T10:52:06Z",
       "streams": [
         {
           "server": "Server 1",
@@ -4457,10 +4457,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e04",
-      "channel_post_id": 83,
+      "channel_post_id": 84,
       "channel_chat_id": -1004325759505,
       "added_date": "2026-09-27"
     }
   ],
-  "last_updated": "2026-09-27T10:52:06Z"
+  "last_updated": "2026-09-27T10:52:09Z"
 };

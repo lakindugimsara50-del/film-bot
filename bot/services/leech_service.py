@@ -1403,8 +1403,10 @@ async def _execute_leech(
                 # Upload variants to Telegram channel if enabled
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
                     _mq_progress_str = "720p/480p Uploading to Telegram..."
-                    for ql, qp in variant_files.items():
-                        await _task_upload_tg_variant(ql, qp)
+                    await asyncio.gather(
+                        *[_task_upload_tg_variant(ql, qp) for ql, qp in variant_files.items()],
+                        return_exceptions=True,
+                    )
                     _mq_progress_str = "Telegram Multi-Quality Complete ✅"
 
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):

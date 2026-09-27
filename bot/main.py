@@ -538,12 +538,26 @@ async def status_handler(client: Client, message: Message) -> None:
     is_admin = message.from_user and message.from_user.id in config.ADMIN_IDS
     admin_details = ""
     if is_admin:
+        pool_txt = ""
+        try:
+            from services.upload_pool import upload_pool
+            up_st = upload_pool.get_status()
+            tot_up = up_st.get("total_sessions", 0)
+            conn_up = up_st.get("connected_sessions", 0)
+            pool_txt = (
+                f"\n👥 <b>Sessions Pool:</b> <code>{conn_up}/{tot_up} Connected</code> "
+                f"(/sessions විස්තර සඳහා)"
+            )
+        except Exception:
+            pass
+
         admin_details = (
             f"\n\n⚙️ <b>පද්ධති විස්තර (System Details):</b>\n"
             f"📦 Private channel: <code>{config.PRIVATE_CHANNEL_ID}</code>\n"
             f"📢 Public channel:  <code>{config.PUBLIC_CHANNEL_ID}</code>\n"
             f"🌐 Stream base URL: <code>{config.STREAM_BASE_URL}</code>\n"
             f"🎥 TMDB key set:    {'✅' if config.TMDB_API_KEY else '❌'}"
+            f"{pool_txt}"
         )
 
     await message.reply_text(
@@ -552,6 +566,44 @@ async def status_handler(client: Client, message: Message) -> None:
         f"{task_summary}"
         f"{wizard_note}"
         f"{admin_details}",
+        parse_mode=ParseMode.HTML,
+    )
+
+
+@app.on_message(filters.command("sessions"))
+async def sessions_handler(client: Client, message: Message) -> None:
+    """Show detailed inspection of all 100 Telegram sessions and tiers."""
+    user_id = message.from_user.id if message.from_user else 0
+    if user_id not in config.ADMIN_IDS:
+        return
+
+    from services.upload_pool import upload_pool
+    from streaming.session_pool import stream_pool
+
+    up_st = upload_pool.get_status()
+    sp_st = stream_pool.get_status()
+
+    tot_up = up_st.get("total_sessions", 0)
+    conn_up = up_st.get("connected_sessions", 0)
+    tot_sp = sp_st.get("total_clients", 0)
+    conn_sp = sp_st.get("connected_clients", 0)
+
+    import glob
+    sess_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
+    disk_count = len(glob.glob(os.path.join(sess_dir, "*.session")))
+
+    await message.reply_text(
+        f"📊 <b>Telegram Session Pool තත්ත්වය:</b>\n\n"
+        f"📁 <b>Sessions Folder හි ඇති ගොනු:</b> <code>{disk_count} .session files</code>\n\n"
+        f"🚀 <b>Parallel Upload Pool:</b>\n"
+        f"  • Load වූ Sessions: <code>{tot_up}</code>\n"
+        f"  • Active / Connected: <code>{conn_up}</code>\n"
+        f"  • 🔴 <b>1080p Tier:</b> <code>Sessions 1–34</code> (34 accounts)\n"
+        f"  • 🟡 <b>720p Tier:</b>  <code>Sessions 35–67</code> (33 accounts)\n"
+        f"  • 🟢 <b>480p Tier:</b>  <code>Sessions 68–100</code> (33 accounts)\n\n"
+        f"⚡ <b>Streaming Pool:</b> <code>{conn_sp}/{tot_sp} Connected</code>\n"
+        f"🔐 <b>2FA Password:</b> <code>2122138 (Auto-Applied)</code>\n"
+        f"⚡ <b>MTProto Transmissions:</b> <code>10x Parallel Chunks per Session</code>",
         parse_mode=ParseMode.HTML,
     )
 

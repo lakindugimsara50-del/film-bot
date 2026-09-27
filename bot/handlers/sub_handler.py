@@ -9,6 +9,7 @@ Supports:
 4. Callback queries from standalone subtitle uploads (sub_act:draft / sub_act:movie)
 """
 
+import asyncio
 import logging
 import os
 import re
@@ -132,15 +133,6 @@ def register(app: Client) -> None:
             )
             return
 
-        # ── INTERCEPT IMDb ID for Re-mux / Add flow ────────────────────────────
-        if query_name and re.match(r'^tt\d{5,10}$', query_name, re.IGNORECASE):
-            from handlers.add_imdb import _parse_add_args, _handle_add_imdb
-            args_text = re.sub(r'^/(?:sub|addsub|subtitle)\s*', '', text, flags=re.IGNORECASE).strip()
-            args = _parse_add_args(args_text)
-            if args.get("imdb_id"):
-                await _handle_add_imdb(client, message, args)
-                return
-        # ───────────────────────────────────────────────────────────────────────
 
         status_msg = await message.reply_text("⏳ <b>උපසිරැසි ගොනුව සකසමින් පවතී...</b>", parse_mode=ParseMode.HTML)
 
@@ -189,6 +181,9 @@ def register(app: Client) -> None:
                     target_movie = movies[-1]
                 elif movies:
                     for m in reversed(movies):
+                        if (query_name.lower() == str(m.get("imdb", "")).lower() or query_name.lower() == str(m.get("imdb_id", "")).lower()) and query_name.startswith("tt"):
+                            target_movie = m
+                            break
                         if _matches_movie(
                             query=query_name,
                             title=m.get("title", ""),
@@ -217,6 +212,52 @@ def register(app: Client) -> None:
                                 vtt_url = remote_url
                         except Exception as gh_err:
                             log.warning("[SubHandler] GitHub subtitle upload fallback to data URI: %s", gh_err)
+
+                    if re.match(r'^tt\d{5,10}$', query_name, re.IGNORECASE):
+                        tg_file_id = target_movie.get("file_id")
+                        if tg_file_id:
+                            try:
+                                input_mp4 = os.path.join(tmpdir, "input.mp4")
+                                output_mp4 = os.path.join(tmpdir, "output_subbed.mp4")
+                                await status_msg.edit_text("⏳ <b>Telegram වෙතින් Video ගොනුව බාගත කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+                                await client.download_media(tg_file_id, file_name=input_mp4)
+                                
+                                await status_msg.edit_text("⏳ <b>FFmpeg හරහා Hard-sub burn-in සිදු කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+                                # Use asyncio subprocess so the event loop stays responsive
+                                ffmpeg_proc = await asyncio.create_subprocess_exec(
+                                    "ffmpeg", "-y", "-i", input_mp4,
+                                    "-vf", f"subtitles={local_srt}",
+                                    "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+                                    "-c:a", "copy", "-movflags", "+faststart",
+                                    output_mp4,
+                                    stdout=asyncio.subprocess.PIPE,
+                                    stderr=asyncio.subprocess.PIPE,
+                                )
+                                _, stderr_data = await ffmpeg_proc.communicate()
+                                if ffmpeg_proc.returncode != 0:
+                                    raise RuntimeError(f"FFmpeg hard-sub failed: {stderr_data[-500:].decode('utf-8', errors='replace')}")
+                                
+                                await status_msg.edit_text("⏳ <b>Telegram Channel එක වෙත නැවත Upload කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+                                ch_id = target_movie.get("channel_id") or config.PRIVATE_CHANNEL_ID
+                                sent_msg = await client.send_video(
+                                    chat_id=ch_id,
+                                    video=output_mp4,
+                                    caption=f"{movie_title} - Hard-Subbed",
+                                    supports_streaming=True
+                                )
+                                
+                                target_movie["file_id"] = sent_msg.video.file_id
+                                target_movie["message_id"] = sent_msg.id
+                                target_movie["subtitle_url"] = vtt_url
+                                
+                                # Fix: match VidLink streams by URL content, not by server label
+                                for st in target_movie.get("streams", []):
+                                    url_val = st.get("stream_url", "")
+                                    if "vidlink.pro" in url_val:
+                                        base_url = url_val.split("?")[0]
+                                        st["stream_url"] = f"{base_url}?sub.Sinhala={urllib.parse.quote(vtt_url, safe='')}"
+                            except Exception as mux_err:
+                                log.warning("[SubHandler] Re-mux failed: %s", mux_err)
 
                     target_movie["subtitles"] = [
                         {

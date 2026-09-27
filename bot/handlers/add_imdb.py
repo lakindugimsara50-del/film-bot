@@ -443,7 +443,7 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                 f"🎬 <b>{title} ({year}) {ep_info}</b>\n"
                 f"📝 <b>උපසිරැසි:</b> සිංහල (Sinhala Subtitle Attached)\n"
                 f"🌐 <b>Web Link:</b> <a href='{site_url}'>{site_url}</a>\n\n"
-                f"⚡ <i>VIP Players (VidLink / AutoEmbed / 2Embed) හරහා දැන්ම නරඹන්න!</i>\n"
+                f"⚡ <i>VIP Players (VidLink / AutoEmbed / MultiEmbed) හරහා දැන්ම නරඹන්න!</i>\n"
                 f"⏳ <b>Stage 2:</b> Telegram Download ගොනුව Upload කිරීම ආරම්භ වේ...",
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
@@ -453,28 +453,28 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
             await _start_stage2_download(client, message.chat.id, sess_data)
             return
 
-        # ── If NO subtitle given: Show Stage 1 live message + ASK SUBTITLE BUTTONS ───
+        # ── Fully Automated Stage 2 with Sri Lankan (PirateLK) Auto-Subtitle ───
         PENDING_IMDB_SESSIONS[message.from_user.id] = sess_data
 
         kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Live)", url=site_url)],
-            [
-                InlineKeyboardButton("💬 සිංහල Subtitle එකතු කරන්න", callback_data=f"asub:add:{slug}"),
-                InlineKeyboardButton("⚡ Subtitle නැතුව Upload අරඹන්න", callback_data=f"asub:skip:{slug}"),
-            ],
+            [InlineKeyboardButton("📁 වෙනත් Custom Subtitle එකක් දමන්න", callback_data=f"asub:add:{slug}")],
         ])
 
         await status_msg.edit_text(
             f"🎉 <b>Stage 1 සාර්ථකයි! චිත්‍රපටය Web එකට Live කරන ලදී!</b>\n\n"
             f"🎬 <b>{title} ({year}) {ep_info}</b>\n"
             f"🌐 <b>Web Link:</b> <a href='{site_url}'>{site_url}</a>\n"
-            f"⚡ <i>VIP Embed Players (VidLink / AutoEmbed / 2Embed) මඟින් දැන්ම නරඹන්න!</i>\n\n"
-            f"💬 <b>ඔබට මෙම Film එකට සිංහල උපසිරැසි (Sinhala Subtitle) එක් කිරීමට අවශ්‍යද?</b>\n"
-            f"<i>(පහත බොත්තම ඔබා .srt/.vtt ගොනුවක් එවන්න, නැතහොත් Subtitle නැතුව Telegram Upload අරඹන්න)</i>",
+            f"⚡ <i>VIP Embed Players (VidLink / AutoEmbed / MultiEmbed) මඟින් දැන්ම නරඹන්න!</i>\n\n"
+            f"🇱🇰 <b>PirateLK ස්වයංක්‍රීය සිංහල උපසිරැසි සහ Telegram Upload ක්‍රියාවලිය ආරම්භ විය...</b>\n"
+            f"<i>(ඔබ සතුව වෙනම Subtitle එකක් ඇත්නම් පහත බොත්තම ඔබා එවන්න, නැතහොත් Auto-Pilot ක්‍රියාත්මක වේ)</i>",
             parse_mode=ParseMode.HTML,
             reply_markup=kb,
             disable_web_page_preview=False,
         )
+
+        # Immediately launch Stage 2 in background without waiting for user action!
+        await _start_stage2_download(client, message.chat.id, sess_data)
 
     except RuntimeError as e:
         await status_msg.edit_text(f"❌ <b>Error:</b> {str(e)}", parse_mode=ParseMode.HTML)

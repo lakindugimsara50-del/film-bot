@@ -1385,12 +1385,10 @@ async def _execute_leech(
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
-            if is_series:
-                log.info("[LeechService] TV Series mode: 720p primary is sufficient, skipping multi-quality encoding.")
-                return
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
+                # Generate 720p and 480p multi-quality variants (for both movies and series)
                 variant_files = await video_service.generate_multi_quality_variants_ram(
                     input_path=local_file,
                     output_dir=temp_dir,
@@ -1400,7 +1398,7 @@ async def _execute_leech(
                     progress_callback=_mq_progress_cb,
                 )
                 _mq_progress_str = "720p/480p Complete ✅"
-                # Upload variants to Telegram channel if enabled
+                # Upload variants to Telegram channel in parallel using the session upload pool
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
                     _mq_progress_str = "720p/480p Uploading to Telegram..."
                     await asyncio.gather(
@@ -1614,16 +1612,16 @@ async def _execute_leech(
 
         variant_media = {
             "1080p": {
-                "file_id": ("" if is_series else file_id),
-                "message_id": (0 if is_series else message_id),
-                "stream_url": ("" if is_series else stream_url),
-                "size_bytes": sz_1080,
+                "file_id": (variant_tg_info.get("1080p", {}).get("file_id", "") or (file_id if "1080" in display_title or not is_series else "")),
+                "message_id": (variant_tg_info.get("1080p", {}).get("message_id", 0) or (message_id if "1080" in display_title or not is_series else 0)),
+                "stream_url": (variant_tg_info.get("1080p", {}).get("stream_url") or stream_url),
+                "size_bytes": (variant_tg_info.get("1080p", {}).get("file_size", 0) or sz_1080),
             },
             "720p": {
-                "file_id": (file_id if is_series else variant_tg_info.get("720p", {}).get("file_id", "")),
-                "message_id": (message_id if is_series else variant_tg_info.get("720p", {}).get("message_id", 0)),
-                "stream_url": (stream_url if is_series else stream_720),
-                "size_bytes": (sz_1080 if is_series else sz_720),
+                "file_id": (variant_tg_info.get("720p", {}).get("file_id", "") or (file_id if is_series and "1080" not in display_title else "")),
+                "message_id": (variant_tg_info.get("720p", {}).get("message_id", 0) or (message_id if is_series and "1080" not in display_title else 0)),
+                "stream_url": (variant_tg_info.get("720p", {}).get("stream_url") or stream_720),
+                "size_bytes": (variant_tg_info.get("720p", {}).get("file_size", 0) or sz_720 or sz_1080),
             },
             "480p": {
                 "file_id": variant_tg_info.get("480p", {}).get("file_id", ""),

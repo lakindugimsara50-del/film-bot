@@ -714,8 +714,12 @@ async def _on_start(client: Client) -> None:
     try:
         from services.upload_pool import upload_pool as _upload_pool
         _upload_pool.set_main_client(client)
-        # Background init so startup isn't delayed
-        asyncio.create_task(_upload_pool.init(config.API_ID, config.API_HASH))
+        # Background init so startup isn't delayed; auto-join sessions to private channel
+        asyncio.create_task(_upload_pool.init(
+            api_id=config.API_ID,
+            api_hash=config.API_HASH,
+            target_channel=config.PRIVATE_CHANNEL_ID,
+        ))
         log.info("[UploadPool] Parallel upload pool initialization started in background.")
     except Exception as up_err:
         log.warning("[UploadPool] Failed to start upload pool init: %s", up_err)

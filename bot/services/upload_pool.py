@@ -52,7 +52,13 @@ class TelegramUploadPool:
         """Register the primary bot client as upload fallback."""
         self._main_client = client
 
-    async def init(self, api_id: int, api_hash: str, sessions_dir: str = None) -> None:
+    async def init(
+        self,
+        api_id: int,
+        api_hash: str,
+        sessions_dir: str = None,
+        target_channel: Optional[int] = None,
+    ) -> None:
         """
         Load all .session files from sessions_dir and authenticate each.
 
@@ -97,10 +103,6 @@ class TelegramUploadPool:
                     no_updates=True,
                     max_concurrent_transmissions=10,
                 )
-                # c.start() is the correct Pyrogram high-level startup:
-                # - restores auth from .session file
-                # - raises SessionPasswordNeeded if 2FA is required
-                # - raises AuthKeyUnregistered if session is revoked
                 await c.start()
                 self.clients.append(c)
                 if (idx + 1) % 10 == 0 or idx == 0:
@@ -117,6 +119,49 @@ class TelegramUploadPool:
                 log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
 
         log.info("[UploadPool] Total active upload clients in pool: %d", len(self.clients))
+
+        if target_channel:
+            try:
+                await self.join_channel(target_channel)
+            except Exception as j_err:
+                log.warning("[UploadPool] Channel auto-join error: %s", j_err)
+
+    async def join_channel(self, target_channel: int) -> None:
+        """Auto-join all loaded userbot sessions to the target Telegram channel so they can post."""
+        if not self.clients or not target_channel:
+            return
+
+        invite_link = None
+        if self._main_client and getattr(self._main_client, "is_connected", False):
+            try:
+                chat = await self._main_client.get_chat(target_channel)
+                invite_link = getattr(chat, "invite_link", None)
+                if not invite_link:
+                    exported = await self._main_client.export_chat_invite_link(target_channel)
+                    invite_link = exported
+            except Exception as exp_err:
+                log.debug("[UploadPool] Channel invite link note: %s", exp_err)
+
+        if not invite_link:
+            log.info("[UploadPool] No invite link available for auto-joining sessions to %s", target_channel)
+            return
+
+        log.info("[UploadPool] Auto-joining %d sessions to channel %s...", len(self.clients), target_channel)
+        joined = 0
+        for c in self.clients:
+            if not getattr(c, "is_connected", False):
+                continue
+            try:
+                await c.join_chat(invite_link)
+                joined += 1
+            except Exception as j_err:
+                err_s = str(j_err).lower()
+                if "already" in err_s or "user_already_participant" in err_s:
+                    joined += 1
+                else:
+                    log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
+
+        log.info("[UploadPool] %d/%d sessions verified in channel %s.", joined, len(self.clients), target_channel)
 
     async def get_client_for_quality(
         self,

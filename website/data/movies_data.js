@@ -4006,7 +4006,107 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "added_date": "2026-09-27"
+    },
+    {
+      "id": "see-2019-s01e01",
+      "slug": "see-2019-s01e01",
+      "title": "See",
+      "title_si": "",
+      "year": 2019,
+      "imdb_id": "tt7949218",
+      "tmdb_id": "80752",
+      "type": "series",
+      "season": 1,
+      "episode": 1,
+      "episode_title": "Godflame",
+      "poster_url": "https://image.tmdb.org/t/p/w500/lKDIhc9FQibDiBQ57n3ELfZCyZg.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/u5N8tXgGDY6jS7R8Xn42LDeL0Dk.jpg",
+      "genres": [
+        "Drama",
+        "Sci-Fi & Fantasy",
+        "Action & Adventure"
+      ],
+      "language": "en",
+      "description": "A virus has decimated humankind. Those who survived emerged blind. Centuries later when twins are born with the mythic ability to see, their father must protect his tribe against a threatened queen.",
+      "director": "Steven Knight",
+      "cast": [
+        {
+          "name": "Jason Momoa",
+          "character": "Baba Voss"
+        },
+        {
+          "name": "Sylvia Hoeks",
+          "character": "Queen Sibeth Kane"
+        },
+        {
+          "name": "Hera Hilmar",
+          "character": "Maghra"
+        },
+        {
+          "name": "Christian Camargo",
+          "character": "Tamacti Jun"
+        },
+        {
+          "name": "Archie Madekwe",
+          "character": "Kofun"
+        }
+      ],
+      "rating": "8.1",
+      "number_of_seasons": 3,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/g3JsScc7mQCfc3e5e5rXwu7xVVP.jpg",
+          "air_date": "2019-11-01"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/A6dnHWe8YYcoFBHzP7T6WPP4b6F.jpg",
+          "air_date": "2021-08-27"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/lKDIhc9FQibDiBQ57n3ELfZCyZg.jpg",
+          "air_date": "2022-08-25"
+        }
+      ],
+      "featured": false,
+      "trending": false,
+      "added_at": "2026-09-27T09:48:08Z",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/80752/1/1"
+        },
+        {
+          "server": "Server 2",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt7949218/1/1"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt7949218&s=1&e=1"
+        }
+      ],
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "",
+      "added_date": "2026-09-27"
     }
   ],
-  "last_updated": "2026-09-27T09:43:25Z"
+  "last_updated": "2026-09-27T09:48:08Z"
 };

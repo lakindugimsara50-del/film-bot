@@ -23,7 +23,7 @@ async def post_to_channel(
     client: Client,
     movie: dict,
     public_channel_id: int,
-) -> None:
+) -> Optional[Any]:
     """
     Send a beautiful, formatted announcement to the public Telegram channel.
 
@@ -31,6 +31,9 @@ async def post_to_channel(
         client:            The Pyrogram bot Client that is already started.
         movie:             The full movie dict (same schema as movies.json).
         public_channel_id: Telegram channel ID (negative integer for channels).
+
+    Returns:
+        The sent Pyrogram Message object if successful, else None.
     """
     try:
         text = _build_message(movie)
@@ -38,7 +41,7 @@ async def post_to_channel(
 
         if poster_url:
             # Send the announcement with the movie poster as a photo
-            await client.send_photo(
+            msg = await client.send_photo(
                 chat_id=public_channel_id,
                 photo=poster_url,
                 caption=text,
@@ -46,18 +49,56 @@ async def post_to_channel(
             )
         else:
             # Fallback: text-only announcement
-            await client.send_message(
+            msg = await client.send_message(
                 chat_id=public_channel_id,
                 text=text,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=False,
             )
 
-        log.info("Announcement posted to channel %s for '%s'", public_channel_id, movie.get("title"))
+        log.info("Announcement posted to channel %s for '%s' (msg_id: %s)", public_channel_id, movie.get("title"), getattr(msg, "id", None))
+        return msg
 
     except Exception as exc:
         log.error("Failed to post announcement: %s", exc)
         # Don't re-raise — a failed announcement should not abort the /add workflow
+        return None
+
+
+async def update_channel_post(
+    client: Client,
+    public_channel_id: int,
+    message_id: int,
+    movie: dict,
+) -> bool:
+    """
+    Update an existing channel announcement when downloads become available.
+    """
+    try:
+        text = _build_message(movie)
+        poster_url: str = movie.get("poster_url", "")
+
+        if poster_url:
+            await client.edit_message_caption(
+                chat_id=public_channel_id,
+                message_id=message_id,
+                caption=text,
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await client.edit_message_text(
+                chat_id=public_channel_id,
+                message_id=message_id,
+                text=text,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=False,
+            )
+        log.info("Announcement updated in channel %s for message %s", public_channel_id, message_id)
+        return True
+    except Exception as exc:
+        log.error("Failed to update announcement %s in channel %s: %s", message_id, public_channel_id, exc)
+        return False
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

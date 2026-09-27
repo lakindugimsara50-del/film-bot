@@ -314,60 +314,51 @@ function getMovieStreams(movie) {
   }
 
   // =========================================================================
-  // Server 1: ⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)
+  // Server 1: 🎬 VIP Player 1 (VidLink Pro Ultra HD • Auto Sinhala Sub)
   // =========================================================================
+  let s1SubParam = movie.subtitle_url ? `?primaryColor=ffeb3b&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
   let s1Url = '';
-  let s1Mode = 'telegram_stream';
-  let s1HasLocal = false;
-
-  if (isMatchingEpisode && (movie.message_id || (primaryUrl && (primaryUrl.includes('/stream/') || primaryUrl.endsWith('.mp4') || primaryUrl.startsWith('assets/'))))) {
-    s1Url = primaryUrl || `/stream/channel/-1004325759505/${movie.message_id}`;
-    s1Mode = 'telegram_stream';
-    s1HasLocal = true;
-  } else if (isMatchingEpisode && driveId) {
-    const activeQ = selectedQuality === 'auto' ? currentEffectiveQuality : selectedQuality;
-    const qDriveId = extractDriveIdForQuality(movie, activeQ) || driveId;
-    s1Url = buildChunkStreamUrl(qDriveId, activeQ);
-    s1Mode = 'super_chunk';
-    s1HasLocal = true;
+  if (isSeries) {
+    if (tmdbId) {
+      s1Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s1SubParam}`;
+    } else if (imdbId) {
+      s1Url = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}${s1SubParam}`;
+    } else {
+      s1Url = `https://vidlink.pro/tv/1399/${sNum}/${eNum}${s1SubParam}`;
+    }
+  } else {
+    if (tmdbId) {
+      s1Url = `https://vidlink.pro/movie/${tmdbId}${s1SubParam}`;
+    } else if (imdbId) {
+      s1Url = `https://player.autoembed.cc/embed/movie/${imdbId}${s1SubParam}`;
+    } else {
+      s1Url = `https://vidlink.pro/movie/564147${s1SubParam}`;
+    }
   }
 
   list.push({
     server: 'Server 1',
-    label: '⚡ Super Player (Cloud HD)',
-    mode: s1Mode,
-    type: 'video/mp4',
+    label: '🎬 VIP Player 1 (VidLink Pro Ultra HD)',
+    mode: 'external_embed',
+    type: 'embed',
+    embed: true,
     stream_url: s1Url,
-    hasLocalFile: s1HasLocal,
-    quality: '1080p'
+    hasLocalFile: true
   });
 
   // =========================================================================
-  // Server 2: 🎬 VIP Player 1 (Fast HD) - Modern VidLink / AutoEmbed Ultra HD
+  // Server 2: ⚡ VIP Player 2 (AutoEmbed Global HD)
   // =========================================================================
-  let s2SubParam = movie.subtitle_url ? `?primaryColor=ffeb3b&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
   let s2Url = '';
   if (isSeries) {
-    if (tmdbId) {
-      s2Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s2SubParam}`;
-    } else if (imdbId) {
-      s2Url = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}${s2SubParam}`;
-    } else {
-      s2Url = `https://vidsrc.cc/v2/embed/tv/${encodeURIComponent(movie.title || 'tv')}/${sNum}/${eNum}${s2SubParam}`;
-    }
+    s2Url = imdbId ? `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}` : (tmdbId ? `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${sNum}/${eNum}` : s1Url);
   } else {
-    if (tmdbId) {
-      s2Url = `https://vidlink.pro/movie/${tmdbId}${s2SubParam}`;
-    } else if (imdbId) {
-      s2Url = `https://player.autoembed.cc/embed/movie/${imdbId}${s2SubParam}`;
-    } else {
-      s2Url = `https://vidsrc.cc/v2/embed/movie/${encodeURIComponent(movie.title || 'movie')}${s2SubParam}`;
-    }
+    s2Url = imdbId ? `https://player.autoembed.cc/embed/movie/${imdbId}` : (tmdbId ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : s1Url);
   }
 
   list.push({
     server: 'Server 2',
-    label: '🎬 VIP Player 1 (Fast HD)',
+    label: '⚡ VIP Player 2 (AutoEmbed HD)',
     mode: 'external_embed',
     type: 'embed',
     embed: true,
@@ -376,7 +367,7 @@ function getMovieStreams(movie) {
   });
 
   // =========================================================================
-  // Server 3: 🚀 VIP Player 2 (Backup Stream) - 2Embed / SuperEmbed Fast Stream
+  // Server 3: 🚀 VIP Player 3 (2Embed Fast Backup)
   // =========================================================================
   const embedKey = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
   let s3Url = '';
@@ -390,7 +381,7 @@ function getMovieStreams(movie) {
 
   list.push({
     server: 'Server 3',
-    label: '🚀 VIP Player 2 (Backup Stream)',
+    label: '🚀 VIP Player 3 (2Embed Fast)',
     mode: 'external_embed',
     type: 'embed',
     embed: true,

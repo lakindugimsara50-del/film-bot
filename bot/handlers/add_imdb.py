@@ -302,6 +302,28 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                     encoded = urllib.parse.quote(vtt_github_url, safe='')
                     stream["stream_url"] += f"?sub.Sinhala={encoded}"
 
+        site_url = f"{(getattr(config, 'SITE_BASE_URL', 'https://filmsub.pages.dev')).rstrip('/')}/movie.html?id={slug}"
+        meta["site_url"] = site_url
+        ep_info = f"- S{season:02d}E{episode:02d}" if season and episode else ""
+
+        # ── Immediately announce on Telegram channel with VIP "Watch Online" link ──
+        channel_post_id = None
+        target_ch = getattr(config, "PUBLIC_CHANNEL_ID", 0) or getattr(config, "PRIVATE_CHANNEL_ID", 0)
+        if target_ch and client:
+            try:
+                meta_ann = dict(meta)
+                meta_ann["site_url"] = site_url
+                meta_ann["downloads"] = []
+                meta_ann["telegram_status"] = "queued"
+                ch_msg = await post_to_channel(client, meta_ann, target_ch)
+                if ch_msg:
+                    channel_post_id = getattr(ch_msg, "id", None)
+                    meta["channel_post_id"] = channel_post_id
+                    meta["channel_chat_id"] = target_ch
+                    log.info("[AddImdb] Immediate channel announcement posted to chat %s: msg_id=%s", target_ch, channel_post_id)
+            except Exception as ann_err:
+                log.warning("[AddImdb] Immediate channel announcement failed: %s", ann_err)
+
         # ── Stage 1C: Commit to GitHub (Site Live!) ────────────────────────────
         await status_msg.edit_text(
             f"⏳ <b>Step 2/2</b> — Site post publish කරමින්...\n"
@@ -316,9 +338,6 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                 parse_mode=ParseMode.HTML
             )
             return
-
-        site_url = f"{(getattr(config, 'SITE_BASE_URL', 'https://filmsub.pages.dev')).rstrip('/')}/movie.html?id={slug}"
-        ep_info = f"- S{season:02d}E{episode:02d}" if season and episode else ""
 
         # ── Stage 1D: If subtitle was already given, start Stage 2 directly ───
         sess_data = {

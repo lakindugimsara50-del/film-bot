@@ -345,8 +345,11 @@ async def find_all_candidates(
                 )
         log.info("[LeechService] Method 3 yielded %d candidate(s).", len(tor_list))
 
-    # For movies, strictly prioritize 1080p candidates over 720p candidates
-    if not is_series and season is None and episode is None:
+    # For TV series, 720p is enough for Telegram upload; for movies, strictly prioritize 1080p
+    if is_series or season is not None or episode is not None:
+        if any("720" in str(c.quality) for c in candidates):
+            candidates.sort(key=lambda c: 0 if "720" in str(c.quality) else (1 if "1080" in str(c.quality) else 2))
+    else:
         if any("1080" in str(c.quality) for c in candidates):
             candidates.sort(key=lambda c: 0 if "1080" in str(c.quality) else 1)
 
@@ -1380,6 +1383,9 @@ async def _execute_leech(
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
+            if is_series:
+                log.info("[LeechService] TV Series mode: 720p primary is sufficient, skipping multi-quality encoding.")
+                return
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
@@ -1388,24 +1394,24 @@ async def _execute_leech(
                     output_dir=temp_dir,
                     slug=slug,
                     sub_path=sub_to_merge,
-                    qualities=("720p", "480p", "360p"),
+                    qualities=("720p", "480p"),
                     progress_callback=_mq_progress_cb,
                 )
-                _mq_progress_str = "720p/480p/360p Complete ✅"
+                _mq_progress_str = "720p/480p Complete ✅"
                 # Upload variants to Telegram channel if enabled
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
-                    _mq_progress_str = "720p/480p/360p Uploading to Telegram..."
+                    _mq_progress_str = "720p/480p Uploading to Telegram..."
                     for ql, qp in variant_files.items():
                         await _task_upload_tg_variant(ql, qp)
                     _mq_progress_str = "Telegram Multi-Quality Complete ✅"
 
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
-                    _mq_progress_str = "720p/480p/360p Uploading to Drive..."
+                    _mq_progress_str = "720p/480p Uploading to Drive..."
                     await asyncio.gather(
                         *[_task_upload_drive_variant(ql, qp) for ql, qp in variant_files.items()],
                         return_exceptions=True,
                     )
-                    _mq_progress_str = "720p/480p/360p Complete ✅"
+                    _mq_progress_str = "720p/480p Complete ✅"
             except Exception as mq_err:
                 log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
 
@@ -1602,16 +1608,16 @@ async def _execute_leech(
 
         variant_media = {
             "1080p": {
-                "file_id": file_id,
-                "message_id": message_id,
-                "stream_url": stream_url,
+                "file_id": ("" if is_series else file_id),
+                "message_id": (0 if is_series else message_id),
+                "stream_url": ("" if is_series else stream_url),
                 "size_bytes": sz_1080,
             },
             "720p": {
-                "file_id": variant_tg_info.get("720p", {}).get("file_id", ""),
-                "message_id": variant_tg_info.get("720p", {}).get("message_id", 0),
-                "stream_url": stream_720,
-                "size_bytes": sz_720,
+                "file_id": (file_id if is_series else variant_tg_info.get("720p", {}).get("file_id", "")),
+                "message_id": (message_id if is_series else variant_tg_info.get("720p", {}).get("message_id", 0)),
+                "stream_url": (stream_url if is_series else stream_720),
+                "size_bytes": (sz_1080 if is_series else sz_720),
             },
             "480p": {
                 "file_id": variant_tg_info.get("480p", {}).get("file_id", ""),
@@ -1626,6 +1632,9 @@ async def _execute_leech(
                 "size_bytes": sz_360,
             },
         }
+
+        # Store in task_tracker so QueueService / Stage2Patcher can retrieve it
+        task_tracker.tracker.store_upload_results(user_id, variant_media)
 
         # ── Downloads Construction ────────────────────────────────────────────────
         tg_channel_id_clean = str(abs(target_channel))

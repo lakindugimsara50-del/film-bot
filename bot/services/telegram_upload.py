@@ -156,6 +156,7 @@ async def download_and_upload(
             SESSION_NAME,
             api_id=API_ID,
             api_hash=API_HASH,
+            max_concurrent_transmissions=getattr(config, "TG_MAX_CONCURRENT_TRANSMISSIONS", 10),
         )
         async with userbot:
             with LowRamFileReader(local_path) as reader:
@@ -216,6 +217,10 @@ async def upload_video_file(
         pass
 
     log.info("[TelegramUpload] Uploading '%s' (%d bytes) to chat %s", file_name, file_size, target)
+
+    # Enable multi-chunk parallel MTProto pipelining for ultra-fast upload
+    if hasattr(bot_client, "max_concurrent_transmissions"):
+        bot_client.max_concurrent_transmissions = getattr(config, "TG_MAX_CONCURRENT_TRANSMISSIONS", 10)
 
     start_time = time.time()
     progress_state = {
@@ -284,6 +289,9 @@ async def upload_video_file(
                 await bot_client.connect()
             except Exception as conn_err:
                 log.warning("[TelegramUpload] bot_client.connect() warning: %s", conn_err)
+
+        if hasattr(bot_client, "max_concurrent_transmissions"):
+            bot_client.max_concurrent_transmissions = 10
 
         try:
             resolved = await bot_client.get_chat(chat_id)

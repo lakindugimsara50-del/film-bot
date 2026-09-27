@@ -180,7 +180,7 @@ class QueueService:
                             from services.stage2_patcher import patch_movie_downloads
                             upload_results = task_tracker.tracker.get_upload_results(item.user_id)
                             if upload_results:
-                                await patch_movie_downloads(item.movie_slug, upload_results)
+                                await patch_movie_downloads(item.movie_slug, upload_results, client=item.client)
                         except Exception as patch_err:
                             log.error("[QueueService] Stage2 patch error: %s", patch_err)
                 except asyncio.CancelledError:

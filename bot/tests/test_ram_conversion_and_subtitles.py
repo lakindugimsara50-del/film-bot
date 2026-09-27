@@ -210,6 +210,10 @@ def test_website_movies_json_and_movies_data_js_have_multi_quality_and_sinhala_s
     assert len(movies) > 0
 
     for m in movies:
+        # Skip movies that are currently queued in Stage 1 awaiting Stage 2 Telegram upload
+        if m.get("telegram_status") == "queued" or m.get("stage") == "embed_only":
+            continue
+
         # 1. Qualities map check
         assert "qualities" in m, f"Missing qualities map in {m.get('title')}"
         for q_key in ("auto", "1080p", "720p", "480p", "360p"):

@@ -7640,21 +7640,21 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQADgmq64rTc87DiGCYb8ePbSSl25KLvAAIdJQACGjbRVbcsoEzGdUA3HgQ",
-      "message_id": 130,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADgGq62a2itXdLlQRiiYcsMr2SCtrlAAIbJQACGjbRVd3JGN8BTZQ2HgQ",
+      "message_id": 128,
       "file_name": "Game.of.Thrones.S04E08.720p.HDTV.x264-KILLERS.mkv",
       "file_size": 1315208360,
       "drive_file_id": "",
-      "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+      "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADgmq64rTc87DiGCYb8ePbSSl25KLvAAIdJQACGjbRVbcsoEzGdUA3HgQ",
-          "message_id": 130,
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADgGq62a2itXdLlQRiiYcsMr2SCtrlAAIbJQACGjbRVd3JGN8BTZQ2HgQ",
+          "message_id": 128,
           "quality": "1080p"
         },
         {
@@ -7662,7 +7662,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/4/8"
+          "stream_url": "https://vidlink.pro/tv/1399/4/8?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s04e08-si.vtt&sub_label=Sinhala&sub=true"
         },
         {
           "server": "Server 3",
@@ -7680,11 +7680,11 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       ],
       "qualities": {
-        "auto": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
-        "1080p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
-        "720p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
-        "480p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
-        "360p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130"
+        "auto": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
+        "1080p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
+        "720p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
+        "480p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
+        "360p": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128"
       },
       "downloads": [
         {
@@ -7692,8 +7692,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "720p HD (Telegram Channel • Fast)",
           "size": "1.2 GB",
           "size_bytes": 1315208360,
-          "url": "https://t.me/c/4325759505/130",
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "url": "https://t.me/c/4325759505/128",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "format": "MKV",
           "host": "Telegram",
           "sub_merged": true,
@@ -7705,7 +7705,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "size": "1.2 GB",
           "size_bytes": 1315208360,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e08_1080p",
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "format": "MKV",
           "host": "Telegram",
           "sub_merged": true,
@@ -7717,7 +7717,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "size": "689.9 MB",
           "size_bytes": 723364598,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e08_720p",
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "format": "MKV",
           "host": "Telegram",
           "sub_merged": true,
@@ -7729,7 +7729,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "size": "401.4 MB",
           "size_bytes": 420866675,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e08_480p",
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "format": "MKV",
           "host": "Telegram",
           "sub_merged": true,
@@ -7741,8 +7741,64 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "size": "225.8 MB",
           "size_bytes": 236737504,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e08_360p",
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.22 GB",
+          "size_bytes": 1315208360,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "0.67 GB",
+          "size_bytes": 723364598,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADgmq64rTc87DiGCYb8ePbSSl25KLvAAIdJQACGjbRVbcsoEzGdUA3HgQ",
+          "message_id": 130,
+          "url": "https://t.me/c/4325759505/130",
+          "telegram_url": "https://t.me/c/4325759505/130",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD",
+          "size": "0.39 GB",
+          "size_bytes": 420866675,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Mobile",
+          "size": "0.22 GB",
+          "size_bytes": 236737504,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
@@ -7752,43 +7808,45 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         "1080p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "size_bytes": 1315208360
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADgmq64rTc87DiGCYb8ePbSSl25KLvAAIdJQACGjbRVbcsoEzGdUA3HgQ",
-          "message_id": 130,
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADgGq62a2itXdLlQRiiYcsMr2SCtrlAAIbJQACGjbRVd3JGN8BTZQ2HgQ",
+          "message_id": 128,
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "size_bytes": 723364598
         },
         "480p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "size_bytes": 420866675
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/130",
+          "stream_url": "https://yorkshire-interactive-vegetarian-supplier.trycloudflare.com/stream/channel/-1004325759505/128",
           "size_bytes": 236737504
         }
       },
       "subtitles": [
         {
           "language": "Sinhala",
-          "srclang": "si",
-          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "label": "සිංහල",
           "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e08-si.vtt",
-          "default": true
+          "default": true,
+          "srclang": "si"
         }
       ],
       "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e08",
       "added_date": "2026-09-28",
-      "added_at": "2026-09-28T21:57:10Z",
-      "added_by": "bot_auto_leech"
+      "added_at": "2026-09-28T21:18:39Z",
+      "added_by": "bot_auto_leech",
+      "telegram_status": "complete",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e08-si.vtt"
     }
   ],
-  "last_updated": "2026-09-28T21:57:12Z"
+  "last_updated": "2026-09-28T21:18:40Z"
 };

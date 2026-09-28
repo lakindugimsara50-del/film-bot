@@ -34,13 +34,13 @@ GITHUB_REPO = getattr(config, "GITHUB_REPO", "username/repo")
 def _get_active_token() -> str:
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return ""
-    return GITHUB_TOKEN if GITHUB_TOKEN is not None else ""
+    return os.environ.get("GITHUB_TOKEN") or getattr(config, "GITHUB_TOKEN", "") or GITHUB_TOKEN or ""
 
 
 def _get_active_repo() -> str:
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return ""
-    return GITHUB_REPO if GITHUB_REPO is not None else ""
+    return os.environ.get("GITHUB_REPO") or getattr(config, "GITHUB_REPO", "") or GITHUB_REPO or ""
 
 
 def _get_headers() -> dict:
@@ -60,6 +60,8 @@ _LOCAL_MOVIES_PATH = os.path.abspath(
 async def get_movies_json() -> tuple[dict, str]:
     """
     Fetch the current movies.json from GitHub (or local file fallback).
+    Supports files > 1MB where GitHub Contents API omits inline base64 content
+    and supplies download_url / Git Data Blobs.
     """
     token = _get_active_token()
     repo = _get_active_repo()
@@ -76,8 +78,49 @@ async def get_movies_json() -> tuple[dict, str]:
         resp.raise_for_status()
         data = resp.json()
 
-    sha: str = data["sha"]
-    raw_json = base64.b64decode(data["content"]).decode("utf-8")
+    sha: str = data.get("sha", "")
+    raw_json = ""
+
+    # Case 1: GitHub Contents API returned inline base64 content (files <= 1MB)
+    if data.get("content"):
+        try:
+            raw_json = base64.b64decode(data["content"]).decode("utf-8")
+        except Exception:
+            raw_json = ""
+
+    # Case 2: File > 1MB, GitHub Contents API returned download_url
+    if not raw_json and data.get("download_url"):
+        try:
+            async with httpx.AsyncClient(timeout=30) as dl_client:
+                dl_resp = await dl_client.get(data["download_url"], headers=_get_headers())
+                if dl_resp.status_code == 200:
+                    raw_json = dl_resp.text
+        except Exception as dl_err:
+            log.warning("[GitHubService] Failed to fetch movies.json via download_url: %s", dl_err)
+
+    # Case 3: Fallback to Git Blobs API (supports up to 100MB)
+    if not raw_json and sha:
+        try:
+            blob_url = f"{_API_BASE}/repos/{repo}/git/blobs/{sha}"
+            async with httpx.AsyncClient(timeout=30) as blob_client:
+                blob_resp = await blob_client.get(blob_url, headers=_get_headers())
+                if blob_resp.status_code == 200:
+                    raw_json = base64.b64decode(blob_resp.json().get("content", "")).decode("utf-8")
+        except Exception as b_err:
+            log.warning("[GitHubService] Failed to fetch movies.json via Git Blobs API: %s", b_err)
+
+    # Case 4: Fallback to local movies.json file if network/API parsing had issues
+    if not raw_json and os.path.exists(_LOCAL_MOVIES_PATH):
+        try:
+            with open(_LOCAL_MOVIES_PATH, "r", encoding="utf-8") as f:
+                content_dict = json.load(f)
+            log.info("Fetched movies.json from LOCAL fallback (%d movies)", len(content_dict.get("movies", [])))
+            return content_dict, sha or "local"
+        except Exception as lf_err:
+            log.warning("[GitHubService] Local fallback read failed: %s", lf_err)
+
+    if not raw_json:
+        raise RuntimeError("movies.json content is empty from GitHub and local fallback")
 
     try:
         content_dict = json.loads(raw_json)

@@ -102,6 +102,33 @@ def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tu
 _CACHED_HW_ENCODER: Optional[str] = None
 
 
+def setup_colab_cuda_ffmpeg() -> bool:
+    """
+    On Google Colab (with NVIDIA T4 GPU), ensure a CUDA-enabled FFmpeg binary with
+    h264_nvenc support is installed into /usr/local/bin/ffmpeg.
+    """
+    if not os.path.exists("/content"):
+        return False
+    try:
+        smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if smi.returncode != 0:
+            return False
+        log.info("[VideoService] Colab NVIDIA GPU detected. Installing CUDA FFmpeg (NVENC)...")
+        cmd = (
+            "wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -O /tmp/ff_cuda.tar.xz "
+            "&& tar -xf /tmp/ff_cuda.tar.xz -C /tmp/ "
+            "&& cp -f /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ffmpeg "
+            "&& cp -f /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffprobe /usr/local/bin/ffprobe "
+            "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+            "&& rm -rf /tmp/ff_cuda* /tmp/ffmpeg-master*"
+        )
+        res = subprocess.run(cmd, shell=True, timeout=90)
+        return res.returncode == 0
+    except Exception as exc:
+        log.debug("[VideoService] Colab CUDA FFmpeg auto-setup note: %s", exc)
+        return False
+
+
 def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
     """
     Auto-detect if NVIDIA GPU hardware encoder (h264_nvenc on Google Colab T4/L4)
@@ -137,6 +164,33 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
             return _CACHED_HW_ENCODER
     except Exception:
         pass
+
+    # On Google Colab: if NVENC failed with standard apt ffmpeg, auto-install BtbN CUDA ffmpeg
+    if os.path.exists("/content") and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
+        setattr(detect_hw_encoder, "_attempted_cuda_install", True)
+        if setup_colab_cuda_ffmpeg():
+            new_exe = get_ffmpeg_binary()
+            try:
+                probe2 = subprocess.run(
+                    [
+                        new_exe,
+                        "-hide_banner",
+                        "-f", "lavfi",
+                        "-i", "nullsrc=s=256x256:d=0.04",
+                        "-c:v", "h264_nvenc",
+                        "-f", "null",
+                        "-",
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=4,
+                )
+                if probe2.returncode == 0:
+                    _CACHED_HW_ENCODER = "h264_nvenc"
+                    log.info("[VideoService] Colab CUDA GPU acceleration activated: h264_nvenc enabled!")
+                    return _CACHED_HW_ENCODER
+            except Exception:
+                pass
 
     _CACHED_HW_ENCODER = "libx264"
     return _CACHED_HW_ENCODER

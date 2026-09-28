@@ -1307,9 +1307,9 @@ async def generate_multi_quality_variants_ram(
             q0 = target_q_list[0]
             h0 = profiles[q0]["height"]
             fc = (
-                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=-2:'min({h0},ih)':flags=fast_bilinear[v_{q0}]"
+                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=w=-2:h={h0}[v_{q0}]"
                 if burn_subs
-                else f"[0:v:0]scale=-2:'min({h0},ih)':flags=fast_bilinear[v_{q0}]"
+                else f"[0:v:0]scale=w=-2:h={h0}[v_{q0}]"
             )
         else:
             split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
@@ -1319,7 +1319,7 @@ async def generate_multi_quality_variants_ram(
                 else f"[0:v:0]split={num_q}{split_labels}"
             )
             scale_branches = ";".join(
-                f"[sp_{q}]scale=-2:'min({profiles[q]['height']},ih)':flags=fast_bilinear[v_{q}]"
+                f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}[v_{q}]"
                 for q in target_q_list
             )
             fc = f"{split_head};{scale_branches}"
@@ -1396,7 +1396,6 @@ async def generate_multi_quality_variants_ram(
         strategies.append(("libx264", False, False))
 
     proc = None
-    valid_outputs: dict[str, str] = {}
     try:
         for attempt_idx, (enc_choice, burn_choice, soft_choice) in enumerate(strategies):
             cmd, out_paths = _build_multi_cmd(enc_choice, burn_choice, soft_choice)
@@ -1463,7 +1462,7 @@ async def generate_multi_quality_variants_ram(
         return valid_outputs
     except Exception as exc:
         log.warning("[VideoService] Multi-quality generation skipped/failed: %s", exc)
-        return {}
+        return valid_outputs
     finally:
         if os.path.exists(local_burn_srt):
             try:

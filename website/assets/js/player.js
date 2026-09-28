@@ -224,10 +224,9 @@ function buildChunkStreamUrl(driveId, quality) {
  * Ensures every movie & TV episode works seamlessly across Laptop, PC, Mobile, and Tablet.
  */
 /**
- * Curates exactly 3 top-tier, rock-solid servers:
- * - Server 1: ⚡ Super Player (Cloud HD) — Native Video.js chunk stream / Telegram Cloud with auto Sinhala sub
- * - Server 2: 🎬 VIP Player 1 (Fast HD) — Ultra HD modern VidLink embed (falls back to AutoEmbed / VidSrc v2)
- * - Server 3: 🚀 VIP Player 2 (Backup Stream) — 2Embed / SuperEmbed fast backup stream
+ * Curates exactly 2 clean zero-ads players:
+ * - Server 1: ⚡ Super Player (Telegram Cloud HD • Zero Ads) — Native Video.js HTML5 player, zero ads, auto Sinhala sub
+ * - Server 2: 🎬 VIP Player (VidLink Ultra HD • Zero Ads) — Sandboxed iframe (blocks popups/redirects), auto Sinhala sub
  */
 function getMovieStreams(movie) {
   if (!movie) return [];
@@ -379,54 +378,11 @@ function getMovieStreams(movie) {
 
   list.push({
     server: `Server ${srvCounter}`,
-    label: `🎬 VIP Player 1 (VidLink Pro Ultra HD)`,
+    label: `🎬 VIP Player (VidLink Ultra HD • Zero Ads)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
     stream_url: s1Url,
-    hasLocalFile: true,
-  });
-  srvCounter++;
-
-  // =========================================================================
-  // VIP Player 2: ⚡ AutoEmbed Global HD
-  // =========================================================================
-  let s2Url = '';
-  if (isSeries) {
-    s2Url = imdbId ? `https://autoembed.co/tv/imdb/${imdbId}-${sNum}-${eNum}` : (tmdbId ? `https://autoembed.co/tv/tmdb/${tmdbId}-${sNum}-${eNum}` : s1Url);
-  } else {
-    s2Url = imdbId ? `https://autoembed.co/movie/imdb/${imdbId}` : (tmdbId ? `https://autoembed.co/movie/tmdb/${tmdbId}` : s1Url);
-  }
-
-  list.push({
-    server: `Server ${srvCounter}`,
-    label: `⚡ VIP Player 2 (AutoEmbed HD)`,
-    mode: 'external_embed',
-    type: 'embed',
-    embed: true,
-    stream_url: s2Url,
-    hasLocalFile: true,
-  });
-  srvCounter++;
-
-  // =========================================================================
-  // VIP Player 3: 🚀 MultiEmbed Fast Backup
-  // =========================================================================
-  const embedKey = imdbId || tmdbId || encodeURIComponent(movie.title || 'movie');
-  let s3Url = '';
-  if (isSeries) {
-    s3Url = `https://multiembed.mov/?video_id=${embedKey}&s=${sNum}&e=${eNum}`;
-  } else {
-    s3Url = `https://multiembed.mov/?video_id=${embedKey}`;
-  }
-
-  list.push({
-    server: `Server ${srvCounter}`,
-    label: `🚀 VIP Player 3 (MultiEmbed Fast)`,
-    mode: 'external_embed',
-    type: 'embed',
-    embed: true,
-    stream_url: s3Url,
     hasLocalFile: true,
   });
 

@@ -88,12 +88,10 @@ async def patch_movie_downloads(
     
     target["downloads"] = downloads
     target["telegram_status"] = "complete"
-    
-    # Ensure streams list contains purely VIP embed players (remove any slow Telegram player)
-    target["streams"] = [
-        s for s in target.get("streams", [])
-        if s.get("mode") not in ("super_chunk", "telegram_stream")
-    ]
+    best = upload_results.get("1080p") or upload_results.get("720p") or upload_results.get("480p")
+    if best and best.get("file_id"):
+        target["file_id"] = best["file_id"]
+        target["message_id"] = best.get("message_id", 0)
     
     if subtitle_url:
         target["subtitle_url"] = subtitle_url

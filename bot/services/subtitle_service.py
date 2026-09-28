@@ -32,8 +32,8 @@ def is_genuine_sinhala_subtitle(content_or_path: Optional[str]) -> bool:
     """
     Verify whether a subtitle file path or raw string contains genuine Sinhala Unicode
     characters (U+0D80..U+0DFF).
-    Requires at least 15 Sinhala characters to reject English/foreign subtitles or
-    isolated stray symbols.
+    Requires at least 10 Sinhala words and > 10 subtitle cues so 2-4 line dummy banners
+    and placeholder fallbacks are strictly rejected.
     """
     if not content_or_path:
         return False
@@ -41,11 +41,21 @@ def is_genuine_sinhala_subtitle(content_or_path: Optional[str]) -> bool:
     if os.path.isfile(content_or_path):
         try:
             with open(content_or_path, "r", encoding="utf-8", errors="replace") as f:
-                text = f.read(150000)
+                text = f.read(250000)
         except Exception:
             return False
-    sinhala_matches = re.findall(r"[\u0D80-\u0DFF]", text)
-    return len(sinhala_matches) >= 15
+
+    cues_count = len(re.findall(r"-->", text))
+    if cues_count <= 10:
+        return False
+
+    sinhala_words = re.findall(r"[\u0D80-\u0DFF]+", text)
+    if len(sinhala_words) < 10:
+        return False
+
+    clean_no_placeholders = re.sub(r"FilmSub(\.lk)?|සිංහල උපසිරැසි|නැරඹීමට|බාගත කිරීමට|ස්තූතියි", "", text)
+    remaining_sinhala = re.findall(r"[\u0D80-\u0DFF]+", clean_no_placeholders)
+    return len(remaining_sinhala) >= 5
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -633,37 +643,37 @@ async def auto_acquire_sinhala_subtitle(
 
     candidate_sub = None
 
-    # 0. Check system temp directory for cached subtitle files matching this session (uploaded in Stage 1)
+    # 1. Search Sri Lankan subtitle sources (PirateLK, etc.) for authentic Sinhala subtitles first
     try:
-        import tempfile as _tf
-        sys_temp = _tf.gettempdir()
-        if os.path.exists(sys_temp):
-            for fname in os.listdir(sys_temp):
-                fl = fname.lower()
-                if fl.startswith("sub_") and fl.endswith((".srt", ".vtt")):
-                    full_p = os.path.join(sys_temp, fname)
-                    if os.path.exists(full_p) and os.path.getsize(full_p) > 64 and is_genuine_sinhala_subtitle(full_p):
-                        candidate_sub = full_p
-                        log.info("[SubtitleService] Found cached Sinhala subtitle in system temp: %s", full_p)
+        sl_sub = await fetch_sri_lankan_sinhala_subtitle(
+            title=title,
+            year=year,
+            season=season,
+            episode=episode,
+            temp_dir=temp_dir,
+        )
+        if sl_sub and os.path.exists(sl_sub) and is_genuine_sinhala_subtitle(sl_sub):
+            candidate_sub = sl_sub
+            log.info("[SubtitleService] Selected authentic Sri Lankan Sinhala subtitle: %s", sl_sub)
+    except Exception as sl_err:
+        log.debug("[SubtitleService] Sri Lankan subtitle step skipped: %s", sl_err)
+
+    # 2. Check temp_dir for any existing genuine Sinhala .srt or .vtt files
+    if not candidate_sub:
+        for root, _, files in os.walk(temp_dir):
+            for f in files:
+                f_l = f.lower()
+                if f_l in ("sinhala_merged.srt", "sinhala_merged.vtt", "sinhala_auto.srt"):
+                    continue
+                if f_l.endswith((".srt", ".vtt")):
+                    p = os.path.join(root, f)
+                    if os.path.getsize(p) > 64 and is_genuine_sinhala_subtitle(p):
+                        candidate_sub = p
                         break
-    except Exception as cache_scan_err:
-        log.debug("[SubtitleService] Cache scan note: %s", cache_scan_err)
+            if candidate_sub:
+                break
 
-    # 1. Check temp_dir for any existing Sinhala .srt or .vtt files first
-    for root, _, files in os.walk(temp_dir):
-        for f in files:
-            f_l = f.lower()
-            if f_l in ("sinhala_merged.srt", "sinhala_merged.vtt", "sinhala_auto.srt"):
-                continue
-            if f_l.endswith((".srt", ".vtt")):
-                p = os.path.join(root, f)
-                if os.path.getsize(p) > 64 and is_genuine_sinhala_subtitle(p):
-                    candidate_sub = p
-                    break
-        if candidate_sub:
-            break
-
-    # 2. Check other subtitle files in temp_dir that can be translated
+    # 3. Check other foreign subtitle files in temp_dir that can be translated
     if not candidate_sub:
         for root, _, files in os.walk(temp_dir):
             for f in files:
@@ -677,22 +687,6 @@ async def auto_acquire_sinhala_subtitle(
                         break
             if candidate_sub:
                 break
-
-    # 3. Search Sri Lankan subtitle sources (PirateLK, etc.) for authentic Sinhala subtitles
-    if not candidate_sub:
-        try:
-            sl_sub = await fetch_sri_lankan_sinhala_subtitle(
-                title=title,
-                year=year,
-                season=season,
-                episode=episode,
-                temp_dir=temp_dir,
-            )
-            if sl_sub and os.path.exists(sl_sub) and is_genuine_sinhala_subtitle(sl_sub):
-                candidate_sub = sl_sub
-                log.info("[SubtitleService] Selected authentic Sri Lankan Sinhala subtitle: %s", sl_sub)
-        except Exception as sl_err:
-            log.debug("[SubtitleService] Sri Lankan subtitle step skipped: %s", sl_err)
 
     # 4. If no external subtitle file found, try extracting embedded subtitle track from video container
     if not candidate_sub and video_path and os.path.exists(video_path):

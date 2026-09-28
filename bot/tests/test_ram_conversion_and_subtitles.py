@@ -571,5 +571,159 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     assert "autoembed.co" in urls[1]
 
 
+@pytest.mark.asyncio
+async def test_generate_multi_quality_variants_480p_instant_copy(tmp_path):
+    """Verify that a source video with 854x480 resolution triggers instant copy for 480p."""
+    in_mp4 = tmp_path / "source_480p.mp4"
+    in_mp4.write_bytes(b"SD_480P_DATA" * 200)
+
+    class FakeProc:
+        returncode = 0
+        stderr = None
+        async def wait(self):
+            return 0
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    async def fake_exec(*args, **kwargs):
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"OUT" * (600 * 1024))
+        p = FakeProc()
+        class FakeStderr:
+            async def read(self, *a):
+                return b""
+            async def readline(self):
+                return b""
+        p.stderr = FakeStderr()
+        return p
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_video_resolution", return_value=(854, 480)), \
+         patch("services.video_service.get_audio_codec", return_value="aac"), \
+         patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            base_stem="sd_film",
+            target_qualities=("480p", "360p"),
+        )
+
+    assert "480p" in variants
+    assert "360p" in variants
+    for q, p in variants.items():
+        assert os.path.exists(p)
+
+
+@pytest.mark.asyncio
+async def test_status_command_rich_formatting_and_markup():
+    """Verify /status command constructs rich formatting and provides interactive buttons."""
+    from main import status_handler, _build_status_content
+    from unittest.mock import MagicMock, AsyncMock
+
+    client = MagicMock()
+    msg = MagicMock()
+    msg.from_user.id = 12345
+    msg.reply_text = AsyncMock()
+
+    with patch("main.config.ADMIN_IDS", [12345]), \
+         patch("main.config.PUBLIC_CHANNEL_ID", -100123456789), \
+         patch("services.task_tracker.tracker.get_status_summary", return_value="✅ Idle"), \
+         patch("handlers.wizard.USER_SESSIONS", {}):
+        client.get_me = AsyncMock(return_value=MagicMock(username="Filmsinhala200Bot"))
+        await status_handler(client, msg)
+
+        msg.reply_text.assert_called_once()
+        args, kwargs = msg.reply_text.call_args
+        assert "Film Bot තත්ත්වය" in args[0]
+        assert kwargs.get("reply_markup") is not None
+        # Check buttons in reply_markup
+        kb = kwargs["reply_markup"]
+        buttons_flat = [b.text for row in kb.inline_keyboard for b in row]
+        assert any("Refresh Status" in b for b in buttons_flat)
+        assert any("View Queue" in b for b in buttons_flat)
+        assert any("Boost" in b for b in buttons_flat)
+        assert any("Cancel" in b for b in buttons_flat)
+
+
+@pytest.mark.asyncio
+async def test_progress_reporter_with_reply_markup():
+    """Verify ProgressReporter includes reply_markup in start and update calls."""
+    from services.progress_service import ProgressReporter
+    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from unittest.mock import MagicMock, AsyncMock
+
+    client = MagicMock()
+    fake_msg = MagicMock()
+    fake_msg.id = 999
+    fake_msg.edit_text = AsyncMock()
+    client.send_message = AsyncMock(return_value=fake_msg)
+
+    test_kb = InlineKeyboardMarkup([[InlineKeyboardButton("Cancel", callback_data="test:cancel")]])
+    reporter = ProgressReporter(client, chat_id=123, title="Test Movie", reply_markup=test_kb)
+
+    await reporter.start()
+    client.send_message.assert_called_once()
+    _, start_kwargs = client.send_message.call_args
+    assert start_kwargs.get("reply_markup") == test_kb
+
+    # Force update
+    reporter._last_edit = 0.0
+    await reporter.update(500 * 1024 * 1024, 1000 * 1024 * 1024)
+    fake_msg.edit_text.assert_called_once()
+    _, edit_kwargs = fake_msg.edit_text.call_args
+    assert edit_kwargs.get("reply_markup") == test_kb
+
+
+def test_player_js_selects_optimal_telegram_variant():
+    """Verify player.js uses Telegram variant_media matching currentEffectiveQuality."""
+    import subprocess
+    js_code = """
+    const fs = require('fs');
+    const vm = require('vm');
+    const code = fs.readFileSync('website/assets/js/player.js', 'utf8');
+    global.window = { FilmSub: {} };
+    global.document = {
+        addEventListener: () => {},
+        getElementById: () => null,
+        querySelector: () => null,
+        querySelectorAll: () => []
+    };
+    global.navigator = {};
+    global.location = { search: '', href: '' };
+    global.FilmSub = { escHtml: s => s };
+    global.currentSeason = 1;
+    global.currentEpisode = 1;
+    vm.runInThisContext(code);
+    currentEffectiveQuality = '720p';
+
+    const movie = {
+        title: 'Dune',
+        type: 'movie',
+        channel_chat_id: '-1004325759505',
+        variant_media: {
+            '1080p': { message_id: 101, file_id: 'f101' },
+            '720p': { message_id: 102, file_id: 'f102' },
+            '480p': { message_id: 103, file_id: 'f103' }
+        },
+        downloads: []
+    };
+    const streams = getMovieStreams(movie);
+    const superPlayer = streams.find(s => s.server === 'Server 1');
+    console.log(JSON.stringify({ found: !!superPlayer, url: superPlayer ? superPlayer.stream_url : '' }));
+    """
+    res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
+    assert res.returncode == 0, f"Node eval error: {res.stderr}"
+    import json
+    data = json.loads(res.stdout.strip())
+    assert data["found"] is True
+    # Should use message_id 102 for 720p
+    assert "/stream/channel/-1004325759505/102" in data["url"]
+
+
+
 
 

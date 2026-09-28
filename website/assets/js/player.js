@@ -345,6 +345,15 @@ function getMovieStreams(movie) {
     ? movie.streams.find(s => s.mode === 'super_chunk' || (s.stream_url && !s.embed && !s.stream_url.includes('vidlink') && !s.stream_url.includes('autoembed') && !s.stream_url.includes('multiembed')))
     : null;
 
+  const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
+  if (vm && typeof vm === 'object') {
+    const qKey = (currentEffectiveQuality || '1080p').toLowerCase();
+    const vOpt = vm[qKey] || vm['1080p'] || vm['720p'] || vm['480p'];
+    if (vOpt && vOpt.message_id) {
+      tgMsgId = vOpt.message_id;
+    }
+  }
+
   if (tgMsgId) {
     if (!tgChatId) tgChatId = '-1004325759505';
     nativeStreamUrl = `/stream/channel/${tgChatId}/${tgMsgId}`;
@@ -985,49 +994,81 @@ function applyQualitySwitch(targetQuality, opts = {}) {
   if (vjsPlayer && typeof vjsPlayer.currentTime === 'function') {
     const curTime = vjsPlayer.currentTime() || 0;
     const wasPaused = vjsPlayer.paused();
-    let newSrc = '';
-    if (newDriveId) {
-      newSrc = buildChunkStreamUrl(newDriveId, currentEffectiveQuality);
-    } else {
-      const qNorm = String(currentEffectiveQuality || '').toLowerCase();
-      if (currentMovie && currentMovie.qualities && typeof currentMovie.qualities === 'object') {
-        const qVal = currentMovie.qualities[qNorm] || currentMovie.qualities[currentEffectiveQuality];
-        if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
-          newSrc = qVal;
-        } else if (qVal && typeof qVal === 'object' && qVal.stream_url && !qVal.stream_url.includes('t.me')) {
-          newSrc = qVal.stream_url;
-        }
-      }
-      if (!newSrc) {
-        const downloads = getMovieDownloads(currentMovie);
-        const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(currentEffectiveQuality.toLowerCase()) && !d.download_only);
-        if (matched) {
-          if (matched.stream_url && !matched.stream_url.includes('t.me')) {
-            newSrc = matched.stream_url;
-          } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
-            newSrc = matched.url;
+let newSrc = '';
+    const qNorm = String(currentEffectiveQuality || '').toLowerCase();
+
+    // 1. Check if movie has multi-quality variant_media (Telegram Cloud)
+    const vm = currentMovie && (currentMovie.variant_media || (currentMovie.movie_entry && currentMovie.movie_entry.variant_media));
+    if (vm && typeof vm === 'object') {
+      const vEntry = vm[qNorm] || vm[currentEffectiveQuality];
+      if (vEntry) {
+        if (vEntry.stream_url && !vEntry.stream_url.includes('t.me')) {
+          newSrc = vEntry.stream_url;
+        } else if (vEntry.message_id) {
+          let tgChatId = currentMovie.channel_chat_id || '';
+          if (!tgChatId) {
+            const mUrl = currentMovie.stream_url || '';
+            const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
+            tgChatId = mMatch ? mMatch[1] : '-1004325759505';
           }
+          newSrc = `/stream/channel/${tgChatId}/${vEntry.message_id}`;
         }
       }
     }
 
-    // Only reload vjsPlayer.src if user explicitly requested a switch (!isAutoDowngrade)
-    // OR if a distinct per-resolution Drive File ID exists (newDriveId !== prevDriveId).
-    // If isAutoDowngrade is true on a single-file Drive movie (newDriveId === prevDriveId),
-    // avoid resetting vjsPlayer.src so the browser's already-buffered media bytes are preserved.
-    const shouldReloadSrc = !isAutoDowngrade || (newDriveId && prevDriveId && newDriveId !== prevDriveId);
+    // 2. Check Drive ID for quality
+    if (!newSrc && newDriveId) {
+      newSrc = buildChunkStreamUrl(newDriveId, currentEffectiveQuality);
+    }
 
-    if (newSrc && shouldReloadSrc) {
+    // 3. Check qualities map
+    if (!newSrc && currentMovie && currentMovie.qualities && typeof currentMovie.qualities === 'object') {
+      const qVal = currentMovie.qualities[qNorm] || currentMovie.qualities[currentEffectiveQuality];
+      if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
+        newSrc = qVal;
+      } else if (qVal && typeof qVal === 'object' && qVal.stream_url && !qVal.stream_url.includes('t.me')) {
+        newSrc = qVal.stream_url;
+      }
+    }
+
+    // 4. Check movie downloads
+    if (!newSrc) {
+      const downloads = getMovieDownloads(currentMovie);
+      const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(qNorm) && !d.download_only);
+      if (matched) {
+        if (matched.stream_url && !matched.stream_url.includes('t.me')) {
+          newSrc = matched.stream_url;
+        } else if (matched.url && matched.url.includes('/c/')) {
+          const mMatch = matched.url.match(/t\.me\/c\/(\d+)\/(\d+)/);
+          if (mMatch) {
+            newSrc = `/stream/channel/-100${mMatch[1]}/${mMatch[2]}`;
+          }
+        } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
+          newSrc = matched.url;
+        }
+      }
+    }
+
+    const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || '';
+    const shouldReloadSrc = newSrc && (!isAutoDowngrade || (newDriveId && prevDriveId && newDriveId !== prevDriveId) || (currentSrc && !currentSrc.includes(newSrc)));
+
+    if (newSrc && shouldReloadSrc && currentSrc !== newSrc) {
       vjsPlayer.src({ src: newSrc, type: 'video/mp4' });
-      vjsPlayer.one('loadedmetadata', () => {
+      let restored = false;
+      const restorePlayhead = () => {
+        if (restored) return;
+        restored = true;
         try {
           if (curTime > 0) vjsPlayer.currentTime(curTime);
         } catch (e) {}
         syncSubtitles();
         if (!wasPaused) {
-          try { vjsPlayer.play(); } catch (e) {}
+          try { vjsPlayer.play().catch(() => {}); } catch (e) {}
         }
-      });
+      };
+      vjsPlayer.one('loadedmetadata', restorePlayhead);
+      vjsPlayer.one('canplay', restorePlayhead);
+      setTimeout(restorePlayhead, 1500);
     }
 
     if (isAutoDowngrade) {

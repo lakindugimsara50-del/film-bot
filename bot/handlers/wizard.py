@@ -319,10 +319,12 @@ def register(app: Client) -> None:
             return
 
         # Otherwise start interactive wizard
+        search_hint = " ".join(tokens).strip() if tokens else ""
         USER_SESSIONS[message.from_user.id] = {
             "step": "WAITING_VIDEO",
             "file_id": "",
             "film_url": "",
+            "title_hint": search_hint,
         }
 
         kb = InlineKeyboardMarkup([
@@ -330,8 +332,9 @@ def register(app: Client) -> None:
             [InlineKeyboardButton("❌ Cancel", callback_data="wiz:cancel")],
         ])
 
+        hint_txt = f"\n🎬 <b>චිත්‍රපටය:</b> <code>{search_hint}</code>\n" if search_hint else ""
         await message.reply_text(
-            "🎬 <b>චිත්‍රපට එකතු කිරීමේ සහයක (Movie Upload Wizard)</b>\n\n"
+            f"🎬 <b>චිත්‍රපට එකතු කිරීමේ සහයක (Movie Upload Wizard)</b>\n{hint_txt}\n"
             "පියවර 1: කරුණාකර චිත්‍රපටයේ <b>Video File එක</b> මට එවන්න (Upload) හෝ <b>Direct Download Link එකක්</b> එවන්න.\n\n"
             "<i>(නැතහොත් කලින් Save කරගත් Draft එකක් තෝරාගත හැක)</i>",
             parse_mode=ParseMode.HTML,

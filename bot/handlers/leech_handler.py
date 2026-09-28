@@ -257,9 +257,17 @@ def register(app: Client) -> None:
         cmd_name = message.command[0].lower() if message.command else "leech"
         is_auto = (cmd_name in ("auto", "boost")) or ("--auto" in text.lower()) or ("-a" in text.split())
 
+        cancel_kb = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("📋 View Queue", callback_data="btn:queue"),
+                InlineKeyboardButton("🛑 Cancel Operation", callback_data="leech:cancel"),
+            ]
+        ])
+
         status_msg = await message.reply_text(
             f"⏳ <b>Auto-Leech පද්ධතියට එක්කරමින් පවතී...</b>\n🎬 {display_hint}",
             parse_mode=ParseMode.HTML,
+            reply_markup=cancel_kb,
         )
 
         pos = await queue_service.add_to_queue(
@@ -280,6 +288,7 @@ def register(app: Client) -> None:
                 f"💡 <i>දැනට ක්‍රියාත්මක කාර්යය අවසන් වූ වහාම මෙම චිත්‍රපටය කිසිදු බාධාවකින් තොරව ස්වයංක්‍රීයව බාගත වේ.</i>\n"
                 f"📋 <i>පෝලිම බැලීමට: <code>/queue</code></i>",
                 parse_mode=ParseMode.HTML,
+                reply_markup=cancel_kb,
             )
 
     @app.on_message(filters.private & filters.command(["queue", "q"]))
@@ -292,7 +301,15 @@ def register(app: Client) -> None:
 
         items = queue_service.get_queue_status()
         if not items:
-            await message.reply_text("🟢 <b>බාගත කිරීමේ පෝලිම හිස්ය (Queue is Empty).</b>\n\nනව චිත්‍රපටයක් බාගත කිරීමට <code>/leech &lt;Movie Name&gt;</code> භාවිතා කරන්න.", parse_mode=ParseMode.HTML)
+            empty_kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🚀 Add Movie (/boost)", callback_data="btn:leech_prompt")],
+                [InlineKeyboardButton("🔄 Refresh Status", callback_data="btn:status_refresh")],
+            ])
+            await message.reply_text(
+                "🟢 <b>බාගත කිරීමේ පෝලිම හිස්ය (Queue is Empty).</b>\n\nනව චිත්‍රපටයක් බාගත කිරීමට <code>/boost &lt;Movie Name&gt;</code> භාවිතා කරන්න.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=empty_kb,
+            )
             return
 
         lines = []
@@ -300,11 +317,16 @@ def register(app: Client) -> None:
             lines.append(f"<b>{i}. {it['title']}</b>\n   ⚡ <i>{it['status']}</i>")
 
         body = "\n\n".join(lines)
+        active_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Refresh Queue", callback_data="btn:queue")],
+            [InlineKeyboardButton("🛑 Cancel Active Task", callback_data="btn:cancel_active")],
+        ])
         await message.reply_text(
             f"📋 <b>වත්මන් බාගත කිරීමේ පෝලිම (Movie Download Queue):</b>\n\n"
             f"{body}\n\n"
             f"💡 <i>සියලුම චිත්‍රපට පිළිවෙලින් එකිනෙක ස්වයංක්‍රීයව බාගත වේ.</i>",
             parse_mode=ParseMode.HTML,
+            reply_markup=active_kb,
         )
 
     @app.on_message(filters.private & filters.command(["cancel", "stop"]))

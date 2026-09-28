@@ -10,7 +10,7 @@ Provides a single ProgressReporter that:
 import asyncio
 import logging
 import time
-from typing import Optional
+from typing import Any, Optional
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
@@ -41,16 +41,22 @@ class ProgressReporter:
         chat_id: int,
         title: str = "",
         reply_to_message_id: Optional[int] = None,
+        reply_markup: Optional[Any] = None,
     ) -> None:
         self._client = client
         self._chat_id = chat_id
         self._title = title
         self._reply_id = reply_to_message_id
+        self._reply_markup = reply_markup
 
         self._msg: Optional[Message] = None
         self._last_edit: float = 0.0
         self._start_time: float = time.time()
         self._lock = asyncio.Lock()
+
+    def set_reply_markup(self, reply_markup: Optional[Any]) -> None:
+        """Dynamically update or attach reply_markup (e.g. Cancel button)."""
+        self._reply_markup = reply_markup
 
     async def start(self, text: Optional[str] = None) -> None:
         """Send the initial progress message."""
@@ -59,11 +65,15 @@ class ProgressReporter:
             f"🎬 {self._title}"
         )
         try:
+            kwargs = {}
+            if self._reply_markup:
+                kwargs["reply_markup"] = self._reply_markup
             self._msg = await self._client.send_message(
                 chat_id=self._chat_id,
                 text=body,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=self._reply_id,
+                **kwargs,
             )
             self._start_time = time.time()
             self._last_edit = time.time()
@@ -109,17 +119,23 @@ class ProgressReporter:
             )
 
             try:
-                await self._msg.edit_text(text, parse_mode=ParseMode.HTML)
+                kwargs = {}
+                if self._reply_markup:
+                    kwargs["reply_markup"] = self._reply_markup
+                await self._msg.edit_text(text, parse_mode=ParseMode.HTML, **kwargs)
                 self._last_edit = time.time()
             except Exception as exc:
                 log.debug("[ProgressService] Edit skipped: %s", exc)
 
-    async def finish(self, text: str) -> None:
+    async def finish(self, text: str, reply_markup: Optional[Any] = None) -> None:
         """Replace the progress message with a final status message."""
         if not self._msg:
             return
         try:
-            await self._msg.edit_text(text, parse_mode=ParseMode.HTML)
+            kwargs = {}
+            if reply_markup is not None:
+                kwargs["reply_markup"] = reply_markup
+            await self._msg.edit_text(text, parse_mode=ParseMode.HTML, **kwargs)
         except Exception as exc:
             log.warning("[ProgressService] Could not finish message: %s", exc)
 

@@ -828,7 +828,7 @@ async def compress_smart_1080p(
     return False
 
 
-def get_optimal_work_dir(min_free_gb: float = 4.0, prefix: str = "leech_ram_") -> str:
+def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -> str:
     """
     Allocate a working directory in the 12GB RAM disk (/dev/shm) on Google Colab / Linux
     when sufficient free RAM space is available, eliminating disk I/O bottlenecks
@@ -842,7 +842,7 @@ def get_optimal_work_dir(min_free_gb: float = 4.0, prefix: str = "leech_ram_") -
     if os.path.isdir(ram_disk) and os.access(ram_disk, os.W_OK):
         try:
             free_ram = shutil.disk_usage(ram_disk).free
-            if free_ram >= min_bytes:
+            if free_ram >= min_bytes or free_ram >= int(1.5 * 1024 * 1024 * 1024):
                 work_dir = tempfile.mkdtemp(prefix=prefix, dir=ram_disk)
                 log.info(
                     "[VideoService] Allocated 12GB RAM Disk workspace: %s (%.2f GB free in /dev/shm)",
@@ -1353,34 +1353,61 @@ async def generate_multi_quality_variants_ram(
     # Detect resolution tier, supporting both 16:9 and 2.39:1 widescreen films
     is_source_1080p = (1700 <= src_w <= 2000) or (950 <= src_h <= 1150)
     is_source_720p = (1100 <= src_w <= 1400) or (620 <= src_h <= 750)
+    is_source_480p = (700 <= src_w <= 950) or (400 <= src_h <= 550)
 
     # If source is already ~1080p and 1080p is in target_q_list, instant copy
     if is_source_1080p and "1080p" in target_q_list:
         direct_1080_path = os.path.join(abs_out_dir, f"{slug}-1080p.mp4")
-        try:
-            ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_1080_path, disposition="default")
-            if not ok_copy:
-                ok_copy = await ensure_web_streamable(input_path, direct_1080_path, sub_path=sub_path)
-            if ok_copy and os.path.exists(direct_1080_path) and os.path.getsize(direct_1080_path) >= min_valid_size:
-                valid_outputs["1080p"] = direct_1080_path
-                target_q_list = [q for q in target_q_list if q != "1080p"]
-                log.info("[VideoService] Source is already ~1080p (%dx%d). Instant 1080p copy applied: %s", src_w, src_h, direct_1080_path)
-        except Exception as e1080:
-            log.debug("[VideoService] Direct 1080p copy note: %s", e1080)
+        if os.path.abspath(input_path) == os.path.abspath(direct_1080_path):
+            valid_outputs["1080p"] = direct_1080_path
+            target_q_list = [q for q in target_q_list if q != "1080p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_1080_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_1080_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_1080_path) and os.path.getsize(direct_1080_path) >= min_valid_size:
+                    valid_outputs["1080p"] = direct_1080_path
+                    target_q_list = [q for q in target_q_list if q != "1080p"]
+                    log.info("[VideoService] Source is already ~1080p (%dx%d). Instant 1080p copy applied: %s", src_w, src_h, direct_1080_path)
+            except Exception as e1080:
+                log.debug("[VideoService] Direct 1080p copy note: %s", e1080)
 
     # If source is already ~720p, do not re-encode 720p if copy succeeds.
     if is_source_720p and "720p" in target_q_list:
         direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
-        try:
-            ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_720_path, disposition="default")
-            if not ok_copy:
-                ok_copy = await ensure_web_streamable(input_path, direct_720_path, sub_path=sub_path)
-            if ok_copy and os.path.exists(direct_720_path) and os.path.getsize(direct_720_path) >= min_valid_size:
-                valid_outputs["720p"] = direct_720_path
-                target_q_list = [q for q in target_q_list if q != "720p"]
-                log.info("[VideoService] Source is already <= 720p (%dx%d). Instant 720p copy applied in seconds: %s", src_w, src_h, direct_720_path)
-        except Exception as e720:
-            log.debug("[VideoService] Direct 720p copy note: %s", e720)
+        if os.path.abspath(input_path) == os.path.abspath(direct_720_path):
+            valid_outputs["720p"] = direct_720_path
+            target_q_list = [q for q in target_q_list if q != "720p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_720_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_720_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_720_path) and os.path.getsize(direct_720_path) >= min_valid_size:
+                    valid_outputs["720p"] = direct_720_path
+                    target_q_list = [q for q in target_q_list if q != "720p"]
+                    log.info("[VideoService] Source is already <= 720p (%dx%d). Instant 720p copy applied in seconds: %s", src_w, src_h, direct_720_path)
+            except Exception as e720:
+                log.debug("[VideoService] Direct 720p copy note: %s", e720)
+
+    # If source is already ~480p, do not re-encode 480p if copy succeeds.
+    if is_source_480p and "480p" in target_q_list:
+        direct_480_path = os.path.join(abs_out_dir, f"{slug}-480p.mp4")
+        if os.path.abspath(input_path) == os.path.abspath(direct_480_path):
+            valid_outputs["480p"] = direct_480_path
+            target_q_list = [q for q in target_q_list if q != "480p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_480_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_480_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_480_path) and os.path.getsize(direct_480_path) >= min_valid_size:
+                    valid_outputs["480p"] = direct_480_path
+                    target_q_list = [q for q in target_q_list if q != "480p"]
+                    log.info("[VideoService] Source is already ~480p (%dx%d). Instant 480p copy applied in seconds: %s", src_w, src_h, direct_480_path)
+            except Exception as e480:
+                log.debug("[VideoService] Direct 480p copy note: %s", e480)
 
     if not target_q_list:
         return valid_outputs

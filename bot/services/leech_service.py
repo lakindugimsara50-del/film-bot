@@ -684,7 +684,7 @@ async def _execute_leech(
         # ── Step 2: Download with Multi-Method Fallback ────────────────────────
         chosen_candidate: Optional[LeechCandidate] = None
         if not temp_dir:
-            temp_dir = video_service.get_optimal_work_dir(min_free_gb=4.5, prefix="leech_ram_")
+            temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
 
         for idx, candidate in enumerate(candidates, 1):

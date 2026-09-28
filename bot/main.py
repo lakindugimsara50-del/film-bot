@@ -509,33 +509,9 @@ async def help_handler(client: Client, message: Message) -> None:
     )
 
 
-@app.on_callback_query(filters.regex(r"^btn:"))
-async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
-    """Handle quick buttons from /start greeting."""
-    action = query.data.split(":", 1)[1]
-    if action == "help":
-        await query.answer()
-        fake_msg = query.message
-        fake_msg.from_user = query.from_user
-        await help_handler(client, fake_msg)
-    elif action == "drives":
-        await query.answer()
-        from handlers.drive_handler import drives_command
-        fake_msg = query.message
-        fake_msg.from_user = query.from_user
-        await drives_command(client, fake_msg)
-    else:
-        await query.answer()
-
-
-@app.on_message(filters.command("status"))
-async def status_handler(client: Client, message: Message) -> None:
-    """Show bot status, active/recent task progress, and configuration summary."""
+def _build_status_content(user_id: int, me_username: str, is_admin: bool):
     from services.task_tracker import tracker
     from handlers.wizard import USER_SESSIONS
-
-    user_id = message.from_user.id if message.from_user else 0
-    me = await client.get_me()
 
     wizard_session = USER_SESSIONS.get(user_id)
     wizard_note = ""
@@ -552,7 +528,6 @@ async def status_handler(client: Client, message: Message) -> None:
 
     task_summary = tracker.get_status_summary(user_id=user_id)
 
-    is_admin = message.from_user and message.from_user.id in config.ADMIN_IDS
     admin_details = ""
     if is_admin:
         pool_txt = ""
@@ -570,20 +545,123 @@ async def status_handler(client: Client, message: Message) -> None:
 
         admin_details = (
             f"\n\n⚙️ <b>පද්ධති විස්තර (System Details):</b>\n"
-            f"📦 Private channel: <code>{config.PRIVATE_CHANNEL_ID}</code>\n"
-            f"📢 Public channel:  <code>{config.PUBLIC_CHANNEL_ID}</code>\n"
-            f"🌐 Stream base URL: <code>{config.STREAM_BASE_URL}</code>\n"
-            f"🎥 TMDB key set:    {'✅' if config.TMDB_API_KEY else '❌'}"
+            f"📦 Channel: <code>{config.PUBLIC_CHANNEL_ID}</code>\n"
+            f"🌐 Stream URL: <code>{config.STREAM_BASE_URL}</code>\n"
+            f"🎥 TMDB API: {'✅' if config.TMDB_API_KEY else '❌'}"
             f"{pool_txt}"
         )
 
-    await message.reply_text(
+    text = (
         f"🤖 <b>Film Bot තත්ත්වය (Status):</b>\n\n"
-        f"Bot: @{me.username}\n\n"
+        f"Bot: @{me_username}\n\n"
         f"{task_summary}"
         f"{wizard_note}"
-        f"{admin_details}",
+        f"{admin_details}"
+    )
+
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔄 Refresh Status", callback_data="btn:status_refresh"),
+            InlineKeyboardButton("📋 View Queue", callback_data="btn:queue"),
+        ],
+        [
+            InlineKeyboardButton("🚀 Boost / Leech", callback_data="btn:leech_prompt"),
+            InlineKeyboardButton("🛑 Cancel Active", callback_data="btn:cancel_active"),
+        ],
+    ])
+    return text, kb
+
+
+@app.on_callback_query(filters.regex(r"^btn:"))
+async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
+    """Handle quick buttons from /start greeting and /status."""
+    action = query.data.split(":", 1)[1]
+    user_id = query.from_user.id if query.from_user else 0
+    is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+
+    if action == "help":
+        await query.answer()
+        fake_msg = query.message
+        fake_msg.from_user = query.from_user
+        await help_handler(client, fake_msg)
+    elif action == "drives":
+        await query.answer()
+        from handlers.drive_handler import drives_command
+        fake_msg = query.message
+        fake_msg.from_user = query.from_user
+        await drives_command(client, fake_msg)
+    elif action == "status_refresh":
+        me = await client.get_me()
+        txt, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
+        await query.answer("Status Updated ✅")
+        try:
+            await query.message.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+        except Exception:
+            pass
+    elif action == "queue":
+        await query.answer()
+        from services.queue_service import queue_service
+        items = queue_service.get_queue_status()
+        if not items:
+            q_txt = "🟢 <b>බාගත කිරීමේ පෝලිම හිස්ය (Queue is Empty).</b>\n\nනව චිත්‍රපටයක් එක් කිරීමට <code>/boost &lt;Movie Name&gt;</code> භාවිතා කරන්න."
+        else:
+            lines = [f"<b>{i}. {it['title']}</b>\n   ⚡ <i>{it['status']}</i>" for i, it in enumerate(items, 1)]
+            q_txt = "📋 <b>වත්මන් බාගත කිරීමේ පෝලිම (Movie Queue):</b>\n\n" + "\n\n".join(lines)
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Refresh Queue", callback_data="btn:queue")],
+            [InlineKeyboardButton("🔙 Back to Status", callback_data="btn:status_refresh")],
+        ])
+        try:
+            await query.message.edit_text(q_txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+        except Exception:
+            pass
+    elif action == "leech_prompt":
+        await query.answer()
+        p_txt = (
+            "🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
+            "ඕනෑම චිත්‍රපටයක් ඔබගේ Data වැය නොවී VPS එකට Download කර Channel එකට Upload කිරීම.\n\n"
+            "<b>භාවිතය (Usage):</b>\n"
+            "  • <code>/boost &lt;Movie Name&gt;</code> — උදා: <code>/boost Inception</code>\n"
+            "  • <code>/boost &lt;IMDb ID&gt;</code> — උදා: <code>/boost tt1375666</code>\n"
+            "  • <code>/queue</code> — බාගත වීමට ඇති පෝලිම බලන්න\n"
+            "  • <code>/cancel</code> — ක්‍රියාත්මක කාර්යය නවත්වන්න"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Back to Status", callback_data="btn:status_refresh")],
+        ])
+        try:
+            await query.message.edit_text(p_txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+        except Exception:
+            pass
+    elif action == "cancel_active":
+        from services import task_tracker
+        cancelled = await task_tracker.cancel_all_user_operations(user_id)
+        if cancelled:
+            await query.answer("කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled) ✅", show_alert=True)
+        else:
+            await query.answer("දැනට ක්‍රියාත්මක කාර්යයක් නොමැත (No active task)", show_alert=True)
+        me = await client.get_me()
+        txt, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
+        try:
+            await query.message.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+        except Exception:
+            pass
+    else:
+        await query.answer()
+
+
+@app.on_message(filters.command("status"))
+async def status_handler(client: Client, message: Message) -> None:
+    """Show bot status, active/recent task progress, and configuration summary."""
+    user_id = message.from_user.id if message.from_user else 0
+    me = await client.get_me()
+    is_admin = message.from_user and message.from_user.id in config.ADMIN_IDS
+
+    text, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
+    await message.reply_text(
+        text,
         parse_mode=ParseMode.HTML,
+        reply_markup=kb,
     )
 
 

@@ -226,7 +226,7 @@ function buildChunkStreamUrl(driveId, quality) {
 /**
  * Curates exactly 2 clean zero-ads players:
  * - Server 1: ⚡ Super Player (Telegram Cloud HD • Zero Ads) — Native Video.js HTML5 player, zero ads, auto Sinhala sub
- * - Server 2: 🎬 VIP Player (VidLink Ultra HD • Zero Ads) — Sandboxed iframe (blocks popups/redirects), auto Sinhala sub
+ * - Server 2: 🎬 VIP Player (VidLink Ultra HD • Zero Ads) — Fast HD Embed with auto Sinhala sub
  */
 function getMovieStreams(movie) {
   if (!movie) return [];
@@ -317,30 +317,46 @@ function getMovieStreams(movie) {
   // Server 1: ⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub) [Native Video.js - Zero Ads]
   // =========================================================================
   let nativeStreamUrl = '';
-  const fileId = movie.file_id || (Array.isArray(movie.streams) && movie.streams.find(s => s.file_id)?.file_id) || '';
+  
+  // 1. Resolve real Telegram Cloud stream via channel chat ID and message ID
+  let tgChatId = movie.channel_chat_id || '';
+  let tgMsgId = movie.channel_post_id || movie.message_id || 0;
+
+  if (!tgMsgId && Array.isArray(movie.downloads)) {
+    for (const d of movie.downloads) {
+      if (d.message_id) {
+        tgMsgId = d.message_id;
+      }
+      const matchC = (d.url || '').match(/t\.me\/c\/(\d+)\/(\d+)/);
+      if (matchC) {
+        tgChatId = tgChatId || `-100${matchC[1]}`;
+        tgMsgId = tgMsgId || parseInt(matchC[2], 10);
+      }
+      const matchU = (d.url || '').match(/t\.me\/([^/]+)\/(\d+)/);
+      if (matchU) {
+        tgChatId = tgChatId || matchU[1];
+        tgMsgId = tgMsgId || parseInt(matchU[2], 10);
+      }
+      if (tgMsgId) break;
+    }
+  }
+
   const existingTgStream = Array.isArray(movie.streams)
     ? movie.streams.find(s => s.mode === 'super_chunk' || (s.stream_url && !s.embed && !s.stream_url.includes('vidlink') && !s.stream_url.includes('autoembed') && !s.stream_url.includes('multiembed')))
     : null;
 
-  if (existingTgStream && existingTgStream.stream_url) {
+  if (tgMsgId) {
+    if (!tgChatId) tgChatId = '-1004325759505';
+    nativeStreamUrl = `/stream/channel/${tgChatId}/${tgMsgId}`;
+  } else if (existingTgStream && existingTgStream.stream_url && !existingTgStream.stream_url.includes('vidlink') && !existingTgStream.stream_url.includes('autoembed') && !existingTgStream.stream_url.includes('multiembed')) {
     nativeStreamUrl = existingTgStream.stream_url;
-  } else if (fileId) {
-    nativeStreamUrl = `/api/stream?file_id=${encodeURIComponent(fileId)}`;
-  } else if (primaryUrl && !primaryUrl.includes('vidlink') && !primaryUrl.includes('autoembed') && !primaryUrl.includes('multiembed') && !primaryUrl.includes('embed')) {
-    nativeStreamUrl = primaryUrl;
   } else if (driveId) {
     nativeStreamUrl = `/api/stream?id=${encodeURIComponent(driveId)}`;
-  } else if (Array.isArray(movie.downloads) && movie.downloads.length > 0) {
-    const d0 = movie.downloads[0];
-    if (d0.stream_url) nativeStreamUrl = d0.stream_url;
-    else if (d0.url && !d0.url.includes('t.me') && !d0.url.includes('drive.google.com')) nativeStreamUrl = d0.url;
+  } else if (primaryUrl && !primaryUrl.includes('vidlink') && !primaryUrl.includes('autoembed') && !primaryUrl.includes('multiembed') && !primaryUrl.includes('embed')) {
+    nativeStreamUrl = primaryUrl;
   }
 
-  if (!nativeStreamUrl) {
-    nativeStreamUrl = driveId ? `/api/stream?id=${encodeURIComponent(driveId)}` : (primaryUrl || '');
-  }
-
-  if (nativeStreamUrl) {
+  if (nativeStreamUrl && !nativeStreamUrl.includes('vidlink') && !nativeStreamUrl.includes('autoembed') && !nativeStreamUrl.includes('multiembed')) {
     list.push({
       server: `Server ${srvCounter}`,
       label: `⚡ Super Player (Telegram Cloud HD • Zero Ads)`,
@@ -1459,7 +1475,6 @@ function renderStreamEmbed(playerEl, stream, movie) {
               frameborder="0"
               loading="eager"
               referrerpolicy="no-referrer-when-downgrade"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               allowfullscreen="true"
               webkitallowfullscreen="true"

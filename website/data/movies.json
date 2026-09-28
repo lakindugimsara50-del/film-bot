@@ -6661,7 +6661,7 @@
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/4/3"
+          "stream_url": "https://vidlink.pro/tv/1399/4/3?sub.Sinhala=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s04e03-s04e03-si.vtt"
         },
         {
           "server": "Server 2",
@@ -6680,12 +6680,21 @@
       ],
       "downloads": [],
       "telegram_status": "queued",
-      "subtitle_url": "",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e03-s04e03-si.vtt",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e03",
       "channel_post_id": 110,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-28"
+      "added_date": "2026-09-28",
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "සිංහල උපසිරැසි",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e03-s04e03-si.vtt",
+          "default": true
+        }
+      ],
+      "has_sinhala_sub": true
     }
   ],
-  "last_updated": "2026-09-28T10:41:12Z"
+  "last_updated": "2026-09-28T10:41:33Z"
 }

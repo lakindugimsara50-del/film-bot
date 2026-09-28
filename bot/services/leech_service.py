@@ -1244,10 +1244,28 @@ async def _execute_leech(
         last_upload_edit = 0.0
         _last_drive_edit = 0.0
         _mq_progress_str = ""
+        _hw_enc = video_service.detect_hw_encoder()
+        _engine_tag = "⚡ <b>Engine:</b> NVIDIA T4 GPU (Hardware Acceleration)" if _hw_enc == "h264_nvenc" else "⚡ <b>Engine:</b> Ultra-Fast Multi-Thread CPU"
+        _sub_tag = "\n🇱🇰 <b>Subtitle:</b> සිංහල උපසිරැසි Muxed (mov_text auto-play)" if (sub_to_merge and os.path.exists(sub_to_merge)) else ""
 
         async def _mq_progress_cb(pct: float, pct_str: str) -> None:
-            nonlocal _mq_progress_str
-            _mq_progress_str = f"RAM 720p/480p/360p: {pct_str}"
+            nonlocal _mq_progress_str, last_upload_edit
+            _mq_progress_str = f"GPU 720p/480p: {pct_str}" if _hw_enc == "h264_nvenc" else f"RAM 720p/480p: {pct_str}"
+            now = time.time()
+            if now - last_upload_edit >= 3.5:
+                last_upload_edit = now
+                mq_text = (
+                    f"⚙️ <b>පියවර 3/3: Multi-Quality පරිවර්තනය &amp; Upload වෙමින්...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
+                    f"🔄 <b>පරිවර්තනය:</b> {_mq_progress_str}\n"
+                    f"{_engine_tag}{_sub_tag}\n"
+                    f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
+                )
+                try:
+                    await status_msg.edit_text(mq_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+                except Exception:
+                    pass
 
         async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
             nonlocal last_upload_edit
@@ -1255,6 +1273,7 @@ async def _execute_leech(
             if (now - last_upload_edit >= 3.0) or (pct >= 100.0 and now - last_upload_edit >= 1.0):
                 last_upload_edit = now
                 p_bar = downloader.format_progress_bar(pct)
+                mq_line = f"\n🔄 <b>Multi-Quality (720p/480p):</b> {_mq_progress_str}" if _mq_progress_str else ""
                 text = (
                     f"📤 <b>පියවර 3/3: Telegram Cloud HD වෙත Upload වෙමින්...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
@@ -1262,6 +1281,7 @@ async def _execute_leech(
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                     f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                     f"⚡ <b>Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
+                    f"{_engine_tag}{_sub_tag}{mq_line}\n"
                     f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
                 )
                 try:

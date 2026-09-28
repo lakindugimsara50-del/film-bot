@@ -314,7 +314,45 @@ function getMovieStreams(movie) {
 
   let srvCounter = 1;
 
+  // =========================================================================
+  // Server 1: ⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub) [Native Video.js - Zero Ads]
+  // =========================================================================
+  let nativeStreamUrl = '';
+  const fileId = movie.file_id || (Array.isArray(movie.streams) && movie.streams.find(s => s.file_id)?.file_id) || '';
+  const existingTgStream = Array.isArray(movie.streams)
+    ? movie.streams.find(s => s.mode === 'super_chunk' || (s.stream_url && !s.embed && !s.stream_url.includes('vidlink') && !s.stream_url.includes('autoembed') && !s.stream_url.includes('multiembed')))
+    : null;
 
+  if (existingTgStream && existingTgStream.stream_url) {
+    nativeStreamUrl = existingTgStream.stream_url;
+  } else if (fileId) {
+    nativeStreamUrl = `/api/stream?file_id=${encodeURIComponent(fileId)}`;
+  } else if (primaryUrl && !primaryUrl.includes('vidlink') && !primaryUrl.includes('autoembed') && !primaryUrl.includes('multiembed') && !primaryUrl.includes('embed')) {
+    nativeStreamUrl = primaryUrl;
+  } else if (driveId) {
+    nativeStreamUrl = `/api/stream?id=${encodeURIComponent(driveId)}`;
+  } else if (Array.isArray(movie.downloads) && movie.downloads.length > 0) {
+    const d0 = movie.downloads[0];
+    if (d0.stream_url) nativeStreamUrl = d0.stream_url;
+    else if (d0.url && !d0.url.includes('t.me') && !d0.url.includes('drive.google.com')) nativeStreamUrl = d0.url;
+  }
+
+  if (!nativeStreamUrl) {
+    nativeStreamUrl = driveId ? `/api/stream?id=${encodeURIComponent(driveId)}` : (primaryUrl || '');
+  }
+
+  if (nativeStreamUrl) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: `⚡ Super Player (Telegram Cloud HD • Zero Ads)`,
+      mode: 'super_chunk',
+      type: 'video/mp4',
+      embed: false,
+      stream_url: nativeStreamUrl,
+      hasLocalFile: true,
+    });
+    srvCounter++;
+  }
 
   // =========================================================================
   // VIP Player 1: 🎬 VidLink Pro Ultra HD (Auto Sinhala Sub)
@@ -1465,6 +1503,7 @@ function renderStreamEmbed(playerEl, stream, movie) {
               frameborder="0"
               loading="eager"
               referrerpolicy="no-referrer-when-downgrade"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               allowfullscreen="true"
               webkitallowfullscreen="true"
@@ -1661,7 +1700,10 @@ function createVjsPlayer(playerEl, stream, movie) {
     });
 
     vjsPlayer.on('canplay', hideLoader);
-    vjsPlayer.on('playing', hideLoader);
+    vjsPlayer.on('playing', () => {
+      hideLoader();
+      syncSubtitles();
+    });
 
     // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 6.0s
     // (e.g. stream server sleeping / warming up, Colab proxy offline, or ultra-slow network),

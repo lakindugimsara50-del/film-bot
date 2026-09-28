@@ -1409,13 +1409,15 @@ async def _execute_leech(
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
-                # Generate 720p and 480p multi-quality variants (for both movies and series)
+                # Detect source resolution: if source is > 1080p (4K), encode 1080p, 720p, 480p; otherwise 720p, 480p
+                src_w, src_h = video_service.get_video_resolution(local_file)
+                requested_qualities = ("1080p", "720p", "480p") if src_h > 1080 else ("720p", "480p")
                 variant_files = await video_service.generate_multi_quality_variants_ram(
                     input_path=local_file,
                     output_dir=temp_dir,
                     slug=slug,
                     sub_path=sub_to_merge,
-                    qualities=("720p", "480p"),
+                    qualities=requested_qualities,
                     progress_callback=_mq_progress_cb,
                 )
                 if variant_files:
@@ -1435,12 +1437,13 @@ async def _execute_leech(
                     _mq_progress_str = f"Telegram {q_keys} Upload Complete ✅"
 
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
-                    _mq_progress_str = "720p/480p Uploading to Drive..."
+                    q_keys = "/".join(variant_files.keys())
+                    _mq_progress_str = f"{q_keys} Uploading to Drive..."
                     await asyncio.gather(
                         *[_task_upload_drive_variant(ql, qp) for ql, qp in variant_files.items()],
                         return_exceptions=True,
                     )
-                    _mq_progress_str = "720p/480p Complete ✅"
+                    _mq_progress_str = f"{q_keys} Drive Complete ✅"
             except Exception as mq_err:
                 log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
 
@@ -1568,10 +1571,18 @@ async def _execute_leech(
             })
             qualities_map = {
                 "auto": stream_url,
-                "1080p": stream_url,
+                "1080p": variant_tg_info.get("1080p", {}).get("stream_url") or stream_url,
                 "720p": stream_720,
                 "480p": stream_480,
                 "360p": stream_360,
+            }
+        elif cloud_stream:
+            qualities_map = {
+                "auto": cloud_stream,
+                "1080p": cloud_stream,
+                "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or cloud_stream,
+                "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or cloud_stream,
+                "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or cloud_stream,
             }
 
         # 2. If Google Drive upload was explicitly enabled and succeeded, add as backup Server
@@ -1706,12 +1717,13 @@ async def _execute_leech(
             })
 
         for q_var, q_lbl, sz_var, s_var in [
+            ("1080p", "1080p Full HD", sz_1080, variant_tg_info.get("1080p", {}).get("stream_url") or stream_url),
             ("720p", "720p HD", sz_720, stream_720),
             ("480p", "480p SD", sz_480, stream_480),
             ("360p", "360p Data Saver", sz_360, stream_360),
         ]:
             var_msg = variant_tg_info.get(q_var, {}).get("message_id")
-            if var_msg and tg_channel_id_clean:
+            if var_msg and var_msg != message_id and tg_channel_id_clean:
                 downloads_list.append({
                     "quality": f"{q_var} (Telegram Direct)",
                     "label": f"{q_lbl} (Telegram Channel • Fast)",

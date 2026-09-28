@@ -1296,9 +1296,10 @@ async def generate_multi_quality_variants_ram(
 
     # Resolution & bitrate profile per quality tier (CRF 26 for ultra-fast high-quality encoding)
     profiles = {
-        "720p": {"height": 720, "crf": "26", "maxrate": "1800k", "bufsize": "2400k", "abitrate": "128k"},
-        "480p": {"height": 480, "crf": "26", "maxrate": "950k",  "bufsize": "1400k", "abitrate": "96k"},
-        "360p": {"height": 360, "crf": "26", "maxrate": "550k",  "bufsize": "900k",  "abitrate": "64k"},
+        "1080p": {"height": 1080, "crf": "26", "maxrate": "3500k", "bufsize": "5000k", "abitrate": "160k"},
+        "720p":  {"height": 720,  "crf": "26", "maxrate": "1800k", "bufsize": "2400k", "abitrate": "128k"},
+        "480p":  {"height": 480,  "crf": "26", "maxrate": "950k",  "bufsize": "1400k", "abitrate": "96k"},
+        "360p":  {"height": 360,  "crf": "26", "maxrate": "550k",  "bufsize": "900k",  "abitrate": "64k"},
     }
 
     target_q_list = [q for q in qualities if q in profiles]
@@ -1308,8 +1309,22 @@ async def generate_multi_quality_variants_ram(
     valid_outputs: dict[str, str] = {}
     src_w, src_h = get_video_resolution(input_path, ffmpeg_bin)
 
-    # If source is already <= 720p (e.g. HDTV / 720p WEB-DL), do not re-encode 720p if copy succeeds.
-    if src_h > 0 and src_h <= 720 and "720p" in target_q_list:
+    # If source is already ~1080p (height between 1000 and 1080) and 1080p is in target_q_list, instant copy
+    if src_h >= 1000 and src_h <= 1080 and "1080p" in target_q_list:
+        direct_1080_path = os.path.join(abs_out_dir, f"{slug}-1080p.mp4")
+        try:
+            ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_1080_path, disposition="default")
+            if not ok_copy:
+                ok_copy = await ensure_web_streamable(input_path, direct_1080_path, sub_path=sub_path)
+            if ok_copy and os.path.exists(direct_1080_path) and os.path.getsize(direct_1080_path) >= min_valid_size:
+                valid_outputs["1080p"] = direct_1080_path
+                target_q_list = [q for q in target_q_list if q != "1080p"]
+                log.info("[VideoService] Source is already ~1080p (%dx%d). Instant 1080p copy applied: %s", src_w, src_h, direct_1080_path)
+        except Exception as e1080:
+            log.debug("[VideoService] Direct 1080p copy note: %s", e1080)
+
+    # If source is already ~720p (height between 680 and 720), do not re-encode 720p if copy succeeds.
+    if src_h >= 680 and src_h <= 720 and "720p" in target_q_list:
         direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
         try:
             ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_720_path, disposition="default")
@@ -1324,6 +1339,26 @@ async def generate_multi_quality_variants_ram(
 
     if not target_q_list:
         return valid_outputs
+
+    # Check if input audio needs transcoding to AAC for browser playback (e.g. AC3/DTS/FLAC)
+    needs_aac_transcode = False
+    try:
+        probe = subprocess.run(
+            [ffmpeg_bin, "-hide_banner", "-i", input_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", probe.stderr)
+        if audio_matches:
+            primary_audio = audio_matches[0].lower()
+            if primary_audio not in ("aac", "mp3"):
+                needs_aac_transcode = True
+    except Exception:
+        pass
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     num_q = len(target_q_list)
@@ -1399,9 +1434,17 @@ async def generate_multi_quality_variants_ram(
                     "-tune", "fastdecode",
                     "-crf", "28",
                 ])
+            c.append("-pix_fmt")
+            c.append("yuv420p")
+            if needs_aac_transcode:
+                c.extend([
+                    "-c:a", "aac",
+                    "-b:a", prof["abitrate"],
+                    "-ac", "2",
+                ])
+            else:
+                c.extend(["-c:a", "copy"])
             c.extend([
-                "-pix_fmt", "yuv420p",
-                "-c:a", "copy",
                 "-movflags", "+faststart",
                 out_file,
             ])
@@ -1414,7 +1457,7 @@ async def generate_multi_quality_variants_ram(
     strategies: list[tuple[str, bool, bool]] = [(hw_enc, False, has_sub)]
     if hw_enc == "h264_nvenc":
         strategies.append(("libx264", False, has_sub))
-    elif has_sub:
+    if has_sub:
         strategies.append(("libx264", False, False))
 
     proc = None
@@ -1456,7 +1499,7 @@ async def generate_multi_quality_variants_ram(
                                 except Exception:
                                     pass
 
-            timeout_val = max(300.0, duration * 0.5) if enc_choice == "h264_nvenc" else max(600.0, duration * 1.5)
+            timeout_val = max(300.0, min(1800.0, duration * 0.5)) if enc_choice == "h264_nvenc" else max(600.0, min(3600.0, duration * 1.5))
             try:
                 await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=timeout_val)
             except asyncio.TimeoutError:
@@ -1468,9 +1511,18 @@ async def generate_multi_quality_variants_ram(
                     except Exception:
                         pass
 
-            for q, p in out_paths.items():
-                if os.path.exists(p) and os.path.getsize(p) >= min_valid_size:
-                    valid_outputs[q] = p
+            if proc and proc.returncode == 0:
+                for q, p in out_paths.items():
+                    if os.path.exists(p) and os.path.getsize(p) >= min_valid_size:
+                        valid_outputs[q] = p
+            else:
+                # Cleanup corrupt/partial files created by this failed attempt
+                for q, p in out_paths.items():
+                    if os.path.exists(p) and p not in valid_outputs.values():
+                        try:
+                            os.remove(p)
+                        except Exception:
+                            pass
 
             if all(q in valid_outputs for q in target_q_list):
                 log.info(
@@ -1479,11 +1531,10 @@ async def generate_multi_quality_variants_ram(
                 )
                 return valid_outputs
 
-            # In CPU mode, if at least 1 variant succeeded (e.g. 720p), return immediately
-            # rather than stalling the pipeline with duplicate retries.
-            if enc_choice == "libx264" and valid_outputs:
+            # If all newly targeted qualities were produced in this attempt, return
+            if proc and proc.returncode == 0 and any(q in valid_outputs for q in out_paths.keys()):
                 log.info(
-                    "[VideoService] Partial multi-quality variants ready on CPU: %s. Returning completed variants.",
+                    "[VideoService] Multi-quality variants successfully produced: %s",
                     list(valid_outputs.keys()),
                 )
                 return valid_outputs

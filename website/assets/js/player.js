@@ -356,7 +356,7 @@ function getMovieStreams(movie) {
     nativeStreamUrl = primaryUrl;
   }
 
-  if (nativeStreamUrl && !nativeStreamUrl.includes('vidlink') && !nativeStreamUrl.includes('autoembed') && !nativeStreamUrl.includes('multiembed')) {
+  if (isMatchingEpisode && nativeStreamUrl && !nativeStreamUrl.includes('vidlink') && !nativeStreamUrl.includes('autoembed') && !nativeStreamUrl.includes('multiembed')) {
     list.push({
       server: `Server ${srvCounter}`,
       label: `⚡ Super Player (Telegram Cloud HD • Zero Ads)`,
@@ -401,6 +401,37 @@ function getMovieStreams(movie) {
     stream_url: s1Url,
     hasLocalFile: true,
   });
+  srvCounter++;
+
+  // If Server 1 was not available (e.g. non-matching series episode), ensure we still have Server 2
+  if (list.length < 2) {
+    let s2Url = '';
+    if (isSeries) {
+      if (imdbId) {
+        s2Url = `https://autoembed.co/tv/imdb/${imdbId}-${sNum}-${eNum}${s1SubParam}`;
+      } else if (tmdbId) {
+        s2Url = `https://autoembed.co/tv/tmdb/${tmdbId}-${sNum}-${eNum}${s1SubParam}`;
+      }
+    } else {
+      if (imdbId) {
+        s2Url = `https://autoembed.co/movie/imdb/${imdbId}${s1SubParam}`;
+      } else if (tmdbId) {
+        s2Url = `https://autoembed.co/movie/tmdb/${tmdbId}${s1SubParam}`;
+      }
+    }
+    if (s2Url) {
+      list.push({
+        server: `Server ${srvCounter}`,
+        label: `⚡ VIP Player 2 (AutoEmbed HD • Zero Ads)`,
+        mode: 'external_embed',
+        type: 'embed',
+        embed: true,
+        stream_url: s2Url,
+        hasLocalFile: true,
+      });
+      srvCounter++;
+    }
+  }
 
   return list;
 }

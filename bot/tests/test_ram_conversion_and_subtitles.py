@@ -319,3 +319,114 @@ def test_search_js_exists_and_filters_type():
     assert 'src="assets/js/search.js"' in html_content, "search.html must link assets/js/search.js"
 
 
+@pytest.mark.asyncio
+async def test_generate_multi_quality_variants_1080p_and_fallback(tmp_path):
+    in_mp4 = tmp_path / "source_4k.mp4"
+    in_mp4.write_bytes(b"4k_content" * 200)
+
+    class FakeProc:
+        returncode = 0
+        stderr = None
+        async def wait(self):
+            return 0
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    recorded_cmds = []
+
+    async def fake_exec(*args, **kwargs):
+        recorded_cmds.append(list(args))
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"V" * (600 * 1024))
+        p = FakeProc()
+        class FakeStderr:
+            async def read(self, *a):
+                return b""
+            async def readline(self):
+                return b""
+        p.stderr = FakeStderr()
+        return p
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_video_resolution", return_value=(3840, 2160)), \
+         patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            base_stem="test_4k_film",
+            target_qualities=("1080p", "720p", "480p"),
+        )
+
+    assert "1080p" in variants
+    assert "720p" in variants
+    assert "480p" in variants
+    for q, p in variants.items():
+        assert os.path.exists(p)
+
+
+@pytest.mark.asyncio
+async def test_generate_multi_quality_variants_cleanup_on_failure(tmp_path):
+    in_mp4 = tmp_path / "corrupt_source.mp4"
+    in_mp4.write_bytes(b"corrupt_data" * 200)
+
+    class FailProc:
+        returncode = 1
+        stderr = None
+        async def wait(self):
+            return 1
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    async def fake_exec(*args, **kwargs):
+        # Write dummy partial files that should be cleaned up on failure
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"CorruptBytes" * 100)
+        p = FailProc()
+        class FakeStderr:
+            async def read(self, *a):
+                return b""
+            async def readline(self):
+                return b""
+        p.stderr = FakeStderr()
+        return p
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_video_resolution", return_value=(1920, 1080)), \
+         patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            base_stem="failed_film",
+            target_qualities=("720p", "480p"),
+        )
+
+    # All failed attempt files should be discarded/cleaned up
+    assert variants == {}
+    for p in tmp_path.glob("failed_film-*.mp4"):
+        assert not p.exists() or p.stat().st_size == 0
+
+
+def test_player_js_two_clean_servers_and_syntax():
+    import subprocess
+    player_js = Path(__file__).resolve().parents[2] / "website" / "assets" / "js" / "player.js"
+    assert player_js.exists()
+
+    res = subprocess.run(["node", "--check", str(player_js)], capture_output=True, text=True)
+    assert res.returncode == 0, f"player.js syntax error: {res.stderr}"
+
+    content = player_js.read_text(encoding="utf-8")
+    # Verify zero-ads 2 clean servers logic
+    assert "Super Player (Telegram Cloud HD • Zero Ads)" in content
+    assert "VIP Player (VidLink Ultra HD • Zero Ads)" in content
+    assert "isMatchingEpisode" in content
+
+
+

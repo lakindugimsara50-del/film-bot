@@ -5948,46 +5948,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 4,
       "episode": 1,
       "episode_title": "Two Swords",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -6046,40 +6016,188 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": false,
+      "sub_merged": false,
+      "quality": "720p",
+      "duration": "59 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-09-28T07:10:03Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADaWq6Fe2WwDryvKiHvIn0ZsDw11JSAAJbIwACGjbRVX1EjUwwgTA2HgQ",
+      "message_id": 105,
+      "file_name": "Game.of.Thrones.S04E01.720p.HDTV.x264-KILLERS.mkv",
+      "file_size": 1579446847,
+      "drive_file_id": "",
+      "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
       "streams": [
         {
           "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADaWq6Fe2WwDryvKiHvIn0ZsDw11JSAAJbIwACGjbRVX1EjUwwgTA2HgQ",
+          "message_id": 105,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://vidlink.pro/tv/1399/4/1"
         },
         {
-          "server": "Server 2",
+          "server": "Server 3",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://autoembed.co/tv/imdb/tt0944947-4-1"
         },
         {
-          "server": "Server 3",
+          "server": "Server 4",
           "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=1"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "",
+      "qualities": {
+        "auto": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+        "1080p": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+        "720p": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+        "480p": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+        "360p": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1579446847,
+          "url": "https://t.me/c/4325759505/105",
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1579446847,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e01_1080p",
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "828.5 MB",
+          "size_bytes": 868695765,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e01_720p",
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "482.0 MB",
+          "size_bytes": 505422991,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e01_480p",
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "271.1 MB",
+          "size_bytes": 284300432,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e01_360p",
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "size_bytes": 1579446847
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADaWq6Fe2WwDryvKiHvIn0ZsDw11JSAAJbIwACGjbRVX1EjUwwgTA2HgQ",
+          "message_id": 105,
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "size_bytes": 868695765
+        },
+        "480p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "size_bytes": 505422991
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://oakland-exec-audience-pike.trycloudflare.com/stream/channel/-1004325759505/105",
+          "size_bytes": 284300432
+        }
+      },
+      "subtitles": [],
+      "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e01",
-      "channel_post_id": 104,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-28"
+      "added_date": "2026-09-28",
+      "added_at": "2026-09-28T07:23:25Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-28T07:10:05Z"
+  "last_updated": "2026-09-28T07:23:27Z"
 };

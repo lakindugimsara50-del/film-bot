@@ -6696,8 +6696,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "has_sinhala_sub": true
     },
     {
-      "id": "game-of-thrones-2011-s04e04",
-      "slug": "game-of-thrones-2011-s04e04",
+      "id": "game-of-thrones-2011-s04e05",
+      "slug": "game-of-thrones-2011-s04e05",
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
@@ -6705,8 +6705,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "tmdb_id": "1399",
       "type": "series",
       "season": 4,
-      "episode": 4,
-      "episode_title": "Oathkeeper",
+      "episode": 5,
+      "episode_title": "First of His Name",
       "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
       "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
       "genres": [
@@ -6801,28 +6801,28 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-28T12:35:53Z",
+      "added_at": "2026-09-28T12:38:59Z",
       "streams": [
         {
           "server": "Server 1",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/4/4"
+          "stream_url": "https://vidlink.pro/tv/1399/4/5"
         },
         {
           "server": "Server 2",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-4-4"
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-4-5"
         },
         {
           "server": "Server 3",
           "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=4"
+          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=5"
         }
       ],
       "downloads": [],
@@ -6831,5 +6831,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-28"
     }
   ],
-  "last_updated": "2026-09-28T12:35:54Z"
+  "last_updated": "2026-09-28T12:39:00Z"
 };

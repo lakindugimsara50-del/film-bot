@@ -74,6 +74,9 @@ PUBLIC_CHANNEL_ID: int = int(os.getenv("PUBLIC_CHANNEL_ID", "0"))
 # The Movie Database — https://www.themoviedb.org/settings/api
 TMDB_API_KEY: str = os.getenv("TMDB_API_KEY", "")
 
+# Google Gemini AI API key for /gr commands
+GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
 # GitHub personal access token (needs repo scope)
 GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
 

@@ -498,6 +498,13 @@ async def help_handler(client: Client, message: Message) -> None:
         "  • <code>/pikpak</code> — View PikPak storage and connection\n"
         "  • <code>/pikpak login &lt;email&gt; &lt;pass&gt;</code> — Connect account\n"
         "  • <code>/pikpak clear</code> — Clean cloud storage\n\n"
+        "⚡ <b>පරිපාලන සහ AI පාලනය (Admin & AI Control):</b>\n"
+        "  • <code>/1</code> (හෝ <code>/restart</code>) — GitHub නවතම code pull කර Bot restart කරන්න\n"
+        "  • <code>/gr &lt;ප්‍රශ්නය&gt;</code> — Antigravity / Gemini AI සහයකගෙන් විමසන්න\n"
+        "  • <code>/gr status</code> — CPU, RAM, Disk, GPU සජීවී තත්ත්වය\n"
+        "  • <code>/gr log</code> — අවසන් log සටහන් බලන්න\n"
+        "  • <code>/gr clean</code> — Temp ගොනු සහ Cache පිරිසිදු කරන්න\n"
+        "  • <code>/setkey &lt;key&gt;</code> — Gemini AI API Key එක සකසන්න\n\n"
         "⚙️ <b>Other:</b>\n"
         "  • <code>/status</code> — Bot & server status\n"
         "  • <code>/ping</code> — Liveness check\n\n"
@@ -778,6 +785,10 @@ def _register_handlers() -> None:
     drive_handler.register(app)
     log.info("Handler registered: drive_handler (/drives, /storage, /adddrive)")
 
+    from handlers import admin_control
+    admin_control.register(app)
+    log.info("Handler registered: admin_control (/1, /restart, /update, /gr, /setkey)")
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -863,6 +874,13 @@ async def _on_start(client: Client) -> None:
         await resume_service.notify_interrupted_downloads(client)
     except Exception as rs_err:
         log.warning("[ResumeService] Could not check interrupted downloads: %s", rs_err)
+
+    # Check if this startup was triggered by /1 restart command and notify admin
+    try:
+        from handlers import admin_control
+        await admin_control.check_and_notify_restart(client)
+    except Exception as re_err:
+        log.debug("[Main] check_and_notify_restart note: %s", re_err)
 
 
 async def main() -> None:

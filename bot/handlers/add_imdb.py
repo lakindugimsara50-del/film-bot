@@ -70,14 +70,14 @@ def register(app: Client) -> None:
             return
         await _handle_add_session(client, message)
 
-    @app.on_callback_query(filters.regex(r"^asub:(add|skip):(.+)$"))
+    @app.on_callback_query(filters.regex(r"^asub:(add|skip|auto):(.+)$"))
     async def imdb_sub_callback_handler(client: Client, query: CallbackQuery):
         user_id = query.from_user.id if query.from_user else 0
         if not _is_admin(user_id):
             await query.answer("⛔ අවසර නැත", show_alert=True)
             return
 
-        match = re.match(r"^asub:(add|skip):(.+)$", query.data)
+        match = re.match(r"^asub:(add|skip|auto):(.+)$", query.data)
         if not match:
             return
         action = match.group(1)
@@ -117,6 +117,59 @@ def register(app: Client) -> None:
                 return
 
         await query.answer()
+
+        if action == "auto":
+            status_edit = await query.message.reply_text("🔍 <b>PirateLK හරහා සිංහල උපසිරැසි සොයමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+            import tempfile
+            with tempfile.TemporaryDirectory(prefix="auto_sub_") as tmpdir:
+                clean_name = sess.get("title", "")
+                srt_path = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
+                    title=clean_name,
+                    year=sess.get("year"),
+                    season=sess.get("season"),
+                    episode=sess.get("episode"),
+                    temp_dir=tmpdir,
+                )
+                if srt_path and os.path.exists(srt_path):
+                    vtt_path = subtitle_service.srt_to_vtt(srt_path)
+                    ep_sfx = f"-s{sess.get('season'):02d}e{sess.get('episode'):02d}" if sess.get("season") and sess.get("episode") else ""
+                    fname = f"{slug}{ep_sfx}-si.vtt"
+                    vtt_url = ""
+                    if getattr(config, "GITHUB_TOKEN", "") and getattr(config, "GITHUB_REPO", ""):
+                        try:
+                            vtt_url = await subtitle_service.upload_subtitle_to_github(vtt_path, fname)
+                        except Exception:
+                            pass
+                    if not vtt_url:
+                        with open(vtt_path, "r", encoding="utf-8", errors="replace") as f:
+                            vtt_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(f.read())}"
+
+                    data, _ = await github_service.get_movies_json()
+                    for m in data.get("movies", []):
+                        if m.get("slug") == slug or m.get("id") == slug:
+                            m["subtitle_url"] = vtt_url
+                            m["subtitles"] = [{"language": "Sinhala", "label": "සිංහල උපසිරැසි", "url": vtt_url, "default": True}]
+                            m["has_sinhala_sub"] = True
+                            for stream in m.get("streams", []):
+                                if "vidlink.pro" in stream.get("stream_url", ""):
+                                    base_u = stream["stream_url"].split("?")[0]
+                                    stream["stream_url"] = f"{base_u}?sub.Sinhala={urllib.parse.quote(vtt_url, safe='')}"
+                            await github_service.add_movie(m)
+                            break
+                    sess["vtt_github_url"] = vtt_url
+                    await status_edit.edit_text(
+                        f"✅ <b>PirateLK සිංහල උපසිරැසි සාර්ථකව එක් කරන ලදී!</b>\n\n"
+                        f"🎬 <b>{sess['title']}</b>\n"
+                        f"🌐 Web Link: <a href='{sess['site_url']}'>{sess['site_url']}</a>",
+                        parse_mode=ParseMode.HTML,
+                    )
+                else:
+                    await status_edit.edit_text(
+                        f"⚠️ <b>PirateLK හි උපසිරැසි හමු නොවීය.</b>\n"
+                        f"කරුණාකර <code>[✍️ Manual Custom Subtitle Upload]</code> බොත්තම මඟින් .srt ගොනුව එවන්න.",
+                        parse_mode=ParseMode.HTML,
+                    )
+            return
 
         if action == "skip":
             await query.message.edit_text(
@@ -458,7 +511,10 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
 
         kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Live)", url=site_url)],
-            [InlineKeyboardButton("📁 වෙනත් Custom Subtitle එකක් දමන්න", callback_data=f"asub:add:{slug}")],
+            [
+                InlineKeyboardButton("⚡ Auto PirateLK Subtitle", callback_data=f"asub:auto:{slug}"),
+                InlineKeyboardButton("✍️ Manual Subtitle Upload", callback_data=f"asub:add:{slug}"),
+            ],
         ])
 
         await status_msg.edit_text(

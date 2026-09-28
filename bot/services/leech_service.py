@@ -1013,8 +1013,9 @@ async def _execute_leech(
         sub_srt_path: Optional[str] = None
         sub_vtt_path: Optional[str] = None
         try:
+            clean_sub_title = show_name if (is_series and show_name) else (title_hint or title or display_title)
             sub_srt_path, sub_vtt_path = await subtitle_service.auto_acquire_sinhala_subtitle(
-                title=display_title,
+                title=clean_sub_title,
                 year=year,
                 imdb_id=imdb_id,
                 temp_dir=temp_dir,
@@ -1131,19 +1132,8 @@ async def _execute_leech(
                 is_faststart_done = True
                 log.info("[LeechService] Instantaneous stream-copy muxing succeeded: %s", local_file)
             elif ext in (".mkv", ".webm", ".avi"):
-                # Edge case: input is MKV or another container with video/audio streams rejected by MP4.
-                # Perform instantaneous stream-copy preserving the native container with Sinhala soft-subs (-c:s srt -disposition:s:0 default)
-                remux_native = os.path.join(temp_dir, f"remux_{slug}{ext}")
-                if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remux_native, disposition="default"):
-                    if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remux_native):
-                        try:
-                            os.remove(local_file)
-                        except Exception:
-                            pass
-                    local_file = remux_native
-                    is_faststart_done = ext == ".mp4"
-                    log.info("[LeechService] Native container stream-copy muxing succeeded: %s", local_file)
-                elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
+                # Always attempt to convert MKV/WebM/AVI into Web-Streamable MP4 with Sinhala subtitles (+faststart)
+                if await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
                     if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                         try:
                             os.remove(local_file)
@@ -1157,7 +1147,16 @@ async def _execute_leech(
                             pass
                     local_file = remuxed
                     is_faststart_done = True
-                    log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
+                    log.info("[LeechService] Web streamable MP4 conversion succeeded: %s", local_file)
+                elif await video_service.stream_copy_subtitles(local_file, sub_to_merge, remux_native := os.path.join(temp_dir, f"remux_{slug}{ext}"), disposition="default"):
+                    if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remux_native):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                    local_file = remux_native
+                    is_faststart_done = ext == ".mp4"
+                    log.info("[LeechService] Native container stream-copy muxing succeeded: %s", local_file)
                 elif sub_to_merge and os.path.exists(sub_to_merge):
                     sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
                     if await video_service.embed_subtitles_soft(local_file, sub_to_merge, sub_muxed, disposition="default"):

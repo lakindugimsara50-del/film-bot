@@ -440,8 +440,16 @@ async def fetch_sri_lankan_sinhala_subtitle(
     import zipfile
     from bs4 import BeautifulSoup
 
-    clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", title).strip()
-    slug_title = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    # Strip any leaked season/episode tokens or episode titles from title
+    clean_series_name = re.sub(
+        r"[\(\[\{]?\b(s\d{1,2}[\s._-]*e\d{1,2}|season\s*\d{1,2}|episode\s*\d{1,2}|ep\s*\d{1,2})\b.*",
+        "",
+        title,
+        flags=re.IGNORECASE,
+    ).strip(" -_")
+    search_title = clean_series_name if (season and clean_series_name) else title
+    clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", search_title).strip()
+    slug_title = re.sub(r"[^a-z0-9]+", "-", search_title.lower()).strip("-")
     search_terms = clean_title.split()
     if not search_terms:
         return None
@@ -471,6 +479,8 @@ async def fetch_sri_lankan_sinhala_subtitle(
             f"https://piratelk.com/{slug_title}-season-{season:02d}-with-sinhala-subtitles/",
             f"https://piratelk.com/{slug_title}-complete-season-{season}-with-sinhala-subtitles/",
             f"https://piratelk.com/{slug_title}-season-{season}-with-sinhala-subtitles/",
+            f"https://piratelk.com/{slug_title}-tv-series-with-sinhala-subtitles/",
+            f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/",
         ])
     else:
         if year:
@@ -497,8 +507,9 @@ async def fetch_sri_lankan_sinhala_subtitle(
                             s_token = f"season {season}"
                             s_token_padded = f"season {season:02d}"
                             s_token_short = f"s{season:02d}"
-                            # Strict season validation: candidate MUST belong to the target season
-                            if s_token in p_title or s_token_padded in p_title or s_token_short in p_title or \
+                            # Accept target season OR TV series hub posts
+                            is_hub = "tv-series" in p_href_lower or "tv series" in p_title or f"{slug_title}-with-sinhala" in p_href_lower
+                            if is_hub or s_token in p_title or s_token_padded in p_title or s_token_short in p_title or \
                                s_token in p_href_lower or s_token_padded in p_href_lower or s_token_short in p_href_lower:
                                 candidate_posts.append(href)
                         else:
@@ -525,13 +536,16 @@ async def fetch_sri_lankan_sinhala_subtitle(
                     if season and not is_season_page:
                         s_target = f"season {season:02d}"
                         s_alt = f"season {season}"
+                        s_slug_target = f"season-{season:02d}"
+                        s_slug_alt = f"season-{season}"
                         for sa in p_soup.find_all("a", href=True):
                             sa_text = sa.get_text(strip=True).lower()
                             sa_href = sa["href"]
                             if "/download/" in sa_href or ".zip" in sa_href:
                                 continue  # Do not treat zip download links as HTML pages
-                            if (s_target in sa_text or s_alt in sa_text) and "piratelk.com/" in sa_href:
-                                s_resp = await client.get(sa_href)
+                            if (s_target in sa_text or s_alt in sa_text or s_slug_target in sa_href.lower() or s_slug_alt in sa_href.lower()) and "piratelk.com/" in sa_href:
+                                s_url = urllib.parse.urljoin(post_url, sa_href)
+                                s_resp = await client.get(s_url)
                                 if s_resp.status_code == 200:
                                     p_soup = BeautifulSoup(s_resp.text, "html.parser")
                                     break
@@ -541,7 +555,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
                         dh = da["href"]
                         if "/download/" in dh or ".zip" in dh:
                             if not any(ign in dh for ign in ["/category/", "/tag/", "usersdrive", "mega.nz"]):
-                                dl_link = dh
+                                dl_link = urllib.parse.urljoin(post_url, dh)
                                 break
 
                     if not dl_link:

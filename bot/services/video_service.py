@@ -1228,18 +1228,19 @@ async def generate_multi_quality_variants_ram(
     valid_outputs: dict[str, str] = {}
     src_w, src_h = get_video_resolution(input_path, ffmpeg_bin)
 
-    # If source is already <= 720p (e.g. HDTV / 720p WEB-DL), do not re-encode 720p.
-    # Instant stream-copy in 2 seconds, freeing up FFmpeg to encode only 480p!
+    # If source is already <= 720p (e.g. HDTV / 720p WEB-DL), do not re-encode 720p if copy succeeds.
     if src_h > 0 and src_h <= 720 and "720p" in target_q_list:
         direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
         try:
-            ok_copy = await apply_faststart(input_path, direct_720_path)
+            ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_720_path, disposition="default")
+            if not ok_copy:
+                ok_copy = await ensure_web_streamable(input_path, direct_720_path, sub_path=sub_path)
             if ok_copy and os.path.exists(direct_720_path) and os.path.getsize(direct_720_path) >= min_valid_size:
                 valid_outputs["720p"] = direct_720_path
+                target_q_list = [q for q in target_q_list if q != "720p"]
                 log.info("[VideoService] Source is already <= 720p (%dx%d). Instant 720p copy applied in seconds: %s", src_w, src_h, direct_720_path)
         except Exception as e720:
             log.debug("[VideoService] Direct 720p copy note: %s", e720)
-        target_q_list = [q for q in target_q_list if q != "720p"]
 
     if not target_q_list:
         return valid_outputs

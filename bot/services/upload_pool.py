@@ -211,12 +211,19 @@ class TelegramUploadPool:
                             return
 
                         try:
-                            await c.get_me()
+                            me = await c.get_me()
+                            c.me = me
+                            if not hasattr(c.me, "is_premium"):
+                                setattr(c.me, "is_premium", False)
                             self.clients.append(c)
                             return
                         except SessionPasswordNeeded:
                             try:
                                 await c.check_password(password)
+                                me = await c.get_me()
+                                c.me = me
+                                if not hasattr(c.me, "is_premium"):
+                                    setattr(c.me, "is_premium", False)
                                 self.clients.append(c)
                                 log.info("[UploadPool] 2FA OK for session: %s", base_name)
                                 return

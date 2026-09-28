@@ -28,6 +28,28 @@ try:
 except Exception:
     pass
 
+# ── Monkeypatch Pyrogram save_file against 'NoneType has no is_premium' ────────
+# In userbot session pools, self.me may be None during fast file saving, causing
+# AttributeError: 'NoneType' object has no attribute 'is_premium' in save_file.py.
+try:
+    import pyrogram.methods.advanced.save_file as _sf
+    _orig_save_file = _sf.SaveFile.save_file
+
+    class _SafeMe:
+        is_premium = False
+
+    async def _safe_save_file(self, *args, **kwargs):
+        if getattr(self, "me", None) is None:
+            self.me = _SafeMe()
+        elif not hasattr(self.me, "is_premium"):
+            setattr(self.me, "is_premium", False)
+        return await _orig_save_file(self, *args, **kwargs)
+
+    _sf.SaveFile.save_file = _safe_save_file
+except Exception:
+    pass
+
+
 # ── Telegram credentials ────────────────────────────────────────────────────
 # Obtain these from https://my.telegram.org/apps
 API_ID: int = int(os.getenv("TG_API_ID", "0"))

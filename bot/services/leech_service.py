@@ -1238,6 +1238,13 @@ async def _execute_leech(
             base_site = "https://filmsub.pages.dev"
         site_url = f"{base_site}/movie.html?id={slug}"
 
+        # Detect source resolution upfront to cleanly route primary and variant pipelines
+        src_w, src_h = video_service.get_video_resolution(local_file)
+        is_source_1080p = (src_w >= 1600 or src_h >= 900)
+        is_source_720p = (1000 <= src_w < 1600) or (550 <= src_h < 900) or (is_series and src_h < 900)
+        primary_quality = "720p" if is_source_720p else "1080p"
+        log.info("[LeechService] Source resolution: %dx%d -> primary_quality='%s' (is_series=%s)", src_w, src_h, primary_quality, is_series)
+
         task_tracker.tracker.set_step(
             user_id, f"3/3 - Telegram Cloud HD Upload ({size_str})..."
         )
@@ -1249,46 +1256,125 @@ async def _execute_leech(
         _engine_tag = "⚡ <b>Engine:</b> NVIDIA T4 GPU (Hardware Acceleration)" if _hw_enc == "h264_nvenc" else "⚡ <b>Engine:</b> Ultra-Fast Multi-Thread CPU"
         _sub_tag = "\n🇱🇰 <b>Subtitle:</b> සිංහල උපසිරැසි Muxed (mov_text auto-play)" if (sub_to_merge and os.path.exists(sub_to_merge)) else ""
 
-        async def _mq_progress_cb(pct: float, pct_str: str) -> None:
-            nonlocal _mq_progress_str, last_upload_edit
-            _mq_progress_str = f"GPU 720p/480p: {pct_str}" if _hw_enc == "h264_nvenc" else f"RAM 720p/480p: {pct_str}"
-            now = time.time()
-            if now - last_upload_edit >= 3.5:
-                last_upload_edit = now
-                mq_text = (
-                    f"⚙️ <b>පියවර 3/3: Multi-Quality පරිවර්තනය &amp; Upload වෙමින්...</b>\n\n"
-                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
-                    f"🔄 <b>පරිවර්තනය:</b> {_mq_progress_str}\n"
-                    f"{_engine_tag}{_sub_tag}\n"
-                    f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
-                )
-                try:
-                    await status_msg.edit_text(mq_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                except Exception:
-                    pass
+        dashboard_state = {
+            "primary_q": primary_quality,
+            "primary_file": file_name,
+            "primary_pct": 0.0,
+            "primary_done": "0 MB",
+            "primary_total": size_str,
+            "primary_speed": "--",
+            "primary_eta": "--",
+            "primary_status": "uploading",
+            "mq_target": ("480p" if primary_quality == "720p" else "720p/480p"),
+            "mq_encode_pct": "0%",
+            "mq_encode_status": "waiting",
+            "variant_q": "",
+            "variant_pct": 0.0,
+            "variant_done": "0 MB",
+            "variant_total": "",
+            "variant_speed": "--",
+            "variant_eta": "--",
+            "variant_status": "waiting",
+        }
 
-        async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+        async def _render_dashboard(force: bool = False) -> None:
             nonlocal last_upload_edit
             now = time.time()
-            if (now - last_upload_edit >= 3.0) or (pct >= 100.0 and now - last_upload_edit >= 1.0):
-                last_upload_edit = now
-                p_bar = downloader.format_progress_bar(pct)
-                mq_line = f"\n🔄 <b>Multi-Quality (720p/480p):</b> {_mq_progress_str}" if _mq_progress_str else ""
-                text = (
-                    f"📤 <b>පියවර 3/3: Telegram Cloud HD වෙත Upload වෙමින්...</b>\n\n"
-                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n"
-                    f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                    f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
-                    f"⚡ <b>Upload Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n"
-                    f"{_engine_tag}{_sub_tag}{mq_line}\n"
-                    f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
+            if not force and (now - last_upload_edit < 2.5):
+                return
+            last_upload_edit = now
+
+            p_q = dashboard_state["primary_q"]
+            p_pct = dashboard_state["primary_pct"]
+            p_status = dashboard_state["primary_status"]
+            p_bar = downloader.format_progress_bar(p_pct)
+
+            if p_status == "complete":
+                p_line = f"✅ <b>{p_q} (Primary):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
+            elif p_status == "failed":
+                p_line = f"❌ <b>{p_q} (Primary):</b> Upload අසාර්ථකයි"
+            else:
+                p_speed = dashboard_state["primary_speed"]
+                p_eta = dashboard_state["primary_eta"]
+                p_done = dashboard_state["primary_done"]
+                p_total = dashboard_state["primary_total"]
+                p_line = (
+                    f"📦 <b>{p_q} (Primary) Upload:</b> {p_bar} {p_pct:.1f}%\n"
+                    f"   ▫️ ප්‍රමාණය: {p_done} / {p_total} | ⚡ Speed: {p_speed} | ⏱ ETA: {p_eta}"
                 )
-                try:
-                    await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                except Exception as up_err:
-                    log.debug("[LeechService] Upload progress edit ignored: %s", up_err)
+
+            mq_status = dashboard_state["mq_encode_status"]
+            mq_target = dashboard_state["mq_target"]
+            if mq_status == "encoding":
+                mq_pct_str = dashboard_state["mq_encode_pct"]
+                mq_line = f"🔄 <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> {mq_pct_str}"
+            elif mq_status == "complete":
+                mq_line = f"✅ <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> සම්පූර්ණයි"
+            elif mq_status == "skipped":
+                mq_line = f"ℹ️ <b>Multi-Quality ({mq_target}):</b> Skipped"
+            else:
+                mq_line = f"⏳ <b>Multi-Quality ({mq_target}):</b> ක්‍රියාත්මක වෙමින්..."
+
+            v_status = dashboard_state["variant_status"]
+            v_q = dashboard_state["variant_q"]
+            v_line = ""
+            if v_status == "uploading" and v_q:
+                v_pct = dashboard_state["variant_pct"]
+                v_bar = downloader.format_progress_bar(v_pct)
+                v_speed = dashboard_state["variant_speed"]
+                v_eta = dashboard_state["variant_eta"]
+                v_done = dashboard_state["variant_done"]
+                v_total = dashboard_state["variant_total"]
+                v_line = (
+                    f"\n📦 <b>{v_q} (Variant) Upload:</b> {v_bar} {v_pct:.1f}%\n"
+                    f"   ▫️ ප්‍රමාණය: {v_done} / {v_total} | ⚡ Speed: {v_speed} | ⏱ ETA: {v_eta}"
+                )
+            elif v_status == "complete" and v_q:
+                v_line = f"\n✅ <b>{v_q} (Variant):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
+
+            text = (
+                f"📤 <b>පියවර 3/3: Telegram Cloud HD Upload & Processing...</b>\n\n"
+                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n\n"
+                f"{p_line}\n"
+                f"{mq_line}"
+                f"{v_line}\n\n"
+                f"{_engine_tag}{_sub_tag}\n"
+                f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
+            )
+            try:
+                await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+            except Exception as up_err:
+                log.debug("[LeechService] Dashboard edit note: %s", up_err)
+
+        async def _mq_progress_cb(pct: float, pct_str: str) -> None:
+            nonlocal _mq_progress_str
+            _mq_progress_str = f"GPU: {pct_str}" if _hw_enc == "h264_nvenc" else f"RAM: {pct_str}"
+            dashboard_state["mq_encode_status"] = "encoding"
+            dashboard_state["mq_encode_pct"] = pct_str
+            await _render_dashboard(force=False)
+
+        async def _upload_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+            dashboard_state["primary_pct"] = pct
+            dashboard_state["primary_done"] = done_str
+            dashboard_state["primary_total"] = total_str
+            dashboard_state["primary_speed"] = speed_str
+            dashboard_state["primary_eta"] = eta_str
+            if pct >= 100.0:
+                dashboard_state["primary_status"] = "complete"
+                await _render_dashboard(force=True)
+            else:
+                await _render_dashboard(force=False)
+
+        async def _variant_upload_progress(q_label: str, pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+            dashboard_state["variant_q"] = q_label
+            dashboard_state["variant_pct"] = pct
+            dashboard_state["variant_done"] = done_str
+            dashboard_state["variant_total"] = total_str
+            dashboard_state["variant_speed"] = speed_str
+            dashboard_state["variant_eta"] = eta_str
+            dashboard_state["variant_status"] = "complete" if pct >= 100.0 else "uploading"
+            await _render_dashboard(force=(pct >= 100.0))
 
         async def _drive_upload_progress(
             done_bytes: int,
@@ -1319,14 +1405,7 @@ async def _execute_leech(
                 pass
 
         try:
-            await status_msg.edit_text(
-                f"📤 <b>පියවර 3/3: Telegram Cloud HD වෙත Upload කිරීම ආරම්භ විය...</b>\n\n"
-                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                f"📁 <b>ගොනුව:</b> <code>{file_name}</code> ({size_str})\n"
-                f"⚡ <b>FastStart MP4 + සිංහල උපසිරැසි සමඟින් Private Channel වෙත Upload වේ...</b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=kb_cancel,
-            )
+            await _render_dashboard(force=True)
         except Exception:
             pass
 
@@ -1383,16 +1462,16 @@ async def _execute_leech(
 
         variant_tg_info: dict[str, dict] = {}
 
-        # Detect source resolution upfront to cleanly route primary and variant pipelines
-        src_w, src_h = video_service.get_video_resolution(local_file)
-        is_source_1080p = (src_w >= 1600 or src_h >= 900)
-        is_source_720p = (1000 <= src_w < 1600) or (550 <= src_h < 900) or (is_series and src_h < 900)
-        primary_quality = "720p" if is_source_720p else "1080p"
-        log.info("[LeechService] Source resolution: %dx%d -> primary_quality='%s' (is_series=%s)", src_w, src_h, primary_quality, is_series)
-
         async def _task_upload_tg_variant(q_label: str, q_path: str) -> None:
             if not os.path.exists(q_path) or os.path.getsize(q_path) == 0:
                 return
+            q_bytes = os.path.getsize(q_path)
+            dashboard_state["variant_q"] = q_label
+            dashboard_state["variant_status"] = "uploading"
+            dashboard_state["variant_total"] = downloader.format_bytes(q_bytes)
+            dashboard_state["variant_pct"] = 0.0
+            await _render_dashboard(force=True)
+
             for attempt in range(3):
                 try:
                     log.info("[LeechService] Uploading variant '%s' to Telegram channel (attempt %d)...", q_label, attempt + 1)
@@ -1404,11 +1483,14 @@ async def _execute_leech(
                         quality=q_label,
                         caption=var_caption,
                         file_name=os.path.basename(q_path),
-                        progress_callback=None,
+                        progress_callback=lambda p, d, t, s, e: _variant_upload_progress(q_label, p, d, t, s, e),
                         fallback_client=client,
                     )
                     if up_res and up_res.get("file_id"):
                         variant_tg_info[q_label] = up_res
+                        dashboard_state["variant_status"] = "complete"
+                        dashboard_state["variant_pct"] = 100.0
+                        await _render_dashboard(force=True)
                         log.info("[LeechService] Telegram upload for variant %s succeeded: msg_id=%s", q_label, up_res.get("message_id"))
                         break
                 except Exception as tg_v_err:
@@ -1418,6 +1500,8 @@ async def _execute_leech(
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
+                dashboard_state["mq_encode_status"] = "skipped"
+                await _render_dashboard(force=True)
                 return
             try:
                 # If primary is 1080p, encode 720p and 480p variants
@@ -1431,7 +1515,13 @@ async def _execute_leech(
 
                 if not requested_qualities:
                     _mq_progress_str = "Multi-Quality Skipped (Source <= 480p) ✅"
+                    dashboard_state["mq_encode_status"] = "skipped"
+                    await _render_dashboard(force=True)
                     return
+
+                dashboard_state["mq_encode_status"] = "encoding"
+                dashboard_state["mq_target"] = "/".join(requested_qualities)
+                await _render_dashboard(force=True)
 
                 variant_files = await video_service.generate_multi_quality_variants_ram(
                     input_path=local_file,
@@ -1444,8 +1534,13 @@ async def _execute_leech(
                 if variant_files:
                     q_keys = "/".join(variant_files.keys())
                     _mq_progress_str = f"{q_keys} Complete ✅"
+                    dashboard_state["mq_encode_status"] = "complete"
+                    dashboard_state["mq_encode_pct"] = "100%"
+                    await _render_dashboard(force=True)
                 else:
                     _mq_progress_str = "Multi-Quality Skipped (Primary Stream Active) ✅"
+                    dashboard_state["mq_encode_status"] = "skipped"
+                    await _render_dashboard(force=True)
 
                 # Upload variants to Telegram channel cleanly to prevent socket contention
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
@@ -1465,6 +1560,8 @@ async def _execute_leech(
                     _mq_progress_str = f"{q_keys} Drive Complete ✅"
             except Exception as mq_err:
                 log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
+                dashboard_state["mq_encode_status"] = "skipped"
+                await _render_dashboard(force=True)
 
         async def _task_upload_telegram() -> None:
             nonlocal file_id, stream_url, message_id
@@ -1486,8 +1583,16 @@ async def _execute_leech(
                 message_id = upload_res.get("message_id", 0)
                 if file_id and message_id:
                     variant_tg_info[primary_quality] = upload_res
+                    dashboard_state["primary_status"] = "complete"
+                    dashboard_state["primary_pct"] = 100.0
+                    await _render_dashboard(force=True)
                     log.info("[LeechService] Registered primary upload into variant_tg_info['%s']: msg_id=%s", primary_quality, message_id)
+                else:
+                    dashboard_state["primary_status"] = "failed"
+                    await _render_dashboard(force=True)
             except Exception as tg_err:
+                dashboard_state["primary_status"] = "failed"
+                await _render_dashboard(force=True)
                 log.error("[LeechService] Telegram upload failed: %s", tg_err)
 
         # Execute Drive upload, Telegram primary upload, and RAM variant Encode+Upload concurrently

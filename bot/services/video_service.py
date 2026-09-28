@@ -1544,7 +1544,9 @@ async def generate_multi_quality_variants_ram(
         strategies.append(("h264_nvenc", False, has_sub))
         if has_sub:
             strategies.append(("h264_nvenc", False, False))
-        strategies.append(("libx264", False, False))
+        strategies.append(("libx264", False, has_sub))
+        if has_sub:
+            strategies.append(("libx264", False, False))
     else:
         if has_sub:
             strategies.append(("libx264", False, True))

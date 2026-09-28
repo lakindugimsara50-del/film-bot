@@ -436,6 +436,38 @@ class TelegramUploadPool:
                 getattr(client, "name", "main_bot"),
                 target_chat,
             )
+
+            # Pre-check channel post permissions BEFORE spending minutes uploading data
+            is_channel = str(target_chat).startswith("-100")
+            if is_channel and client != fallback:
+                try:
+                    member = await client.get_chat_member(target_chat, "me")
+                    status_raw = getattr(member, "status", None)
+                    status_str = getattr(status_raw, "value", str(status_raw)).lower()
+                    privs = getattr(member, "privileges", None)
+                    can_post = getattr(privs, "can_post_messages", False) if privs else False
+                    if "admin" not in status_str and "owner" not in status_str and "creator" not in status_str:
+                        log.warning(
+                            "[UploadPool] Session '%s' is not admin in channel %s (status=%s) — userbots lack posting rights, jumping directly to main bot",
+                            getattr(client, "name", "?"), target_chat, status_str
+                        )
+                        self._channel_unwritable.add(target_chat)
+                        break
+                    elif "admin" in status_str and not can_post:
+                        log.warning(
+                            "[UploadPool] Session '%s' is admin in %s but lacks can_post_messages — jumping directly to main bot",
+                            getattr(client, "name", "?"), target_chat
+                        )
+                        self._channel_unwritable.add(target_chat)
+                        break
+                except Exception as perm_err:
+                    log.warning(
+                        "[UploadPool] Session '%s' chat member check note in %s (%s) — userbots unwritable, jumping to main bot",
+                        getattr(client, "name", "?"), target_chat, perm_err
+                    )
+                    self._channel_unwritable.add(target_chat)
+                    break
+
             try:
                 return await telegram_upload.upload_video_file(
                     bot_client=client,

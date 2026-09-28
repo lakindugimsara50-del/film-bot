@@ -36,27 +36,24 @@ def _ensure_pyrogram_session(session_path: str, api_id: int) -> None:
     Check if session_path is a Telethon SQLite session format and convert it in-place
     to Pyrogram format so that Pyrogram starts without 'no such column: number' errors.
     """
+    conn = None
     try:
-        conn = sqlite3.connect(session_path)
+        conn = sqlite3.connect(session_path, timeout=15.0)
         cur = conn.cursor()
         cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='version'")
         if not cur.fetchone():
-            conn.close()
             return
         cur.execute("PRAGMA table_info(version)")
         cols = [c[1] for c in cur.fetchall()]
         if "number" in cols:
-            conn.close()
             return  # Already Pyrogram format
         cur.execute("PRAGMA table_info(sessions)")
         s_cols = [c[1] for c in cur.fetchall()]
         if "auth_key" not in s_cols:
-            conn.close()
             return
         cur.execute("SELECT dc_id, auth_key FROM sessions")
         s_row = cur.fetchone()
         if not s_row:
-            conn.close()
             return
         dc_id, auth_key = s_row[0], s_row[1]
         user_id = 0
@@ -108,10 +105,15 @@ def _ensure_pyrogram_session(session_path: str, api_id: int) -> None:
                 (user_id, access_hash, 1, username, str(phone) if phone else None)
             )
         conn.commit()
-        conn.close()
         log.info("[UploadPool] Converted Telethon session '%s' to Pyrogram format", os.path.basename(session_path))
     except Exception as conv_err:
         log.warning("[UploadPool] Note while checking session format for '%s': %s", session_path, conv_err)
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 
 # Quality tier → (start_index, end_index) within the sorted session list (inclusive)
@@ -183,65 +185,83 @@ class TelegramUploadPool:
                 return
 
             async with sem:
-                try:
-                    # Ensure session database is in Pyrogram SQLite format (migrates Telethon format if needed)
-                    _ensure_pyrogram_session(s_path, api_id)
-
-                    c = Client(
-                        name=session_prefix,
-                        api_id=api_id,
-                        api_hash=api_hash,
-                        no_updates=True,
-                        max_concurrent_transmissions=10,
-                    )
-                    is_auth = await c.connect()
-                    if not is_auth:
-                        await c.disconnect()
-                        log.warning("[UploadPool] Session '%s' is not authorized. Skipping.", base_name)
-                        return
-
+                for attempt in range(3):
                     try:
-                        await c.initialize()
-                    except Exception as init_err:
-                        await c.disconnect()
-                        log.warning("[UploadPool] Session '%s' init error: %s. Skipping.", base_name, init_err)
-                        return
+                        # Ensure session database is in Pyrogram SQLite format (migrates Telethon format if needed)
+                        _ensure_pyrogram_session(s_path, api_id)
 
-                    try:
-                        await c.get_me()
-                        self.clients.append(c)
-                    except SessionPasswordNeeded:
-                        try:
-                            await c.check_password(password)
-                            self.clients.append(c)
-                            log.info("[UploadPool] 2FA OK for session: %s", base_name)
-                        except Exception as pw_err:
-                            if c.is_initialized:
-                                await c.stop()
-                            elif c.is_connected:
-                                await c.disconnect()
-                            log.warning("[UploadPool] 2FA failed for session '%s': %s", base_name, pw_err)
-                            return
-                    except Exception as auth_err:
-                        if c.is_initialized:
-                            await c.stop()
-                        elif c.is_connected:
+                        c = Client(
+                            name=session_prefix,
+                            api_id=api_id,
+                            api_hash=api_hash,
+                            no_updates=True,
+                            max_concurrent_transmissions=10,
+                        )
+                        is_auth = await c.connect()
+                        if not is_auth:
                             await c.disconnect()
-                        log.warning("[UploadPool] Session '%s' auth error (%s). Skipping.", base_name, auth_err)
-                        return
-                except Exception as exc:
-                    try:
-                        if 'c' in locals():
+                            log.warning("[UploadPool] Session '%s' is not authorized. Skipping.", base_name)
+                            return
+
+                        try:
+                            await c.initialize()
+                        except Exception as init_err:
+                            await c.disconnect()
+                            log.warning("[UploadPool] Session '%s' init error: %s. Skipping.", base_name, init_err)
+                            return
+
+                        try:
+                            await c.get_me()
+                            self.clients.append(c)
+                            return
+                        except SessionPasswordNeeded:
+                            try:
+                                await c.check_password(password)
+                                self.clients.append(c)
+                                log.info("[UploadPool] 2FA OK for session: %s", base_name)
+                                return
+                            except Exception as pw_err:
+                                if c.is_initialized:
+                                    await c.stop()
+                                elif c.is_connected:
+                                    await c.disconnect()
+                                log.warning("[UploadPool] 2FA failed for session '%s': %s", base_name, pw_err)
+                                return
+                        except Exception as auth_err:
                             if c.is_initialized:
                                 await c.stop()
                             elif c.is_connected:
                                 await c.disconnect()
-                    except Exception:
-                        pass
-                    log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
+                            log.warning("[UploadPool] Session '%s' auth error (%s). Skipping.", base_name, auth_err)
+                            return
+                    except Exception as exc:
+                        try:
+                            if 'c' in locals():
+                                if c.is_initialized:
+                                    await c.stop()
+                                elif c.is_connected:
+                                    await c.disconnect()
+                        except Exception:
+                            pass
+                        err_str = str(exc).lower()
+                        if "database is locked" in err_str and attempt < 2:
+                            await asyncio.sleep(0.6 * (attempt + 1))
+                            continue
+                        log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
+                        break
 
         await asyncio.gather(*[_load_one(sp) for sp in session_files])
         log.info("[UploadPool] Total active upload clients in pool: %d/%d", len(self.clients), len(session_files))
+
+        # Share active clients with stream_pool so both upload and streaming use the same Pyrogram client instances
+        try:
+            from streaming.session_pool import stream_pool
+            for c in self.clients:
+                if c not in stream_pool.clients:
+                    stream_pool.clients.append(c)
+            log.info("[UploadPool] Synced %d clients to stream_pool.", len(stream_pool.clients))
+        except Exception as sync_err:
+            log.debug("[UploadPool] Stream pool sync note: %s", sync_err)
 
         if target_channel:
             try:

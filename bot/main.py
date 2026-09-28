@@ -30,7 +30,7 @@ import uvicorn
 
 import config
 
-BOT_VERSION = "v2.8.0-cs-evo-pool98-subfix"
+BOT_VERSION = "v2.8.2-clean-players-pool98"
 
 # Ensure Windows console streams support UTF-8 encoding (Sinhala text)
 if hasattr(sys.stdout, "reconfigure"):
@@ -717,12 +717,12 @@ async def _on_start(client: Client) -> None:
     try:
         from streaming.session_pool import stream_pool
         stream_pool.set_main_client(client)
-        await stream_pool.init_extra_sessions(config.API_ID, config.API_HASH)
-        log.info("[StreamPool] Streaming pool initialized with main bot client.")
+        log.info("[StreamPool] Streaming pool registered with main bot client.")
     except Exception as sp_err:
-        log.warning("[StreamPool] Failed to initialize extra sessions in streaming pool: %s", sp_err)
+        log.warning("[StreamPool] Failed to register main client in streaming pool: %s", sp_err)
 
     # Initialize upload pool with session files for parallel multi-quality uploads
+    # (upload_pool loads all 98 sessions and automatically syncs them to stream_pool)
     try:
         from services.upload_pool import upload_pool as _upload_pool
         _upload_pool.set_main_client(client)
@@ -746,7 +746,7 @@ async def _on_start(client: Client) -> None:
                 text=(
                     f"🤖 <b>Film Bot started!</b> (<code>{BOT_VERSION}</code>){service_tag}\n"
                     f"Bot: @{me.username}\n"
-                    f"🔥 CineSubz CS & Evo Players Active\n"
+                    f"🔥 Clean VIP Players (VidLink, AutoEmbed, MultiEmbed) Active\n"
                     f"🔥 PirateLK Auto Subtitle Engine Active\n"
                     f"👥 98-Session Upload & Stream Pool Active\n"
                     "Use /help to see available commands."

@@ -58,6 +58,18 @@ class TelegramStreamPool:
             except Exception:
                 pass
 
+        # If upload_pool already has clients, reuse them directly to avoid SQLite 'database is locked' errors!
+        try:
+            from services.upload_pool import upload_pool
+            if upload_pool.clients:
+                for c in upload_pool.clients:
+                    if c not in self.clients:
+                        self.clients.append(c)
+                log.info("[StreamPool] Reused %d clients from upload_pool (zero lock contention).", len(self.clients))
+                return
+        except Exception:
+            pass
+
         password = os.getenv("SESSION_2FA_PASSWORD", "2122138")
 
         # 1. Check directory for .session files

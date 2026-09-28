@@ -1,5 +1,5 @@
 /* ============================================================
-   FilmSub – player.js | CineSubz / Netflix Super Player v2.0
+   FilmSub – player.js | Netflix Super Player v2.0
    ============================================================
    Features:
    1. Zero-White-Screen ("Sudu Thira") Protection:
@@ -12,13 +12,12 @@
       - Monitors navigator.connection + Video.js buffer stalls ('waiting')
       - Auto-downgrades quality on lag while preserving currentTime()
       - In-player Quality Selector inside Video.js control bar (works in Fullscreen)
-   4. Multi-Server + External Backup Players ("Bahirawa Players"):
-      - Server 1: ⚡ Super Player (Chunk Stream + Auto Sinhala Sub)
-      - Server 2: ☁️ Drive Player (Google CDN + Live Sinhala Sub)
-      - Server 3: 🌐 VIP Backup 1 (VidSrc Multi-Quality)
-      - Server 4: 🎬 VIP Backup 2 (MultiEmbed / SuperEmbed HD)
-      - Server 5: 🚀 VIP Backup 3 (AutoEmbed Global HD)
-   5. CineSubz-Style Embedded Sinhala Subtitles:
+   4. Multi-Server Clean VIP Players:
+      - Server 1: ⚡ Super Player (Telegram Cloud HD / Auto Sinhala Sub)
+      - Server 2: 🎬 VIP Player 1 (VidLink Pro Ultra HD)
+      - Server 3: ⚡ VIP Player 2 (AutoEmbed HD)
+      - Server 4: 🚀 VIP Player 3 (MultiEmbed Fast)
+   5. Embedded Sinhala Subtitles:
       - Native HTML5 <track> + programmatic VTTCue injection + in-video overlay
       - Supports Fullscreen on Desktop/Mobile, Sync (-0.5s/+0.5s), Size, Color & Custom .SRT upload
    ============================================================ */
@@ -313,37 +312,26 @@ function getMovieStreams(movie) {
     }
   }
 
-  // =========================================================================
-  // Server 1 & 2: CineSubz CS Player & Evo Player (if available in movie data)
-  // =========================================================================
-  const existingStreams = Array.isArray(movie.streams) ? movie.streams : [];
-  const csEntry = existingStreams.find(s => s && (s.label || '').includes('CS Player') || (s.stream_url || '').includes('setwenna') || (s.stream_url || '').includes('csplayer')) || (movie.cs_player ? { stream_url: movie.cs_player } : null);
-  const evoEntry = existingStreams.find(s => s && (s.label || '').includes('Evo Player') || (s.stream_url || '').includes('evostream')) || (movie.evo_player ? { stream_url: movie.evo_player } : null);
-
   let srvCounter = 1;
 
-  if (csEntry && csEntry.stream_url) {
+  // =========================================================================
+  // Server 1 (if available): ⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)
+  // =========================================================================
+  const existingStreams = Array.isArray(movie.streams) ? movie.streams : [];
+  const tgStream = existingStreams.find(s => s && (s.mode === 'super_chunk' || s.mode === 'telegram_stream' || s.file_id || s.message_id));
+  if (isMatchingEpisode && (tgStream || movie.message_id)) {
+    const msgId = (tgStream && tgStream.message_id) || movie.message_id;
+    const fileId = (tgStream && tgStream.file_id) || movie.file_id;
     list.push({
       server: `Server ${srvCounter}`,
-      label: '🎬 CS Player (CineSubz Direct HD • Sinhala Sub)',
-      mode: 'direct_mp4',
+      label: '⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)',
+      mode: 'telegram_stream',
       type: 'video/mp4',
-      stream_url: csEntry.stream_url,
+      stream_url: `/stream/channel/-1004325759505/${msgId}`,
+      message_id: msgId,
+      file_id: fileId,
       hasLocalFile: true,
       sub_merged: true,
-    });
-    srvCounter++;
-  }
-
-  if (evoEntry && evoEntry.stream_url) {
-    list.push({
-      server: `Server ${srvCounter}`,
-      label: '⚡ Evo Player (EvoStream Fast Stream)',
-      mode: 'external_embed',
-      type: 'embed',
-      embed: true,
-      stream_url: evoEntry.stream_url,
-      hasLocalFile: true,
     });
     srvCounter++;
   }
@@ -2087,7 +2075,7 @@ function renderMovieDetails(movie) {
       </div>
       <div class="cs-meta-row">
         <div class="cs-meta-label"><i class="fa-solid fa-pen-nib"></i> උපසිරැසිකරු:</div>
-        <div class="cs-meta-val">FilmSub.lk / CineSubz Team</div>
+        <div class="cs-meta-val">FilmSub.lk Team</div>
       </div>`;
   }
 

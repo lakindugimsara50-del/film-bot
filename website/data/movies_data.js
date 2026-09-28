@@ -7367,14 +7367,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-28T19:30:00Z",
+      "added_at": "2026-09-28T19:55:53Z",
       "streams": [
         {
           "server": "Server 1",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/4/7?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s04e07-s04e07-si.vtt&sub_label=Sinhala&sub=true"
+          "stream_url": "https://vidlink.pro/tv/1399/4/7"
         },
         {
           "server": "Server 2",
@@ -7393,21 +7393,12 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "downloads": [],
       "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e07-s04e07-si.vtt",
+      "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e07",
-      "channel_post_id": 122,
+      "channel_post_id": 123,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-28",
-      "subtitles": [
-        {
-          "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e07-s04e07-si.vtt",
-          "default": true
-        }
-      ],
-      "has_sinhala_sub": true
+      "added_date": "2026-09-28"
     }
   ],
-  "last_updated": "2026-09-28T19:36:48Z"
+  "last_updated": "2026-09-28T19:56:04Z"
 };

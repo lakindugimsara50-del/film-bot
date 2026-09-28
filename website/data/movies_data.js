@@ -6701,16 +6701,46 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
-      "imdb": "N/A",
-      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 4,
       "episode": 5,
       "episode_title": "First of His Name",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "en",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
+      "rating": "8.5",
       "number_of_seasons": 8,
-      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -6769,195 +6799,107 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
-      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "English",
-      "subtitle_language": "Sinhala",
-      "has_sinhala_sub": true,
-      "sub_merged": true,
-      "quality": "720p",
-      "duration": "54 min",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
       "featured": false,
-      "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQADdWq6dyqmW5MDine1F-I9vgZJ9UwUAALFJAACGjbRVTDM0VrRjgYPHgQ",
-      "message_id": 117,
-      "file_name": "game.of.thrones.s04e05.720p.hdtv.x264-killers.mkv",
-      "file_size": 1345560038,
-      "drive_file_id": "",
-      "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
+      "trending": false,
+      "added_at": "2026-09-28T14:02:53Z",
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
-          "type": "video/mp4",
-          "mode": "telegram_stream",
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADdWq6dyqmW5MDine1F-I9vgZJ9UwUAALFJAACGjbRVTDM0VrRjgYPHgQ",
-          "message_id": 117,
-          "quality": "1080p"
-        },
-        {
-          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/4/5"
+          "stream_url": "https://vidlink.pro/tv/1399/4/5?sub.Sinhala=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s04e05-s04e05-si.vtt"
         },
         {
-          "server": "Server 3",
+          "server": "Server 2",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://autoembed.co/tv/imdb/tt0944947-4-5"
         },
         {
-          "server": "Server 4",
+          "server": "Server 3",
           "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=5"
         }
       ],
-      "qualities": {
-        "auto": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-        "1080p": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-        "720p": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-        "480p": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-        "360p": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117"
-      },
       "downloads": [
         {
-          "quality": "720p (Telegram Direct)",
-          "label": "720p HD (Telegram Channel • Fast)",
-          "size": "1.3 GB",
-          "size_bytes": 1345560038,
-          "url": "https://t.me/c/4325759505/117",
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "format": "MKV",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
           "quality": "1080p",
-          "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "1.3 GB",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.25 GB",
           "size_bytes": 1345560038,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e05_1080p",
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "format": "MKV",
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
         },
         {
           "quality": "720p",
-          "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "705.8 MB",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "0.69 GB",
           "size_bytes": 740058020,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e05_720p",
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "format": "MKV",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADdWq6dyqmW5MDine1F-I9vgZJ9UwUAALFJAACGjbRVTDM0VrRjgYPHgQ",
+          "message_id": 117,
+          "url": "https://t.me/c/4325759505/117",
+          "telegram_url": "https://t.me/c/4325759505/117",
+          "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
         },
         {
           "quality": "480p",
-          "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "410.6 MB",
+          "label": "480p SD",
+          "size": "0.40 GB",
           "size_bytes": 430579212,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e05_480p",
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "format": "MKV",
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
         },
         {
           "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "231.0 MB",
+          "label": "360p Mobile",
+          "size": "0.23 GB",
           "size_bytes": 242200806,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s04e05_360p",
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "format": "MKV",
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
         }
       ],
-      "variant_media": {
-        "1080p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "size_bytes": 1345560038
-        },
-        "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADdWq6dyqmW5MDine1F-I9vgZJ9UwUAALFJAACGjbRVTDM0VrRjgYPHgQ",
-          "message_id": 117,
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "size_bytes": 740058020
-        },
-        "480p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "size_bytes": 430579212
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://examinations-additionally-unto-towns.trycloudflare.com/stream/channel/-1004325759505/117",
-          "size_bytes": 242200806
-        }
-      },
+      "telegram_status": "complete",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e05-si.vtt",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e05",
+      "channel_post_id": 116,
+      "channel_chat_id": -1004325759505,
+      "added_date": "2026-09-28",
       "subtitles": [
         {
           "language": "Sinhala",
-          "srclang": "si",
-          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "label": "සිංහල",
           "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e05-si.vtt",
-          "default": true
+          "default": true,
+          "srclang": "si"
         }
       ],
-      "source_method": "torrent",
-      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e05",
-      "added_date": "2026-09-28",
-      "added_at": "2026-09-28T14:18:20Z",
-      "added_by": "bot_auto_leech"
+      "has_sinhala_sub": true,
+      "sub_merged": true
     },
     {
       "id": "game-of-thrones-2011-s04e04",
@@ -7114,5 +7056,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ]
     }
   ],
-  "last_updated": "2026-09-28T14:18:22Z"
+  "last_updated": "2026-09-28T14:03:13Z"
 };

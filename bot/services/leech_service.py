@@ -1418,15 +1418,21 @@ async def _execute_leech(
                     qualities=("720p", "480p"),
                     progress_callback=_mq_progress_cb,
                 )
-                _mq_progress_str = "720p/480p Complete ✅"
+                if variant_files:
+                    q_keys = "/".join(variant_files.keys())
+                    _mq_progress_str = f"{q_keys} Complete ✅"
+                else:
+                    _mq_progress_str = "Multi-Quality Skipped (Primary Stream Active) ✅"
+
                 # Upload variants to Telegram channel in parallel using the session upload pool
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
-                    _mq_progress_str = "720p/480p Uploading to Telegram..."
+                    q_keys = "/".join(variant_files.keys())
+                    _mq_progress_str = f"{q_keys} Uploading to Telegram..."
                     await asyncio.gather(
                         *[_task_upload_tg_variant(ql, qp) for ql, qp in variant_files.items()],
                         return_exceptions=True,
                     )
-                    _mq_progress_str = "Telegram Multi-Quality Complete ✅"
+                    _mq_progress_str = f"Telegram {q_keys} Upload Complete ✅"
 
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
                     _mq_progress_str = "720p/480p Uploading to Drive..."

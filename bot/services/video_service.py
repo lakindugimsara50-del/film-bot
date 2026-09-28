@@ -37,6 +37,10 @@ log.info(
 
 def get_ffmpeg_binary() -> Optional[str]:
     """Find system ffmpeg or bundled imageio_ffmpeg binary."""
+    # Check /usr/local/bin/ffmpeg first (where Colab CUDA NVENC ffmpeg is placed)
+    if os.path.exists("/usr/local/bin/ffmpeg") and os.access("/usr/local/bin/ffmpeg", os.X_OK):
+        return "/usr/local/bin/ffmpeg"
+
     sys_ffmpeg = shutil.which("ffmpeg")
     if sys_ffmpeg:
         return sys_ffmpeg
@@ -113,16 +117,24 @@ def setup_colab_cuda_ffmpeg() -> bool:
         smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if smi.returncode != 0:
             return False
+
+        # If /usr/local/bin/ffmpeg already has working h264_nvenc, skip re-download
+        if os.path.exists("/usr/local/bin/ffmpeg"):
+            test_probe = subprocess.run(
+                ["/usr/local/bin/ffmpeg", "-hide_banner", "-f", "lavfi", "-i", "nullsrc=s=256x256:d=0.04", "-c:v", "h264_nvenc", "-f", "null", "-"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4,
+            )
+            if test_probe.returncode == 0:
+                return True
+
         log.info("[VideoService] Colab NVIDIA GPU detected. Installing CUDA FFmpeg (NVENC)...")
         cmd = (
-            "wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -O /tmp/ff_cuda.tar.xz "
-            "&& tar -xf /tmp/ff_cuda.tar.xz -C /tmp/ "
-            "&& cp -f /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ffmpeg "
-            "&& cp -f /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffprobe /usr/local/bin/ffprobe "
+            "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o /tmp/ff_cuda.tar.xz "
+            "&& tar -xf /tmp/ff_cuda.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
             "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
-            "&& rm -rf /tmp/ff_cuda* /tmp/ffmpeg-master*"
+            "&& rm -rf /tmp/ff_cuda.tar.xz"
         )
-        res = subprocess.run(cmd, shell=True, timeout=90)
+        res = subprocess.run(cmd, shell=True, timeout=180)
         return res.returncode == 0
     except Exception as exc:
         log.debug("[VideoService] Colab CUDA FFmpeg auto-setup note: %s", exc)
@@ -136,6 +148,19 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
     """
     global _CACHED_HW_ENCODER
     if _CACHED_HW_ENCODER is not None:
+        return _CACHED_HW_ENCODER
+
+    # Check if NVIDIA GPU exists first
+    has_gpu = False
+    try:
+        smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        has_gpu = (smi.returncode == 0)
+    except Exception:
+        has_gpu = False
+
+    if not has_gpu:
+        log.info("[VideoService] No NVIDIA GPU detected (CPU mode active). Using high-speed multi-threaded CPU encoder.")
+        _CACHED_HW_ENCODER = "libx264"
         return _CACHED_HW_ENCODER
 
     exe = ffmpeg_bin or get_ffmpeg_binary()
@@ -165,7 +190,7 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
     except Exception:
         pass
 
-    # On Google Colab: if NVENC failed with standard apt ffmpeg, auto-install BtbN CUDA ffmpeg
+    # On Google Colab with GPU: if NVENC failed with standard apt ffmpeg, auto-install BtbN CUDA ffmpeg
     if os.path.exists("/content") and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
         setattr(detect_hw_encoder, "_attempted_cuda_install", True)
         if setup_colab_cuda_ffmpeg():
@@ -193,6 +218,7 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
                 pass
 
     _CACHED_HW_ENCODER = "libx264"
+    log.info("[VideoService] Falling back to high-speed CPU encoder: libx264")
     return _CACHED_HW_ENCODER
 
 
@@ -1307,9 +1333,9 @@ async def generate_multi_quality_variants_ram(
             q0 = target_q_list[0]
             h0 = profiles[q0]["height"]
             fc = (
-                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=w=-2:h={h0}[v_{q0}]"
+                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
                 if burn_subs
-                else f"[0:v:0]scale=w=-2:h={h0}[v_{q0}]"
+                else f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
             )
         else:
             split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
@@ -1319,7 +1345,7 @@ async def generate_multi_quality_variants_ram(
                 else f"[0:v:0]split={num_q}{split_labels}"
             )
             scale_branches = ";".join(
-                f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}[v_{q}]"
+                f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
                 for q in target_q_list
             )
             fc = f"{split_head};{scale_branches}"
@@ -1371,15 +1397,11 @@ async def generate_multi_quality_variants_ram(
                     "-c:v", "libx264",
                     "-preset", "ultrafast",
                     "-tune", "fastdecode",
-                    "-crf", prof["crf"],
-                    "-maxrate", prof["maxrate"],
-                    "-bufsize", prof["bufsize"],
+                    "-crf", "28",
                 ])
             c.extend([
                 "-pix_fmt", "yuv420p",
-                "-c:a", "aac",
-                "-b:a", prof["abitrate"],
-                "-ac", "2",
+                "-c:a", "copy",
                 "-movflags", "+faststart",
                 out_file,
             ])
@@ -1387,12 +1409,12 @@ async def generate_multi_quality_variants_ram(
 
     # Build ordered attempt strategies:
     # 1. Preferred encoder (NVENC or libx264) + soft subs (instantaneous, zero CPU subtitle burning overhead)
-    # 2. Fallback CPU libx264 + soft subs only (recovers from NVENC multi-stream limits)
-    # 3. Fallback CPU libx264 without subs (recovers from corrupt SRT stream)
+    # 2. Fallback CPU libx264 + soft subs only (if NVENC failed)
+    # 3. Fallback CPU libx264 without subs (if SRT parsing failed)
     strategies: list[tuple[str, bool, bool]] = [(hw_enc, False, has_sub)]
     if hw_enc == "h264_nvenc":
         strategies.append(("libx264", False, has_sub))
-    if has_sub:
+    elif has_sub:
         strategies.append(("libx264", False, False))
 
     proc = None
@@ -1434,10 +1456,11 @@ async def generate_multi_quality_variants_ram(
                                 except Exception:
                                     pass
 
+            timeout_val = max(300.0, duration * 0.5) if enc_choice == "h264_nvenc" else max(600.0, duration * 1.5)
             try:
-                await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=240.0)
+                await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=timeout_val)
             except asyncio.TimeoutError:
-                log.warning("[VideoService] Multi-quality FFmpeg timed out (240s) — terminating process")
+                log.warning("[VideoService] Multi-quality FFmpeg timed out (%.0fs) — terminating process", timeout_val)
                 if proc and proc.returncode is None:
                     try:
                         proc.terminate()
@@ -1455,6 +1478,16 @@ async def generate_multi_quality_variants_ram(
                     attempt_idx + 1, enc_choice, burn_choice, list(valid_outputs.keys()),
                 )
                 return valid_outputs
+
+            # In CPU mode, if at least 1 variant succeeded (e.g. 720p), return immediately
+            # rather than stalling the pipeline with duplicate retries.
+            if enc_choice == "libx264" and valid_outputs:
+                log.info(
+                    "[VideoService] Partial multi-quality variants ready on CPU: %s. Returning completed variants.",
+                    list(valid_outputs.keys()),
+                )
+                return valid_outputs
+
             log.warning(
                 "[VideoService] Multi-quality attempt %d (encoder=%s, burn=%s) produced %d/%d variants; retrying fallback...",
                 attempt_idx + 1, enc_choice, burn_choice, len(valid_outputs), len(target_q_list),

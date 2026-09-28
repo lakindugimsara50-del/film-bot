@@ -253,9 +253,9 @@ def register(app: Client) -> None:
         # Check if an active task is running
         is_busy = not queue_service.is_idle()
 
-        # Check if full auto was requested via /auto or --auto / -a
+        # Check if full auto was requested via /auto, /boost or --auto / -a
         cmd_name = message.command[0].lower() if message.command else "leech"
-        is_auto = (cmd_name == "auto") or ("--auto" in text.lower()) or ("-a" in text.split())
+        is_auto = (cmd_name in ("auto", "boost")) or ("--auto" in text.lower()) or ("-a" in text.split())
 
         status_msg = await message.reply_text(
             f"⏳ <b>Auto-Leech පද්ධතියට එක්කරමින් පවතී...</b>\n🎬 {display_hint}",

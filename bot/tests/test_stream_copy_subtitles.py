@@ -384,3 +384,35 @@ async def test_stream_copy_subtitles_real_ffmpeg_execution(tmp_path):
     assert sub.get("codec_name") == "mov_text"
     assert sub.get("disposition", {}).get("default") == 1
     assert sub.get("tags", {}).get("language") == "sin"
+
+
+@pytest.mark.asyncio
+async def test_stream_copy_subtitles_ac3_auto_transcode_to_aac(tmp_path):
+    """Verify that when source contains AC3 audio, stream_copy_subtitles
+    proactively transcodes audio to stereo AAC with -c:a aac to prevent browser silence."""
+    in_video = tmp_path / "movie_ac3.mp4"
+    in_video.write_bytes(b"DATA" * 500)
+    sub_srt = tmp_path / "sub.srt"
+    sub_srt.write_text("1\n00:00:01,000 --> 00:00:02,000\nSub\n", encoding="utf-8")
+    out_mp4 = tmp_path / "movie_aac.mp4"
+
+    captured_cmds = []
+
+    async def fake_exec(*args, **kwargs):
+        captured_cmds.append(list(args))
+        out_mp4.write_bytes(b"OUT" * 100)
+        return DummyProc(returncode=0)
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_audio_codec", return_value="ac3"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        ok = await stream_copy_subtitles(str(in_video), str(sub_srt), str(out_mp4), disposition="default")
+
+    assert ok is True
+    assert len(captured_cmds) == 1
+    cmd = captured_cmds[0]
+    assert "-c:v" in cmd and cmd[cmd.index("-c:v") + 1] == "copy"
+    assert "-c:a" in cmd and cmd[cmd.index("-c:a") + 1] == "aac"
+    assert "-b:a" in cmd and cmd[cmd.index("-b:a") + 1] == "160k"
+    assert "-ac" in cmd and cmd[cmd.index("-ac") + 1] == "2"
+

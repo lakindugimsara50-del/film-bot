@@ -378,7 +378,7 @@ function getMovieStreams(movie) {
     if (tmdbId) {
       s1Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s1SubParam}`;
     } else if (imdbId) {
-      s1Url = `https://autoembed.co/tv/imdb/${imdbId}-${sNum}-${eNum}${s1SubParam}`;
+      s1Url = `https://vidlink.pro/tv/${imdbId}/${sNum}/${eNum}${s1SubParam}`;
     } else {
       s1Url = `https://vidlink.pro/tv/1399/${sNum}/${eNum}${s1SubParam}`;
     }
@@ -386,7 +386,7 @@ function getMovieStreams(movie) {
     if (tmdbId) {
       s1Url = `https://vidlink.pro/movie/${tmdbId}${s1SubParam}`;
     } else if (imdbId) {
-      s1Url = `https://autoembed.co/movie/imdb/${imdbId}${s1SubParam}`;
+      s1Url = `https://vidlink.pro/movie/${imdbId}${s1SubParam}`;
     } else {
       s1Url = `https://vidlink.pro/movie/564147${s1SubParam}`;
     }

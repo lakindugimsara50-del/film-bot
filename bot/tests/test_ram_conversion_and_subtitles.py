@@ -429,4 +429,147 @@ def test_player_js_two_clean_servers_and_syntax():
     assert "isMatchingEpisode" in content
 
 
+@pytest.mark.asyncio
+async def test_generate_multi_quality_variants_1080p_widescreen_and_ac3(tmp_path):
+    """Verify that a 1920x800 widescreen film with AC3 audio triggers the 1080p shortcut,
+    transcodes audio to AAC, and generates remaining requested variants."""
+    in_mp4 = tmp_path / "widescreen_1080p.mp4"
+    in_mp4.write_bytes(b"WIDESCREEN_1080P" * 200)
+
+    class FakeProc:
+        returncode = 0
+        stderr = None
+        async def wait(self):
+            return 0
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    async def fake_exec(*args, **kwargs):
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"V" * (600 * 1024))
+        p = FakeProc()
+        class FakeStderr:
+            async def read(self, *a):
+                return b""
+            async def readline(self):
+                return b""
+        p.stderr = FakeStderr()
+        return p
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_video_resolution", return_value=(1920, 800)), \
+         patch("services.video_service.get_audio_codec", return_value="ac3"), \
+         patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            base_stem="widescreen_film",
+            target_qualities=("1080p", "720p", "480p"),
+        )
+
+    assert "1080p" in variants
+    assert "720p" in variants
+    assert "480p" in variants
+    for q, p in variants.items():
+        assert os.path.exists(p)
+
+
+@pytest.mark.asyncio
+async def test_boost_command_auto_publish():
+    """Verify /boost command registers as is_auto=True so queue_service runs in auto-publish mode."""
+    from unittest.mock import MagicMock
+    from handlers.leech_handler import register as register_leech_handler
+    from services.auth_service import auth_service
+
+    app = MagicMock()
+    registered_handlers = []
+    def fake_on_message(filters):
+        def decorator(func):
+            registered_handlers.append((filters, func))
+            return func
+        return decorator
+    app.on_message = fake_on_message
+
+    register_leech_handler(app)
+    # Find leech_command handler
+    leech_cmd_fn = None
+    for filt, fn in registered_handlers:
+        if fn.__name__ == "leech_command":
+            leech_cmd_fn = fn
+            break
+    assert leech_cmd_fn is not None
+
+    # Call with /boost command
+    client = MagicMock()
+    msg = MagicMock()
+    msg.from_user.id = 123456
+    msg.from_user.username = "testuser"
+    msg.command = ["boost", "Inception", "2010"]
+    msg.text = "/boost Inception 2010"
+    msg.reply_to_message = None
+
+    status_mock = AsyncMock()
+    msg.reply_text = AsyncMock(return_value=status_mock)
+
+    with patch.object(auth_service, "is_authorized", return_value=True), \
+         patch("handlers.leech_handler.queue_service.is_idle", return_value=True), \
+         patch("handlers.leech_handler.queue_service.add_to_queue", new_callable=AsyncMock) as mock_add_queue:
+        mock_add_queue.return_value = 1
+        await leech_cmd_fn(client, msg)
+
+        # auto_publish must be True for /boost
+        mock_add_queue.assert_called_once()
+        _, kwargs = mock_add_queue.call_args
+        assert kwargs.get("auto_publish") is True
+
+
+def test_player_js_no_duplicate_urls_on_imdb_only():
+    """Verify player.js creates distinct VidLink and AutoEmbed stream URLs without duplication."""
+    import subprocess
+    js_code = """
+    const fs = require('fs');
+    const vm = require('vm');
+    const code = fs.readFileSync('website/assets/js/player.js', 'utf8');
+    // Stub browser globals
+    global.window = { FilmSub: {} };
+    global.document = {
+        addEventListener: () => {},
+        getElementById: () => null,
+        querySelector: () => null,
+        querySelectorAll: () => []
+    };
+    global.navigator = {};
+    global.location = { search: '', href: '' };
+    global.FilmSub = { escHtml: s => s };
+    global.currentSeason = 1;
+    global.currentEpisode = 2;
+    global.currentEffectiveQuality = '1080p';
+    vm.runInThisContext(code);
+
+    const movie = {
+        title: 'Game of Thrones',
+        type: 'series',
+        season: 1,
+        episode: 1,
+        imdb_id: 'tt0944947'
+    };
+    const streams = getMovieStreams(movie);
+    console.log(JSON.stringify(streams.map(s => ({ server: s.server, label: s.label, url: s.stream_url }))));
+    """
+    res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
+    assert res.returncode == 0, f"Node eval error: {res.stderr}"
+    import json
+    st_list = json.loads(res.stdout.strip())
+    assert len(st_list) == 2, f"Expected exactly 2 clean servers, got {len(st_list)}"
+    urls = [s['url'] for s in st_list]
+    assert len(set(urls)) == 2, f"Expected 2 distinct URLs, got duplicates: {urls}"
+    assert "vidlink.pro" in urls[0]
+    assert "autoembed.co" in urls[1]
+
+
+
 

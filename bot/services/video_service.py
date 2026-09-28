@@ -103,6 +103,37 @@ def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tu
     return (0, 0)
 
 
+def get_audio_codec(file_path: str, ffmpeg_bin: Optional[str] = None) -> Optional[str]:
+    """Extract primary audio codec name using ffmpeg -i."""
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return None
+    try:
+        cmd = [exe, "-hide_banner", "-i", file_path]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", proc.stderr)
+        if audio_matches:
+            return audio_matches[0].lower()
+    except Exception as exc:
+        log.debug("[VideoService] Could not parse audio codec: %s", exc)
+    return None
+
+
+def is_web_compatible_audio(codec: Optional[str]) -> bool:
+    """Check if audio codec can be natively decoded by web browsers (AAC, MP3)."""
+    if not codec:
+        return True
+    return codec.lower() in ("aac", "mp3")
+
+
 _CACHED_HW_ENCODER: Optional[str] = None
 
 
@@ -260,6 +291,12 @@ async def stream_copy_subtitles(
     sub_codec = "mov_text" if is_mp4 else "srt"
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
 
+    # Detect if source audio requires AAC transcode for browser compatibility
+    in_audio_codec = get_audio_codec(video_path, ffmpeg_bin)
+    needs_aac = is_mp4 and bool(in_audio_codec and not is_web_compatible_audio(in_audio_codec))
+    if needs_aac:
+        log.info("[VideoService] Stream-copy detected non-AAC audio (%s) -> transcoding to Stereo AAC for 100%% browser playback", in_audio_codec)
+
     # Primary Attempt: Direct instantaneous stream copy with soft-sub muxing and +faststart
     cmd = [
         ffmpeg_bin,
@@ -275,7 +312,12 @@ async def stream_copy_subtitles(
             "-map", "0:a?",
             "-map", "1:0",
             "-c:v", "copy",
-            "-c:a", "copy",
+        ])
+        if needs_aac:
+            cmd.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2"])
+        else:
+            cmd.extend(["-c:a", "copy"])
+        cmd.extend([
             "-c:s", sub_codec,
             "-metadata:s:s:0", "language=sin",
             "-metadata:s:s:0", "title=Sinhala (සිංහල)",
@@ -286,9 +328,12 @@ async def stream_copy_subtitles(
             "-map", "0:v:0",
             "-map", "0:a?",
             "-c:v", "copy",
-            "-c:a", "copy",
-            "-sn",
         ])
+        if needs_aac:
+            cmd.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2"])
+        else:
+            cmd.extend(["-c:a", "copy"])
+        cmd.extend(["-sn"])
     cmd.extend(["-max_muxing_queue_size", "9999"])
     if is_mp4:
         cmd.extend(["-movflags", "+faststart"])
@@ -411,10 +456,15 @@ async def stream_copy_subtitles(
             "-map", "0:v:0",
             "-map", "0:a?",
             "-c:v", "copy",
-            "-c:a", "copy",
+        ]
+        if needs_aac:
+            cmd_fallback_nosub.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2"])
+        else:
+            cmd_fallback_nosub.extend(["-c:a", "copy"])
+        cmd_fallback_nosub.extend([
             "-sn",
             "-max_muxing_queue_size", "9999",
-        ]
+        ])
         if is_mp4:
             cmd_fallback_nosub.extend(["-movflags", "+faststart"])
         cmd_fallback_nosub.append(os.path.abspath(output_path))
@@ -880,25 +930,10 @@ async def ensure_web_streamable(
     min_valid_size = min(512 * 1024, max(1024, int(input_size * 0.25)))
 
     # Inspect input audio codec quickly so we don't copy AC3/EAC3/DTS into MP4 (which causes silent playback in browsers)
-    needs_aac_transcode = False
-    try:
-        probe = subprocess.run(
-            [ffmpeg_bin, "-hide_banner", "-i", input_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=180,   # increased: large files on Colab need more probe time
-        )
-        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", probe.stderr)
-        if audio_matches:
-            primary_audio = audio_matches[0].lower()
-            if primary_audio not in ("aac", "mp3"):
-                needs_aac_transcode = True
-                log.info("[VideoService] Audio codec '%s' detected — will transcode to Stereo AAC for 100%% browser compatibility.", primary_audio)
-    except Exception:
-        pass
+    in_codec = get_audio_codec(input_path, ffmpeg_bin)
+    needs_aac_transcode = bool(in_codec and not is_web_compatible_audio(in_codec))
+    if needs_aac_transcode:
+        log.info("[VideoService] Audio codec '%s' detected — will transcode to Stereo AAC for 100%% browser compatibility.", in_codec)
 
     # Attempt 1: Instant stream-copy (only if audio is already browser-compatible AAC/MP3)
     if not needs_aac_transcode:
@@ -1309,8 +1344,18 @@ async def generate_multi_quality_variants_ram(
     valid_outputs: dict[str, str] = {}
     src_w, src_h = get_video_resolution(input_path, ffmpeg_bin)
 
-    # If source is already ~1080p (height between 1000 and 1080) and 1080p is in target_q_list, instant copy
-    if src_h >= 1000 and src_h <= 1080 and "1080p" in target_q_list:
+    # Check if input audio needs transcoding to AAC for browser playback (e.g. AC3/DTS/FLAC)
+    in_audio_codec = get_audio_codec(input_path, ffmpeg_bin)
+    needs_aac_transcode = bool(in_audio_codec and not is_web_compatible_audio(in_audio_codec))
+    if needs_aac_transcode:
+        log.info("[VideoService] Source audio codec '%s' detected -> enforcing AAC transcode for browser compatibility", in_audio_codec)
+
+    # Detect resolution tier, supporting both 16:9 and 2.39:1 widescreen films
+    is_source_1080p = (1700 <= src_w <= 2000) or (950 <= src_h <= 1150)
+    is_source_720p = (1100 <= src_w <= 1400) or (620 <= src_h <= 750)
+
+    # If source is already ~1080p and 1080p is in target_q_list, instant copy
+    if is_source_1080p and "1080p" in target_q_list:
         direct_1080_path = os.path.join(abs_out_dir, f"{slug}-1080p.mp4")
         try:
             ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_1080_path, disposition="default")
@@ -1323,8 +1368,8 @@ async def generate_multi_quality_variants_ram(
         except Exception as e1080:
             log.debug("[VideoService] Direct 1080p copy note: %s", e1080)
 
-    # If source is already ~720p (height between 680 and 720), do not re-encode 720p if copy succeeds.
-    if src_h >= 680 and src_h <= 720 and "720p" in target_q_list:
+    # If source is already ~720p, do not re-encode 720p if copy succeeds.
+    if is_source_720p and "720p" in target_q_list:
         direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
         try:
             ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_720_path, disposition="default")
@@ -1339,26 +1384,6 @@ async def generate_multi_quality_variants_ram(
 
     if not target_q_list:
         return valid_outputs
-
-    # Check if input audio needs transcoding to AAC for browser playback (e.g. AC3/DTS/FLAC)
-    needs_aac_transcode = False
-    try:
-        probe = subprocess.run(
-            [ffmpeg_bin, "-hide_banner", "-i", input_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=15,
-        )
-        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", probe.stderr)
-        if audio_matches:
-            primary_audio = audio_matches[0].lower()
-            if primary_audio not in ("aac", "mp3"):
-                needs_aac_transcode = True
-    except Exception:
-        pass
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     num_q = len(target_q_list)

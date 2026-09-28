@@ -6808,7 +6808,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/4/5"
+          "stream_url": "https://vidlink.pro/tv/1399/4/5?sub.Sinhala=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s04e05-s04e05-si.vtt"
         },
         {
           "server": "Server 2",
@@ -6827,11 +6827,20 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "downloads": [],
       "telegram_status": "queued",
-      "subtitle_url": "",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e05-s04e05-si.vtt",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e05",
       "channel_post_id": 116,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-28"
+      "added_date": "2026-09-28",
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "සිංහල උපසිරැසි",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e05-s04e05-si.vtt",
+          "default": true
+        }
+      ],
+      "has_sinhala_sub": true
     },
     {
       "id": "game-of-thrones-2011-s04e04",
@@ -6988,5 +6997,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ]
     }
   ],
-  "last_updated": "2026-09-28T14:02:55Z"
+  "last_updated": "2026-09-28T14:03:13Z"
 };

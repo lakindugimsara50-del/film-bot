@@ -87,6 +87,8 @@ app = Client(
     api_hash=config.API_HASH,
     bot_token=config.BOT_TOKEN,
     workers=_PYROGRAM_WORKERS,
+    max_concurrent_transmissions=10,
+    sleep_threshold=30,
 )
 
 # ── Global concurrency lock ───────────────────────────────────────────────────

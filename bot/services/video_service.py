@@ -1296,7 +1296,7 @@ async def generate_multi_quality_variants_ram(
     output_dir: str,
     slug: str = "movie",
     sub_path: Optional[str] = None,
-    qualities: tuple[str, ...] = ("720p", "480p", "360p"),
+    qualities: tuple[str, ...] = ("720p", "480p"),
     progress_callback: Optional[Callable[[float, str], None]] = None,
     base_stem: Optional[str] = None,
     target_qualities: Optional[tuple[str, ...]] = None,
@@ -1592,7 +1592,7 @@ async def generate_multi_quality_variants_ram(
                                 except Exception:
                                     pass
 
-            timeout_val = max(300.0, min(1800.0, duration * 0.5)) if enc_choice == "h264_nvenc" else max(600.0, min(3600.0, duration * 1.5))
+            timeout_val = max(300.0, min(1800.0, duration * 0.5)) if enc_choice == "h264_nvenc" else max(900.0, min(5400.0, duration * 2.0))
             try:
                 await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=timeout_val)
             except asyncio.TimeoutError:

@@ -1383,10 +1383,17 @@ async def _execute_leech(
 
         variant_tg_info: dict[str, dict] = {}
 
+        # Detect source resolution upfront to cleanly route primary and variant pipelines
+        src_w, src_h = video_service.get_video_resolution(local_file)
+        is_source_1080p = (src_w >= 1600 or src_h >= 900)
+        is_source_720p = (1000 <= src_w < 1600) or (550 <= src_h < 900) or (is_series and src_h < 900)
+        primary_quality = "720p" if is_source_720p else "1080p"
+        log.info("[LeechService] Source resolution: %dx%d -> primary_quality='%s' (is_series=%s)", src_w, src_h, primary_quality, is_series)
+
         async def _task_upload_tg_variant(q_label: str, q_path: str) -> None:
-            if not os.path.exists(q_path):
+            if not os.path.exists(q_path) or os.path.getsize(q_path) == 0:
                 return
-            for attempt in range(2):
+            for attempt in range(3):
                 try:
                     log.info("[LeechService] Uploading variant '%s' to Telegram channel (attempt %d)...", q_label, attempt + 1)
                     var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
@@ -1406,17 +1413,26 @@ async def _execute_leech(
                         break
                 except Exception as tg_v_err:
                     log.warning("[LeechService] Telegram upload for variant %s attempt %d skipped/failed: %s", q_label, attempt + 1, tg_v_err)
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(2.0 * (attempt + 1))
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
-                # Detect source resolution: if source is > 1080p (4K / 1440p), encode 1080p, 720p, 480p, 360p; otherwise 720p, 480p, 360p
-                src_w, src_h = video_service.get_video_resolution(local_file)
-                is_source_4k = (src_w > 2000) or (src_h > 1150)
-                requested_qualities = ("1080p", "720p", "480p", "360p") if is_source_4k else ("720p", "480p", "360p")
+                # If primary is 1080p, encode 720p and 480p variants
+                # If primary is 720p (like most series), encode ONLY 480p variant (no duplicate 720p!)
+                if primary_quality == "1080p":
+                    requested_qualities = ("720p", "480p")
+                elif primary_quality == "720p":
+                    requested_qualities = ("480p",)
+                else:
+                    requested_qualities = ()
+
+                if not requested_qualities:
+                    _mq_progress_str = "Multi-Quality Skipped (Source <= 480p) ✅"
+                    return
+
                 variant_files = await video_service.generate_multi_quality_variants_ram(
                     input_path=local_file,
                     output_dir=temp_dir,
@@ -1431,23 +1447,21 @@ async def _execute_leech(
                 else:
                     _mq_progress_str = "Multi-Quality Skipped (Primary Stream Active) ✅"
 
-                # Upload variants to Telegram channel in parallel using the session upload pool
+                # Upload variants to Telegram channel cleanly to prevent socket contention
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
                     q_keys = "/".join(variant_files.keys())
                     _mq_progress_str = f"{q_keys} Uploading to Telegram..."
-                    await asyncio.gather(
-                        *[_task_upload_tg_variant(ql, qp) for ql, qp in variant_files.items()],
-                        return_exceptions=True,
-                    )
+                    for ql, qp in variant_files.items():
+                        if ql == primary_quality:
+                            continue
+                        await _task_upload_tg_variant(ql, qp)
                     _mq_progress_str = f"Telegram {q_keys} Upload Complete ✅"
 
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
                     q_keys = "/".join(variant_files.keys())
                     _mq_progress_str = f"{q_keys} Uploading to Drive..."
-                    await asyncio.gather(
-                        *[_task_upload_drive_variant(ql, qp) for ql, qp in variant_files.items()],
-                        return_exceptions=True,
-                    )
+                    for ql, qp in variant_files.items():
+                        await _task_upload_drive_variant(ql, qp)
                     _mq_progress_str = f"{q_keys} Drive Complete ✅"
             except Exception as mq_err:
                 log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
@@ -1461,8 +1475,8 @@ async def _execute_leech(
                 upload_res = await upload_pool.upload_with_pool(
                     file_path=local_file,
                     target_chat=target_channel,
-                    quality="1080p",
-                    caption=f"🎬 {display_title}\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
+                    quality=primary_quality,
+                    caption=f"🎬 {display_title} [{primary_quality}]\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
                     file_name=os.path.basename(local_file),
                     progress_callback=_upload_progress,
                     fallback_client=client,
@@ -1470,10 +1484,13 @@ async def _execute_leech(
                 file_id = upload_res.get("file_id", "")
                 stream_url = upload_res.get("stream_url", "")
                 message_id = upload_res.get("message_id", 0)
+                if file_id and message_id:
+                    variant_tg_info[primary_quality] = upload_res
+                    log.info("[LeechService] Registered primary upload into variant_tg_info['%s']: msg_id=%s", primary_quality, message_id)
             except Exception as tg_err:
                 log.error("[LeechService] Telegram upload failed: %s", tg_err)
 
-        # Execute Drive 1080p upload, Telegram 1080p upload, and 720p/480p/360p RAM Encode+Upload concurrently!
+        # Execute Drive upload, Telegram primary upload, and RAM variant Encode+Upload concurrently
         await asyncio.gather(
             _task_upload_drive_1080(),
             _task_upload_telegram(),
@@ -1671,28 +1688,28 @@ async def _execute_leech(
 
         variant_media = {
             "1080p": {
-                "file_id": (variant_tg_info.get("1080p", {}).get("file_id", "") or (file_id if "1080" in display_title or not is_series else "")),
-                "message_id": (variant_tg_info.get("1080p", {}).get("message_id", 0) or (message_id if "1080" in display_title or not is_series else 0)),
-                "stream_url": (variant_tg_info.get("1080p", {}).get("stream_url") or stream_url),
-                "size_bytes": (variant_tg_info.get("1080p", {}).get("file_size", 0) or sz_1080),
+                "file_id": (variant_tg_info.get("1080p", {}).get("file_id", "") or (file_id if primary_quality == "1080p" else "")),
+                "message_id": (variant_tg_info.get("1080p", {}).get("message_id", 0) or (message_id if primary_quality == "1080p" else 0)),
+                "stream_url": (variant_tg_info.get("1080p", {}).get("stream_url") or (stream_url if primary_quality == "1080p" else "")),
+                "size_bytes": (variant_tg_info.get("1080p", {}).get("file_size", 0) or (sz_1080 if primary_quality == "1080p" else 0)),
             },
             "720p": {
-                "file_id": (variant_tg_info.get("720p", {}).get("file_id", "") or (file_id if is_series and "1080" not in display_title else "")),
-                "message_id": (variant_tg_info.get("720p", {}).get("message_id", 0) or (message_id if is_series and "1080" not in display_title else 0)),
-                "stream_url": (variant_tg_info.get("720p", {}).get("stream_url") or stream_720),
-                "size_bytes": (variant_tg_info.get("720p", {}).get("file_size", 0) or sz_720 or sz_1080),
+                "file_id": (variant_tg_info.get("720p", {}).get("file_id", "") or (file_id if primary_quality == "720p" else "")),
+                "message_id": (variant_tg_info.get("720p", {}).get("message_id", 0) or (message_id if primary_quality == "720p" else 0)),
+                "stream_url": (variant_tg_info.get("720p", {}).get("stream_url") or (stream_url if primary_quality == "720p" else stream_720)),
+                "size_bytes": (variant_tg_info.get("720p", {}).get("file_size", 0) or (sz_1080 if primary_quality == "720p" else sz_720)),
             },
             "480p": {
                 "file_id": variant_tg_info.get("480p", {}).get("file_id", ""),
                 "message_id": variant_tg_info.get("480p", {}).get("message_id", 0),
-                "stream_url": stream_480,
-                "size_bytes": sz_480,
+                "stream_url": variant_tg_info.get("480p", {}).get("stream_url") or stream_480,
+                "size_bytes": variant_tg_info.get("480p", {}).get("file_size", 0) or sz_480,
             },
             "360p": {
                 "file_id": variant_tg_info.get("360p", {}).get("file_id", ""),
                 "message_id": variant_tg_info.get("360p", {}).get("message_id", 0),
-                "stream_url": stream_360,
-                "size_bytes": sz_360,
+                "stream_url": variant_tg_info.get("360p", {}).get("stream_url") or stream_360,
+                "size_bytes": variant_tg_info.get("360p", {}).get("file_size", 0) or sz_360,
             },
         }
 
@@ -1703,39 +1720,34 @@ async def _execute_leech(
         tg_channel_id_clean = str(abs(target_channel))
         if tg_channel_id_clean.startswith("100"):
             tg_channel_id_clean = tg_channel_id_clean[3:]
-        tg_post_link = f"https://t.me/c/{tg_channel_id_clean}/{message_id}" if message_id else ""
 
-        if tg_post_link:
-            q_title = "720p HD (Telegram Channel • Fast)" if is_series else "1080p Full HD (Telegram Channel • Fast)"
-            q_name = "720p (Telegram Direct)" if is_series else "1080p (Telegram Direct)"
-            downloads_list.append({
-                "quality": q_name,
-                "label": q_title,
-                "size": downloader.format_bytes(sz_1080),
-                "size_bytes": sz_1080,
-                "url": tg_post_link,
-                "stream_url": stream_url,
-                "format": file_ext,
-                "host": "Telegram",
-                "sub_merged": True,
-                "subtitle_merged": True,
-            })
-
-        for q_var, q_lbl, sz_var, s_var in [
-            ("1080p", "1080p Full HD", sz_1080, variant_tg_info.get("1080p", {}).get("stream_url") or stream_url),
-            ("720p", "720p HD", sz_720, stream_720),
-            ("480p", "480p SD", sz_480, stream_480),
-            ("360p", "360p Data Saver", sz_360, stream_360),
+        # Real Telegram direct channel downloads for every verified uploaded quality
+        added_msg_ids = set()
+        for q_var, q_lbl, fallback_sz, fallback_stream in [
+            ("1080p", "1080p Full HD (Telegram Channel • Fast)", sz_1080, stream_url),
+            ("720p", "720p HD (Telegram Channel • Fast)", sz_720, stream_720),
+            ("480p", "480p SD (Telegram Channel • Fast)", sz_480, stream_480),
+            ("360p", "360p Mobile (Telegram Channel • Fast)", sz_360, stream_360),
         ]:
-            var_msg = variant_tg_info.get(q_var, {}).get("message_id")
-            if var_msg and var_msg != message_id and tg_channel_id_clean:
+            info = variant_tg_info.get(q_var) or {}
+            v_msg = info.get("message_id")
+            if not v_msg and q_var == primary_quality:
+                v_msg = message_id
+            if v_msg and v_msg > 0 and v_msg not in added_msg_ids and tg_channel_id_clean:
+                added_msg_ids.add(v_msg)
+                v_sz = info.get("file_size") or (sz_1080 if q_var == primary_quality else fallback_sz)
+                v_fid = info.get("file_id") or (file_id if q_var == primary_quality else "")
+                v_stream = info.get("stream_url") or (stream_url if q_var == primary_quality else fallback_stream)
                 downloads_list.append({
                     "quality": f"{q_var} (Telegram Direct)",
-                    "label": f"{q_lbl} (Telegram Channel • Fast)",
-                    "size": downloader.format_bytes(sz_var),
-                    "size_bytes": sz_var,
-                    "url": f"https://t.me/c/{tg_channel_id_clean}/{var_msg}",
-                    "stream_url": s_var,
+                    "label": q_lbl,
+                    "size": downloader.format_bytes(v_sz),
+                    "size_bytes": v_sz,
+                    "url": f"https://t.me/c/{tg_channel_id_clean}/{v_msg}",
+                    "telegram_url": f"https://t.me/c/{tg_channel_id_clean}/{v_msg}",
+                    "file_id": v_fid,
+                    "message_id": v_msg,
+                    "stream_url": v_stream,
                     "format": file_ext,
                     "host": "Telegram",
                     "sub_merged": True,

@@ -134,6 +134,7 @@ class TelegramUploadPool:
         self._main_client: Optional[Client] = None
         # Per-quality round-robin index — starts at each tier's start_idx
         self._indices: Dict[str, int] = {k: v[0] for k, v in _QUALITY_TIERS.items()}
+        self._channel_unwritable: set[int] = set()
         self._lock = asyncio.Lock()
 
     def set_main_client(self, client: Client) -> None:
@@ -331,6 +332,24 @@ class TelegramUploadPool:
                     if "already" not in err_s and "user_already_participant" not in err_s:
                         log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
 
+                # Attempt to promote userbot to admin with can_post_messages if main bot is admin
+                if self._main_client and getattr(self._main_client, "is_connected", False):
+                    try:
+                        u_me = getattr(c, "me", None)
+                        if u_me and getattr(u_me, "id", None):
+                            from pyrogram.types import ChatPrivileges
+                            await self._main_client.promote_chat_member(
+                                chat_id=target_channel,
+                                user_id=u_me.id,
+                                privileges=ChatPrivileges(
+                                    can_post_messages=True,
+                                    can_edit_messages=True,
+                                )
+                            )
+                            log.info("[UploadPool] Session %s (user %s) promoted to admin in %s", getattr(c, "name", "session"), u_me.id, target_channel)
+                    except Exception as prom_err:
+                        log.debug("[UploadPool] Session %s promote note: %s", getattr(c, "name", "client"), prom_err)
+
         await asyncio.gather(*[_join_one(c) for c in self.clients], return_exceptions=True)
         log.info("[UploadPool] %d sessions verified in channel %s.", len(self.clients), target_channel)
 
@@ -386,6 +405,22 @@ class TelegramUploadPool:
         """
         from pyrogram.errors import FloodWait
 
+        fallback = fallback_client or self._main_client
+
+        # Fast-path: if this target_chat is already known to reject userbot sessions,
+        # jump straight to verified fallback client without wasting time
+        if target_chat in self._channel_unwritable or not self.clients:
+            if fallback:
+                log.info("[UploadPool] Uploading [%s] directly via main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
+                return await telegram_upload.upload_video_file(
+                    bot_client=fallback,
+                    file_path=file_path,
+                    target_chat=target_chat,
+                    caption=caption,
+                    progress_callback=progress_callback,
+                    fallback_chat=0,
+                )
+
         last_exc = None
         tried_clients: list = []
 
@@ -422,9 +457,10 @@ class TelegramUploadPool:
                 err_str = str(exc).lower()
                 if "chat_write_forbidden" in err_str or "channel_private" in err_str or "user_not_participant" in err_str:
                     log.warning(
-                        "[UploadPool] Session '%s' lacks write permissions in chat %s (%s) — jumping straight to main bot client.",
+                        "[UploadPool] Session '%s' lacks write permissions in chat %s (%s) — marking channel and jumping straight to main bot client.",
                         getattr(client, "name", "?"), target_chat, exc,
                     )
+                    self._channel_unwritable.add(target_chat)
                     break
                 log.warning(
                     "[UploadPool] Session upload failed for [%s] attempt %d (%s) — rotating to next session.",
@@ -433,7 +469,6 @@ class TelegramUploadPool:
                 continue
 
         # All attempts exhausted (or userbot lacked write permissions) — use main bot client
-        fallback = fallback_client or self._main_client
         if fallback:
             log.info("[UploadPool] Uploading [%s] via verified main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
             try:

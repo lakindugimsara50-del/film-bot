@@ -57,11 +57,13 @@ async def patch_movie_downloads(
     
     for quality in ["1080p", "720p", "480p", "360p"]:
         result = upload_results.get(quality)
-        if not result:
+        if not result or not result.get("message_id"):
             continue
-        size_bytes = result.get("size_bytes", 0)
-        size_str = _human_size(size_bytes)
         msg_id = result.get("message_id", 0)
+        if not msg_id or int(msg_id) <= 0:
+            continue
+        size_bytes = result.get("size_bytes", 0) or result.get("file_size", 0)
+        size_str = _human_size(size_bytes)
         file_id = result.get("file_id", "")
         title_enc = urllib.parse.quote(target.get("title", "Film"))
         

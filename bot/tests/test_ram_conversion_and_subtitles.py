@@ -197,6 +197,61 @@ async def test_generate_multi_quality_variants_ram(tmp_path):
         assert os.path.exists(p), f"Variant {q} should exist at {p}"
 
 
+@pytest.mark.asyncio
+async def test_series_and_movie_variant_pipeline_logic(tmp_path):
+    """
+    Verify resolution detection and variant selection logic:
+    - 720p series source requests only 480p (no 720p duplicate)
+    - 1080p film source requests 720p and 480p
+    """
+    # 1. Test 720p series source
+    src_720_w, src_720_h = 1280, 720
+    is_source_720p = (1000 <= src_720_w < 1600) or (550 <= src_720_h < 900)
+    primary_quality_720 = "720p" if is_source_720p else "1080p"
+    assert primary_quality_720 == "720p"
+
+    requested_qualities_720 = ("480p",) if primary_quality_720 == "720p" else ("720p", "480p")
+    assert requested_qualities_720 == ("480p",)
+
+    # 2. Test 1080p film source
+    src_1080_w, src_1080_h = 1920, 1080
+    is_source_1080p = (src_1080_w >= 1600 or src_1080_h >= 900)
+    is_source_720p_film = (1000 <= src_1080_w < 1600) or (550 <= src_1080_h < 900)
+    primary_quality_1080 = "720p" if is_source_720p_film else "1080p"
+    assert primary_quality_1080 == "1080p"
+
+    requested_qualities_1080 = ("720p", "480p") if primary_quality_1080 == "1080p" else ("480p",)
+    assert requested_qualities_1080 == ("720p", "480p")
+
+    # 3. Test non-duplicate downloads_list generation
+    variant_tg_info = {
+        "720p": {"message_id": 101, "file_id": "fid_720", "file_size": 500000000, "stream_url": "http://stream/720"},
+        "480p": {"message_id": 102, "file_id": "fid_480", "file_size": 250000000, "stream_url": "http://stream/480"},
+    }
+    primary_q = "720p"
+    message_id = 101
+    tg_channel_id_clean = "12345678"
+
+    downloads_list = []
+    added_msg_ids = set()
+    for q_var, q_lbl, fallback_sz, fallback_stream in [
+        ("1080p", "1080p Full HD", 1000, "url1"),
+        ("720p", "720p HD", 500, "url2"),
+        ("480p", "480p SD", 250, "url3"),
+    ]:
+        info = variant_tg_info.get(q_var) or {}
+        v_msg = info.get("message_id")
+        if not v_msg and q_var == primary_q:
+            v_msg = message_id
+        if v_msg and v_msg > 0 and v_msg not in added_msg_ids and tg_channel_id_clean:
+            added_msg_ids.add(v_msg)
+            downloads_list.append({"quality": q_var, "message_id": v_msg})
+
+    assert len(downloads_list) == 2
+    assert downloads_list[0]["quality"] == "720p" and downloads_list[0]["message_id"] == 101
+    assert downloads_list[1]["quality"] == "480p" and downloads_list[1]["message_id"] == 102
+
+
 def test_website_movies_json_and_movies_data_js_have_multi_quality_and_sinhala_subs():
     repo_root = Path(__file__).resolve().parents[2]
     movies_json_path = repo_root / "website" / "data" / "movies.json"

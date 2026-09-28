@@ -6801,7 +6801,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-28T12:38:59Z",
+      "added_at": "2026-09-28T14:02:53Z",
       "streams": [
         {
           "server": "Server 1",
@@ -6828,6 +6828,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e05",
+      "channel_post_id": 116,
+      "channel_chat_id": -1004325759505,
       "added_date": "2026-09-28"
     },
     {
@@ -6985,5 +6988,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ]
     }
   ],
-  "last_updated": "2026-09-28T13:34:16Z"
+  "last_updated": "2026-09-28T14:02:55Z"
 };

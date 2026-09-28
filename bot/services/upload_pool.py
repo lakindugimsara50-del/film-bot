@@ -298,42 +298,62 @@ class TelegramUploadPool:
                 except Exception as alert_err:
                     log.debug("[UploadPool] Admin alert note: %s", alert_err)
 
-    async def join_channel(self, target_channel: int) -> None:
-        """Auto-join all loaded userbot sessions to the target Telegram channel so they can post."""
+    async def join_channel(self, target_channel: int) -> dict:
+        """Auto-join all loaded userbot sessions to the target Telegram channel and promote up to 40 sessions to admin."""
         if not self.clients or not target_channel:
-            return
+            return {"joined": 0, "promoted": 0, "error": "No sessions or channel not set"}
+
+        # Discard unwritable flag so newly promoted sessions are attempted
+        self._channel_unwritable.discard(target_channel)
+        try:
+            self._channel_unwritable.discard(int(target_channel))
+        except Exception:
+            pass
 
         invite_link = None
+        channel_username = None
         if self._main_client and getattr(self._main_client, "is_connected", False):
             try:
                 chat = await self._main_client.get_chat(target_channel)
+                channel_username = getattr(chat, "username", None)
                 invite_link = getattr(chat, "invite_link", None)
-                if not invite_link:
-                    exported = await self._main_client.export_chat_invite_link(target_channel)
-                    invite_link = exported
-            except Exception as exp_err:
-                log.debug("[UploadPool] Channel invite link note: %s", exp_err)
+                if not invite_link and not channel_username:
+                    try:
+                        exported = await self._main_client.export_chat_invite_link(target_channel)
+                        invite_link = exported
+                    except Exception as exp_err:
+                        log.debug("[UploadPool] Channel export invite link note: %s", exp_err)
+            except Exception as chat_err:
+                log.warning("[UploadPool] Channel get_chat error for %s: %s", target_channel, chat_err)
 
-        if not invite_link:
-            log.info("[UploadPool] No invite link available for auto-joining sessions to %s", target_channel)
-            return
+        join_dest = channel_username or invite_link
+        if not join_dest:
+            log.info("[UploadPool] No username or invite link available for auto-joining sessions to %s", target_channel)
+            return {"joined": 0, "promoted": 0, "error": "Bot cannot access channel or export invite link"}
 
-        log.info("[UploadPool] Auto-joining %d sessions to channel %s...", len(self.clients), target_channel)
-        join_sem = asyncio.Semaphore(8)
+        log.info("[UploadPool] Auto-joining %d sessions to channel %s (dest=%s)...", len(self.clients), target_channel, join_dest)
+        join_sem = asyncio.Semaphore(5)
+        joined_count = 0
+        promoted_count = 0
+        limit_reached = False
 
         async def _join_one(c: Client):
+            nonlocal joined_count, promoted_count, limit_reached
             if not getattr(c, "is_connected", False):
                 return
             async with join_sem:
                 try:
-                    await c.join_chat(invite_link)
+                    await c.join_chat(join_dest)
+                    joined_count += 1
                 except Exception as j_err:
                     err_s = str(j_err).lower()
-                    if "already" not in err_s and "user_already_participant" not in err_s:
+                    if "already" in err_s or "user_already_participant" in err_s:
+                        joined_count += 1
+                    else:
                         log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
 
-                # Attempt to promote userbot to admin with can_post_messages if main bot is admin
-                if self._main_client and getattr(self._main_client, "is_connected", False):
+                # Attempt to promote userbot to admin with can_post_messages if main bot is admin (up to 40 sessions)
+                if not limit_reached and promoted_count < 42 and self._main_client and getattr(self._main_client, "is_connected", False):
                     try:
                         u_me = getattr(c, "me", None)
                         if u_me and getattr(u_me, "id", None):
@@ -346,16 +366,27 @@ class TelegramUploadPool:
                                     can_edit_messages=True,
                                 )
                             )
+                            promoted_count += 1
                             log.info("[UploadPool] Session %s (user %s) promoted to admin in %s", getattr(c, "name", "session"), u_me.id, target_channel)
                     except Exception as prom_err:
                         err_str = str(prom_err)
                         if "ADMINS_TOO_MUCH" in err_str:
-                            log.info("[UploadPool] Telegram channel admin limit reached (max 50 admins). Remaining sessions will use main bot fallback for uploads.")
-                            return
-                        log.debug("[UploadPool] Session %s promote note: %s", getattr(c, "name", "client"), prom_err)
+                            limit_reached = True
+                            log.info("[UploadPool] Telegram channel admin limit reached (max 50 admins).")
+                        elif "chat_admin_required" in err_str.lower() or "right_forbidden" in err_str.lower():
+                            limit_reached = True
+                            log.warning("[UploadPool] Main bot lacks 'Add Administrators' permission in channel %s: %s", target_channel, prom_err)
+                        else:
+                            log.debug("[UploadPool] Session %s promote note: %s", getattr(c, "name", "client"), prom_err)
 
         await asyncio.gather(*[_join_one(c) for c in self.clients], return_exceptions=True)
-        log.info("[UploadPool] %d sessions verified in channel %s.", len(self.clients), target_channel)
+        self._channel_unwritable.discard(target_channel)
+        try:
+            self._channel_unwritable.discard(int(target_channel))
+        except Exception:
+            pass
+        log.info("[UploadPool] %d sessions joined, %d sessions promoted in channel %s.", joined_count, promoted_count, target_channel)
+        return {"joined": joined_count, "promoted": promoted_count, "total_sessions": len(self.clients)}
 
     async def get_client_for_quality(
         self,

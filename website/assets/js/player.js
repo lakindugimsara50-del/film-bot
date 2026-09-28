@@ -412,101 +412,71 @@ function getMovieStreams(movie) {
   }
 
   // =========================================================================
-  // VIP Player 1: 🎬 VidLink Pro Ultra HD (Auto Sinhala Sub)
+  // Server 2: 🎬 VIP Global Player (Universal Free HD • Zero Ads)
+  // [Universal Embed Player containing every movie & series in the world]
   // =========================================================================
-  // Extract or build a public HTTP VTT URL for VidLink external subtitles
-  let subUrl = '';
-  if (movie.subtitle_url && movie.subtitle_url.startsWith('http')) {
-    subUrl = movie.subtitle_url;
-  } else if (Array.isArray(movie.subtitles) && movie.subtitles[0] && movie.subtitles[0].url && movie.subtitles[0].url.startsWith('http')) {
-    subUrl = movie.subtitles[0].url;
-  } else if (movie.slug) {
-    subUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${movie.slug}-si.vtt`;
-  }
-  let s1SubParam = subUrl
-    ? `?primaryColor=ffeb3b&sub_file=${encodeURIComponent(subUrl)}&sub_label=Sinhala&sub=true`
-    : '?primaryColor=ffeb3b';
-  let s1Url = '';
+  let s2Url = '';
+  let vidlinkUrl = '';
+  let twoEmbedUrl = '';
+
   if (isSeries) {
-    if (tmdbId) {
-      s1Url = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}${s1SubParam}`;
-    } else if (imdbId) {
-      s1Url = `https://vidlink.pro/tv/${imdbId}/${sNum}/${eNum}${s1SubParam}`;
+    if (imdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${imdbId}&s=${sNum}&e=${eNum}`;
+      twoEmbedUrl = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
+    } else if (tmdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${sNum}&e=${eNum}`;
+      twoEmbedUrl = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
     } else {
-      s1Url = `https://vidlink.pro/tv/1399/${sNum}/${eNum}${s1SubParam}`;
+      s2Url = `https://multiembed.mov/?video_id=tt0944947&s=${sNum}&e=${eNum}`;
+    }
+    if (tmdbId) {
+      vidlinkUrl = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}`;
+    } else if (imdbId) {
+      vidlinkUrl = `https://vidlink.pro/tv/${imdbId}/${sNum}/${eNum}`;
     }
   } else {
-    if (tmdbId) {
-      s1Url = `https://vidlink.pro/movie/${tmdbId}${s1SubParam}`;
-    } else if (imdbId) {
-      s1Url = `https://vidlink.pro/movie/${imdbId}${s1SubParam}`;
+    if (imdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${imdbId}`;
+      twoEmbedUrl = `https://www.2embed.cc/embed/${imdbId}`;
+    } else if (tmdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
+      twoEmbedUrl = `https://www.2embed.cc/embed/${tmdbId}`;
     } else {
-      s1Url = `https://vidlink.pro/movie/564147${s1SubParam}`;
+      s2Url = `https://multiembed.mov/?video_id=tt0268380`;
+    }
+    if (tmdbId) {
+      vidlinkUrl = `https://vidlink.pro/movie/${tmdbId}`;
+    } else if (imdbId) {
+      vidlinkUrl = `https://vidlink.pro/movie/${imdbId}`;
     }
   }
 
   list.push({
     server: `Server ${srvCounter}`,
-    label: `🎬 VIP Player 1 (VidLink Ultra HD • Zero Ads)`,
+    label: `🎬 VIP Global Player (Universal Free HD • Zero Ads)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
-    stream_url: s1Url,
+    stream_url: s2Url,
     hasLocalFile: true,
+    alt_urls: {
+      multiembed: s2Url,
+      vidlink: vidlinkUrl,
+      twoembed: twoEmbedUrl,
+    },
   });
   srvCounter++;
 
-  // VIP Player 2: ⚡ MultiEmbed Fast Stream (rock-solid 2026 embed)
-  let s2Url = '';
-  if (isSeries) {
-    if (imdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${imdbId}&s=${sNum}&e=${eNum}`;
-    } else if (tmdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${sNum}&e=${eNum}`;
-    }
-  } else {
-    if (imdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${imdbId}`;
-    } else if (tmdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
-    }
-  }
-  if (s2Url) {
+  if (list.length < 2 && (vidlinkUrl || twoEmbedUrl)) {
+    const backupUrl = vidlinkUrl || twoEmbedUrl;
+    const backupLabel = vidlinkUrl ? '⚡ VIP Backup Player (VidLink Ultra HD • Zero Ads)' : '🚀 VIP Backup Player (2Embed Fast • Zero Ads)';
     list.push({
       server: `Server ${srvCounter}`,
-      label: `⚡ VIP Player 2 (MultiEmbed Fast • Zero Ads)`,
+      label: backupLabel,
       mode: 'external_embed',
       type: 'embed',
       embed: true,
-      stream_url: s2Url,
-      hasLocalFile: true,
-    });
-    srvCounter++;
-  }
-
-  // VIP Player 3: 🚀 2Embed Pro Backup
-  let s3Url = '';
-  if (isSeries) {
-    if (imdbId) {
-      s3Url = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
-    } else if (tmdbId) {
-      s3Url = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
-    }
-  } else {
-    if (imdbId) {
-      s3Url = `https://www.2embed.cc/embed/${imdbId}`;
-    } else if (tmdbId) {
-      s3Url = `https://www.2embed.cc/embed/${tmdbId}`;
-    }
-  }
-  if (s3Url) {
-    list.push({
-      server: `Server ${srvCounter}`,
-      label: `🚀 VIP Player 3 (2Embed Pro • Zero Ads)`,
-      mode: 'external_embed',
-      type: 'embed',
-      embed: true,
-      stream_url: s3Url,
+      stream_url: backupUrl,
       hasLocalFile: true,
     });
     srvCounter++;
@@ -564,13 +534,24 @@ function getMovieSubtitles(movie) {
       default: sub.default !== undefined ? sub.default : (idx === 0)
     }));
   }
-  if (_isValidSubUrl(movie.subtitle_url)) {
+
+  let ghSubUrl = '';
+  if (movie.slug) {
+    const isSeries = movie.type === 'series' || currentSeason > 1 || currentEpisode > 1;
+    const sNum = currentSeason || movie.season || 1;
+    const eNum = currentEpisode || movie.episode || 1;
+    const epSfx = isSeries ? `-s${String(sNum).padStart(2, '0')}e${String(eNum).padStart(2, '0')}` : '';
+    ghSubUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${movie.slug}${epSfx}-si.vtt`;
+  }
+
+  const effectiveSubUrl = _isValidSubUrl(movie.subtitle_url) ? movie.subtitle_url : ghSubUrl;
+  if (effectiveSubUrl) {
     return [
       {
         language: movie.lang || 'Sinhala',
         srclang: 'si',
         label: 'සිංහල උපසිරැසි (Sinhala)',
-        url: movie.subtitle_url,
+        url: effectiveSubUrl,
         default: true
       }
     ];
@@ -1611,6 +1592,9 @@ function renderStreamEmbed(playerEl, stream, movie) {
     ? streams.findIndex(s => s.stream_url === stream.stream_url)
     : currentStreamIdx;
 
+  const altUrls = stream.alt_urls || {};
+  const hasAlt = Boolean(altUrls.multiembed || altUrls.vidlink || altUrls.twoembed);
+
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;background-color:#000000 !important;border-radius:8px;overflow:hidden">
       ${buildSuperLoaderHtml(movie, stream.label || stream.server)}
@@ -1635,12 +1619,19 @@ function renderStreamEmbed(playerEl, stream, movie) {
         <span>Active Server: <strong style="color:#fff">${FilmSub.escHtml(stream.label || stream.server)}</strong></span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="color:#777">Switch Player:</span>
-        ${streams.map((st, i) => `
-          <button type="button" class="sub-ctrl-btn${sIdx === i ? ' active' : ''}" onclick="loadStream(currentMovie, ${i})" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
-            ${FilmSub.escHtml((st.label || st.server || `Server ${i + 1}`).split('(')[0].trim())}
-          </button>
-        `).join('')}
+        ${hasAlt ? `
+          <span style="color:#777">Stream Source:</span>
+          ${altUrls.multiembed ? `<button type="button" class="sub-ctrl-btn active alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.multiembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">⚡ MultiEmbed</button>` : ''}
+          ${altUrls.vidlink ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.vidlink)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🎬 VidLink</button>` : ''}
+          ${altUrls.twoembed ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.twoembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🚀 2Embed</button>` : ''}
+        ` : `
+          <span style="color:#777">Switch Player:</span>
+          ${streams.map((st, i) => `
+            <button type="button" class="sub-ctrl-btn${sIdx === i ? ' active' : ''}" onclick="loadStream(currentMovie, ${i})" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
+              ${FilmSub.escHtml((st.label || st.server || `Server ${i + 1}`).split('(')[0].trim())}
+            </button>
+          `).join('')}
+        `}
       </div>
     </div>`;
 
@@ -1651,18 +1642,35 @@ function renderStreamEmbed(playerEl, stream, movie) {
     setTimeout(() => {
       if (iframeEl && iframeEl.isConnected) iframeEl.style.opacity = '1';
       if (loaderEl && loaderEl.isConnected) loaderEl.classList.add('hidden');
-    }, 150);
+    }, 100);
   };
 
   if (iframeEl) {
     iframeEl.addEventListener('load', revealIframe);
     iframeEl.addEventListener('error', revealIframe);
   }
-  // Safety watchdog: never leave loader stuck > 2.5s
-  setTimeout(revealIframe, 2500);
+  // Safety watchdog: never leave loader stuck > 1.2s
+  setTimeout(revealIframe, 1200);
 
   mountLiveSubtitleOverlay(playerEl, movie);
 }
+
+window.switchEmbedSource = function(btn, url) {
+  if (!url) return;
+  const iframeEl = document.getElementById('player-drive-iframe');
+  const loaderEl = document.getElementById('super-player-loader');
+  if (loaderEl) loaderEl.classList.remove('hidden');
+  if (iframeEl) {
+    iframeEl.style.opacity = '0';
+    iframeEl.src = url;
+  }
+  document.querySelectorAll('.alt-src-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  setTimeout(() => {
+    if (iframeEl && iframeEl.isConnected) iframeEl.style.opacity = '1';
+    if (loaderEl && loaderEl.isConnected) loaderEl.classList.add('hidden');
+  }, 1200);
+};
 
 /**
  * Injects an interactive Quality Selector Menu Button directly inside the Video.js control bar

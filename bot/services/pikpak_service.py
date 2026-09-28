@@ -186,8 +186,13 @@ class PikPakService:
 
             # If not immediately complete, poll until done
             while phase != "PHASE_TYPE_COMPLETE":
-                if time.time() - start_time > timeout:
+                elapsed = time.time() - start_time
+                if elapsed > timeout:
                     raise TimeoutError(f"[PikPak] Offline task {task_id} timed out after {timeout}s.")
+                # If cloud caching takes >90s without completing, yield to direct fast aria2c on Colab
+                if elapsed > 90.0 and progress < 99.0:
+                    log.warning("[PikPak] Cloud caching slow/stalled at %.1f%% after %.0fs — yielding to direct aria2c", progress, elapsed)
+                    raise TimeoutError(f"[PikPak] Cloud caching stalled at {progress:.1f}% after {elapsed:.0f}s.")
 
                 await asyncio.sleep(2.5)
 

@@ -247,6 +247,150 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
 
+    @app.on_message(filters.command(["setchannel", "set_channel"]) & filters.private)
+    async def set_channel_handler(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            return
+
+        parts = (message.text or "").strip().split(None, 1)
+        if len(parts) < 2:
+            current_ch = config.PRIVATE_CHANNEL_ID
+            await message.reply_text(
+                "📢 <b>Channel Setup & Session Auto-Admin</b>\n\n"
+                f"📌 <b>වත්මන් Channel ID:</b> <code>{current_ch}</code>\n\n"
+                "<b>භාවිතය (Usage):</b>\n"
+                "• <code>/setchannel @channel_username</code>\n"
+                "• <code>/setchannel -1004325759505</code>\n\n"
+                "<i>💡 සටහන: මුලින්ම මෙම Bot ව ඔබගේ Channel එකේ Administrator කෙනෙකු ලෙස (Add Admins & Post Messages rights සහිතව) එක් කරන්න.</i>",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        target_input = parts[1].strip()
+        status_msg = await message.reply_text(
+            f"⏳ <b>Channel එක පරීක්ෂා කරමින්...</b>\n<code>{target_input}</code>",
+            parse_mode=ParseMode.HTML,
+        )
+
+        try:
+            try:
+                ch_id_int = int(target_input)
+                chat = await client.get_chat(ch_id_int)
+            except ValueError:
+                clean_uname = target_input.lstrip("@").strip()
+                chat = await client.get_chat(clean_uname)
+
+            bot_me = await client.get_me()
+            member = await client.get_chat_member(chat.id, bot_me.id)
+            privs = getattr(member, "privileges", None)
+            can_promote = getattr(privs, "can_promote_members", False) if privs else False
+
+            config.PRIVATE_CHANNEL_ID = chat.id
+            config.PUBLIC_CHANNEL_ID = chat.id
+
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+            if not os.path.exists(env_path):
+                env_path = os.path.join(os.getcwd(), ".env")
+
+            try:
+                lines = []
+                if os.path.exists(env_path):
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+
+                def _set_env_key(key: str, val: str):
+                    found = False
+                    for idx, line in enumerate(lines):
+                        if line.startswith(f"{key}="):
+                            lines[idx] = f"{key}={val}\n"
+                            found = True
+                            break
+                    if not found:
+                        lines.append(f"{key}={val}\n")
+
+                _set_env_key("PRIVATE_CHANNEL_ID", str(chat.id))
+                _set_env_key("PUBLIC_CHANNEL_ID", str(chat.id))
+
+                with open(env_path, "w", encoding="utf-8") as f:
+                    f.writelines(lines)
+            except Exception as e_err:
+                log.warning("[AdminControl] Could not write channel to .env: %s", e_err)
+
+            await status_msg.edit_text(
+                f"✅ <b>Channel එක හඳුනාගන්නා ලදී!</b>\n"
+                f"📢 <b>නම:</b> {chat.title}\n"
+                f"🆔 <b>ID:</b> <code>{chat.id}</code>\n"
+                f"⚡ <b>Userbot Sessions Channel එකට Join කර Admin Privileges ලබාදෙමින් පවතී...</b>",
+                parse_mode=ParseMode.HTML,
+            )
+
+            from services.upload_pool import upload_pool
+            res = await upload_pool.join_channel(chat.id)
+
+            perm_warn = ""
+            if not can_promote:
+                perm_warn = "\n\n⚠️ <i>සටහන: Main Bot හට 'Add Administrators' අවසරය නොමැති බැවින් Sessions Admin ලෙස promote කිරීමට නොහැකි විය. කරුණාකර Channel Settings > Administrators වෙත ගොස් Bot හට Add Admins අවසරය ලබාදී <code>/promote</code> යවන්න.</i>"
+
+            await status_msg.edit_text(
+                f"✅ <b>Channel එක සාර්ථකව සම්බන්ධ කරන ලදී!</b>\n\n"
+                f"📢 <b>Channel:</b> {chat.title}\n"
+                f"🆔 <b>Channel ID:</b> <code>{chat.id}</code>\n"
+                f"👤 <b>Username:</b> @{chat.username or 'Private'}\n\n"
+                f"👥 <b>Sessions Joined:</b> <code>{res.get('joined', 0)}/{res.get('total_sessions', 0)}</code>\n"
+                f"👑 <b>Sessions Promoted (Admins):</b> <code>{res.get('promoted', 0)}</code>\n"
+                f"⚡ <b>Multi-Session Upload:</b> සක්‍රීයයි (Active){perm_warn}",
+                parse_mode=ParseMode.HTML,
+            )
+
+        except Exception as err:
+            log.exception("[AdminControl] setchannel error")
+            await status_msg.edit_text(
+                f"❌ <b>Channel එක සම්බන්ධ කිරීම අසාර්ථකයි:</b>\n\n"
+                f"<code>{str(err)[:300]}</code>\n\n"
+                f"💡 <b>කරුණාකර පරීක්ෂා කරන්න:</b>\n"
+                f"1. Bot ව Channel එකේ Administrator කෙනෙකු ලෙස එක්කර ඇත්දැයි බලන්න.\n"
+                f"2. Channel ID එක හෝ Username (@filmfor) නිවැරදිදැයි බලන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+
+    @app.on_message(filters.command(["promote", "syncsessions"]) & filters.private)
+    async def promote_sessions_handler(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            return
+
+        target_ch = config.PRIVATE_CHANNEL_ID
+        if not target_ch:
+            await message.reply_text(
+                "❌ <b>Channel එකක් සකසා නැත!</b>\n\n"
+                "පළමුව <code>/setchannel @your_channel</code> ලබා දෙන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        status_msg = await message.reply_text(
+            f"🔄 <b>Userbot Sessions Channel (<code>{target_ch}</code>) එකට සම්බන්ධ කර Admin Privileges ලබාදෙමින් පවතී...</b>",
+            parse_mode=ParseMode.HTML,
+        )
+
+        try:
+            from services.upload_pool import upload_pool
+            res = await upload_pool.join_channel(target_ch)
+            await status_msg.edit_text(
+                f"✅ <b>Sessions Promotion ක්‍රියාවලිය සම්පූර්ණයි!</b>\n\n"
+                f"📢 <b>Target Channel:</b> <code>{target_ch}</code>\n"
+                f"👥 <b>Joined Sessions:</b> <code>{res.get('joined', 0)}/{res.get('total_sessions', 0)}</code>\n"
+                f"👑 <b>Admin Promoted Sessions:</b> <code>{res.get('promoted', 0)}</code>\n"
+                f"⚡ <b>Multi-Account Parallel Upload:</b> Ready & Active!",
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception as err:
+            await status_msg.edit_text(
+                f"❌ <b>Promotion දෝෂයක්:</b> {err}",
+                parse_mode=ParseMode.HTML,
+            )
+
     @app.on_message(filters.command("gr") & filters.private)
     async def gr_command_handler(client: Client, message: Message) -> None:
         user_id = message.from_user.id if message.from_user else 0

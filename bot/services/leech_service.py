@@ -723,14 +723,15 @@ async def _execute_leech(
                     else:
                         status_line = f"⚡ <b>වේගය:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}"
 
+                    _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
                     text = (
-                        f"📥 <b>පියවර 2/4: {cloud_service_name} ➔ Render Cloud වෙත බාගත කරමින්...</b>\n\n"
+                        f"📥 <b>පියවර 2/4: {cloud_service_name} ➔ {_env_name} වෙත බාගත කරමින්...</b>\n\n"
                         f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                         f"⚡ <b>ක්‍රමය:</b> {candidate.method_name} (Cloud Direct Link)\n"
                         f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                         f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                         f"{status_line}\n"
-                        f"☁️ <i>Render Data Center High-Speed Cloud Bandwidth (ඔබේ Data නොයයි)</i>"
+                        f"☁️ <i>{_env_name} High-Speed Cloud Bandwidth (ඔබේ Data නොයයි)</i>"
                     )
                     try:
                         await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
@@ -919,30 +920,23 @@ async def _execute_leech(
                         t_aria = asyncio.create_task(_attempt_direct_aria2c(race_aria_dir, f"{task_key}_aria"))
                         t_cloud = asyncio.create_task(_attempt_cloud_debrid(race_cloud_dir, f"{task_key}_cloud"))
 
-                        done, pending = await asyncio.wait({t_aria, t_cloud}, return_when=asyncio.FIRST_COMPLETED)
-                        for d_task in done:
-                            try:
-                                res_path = d_task.result()
-                                if res_path and os.path.exists(res_path) and os.path.getsize(res_path) > 0:
-                                    local_file = res_path
-                                    break
-                            except Exception as r_err:
-                                log.debug("[LeechService] First finished race branch error: %s", r_err)
+                        pending = {t_aria, t_cloud}
+                        while pending and not local_file:
+                            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                            for d_task in done:
+                                try:
+                                    res_path = d_task.result()
+                                    if res_path and os.path.exists(res_path) and os.path.getsize(res_path) > 0:
+                                        local_file = res_path
+                                        break
+                                except Exception as r_err:
+                                    log.debug("[LeechService] Race branch error: %s", r_err)
 
                         if local_file:
                             for p_task in pending:
                                 p_task.cancel()
                             await downloader.cancel_active_download(f"{task_key}_aria")
                             await downloader.cancel_active_download(f"{task_key}_cloud")
-                        elif pending:
-                            for p_task in pending:
-                                try:
-                                    res_path2 = await p_task
-                                    if res_path2 and os.path.exists(res_path2) and os.path.getsize(res_path2) > 0:
-                                        local_file = res_path2
-                                        break
-                                except Exception as r_err2:
-                                    log.debug("[LeechService] Second race branch error: %s", r_err2)
                     else:
                         if has_cloud_debrid:
                             local_file = await _attempt_cloud_debrid(temp_dir, task_key)

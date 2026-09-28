@@ -7514,7 +7514,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-28T19:56:19Z",
+      "added_at": "2026-09-28T19:57:02Z",
       "streams": [
         {
           "server": "Server 1",
@@ -7542,10 +7542,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e08",
-      "channel_post_id": 124,
+      "channel_post_id": 125,
       "channel_chat_id": -1004325759505,
       "added_date": "2026-09-28"
     }
   ],
-  "last_updated": "2026-09-28T19:56:20Z"
+  "last_updated": "2026-09-28T19:57:03Z"
 };

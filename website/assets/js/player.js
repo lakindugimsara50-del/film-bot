@@ -69,6 +69,14 @@ function normalizeStreamUrl(u) {
   if (match) {
     return `/stream/channel/${match[1]}/${match[2]}`;
   }
+  const autoMatchTv = u.match(/autoembed\.(?:co|cc|to)\/tv\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)-(\d+)-(\d+)/i);
+  if (autoMatchTv) {
+    return `https://multiembed.mov/?video_id=${autoMatchTv[1]}&s=${autoMatchTv[2]}&e=${autoMatchTv[3]}`;
+  }
+  const autoMatchMovie = u.match(/autoembed\.(?:co|cc|to)\/movie\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)/i);
+  if (autoMatchMovie) {
+    return `https://multiembed.mov/?video_id=${autoMatchMovie[1]}`;
+  }
   return isDeadTunnel(u) ? '' : u;
 }
 
@@ -439,7 +447,7 @@ function getMovieStreams(movie) {
 
   list.push({
     server: `Server ${srvCounter}`,
-    label: `🎬 VIP Player (VidLink Ultra HD • Zero Ads)`,
+    label: `🎬 VIP Player 1 (VidLink Ultra HD • Zero Ads)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
@@ -448,34 +456,60 @@ function getMovieStreams(movie) {
   });
   srvCounter++;
 
-  // If Server 1 was not available (e.g. non-matching series episode), ensure we still have Server 2
-  if (list.length < 2) {
-    let s2Url = '';
-    if (isSeries) {
-      if (imdbId) {
-        s2Url = `https://autoembed.co/tv/imdb/${imdbId}-${sNum}-${eNum}${s1SubParam}`;
-      } else if (tmdbId) {
-        s2Url = `https://autoembed.co/tv/tmdb/${tmdbId}-${sNum}-${eNum}${s1SubParam}`;
-      }
-    } else {
-      if (imdbId) {
-        s2Url = `https://autoembed.co/movie/imdb/${imdbId}${s1SubParam}`;
-      } else if (tmdbId) {
-        s2Url = `https://autoembed.co/movie/tmdb/${tmdbId}${s1SubParam}`;
-      }
+  // VIP Player 2: ⚡ MultiEmbed Fast Stream (rock-solid 2026 embed)
+  let s2Url = '';
+  if (isSeries) {
+    if (imdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${imdbId}&s=${sNum}&e=${eNum}`;
+    } else if (tmdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${sNum}&e=${eNum}`;
     }
-    if (s2Url) {
-      list.push({
-        server: `Server ${srvCounter}`,
-        label: `⚡ VIP Player 2 (AutoEmbed HD • Zero Ads)`,
-        mode: 'external_embed',
-        type: 'embed',
-        embed: true,
-        stream_url: s2Url,
-        hasLocalFile: true,
-      });
-      srvCounter++;
+  } else {
+    if (imdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${imdbId}`;
+    } else if (tmdbId) {
+      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
     }
+  }
+  if (s2Url) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: `⚡ VIP Player 2 (MultiEmbed Fast • Zero Ads)`,
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: s2Url,
+      hasLocalFile: true,
+    });
+    srvCounter++;
+  }
+
+  // VIP Player 3: 🚀 2Embed Pro Backup
+  let s3Url = '';
+  if (isSeries) {
+    if (imdbId) {
+      s3Url = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
+    } else if (tmdbId) {
+      s3Url = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
+    }
+  } else {
+    if (imdbId) {
+      s3Url = `https://www.2embed.cc/embed/${imdbId}`;
+    } else if (tmdbId) {
+      s3Url = `https://www.2embed.cc/embed/${tmdbId}`;
+    }
+  }
+  if (s3Url) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: `🚀 VIP Player 3 (2Embed Pro • Zero Ads)`,
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: s3Url,
+      hasLocalFile: true,
+    });
+    srvCounter++;
   }
 
   return list;
@@ -1549,6 +1583,15 @@ function renderStreamEmbed(playerEl, stream, movie) {
   isTrailerActive = false;
 
   let baseEmbedUrl = stream.stream_url || '';
+  const autoMatchTv = baseEmbedUrl.match(/autoembed\.(?:co|cc|to)\/tv\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)-(\d+)-(\d+)/i);
+  if (autoMatchTv) {
+    baseEmbedUrl = `https://multiembed.mov/?video_id=${autoMatchTv[1]}&s=${autoMatchTv[2]}&e=${autoMatchTv[3]}`;
+  } else {
+    const autoMatchMovie = baseEmbedUrl.match(/autoembed\.(?:co|cc|to)\/movie\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)/i);
+    if (autoMatchMovie) {
+      baseEmbedUrl = `https://multiembed.mov/?video_id=${autoMatchMovie[1]}`;
+    }
+  }
   if (baseEmbedUrl.includes('drive.google.com')) {
     const driveId = extractDriveFileIdFromUrl(baseEmbedUrl);
     if (driveId) {

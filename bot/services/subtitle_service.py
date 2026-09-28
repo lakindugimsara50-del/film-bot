@@ -239,12 +239,12 @@ async def upload_subtitle_to_github(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def vtt_to_srt(vtt_path: str) -> str:
+def vtt_to_srt(vtt_path: str, out_path: Optional[str] = None) -> str:
     """Convert a WebVTT (.vtt) subtitle file to SubRip (.srt) format for FFmpeg muxing."""
     if not os.path.isfile(vtt_path):
         raise FileNotFoundError(f"VTT file not found: {vtt_path}")
 
-    srt_path = re.sub(r"\.vtt$", ".srt", vtt_path, flags=re.IGNORECASE)
+    srt_path = out_path or re.sub(r"\.vtt$", ".srt", vtt_path, flags=re.IGNORECASE)
     if srt_path == vtt_path:
         srt_path = vtt_path + ".srt"
 

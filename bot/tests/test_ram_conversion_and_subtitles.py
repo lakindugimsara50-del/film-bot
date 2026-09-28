@@ -619,11 +619,11 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     assert res.returncode == 0, f"Node eval error: {res.stderr}"
     import json
     st_list = json.loads(res.stdout.strip())
-    assert len(st_list) == 2, f"Expected exactly 2 clean servers, got {len(st_list)}"
+    assert len(st_list) >= 2, f"Expected at least 2 clean servers, got {len(st_list)}"
     urls = [s['url'] for s in st_list]
-    assert len(set(urls)) == 2, f"Expected 2 distinct URLs, got duplicates: {urls}"
-    assert "vidlink.pro" in urls[0]
-    assert "autoembed.co" in urls[1]
+    assert len(set(urls)) == len(urls), f"Expected distinct URLs, got duplicates: {urls}"
+    assert any("vidlink.pro" in u for u in urls), f"Missing vidlink in {urls}"
+    assert any("multiembed.mov" in u for u in urls), f"Missing multiembed in {urls}"
 
 
 @pytest.mark.asyncio

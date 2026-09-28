@@ -291,6 +291,13 @@ async def stream_copy_subtitles(
     is_mp4 = ext in (".mp4", ".m4v", ".mov")
     sub_codec = "mov_text" if is_mp4 else "srt"
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    if has_sub and is_mp4 and sub_path.lower().endswith(".vtt"):
+        try:
+            from services.subtitle_service import vtt_to_srt
+            sub_srt = os.path.join(out_dir, f"sub_copy_{os.path.basename(sub_path)}.srt")
+            sub_path = vtt_to_srt(sub_path, sub_srt)
+        except Exception as e_vtt:
+            log.debug("[VideoService] VTT->SRT prep for stream-copy: %s", e_vtt)
 
     # Detect if source audio requires AAC transcode for browser compatibility
     in_audio_codec = get_audio_codec(video_path, ffmpeg_bin)
@@ -926,6 +933,14 @@ async def ensure_web_streamable(
                 pass
 
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    if has_sub and sub_path.lower().endswith(".vtt"):
+        try:
+            from services.subtitle_service import vtt_to_srt
+            out_d = os.path.dirname(os.path.abspath(output_path)) or "."
+            sub_srt = os.path.join(out_d, f"sub_web_{os.path.basename(sub_path)}.srt")
+            sub_path = vtt_to_srt(sub_path, sub_srt)
+        except Exception as e_vtt:
+            log.debug("[VideoService] VTT->SRT prep for ensure_web_streamable: %s", e_vtt)
     _threads = "0"  # Use all CPU threads & RAM buffer
     input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
     min_valid_size = min(512 * 1024, max(1024, int(input_size * 0.25)))
@@ -1325,6 +1340,13 @@ async def generate_multi_quality_variants_ram(
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
     local_burn_srt = os.path.join(abs_out_dir, "sub_burn_multi.srt")
     if has_sub:
+        if sub_path.lower().endswith(".vtt"):
+            try:
+                from services.subtitle_service import vtt_to_srt
+                sub_srt = os.path.join(abs_out_dir, f"sub_multi_{slug}.srt")
+                sub_path = vtt_to_srt(sub_path, sub_srt)
+            except Exception as e_vtt:
+                log.debug("[VideoService] VTT->SRT prep in multi-quality: %s", e_vtt)
         try:
             shutil.copyfile(sub_path, local_burn_srt)
         except Exception:
@@ -1351,11 +1373,21 @@ async def generate_multi_quality_variants_ram(
     if needs_aac_transcode:
         log.info("[VideoService] Audio codec is '%s' -> transcoding to AAC for universal MP4 browser playback", in_audio_codec or "unknown")
 
-    # Detect resolution tier, supporting both 16:9 and 2.39:1 widescreen films
-    is_source_1080p = (1700 <= src_w <= 2000) or (950 <= src_h <= 1150)
-    is_source_720p = (1100 <= src_w <= 1400) or (620 <= src_h <= 750)
-    is_source_480p = (700 <= src_w <= 950) or (400 <= src_h <= 550)
-    is_source_360p = (src_w > 0 and src_w <= 700) or (src_h > 0 and src_h <= 400)
+    # Detect resolution tier cleanly (mutually exclusive) supporting both 16:9 and 2.39:1 widescreen films
+    if (src_w >= 1600 or src_h >= 900):
+        is_source_1080p = True
+        is_source_720p = is_source_480p = is_source_360p = False
+    elif (src_w >= 1000 or src_h >= 576):
+        is_source_720p = True
+        is_source_1080p = is_source_480p = is_source_360p = False
+    elif (src_w >= 650 or src_h >= 420):
+        is_source_480p = True
+        is_source_1080p = is_source_720p = is_source_360p = False
+    elif (src_w > 0 or src_h > 0):
+        is_source_360p = True
+        is_source_1080p = is_source_720p = is_source_480p = False
+    else:
+        is_source_1080p = is_source_720p = is_source_480p = is_source_360p = False
 
     # If source is already ~1080p and 1080p is in target_q_list, instant copy
     if is_source_1080p and "1080p" in target_q_list:

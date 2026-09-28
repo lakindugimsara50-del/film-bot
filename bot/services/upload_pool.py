@@ -348,6 +348,10 @@ class TelegramUploadPool:
                             )
                             log.info("[UploadPool] Session %s (user %s) promoted to admin in %s", getattr(c, "name", "session"), u_me.id, target_channel)
                     except Exception as prom_err:
+                        err_str = str(prom_err)
+                        if "ADMINS_TOO_MUCH" in err_str:
+                            log.info("[UploadPool] Telegram channel admin limit reached (max 50 admins). Remaining sessions will use main bot fallback for uploads.")
+                            return
                         log.debug("[UploadPool] Session %s promote note: %s", getattr(c, "name", "client"), prom_err)
 
         await asyncio.gather(*[_join_one(c) for c in self.clients], return_exceptions=True)

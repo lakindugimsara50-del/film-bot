@@ -6368,16 +6368,6 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "stream_url": "https://lanka-clara-concept-programs.trycloudflare.com/stream/channel/-1004325759505/108",
       "streams": [
         {
-          "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
-          "type": "video/mp4",
-          "mode": "telegram_stream",
-          "stream_url": "https://lanka-clara-concept-programs.trycloudflare.com/stream/channel/-1004325759505/108",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADbGq6KStcuHs_e9cRBBsawyVR3uuVAAKkIwACGjbRVec51xG7n3WoHgQ",
-          "message_id": 108,
-          "quality": "1080p"
-        },
-        {
           "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
@@ -6466,6 +6456,62 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.18 GB",
+          "size_bytes": 1269763329,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "0.65 GB",
+          "size_bytes": 698369830,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADbGq6KStcuHs_e9cRBBsawyVR3uuVAAKkIwACGjbRVec51xG7n3WoHgQ",
+          "message_id": 108,
+          "url": "https://t.me/c/4325759505/108",
+          "telegram_url": "https://t.me/c/4325759505/108",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD",
+          "size": "0.38 GB",
+          "size_bytes": 406324265,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Mobile",
+          "size": "0.21 GB",
+          "size_bytes": 228557399,
+          "file_id": "",
+          "message_id": 0,
+          "url": "https://t.me/c/4325759505/0",
+          "telegram_url": "https://t.me/c/4325759505/0",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -6499,7 +6545,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e02",
       "added_date": "2026-09-28",
       "added_at": "2026-09-28T08:45:31Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "telegram_status": "complete"
     }
   ],
   "last_updated": "2026-09-28T08:45:32Z"

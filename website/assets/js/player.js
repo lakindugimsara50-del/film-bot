@@ -406,7 +406,18 @@ function getMovieStreams(movie) {
   // =========================================================================
   // VIP Player 1: 🎬 VidLink Pro Ultra HD (Auto Sinhala Sub)
   // =========================================================================
-  let s1SubParam = movie.subtitle_url ? `?primaryColor=ffeb3b&sub.Sinhala=${encodeURIComponent(movie.subtitle_url)}` : '';
+  // Extract or build a public HTTP VTT URL for VidLink external subtitles
+  let subUrl = '';
+  if (movie.subtitle_url && movie.subtitle_url.startsWith('http')) {
+    subUrl = movie.subtitle_url;
+  } else if (Array.isArray(movie.subtitles) && movie.subtitles[0] && movie.subtitles[0].url && movie.subtitles[0].url.startsWith('http')) {
+    subUrl = movie.subtitles[0].url;
+  } else if (movie.slug) {
+    subUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${movie.slug}-si.vtt`;
+  }
+  let s1SubParam = subUrl
+    ? `?primaryColor=ffeb3b&sub_file=${encodeURIComponent(subUrl)}&sub_label=Sinhala&sub=true`
+    : '?primaryColor=ffeb3b';
   let s1Url = '';
   if (isSeries) {
     if (tmdbId) {
@@ -1750,7 +1761,38 @@ function createVjsPlayer(playerEl, stream, movie) {
       } catch (e) {}
 
       injectInPlayerQualityControl(vjsPlayer);
+
+      // Bug 2 fix: Ensure Sinhala subtitle track is injected via addRemoteTextTrack
+      // if the HTML <track> hasn't surfaced in textTracks() yet (async VJS fetch).
+      const subs = getMovieSubtitles(movie);
+      if (subs && subs.length > 0) {
+        try {
+          const existingTracks = vjsPlayer.textTracks();
+          let hasSub = false;
+          for (let i = 0; i < existingTracks.length; i++) {
+            if (existingTracks[i].kind === 'subtitles' || existingTracks[i].kind === 'captions') {
+              hasSub = true;
+              existingTracks[i].mode = liveSubEnabled ? 'showing' : 'disabled';
+            }
+          }
+          if (!hasSub && typeof vjsPlayer.addRemoteTextTrack === 'function') {
+            const primarySub = subs[0];
+            vjsPlayer.addRemoteTextTrack({
+              src: primarySub.url,
+              kind: 'subtitles',
+              srclang: primarySub.srclang || 'si',
+              label: primarySub.label || 'සිංහල (Sinhala)',
+              default: true,
+            }, false);
+          }
+        } catch (e) {}
+      }
+
       syncSubtitles();
+      // Deferred re-sync: VJS fetches the VTT asynchronously — run again after 1.5s
+      // to guarantee VTTCues are injected once the track file is fully loaded.
+      setTimeout(() => { try { syncSubtitles(); } catch (e) {} }, 1500);
+
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
       setTimeout(hideLoader, 600);
@@ -1768,9 +1810,9 @@ function createVjsPlayer(playerEl, stream, movie) {
       syncSubtitles();
     });
 
-    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 6.0s
-    // (e.g. stream server sleeping / warming up, Colab proxy offline, or ultra-slow network),
-    // automatically switch to Server 2 (VidSrc Pro / SuperEmbed) so playback starts with zero white screen and zero interruption.
+    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 4.5s
+    // (e.g. stream server sleeping, Colab proxy offline, or network stall),
+    // automatically switch to Server 2 (VIP VidLink Ultra HD with Sinhala sub) so playback starts with zero white screen.
     const slowHeaderWatchdog = setTimeout(() => {
       const isLocalSample = stream.stream_url && (stream.stream_url.includes('sample_stream') || stream.stream_url.startsWith('assets/'));
       if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
@@ -1778,13 +1820,13 @@ function createVjsPlayer(playerEl, stream, movie) {
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         const streams = getMovieStreams(movie);
         if (streams.length > 1 && currentStreamIdx === 0) {
-          FilmSub.showToast('⚡ Server 1 warming up — auto-switching to Server 2...', 'info');
+          FilmSub.showToast('⚡ Server 1 Offline — VIP Server 2 වෙත මාරු විය...', 'info');
           setTimeout(() => {
             loadStream(movie, 1);
           }, 10);
         }
       }
-    }, 6000);
+    }, 4500);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);

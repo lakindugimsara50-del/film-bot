@@ -153,7 +153,7 @@ def register(app: Client) -> None:
                             for stream in m.get("streams", []):
                                 if "vidlink.pro" in stream.get("stream_url", ""):
                                     base_u = stream["stream_url"].split("?")[0]
-                                    stream["stream_url"] = f"{base_u}?sub.Sinhala={urllib.parse.quote(vtt_url, safe='')}"
+                                    stream["stream_url"] = f"{base_u}?sub_file={urllib.parse.quote(vtt_url, safe='')}&sub_label=Sinhala&sub=true"
                             await github_service.add_movie(m)
                             break
                     sess["vtt_github_url"] = vtt_url
@@ -316,7 +316,7 @@ def register(app: Client) -> None:
                                 if "vidlink.pro" in stream.get("stream_url", ""):
                                     base_url = stream["stream_url"].split("?")[0]
                                     encoded = urllib.parse.quote(vtt_github_url, safe='')
-                                    stream["stream_url"] = f"{base_url}?sub.Sinhala={encoded}"
+                                    stream["stream_url"] = f"{base_url}?sub_file={encoded}&sub_label=Sinhala&sub=true"
                             break
                     await github_service._commit_movies_json(
                         data, sha, f"feat(sub): attach Sinhala subtitle to {slug}"
@@ -432,7 +432,7 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
             for stream in meta.get("streams", []):
                 if "vidlink.pro" in stream.get("stream_url", ""):
                     encoded = urllib.parse.quote(vtt_github_url, safe='')
-                    stream["stream_url"] += f"?sub.Sinhala={encoded}"
+                    stream["stream_url"] += f"?sub_file={encoded}&sub_label=Sinhala&sub=true"
 
         site_url = f"{(getattr(config, 'SITE_BASE_URL', 'https://filmsub.pages.dev')).rstrip('/')}/movie.html?id={slug}"
         meta["site_url"] = site_url

@@ -105,7 +105,7 @@ def get_player_url(
     if player_name == "vip1":
         sub_param = ""
         if subtitle_url:
-            sub_param = f"?primaryColor=ffeb3b&sub.Sinhala={urllib.parse.quote(subtitle_url, safe='')}"
+            sub_param = f"?primaryColor=ffeb3b&sub_file={urllib.parse.quote(subtitle_url, safe='')}&sub_label=Sinhala&sub=true"
 
         if is_series:
             if tmdb_id:

@@ -255,7 +255,7 @@ def register(app: Client) -> None:
                                     url_val = st.get("stream_url", "")
                                     if "vidlink.pro" in url_val:
                                         base_url = url_val.split("?")[0]
-                                        st["stream_url"] = f"{base_url}?sub.Sinhala={urllib.parse.quote(vtt_url, safe='')}"
+                                        st["stream_url"] = f"{base_url}?sub_file={urllib.parse.quote(vtt_url, safe='')}&sub_label=Sinhala&sub=true"
                             except Exception as mux_err:
                                 log.warning("[SubHandler] Re-mux failed: %s", mux_err)
 

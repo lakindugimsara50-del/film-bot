@@ -109,9 +109,9 @@ async def patch_movie_downloads(
         # Update VidLink stream with sub injection
         for stream in target.get("streams", []):
             url = stream.get("stream_url", "")
-            if "vidlink.pro" in url and "sub.Sinhala" not in url:
+            if "vidlink.pro" in url and "sub_file=" not in url:
                 sep = "&" if "?" in url else "?"
-                stream["stream_url"] = f"{url}{sep}sub.Sinhala={urllib.parse.quote(subtitle_url, safe='')}"
+                stream["stream_url"] = f"{url}{sep}sub_file={urllib.parse.quote(subtitle_url, safe='')}&sub_label=Sinhala&sub=true"
     
     # Commit to GitHub
     await github_service._commit_movies_json(

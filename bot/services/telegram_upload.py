@@ -300,11 +300,45 @@ async def upload_video_file(
             log.warning("[TelegramUpload] Pre-resolving chat %s warning: %s", chat_id, gc_err)
 
         _reset_progress_state()
-        with LowRamFileReader(file_path) as reader:
+        _use_low_ram = (not os.path.exists('/content')) and (os.name != 'nt')
+        if _use_low_ram:
+            try:
+                import psutil
+                if psutil.virtual_memory().total > 1.2 * 1024 * 1024 * 1024:
+                    _use_low_ram = False
+            except Exception:
+                pass
+
+        if _use_low_ram:
+            with LowRamFileReader(file_path) as reader:
+                try:
+                    return await bot_client.send_video(
+                        chat_id=chat_id,
+                        video=reader,
+                        file_name=file_name,
+                        caption=caption,
+                        progress=_pyrogram_progress,
+                        disable_notification=True,
+                    )
+                except Exception as vid_err:
+                    log.warning("[TelegramUpload] send_video failed (%s). Falling back to send_document...", vid_err)
+                    _reset_progress_state()
+                    reader.seek(0)
+                    return await bot_client.send_document(
+                        chat_id=chat_id,
+                        document=reader,
+                        file_name=file_name,
+                        caption=caption,
+                        force_document=True,
+                        progress=_pyrogram_progress,
+                        disable_notification=True,
+                    )
+        else:
+            # High-RAM / Colab / Fast upload mode: pass path directly for native multi-worker MTProto pipelining
             try:
                 return await bot_client.send_video(
                     chat_id=chat_id,
-                    video=reader,
+                    video=file_path,
                     file_name=file_name,
                     caption=caption,
                     progress=_pyrogram_progress,
@@ -313,10 +347,9 @@ async def upload_video_file(
             except Exception as vid_err:
                 log.warning("[TelegramUpload] send_video failed (%s). Falling back to send_document...", vid_err)
                 _reset_progress_state()
-                reader.seek(0)
                 return await bot_client.send_document(
                     chat_id=chat_id,
-                    document=reader,
+                    document=file_path,
                     file_name=file_name,
                     caption=caption,
                     force_document=True,

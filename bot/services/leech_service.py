@@ -1013,7 +1013,8 @@ async def _execute_leech(
         sub_srt_path: Optional[str] = None
         sub_vtt_path: Optional[str] = None
         try:
-            clean_sub_title = show_name if (is_series and show_name) else (title_hint or title or display_title)
+            _show_name = locals().get('show_name', '')
+            clean_sub_title = _show_name if (is_series and _show_name) else (title or display_title)
             sub_srt_path, sub_vtt_path = await subtitle_service.auto_acquire_sinhala_subtitle(
                 title=clean_sub_title,
                 year=year,
@@ -1385,24 +1386,27 @@ async def _execute_leech(
         async def _task_upload_tg_variant(q_label: str, q_path: str) -> None:
             if not os.path.exists(q_path):
                 return
-            try:
-                log.info("[LeechService] Uploading variant '%s' to Telegram channel...", q_label)
-                var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
-                from services.upload_pool import upload_pool
-                up_res = await upload_pool.upload_with_pool(
-                    file_path=q_path,
-                    target_chat=target_channel,
-                    quality=q_label,
-                    caption=var_caption,
-                    file_name=os.path.basename(q_path),
-                    progress_callback=None,
-                    fallback_client=client,
-                )
-                if up_res and up_res.get("file_id"):
-                    variant_tg_info[q_label] = up_res
-                    log.info("[LeechService] Telegram upload for variant %s succeeded: msg_id=%s", q_label, up_res.get("message_id"))
-            except Exception as tg_v_err:
-                log.warning("[LeechService] Telegram upload for variant %s skipped/failed: %s", q_label, tg_v_err)
+            for attempt in range(2):
+                try:
+                    log.info("[LeechService] Uploading variant '%s' to Telegram channel (attempt %d)...", q_label, attempt + 1)
+                    var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
+                    from services.upload_pool import upload_pool
+                    up_res = await upload_pool.upload_with_pool(
+                        file_path=q_path,
+                        target_chat=target_channel,
+                        quality=q_label,
+                        caption=var_caption,
+                        file_name=os.path.basename(q_path),
+                        progress_callback=None,
+                        fallback_client=client,
+                    )
+                    if up_res and up_res.get("file_id"):
+                        variant_tg_info[q_label] = up_res
+                        log.info("[LeechService] Telegram upload for variant %s succeeded: msg_id=%s", q_label, up_res.get("message_id"))
+                        break
+                except Exception as tg_v_err:
+                    log.warning("[LeechService] Telegram upload for variant %s attempt %d skipped/failed: %s", q_label, attempt + 1, tg_v_err)
+                    await asyncio.sleep(1.5)
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str

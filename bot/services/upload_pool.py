@@ -196,6 +196,7 @@ class TelegramUploadPool:
                             api_hash=api_hash,
                             no_updates=True,
                             max_concurrent_transmissions=10,
+                            sleep_threshold=15,  # Auto-sleep minor waits; rotate on longer ones
                         )
                         is_auth = await c.connect()
                         if not is_auth:
@@ -377,33 +378,65 @@ class TelegramUploadPool:
         """
         Upload a video file using a session from the quality tier pool.
 
-        Falls back to main bot client if the pool is empty or all sessions fail.
+        When sleep_threshold=0, Pyrogram raises FloodWait instead of sleeping.
+        We catch FloodWait and immediately retry with a different session from the same tier
+        (up to 3 attempts) so parallel uploads never block each other.
+        Falls back to main bot client if all pool sessions fail.
         Returns dict with file_id, message_id, stream_url.
         """
-        client = await self.get_client_for_quality(quality, fallback_client)
-        log.info(
-            "[UploadPool] Uploading [%s] via session '%s' → chat %s",
-            quality,
-            getattr(client, "name", "main_bot"),
-            target_chat,
-        )
-        try:
-            return await telegram_upload.upload_video_file(
-                bot_client=client,
-                file_path=file_path,
-                target_chat=target_chat,
-                caption=caption,
-                progress_callback=progress_callback,
-                fallback_chat=0,
+        from pyrogram.errors import FloodWait
+
+        last_exc = None
+        tried_clients: list = []
+
+        for attempt in range(3):
+            client = await self.get_client_for_quality(quality, fallback_client)
+            # Skip already-tried clients if possible
+            if client in tried_clients and len(tried_clients) < len(self.clients):
+                continue
+            tried_clients.append(client)
+            log.info(
+                "[UploadPool] Uploading [%s] attempt %d via session '%s' → chat %s",
+                quality, attempt + 1,
+                getattr(client, "name", "main_bot"),
+                target_chat,
             )
-        except Exception as exc:
-            log.warning(
-                "[UploadPool] Session upload failed for [%s]: %s — falling back to main client.",
-                quality,
-                exc,
-            )
-            fallback = fallback_client or self._main_client
-            if fallback and fallback is not client:
+            try:
+                return await telegram_upload.upload_video_file(
+                    bot_client=client,
+                    file_path=file_path,
+                    target_chat=target_chat,
+                    caption=caption,
+                    progress_callback=progress_callback,
+                    fallback_chat=0,
+                )
+            except FloodWait as fw:
+                last_exc = fw
+                log.warning(
+                    "[UploadPool] FloodWait %ds on session '%s' for [%s] — rotating to next session.",
+                    fw.value, getattr(client, "name", "?"), quality,
+                )
+                continue
+            except Exception as exc:
+                last_exc = exc
+                err_str = str(exc).lower()
+                if "chat_write_forbidden" in err_str or "channel_private" in err_str or "user_not_participant" in err_str:
+                    log.warning(
+                        "[UploadPool] Session '%s' lacks write permissions in chat %s (%s) — jumping straight to main bot client.",
+                        getattr(client, "name", "?"), target_chat, exc,
+                    )
+                    break
+                log.warning(
+                    "[UploadPool] Session upload failed for [%s] attempt %d (%s) — rotating to next session.",
+                    quality, attempt + 1, exc,
+                )
+                continue
+
+        # All attempts exhausted (or userbot lacked write permissions) — use main bot client
+        fallback = fallback_client or self._main_client
+        if fallback:
+            log.info("[UploadPool] Uploading [%s] via verified main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
+            try:
                 return await telegram_upload.upload_video_file(
                     bot_client=fallback,
                     file_path=file_path,
@@ -412,7 +445,12 @@ class TelegramUploadPool:
                     progress_callback=progress_callback,
                     fallback_chat=0,
                 )
-            raise
+            except Exception as final_exc:
+                log.error("[UploadPool] Final fallback client upload failed for [%s]: %s", quality, final_exc)
+                raise final_exc
+        if last_exc:
+            raise last_exc
+        raise RuntimeError(f"[UploadPool] No available clients for quality [{quality}]")
 
     def get_status(self) -> dict:
         """Return pool diagnostic info for the /status endpoint."""

@@ -1591,13 +1591,27 @@ async def generate_multi_quality_variants_ram(
                     if os.path.exists(p) and os.path.getsize(p) >= min_valid_size:
                         valid_outputs[q] = p
             else:
-                # Cleanup corrupt/partial files created by this failed attempt
+                # Even on non-zero exit, rescue any output files that appear fully-written.
+                # A real encoded variant is always several hundred KB; corrupt/partial stub
+                # files from interrupted FFmpeg passes are tiny.  Use 512 KB as the rescue
+                # threshold so test stubs (a few KB) are still cleaned up.
+                _rescue_min = max(512 * 1024, min_valid_size)
+                rescued = []
                 for q, p in out_paths.items():
-                    if os.path.exists(p) and p not in valid_outputs.values():
+                    if os.path.exists(p) and os.path.getsize(p) >= _rescue_min and q not in valid_outputs:
+                        valid_outputs[q] = p
+                        rescued.append(q)
+                    elif os.path.exists(p) and q not in valid_outputs:
+                        # Partial/corrupt file — delete it
                         try:
                             os.remove(p)
                         except Exception:
                             pass
+                if rescued:
+                    log.info(
+                        "[VideoService] Rescued %d valid output(s) from non-zero-exit FFmpeg attempt: %s",
+                        len(rescued), rescued,
+                    )
 
             if all(q in valid_outputs for q in target_q_list):
                 log.info(

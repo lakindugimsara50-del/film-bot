@@ -10,6 +10,7 @@ Provides:
 """
 
 import asyncio
+import collections
 import logging
 import os
 import re
@@ -1344,11 +1345,11 @@ async def generate_multi_quality_variants_ram(
     valid_outputs: dict[str, str] = {}
     src_w, src_h = get_video_resolution(input_path, ffmpeg_bin)
 
-    # Check if input audio needs transcoding to AAC for browser playback (e.g. AC3/DTS/FLAC)
+    # Enforce AAC audio transcode unless source is confirmed already to be AAC (prevents MP4 mux errors with DTS/EAC3)
     in_audio_codec = get_audio_codec(input_path, ffmpeg_bin)
-    needs_aac_transcode = bool(in_audio_codec and not is_web_compatible_audio(in_audio_codec))
+    needs_aac_transcode = bool(in_audio_codec != "aac")
     if needs_aac_transcode:
-        log.info("[VideoService] Source audio codec '%s' detected -> enforcing AAC transcode for browser compatibility", in_audio_codec)
+        log.info("[VideoService] Audio codec is '%s' -> transcoding to AAC for universal MP4 browser playback", in_audio_codec or "unknown")
 
     # Detect resolution tier, supporting both 16:9 and 2.39:1 widescreen films
     is_source_1080p = (1700 <= src_w <= 2000) or (950 <= src_h <= 1150)
@@ -1467,8 +1468,20 @@ async def generate_multi_quality_variants_ram(
             "-threads", "0",
             "-i", os.path.abspath(input_path),
         ]
+        effective_sub = sub_path
         if include_soft_subs and sub_path and os.path.exists(sub_path):
-            c.extend(["-i", os.path.abspath(sub_path)])
+            if sub_path.lower().endswith(".vtt"):
+                try:
+                    from services.subtitle_service import vtt_to_srt
+                    conv_srt = os.path.join(abs_out_dir, "multi_sub_temp.srt")
+                    effective_sub = vtt_to_srt(sub_path, conv_srt)
+                except Exception as conv_err:
+                    log.debug("[VideoService] Subtitle format prep note: %s", conv_err)
+                    effective_sub = sub_path
+            if effective_sub and os.path.exists(effective_sub) and os.path.getsize(effective_sub) > 16:
+                c.extend(["-i", os.path.abspath(effective_sub)])
+            else:
+                include_soft_subs = False
 
         c.extend(["-filter_complex", fc])
 
@@ -1481,17 +1494,13 @@ async def generate_multi_quality_variants_ram(
                 "-map", f"[v_{q}]",
                 "-map", "0:a:0?",
             ])
-            if include_soft_subs and sub_path and os.path.exists(sub_path):
+            if include_soft_subs and effective_sub and os.path.exists(effective_sub) and os.path.getsize(effective_sub) > 16:
                 c.extend([
                     "-map", "1:0",
-                    "-map", "1:0",
                     "-c:s", "mov_text",
-                    "-metadata:s:s:0", "language=eng",
-                    "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
-                    "-disposition:s:0", "default+forced",
-                    "-metadata:s:s:1", "language=sin",
-                    "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
-                    "-disposition:s:1", "default+forced",
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
                 ])
             if use_hw == "h264_nvenc":
                 c.extend([
@@ -1508,6 +1517,7 @@ async def generate_multi_quality_variants_ram(
                     "-preset", "ultrafast",
                     "-tune", "fastdecode",
                     "-crf", "28",
+                    "-threads", "0",
                 ])
             c.append("-pix_fmt")
             c.append("yuv420p")
@@ -1527,12 +1537,17 @@ async def generate_multi_quality_variants_ram(
 
     # Build ordered attempt strategies:
     # 1. Preferred encoder (NVENC or libx264) + soft subs (instantaneous, zero CPU subtitle burning overhead)
-    # 2. Fallback CPU libx264 + soft subs only (if NVENC failed)
-    # 3. Fallback CPU libx264 without subs (if SRT parsing failed)
-    strategies: list[tuple[str, bool, bool]] = [(hw_enc, False, has_sub)]
+    # 2. Preferred encoder without soft subs (if mov_text / subtitle stream muxing failed)
+    # 3. Fallback CPU libx264 without subs
+    strategies: list[tuple[str, bool, bool]] = []
     if hw_enc == "h264_nvenc":
-        strategies.append(("libx264", False, has_sub))
-    if has_sub:
+        strategies.append(("h264_nvenc", False, has_sub))
+        if has_sub:
+            strategies.append(("h264_nvenc", False, False))
+        strategies.append(("libx264", False, False))
+    else:
+        if has_sub:
+            strategies.append(("libx264", False, True))
         strategies.append(("libx264", False, False))
 
     proc = None
@@ -1542,11 +1557,12 @@ async def generate_multi_quality_variants_ram(
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=abs_out_dir,
-                stdout=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
             time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
             last_pct = 0.0
+            stderr_tail = collections.deque(maxlen=40)
 
             async def _read_stderr():
                 nonlocal last_pct
@@ -1558,6 +1574,8 @@ async def generate_multi_quality_variants_ram(
                     if not chunk:
                         break
                     decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                    for line in decoded.splitlines(keepends=True):
+                        stderr_tail.append(line)
                     matches = time_pattern.findall(decoded)
                     if matches and duration > 0:
                         h, mm, ss = matches[-1]
@@ -1591,6 +1609,11 @@ async def generate_multi_quality_variants_ram(
                     if os.path.exists(p) and os.path.getsize(p) >= min_valid_size:
                         valid_outputs[q] = p
             else:
+                tail_str = "".join(stderr_tail).strip()
+                log.error(
+                    "[VideoService] Multi-quality FFmpeg attempt %d failed (exit %s):\n%s",
+                    attempt_idx + 1, getattr(proc, "returncode", "None"), tail_str[-1200:] if tail_str else "(no stderr)",
+                )
                 # Even on non-zero exit, rescue any output files that appear fully-written.
                 # A real encoded variant is always several hundred KB; corrupt/partial stub
                 # files from interrupted FFmpeg passes are tiny.  Use 512 KB as the rescue

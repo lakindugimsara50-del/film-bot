@@ -446,7 +446,11 @@ async def search_torrentio(
     log.info("[TorrentFinder] Torrentio querying: %s (target='%s')", urls[0], target_title)
     candidates: list[dict] = []
     seen_hashes: set[str] = set()
-    headers = DEFAULT_HEADERS
+    headers = {
+        **DEFAULT_HEADERS,
+        "Referer": "https://web.stremio.com/",
+        "Origin": "https://web.stremio.com",
+    }
 
     raw_streams: list[dict] = []
     async with httpx.AsyncClient(headers=headers, timeout=12, follow_redirects=True) as client:
@@ -459,6 +463,9 @@ async def search_torrentio(
                         if st:
                             raw_streams.extend(st)
                         break
+                    elif resp.status_code == 403:
+                        log.info("[TorrentFinder] Torrentio HTTP 403 (Cloudflare datacenter IP block) - fast failover to other indexers")
+                        return []
                     else:
                         log.warning("[TorrentFinder] Torrentio HTTP %d on %s (attempt %d)", resp.status_code, url, attempt + 1)
                         if attempt == 0:

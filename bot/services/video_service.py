@@ -23,6 +23,17 @@ log = logging.getLogger(__name__)
 # Max upload limit for standard Telegram Bot API (1.95 GB safe ceiling)
 MAX_TELEGRAM_BOT_SIZE = int(1.95 * 1024 * 1024 * 1024)
 
+# ── Colab / Render environment detection ─────────────────────────────────────
+# Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
+# Render Free Tier (0.1 vCPU, 512 MB RAM): use veryfast + limited remux
+_on_colab: bool = os.path.exists("/content")
+_threads: str = "0"          # always use all available CPU cores
+_preset: str = "ultrafast" if _on_colab else "veryfast"
+log.info(
+    "[VideoService] Environment: on_colab=%s  preset=%s  threads=%s",
+    _on_colab, _preset, _threads,
+)
+
 
 def get_ffmpeg_binary() -> Optional[str]:
     """Find system ffmpeg or bundled imageio_ffmpeg binary."""
@@ -512,14 +523,15 @@ async def compress_video(
     else:
         cmd.extend([
             "-c:v", "libx264",
-            "-preset", "ultrafast",
+            "-preset", _preset,   # ultrafast on Colab GPU, veryfast on Render
             "-tune", "fastdecode",
-            "-threads", "0",
+            "-threads", _threads,
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
             "-pix_fmt", "yuv420p",
         ])
+
 
     cmd.extend([
         "-c:a", "aac",
@@ -797,7 +809,7 @@ async def ensure_web_streamable(
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=8,
+            timeout=180,   # increased: large files on Colab need more probe time
         )
         audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", probe.stderr)
         if audio_matches:
@@ -880,12 +892,13 @@ async def ensure_web_streamable(
                 except Exception:
                     pass
 
-    # For files > 1.2 GB on low-CPU non-Colab environments without /dev/shm, skip CPU audio transcode
+    # For files > 1.2 GB on Render (non-Colab, no /dev/shm), skip CPU audio transcode
+    # to avoid OOM. Direct upload without extra remux is handled by leech_service.
     file_size = input_size
-    _has_ram_disk = os.path.isdir("/dev/shm") or os.path.exists("/content")
-    if not _has_ram_disk and file_size > 1.2 * 1024 * 1024 * 1024:
+    if not _on_colab and file_size > 1.2 * 1024 * 1024 * 1024:
         log.warning(
-            "[VideoService] File size %.2f GB > 1.2 GB on constrained host. Skipping audio transcode.",
+            "[VideoService] File size %.2f GB > 1.2 GB on Render (not Colab). "
+            "Skipping audio transcode to prevent OOM.",
             file_size / (1024 ** 3),
         )
         _cleanup_output()
@@ -941,7 +954,8 @@ async def ensure_web_streamable(
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await asyncio.wait_for(proc.wait(), timeout=360.0)
+        await asyncio.wait_for(proc.wait(), timeout=360.0)  # ≥300 s per plan §4.3; 360 s for large Colab files
+
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) >= min_valid_size:
             log.info("[VideoService] AAC audio + MP4 remux (sub=%s) succeeded: %s", has_sub, output_path)
             return True

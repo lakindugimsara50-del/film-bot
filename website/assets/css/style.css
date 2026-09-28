@@ -2340,3 +2340,65 @@ main > .section:first-of-type {
   padding: 7px 18px !important;
 }
 
+/* ============================================================
+   Mobile-first responsive additions – plan §6.1
+   (Super Player + Auto-Subtitle + High-Speed Conversion)
+   ============================================================ */
+
+/* -- Hero banner shrink on small phones ----------------------- */
+@media (max-width: 600px) {
+  .hero-banner,
+  .hero-section {
+    min-height: 180px !important;
+    padding: 16px 12px !important;
+  }
+  .hero-title { font-size: 22px !important; }
+  .hero-subtitle, .hero-desc { font-size: 13px !important; }
+
+  /* Movie grid: 2-column compact layout on mobile */
+  .movies-grid,
+  .movie-grid,
+  #movie-grid,
+  #movies-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* Player logo overlay hidden (plan §2.5) */
+  .player-logo { display: none !important; }
+
+  /* VIP player tabs stack vertically */
+  .server-tabs,
+  .player-server-tabs,
+  .cs-server-tabs {
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+  .server-tab, .cs-server-tab {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  /* Download card buttons stack */
+  .cs-dl-actions { flex-direction: column !important; gap: 6px !important; }
+
+  /* Subtitle controls row wraps */
+  .sub-controls, .subtitle-controls-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+}
+
+/* -- Extra-small phones (= 380 px) ---------------------------- */
+@media (max-width: 380px) {
+  .movies-grid,
+  .movie-grid,
+  #movie-grid,
+  #movies-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+/* -- Quality selector badge (plan §6.4) ----------------------- */
+.vjs-quality-selector .vjs-menu-button { min-width: 56px; }

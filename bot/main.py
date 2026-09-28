@@ -89,6 +89,11 @@ app = Client(
     workers=_PYROGRAM_WORKERS,
 )
 
+# ── Global concurrency lock ───────────────────────────────────────────────────
+# Ensures only ONE heavy upload runs at a time so Render (512 MB) never OOMs.
+# Usage:  async with upload_semaphore:
+#             await client.send_document(...)
+upload_semaphore: asyncio.Semaphore = asyncio.Semaphore(1)
 
 
 # ── Health & Status Web Server ────────────────────────────────────────────────
@@ -660,6 +665,10 @@ def _register_handlers() -> None:
     from handlers import leech_handler
     leech_handler.register(app)
     log.info("Handler registered: leech_handler (/leech, /auto, /boost, /queue)")
+
+    from handlers import play_handler
+    play_handler.register(app)
+    log.info("Handler registered: play_handler (/player, add_player callbacks)")
 
     from handlers import auth_handler
     auth_handler.register(app)

@@ -314,27 +314,7 @@ function getMovieStreams(movie) {
 
   let srvCounter = 1;
 
-  // =========================================================================
-  // Server 1 (if available): ⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)
-  // =========================================================================
-  const existingStreams = Array.isArray(movie.streams) ? movie.streams : [];
-  const tgStream = existingStreams.find(s => s && (s.mode === 'super_chunk' || s.mode === 'telegram_stream' || s.file_id || s.message_id));
-  if (isMatchingEpisode && (tgStream || movie.message_id)) {
-    const msgId = (tgStream && tgStream.message_id) || movie.message_id;
-    const fileId = (tgStream && tgStream.file_id) || movie.file_id;
-    list.push({
-      server: `Server ${srvCounter}`,
-      label: '⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)',
-      mode: 'telegram_stream',
-      type: 'video/mp4',
-      stream_url: `/stream/channel/-1004325759505/${msgId}`,
-      message_id: msgId,
-      file_id: fileId,
-      hasLocalFile: true,
-      sub_merged: true,
-    });
-    srvCounter++;
-  }
+
 
   // =========================================================================
   // VIP Player 1: 🎬 VidLink Pro Ultra HD (Auto Sinhala Sub)
@@ -1393,14 +1373,60 @@ function initVideoPlayer(movie) {
     return;
   }
 
-  // If Server 1 doesn't have a direct local file for this episode (e.g. S02E02),
-  // default to Server 2 (VIP Player 1 - VidLink) so it plays immediately with 0 waiting!
+  // ── data-player support (plan §2.4) ───────────────────────────────────────
+  // If the container (or <video> element) has a data-player attribute, load
+  // the matching VIP server directly instead of Server 1.
   let startIdx = 0;
-  if (!streams[0].hasLocalFile && streams.length > 1) {
+  const dataPlayerName = (
+    playerEl.dataset.player ||
+    document.getElementById('filmsubPlayer')?.dataset?.player ||
+    ''
+  ).toLowerCase().trim();
+
+  if (dataPlayerName && dataPlayerName !== 'super') {
+    // Map "vip1"→0, "vip2"→1, "vip3"→2 (matching PLAYER_ORDER order in streams)
+    const playerMap = { vip1: 0, vip2: 1, vip3: 2 };
+    if (playerMap[dataPlayerName] !== undefined) {
+      startIdx = playerMap[dataPlayerName];
+    }
+  } else if (!streams[0].hasLocalFile && streams.length > 1) {
     startIdx = 1;
   }
+
   loadStream(movie, startIdx);
+
+  // ── data-subtitle support (plan §6.2) ────────────────────────────────────
+  // After Video.js is initialised (slight delay), attach the VTT track.
+  const subSrc = (
+    playerEl.dataset.subtitle ||
+    document.getElementById('filmsubPlayer')?.dataset?.subtitle ||
+    ''
+  ).trim();
+
+  if (subSrc) {
+    const waitForVjs = setInterval(() => {
+      const p = window.vjsPlayer || (typeof videojs !== 'undefined' && videojs.getPlayers()?.filmsubPlayer);
+      if (p && typeof p.addRemoteTextTrack === 'function') {
+        clearInterval(waitForVjs);
+        try {
+          p.addRemoteTextTrack({
+            src: subSrc,
+            kind: 'subtitles',
+            srclang: 'si',
+            label: 'සිංහල (Sinhala)',
+            default: true,
+          }, false);
+          console.log('[FilmSub] data-subtitle VTT track injected:', subSrc);
+        } catch (e) {
+          console.warn('[FilmSub] addRemoteTextTrack error:', e);
+        }
+      }
+    }, 400);
+    // Give up after 8 s (not a Video.js player scenario)
+    setTimeout(() => clearInterval(waitForVjs), 8000);
+  }
 }
+
 
 function renderStreamEmbed(playerEl, stream, movie) {
   if (vjsPlayer) {

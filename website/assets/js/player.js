@@ -52,6 +52,26 @@ let stallTimestamps = [];
 let activeStallTimer = null;
 let lastAutoSwitchEpoch = 0;
 
+function isDeadTunnel(u) {
+  if (!u || typeof u !== 'string') return true;
+  const l = u.toLowerCase();
+  return l.includes('trycloudflare.com') ||
+         l.includes('loca.lt') ||
+         l.includes('ngrok.io') ||
+         l.includes('ngrok-free.app') ||
+         l.includes('127.0.0.1') ||
+         l.includes('localhost');
+}
+
+function normalizeStreamUrl(u) {
+  if (!u || typeof u !== 'string') return '';
+  const match = u.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+  if (match) {
+    return `/stream/channel/${match[1]}/${match[2]}`;
+  }
+  return isDeadTunnel(u) ? '' : u;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await waitForFilmSub();
   await FilmSub.loadMovies();
@@ -348,21 +368,26 @@ function getMovieStreams(movie) {
   const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
   if (vm && typeof vm === 'object') {
     const qKey = (currentEffectiveQuality || '1080p').toLowerCase();
-    const vOpt = vm[qKey] || vm['1080p'] || vm['720p'] || vm['480p'];
-    if (vOpt && vOpt.message_id) {
-      tgMsgId = vOpt.message_id;
+    const vOpt = vm[qKey] || vm['1080p'] || vm['720p'] || vm['480p'] || vm['360p'] || Object.values(vm)[0];
+    if (vOpt) {
+      if (vOpt.message_id) {
+        tgMsgId = vOpt.message_id;
+      } else if (vOpt.stream_url) {
+        const norm = normalizeStreamUrl(vOpt.stream_url);
+        if (norm) nativeStreamUrl = norm;
+      }
     }
   }
 
   if (tgMsgId) {
     if (!tgChatId) tgChatId = '-1004325759505';
     nativeStreamUrl = `/stream/channel/${tgChatId}/${tgMsgId}`;
-  } else if (existingTgStream && existingTgStream.stream_url && !existingTgStream.stream_url.includes('vidlink') && !existingTgStream.stream_url.includes('autoembed') && !existingTgStream.stream_url.includes('multiembed')) {
-    nativeStreamUrl = existingTgStream.stream_url;
-  } else if (driveId) {
+  } else if (!nativeStreamUrl && existingTgStream && existingTgStream.stream_url && !existingTgStream.stream_url.includes('vidlink') && !existingTgStream.stream_url.includes('autoembed') && !existingTgStream.stream_url.includes('multiembed')) {
+    nativeStreamUrl = normalizeStreamUrl(existingTgStream.stream_url);
+  } else if (!nativeStreamUrl && driveId) {
     nativeStreamUrl = `/api/stream?id=${encodeURIComponent(driveId)}`;
-  } else if (primaryUrl && !primaryUrl.includes('vidlink') && !primaryUrl.includes('autoembed') && !primaryUrl.includes('multiembed') && !primaryUrl.includes('embed')) {
-    nativeStreamUrl = primaryUrl;
+  } else if (!nativeStreamUrl && primaryUrl && !primaryUrl.includes('vidlink') && !primaryUrl.includes('autoembed') && !primaryUrl.includes('multiembed') && !primaryUrl.includes('embed')) {
+    nativeStreamUrl = normalizeStreamUrl(primaryUrl);
   }
 
   if (isMatchingEpisode && nativeStreamUrl && !nativeStreamUrl.includes('vidlink') && !nativeStreamUrl.includes('autoembed') && !nativeStreamUrl.includes('multiembed')) {
@@ -679,18 +704,6 @@ function getMovieDownloads(movie) {
     if (rawId) chClean = rawId;
   }
 
-  // Filter helper for dead ephemeral tunnels
-  const isDeadTunnel = (u) => {
-    if (!u || typeof u !== 'string') return true;
-    const l = u.toLowerCase();
-    return l.includes('trycloudflare.com') ||
-           l.includes('loca.lt') ||
-           l.includes('ngrok.io') ||
-           l.includes('ngrok-free.app') ||
-           l.includes('127.0.0.1') ||
-           l.includes('localhost');
-  };
-
   const results = [];
   const seenQualities = new Set();
   const seenUrls = new Set();
@@ -994,24 +1007,31 @@ function applyQualitySwitch(targetQuality, opts = {}) {
   if (vjsPlayer && typeof vjsPlayer.currentTime === 'function') {
     const curTime = vjsPlayer.currentTime() || 0;
     const wasPaused = vjsPlayer.paused();
-let newSrc = '';
+    let newSrc = '';
     const qNorm = String(currentEffectiveQuality || '').toLowerCase();
 
     // 1. Check if movie has multi-quality variant_media (Telegram Cloud)
     const vm = currentMovie && (currentMovie.variant_media || (currentMovie.movie_entry && currentMovie.movie_entry.variant_media));
     if (vm && typeof vm === 'object') {
-      const vEntry = vm[qNorm] || vm[currentEffectiveQuality];
+      let vEntry = vm[qNorm] || vm[currentEffectiveQuality];
+      if (!vEntry) {
+        // Fallback to highest available quality
+        const order = ['1080p', '720p', '480p', '360p'];
+        for (const q of order) {
+          if (vm[q]) { vEntry = vm[q]; break; }
+        }
+      }
       if (vEntry) {
-        if (vEntry.stream_url && !vEntry.stream_url.includes('t.me')) {
-          newSrc = vEntry.stream_url;
-        } else if (vEntry.message_id) {
-          let tgChatId = currentMovie.channel_chat_id || '';
-          if (!tgChatId) {
-            const mUrl = currentMovie.stream_url || '';
-            const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
-            tgChatId = mMatch ? mMatch[1] : '-1004325759505';
-          }
+        let tgChatId = currentMovie.channel_chat_id || '';
+        if (!tgChatId) {
+          const mUrl = currentMovie.stream_url || (vEntry.stream_url || '');
+          const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
+          tgChatId = mMatch ? mMatch[1] : '-1004325759505';
+        }
+        if (vEntry.message_id) {
           newSrc = `/stream/channel/${tgChatId}/${vEntry.message_id}`;
+        } else if (vEntry.stream_url) {
+          newSrc = normalizeStreamUrl(vEntry.stream_url);
         }
       }
     }
@@ -1025,9 +1045,9 @@ let newSrc = '';
     if (!newSrc && currentMovie && currentMovie.qualities && typeof currentMovie.qualities === 'object') {
       const qVal = currentMovie.qualities[qNorm] || currentMovie.qualities[currentEffectiveQuality];
       if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
-        newSrc = qVal;
+        newSrc = normalizeStreamUrl(qVal);
       } else if (qVal && typeof qVal === 'object' && qVal.stream_url && !qVal.stream_url.includes('t.me')) {
-        newSrc = qVal.stream_url;
+        newSrc = normalizeStreamUrl(qVal.stream_url);
       }
     }
 
@@ -1037,14 +1057,14 @@ let newSrc = '';
       const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(qNorm) && !d.download_only);
       if (matched) {
         if (matched.stream_url && !matched.stream_url.includes('t.me')) {
-          newSrc = matched.stream_url;
+          newSrc = normalizeStreamUrl(matched.stream_url);
         } else if (matched.url && matched.url.includes('/c/')) {
           const mMatch = matched.url.match(/t\.me\/c\/(\d+)\/(\d+)/);
           if (mMatch) {
             newSrc = `/stream/channel/-100${mMatch[1]}/${mMatch[2]}`;
           }
         } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
-          newSrc = matched.url;
+          newSrc = normalizeStreamUrl(matched.url);
         }
       }
     }

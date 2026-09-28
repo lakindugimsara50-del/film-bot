@@ -139,12 +139,16 @@ class ProgressReporter:
         except Exception as exc:
             log.warning("[ProgressService] Could not finish message: %s", exc)
 
-    async def edit(self, text: str) -> None:
+    async def edit(self, text: str, reply_markup: Optional[Any] = None) -> None:
         """Unconditionally edit the progress message (ignores rate-limit guard)."""
         if not self._msg:
             return
         try:
-            await self._msg.edit_text(text, parse_mode=ParseMode.HTML)
+            markup = reply_markup if reply_markup is not None else self._reply_markup
+            kwargs = {}
+            if markup:
+                kwargs["reply_markup"] = markup
+            await self._msg.edit_text(text, parse_mode=ParseMode.HTML, **kwargs)
             self._last_edit = time.time()
         except Exception as exc:
             log.debug("[ProgressService] edit() skipped: %s", exc)

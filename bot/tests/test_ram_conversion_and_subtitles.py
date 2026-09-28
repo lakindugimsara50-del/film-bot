@@ -724,6 +724,218 @@ def test_player_js_selects_optimal_telegram_variant():
     assert "/stream/channel/-1004325759505/102" in data["url"]
 
 
+@pytest.mark.asyncio
+async def test_generate_multi_quality_variants_360p_instant_copy_and_anti_upscale(tmp_path):
+    """Verify that 360p source video triggers instant copy for 360p and eliminates wasteful upscaling."""
+    in_mp4 = tmp_path / "source_360p.mp4"
+    in_mp4.write_bytes(b"SD_360P_DATA" * 150)
+
+    class FakeProc:
+        returncode = 0
+        stderr = None
+        async def wait(self):
+            return 0
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    async def fake_exec(*args, **kwargs):
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"OUT" * (300 * 1024))
+        p = FakeProc()
+        class FakeStderr:
+            async def read(self, *a):
+                return b""
+            async def readline(self):
+                return b""
+        p.stderr = FakeStderr()
+        return p
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_video_resolution", return_value=(640, 360)), \
+         patch("services.video_service.get_audio_codec", return_value="aac"), \
+         patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            base_stem="sd_film_360",
+            target_qualities=("1080p", "720p", "360p"),
+        )
+
+    # 360p instant copy should be present, upscales (1080p, 720p) dropped
+    assert "360p" in variants
+    assert "1080p" not in variants
+    assert "720p" not in variants
+    assert os.path.exists(variants["360p"])
+
+
+def test_player_js_normalizes_stream_urls_and_ignores_dead_tunnels():
+    """Verify player.js converts ephemeral /stream/channel/ URLs to relative proxy paths."""
+    import subprocess
+    js_code = """
+    const fs = require('fs');
+    const vm = require('vm');
+    const code = fs.readFileSync('website/assets/js/player.js', 'utf8');
+    global.window = { FilmSub: {} };
+    global.document = {
+        addEventListener: () => {},
+        getElementById: () => null,
+        querySelector: () => null,
+        querySelectorAll: () => []
+    };
+    global.navigator = {};
+    global.location = { search: '', href: '' };
+    global.FilmSub = { escHtml: s => s };
+    global.currentSeason = 1;
+    global.currentEpisode = 1;
+    vm.runInThisContext(code);
+
+    const movie = {
+        title: 'Deadpool',
+        type: 'movie',
+        variant_media: {
+            '1080p': {
+                stream_url: 'https://damaged-aye-metals-marking.trycloudflare.com/stream/channel/-1004325759505/55',
+                message_id: 55
+            }
+        },
+        downloads: []
+    };
+    currentEffectiveQuality = '1080p';
+    const streams = getMovieStreams(movie);
+    const superPlayer = streams.find(s => s.server === 'Server 1');
+
+    // Also test normalizeStreamUrl on dead tunnel vs relative
+    const norm = normalizeStreamUrl('https://xyz.trycloudflare.com/stream/channel/-100123/456');
+    const dead = normalizeStreamUrl('https://xyz.trycloudflare.com/plain/url.mp4');
+
+    console.log(JSON.stringify({
+        url: superPlayer ? superPlayer.stream_url : '',
+        norm: norm,
+        dead: dead
+    }));
+    """
+    res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
+    assert res.returncode == 0, f"Node eval error: {res.stderr}"
+    import json
+    data = json.loads(res.stdout.strip())
+    assert data["url"] == "/stream/channel/-1004325759505/55"
+    assert data["norm"] == "/stream/channel/-100123/456"
+    assert data["dead"] == ""
+
+
+def test_player_js_360p_fallback_on_auto():
+    """Verify that if a movie only has 360p in variant_media, it is resolved correctly on auto."""
+    import subprocess
+    js_code = """
+    const fs = require('fs');
+    const vm = require('vm');
+    const code = fs.readFileSync('website/assets/js/player.js', 'utf8');
+    global.window = { FilmSub: {} };
+    global.document = {
+        addEventListener: () => {},
+        getElementById: () => null,
+        querySelector: () => null,
+        querySelectorAll: () => []
+    };
+    global.navigator = {};
+    global.location = { search: '', href: '' };
+    global.FilmSub = { escHtml: s => s };
+    global.currentSeason = 1;
+    global.currentEpisode = 1;
+    vm.runInThisContext(code);
+
+    currentEffectiveQuality = 'auto';
+    const movie = {
+        title: 'Old Film',
+        type: 'movie',
+        channel_chat_id: '-1004325759505',
+        variant_media: {
+            '360p': { message_id: 88, file_id: 'f88' }
+        },
+        downloads: []
+    };
+    const streams = getMovieStreams(movie);
+    const superPlayer = streams.find(s => s.server === 'Server 1');
+    console.log(JSON.stringify({ url: superPlayer ? superPlayer.stream_url : '' }));
+    """
+    res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
+    assert res.returncode == 0, f"Node eval error: {res.stderr}"
+    import json
+    data = json.loads(res.stdout.strip())
+    assert "/stream/channel/-1004325759505/88" in data["url"]
+
+
+@pytest.mark.asyncio
+async def test_progress_reporter_edit_preserves_reply_markup():
+    """Verify ProgressReporter.edit preserves reply_markup."""
+    from services.progress_service import ProgressReporter
+    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from unittest.mock import MagicMock, AsyncMock
+
+    client = MagicMock()
+    fake_msg = MagicMock()
+    fake_msg.id = 1001
+    fake_msg.edit_text = AsyncMock()
+    client.send_message = AsyncMock(return_value=fake_msg)
+
+    test_kb = InlineKeyboardMarkup([[InlineKeyboardButton("Cancel", callback_data="test:cancel")]])
+    reporter = ProgressReporter(client, chat_id=123, title="Test Movie", reply_markup=test_kb)
+    await reporter.start()
+
+    await reporter.edit("⚡ Single Edit")
+    fake_msg.edit_text.assert_called_once()
+    _, kwargs = fake_msg.edit_text.call_args
+    assert kwargs.get("reply_markup") == test_kb
+
+
+@pytest.mark.asyncio
+async def test_cancel_command_cleans_queue_service():
+    """Verify that /cancel cleans both task_tracker and queue_service."""
+    from handlers.leech_handler import register
+    from pyrogram import filters
+    from unittest.mock import MagicMock, AsyncMock, patch
+
+    mock_app = MagicMock()
+    handlers = {}
+    def on_message_decorator(flt):
+        def wrapper(fn):
+            handlers[fn.__name__] = fn
+            return fn
+        return wrapper
+    def on_callback_decorator(flt):
+        def wrapper(fn):
+            handlers[fn.__name__] = fn
+            return fn
+        return wrapper
+    mock_app.on_message = on_message_decorator
+    mock_app.on_callback_query = on_callback_decorator
+
+    register(mock_app)
+
+    cancel_fn = handlers["cancel_command"]
+    client = MagicMock()
+    msg = MagicMock()
+    msg.from_user.id = 555
+    msg.from_user.username = "tester"
+    msg.reply_text = AsyncMock()
+
+    with patch("handlers.leech_handler.auth_service.is_authorized", return_value=True), \
+         patch("services.queue_service.queue_service.cancel_user", return_value=True) as mock_q_cancel, \
+         patch("services.task_tracker.cancel_all_user_operations", new_callable=AsyncMock) as mock_tracker_cancel:
+        mock_tracker_cancel.return_value = True
+        await cancel_fn(client, msg)
+
+        mock_q_cancel.assert_called_once()
+        mock_tracker_cancel.assert_called_once_with(555)
+        msg.reply_text.assert_called_once()
+        assert "සාර්ථකව අවලංගු කරන ලදී" in msg.reply_text.call_args[0][0]
+
+
+
 
 
 

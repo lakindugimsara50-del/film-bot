@@ -337,11 +337,14 @@ def register(app: Client) -> None:
             await message.reply_text("⛔ Access denied.")
             return
 
-        cancelled = await task_tracker.cancel_all_user_operations(user_id)
-        if cancelled:
+        from services.queue_service import queue_service
+        is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+        q_cancelled = queue_service.cancel_user(user_id if not is_admin else None)
+        t_cancelled = await task_tracker.cancel_all_user_operations(user_id)
+        if q_cancelled or t_cancelled:
             await message.reply_text(
                 "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
-                "🗑️ <i>Seedr ගිණුමේ ගබඩාව සහ බාගත කිරීම් (Downloads) සියල්ල පිරිසිදු කරන ලදී.</i>",
+                "🗑️ <i>බාගත කිරීමේ පෝලිම (Queue) සහ තාවකාලික දත්ත සියල්ල පිරිසිදු කරන ලදී.</i>",
                 parse_mode=ParseMode.HTML,
             )
         else:
@@ -361,7 +364,10 @@ def register(app: Client) -> None:
 
         action = query.data.split(":")[-1]
         if action == "cancel":
-            cancelled = await task_tracker.cancel_all_user_operations(user_id)
+            from services.queue_service import queue_service
+            is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+            queue_service.cancel_user(user_id if not is_admin else None)
+            await task_tracker.cancel_all_user_operations(user_id)
             await query.answer("ක්‍රියාවලිය අවලංගු කරන ලදී (Cancelled).", show_alert=True)
             try:
                 await query.message.edit_text(

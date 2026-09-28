@@ -1354,6 +1354,7 @@ async def generate_multi_quality_variants_ram(
     is_source_1080p = (1700 <= src_w <= 2000) or (950 <= src_h <= 1150)
     is_source_720p = (1100 <= src_w <= 1400) or (620 <= src_h <= 750)
     is_source_480p = (700 <= src_w <= 950) or (400 <= src_h <= 550)
+    is_source_360p = (src_w > 0 and src_w <= 700) or (src_h > 0 and src_h <= 400)
 
     # If source is already ~1080p and 1080p is in target_q_list, instant copy
     if is_source_1080p and "1080p" in target_q_list:
@@ -1408,6 +1409,28 @@ async def generate_multi_quality_variants_ram(
                     log.info("[VideoService] Source is already ~480p (%dx%d). Instant 480p copy applied in seconds: %s", src_w, src_h, direct_480_path)
             except Exception as e480:
                 log.debug("[VideoService] Direct 480p copy note: %s", e480)
+
+    # If source is already ~360p, do not re-encode 360p if copy succeeds.
+    if is_source_360p and "360p" in target_q_list:
+        direct_360_path = os.path.join(abs_out_dir, f"{slug}-360p.mp4")
+        if os.path.abspath(input_path) == os.path.abspath(direct_360_path):
+            valid_outputs["360p"] = direct_360_path
+            target_q_list = [q for q in target_q_list if q != "360p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_360_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_360_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_360_path) and os.path.getsize(direct_360_path) >= min_valid_size:
+                    valid_outputs["360p"] = direct_360_path
+                    target_q_list = [q for q in target_q_list if q != "360p"]
+                    log.info("[VideoService] Source is already ~360p (%dx%d). Instant 360p copy applied in seconds: %s", src_w, src_h, direct_360_path)
+            except Exception as e360:
+                log.debug("[VideoService] Direct 360p copy note: %s", e360)
+
+    # Prevent wasteful upscaling: filter out qualities that exceed source resolution
+    if src_h > 0 and (src_w <= 2000 and src_h <= 1150):
+        target_q_list = [q for q in target_q_list if profiles[q]["height"] <= (src_h + 50)]
 
     if not target_q_list:
         return valid_outputs

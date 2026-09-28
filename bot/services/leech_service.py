@@ -1409,10 +1409,10 @@ async def _execute_leech(
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 return
             try:
-                # Detect source resolution: if source is > 1080p (4K / 1440p), encode 1080p, 720p, 480p; otherwise 720p, 480p
+                # Detect source resolution: if source is > 1080p (4K / 1440p), encode 1080p, 720p, 480p, 360p; otherwise 720p, 480p, 360p
                 src_w, src_h = video_service.get_video_resolution(local_file)
                 is_source_4k = (src_w > 2000) or (src_h > 1150)
-                requested_qualities = ("1080p", "720p", "480p") if is_source_4k else ("720p", "480p")
+                requested_qualities = ("1080p", "720p", "480p", "360p") if is_source_4k else ("720p", "480p", "360p")
                 variant_files = await video_service.generate_multi_quality_variants_ram(
                     input_path=local_file,
                     output_dir=temp_dir,

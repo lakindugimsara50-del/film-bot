@@ -528,6 +528,15 @@ def _build_status_content(user_id: int, me_username: str, is_admin: bool):
 
     task_summary = tracker.get_status_summary(user_id=user_id)
 
+    queue_note = ""
+    try:
+        from services.queue_service import queue_service
+        q_items = queue_service.get_queue_status()
+        if q_items:
+            queue_note = f"\n\n📋 <b>බාගත කිරීමේ පෝලිම (Queue):</b> <code>{len(q_items)} Film(s) Pending</code> (/queue)"
+    except Exception:
+        pass
+
     admin_details = ""
     if is_admin:
         pool_txt = ""
@@ -555,6 +564,7 @@ def _build_status_content(user_id: int, me_username: str, is_admin: bool):
         f"🤖 <b>Film Bot තත්ත්වය (Status):</b>\n\n"
         f"Bot: @{me_username}\n\n"
         f"{task_summary}"
+        f"{queue_note}"
         f"{wizard_note}"
         f"{admin_details}"
     )
@@ -635,8 +645,10 @@ async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
             pass
     elif action == "cancel_active":
         from services import task_tracker
-        cancelled = await task_tracker.cancel_all_user_operations(user_id)
-        if cancelled:
+        from services.queue_service import queue_service
+        q_cancelled = queue_service.cancel_user(user_id if not is_admin else None)
+        t_cancelled = await task_tracker.cancel_all_user_operations(user_id)
+        if q_cancelled or t_cancelled:
             await query.answer("කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled) ✅", show_alert=True)
         else:
             await query.answer("දැනට ක්‍රියාත්මක කාර්යයක් නොමැත (No active task)", show_alert=True)

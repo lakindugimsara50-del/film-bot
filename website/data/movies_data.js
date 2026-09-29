@@ -8155,46 +8155,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 5,
       "episode": 3,
       "episode_title": "High Sparrow",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -8253,40 +8223,199 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "quality": "720p",
+      "duration": "60 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-09-29T00:37:08Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADiWq7CZ0521dLVigBlkjq1v0VGLx_AAJsHgACGjbZVR98MzL3GICGHgQ",
+      "message_id": 137,
+      "file_name": "game.of.thrones.s05e03.720p.hdtv.x264-0sec.mkv",
+      "file_size": 1133057899,
+      "drive_file_id": "",
+      "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
       "streams": [
         {
           "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADiWq7CZ0521dLVigBlkjq1v0VGLx_AAJsHgACGjbZVR98MzL3GICGHgQ",
+          "message_id": 137,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://vidlink.pro/tv/1399/5/3"
         },
         {
-          "server": "Server 2",
-          "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-5-3"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=5&e=3"
-        },
-        {
-          "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=5&e=3"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "",
+      "qualities": {
+        "auto": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+        "1080p": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+        "720p": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+        "480p": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+        "360p": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1133057899,
+          "url": "https://t.me/c/4325759505/137",
+          "telegram_url": "https://t.me/c/4325759505/137",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADiWq7CZ0521dLVigBlkjq1v0VGLx_AAJsHgACGjbZVR98MzL3GICGHgQ",
+          "message_id": 137,
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1133057899,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s05e03_1080p",
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1133057899,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s05e03_720p",
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "345.8 MB",
+          "size_bytes": 362578527,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s05e03_480p",
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "194.5 MB",
+          "size_bytes": 203950421,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s05e03_360p",
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "format": "MKV",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADiWq7CZ0521dLVigBlkjq1v0VGLx_AAJsHgACGjbZVR98MzL3GICGHgQ",
+          "message_id": 137,
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "size_bytes": 1133057899
+        },
+        "480p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "size_bytes": 362578527
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://homepage-tries-streams-chef.trycloudflare.com/stream/channel/-1004325759505/137",
+          "size_bytes": 203950421
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s05e03-si.vtt",
+          "default": true
+        }
+      ],
+      "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s05e03",
-      "channel_post_id": 136,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-29"
+      "added_date": "2026-09-29",
+      "added_at": "2026-09-29T00:43:11Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-29T00:37:09Z"
+  "last_updated": "2026-09-29T00:43:12Z"
 };

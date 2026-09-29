@@ -135,12 +135,12 @@ def get_player_url(
         # Absolute fallback: re-use vip1 URL
         return get_player_url("vip1", movie, season, episode, subtitle_url)
 
-    # ── VIP 3: MultiEmbed ─────────────────────────────────────────────────────
+    # ── VIP 3: 2Embed ─────────────────────────────────────────────────────────
     if player_name == "vip3":
         embed_key = imdb_id or tmdb_id or urllib.parse.quote(movie.get("title", "movie"))
         if is_series:
-            return f"https://multiembed.mov/?video_id={embed_key}&s={s}&e={e}"
-        return f"https://multiembed.mov/?video_id={embed_key}"
+            return f"https://www.2embed.cc/embedtv/{embed_key}&s={s}&e={e}"
+        return f"https://www.2embed.cc/embed/{embed_key}"
 
     log.warning("[PlayerService] Unknown player_name '%s'; defaulting to vip1.", player_name)
     return get_player_url("vip1", movie, season, episode, subtitle_url)

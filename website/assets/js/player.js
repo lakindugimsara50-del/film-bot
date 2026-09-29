@@ -71,11 +71,11 @@ function normalizeStreamUrl(u) {
   }
   const autoMatchTv = u.match(/autoembed\.(?:co|cc|to)\/tv\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)-(\d+)-(\d+)/i);
   if (autoMatchTv) {
-    return `https://multiembed.mov/?video_id=${autoMatchTv[1]}&s=${autoMatchTv[2]}&e=${autoMatchTv[3]}`;
+    return `https://player.autoembed.cc/embed/tv/${autoMatchTv[1]}/${autoMatchTv[2]}/${autoMatchTv[3]}`;
   }
   const autoMatchMovie = u.match(/autoembed\.(?:co|cc|to)\/movie\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)/i);
   if (autoMatchMovie) {
-    return `https://multiembed.mov/?video_id=${autoMatchMovie[1]}`;
+    return `https://player.autoembed.cc/embed/movie/${autoMatchMovie[1]}`;
   }
   return isDeadTunnel(u) ? '' : u;
 }
@@ -412,72 +412,73 @@ function getMovieStreams(movie) {
   }
 
   // =========================================================================
-  // Server 2: 🎬 VIP Global Player (Universal Free HD • Zero Ads)
+  // Server 2: 🎬 VIP Global Player (VidLink Ultra HD • Zero Ads)
   // [Universal Embed Player containing every movie & series in the world]
   // =========================================================================
-  let s2Url = '';
   let vidlinkUrl = '';
+  let autoEmbedUrl = '';
   let twoEmbedUrl = '';
 
   if (isSeries) {
-    if (imdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${imdbId}&s=${sNum}&e=${eNum}`;
-      twoEmbedUrl = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
-    } else if (tmdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${sNum}&e=${eNum}`;
-      twoEmbedUrl = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
-    } else {
-      s2Url = `https://multiembed.mov/?video_id=tt0944947&s=${sNum}&e=${eNum}`;
-    }
     if (tmdbId) {
       vidlinkUrl = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/${imdbId || tmdbId}/${sNum}/${eNum}`;
+      twoEmbedUrl = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
     } else if (imdbId) {
       vidlinkUrl = `https://vidlink.pro/tv/${imdbId}/${sNum}/${eNum}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}`;
+      twoEmbedUrl = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
+    } else {
+      vidlinkUrl = `https://vidlink.pro/tv/1399/${sNum}/${eNum}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/tt0944947/${sNum}/${eNum}`;
     }
   } else {
-    if (imdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${imdbId}`;
-      twoEmbedUrl = `https://www.2embed.cc/embed/${imdbId}`;
-    } else if (tmdbId) {
-      s2Url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
-      twoEmbedUrl = `https://www.2embed.cc/embed/${tmdbId}`;
-    } else {
-      s2Url = `https://multiembed.mov/?video_id=tt0268380`;
-    }
     if (tmdbId) {
       vidlinkUrl = `https://vidlink.pro/movie/${tmdbId}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/${imdbId || tmdbId}`;
+      twoEmbedUrl = `https://www.2embed.cc/embed/${tmdbId}`;
     } else if (imdbId) {
       vidlinkUrl = `https://vidlink.pro/movie/${imdbId}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/${imdbId}`;
+      twoEmbedUrl = `https://www.2embed.cc/embed/${imdbId}`;
+    } else {
+      vidlinkUrl = `https://vidlink.pro/movie/550`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/tt0137523`;
     }
   }
 
+  const s2Url = vidlinkUrl || autoEmbedUrl || twoEmbedUrl;
+
   list.push({
     server: `Server ${srvCounter}`,
-    label: `🎬 VIP Global Player (Universal Free HD • Zero Ads)`,
+    label: `🎬 VIP Global Player (VidLink Ultra HD • Zero Ads)`,
     mode: 'external_embed',
     type: 'embed',
     embed: true,
     stream_url: s2Url,
     hasLocalFile: true,
     alt_urls: {
-      multiembed: s2Url,
       vidlink: vidlinkUrl,
+      autoembed: autoEmbedUrl,
       twoembed: twoEmbedUrl,
     },
   });
   srvCounter++;
 
-  if (list.length < 2 && (vidlinkUrl || twoEmbedUrl)) {
-    const backupUrl = vidlinkUrl || twoEmbedUrl;
-    const backupLabel = vidlinkUrl ? '⚡ VIP Backup Player (VidLink Ultra HD • Zero Ads)' : '🚀 VIP Backup Player (2Embed Fast • Zero Ads)';
+  const s3Url = autoEmbedUrl || twoEmbedUrl;
+  if (s3Url && s3Url !== s2Url) {
     list.push({
       server: `Server ${srvCounter}`,
-      label: backupLabel,
+      label: `⚡ VIP Backup Player (AutoEmbed HD • Zero Ads)`,
       mode: 'external_embed',
       type: 'embed',
       embed: true,
-      stream_url: backupUrl,
+      stream_url: s3Url,
       hasLocalFile: true,
+      alt_urls: {
+        autoembed: autoEmbedUrl,
+        twoembed: twoEmbedUrl,
+      },
     });
     srvCounter++;
   }
@@ -1566,11 +1567,11 @@ function renderStreamEmbed(playerEl, stream, movie) {
   let baseEmbedUrl = stream.stream_url || '';
   const autoMatchTv = baseEmbedUrl.match(/autoembed\.(?:co|cc|to)\/tv\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)-(\d+)-(\d+)/i);
   if (autoMatchTv) {
-    baseEmbedUrl = `https://multiembed.mov/?video_id=${autoMatchTv[1]}&s=${autoMatchTv[2]}&e=${autoMatchTv[3]}`;
+    baseEmbedUrl = `https://player.autoembed.cc/embed/tv/${autoMatchTv[1]}/${autoMatchTv[2]}/${autoMatchTv[3]}`;
   } else {
     const autoMatchMovie = baseEmbedUrl.match(/autoembed\.(?:co|cc|to)\/movie\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)/i);
     if (autoMatchMovie) {
-      baseEmbedUrl = `https://multiembed.mov/?video_id=${autoMatchMovie[1]}`;
+      baseEmbedUrl = `https://player.autoembed.cc/embed/movie/${autoMatchMovie[1]}`;
     }
   }
   if (baseEmbedUrl.includes('drive.google.com')) {
@@ -1593,7 +1594,7 @@ function renderStreamEmbed(playerEl, stream, movie) {
     : currentStreamIdx;
 
   const altUrls = stream.alt_urls || {};
-  const hasAlt = Boolean(altUrls.multiembed || altUrls.vidlink || altUrls.twoembed);
+  const hasAlt = Boolean(altUrls.vidlink || altUrls.autoembed || altUrls.twoembed);
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;background-color:#000000 !important;border-radius:8px;overflow:hidden">
@@ -1621,8 +1622,8 @@ function renderStreamEmbed(playerEl, stream, movie) {
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         ${hasAlt ? `
           <span style="color:#777">Stream Source:</span>
-          ${altUrls.multiembed ? `<button type="button" class="sub-ctrl-btn active alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.multiembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">⚡ MultiEmbed</button>` : ''}
-          ${altUrls.vidlink ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.vidlink)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🎬 VidLink</button>` : ''}
+          ${altUrls.vidlink ? `<button type="button" class="sub-ctrl-btn active alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.vidlink)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🎬 VidLink</button>` : ''}
+          ${altUrls.autoembed ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.autoembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">⚡ AutoEmbed</button>` : ''}
           ${altUrls.twoembed ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.twoembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🚀 2Embed</button>` : ''}
         ` : `
           <span style="color:#777">Switch Player:</span>

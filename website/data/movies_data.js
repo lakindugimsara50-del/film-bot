@@ -1,4 +1,5 @@
-window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
+// movies_data.js - Synchronous fallback data for file:// and offline preview
+window.MOVIES_DATA = {
   "movies": [
     {
       "id": "the-100-2014-s01e01",
@@ -2636,7 +2637,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=2&e=1"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/2/1"
         }
       ],
       "qualities": {
@@ -2929,7 +2930,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=2&e=2"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/2/2"
         }
       ],
       "qualities": {
@@ -3357,7 +3358,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=2&e=6"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/2/6"
         }
       ],
       "qualities": {
@@ -4733,7 +4734,7 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "🎬 VIP Player 2 (SuperEmbed • Fast HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=3&e=6"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/3/6"
         }
       ],
       "qualities": {
@@ -5015,14 +5016,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-3-7"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-3-7"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=3&e=7"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/3/7"
         }
       ],
       "downloads": [],
@@ -5167,14 +5168,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-3-8"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-3-8"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=3&e=8"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/3/8"
         }
       ],
       "qualities": {
@@ -5470,14 +5471,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-3-9"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-3-9"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=3&e=9"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/3/9"
         }
       ],
       "qualities": {
@@ -5773,14 +5774,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-3-10"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-3-10"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=3&e=10"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/3/10"
         }
       ],
       "qualities": {
@@ -6076,14 +6077,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-1"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-1"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=1"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/1"
         }
       ],
       "qualities": {
@@ -6379,14 +6380,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-2"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-2"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=2"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/2"
         }
       ],
       "qualities": {
@@ -6668,14 +6669,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-3"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-3"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=3"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/3"
         }
       ],
       "downloads": [],
@@ -6815,14 +6816,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-5"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-5"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=5"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/5"
         }
       ],
       "downloads": [
@@ -7175,14 +7176,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-6"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-6"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=6"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/6"
         }
       ],
       "downloads": [
@@ -7405,14 +7406,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-7"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-7"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=7"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/7"
         }
       ],
       "qualities": {
@@ -7669,14 +7670,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-4-8"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-4-8"
         },
         {
           "server": "Server 4",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=4&e=8"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/4/8"
         }
       ],
       "qualities": {
@@ -7967,14 +7968,14 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947-5-1"
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt0944947-5-1"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+          "label": "🚀 VIP Player 3 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=5&e=1"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/5/1"
         }
       ],
       "downloads": [],
@@ -8102,10 +8103,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=5&e=2"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/5/2"
         },
         {
           "server": "Server 3",
@@ -8266,10 +8267,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=5&e=3"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/5/3"
         },
         {
           "server": "Server 3",
@@ -8430,10 +8431,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=5&e=4"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/5/4"
         },
         {
           "server": "Server 3",
@@ -8594,10 +8595,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://multiembed.mov/?video_id=tt0944947&s=5&e=5"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/5/5"
         },
         {
           "server": "Server 3",

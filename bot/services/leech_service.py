@@ -1007,13 +1007,27 @@ async def _execute_leech(
         sub_vtt_path: Optional[str] = None
         try:
             import tempfile
-            cached_sys_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
-            if os.path.exists(cached_sys_srt) and os.path.getsize(cached_sys_srt) > 32:
-                local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
-                shutil.copyfile(cached_sys_srt, local_stage_srt)
-                sub_srt_path = local_stage_srt
-                sub_vtt_path = subtitle_service.srt_to_vtt(local_stage_srt)
-                log.info("[LeechService] Reusing Stage 1 cached Sinhala subtitle: %s", sub_srt_path)
+            title_slug = _slugify(title, year)
+            candidate_srts = [
+                os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt"),
+                os.path.join(tempfile.gettempdir(), f"sub_{slug}{ep_suffix}.srt"),
+                os.path.join(tempfile.gettempdir(), f"sub_{title_slug}.srt"),
+                os.path.join(tempfile.gettempdir(), f"sub_{title_slug}{ep_suffix}.srt"),
+                os.path.join(tempfile.gettempdir(), f"sub_{slug}.vtt"),
+                os.path.join(tempfile.gettempdir(), f"sub_{title_slug}.vtt"),
+            ]
+            for c_sub in candidate_srts:
+                if os.path.exists(c_sub) and os.path.getsize(c_sub) > 32:
+                    if c_sub.lower().endswith(".vtt"):
+                        local_stage_srt = subtitle_service.vtt_to_srt(c_sub, os.path.join(temp_dir, "sinhala_merged.srt"))
+                    else:
+                        local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
+                        shutil.copyfile(c_sub, local_stage_srt)
+                    if local_stage_srt and os.path.exists(local_stage_srt):
+                        sub_srt_path = local_stage_srt
+                        sub_vtt_path = subtitle_service.srt_to_vtt(local_stage_srt)
+                        log.info("[LeechService] Reusing Stage 1 cached Sinhala subtitle: %s (from %s)", sub_srt_path, c_sub)
+                        break
         except Exception as cache_err:
             log.debug("[LeechService] Cache reuse note: %s", cache_err)
 
@@ -1771,12 +1785,11 @@ async def _execute_leech(
                 if is_series
                 else f"https://autoembed.co/movie/imdb/{ext_id}"
             )
-            # VIP 3: MultiEmbed Fast
-            tmdb_flag = "&tmdb=1" if (not imdb_id and tmdb_id_val) else ""
-            multiembed_url = (
-                f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}&s={s_num}&e={e_num}"
+            # VIP 3: 2Embed Fast
+            twoembed_url = (
+                f"https://www.2embed.cc/embedtv/{ext_id}&s={s_num}&e={e_num}"
                 if is_series
-                else f"https://multiembed.mov/?video_id={ext_id}{tmdb_flag}"
+                else f"https://www.2embed.cc/embed/{ext_id}"
             )
             streams_list.append({
                 "server": f"Server {len(streams_list) + 1}",
@@ -1794,10 +1807,10 @@ async def _execute_leech(
             })
             streams_list.append({
                 "server": f"Server {len(streams_list) + 1}",
-                "label": "🚀 VIP Player 3 (MultiEmbed Fast)",
+                "label": "🚀 VIP Player 3 (2Embed Fast)",
                 "type": "embed",
                 "embed": True,
-                "stream_url": multiembed_url,
+                "stream_url": twoembed_url,
             })
 
         # If streams_list is still empty (e.g. testing), add a placeholder direct MP4 entry

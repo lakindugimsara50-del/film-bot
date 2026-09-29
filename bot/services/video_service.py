@@ -1425,8 +1425,8 @@ async def generate_multi_quality_variants_ram(
             except Exception as e720:
                 log.debug("[VideoService] Direct 720p copy note: %s", e720)
 
-    # If source is already ~480p, do not re-encode 480p if copy succeeds.
-    if is_source_480p and "480p" in target_q_list:
+    # If source is already ~480p or smaller, do not re-encode 480p if copy succeeds.
+    if (is_source_480p or (src_h > 0 and src_h <= 500)) and "480p" in target_q_list:
         direct_480_path = os.path.join(abs_out_dir, f"{slug}-480p.mp4")
         if os.path.abspath(input_path) == os.path.abspath(direct_480_path):
             valid_outputs["480p"] = direct_480_path
@@ -1436,6 +1436,9 @@ async def generate_multi_quality_variants_ram(
                 ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_480_path, disposition="default")
                 if not ok_copy:
                     ok_copy = await ensure_web_streamable(input_path, direct_480_path, sub_path=sub_path)
+                if not ok_copy and os.path.exists(input_path):
+                    shutil.copyfile(input_path, direct_480_path)
+                    ok_copy = True
                 if ok_copy and os.path.exists(direct_480_path) and os.path.getsize(direct_480_path) >= min_valid_size:
                     valid_outputs["480p"] = direct_480_path
                     target_q_list = [q for q in target_q_list if q != "480p"]
@@ -1543,7 +1546,7 @@ async def generate_multi_quality_variants_ram(
             if use_hw == "h264_nvenc":
                 c.extend([
                     "-c:v", "h264_nvenc",
-                    "-preset", "p1",
+                    "-preset", "fast",
                     "-rc", "vbr",
                     "-cq", prof["crf"],
                     "-maxrate", prof["maxrate"],
@@ -1585,6 +1588,7 @@ async def generate_multi_quality_variants_ram(
             strategies.append(("h264_nvenc", True, False))
             strategies.append(("h264_nvenc", False, True))
             strategies.append(("libx264", True, True))
+            strategies.append(("libx264", False, True))
         strategies.append(("h264_nvenc", False, False))
         strategies.append(("libx264", False, False))
     else:
@@ -1659,9 +1663,6 @@ async def generate_multi_quality_variants_ram(
                     attempt_idx + 1, getattr(proc, "returncode", "None"), tail_str[-1200:] if tail_str else "(no stderr)",
                 )
                 # Even on non-zero exit, rescue any output files that appear fully-written.
-                # A real encoded variant is always several hundred KB; corrupt/partial stub
-                # files from interrupted FFmpeg passes are tiny.  Use 512 KB as the rescue
-                # threshold so test stubs (a few KB) are still cleaned up.
                 _rescue_min = max(512 * 1024, min_valid_size)
                 rescued = []
                 for q, p in out_paths.items():
@@ -1669,7 +1670,6 @@ async def generate_multi_quality_variants_ram(
                         valid_outputs[q] = p
                         rescued.append(q)
                     elif os.path.exists(p) and q not in valid_outputs:
-                        # Partial/corrupt file — delete it
                         try:
                             os.remove(p)
                         except Exception:
@@ -1699,6 +1699,90 @@ async def generate_multi_quality_variants_ram(
                 "[VideoService] Multi-quality attempt %d (encoder=%s, burn=%s) produced %d/%d variants; retrying fallback...",
                 attempt_idx + 1, enc_choice, burn_choice, len(valid_outputs), len(target_q_list),
             )
+
+        # Guaranteed Fallback: If any requested quality is still missing (e.g. 480p),
+        # run a direct, bulletproof single-pass transcode with stereo AAC and soft-subs.
+        for q in target_q_list:
+            if q in valid_outputs:
+                continue
+            prof = profiles.get(q)
+            if not prof:
+                continue
+            fallback_out = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
+            log.info("[VideoService] Running guaranteed single-pass fallback encode for variant %s: %s", q, fallback_out)
+            h_val = prof["height"]
+            fb_cmd = [
+                ffmpeg_bin,
+                "-y",
+                "-hide_banner",
+                "-threads", "0",
+                "-i", os.path.abspath(input_path),
+            ]
+            has_fb_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+            fb_effective_sub = sub_path
+            if has_fb_sub:
+                if sub_path.lower().endswith(".vtt"):
+                    try:
+                        from services.subtitle_service import vtt_to_srt
+                        conv_srt = os.path.join(abs_out_dir, f"multi_fb_sub_{q}.srt")
+                        fb_effective_sub = vtt_to_srt(sub_path, conv_srt)
+                    except Exception:
+                        fb_effective_sub = sub_path
+                if fb_effective_sub and os.path.exists(fb_effective_sub) and os.path.getsize(fb_effective_sub) > 16:
+                    fb_cmd.extend(["-i", os.path.abspath(fb_effective_sub)])
+                else:
+                    has_fb_sub = False
+
+            fb_cmd.extend([
+                "-vf", f"scale=w=-2:h=min(ih\\,{h_val}):flags=fast_bilinear",
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+            ])
+            if has_fb_sub and fb_effective_sub:
+                fb_cmd.extend([
+                    "-map", "1:0",
+                    "-c:s", "mov_text",
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            fb_cmd.extend([
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-crf", "28",
+                "-threads", "0",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", prof["abitrate"],
+                "-ac", "2",
+                "-movflags", "+faststart",
+                fallback_out,
+            ])
+            try:
+                fb_proc = await asyncio.create_subprocess_exec(
+                    *fb_cmd,
+                    cwd=abs_out_dir,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL,
+                )
+                await asyncio.wait_for(fb_proc.wait(), timeout=max(300.0, min(1800.0, duration * 1.5)))
+                if fb_proc.returncode == 0 and os.path.exists(fallback_out) and os.path.getsize(fallback_out) >= min_valid_size:
+                    valid_outputs[q] = fallback_out
+                    log.info("[VideoService] Guaranteed single-pass fallback succeeded for %s: %s", q, fallback_out)
+                else:
+                    if os.path.exists(fallback_out) and q not in valid_outputs:
+                        try:
+                            os.remove(fallback_out)
+                        except Exception:
+                            pass
+            except Exception as fb_err:
+                log.warning("[VideoService] Fallback encode for %s failed: %s", q, fb_err)
+                if os.path.exists(fallback_out) and q not in valid_outputs:
+                    try:
+                        os.remove(fallback_out)
+                    except Exception:
+                        pass
+
         return valid_outputs
     except Exception as exc:
         log.warning("[VideoService] Multi-quality generation skipped/failed: %s", exc)

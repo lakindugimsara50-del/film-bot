@@ -78,14 +78,14 @@ def _build_embed_servers(imdb_id: str, tmdb_id: Optional[str] = None) -> list[di
             "stream_url": f"https://www.2embed.cc/embed/{imdb_id}",
         })
 
-    # SuperEmbed - TMDB based
+    # AutoEmbed - TMDB based
     if tmdb_id:
         servers.append({
             "server": "Server 5",
-            "label": "Server 5 (SuperEmbed)",
+            "label": "Server 5 (AutoEmbed)",
             "type": "embed",
-            "embed_url": f"https://multiembed.mov/directstream.php?video_id={tmdb_id}&tmdb=1",
-            "stream_url": f"https://multiembed.mov/directstream.php?video_id={tmdb_id}&tmdb=1",
+            "embed_url": f"https://player.autoembed.cc/embed/movie/{tmdb_id}",
+            "stream_url": f"https://player.autoembed.cc/embed/movie/{tmdb_id}",
         })
 
     return servers

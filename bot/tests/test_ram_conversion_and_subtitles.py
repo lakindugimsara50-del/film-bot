@@ -665,7 +665,7 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     urls = [s['url'] for s in st_list]
     assert len(set(urls)) == len(urls), f"Expected distinct URLs, got duplicates: {urls}"
     assert any("vidlink.pro" in u for u in urls), f"Missing vidlink in {urls}"
-    assert any("multiembed.mov" in u for u in urls), f"Missing multiembed in {urls}"
+    assert any("autoembed.cc" in u for u in urls), f"Missing autoembed in {urls}"
 
 
 @pytest.mark.asyncio

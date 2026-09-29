@@ -283,11 +283,12 @@ def register(app: Client) -> None:
                 # Cache local subtitle in system temp so Stage 2 FFmpeg can mux it directly into video
                 try:
                     import shutil
-                    cached_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
-                    if os.path.exists(local_srt) and os.path.getsize(local_srt) > 0:
-                        shutil.copyfile(local_srt, cached_srt)
-                    elif os.path.exists(local_vtt) and os.path.getsize(local_vtt) > 0:
-                        shutil.copyfile(local_vtt, os.path.join(tempfile.gettempdir(), f"sub_{slug}.vtt"))
+                    for c_name in set([f"sub_{slug}.srt", f"sub_{slug}{ep_sfx}.srt"]):
+                        c_target = os.path.join(tempfile.gettempdir(), c_name)
+                        if os.path.exists(local_srt) and os.path.getsize(local_srt) > 0:
+                            shutil.copyfile(local_srt, c_target)
+                        elif os.path.exists(local_vtt) and os.path.getsize(local_vtt) > 0:
+                            shutil.copyfile(local_vtt, c_target.replace(".srt", ".vtt"))
                 except Exception as c_err:
                     log.warning("[AddImdb] Failed to cache subtitle for Stage 2: %s", c_err)
 
@@ -458,8 +459,8 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
 
                         try:
                             import shutil
-                            cached_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
-                            shutil.copyfile(auto_srt, cached_srt)
+                            for c_name in set([f"sub_{slug}.srt", f"sub_{slug}{ep_sfx}.srt"]):
+                                shutil.copyfile(auto_srt, os.path.join(tempfile.gettempdir(), c_name))
                         except Exception:
                             pass
 

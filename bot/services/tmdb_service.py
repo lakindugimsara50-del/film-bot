@@ -443,10 +443,10 @@ async def _build_movie_dict_from_tmdb(item: dict, imdb_id: str) -> dict:
         },
         {
             "server": "Server 2",
-            "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+            "label": "⚡ VIP Player 2 (AutoEmbed HD)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://multiembed.mov/?video_id={imdb_id}" if imdb_id else f"https://multiembed.mov/?video_id={tmdb_id}&tmdb=1",
+            "stream_url": f"https://player.autoembed.cc/embed/movie/{imdb_id}" if imdb_id else f"https://player.autoembed.cc/embed/movie/{tmdb_id}",
         },
         {
             "server": "Server 3",
@@ -536,10 +536,10 @@ async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = N
         },
         {
             "server": "Server 2",
-            "label": "⚡ VIP Player 2 (MultiEmbed Fast)",
+            "label": "⚡ VIP Player 2 (AutoEmbed HD)",
             "type": "embed",
             "embed": True,
-            "stream_url": f"https://multiembed.mov/?video_id={imdb_id}&s={S}&e={E}" if imdb_id else f"https://multiembed.mov/?video_id={tmdb_id}&tmdb=1&s={S}&e={E}",
+            "stream_url": f"https://player.autoembed.cc/embed/tv/{imdb_id}/{S}/{E}" if imdb_id else f"https://player.autoembed.cc/embed/tv/{tmdb_id}/{S}/{E}",
         },
         {
             "server": "Server 3",

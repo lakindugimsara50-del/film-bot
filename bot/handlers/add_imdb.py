@@ -491,10 +491,10 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
         meta["site_url"] = site_url
         ep_info = f"- S{season:02d}E{episode:02d}" if season and episode else ""
 
-        # ── Immediately announce on Telegram channel with VIP "Watch Online" link ──
+        # ── Immediately announce on Telegram channel with VIP "Watch Online" link (only if subtitle is ready) ──
         channel_post_id = None
         target_ch = getattr(config, "PUBLIC_CHANNEL_ID", 0) or getattr(config, "PRIVATE_CHANNEL_ID", 0)
-        if target_ch and client:
+        if target_ch and client and vtt_github_url:
             try:
                 meta_ann = dict(meta)
                 meta_ann["site_url"] = site_url
@@ -508,6 +508,8 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                     log.info("[AddImdb] Immediate channel announcement posted to chat %s: msg_id=%s", target_ch, channel_post_id)
             except Exception as ann_err:
                 log.warning("[AddImdb] Immediate channel announcement failed: %s", ann_err)
+        elif not vtt_github_url:
+            log.info("[AddImdb] Skipping premature channel announcement for '%s' because subtitle is not yet available.", title)
 
         # ── Stage 1C: Commit to GitHub (Site Live!) ────────────────────────────
         await status_msg.edit_text(

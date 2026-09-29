@@ -46,8 +46,9 @@ async def patch_movie_downloads(
         log.warning("[Stage2Patcher] Movie slug '%s' not found in movies.json", movie_slug)
         return False
     
-    # Build download entries
-    downloads = target.get("downloads", [])
+    # Build download entries: preserve existing downloads that are not replaced
+    incoming_qualities = {q for q in ["1080p", "720p", "480p", "360p"] if upload_results.get(q) and upload_results.get(q).get("message_id")}
+    downloads = [d for d in target.get("downloads", []) if d.get("quality") not in incoming_qualities]
     quality_labels = {
         "1080p": "1080p Full HD (Sinhala Sub Merged)",
         "720p": "720p HD (Sinhala Sub Merged)",
@@ -122,21 +123,42 @@ async def patch_movie_downloads(
     )
     log.info("[Stage2Patcher] Patched downloads for '%s'", movie_slug)
 
-    # Automatically update channel announcement post with download buttons
+    # Automatically update channel announcement post or create one if previously deferred
     ch_post_id = target.get("channel_post_id")
     target_ch_id = target.get("channel_chat_id") or getattr(config, "PUBLIC_CHANNEL_ID", 0) or getattr(config, "PRIVATE_CHANNEL_ID", 0)
-    if client and ch_post_id and target_ch_id:
-        try:
-            from handlers.announce import update_channel_post
-            await update_channel_post(
-                client=client,
-                public_channel_id=target_ch_id,
-                message_id=ch_post_id,
-                movie=target,
-            )
-            log.info("[Stage2Patcher] Channel post %s in chat %s updated with download links for '%s'", ch_post_id, target_ch_id, movie_slug)
-        except Exception as ann_err:
-            log.warning("[Stage2Patcher] Failed to update channel announcement: %s", ann_err)
+    if client and target_ch_id:
+        if ch_post_id:
+            try:
+                from handlers.announce import update_channel_post
+                await update_channel_post(
+                    client=client,
+                    public_channel_id=target_ch_id,
+                    message_id=ch_post_id,
+                    movie=target,
+                )
+                log.info("[Stage2Patcher] Channel post %s in chat %s updated with download links for '%s'", ch_post_id, target_ch_id, movie_slug)
+            except Exception as ann_err:
+                log.warning("[Stage2Patcher] Failed to update channel announcement: %s", ann_err)
+        else:
+            try:
+                from handlers.announce import post_to_channel
+                ch_msg = await post_to_channel(client, target, target_ch_id)
+                if ch_msg:
+                    target["channel_post_id"] = getattr(ch_msg, "id", None)
+                    target["channel_chat_id"] = target_ch_id
+                    log.info("[Stage2Patcher] Deferred channel post %s created in chat %s for '%s'", target["channel_post_id"], target_ch_id, movie_slug)
+                    cur_data, cur_sha = await github_service.get_movies_json()
+                    for m in cur_data.get("movies", []):
+                        if m.get("slug") == movie_slug or m.get("id") == movie_slug:
+                            m["channel_post_id"] = target["channel_post_id"]
+                            m["channel_chat_id"] = target_ch_id
+                            break
+                    await github_service._commit_movies_json(
+                        cur_data, cur_sha,
+                        f"feat(channel): record channel_post_id for {movie_slug}"
+                    )
+            except Exception as ann_err:
+                log.warning("[Stage2Patcher] Failed to post deferred channel announcement: %s", ann_err)
 
     return True
 

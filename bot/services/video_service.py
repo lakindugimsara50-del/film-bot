@@ -1479,28 +1479,106 @@ async def generate_multi_quality_variants_ram(
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     num_q = len(target_q_list)
 
+    # ── Ultra-Fast Single-Pass Direct Pipeline when only 1 quality variant is requested (e.g. 480p for TV Series) ──
+    if num_q == 1:
+        q_single = target_q_list[0]
+        prof_single = profiles[q_single]
+        out_single = os.path.join(abs_out_dir, f"{slug}-{q_single}.mp4")
+        h_single = prof_single["height"]
+
+        has_sub_single = bool(has_sub and os.path.exists(local_burn_srt))
+
+        fast_cmd = [
+            ffmpeg_bin, "-y", "-hide_banner", "-threads", "0",
+            "-i", os.path.abspath(input_path),
+        ]
+        if has_sub_single:
+            fast_cmd.extend([
+                "-filter_complex", f"[0:v:0]subtitles=filename='sub_burn_multi.srt',scale=w=-2:h={h_single}:flags=fast_bilinear[v_{q_single}]",
+                "-map", f"[v_{q_single}]",
+            ])
+        else:
+            fast_cmd.extend([
+                "-vf", f"scale=-2:{h_single}",
+                "-map", "0:v:0",
+            ])
+        fast_cmd.extend(["-map", "0:a:0?"])
+
+        if hw_enc == "h264_nvenc":
+            fast_cmd.extend([
+                "-c:v", "h264_nvenc", "-preset", "fast", "-rc", "vbr",
+                "-cq", prof_single["crf"], "-maxrate", prof_single["maxrate"], "-bufsize", prof_single["bufsize"],
+            ])
+        else:
+            fast_cmd.extend([
+                "-c:v", "libx264", "-preset", "ultrafast", "-tune", "fastdecode",
+                "-crf", "28", "-threads", "0",
+            ])
+        fast_cmd.append("-pix_fmt")
+        fast_cmd.append("yuv420p")
+
+        if needs_aac_transcode:
+            fast_cmd.extend(["-c:a", "aac", "-b:a", prof_single["abitrate"], "-ac", "2"])
+        else:
+            fast_cmd.extend(["-c:a", "copy"])
+        fast_cmd.extend(["-movflags", "+faststart", out_single])
+
+        log.info("[VideoService] Executing ultra-fast single-pass encode for %s: %s", q_single, out_single)
+        timeout_single = max(180.0, min(1200.0, duration * 0.8)) if hw_enc == "h264_nvenc" else max(300.0, min(2400.0, duration * 1.5))
+        try:
+            p_fast = await asyncio.create_subprocess_exec(
+                *fast_cmd,
+                cwd=abs_out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(p_fast.wait(), timeout=timeout_single)
+            if p_fast.returncode == 0 and os.path.exists(out_single) and os.path.getsize(out_single) >= min_valid_size:
+                valid_outputs[q_single] = out_single
+                log.info("[VideoService] Ultra-fast single-pass encode succeeded for %s: %s", q_single, out_single)
+                return valid_outputs
+        except Exception as fast_err:
+            log.warning("[VideoService] Fast single-pass encode for %s error: %s", q_single, fast_err)
+
+        # Fallback without subtitle if subtitle was the cause of failure
+        fast_cmd_nosub = [
+            ffmpeg_bin, "-y", "-hide_banner", "-threads", "0",
+            "-i", os.path.abspath(input_path),
+            "-vf", f"scale=-2:{h_single}",
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "fastdecode", "-crf", "28", "-threads", "0", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", prof_single["abitrate"], "-ac", "2",
+            "-movflags", "+faststart", out_single,
+        ]
+        try:
+            p_nosub = await asyncio.create_subprocess_exec(
+                *fast_cmd_nosub,
+                cwd=abs_out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(p_nosub.wait(), timeout=timeout_single)
+            if p_nosub.returncode == 0 and os.path.exists(out_single) and os.path.getsize(out_single) >= min_valid_size:
+                valid_outputs[q_single] = out_single
+                log.info("[VideoService] Ultra-fast single-pass no-sub fallback succeeded for %s: %s", q_single, out_single)
+                return valid_outputs
+        except Exception as nosub_err:
+            log.warning("[VideoService] Fast single-pass no-sub fallback error: %s", nosub_err)
+
     def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
         escaped_sub_file = "sub_burn_multi.srt"
-        if num_q == 1:
-            q0 = target_q_list[0]
-            h0 = profiles[q0]["height"]
-            fc = (
-                f"[0:v:0]subtitles=filename='{escaped_sub_file}',scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
-                if burn_subs
-                else f"[0:v:0]scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
-            )
-        else:
-            split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
-            split_head = (
-                f"[0:v:0]subtitles=filename='{escaped_sub_file}',split={num_q}{split_labels}"
-                if burn_subs
-                else f"[0:v:0]split={num_q}{split_labels}"
-            )
-            scale_branches = ";".join(
-                f"[sp_{q}]scale=w=-2:h=min(ih\\,{profiles[q]['height']}):flags=fast_bilinear[v_{q}]"
-                for q in target_q_list
-            )
-            fc = f"{split_head};{scale_branches}"
+        split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
+        split_head = (
+            f"[0:v:0]subtitles=filename='{escaped_sub_file}',split={num_q}{split_labels}"
+            if burn_subs
+            else f"[0:v:0]split={num_q}{split_labels}"
+        )
+        scale_branches = ";".join(
+            f"[sp_{q}]scale=w=-2:h=min(ih\\,{profiles[q]['height']}):flags=fast_bilinear[v_{q}]"
+            for q in target_q_list
+        )
+        fc = f"{split_head};{scale_branches}"
 
         c: list[str] = [
             ffmpeg_bin,
@@ -1576,26 +1654,19 @@ async def generate_multi_quality_variants_ram(
             ])
         return c, paths
 
-    # Build ordered attempt strategies:
-    # 1. Preferred encoder with BURNED-IN subtitles AND soft-subs for 100% universal device playback
-    # 2. Preferred encoder with BURNED-IN subtitles only (if container rejects mov_text)
-    # 3. Preferred encoder with soft-subs only
-    # 4. Fallback without subtitles
+    # Build ordered attempt strategies (prefer fast soft-subs and avoid fragile libass burn failure):
     strategies: list[tuple[str, bool, bool]] = []
     if hw_enc == "h264_nvenc":
         if has_sub:
-            strategies.append(("h264_nvenc", True, True))
-            strategies.append(("h264_nvenc", True, False))
             strategies.append(("h264_nvenc", False, True))
-            strategies.append(("libx264", True, True))
-            strategies.append(("libx264", False, True))
+            strategies.append(("h264_nvenc", True, False))
         strategies.append(("h264_nvenc", False, False))
+        strategies.append(("libx264", False, True))
         strategies.append(("libx264", False, False))
     else:
         if has_sub:
-            strategies.append(("libx264", True, True))
-            strategies.append(("libx264", True, False))
             strategies.append(("libx264", False, True))
+            strategies.append(("libx264", True, False))
         strategies.append(("libx264", False, False))
 
     proc = None

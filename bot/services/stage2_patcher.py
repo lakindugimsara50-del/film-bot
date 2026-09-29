@@ -89,8 +89,23 @@ async def patch_movie_downloads(
             "subtitle_merged": True,
         })
     
+    _q_order = {"1080p": 0, "720p": 1, "480p": 2, "360p": 3}
+    downloads.sort(key=lambda d: _q_order.get(d.get("quality", "").split()[0], 99))
     target["downloads"] = downloads
     target["telegram_status"] = "complete"
+
+    # Sync multi-quality variant_media so frontend web player has direct access
+    target["variant_media"] = {
+        q: {
+            "file_id": upload_results[q].get("file_id", ""),
+            "message_id": upload_results[q].get("message_id", 0),
+            "stream_url": upload_results[q].get("stream_url", ""),
+            "size_bytes": upload_results[q].get("size_bytes", 0) or upload_results[q].get("file_size", 0),
+        }
+        for q in ["1080p", "720p", "480p", "360p"]
+        if upload_results.get(q) and (upload_results[q].get("file_id") or upload_results[q].get("message_id"))
+    }
+
     best = upload_results.get("1080p") or upload_results.get("720p") or upload_results.get("480p")
     if best and best.get("file_id"):
         target["file_id"] = best["file_id"]

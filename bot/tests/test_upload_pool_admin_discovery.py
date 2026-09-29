@@ -142,8 +142,13 @@ async def test_upload_with_pool_fallback_when_no_admins():
 
 
 @pytest.mark.asyncio
-async def test_auth_service_sync_channel_admins():
+async def test_auth_service_sync_channel_admins(tmp_path, monkeypatch):
+    import services.auth_service as auth_mod
     from services.auth_service import AuthService
+
+    test_auth_file = str(tmp_path / "authorized_users.json")
+    monkeypatch.setattr(auth_mod, "_AUTH_FILE", test_auth_file)
+    monkeypatch.setattr(auth_mod, "_DATA_DIR", str(tmp_path))
 
     auth = AuthService()
     test_user_id = 9988776655

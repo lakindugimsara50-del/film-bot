@@ -1532,9 +1532,32 @@ async def _execute_leech(
                         await _render_dashboard(force=True)
                         log.info("[LeechService] Telegram upload for variant %s succeeded: msg_id=%s", q_label, up_res.get("message_id"))
                         break
+                    else:
+                        log.warning("[LeechService] Variant upload attempt %d returned no file_id: %s", attempt + 1, up_res)
                 except Exception as tg_v_err:
                     log.warning("[LeechService] Telegram upload for variant %s attempt %d skipped/failed: %s", q_label, attempt + 1, tg_v_err)
                     await asyncio.sleep(2.0 * (attempt + 1))
+
+            if not variant_tg_info.get(q_label) and client and getattr(client, "is_connected", False):
+                try:
+                    log.info("[LeechService] Executing direct bot client fallback upload for variant '%s'...", q_label)
+                    from services import telegram_upload
+                    direct_res = await telegram_upload.upload_video_file(
+                        bot_client=client,
+                        file_path=q_path,
+                        target_chat=target_channel,
+                        caption=var_caption,
+                        progress_callback=_var_cb,
+                        fallback_chat=0,
+                    )
+                    if direct_res and direct_res.get("file_id"):
+                        variant_tg_info[q_label] = direct_res
+                        dashboard_state["variant_status"] = "complete"
+                        dashboard_state["variant_pct"] = 100.0
+                        await _render_dashboard(force=True)
+                        log.info("[LeechService] Direct client fallback upload for variant %s succeeded: msg_id=%s", q_label, direct_res.get("message_id"))
+                except Exception as direct_err:
+                    log.error("[LeechService] Direct client fallback upload for variant %s failed: %s", q_label, direct_err)
 
         async def _task_encode_and_upload_variants() -> None:
             nonlocal variant_files, _mq_progress_str

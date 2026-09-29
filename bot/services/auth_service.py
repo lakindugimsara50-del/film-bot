@@ -108,9 +108,11 @@ class AuthService:
                     continue
                 uid = u.id
                 self._channel_admin_ids.add(uid)
+                self._authorized_ids.add(uid)
                 u_name = f"@{u.username}" if getattr(u, "username", None) else getattr(u, "first_name", f"User {uid}")
                 found.append({"id": uid, "name": u_name})
-            log.info("[AuthService] Synced %d channel administrators from chat %s into bot auth pool.", len(self._channel_admin_ids), channel_id)
+            self._save()
+            log.info("[AuthService] Synced and persisted %d channel administrators from chat %s into bot auth pool.", len(self._channel_admin_ids), channel_id)
         except Exception as exc:
             log.warning("[AuthService] Failed to sync channel admins from chat %s: %s", channel_id, exc)
         return found

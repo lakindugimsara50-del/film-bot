@@ -405,6 +405,8 @@ class TelegramUploadPool:
     async def get_admin_sessions(self, target_channel: int, refresh: bool = False) -> List[Client]:
         """
         Scan connected sessions to find accounts with admin rights and post_messages in target_channel.
+        First queries administrators via main bot client for instantaneous 100% accurate discovery,
+        matching against pool session user IDs, with per-session fallback check.
         Results are cached for 10 minutes unless refresh=True.
         """
         if not target_channel or not self.clients:
@@ -421,24 +423,75 @@ class TelegramUploadPool:
                 return [c for c in self._admin_sessions[t_key] if getattr(c, "is_connected", False)]
 
         admin_clients: List[Client] = []
-        sem = asyncio.Semaphore(10)
 
-        async def _check_c(c: Client):
-            if not getattr(c, "is_connected", False):
-                return
-            async with sem:
-                try:
-                    member = await c.get_chat_member(target_channel, "me")
+        # 1. Primary method: Query channel administrators via main bot (instant, zero per-session rate limit)
+        admin_uids: set[int] = set()
+        channel_username: Optional[str] = None
+        invite_link: Optional[str] = None
+        if self._main_client and getattr(self._main_client, "is_connected", False):
+            try:
+                from pyrogram.enums import ChatMembersFilter
+                chat_obj = await self._main_client.get_chat(target_channel)
+                channel_username = getattr(chat_obj, "username", None)
+                invite_link = getattr(chat_obj, "invite_link", None)
+                async for member in self._main_client.get_chat_members(target_channel, filter=ChatMembersFilter.ADMINISTRATORS):
+                    u = getattr(member, "user", None)
+                    if not u or getattr(u, "is_bot", False):
+                        continue
+                    privs = getattr(member, "privileges", None)
+                    can_post = getattr(privs, "can_post_messages", True) if privs else True
                     status_raw = getattr(member, "status", None)
                     status_str = getattr(status_raw, "value", str(status_raw)).lower()
-                    privs = getattr(member, "privileges", None)
-                    can_post = getattr(privs, "can_post_messages", False) if privs else False
                     if ("admin" in status_str and can_post) or "owner" in status_str or "creator" in status_str:
-                        admin_clients.append(c)
-                except Exception as c_err:
-                    log.debug("[UploadPool] Session %s admin check in %s: %s", getattr(c, "name", "client"), target_channel, c_err)
+                        admin_uids.add(u.id)
+                log.info("[UploadPool] Main bot queried channel %s: %d human admin accounts verified.", target_channel, len(admin_uids))
+            except Exception as q_err:
+                log.warning("[UploadPool] Main bot could not query channel administrators: %s", q_err)
 
-        await asyncio.gather(*[_check_c(c) for c in self.clients], return_exceptions=True)
+        if admin_uids:
+            for c in self.clients:
+                if not getattr(c, "is_connected", False):
+                    continue
+                c_me = getattr(c, "me", None)
+                c_uid = getattr(c_me, "id", None)
+                if c_uid and c_uid in admin_uids and c not in admin_clients:
+                    admin_clients.append(c)
+            log.info("[UploadPool] Matched %d pool sessions to verified channel admin accounts!", len(admin_clients))
+
+        # 2. Fallback per-session check if main bot query produced no matches
+        if not admin_clients:
+            sem = asyncio.Semaphore(10)
+
+            async def _check_c(c: Client):
+                if not getattr(c, "is_connected", False):
+                    return
+                async with sem:
+                    try:
+                        member = await c.get_chat_member(target_channel, "me")
+                        status_raw = getattr(member, "status", None)
+                        status_str = getattr(status_raw, "value", str(status_raw)).lower()
+                        privs = getattr(member, "privileges", None)
+                        can_post = getattr(privs, "can_post_messages", False) if privs else False
+                        if ("admin" in status_str and can_post) or "owner" in status_str or "creator" in status_str:
+                            admin_clients.append(c)
+                    except Exception as c_err:
+                        log.debug("[UploadPool] Session %s admin check in %s: %s", getattr(c, "name", "client"), target_channel, c_err)
+
+            await asyncio.gather(*[_check_c(c) for c in self.clients], return_exceptions=True)
+
+        # 3. Ensure all admin sessions have the channel peer resolved
+        join_dest = channel_username or invite_link
+        if join_dest and admin_clients:
+            async def _warmup_peer(c: Client):
+                try:
+                    if channel_username:
+                        await c.get_chat(channel_username)
+                    elif invite_link:
+                        await c.join_chat(invite_link)
+                except Exception:
+                    pass
+            await asyncio.gather(*[_warmup_peer(c) for c in admin_clients], return_exceptions=True)
+
         admin_clients.sort(key=lambda c: getattr(c, "name", ""))
         self._admin_sessions[t_key] = admin_clients
         self._admin_check_times[t_key] = now

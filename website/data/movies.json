@@ -8911,7 +8911,7 @@
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-29T14:59:15Z",
+      "added_at": "2026-09-29T16:12:28Z",
       "streams": [
         {
           "server": "Server 1",
@@ -8935,40 +8935,23 @@
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=5&e=7"
         }
       ],
-      "downloads": [
-        {
-          "quality": "720p",
-          "label": "720p HD (Sinhala Sub Merged)",
-          "size": "1.31 GB",
-          "size_bytes": 1410374903,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADlWq73bnK4iF5FU4s-cd4BveJNgeCAAJpIwACGjbZVTAXvOnGjgd2HgQ",
-          "message_id": 149,
-          "url": "https://t.me/c/4325759505/149",
-          "telegram_url": "https://t.me/c/4325759505/149",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        }
-      ],
-      "telegram_status": "complete",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s05e07-si.vtt",
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s05e07-s05e07-si.vtt",
       "has_sinhala_sub": true,
       "subtitles": [
         {
           "language": "Sinhala",
-          "label": "සිංහල",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s05e07-si.vtt",
-          "default": true,
-          "srclang": "si"
+          "label": "සිංහල උපසිරැසි",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s05e07-s05e07-si.vtt",
+          "default": true
         }
       ],
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s05e07",
-      "channel_post_id": 148,
+      "channel_post_id": 151,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-29",
-      "sub_merged": true
+      "added_date": "2026-09-29"
     }
   ],
-  "last_updated": "2026-09-29T14:59:27Z"
+  "last_updated": "2026-09-29T16:12:38Z"
 }

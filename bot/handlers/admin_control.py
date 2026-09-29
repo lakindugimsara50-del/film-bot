@@ -382,7 +382,8 @@ def register(app: Client) -> None:
                 f"📢 <b>Target Channel:</b> <code>{target_ch}</code>\n"
                 f"👥 <b>Joined Sessions:</b> <code>{res.get('joined', 0)}/{res.get('total_sessions', 0)}</code>\n"
                 f"👑 <b>Admin Promoted Sessions:</b> <code>{res.get('promoted', 0)}</code>\n"
-                f"⚡ <b>Multi-Account Parallel Upload:</b> Ready & Active!",
+                f"⚡ <b>Multi-Account Parallel Upload:</b> Ready & Active!\n"
+                f"💡 Admin Accounts බැලීමට: <code>/admins</code>",
                 parse_mode=ParseMode.HTML,
             )
         except Exception as err:
@@ -390,6 +391,58 @@ def register(app: Client) -> None:
                 f"❌ <b>Promotion දෝෂයක්:</b> {err}",
                 parse_mode=ParseMode.HTML,
             )
+
+    @app.on_message(filters.command(["admins", "checkadmins"]) & filters.private)
+    async def check_admins_handler(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            return
+
+        target_ch = config.PRIVATE_CHANNEL_ID
+        if not target_ch:
+            await message.reply_text(
+                "❌ <b>Channel එකක් සකසා නැත!</b>\n\nපළමුව <code>/setchannel @your_channel</code> ලබා දෙන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        status_msg = await message.reply_text(
+            f"🔍 <b>Channel (<code>{target_ch}</code>) හි Admin Sessions සොයමින් පවතී...</b>",
+            parse_mode=ParseMode.HTML,
+        )
+
+        try:
+            from services.upload_pool import upload_pool
+            admin_clients = await upload_pool.get_admin_sessions(target_ch, refresh=True)
+            if not admin_clients:
+                await status_msg.edit_text(
+                    f"⚠️ <b>කිසිදු Userbot Session එකක් Channel එකේ Admin ලෙස හමු නොවීය!</b>\n\n"
+                    f"📢 <b>Channel:</b> <code>{target_ch}</code>\n"
+                    f"👥 <b>Total Loaded Sessions:</b> <code>{len(upload_pool.clients)}</code>\n\n"
+                    f"💡 <b>විසඳුම:</b>\n"
+                    f"1. Bot හට Channel එකේ 'Add Administrators' අවසරය ලබාදී <code>/promote</code> යවන්න.\n"
+                    f"2. නැතහොත් ඔබගේ Telegram Channel Settings > Administrators වෙත ගොස් ඔබගේ userbot ගිණුම් වලට Post Messages rights සහිතව Admin ලබා දෙන්න.",
+                    parse_mode=ParseMode.HTML,
+                )
+                return
+
+            lines = [
+                f"👑 <b>Channel Admin Sessions ({len(admin_clients)} Verified)</b>\n",
+                f"📢 <b>Target Channel:</b> <code>{target_ch}</code>\n",
+            ]
+            quality_map = ["1080p Tier", "720p Tier", "480p Tier"]
+            for idx, c in enumerate(admin_clients):
+                c_name = os.path.basename(getattr(c, "name", "session"))
+                u_me = getattr(c, "me", None)
+                u_id = getattr(u_me, "id", "Unknown") if u_me else "Unknown"
+                u_name = f"@{u_me.username}" if u_me and getattr(u_me, "username", None) else getattr(u_me, "first_name", "User")
+                assigned_q = quality_map[idx % len(quality_map)] if len(admin_clients) >= 3 else f"Multi-Quality ({quality_map[idx % len(quality_map)]})"
+                lines.append(f"• <b>{c_name}</b>: {u_name} (<code>{u_id}</code>) ➔ <b>{assigned_q}</b>")
+
+            lines.append(f"\n⚡ <b>Parallel Multi-Quality:</b> Active! 1080p, 720p, සහ 480p මෙම Admin ගිණුම් මඟින් එකවර Upload වේ.")
+            await status_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML)
+        except Exception as exc:
+            await status_msg.edit_text(f"❌ <b>පරීක්ෂා කිරීමේ දෝෂයක්:</b> {exc}", parse_mode=ParseMode.HTML)
 
     @app.on_message(filters.command("gr") & filters.private)
     async def gr_command_handler(client: Client, message: Message) -> None:
@@ -408,6 +461,7 @@ def register(app: Client) -> None:
                 "  • <code>/gr status</code> — CPU, RAM, Disk, GPU සජීවී තත්ත්වය\n"
                 "  • <code>/gr log</code> — අවසන් පද්ධති සටහන් (Last 25 logs)\n"
                 "  • <code>/gr clean</code> — Temp ගොනු සහ Cache පිරිසිදු කරන්න\n"
+                "  • <code>/admins</code> — Channel Admin Sessions පරීක්ෂා කරන්න\n"
                 "  • <code>/1</code> — GitHub වෙතින් නවතම code pull කර Bot restart කරන්න",
                 parse_mode=ParseMode.HTML,
             )

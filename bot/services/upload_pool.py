@@ -21,6 +21,7 @@ import glob
 import logging
 import os
 import sqlite3
+import time
 from typing import Dict, List, Optional
 
 from pyrogram import Client
@@ -135,6 +136,8 @@ class TelegramUploadPool:
         # Per-quality round-robin index — starts at each tier's start_idx
         self._indices: Dict[str, int] = {k: v[0] for k, v in _QUALITY_TIERS.items()}
         self._channel_unwritable: set[int] = set()
+        self._admin_sessions: Dict[int, List[Client]] = {}
+        self._admin_check_times: Dict[int, float] = {}
         self._lock = asyncio.Lock()
 
     def set_main_client(self, client: Client) -> None:
@@ -385,16 +388,110 @@ class TelegramUploadPool:
             self._channel_unwritable.discard(int(target_channel))
         except Exception:
             pass
-        log.info("[UploadPool] %d sessions joined, %d sessions promoted in channel %s.", joined_count, promoted_count, target_channel)
-        return {"joined": joined_count, "promoted": promoted_count, "total_sessions": len(self.clients)}
+
+        # Immediately refresh and cache verified admin sessions for this channel
+        admin_clients = await self.get_admin_sessions(target_channel, refresh=True)
+        log.info(
+            "[UploadPool] %d sessions joined, %d promoted, %d verified admin sessions in channel %s.",
+            joined_count, promoted_count, len(admin_clients), target_channel
+        )
+        return {
+            "joined": joined_count,
+            "promoted": promoted_count,
+            "admin_sessions": len(admin_clients),
+            "total_sessions": len(self.clients),
+        }
+
+    async def get_admin_sessions(self, target_channel: int, refresh: bool = False) -> List[Client]:
+        """
+        Scan connected sessions to find accounts with admin rights and post_messages in target_channel.
+        Results are cached for 10 minutes unless refresh=True.
+        """
+        if not target_channel or not self.clients:
+            return []
+
+        try:
+            t_key = int(target_channel)
+        except Exception:
+            t_key = target_channel
+
+        now = time.time()
+        if not refresh and t_key in self._admin_sessions:
+            if now - self._admin_check_times.get(t_key, 0) < 600:
+                return [c for c in self._admin_sessions[t_key] if getattr(c, "is_connected", False)]
+
+        admin_clients: List[Client] = []
+        sem = asyncio.Semaphore(10)
+
+        async def _check_c(c: Client):
+            if not getattr(c, "is_connected", False):
+                return
+            async with sem:
+                try:
+                    member = await c.get_chat_member(target_channel, "me")
+                    status_raw = getattr(member, "status", None)
+                    status_str = getattr(status_raw, "value", str(status_raw)).lower()
+                    privs = getattr(member, "privileges", None)
+                    can_post = getattr(privs, "can_post_messages", False) if privs else False
+                    if ("admin" in status_str and can_post) or "owner" in status_str or "creator" in status_str:
+                        admin_clients.append(c)
+                except Exception as c_err:
+                    log.debug("[UploadPool] Session %s admin check in %s: %s", getattr(c, "name", "client"), target_channel, c_err)
+
+        await asyncio.gather(*[_check_c(c) for c in self.clients], return_exceptions=True)
+        admin_clients.sort(key=lambda c: getattr(c, "name", ""))
+        self._admin_sessions[t_key] = admin_clients
+        self._admin_check_times[t_key] = now
+        log.info(
+            "[UploadPool] Found %d verified admin sessions with posting rights in channel %s",
+            len(admin_clients), target_channel
+        )
+        return admin_clients
 
     async def get_client_for_quality(
         self,
         quality: str = "default",
         fallback_client: Optional[Client] = None,
+        target_chat: Optional[int] = None,
     ) -> Client:
-        """Return the next available client for the given quality tier (round-robin)."""
+        """
+        Return the next available client for the given quality tier (round-robin).
+        If target_chat has verified channel admin sessions, allocates those admin sessions
+        across qualities (e.g. 1080p, 720p, 480p) to achieve true parallel userbot uploads.
+        """
         async with self._lock:
+            if target_chat:
+                try:
+                    t_key = int(target_chat)
+                except Exception:
+                    t_key = target_chat
+
+                admin_pool = [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
+                if admin_pool:
+                    quality_map = {"1080p": 0, "720p": 1, "480p": 2, "360p": 3, "default": 0}
+                    base_idx = quality_map.get(quality, 0)
+                    n_admins = len(admin_pool)
+
+                    if n_admins >= 3:
+                        # Distribute distinct admin accounts per quality tier
+                        tier_admins = [admin_pool[i] for i in range(n_admins) if i % 3 == base_idx % 3]
+                        if not tier_admins:
+                            tier_admins = admin_pool
+                    elif n_admins == 2:
+                        tier_admins = [admin_pool[base_idx % 2]]
+                    else:
+                        tier_admins = admin_pool
+
+                    q_key = f"{quality}_{t_key}"
+                    cur_idx = self._indices.get(q_key, 0) % len(tier_admins)
+                    self._indices[q_key] = (cur_idx + 1) % len(tier_admins)
+                    selected = tier_admins[cur_idx]
+                    log.info(
+                        "[UploadPool] Selected verified admin session '%s' for [%s] in channel %s (pool of %d)",
+                        getattr(selected, "name", "session"), quality, target_chat, len(tier_admins)
+                    )
+                    return selected
+
             if not self.clients:
                 return fallback_client or self._main_client or (_ for _ in ()).throw(
                     RuntimeError("No active Telegram clients in upload pool.")
@@ -431,20 +528,32 @@ class TelegramUploadPool:
     ) -> dict:
         """
         Upload a video file using a session from the quality tier pool.
-
-        When sleep_threshold=0, Pyrogram raises FloodWait instead of sleeping.
-        We catch FloodWait and immediately retry with a different session from the same tier
-        (up to 3 attempts) so parallel uploads never block each other.
-        Falls back to main bot client if all pool sessions fail.
-        Returns dict with file_id, message_id, stream_url.
+        Pre-checks and prioritizes verified admin userbot sessions for the channel.
+        Falls back to main bot client if no pool sessions are admins or if all fail.
         """
         from pyrogram.errors import FloodWait
 
         fallback = fallback_client or self._main_client
+        is_channel = str(target_chat).startswith("-100")
 
-        # Fast-path: if this target_chat is already known to reject userbot sessions,
-        # jump straight to verified fallback client without wasting time
-        if target_chat in self._channel_unwritable or not self.clients:
+        # For channels, discover or refresh admin sessions
+        if is_channel and self.clients:
+            admin_clients = await self.get_admin_sessions(target_chat)
+            if not admin_clients:
+                log.info(
+                    "[UploadPool] No userbot sessions have admin rights in channel %s — uploading [%s] via main bot client '%s'",
+                    target_chat, quality, getattr(fallback, "name", "main_bot")
+                )
+                if fallback:
+                    return await telegram_upload.upload_video_file(
+                        bot_client=fallback,
+                        file_path=file_path,
+                        target_chat=target_chat,
+                        caption=caption,
+                        progress_callback=progress_callback,
+                        fallback_chat=0,
+                    )
+        elif target_chat in self._channel_unwritable or not self.clients:
             if fallback:
                 log.info("[UploadPool] Uploading [%s] directly via main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
                 return await telegram_upload.upload_video_file(
@@ -460,8 +569,7 @@ class TelegramUploadPool:
         tried_clients: list = []
 
         for attempt in range(3):
-            client = await self.get_client_for_quality(quality, fallback_client)
-            # Skip already-tried clients if possible
+            client = await self.get_client_for_quality(quality, fallback_client, target_chat=target_chat)
             if client in tried_clients and len(tried_clients) < len(self.clients):
                 continue
             tried_clients.append(client)
@@ -471,37 +579,6 @@ class TelegramUploadPool:
                 getattr(client, "name", "main_bot"),
                 target_chat,
             )
-
-            # Pre-check channel post permissions BEFORE spending minutes uploading data
-            is_channel = str(target_chat).startswith("-100")
-            if is_channel and client != fallback:
-                try:
-                    member = await client.get_chat_member(target_chat, "me")
-                    status_raw = getattr(member, "status", None)
-                    status_str = getattr(status_raw, "value", str(status_raw)).lower()
-                    privs = getattr(member, "privileges", None)
-                    can_post = getattr(privs, "can_post_messages", False) if privs else False
-                    if "admin" not in status_str and "owner" not in status_str and "creator" not in status_str:
-                        log.warning(
-                            "[UploadPool] Session '%s' is not admin in channel %s (status=%s) — userbots lack posting rights, jumping directly to main bot",
-                            getattr(client, "name", "?"), target_chat, status_str
-                        )
-                        self._channel_unwritable.add(target_chat)
-                        break
-                    elif "admin" in status_str and not can_post:
-                        log.warning(
-                            "[UploadPool] Session '%s' is admin in %s but lacks can_post_messages — jumping directly to main bot",
-                            getattr(client, "name", "?"), target_chat
-                        )
-                        self._channel_unwritable.add(target_chat)
-                        break
-                except Exception as perm_err:
-                    log.warning(
-                        "[UploadPool] Session '%s' chat member check note in %s (%s) — userbots unwritable, jumping to main bot",
-                        getattr(client, "name", "?"), target_chat, perm_err
-                    )
-                    self._channel_unwritable.add(target_chat)
-                    break
 
             try:
                 return await telegram_upload.upload_video_file(
@@ -524,18 +601,24 @@ class TelegramUploadPool:
                 err_str = str(exc).lower()
                 if "chat_write_forbidden" in err_str or "channel_private" in err_str or "user_not_participant" in err_str:
                     log.warning(
-                        "[UploadPool] Session '%s' lacks write permissions in chat %s (%s) — marking channel and jumping straight to main bot client.",
+                        "[UploadPool] Session '%s' lacks write permissions in chat %s (%s) — removing from admin cache and trying next.",
                         getattr(client, "name", "?"), target_chat, exc,
                     )
-                    self._channel_unwritable.add(target_chat)
-                    break
+                    try:
+                        t_key = int(target_chat)
+                    except Exception:
+                        t_key = target_chat
+                    if t_key in self._admin_sessions and client in self._admin_sessions[t_key]:
+                        self._admin_sessions[t_key].remove(client)
+                    continue
+
                 log.warning(
                     "[UploadPool] Session upload failed for [%s] attempt %d (%s) — rotating to next session.",
                     quality, attempt + 1, exc,
                 )
                 continue
 
-        # All attempts exhausted (or userbot lacked write permissions) — use main bot client
+        # All userbot attempts exhausted — use main bot client
         if fallback:
             log.info("[UploadPool] Uploading [%s] via verified main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
             try:
@@ -557,9 +640,11 @@ class TelegramUploadPool:
     def get_status(self) -> dict:
         """Return pool diagnostic info for the /status endpoint."""
         connected = [c for c in self.clients if getattr(c, "is_connected", False)]
+        admin_counts = {str(k): len(v) for k, v in self._admin_sessions.items()}
         return {
             "total_sessions": len(self.clients),
             "connected_sessions": len(connected),
+            "admin_channels": admin_counts,
             "quality_tiers": {k: list(v) for k, v in _QUALITY_TIERS.items()},
         }
 

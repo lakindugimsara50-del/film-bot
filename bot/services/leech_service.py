@@ -901,10 +901,10 @@ async def _execute_leech(
                     seed_count = int((candidate.extra or {}).get("seeders") or (candidate.extra or {}).get("seeds") or 0)
                     _is_colab_env = os.path.exists("/content") or os.path.isdir("/dev/shm")
                     should_race = (
-                        getattr(config, "ENABLE_TORRENT_RACING", True)
+                        getattr(config, "ENABLE_TORRENT_RACING", False)
                         and has_cloud_debrid
                         and bool(downloader.find_aria2c())
-                        and (_is_colab_env or seed_count >= 15 or candidate.method == "yts")
+                        and seed_count >= 35
                     )
 
                     if should_race:

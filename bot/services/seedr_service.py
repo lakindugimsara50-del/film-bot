@@ -265,7 +265,7 @@ class SeedrService:
                                     f"☁️ <b>Seedr Cloud එක බාගත කරමින් පවතී...</b>\n\n"
                                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {progress}%\n"
                                     f"⚡ <b>Cloud Speed:</b> {rate_str} | 👥 <b>Seeders:</b> {seeders}\n"
-                                    f"💡 <i>Seedr Cloud එකෙන් බාගත වූ පසු Render Server එකට කෙලින්ම Direct Link එක ලබාගනී.</i>"
+                                    f"💡 <i>Seedr Cloud එකෙන් බාගත වූ පසු High-Speed Direct Link එක ලබාගනී.</i>"
                                 )
 
                 except Exception as poll_err:

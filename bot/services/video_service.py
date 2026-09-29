@@ -1734,7 +1734,7 @@ async def generate_multi_quality_variants_ram(
                     has_fb_sub = False
 
             fb_cmd.extend([
-                "-vf", f"scale=w=-2:h=min(ih\\,{h_val}):flags=fast_bilinear",
+                "-vf", f"scale=-2:{h_val}",
                 "-map", "0:v:0",
                 "-map", "0:a:0?",
             ])
@@ -1770,7 +1770,25 @@ async def generate_multi_quality_variants_ram(
                     valid_outputs[q] = fallback_out
                     log.info("[VideoService] Guaranteed single-pass fallback succeeded for %s: %s", q, fallback_out)
                 else:
-                    if os.path.exists(fallback_out) and q not in valid_outputs:
+                    log.warning("[VideoService] Fallback encode for %s returned code %s; trying simple transcode...", q, getattr(fb_proc, "returncode", "N/A"))
+                    simple_cmd = [
+                        ffmpeg_bin, "-y", "-hide_banner", "-threads", "0",
+                        "-i", os.path.abspath(input_path),
+                        "-vf", f"scale=-2:{h_val}",
+                        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28", "-threads", "0", "-pix_fmt", "yuv420p",
+                        "-c:a", "aac", "-b:a", prof["abitrate"], "-ac", "2",
+                        "-movflags", "+faststart",
+                        fallback_out,
+                    ]
+                    p_simple = await asyncio.create_subprocess_exec(
+                        *simple_cmd, cwd=abs_out_dir,
+                        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    await asyncio.wait_for(p_simple.wait(), timeout=max(300.0, min(1800.0, duration * 1.5)))
+                    if p_simple.returncode == 0 and os.path.exists(fallback_out) and os.path.getsize(fallback_out) >= min_valid_size:
+                        valid_outputs[q] = fallback_out
+                        log.info("[VideoService] Simple single-pass fallback succeeded for %s: %s", q, fallback_out)
+                    elif os.path.exists(fallback_out) and q not in valid_outputs:
                         try:
                             os.remove(fallback_out)
                         except Exception:

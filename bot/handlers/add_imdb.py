@@ -39,7 +39,7 @@ PENDING_IMDB_SESSIONS: dict[int, dict] = {}
 
 
 def _is_admin(uid: int) -> bool:
-    return uid in getattr(config, "ADMIN_IDS", [])
+    return uid in getattr(config, "ADMIN_IDS", []) or auth_service.is_admin(uid)
 
 
 def register(app: Client) -> None:

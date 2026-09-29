@@ -39,7 +39,8 @@ from handlers.announce import post_to_channel, _slugify
 log = logging.getLogger(__name__)
 
 def _check_admin(_, __, message: Message) -> bool:
-    if message.from_user and message.from_user.id in config.ADMIN_IDS:
+    from services.auth_service import auth_service
+    if message.from_user and (message.from_user.id in config.ADMIN_IDS or auth_service.is_admin(message.from_user.id)):
         return True
     if message.chat and message.chat.id in (config.PRIVATE_CHANNEL_ID, config.PUBLIC_CHANNEL_ID):
         return True

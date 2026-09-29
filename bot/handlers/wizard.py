@@ -41,7 +41,8 @@ USER_SESSIONS: dict[int, dict] = {}
 
 
 def _is_admin(user_id: int) -> bool:
-    return user_id in config.ADMIN_IDS
+    from services.auth_service import auth_service
+    return user_id in config.ADMIN_IDS or auth_service.is_admin(user_id)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -139,3 +139,44 @@ async def test_upload_with_pool_fallback_when_no_admins():
         mock_upload.assert_awaited_once()
         called_bot = mock_upload.call_args.kwargs["bot_client"]
         assert called_bot == main_bot
+
+
+@pytest.mark.asyncio
+async def test_auth_service_sync_channel_admins():
+    from services.auth_service import AuthService
+
+    auth = AuthService()
+    test_user_id = 9988776655
+    assert not auth.is_admin(test_user_id)
+    assert not auth.is_authorized(test_user_id)
+
+    # Mock client with get_chat_members async generator
+    class AsyncGen:
+        def __init__(self, items):
+            self.items = items
+        def __aiter__(self):
+            self._iter = iter(self.items)
+            return self
+        async def __anext__(self):
+            try:
+                return next(self._iter)
+            except StopIteration:
+                raise StopAsyncIteration
+
+    mock_user = MagicMock()
+    mock_user.id = test_user_id
+    mock_user.username = "chan_admin"
+    mock_user.is_bot = False
+
+    mock_member = MagicMock()
+    mock_member.user = mock_user
+
+    mock_client = MagicMock()
+    mock_client.get_chat_members.return_value = AsyncGen([mock_member])
+
+    synced = await auth.sync_channel_admins(mock_client, -100123456789)
+    assert len(synced) == 1
+    assert synced[0]["id"] == test_user_id
+    assert auth.is_admin(test_user_id)
+    assert auth.is_authorized(test_user_id)
+

@@ -33,7 +33,8 @@ RESTART_INFO_FILE = os.path.join(
 
 
 def _is_admin(uid: int) -> bool:
-    return uid in config.ADMIN_IDS
+    from services.auth_service import auth_service
+    return uid in config.ADMIN_IDS or auth_service.is_admin(uid)
 
 
 def get_repo_dir() -> str:
@@ -392,13 +393,13 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
 
-    @app.on_message(filters.command(["admins", "checkadmins"]) & filters.private)
+    @app.on_message(filters.command(["admins", "checkadmins", "syncadmins"]) & filters.private)
     async def check_admins_handler(client: Client, message: Message) -> None:
         user_id = message.from_user.id if message.from_user else 0
         if not _is_admin(user_id):
             return
 
-        target_ch = config.PRIVATE_CHANNEL_ID
+        target_ch = config.PRIVATE_CHANNEL_ID or config.PUBLIC_CHANNEL_ID
         if not target_ch:
             await message.reply_text(
                 "❌ <b>Channel එකක් සකසා නැත!</b>\n\nපළමුව <code>/setchannel @your_channel</code> ලබා දෙන්න.",
@@ -407,41 +408,54 @@ def register(app: Client) -> None:
             return
 
         status_msg = await message.reply_text(
-            f"🔍 <b>Channel (<code>{target_ch}</code>) හි Admin Sessions සොයමින් පවතී...</b>",
+            f"🔍 <b>Channel (<code>{target_ch}</code>) හි Admins සහ Sessions පරීක්ෂා කරමින් පවතී...</b>",
             parse_mode=ParseMode.HTML,
         )
 
         try:
             from services.upload_pool import upload_pool
+            from services.auth_service import auth_service
+
+            # 1. Sync Channel Administrators from Telegram to grant bot access
+            synced_channel_admins = await auth_service.sync_channel_admins(client, target_ch)
+
+            # 2. Check userbot sessions that have upload admin rights
             admin_clients = await upload_pool.get_admin_sessions(target_ch, refresh=True)
-            if not admin_clients:
-                await status_msg.edit_text(
-                    f"⚠️ <b>කිසිදු Userbot Session එකක් Channel එකේ Admin ලෙස හමු නොවීය!</b>\n\n"
-                    f"📢 <b>Channel:</b> <code>{target_ch}</code>\n"
-                    f"👥 <b>Total Loaded Sessions:</b> <code>{len(upload_pool.clients)}</code>\n\n"
-                    f"💡 <b>විසඳුම:</b>\n"
-                    f"1. Bot හට Channel එකේ 'Add Administrators' අවසරය ලබාදී <code>/promote</code> යවන්න.\n"
-                    f"2. නැතහොත් ඔබගේ Telegram Channel Settings > Administrators වෙත ගොස් ඔබගේ userbot ගිණුම් වලට Post Messages rights සහිතව Admin ලබා දෙන්න.",
-                    parse_mode=ParseMode.HTML,
-                )
-                return
 
             lines = [
-                f"👑 <b>Channel Admin Sessions ({len(admin_clients)} Verified)</b>\n",
+                f"👑 <b>Telegram Channel Admins & Upload Sessions</b>",
                 f"📢 <b>Target Channel:</b> <code>{target_ch}</code>\n",
             ]
-            quality_map = ["1080p Tier", "720p Tier", "480p Tier"]
-            for idx, c in enumerate(admin_clients):
-                c_name = os.path.basename(getattr(c, "name", "session"))
-                u_me = getattr(c, "me", None)
-                u_id = getattr(u_me, "id", "Unknown") if u_me else "Unknown"
-                u_name = f"@{u_me.username}" if u_me and getattr(u_me, "username", None) else getattr(u_me, "first_name", "User")
-                assigned_q = quality_map[idx % len(quality_map)] if len(admin_clients) >= 3 else f"Multi-Quality ({quality_map[idx % len(quality_map)]})"
-                lines.append(f"• <b>{c_name}</b>: {u_name} (<code>{u_id}</code>) ➔ <b>{assigned_q}</b>")
 
-            lines.append(f"\n⚡ <b>Parallel Multi-Quality:</b> Active! 1080p, 720p, සහ 480p මෙම Admin ගිණුම් මඟින් එකවර Upload වේ.")
+            if synced_channel_admins:
+                lines.append(f"👥 <b>Channel Administrators ({len(synced_channel_admins)} Authorized for Bot):</b>")
+                for adm in synced_channel_admins[:30]:
+                    lines.append(f" • {adm.get('name', 'User')} (<code>{adm.get('id')}</code>) ➔ <b>Bot Access Active ✅</b>")
+                lines.append("")
+            else:
+                lines.append("👥 <b>Channel Administrators:</b> Auto-sync ක්‍රියාත්මක විය.\n")
+
+            if admin_clients:
+                lines.append(f"⚡ <b>Verified Upload Pool Sessions ({len(admin_clients)} Sessions):</b>")
+                quality_map = ["1080p Tier", "720p Tier", "480p Tier"]
+                for idx, c in enumerate(admin_clients):
+                    c_name = os.path.basename(getattr(c, "name", "session"))
+                    u_me = getattr(c, "me", None)
+                    u_id = getattr(u_me, "id", "Unknown") if u_me else "Unknown"
+                    u_name = f"@{u_me.username}" if u_me and getattr(u_me, "username", None) else getattr(u_me, "first_name", "User")
+                    assigned_q = quality_map[idx % len(quality_map)] if len(admin_clients) >= 3 else f"Multi-Quality ({quality_map[idx % len(quality_map)]})"
+                    lines.append(f" • <b>{c_name}</b>: {u_name} (<code>{u_id}</code>) ➔ <b>{assigned_q}</b>")
+
+                lines.append(f"\n🚀 <b>Multi-Quality Parallel Upload:</b> සක්‍රීයයි! 1080p, 720p, 480p එකවර Upload වේ.")
+            else:
+                lines.append(
+                    f"⚠️ <b>Upload Sessions:</b> Channel එකේ Post Messages සහිත Userbot Sessions තවමත් හමු නොවීය.\n"
+                    f"💡 ඔබ Channel එකට එක් කළ Admin ගිණුම් වලට 'Post Messages' rights ඇති බව තහවුරු කරගන්න."
+                )
+
             await status_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML)
         except Exception as exc:
+            log.warning("[AdminControl] checkadmins error: %s", exc)
             await status_msg.edit_text(f"❌ <b>පරීක්ෂා කිරීමේ දෝෂයක්:</b> {exc}", parse_mode=ParseMode.HTML)
 
     @app.on_message(filters.command("gr") & filters.private)

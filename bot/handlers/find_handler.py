@@ -33,7 +33,8 @@ _PENDING: dict[int, dict] = {}
 
 
 def _is_admin(uid: int) -> bool:
-    return uid in config.ADMIN_IDS
+    from services.auth_service import auth_service
+    return uid in config.ADMIN_IDS or auth_service.is_admin(uid)
 
 
 def _parse_query(text: str) -> tuple[str, Optional[int], Optional[str]]:

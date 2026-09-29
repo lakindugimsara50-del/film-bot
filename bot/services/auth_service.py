@@ -23,6 +23,7 @@ class AuthService:
     def __init__(self):
         self._authorized_ids: Set[int] = set(config.ADMIN_IDS)
         self._authorized_usernames: Set[str] = set()
+        self._channel_admin_ids: Set[int] = set()
         self._metadata: Dict[str, dict] = {}
         self._load()
 
@@ -75,7 +76,7 @@ class AuthService:
         """Check if user is authorized to use bot upload features."""
         if user_id in config.ADMIN_IDS:
             return True
-        if user_id in self._authorized_ids:
+        if user_id in self._authorized_ids or user_id in self._channel_admin_ids:
             return True
         if username:
             clean_un = username.lstrip("@").lower().strip()
@@ -88,8 +89,31 @@ class AuthService:
         return user_id in config.ADMIN_IDS
 
     def is_admin(self, user_id: int) -> bool:
-        """Admin or authorized uploader check."""
-        return self.is_owner(user_id) or (user_id in self._authorized_ids)
+        """Admin or authorized uploader check (includes all channel administrators)."""
+        return self.is_owner(user_id) or (user_id in self._authorized_ids) or (user_id in self._channel_admin_ids)
+
+    async def sync_channel_admins(self, client, channel_id: int) -> list:
+        """
+        Query Telegram for all administrators of the target channel and grant them bot authorization.
+        Returns list of newly authorized admin user dicts.
+        """
+        if not client or not channel_id:
+            return []
+        from pyrogram.enums import ChatMembersFilter
+        found = []
+        try:
+            async for member in client.get_chat_members(channel_id, filter=ChatMembersFilter.ADMINISTRATORS):
+                u = getattr(member, "user", None)
+                if not u or getattr(u, "is_bot", False):
+                    continue
+                uid = u.id
+                self._channel_admin_ids.add(uid)
+                u_name = f"@{u.username}" if getattr(u, "username", None) else getattr(u, "first_name", f"User {uid}")
+                found.append({"id": uid, "name": u_name})
+            log.info("[AuthService] Synced %d channel administrators from chat %s into bot auth pool.", len(self._channel_admin_ids), channel_id)
+        except Exception as exc:
+            log.warning("[AuthService] Failed to sync channel admins from chat %s: %s", channel_id, exc)
+        return found
 
     def add_user(self, identifier: str, added_by: int = 0) -> str:
         """
@@ -152,6 +176,14 @@ class AuthService:
         results = []
         for aid in config.ADMIN_IDS:
             results.append({"id": aid, "type": "Owner / Primary Admin", "name": f"Admin ({aid})"})
+
+        for uid in self._channel_admin_ids:
+            if uid not in config.ADMIN_IDS and uid not in self._authorized_ids:
+                results.append({
+                    "id": uid,
+                    "type": "Channel Admin (Auto-Authorized)",
+                    "added_at": "Telegram Channel Admin",
+                })
 
         for uid in self._authorized_ids:
             if uid not in config.ADMIN_IDS:

@@ -674,9 +674,10 @@ async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
 @app.on_message(filters.command("status"))
 async def status_handler(client: Client, message: Message) -> None:
     """Show bot status, active/recent task progress, and configuration summary."""
+    from services.auth_service import auth_service
     user_id = message.from_user.id if message.from_user else 0
     me = await client.get_me()
-    is_admin = message.from_user and message.from_user.id in config.ADMIN_IDS
+    is_admin = message.from_user and (message.from_user.id in config.ADMIN_IDS or auth_service.is_admin(message.from_user.id))
 
     text, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
     await message.reply_text(
@@ -689,8 +690,9 @@ async def status_handler(client: Client, message: Message) -> None:
 @app.on_message(filters.command("sessions"))
 async def sessions_handler(client: Client, message: Message) -> None:
     """Show detailed inspection of all 100 Telegram sessions and tiers."""
+    from services.auth_service import auth_service
     user_id = message.from_user.id if message.from_user else 0
-    if user_id not in config.ADMIN_IDS:
+    if not (user_id in config.ADMIN_IDS or auth_service.is_admin(user_id)):
         return
 
     from services.upload_pool import upload_pool
@@ -847,6 +849,16 @@ async def _on_start(client: Client) -> None:
         log.info("[UploadPool] Parallel upload pool initialization started in background.")
     except Exception as up_err:
         log.warning("[UploadPool] Failed to start upload pool init: %s", up_err)
+
+    # Auto-sync channel administrators to grant them bot access
+    try:
+        from services.auth_service import auth_service
+        target_ch_for_auth = config.PRIVATE_CHANNEL_ID or config.PUBLIC_CHANNEL_ID
+        if target_ch_for_auth:
+            asyncio.create_task(auth_service.sync_channel_admins(client, target_ch_for_auth))
+            log.info("[AuthService] Scheduled channel administrator authorization sync for %s.", target_ch_for_auth)
+    except Exception as auth_sync_err:
+        log.warning("[AuthService] Failed to schedule channel admin sync: %s", auth_sync_err)
 
     # Notify admins that the bot restarted
     service_name = os.getenv("RENDER_SERVICE_NAME", "") or os.getenv("RENDER_INSTANCE_ID", "")

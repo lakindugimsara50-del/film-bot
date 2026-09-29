@@ -32,7 +32,7 @@ _recent_leech_commands: dict = {}
 
 
 def _is_admin(uid: int) -> bool:
-    return uid in config.ADMIN_IDS
+    return uid in config.ADMIN_IDS or auth_service.is_admin(uid)
 
 
 async def setup_seedr_account(client: Client, message: Message, email: str, password: str) -> bool:

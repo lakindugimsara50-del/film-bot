@@ -1245,6 +1245,8 @@ async def _execute_leech(
 
         last_upload_edit = 0.0
         _last_drive_edit = 0.0
+        last_rendered_text = ""
+        dashboard_lock = asyncio.Lock()
         _mq_progress_str = ""
         _hw_enc = video_service.detect_hw_encoder()
         _engine_tag = "⚡ <b>Engine:</b> NVIDIA T4 GPU (Hardware Acceleration)" if _hw_enc == "h264_nvenc" else "⚡ <b>Engine:</b> Ultra-Fast Multi-Thread CPU"
@@ -1269,77 +1271,104 @@ async def _execute_leech(
             "variant_speed": "--",
             "variant_eta": "--",
             "variant_status": "waiting",
+            "drive_pct": 0.0,
+            "drive_done": "0 MB",
+            "drive_total": "",
+            "drive_speed": "--",
+            "drive_eta": "--",
+            "drive_status": "waiting",
         }
 
         async def _render_dashboard(force: bool = False) -> None:
-            nonlocal last_upload_edit
+            nonlocal last_upload_edit, last_rendered_text
             now = time.time()
             if not force and (now - last_upload_edit < 2.5):
                 return
-            last_upload_edit = now
 
-            p_q = dashboard_state["primary_q"]
-            p_pct = dashboard_state["primary_pct"]
-            p_status = dashboard_state["primary_status"]
-            p_bar = downloader.format_progress_bar(p_pct)
+            async with dashboard_lock:
+                now = time.time()
+                if not force and (now - last_upload_edit < 2.5):
+                    return
 
-            if p_status == "complete":
-                p_line = f"✅ <b>{p_q} (Primary):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
-            elif p_status == "failed":
-                p_line = f"❌ <b>{p_q} (Primary):</b> Upload අසාර්ථකයි"
-            else:
-                p_speed = dashboard_state["primary_speed"]
-                p_eta = dashboard_state["primary_eta"]
-                p_done = dashboard_state["primary_done"]
-                p_total = dashboard_state["primary_total"]
-                p_line = (
-                    f"📦 <b>{p_q} (Primary) Upload:</b> {p_bar} {p_pct:.1f}%\n"
-                    f"   ▫️ ප්‍රමාණය: {p_done} / {p_total} | ⚡ Speed: {p_speed} | ⏱ ETA: {p_eta}"
+                p_q = dashboard_state["primary_q"]
+                p_pct = dashboard_state["primary_pct"]
+                p_status = dashboard_state["primary_status"]
+                p_bar = downloader.format_progress_bar(p_pct)
+
+                if p_status == "complete":
+                    p_line = f"✅ <b>{p_q} (Primary):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
+                elif p_status == "failed":
+                    p_line = f"❌ <b>{p_q} (Primary):</b> Upload අසාර්ථකයි"
+                else:
+                    p_speed = dashboard_state["primary_speed"]
+                    p_eta = dashboard_state["primary_eta"]
+                    p_done = dashboard_state["primary_done"]
+                    p_total = dashboard_state["primary_total"]
+                    p_line = (
+                        f"📦 <b>{p_q} (Primary) Upload:</b> {p_bar} {p_pct:.1f}%\n"
+                        f"   ▫️ ප්‍රමාණය: {p_done} / {p_total} | ⚡ Speed: {p_speed} | ⏱ ETA: {p_eta}"
+                    )
+
+                mq_status = dashboard_state["mq_encode_status"]
+                mq_target = dashboard_state["mq_target"]
+                if mq_status == "encoding":
+                    mq_pct_str = dashboard_state["mq_encode_pct"]
+                    mq_line = f"🔄 <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> {mq_pct_str}"
+                elif mq_status == "complete":
+                    mq_line = f"✅ <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> සම්පූර්ණයි"
+                elif mq_status == "skipped":
+                    mq_line = f"ℹ️ <b>Multi-Quality ({mq_target}):</b> Skipped"
+                else:
+                    mq_line = f"⏳ <b>Multi-Quality ({mq_target}):</b> ක්‍රියාත්මක වෙමින්..."
+
+                v_status = dashboard_state["variant_status"]
+                v_q = dashboard_state["variant_q"]
+                v_line = ""
+                if v_status == "uploading" and v_q:
+                    v_pct = dashboard_state["variant_pct"]
+                    v_bar = downloader.format_progress_bar(v_pct)
+                    v_speed = dashboard_state["variant_speed"]
+                    v_eta = dashboard_state["variant_eta"]
+                    v_done = dashboard_state["variant_done"]
+                    v_total = dashboard_state["variant_total"]
+                    v_line = (
+                        f"\n📦 <b>{v_q} (Variant) Upload:</b> {v_bar} {v_pct:.1f}%\n"
+                        f"   ▫️ ප්‍රමාණය: {v_done} / {v_total} | ⚡ Speed: {v_speed} | ⏱ ETA: {v_eta}"
+                    )
+                elif v_status == "complete" and v_q:
+                    v_line = f"\n✅ <b>{v_q} (Variant):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
+
+                drive_line = ""
+                if getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
+                    d_st = dashboard_state.get("drive_status")
+                    if d_st == "uploading":
+                        d_bar = downloader.format_progress_bar(dashboard_state["drive_pct"])
+                        drive_line = (
+                            f"\n☁️ <b>Google Drive Backup:</b> {d_bar} {dashboard_state['drive_pct']:.1f}%\n"
+                            f"   ▫️ ප්‍රමාණය: {dashboard_state['drive_done']} / {dashboard_state['drive_total']}"
+                        )
+                    elif d_st == "complete":
+                        drive_line = "\n✅ <b>Google Drive Backup:</b> Upload සම්පූර්ණයි"
+
+                text = (
+                    f"📤 <b>පියවර 3/3: Telegram Cloud HD Upload & Processing...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n\n"
+                    f"{p_line}\n"
+                    f"{mq_line}"
+                    f"{v_line}"
+                    f"{drive_line}\n\n"
+                    f"{_engine_tag}{_sub_tag}\n"
+                    f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
                 )
-
-            mq_status = dashboard_state["mq_encode_status"]
-            mq_target = dashboard_state["mq_target"]
-            if mq_status == "encoding":
-                mq_pct_str = dashboard_state["mq_encode_pct"]
-                mq_line = f"🔄 <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> {mq_pct_str}"
-            elif mq_status == "complete":
-                mq_line = f"✅ <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> සම්පූර්ණයි"
-            elif mq_status == "skipped":
-                mq_line = f"ℹ️ <b>Multi-Quality ({mq_target}):</b> Skipped"
-            else:
-                mq_line = f"⏳ <b>Multi-Quality ({mq_target}):</b> ක්‍රියාත්මක වෙමින්..."
-
-            v_status = dashboard_state["variant_status"]
-            v_q = dashboard_state["variant_q"]
-            v_line = ""
-            if v_status == "uploading" and v_q:
-                v_pct = dashboard_state["variant_pct"]
-                v_bar = downloader.format_progress_bar(v_pct)
-                v_speed = dashboard_state["variant_speed"]
-                v_eta = dashboard_state["variant_eta"]
-                v_done = dashboard_state["variant_done"]
-                v_total = dashboard_state["variant_total"]
-                v_line = (
-                    f"\n📦 <b>{v_q} (Variant) Upload:</b> {v_bar} {v_pct:.1f}%\n"
-                    f"   ▫️ ප්‍රමාණය: {v_done} / {v_total} | ⚡ Speed: {v_speed} | ⏱ ETA: {v_eta}"
-                )
-            elif v_status == "complete" and v_q:
-                v_line = f"\n✅ <b>{v_q} (Variant):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
-
-            text = (
-                f"📤 <b>පියවර 3/3: Telegram Cloud HD Upload & Processing...</b>\n\n"
-                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                f"📁 <b>ගොනුව:</b> <code>{file_name}</code>\n\n"
-                f"{p_line}\n"
-                f"{mq_line}"
-                f"{v_line}\n\n"
-                f"{_engine_tag}{_sub_tag}\n"
-                f"🛡️ <i>Telegram Cloud Storage • 100% Google Account Strike Safe</i>"
-            )
-            try:
-                await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-            except Exception as up_err:
-                log.debug("[LeechService] Dashboard edit note: %s", up_err)
+                if text == last_rendered_text:
+                    return
+                last_upload_edit = now
+                last_rendered_text = text
+                try:
+                    await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+                except Exception as up_err:
+                    log.debug("[LeechService] Dashboard edit note: %s", up_err)
 
         async def _mq_progress_cb(pct: float, pct_str: str) -> None:
             nonlocal _mq_progress_str
@@ -1376,27 +1405,14 @@ async def _execute_leech(
             speed_str: str = "--",
             eta_str: str = "--",
         ) -> None:
-            nonlocal _last_drive_edit
-            now = time.time()
             pct = min(100.0, (done_bytes / total_bytes * 100)) if total_bytes > 0 else 0.0
-            if (now - _last_drive_edit < 2.5) and pct < 100.0:
-                return
-            _last_drive_edit = now
-            p_bar = downloader.format_progress_bar(pct)
-            done_str = downloader.format_bytes(done_bytes)
-            total_str = downloader.format_bytes(total_bytes)
-            speed_display = f"⚡ <b>Drive Speed:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}\n" if speed_str != "--" else ""
-            txt = (
-                f"☁️ <b>Google Drive Backup Upload වෙමින්...</b>\n\n"
-                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
-                f"{speed_display}"
-            )
-            try:
-                await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-            except Exception:
-                pass
+            dashboard_state["drive_pct"] = pct
+            dashboard_state["drive_done"] = downloader.format_bytes(done_bytes)
+            dashboard_state["drive_total"] = downloader.format_bytes(total_bytes)
+            dashboard_state["drive_speed"] = speed_str
+            dashboard_state["drive_eta"] = eta_str
+            dashboard_state["drive_status"] = "complete" if pct >= 100.0 else "uploading"
+            await _render_dashboard(force=(pct >= 100.0))
 
         try:
             await _render_dashboard(force=True)
@@ -1470,6 +1486,9 @@ async def _execute_leech(
                 try:
                     log.info("[LeechService] Uploading variant '%s' to Telegram channel (attempt %d)...", q_label, attempt + 1)
                     var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
+                    async def _var_cb(p: float, d: str, t: str, s: str, e: str) -> None:
+                        await _variant_upload_progress(q_label, p, d, t, s, e)
+
                     from services.upload_pool import upload_pool
                     up_res = await upload_pool.upload_with_pool(
                         file_path=q_path,
@@ -1477,7 +1496,7 @@ async def _execute_leech(
                         quality=q_label,
                         caption=var_caption,
                         file_name=os.path.basename(q_path),
-                        progress_callback=lambda p, d, t, s, e: _variant_upload_progress(q_label, p, d, t, s, e),
+                        progress_callback=_var_cb,
                         fallback_client=client,
                     )
                     if up_res and up_res.get("file_id"):

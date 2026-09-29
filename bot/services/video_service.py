@@ -1462,8 +1462,13 @@ async def generate_multi_quality_variants_ram(
                 log.debug("[VideoService] Direct 360p copy note: %s", e360)
 
     # Prevent wasteful upscaling: filter out qualities that exceed source resolution
-    if src_h > 0 and (src_w <= 2000 and src_h <= 1150):
-        target_q_list = [q for q in target_q_list if profiles[q]["height"] <= (src_h + 50)]
+    # Check width or height to support widescreen aspect ratios (e.g. 1280x534 for 720p, 854x360 for 480p)
+    _min_w = {"1080p": 1400, "720p": 950, "480p": 500, "360p": 300}
+    if src_w > 0 or src_h > 0:
+        target_q_list = [
+            q for q in target_q_list
+            if (src_w >= _min_w.get(q, 0) or src_h >= (profiles[q]["height"] - 150))
+        ]
 
     if not target_q_list:
         return valid_outputs
@@ -1476,9 +1481,9 @@ async def generate_multi_quality_variants_ram(
             q0 = target_q_list[0]
             h0 = profiles[q0]["height"]
             fc = (
-                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
                 if burn_subs
-                else f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+                else f"[0:v:0]scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
             )
         else:
             split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
@@ -1488,7 +1493,7 @@ async def generate_multi_quality_variants_ram(
                 else f"[0:v:0]split={num_q}{split_labels}"
             )
             scale_branches = ";".join(
-                f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
+                f"[sp_{q}]scale=w=-2:h=min(ih\\,{profiles[q]['height']}):flags=fast_bilinear[v_{q}]"
                 for q in target_q_list
             )
             fc = f"{split_head};{scale_branches}"

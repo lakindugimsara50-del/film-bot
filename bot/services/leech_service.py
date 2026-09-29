@@ -1002,25 +1002,37 @@ async def _execute_leech(
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
         slug = f"{_slugify(title, year)}{ep_suffix}"
 
-        # 1. Extract embedded subtitle / auto-translate / acquire Sinhala .srt & .vtt BEFORE remuxing
-        #    so ensure_web_streamable never strips embedded tracks!
+        # 1. Check if subtitle was already cached by Stage 1 (/add) or /sub; otherwise auto-acquire
         sub_srt_path: Optional[str] = None
         sub_vtt_path: Optional[str] = None
         try:
-            _show_name = locals().get('show_name', '')
-            clean_sub_title = _show_name if (is_series and _show_name) else (title or display_title)
-            sub_srt_path, sub_vtt_path = await subtitle_service.auto_acquire_sinhala_subtitle(
-                title=clean_sub_title,
-                year=year,
-                imdb_id=imdb_id,
-                temp_dir=temp_dir,
-                video_path=local_file,
-                season=season,
-                episode=episode,
-            )
-            log.info("[LeechService] Prepared Sinhala subtitle tracks: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
-        except Exception as sub_acq_err:
-            log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
+            import tempfile
+            cached_sys_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
+            if os.path.exists(cached_sys_srt) and os.path.getsize(cached_sys_srt) > 32:
+                local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
+                shutil.copyfile(cached_sys_srt, local_stage_srt)
+                sub_srt_path = local_stage_srt
+                sub_vtt_path = subtitle_service.srt_to_vtt(local_stage_srt)
+                log.info("[LeechService] Reusing Stage 1 cached Sinhala subtitle: %s", sub_srt_path)
+        except Exception as cache_err:
+            log.debug("[LeechService] Cache reuse note: %s", cache_err)
+
+        if not sub_srt_path:
+            try:
+                _show_name = locals().get('show_name', '')
+                clean_sub_title = _show_name if (is_series and _show_name) else (title or display_title)
+                sub_srt_path, sub_vtt_path = await subtitle_service.auto_acquire_sinhala_subtitle(
+                    title=clean_sub_title,
+                    year=year,
+                    imdb_id=imdb_id,
+                    temp_dir=temp_dir,
+                    video_path=local_file,
+                    season=season,
+                    episode=episode,
+                )
+                log.info("[LeechService] Prepared Sinhala subtitle tracks: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
+            except Exception as sub_acq_err:
+                log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
 
         # 2. Intelligent Video Processing & Subtitle Muxing
         # If file exceeds Telegram limit (1.95 GB), compress directly targeting 1.85 GB

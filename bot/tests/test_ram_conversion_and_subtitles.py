@@ -198,6 +198,48 @@ async def test_generate_multi_quality_variants_ram(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_generate_multi_quality_variants_ram_burns_subtitles(tmp_path):
+    """Verify that multi-quality variants include the subtitles filter for burning in subtitles."""
+    in_mp4 = tmp_path / "source_burn.mp4"
+    in_mp4.write_bytes(b"DATA" * 500)
+    sub_srt = tmp_path / "sample_burn.srt"
+    sub_srt.write_text("1\n00:00:01,000 --> 00:00:05,000\nසිංහල උපසිරැසි\n", encoding="utf-8")
+
+    class FakeProc:
+        returncode = 0
+        async def wait(self):
+            return 0
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    captured_cmds = []
+
+    async def fake_exec(*args, **kwargs):
+        captured_cmds.append(list(args))
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"S" * (600 * 1024))
+        return FakeProc()
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            slug="test_slug",
+            sub_path=str(sub_srt),
+            qualities=("480p",),
+        )
+
+    assert len(captured_cmds) > 0
+    cmd_str = " ".join(captured_cmds[0])
+    assert "subtitles=filename=" in cmd_str
+    assert "sub_burn_multi.srt" in cmd_str
+
+
+@pytest.mark.asyncio
 async def test_series_and_movie_variant_pipeline_logic(tmp_path):
     """
     Verify resolution detection and variant selection logic:

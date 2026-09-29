@@ -1477,18 +1477,19 @@ async def generate_multi_quality_variants_ram(
     num_q = len(target_q_list)
 
     def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
+        escaped_sub_file = "sub_burn_multi.srt"
         if num_q == 1:
             q0 = target_q_list[0]
             h0 = profiles[q0]["height"]
             fc = (
-                f"[0:v:0]subtitles=sub_burn_multi.srt,scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
+                f"[0:v:0]subtitles=filename='{escaped_sub_file}',scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
                 if burn_subs
                 else f"[0:v:0]scale=w=-2:h=min(ih\\,{h0}):flags=fast_bilinear[v_{q0}]"
             )
         else:
             split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
             split_head = (
-                f"[0:v:0]subtitles=sub_burn_multi.srt,split={num_q}{split_labels}"
+                f"[0:v:0]subtitles=filename='{escaped_sub_file}',split={num_q}{split_labels}"
                 if burn_subs
                 else f"[0:v:0]split={num_q}{split_labels}"
             )
@@ -1573,19 +1574,23 @@ async def generate_multi_quality_variants_ram(
         return c, paths
 
     # Build ordered attempt strategies:
-    # 1. Preferred encoder (NVENC or libx264) + soft subs (instantaneous, zero CPU subtitle burning overhead)
-    # 2. Preferred encoder without soft subs (if mov_text / subtitle stream muxing failed)
-    # 3. Fallback CPU libx264 without subs
+    # 1. Preferred encoder with BURNED-IN subtitles AND soft-subs for 100% universal device playback
+    # 2. Preferred encoder with BURNED-IN subtitles only (if container rejects mov_text)
+    # 3. Preferred encoder with soft-subs only
+    # 4. Fallback without subtitles
     strategies: list[tuple[str, bool, bool]] = []
     if hw_enc == "h264_nvenc":
-        strategies.append(("h264_nvenc", False, has_sub))
         if has_sub:
-            strategies.append(("h264_nvenc", False, False))
-        strategies.append(("libx264", False, has_sub))
-        if has_sub:
-            strategies.append(("libx264", False, False))
+            strategies.append(("h264_nvenc", True, True))
+            strategies.append(("h264_nvenc", True, False))
+            strategies.append(("h264_nvenc", False, True))
+            strategies.append(("libx264", True, True))
+        strategies.append(("h264_nvenc", False, False))
+        strategies.append(("libx264", False, False))
     else:
         if has_sub:
+            strategies.append(("libx264", True, True))
+            strategies.append(("libx264", True, False))
             strategies.append(("libx264", False, True))
         strategies.append(("libx264", False, False))
 

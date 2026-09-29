@@ -402,7 +402,7 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
         year = meta.get("year", "")
         slug = meta.get("slug", _slugify(f"{title} {year}"))
 
-        # ── Stage 1B: Handle subtitle if provided inline in command ────────────
+        # ── Stage 1B: Handle or Auto-Acquire Sinhala Subtitle ─────────────────
         vtt_github_url = ""
         if subtitle_url:
             await status_msg.edit_text(
@@ -411,13 +411,21 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
             )
             try:
                 import tempfile
-                with tempfile.TemporaryDirectory() as tmpdir:
+                with tempfile.TemporaryDirectory(prefix="imdb_sub_") as tmpdir:
                     srt_path = os.path.join(tmpdir, "sub.srt")
                     local_path = await subtitle_service.download_subtitle(subtitle_url, srt_path)
                     if local_path and subtitle_service.is_genuine_sinhala_subtitle(local_path):
                         vtt_path = subtitle_service.srt_to_vtt(local_path)
                         ep_sfx = f"-s{season:02d}e{episode:02d}" if season and episode else ""
                         fname = f"{slug}{ep_sfx}-si.vtt"
+
+                        try:
+                            import shutil
+                            cached_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
+                            shutil.copyfile(local_path, cached_srt)
+                        except Exception:
+                            pass
+
                         vtt_github_url = await subtitle_service.upload_subtitle_to_github(
                             vtt_path=vtt_path,
                             filename=fname,
@@ -426,9 +434,54 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                         )
             except Exception as sub_err:
                 log.warning("[AddImdb] Inline subtitle error (continuing): %s", sub_err)
+        else:
+            # Auto-search Sri Lankan sources (PirateLK) BEFORE posting or publishing
+            await status_msg.edit_text(
+                f"🔍 <b>PirateLK හරහා සිංහල උපසිරැසි සොයමින් පවතී...</b>\n🎬 <b>{title}</b>",
+                parse_mode=ParseMode.HTML
+            )
+            try:
+                import tempfile
+                with tempfile.TemporaryDirectory(prefix="imdb_sub_auto_") as tmpdir:
+                    clean_yr = int(year) if str(year).isdigit() else None
+                    auto_srt = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
+                        title=title,
+                        year=clean_yr,
+                        season=season,
+                        episode=episode,
+                        temp_dir=tmpdir,
+                    )
+                    if auto_srt and os.path.exists(auto_srt) and subtitle_service.is_genuine_sinhala_subtitle(auto_srt):
+                        vtt_path = subtitle_service.srt_to_vtt(auto_srt)
+                        ep_sfx = f"-s{season:02d}e{episode:02d}" if season and episode else ""
+                        fname = f"{slug}{ep_sfx}-si.vtt"
+
+                        try:
+                            import shutil
+                            cached_srt = os.path.join(tempfile.gettempdir(), f"sub_{slug}.srt")
+                            shutil.copyfile(auto_srt, cached_srt)
+                        except Exception:
+                            pass
+
+                        vtt_github_url = await subtitle_service.upload_subtitle_to_github(
+                            vtt_path=vtt_path,
+                            filename=fname,
+                            github_token=getattr(config, "GITHUB_TOKEN", ""),
+                            repo=getattr(config, "GITHUB_REPO", ""),
+                        )
+                        log.info("[AddImdb] Auto-acquired Sinhala subtitle from PirateLK: %s", vtt_github_url)
+            except Exception as auto_err:
+                log.warning("[AddImdb] Auto subtitle lookup note: %s", auto_err)
 
         if vtt_github_url:
             meta["subtitle_url"] = vtt_github_url
+            meta["has_sinhala_sub"] = True
+            meta["subtitles"] = [{
+                "language": "Sinhala",
+                "label": "සිංහල උපසිරැසි",
+                "url": vtt_github_url,
+                "default": True,
+            }]
             for stream in meta.get("streams", []):
                 if "vidlink.pro" in stream.get("stream_url", ""):
                     encoded = urllib.parse.quote(vtt_github_url, safe='')

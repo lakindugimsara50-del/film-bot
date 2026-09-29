@@ -326,3 +326,65 @@ async def upload_file(
                 continue
             raise
     return ""
+
+
+_STREAM_ENDPOINT_PATH = "website/data/stream_endpoint.json"
+_STREAM_ENDPOINT_JS_PATH = "website/data/stream_endpoint.js"
+_LOCAL_STREAM_ENDPOINT_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "website", "data", "stream_endpoint.json")
+)
+_LOCAL_STREAM_ENDPOINT_JS_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "website", "data", "stream_endpoint.js")
+)
+
+
+async def publish_live_stream_endpoint(stream_base_url: str) -> bool:
+    """
+    Publish the active streaming server base URL (e.g. Cloudflare tunnel or Render URL)
+    to website/data/stream_endpoint.json and stream_endpoint.js on GitHub and locally.
+    Enables zero-configuration live Telegram video streaming on the website.
+    """
+    clean_url = stream_base_url.strip().rstrip("/")
+    if not clean_url or "localhost" in clean_url or "127.0.0.1" in clean_url:
+        return False
+
+    payload = {
+        "stream_base_url": clean_url,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "status": "online",
+    }
+    json_bytes = json.dumps(payload, indent=2).encode("utf-8")
+    js_bytes = f"window.FILMSUB_STREAM_CONFIG = {json.dumps(payload, indent=2)};\n".encode("utf-8")
+
+    # Always write locally first
+    try:
+        os.makedirs(os.path.dirname(_LOCAL_STREAM_ENDPOINT_PATH), exist_ok=True)
+        with open(_LOCAL_STREAM_ENDPOINT_PATH, "wb") as f:
+            f.write(json_bytes)
+        with open(_LOCAL_STREAM_ENDPOINT_JS_PATH, "wb") as f:
+            f.write(js_bytes)
+    except Exception as loc_err:
+        log.debug("[GitHubService] Local stream_endpoint write note: %s", loc_err)
+
+    token = _get_active_token()
+    repo = _get_active_repo()
+    if not token or repo in ("", "username/repo"):
+        return True
+
+    try:
+        await upload_file(
+            content=json_bytes,
+            path=_STREAM_ENDPOINT_PATH,
+            message=f"feat(stream): update live stream endpoint to {clean_url}",
+        )
+        await upload_file(
+            content=js_bytes,
+            path=_STREAM_ENDPOINT_JS_PATH,
+            message=f"feat(stream): update live stream js config to {clean_url}",
+        )
+        log.info("[GitHubService] Successfully published live stream endpoint to GitHub: %s", clean_url)
+        return True
+    except Exception as exc:
+        log.warning("[GitHubService] Failed to publish stream endpoint to GitHub: %s", exc)
+        return False
+

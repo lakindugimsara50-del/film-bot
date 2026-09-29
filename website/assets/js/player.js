@@ -52,9 +52,55 @@ let stallTimestamps = [];
 let activeStallTimer = null;
 let lastAutoSwitchEpoch = 0;
 
+let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) || '';
+
+async function loadLiveStreamConfig() {
+  const cached = sessionStorage.getItem('filmsub_stream_base');
+  const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
+  if (cached && (Date.now() - cachedTime) < 45000) {
+    activeStreamBaseUrl = cached;
+    return cached;
+  }
+
+  // 1. Check local endpoint first
+  try {
+    const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now());
+    if (rLoc.ok) {
+      const d = await rLoc.json();
+      if (d && d.stream_base_url) {
+        activeStreamBaseUrl = d.stream_base_url.replace(/\/+$/, '');
+        sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
+        sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
+        return activeStreamBaseUrl;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Check fresh GitHub raw config
+  try {
+    const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
+    const ctrl = new AbortController();
+    const tId = setTimeout(() => ctrl.abort(), 2000);
+    const rGh = await fetch(ghUrl, { signal: ctrl.signal });
+    clearTimeout(tId);
+    if (rGh.ok) {
+      const d = await rGh.json();
+      if (d && d.stream_base_url) {
+        activeStreamBaseUrl = d.stream_base_url.replace(/\/+$/, '');
+        sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
+        sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
+        return activeStreamBaseUrl;
+      }
+    }
+  } catch (e) {}
+
+  return activeStreamBaseUrl;
+}
+
 function isDeadTunnel(u) {
   if (!u || typeof u !== 'string') return true;
   const l = u.toLowerCase();
+  if (activeStreamBaseUrl && u.startsWith(activeStreamBaseUrl)) return false;
   return l.includes('trycloudflare.com') ||
          l.includes('loca.lt') ||
          l.includes('ngrok.io') ||
@@ -67,7 +113,12 @@ function normalizeStreamUrl(u) {
   if (!u || typeof u !== 'string') return '';
   const match = u.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
   if (match) {
-    return `/stream/channel/${match[1]}/${match[2]}`;
+    const cId = match[1];
+    const mId = match[2];
+    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+      return `${activeStreamBaseUrl}/stream/channel/${cId}/${mId}`;
+    }
+    return `/stream/channel/${cId}/${mId}`;
   }
   const autoMatchTv = u.match(/autoembed\.(?:co|cc|to)\/tv\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)-(\d+)-(\d+)/i);
   if (autoMatchTv) {
@@ -83,6 +134,7 @@ function normalizeStreamUrl(u) {
 document.addEventListener('DOMContentLoaded', async () => {
   await waitForFilmSub();
   await FilmSub.loadMovies();
+  await loadLiveStreamConfig();
 
   const slug = getSlugFromURL();
   if (!slug) {
@@ -389,7 +441,11 @@ function getMovieStreams(movie) {
 
   if (tgMsgId) {
     if (!tgChatId) tgChatId = '-1004325759505';
-    nativeStreamUrl = `/stream/channel/${tgChatId}/${tgMsgId}`;
+    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+      nativeStreamUrl = `${activeStreamBaseUrl}/stream/channel/${tgChatId}/${tgMsgId}`;
+    } else {
+      nativeStreamUrl = `/stream/channel/${tgChatId}/${tgMsgId}`;
+    }
   } else if (!nativeStreamUrl && existingTgStream && existingTgStream.stream_url && !existingTgStream.stream_url.includes('vidlink') && !existingTgStream.stream_url.includes('autoembed') && !existingTgStream.stream_url.includes('multiembed')) {
     nativeStreamUrl = normalizeStreamUrl(existingTgStream.stream_url);
   } else if (!nativeStreamUrl && driveId) {
@@ -1056,7 +1112,11 @@ function applyQualitySwitch(targetQuality, opts = {}) {
           tgChatId = mMatch ? mMatch[1] : '-1004325759505';
         }
         if (vEntry.message_id) {
-          newSrc = `/stream/channel/${tgChatId}/${vEntry.message_id}`;
+          if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+            newSrc = `${activeStreamBaseUrl}/stream/channel/${tgChatId}/${vEntry.message_id}`;
+          } else {
+            newSrc = `/stream/channel/${tgChatId}/${vEntry.message_id}`;
+          }
         } else if (vEntry.stream_url) {
           newSrc = normalizeStreamUrl(vEntry.stream_url);
         }

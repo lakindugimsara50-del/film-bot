@@ -1477,7 +1477,7 @@ async def _execute_leech(
                 elif p_status == "failed":
                     p_line = f"❌ <b>{p_q} (Primary):</b> Upload අසාර්ථකයි"
                 elif p_status == "waiting":
-                    p_line = f"⏳ <b>{p_q} (Primary) Upload:</b> Multi-Quality පරිවර්තනයෙන් පසු Full Speed ආරම්භ වේ..."
+                    p_line = f"⏳ <b>{p_q} (Primary) Upload:</b> Multi-Quality සූදානම් වීමෙන් පසු Full Speed ආරම්භ වේ..."
                 else:
                     p_speed = dashboard_state["primary_speed"]
                     p_eta = dashboard_state["primary_eta"]
@@ -1490,11 +1490,18 @@ async def _execute_leech(
 
                 mq_status = dashboard_state["mq_encode_status"]
                 mq_target = dashboard_state["mq_target"]
+                is_direct_mq = "Direct" in str(mq_target)
                 if mq_status == "encoding":
                     mq_pct_str = dashboard_state["mq_encode_pct"]
-                    mq_line = f"🔄 <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> {mq_pct_str}"
+                    if is_direct_mq:
+                        mq_line = f"⚡ <b>Multi-Quality ({mq_target}) Direct බාගත කිරීම:</b> ක්‍රියාත්මකයි..."
+                    else:
+                        mq_line = f"🔄 <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> {mq_pct_str}"
                 elif mq_status == "complete":
-                    mq_line = f"✅ <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> සම්පූර්ණයි"
+                    if is_direct_mq:
+                        mq_line = f"✅ <b>Multi-Quality ({mq_target}):</b> කෙලින්ම බාගත වීම සාර්ථකයි"
+                    else:
+                        mq_line = f"✅ <b>Multi-Quality ({mq_target}) පරිවර්තනය:</b> සම්පූර්ණයි"
                 elif mq_status == "skipped":
                     mq_line = f"ℹ️ <b>Multi-Quality ({mq_target}):</b> Skipped"
                 else:
@@ -1741,7 +1748,7 @@ async def _execute_leech(
                 needed_qualities = [q for q in requested_qualities if q != primary_quality]
                 direct_downloaded: dict[str, str] = {}
 
-                if is_already_hardsubbed and chosen_candidate and needed_qualities:
+                if chosen_candidate and needed_qualities:
                     chosen_portal = (chosen_candidate.extra or {}).get("portal", "")
                     chosen_host = urllib.parse.urlparse(str(chosen_candidate.source_url)).netloc
 
@@ -1781,6 +1788,17 @@ async def _execute_leech(
                                     except Exception:
                                         pass
                                     dl_out = fs_out
+
+                                # If not pre-hardsubbed and subtitle exists, fast stream-copy subtitle into variant (~1 sec)
+                                if not is_already_hardsubbed and sub_to_burn_video and os.path.exists(sub_to_burn_video):
+                                    sub_var_out = os.path.join(temp_dir, f"subbed_{slug}_{vq}.mp4")
+                                    if await video_service.stream_copy_subtitles(dl_out, sub_to_burn_video, sub_var_out):
+                                        try:
+                                            os.remove(dl_out)
+                                        except Exception:
+                                            pass
+                                        dl_out = sub_var_out
+
                                 log.info("[LeechService] Direct variant %s download complete: %s (%s)", vq, dl_out, downloader.format_bytes(os.path.getsize(dl_out)))
                                 return (vq, dl_out)
                             return None

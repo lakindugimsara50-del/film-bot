@@ -588,19 +588,19 @@ async def _execute_leech(
         step1_text = (
             f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
             f"📺 <b>TV Series:</b> {display_title}\n"
-            f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී (EZTV, PirateBay, TorrentsCSV)..."
+            f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී (SinhalaSub, Cineru, SubzLK, Torrentio, EZTV)..."
             f"{auto_ep_note}\n\n"
-            f"⚡ <i>Cloud Multi-Source Auto Search සක්‍රීයයි...</i>"
+            f"⚡ <i>Sri Lankan Matched Video & Subtitle Engine සක්‍රීයයි...</i>"
         )
     else:
         step1_text = (
             f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
             f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
-            f"🔍 <b>පියවර 1/4:</b> ක්‍රම 4 ඔස්සේ බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී...\n\n"
-            f"• Method A: DDL Scrapers (PixelDrain/Pahe)\n"
-            f"• Method B: Multi-Torrent Scrapers (YTS/PirateBay)\n"
-            f"• Method C: Telegram Movie Channels\n"
-            f"• Method D: Web Stream Extractors"
+            f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී...\n\n"
+            f"• Priority 1: Sri Lankan Matched Portals (SinhalaSub/Cineru/SubzLK)\n"
+            f"• Priority 2: Telegram Cloud HD Channels\n"
+            f"• Priority 3: DDL Scrapers (PixelDrain/Pahe)\n"
+            f"• Priority 4: High-Seed Torrents (Torrentio/YTS/EZTV)"
         )
 
     await status_msg.edit_text(

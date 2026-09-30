@@ -399,6 +399,11 @@ async def _search_portal(
 
             # Package found video links as top-priority candidates
             for vl in video_links:
+                u_str = str(vl.get("url", "")).lower()
+                is_hardsub = (
+                    p_name in ("SinhalaSub", "CineSubz")
+                    or any(k in u_str for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                )
                 found_candidates.append({
                     "portal": p_name,
                     "post_url": current_target_url,
@@ -406,6 +411,7 @@ async def _search_portal(
                     "quality": vl["quality"],
                     "host_type": vl["host_type"],
                     "sub_srt_path": sub_srt_path,
+                    "is_already_hardsubbed": is_hardsub,
                 })
 
             if found_candidates:

@@ -1102,6 +1102,77 @@ class TestLeechService(unittest.TestCase):
 
         asyncio.run(run_candidates_test())
 
+    def test_srilankan_matched_candidates_detect_hardsub(self):
+        from services.scrapers import srilankan_matched_scraper
+
+        test_data = [
+            {"portal": "SinhalaSub", "url": "https://cdn.sinhalasub.net/877/Game.of.Thrones.S06E05%201080p.mp4", "quality": "1080p"},
+            {"portal": "CineSubz", "url": "https://drive.csplayer2.space/server1/movie.mp4", "quality": "720p"},
+            {"portal": "Baiscope", "url": "https://pixeldrain.com/api/file/abc", "quality": "1080p"},
+        ]
+
+        # SinhalaSub and CineSubz should be marked as pre-hardsubbed
+        for d in test_data[:2]:
+            u_str = d["url"].lower()
+            p_name = d["portal"]
+            is_hardsub = (
+                p_name in ("SinhalaSub", "CineSubz")
+                or any(k in u_str for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+            )
+            self.assertTrue(is_hardsub, f"Expected {p_name} to be marked is_already_hardsubbed")
+
+        # Baiscope untouched webrip should not be marked as pre-hardsubbed
+        b_data = test_data[2]
+        is_hardsub_b = (
+            b_data["portal"] in ("SinhalaSub", "CineSubz")
+            or any(k in b_data["url"].lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+        )
+        self.assertFalse(is_hardsub_b)
+
+    def test_find_all_candidates_preserves_hardsubbed_flag(self):
+        async def run_test():
+            fake_matched = [
+                {
+                    "portal": "SinhalaSub",
+                    "url": "https://cdn.sinhalasub.net/877/Got.S06E05.1080p.mp4",
+                    "quality": "1080p",
+                    "host_type": "cdn",
+                    "sub_srt_path": "/tmp/sub.srt",
+                    "is_already_hardsubbed": True,
+                    "post_url": "https://sinhalasub.lk/game-of-thrones-s06e05/",
+                },
+                {
+                    "portal": "SinhalaSub",
+                    "url": "https://cdn.sinhalasub.net/876/Got.S06E05.720p.mp4",
+                    "quality": "720p",
+                    "host_type": "cdn",
+                    "sub_srt_path": "/tmp/sub.srt",
+                    "is_already_hardsubbed": True,
+                    "post_url": "https://sinhalasub.lk/game-of-thrones-s06e05/",
+                },
+                {
+                    "portal": "SinhalaSub",
+                    "url": "https://cdn.sinhalasub.net/875/Got.S06E05.480p.mp4",
+                    "quality": "480p",
+                    "host_type": "cdn",
+                    "sub_srt_path": "/tmp/sub.srt",
+                    "is_already_hardsubbed": True,
+                    "post_url": "https://sinhalasub.lk/game-of-thrones-s06e05/",
+                },
+            ]
+            with patch("services.scrapers.srilankan_matched_scraper.search_matched_srilankan_releases", new_callable=AsyncMock, return_value=fake_matched), \
+                 patch("services.scrapers.method1_telegram.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.method3_ddl.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.torrent_finder.search_all_torrents", new_callable=AsyncMock, return_value=[]):
+                cands = await leech_service.find_all_candidates(title="Game of Thrones", season=6, episode=5, is_series=True)
+                self.assertGreaterEqual(len(cands), 3)
+                # Verify all SinhalaSub candidates have is_already_hardsubbed=True
+                for c in cands[:3]:
+                    self.assertTrue(c.extra.get("is_already_hardsubbed"))
+                    self.assertEqual(c.extra.get("portal"), "SinhalaSub")
+
+        asyncio.run(run_test())
+
 
 if __name__ == "__main__":
     unittest.main()

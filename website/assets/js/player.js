@@ -561,6 +561,7 @@ function _isValidSubUrl(u) {
 
 function getMovieSubtitles(movie) {
   if (!movie) return [];
+  const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));
   const defaultUri = buildDefaultSinhalaVttDataUri(movie);
   if (Array.isArray(movie.subtitles) && movie.subtitles.length > 0) {
     return movie.subtitles.map((sub, idx) => ({
@@ -569,7 +570,7 @@ function getMovieSubtitles(movie) {
       srclang: sub.srclang || 'si',
       label: sub.label || 'සිංහල උපසිරැසි (Sinhala)',
       url: _isValidSubUrl(sub.url) ? sub.url : defaultUri,
-      default: sub.default !== undefined ? sub.default : (idx === 0)
+      default: sub.default !== undefined ? sub.default : (!isHardcoded && idx === 0)
     }));
   }
 
@@ -590,7 +591,7 @@ function getMovieSubtitles(movie) {
         srclang: 'si',
         label: 'සිංහල උපසිරැසි (Sinhala)',
         url: effectiveSubUrl,
-        default: true
+        default: !isHardcoded
       }
     ];
   }
@@ -600,7 +601,7 @@ function getMovieSubtitles(movie) {
       srclang: 'si',
       label: 'සිංහල උපසිරැසි (Sinhala Auto)',
       url: defaultUri,
-      default: true
+      default: !isHardcoded
     }
   ];
 }
@@ -1445,6 +1446,14 @@ async function mountLiveSubtitleOverlay(playerEl, movie) {
     clearInterval(liveSubTimer);
     liveSubTimer = null;
   }
+  const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));
+  if (isHardcoded) {
+    liveSubEnabled = false;
+    const toggleBtn = document.getElementById('btn-toggle-live-sub');
+    const stateSpan = document.getElementById('live-sub-state');
+    if (toggleBtn) toggleBtn.classList.remove('active');
+    if (stateSpan) stateSpan.textContent = 'OFF';
+  }
   if (!parsedSubCues || parsedSubCues.length === 0) {
     await loadParsedSubtitles(movie);
   }
@@ -1784,11 +1793,12 @@ function injectInPlayerQualityControl(player) {
 
 function createVjsPlayer(playerEl, stream, movie) {
   const subtitles = getMovieSubtitles(movie);
+  const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));
   const tracksHTML = subtitles.map((sub, i) => `
     <track kind="subtitles" src="${FilmSub.escHtml(sub.url || '')}"
            srclang="${FilmSub.escHtml(sub.srclang || 'si')}"
            label="${FilmSub.escHtml(sub.label || 'සිංහල උපසිරැසි')}"
-           ${sub.default || i === 0 ? 'default' : ''}>`).join('');
+           ${(sub.default || i === 0) && !isHardcoded ? 'default' : ''}>`).join('');
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:8px;overflow:hidden">
@@ -1865,17 +1875,17 @@ function createVjsPlayer(playerEl, stream, movie) {
           for (let i = 0; i < existingTracks.length; i++) {
             if (existingTracks[i].kind === 'subtitles' || existingTracks[i].kind === 'captions') {
               hasSub = true;
-              existingTracks[i].mode = liveSubEnabled ? 'showing' : 'disabled';
+              existingTracks[i].mode = (liveSubEnabled && !isHardcoded) ? 'showing' : 'disabled';
             }
           }
-          if (!hasSub && typeof vjsPlayer.addRemoteTextTrack === 'function') {
+          if (!hasSub && !isHardcoded && typeof vjsPlayer.addRemoteTextTrack === 'function') {
             const primarySub = subs[0];
             vjsPlayer.addRemoteTextTrack({
               src: primarySub.url,
               kind: 'subtitles',
               srclang: primarySub.srclang || 'si',
               label: primarySub.label || 'සිංහල (Sinhala)',
-              default: true,
+              default: !isHardcoded,
             }, false);
           }
         } catch (e) {}

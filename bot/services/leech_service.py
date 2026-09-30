@@ -313,6 +313,11 @@ async def find_all_candidates(
             m_portal = m.get("portal", "SriLankan")
             m_ht = m.get("host_type", "ddl")
             m_method = "torrent" if m_ht == "magnet" else "ddl"
+            m_is_hardsub = bool(
+                m.get("is_already_hardsubbed")
+                or m_portal in ("SinhalaSub", "CineSubz")
+                or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+            )
             matched_candidates.append(
                 LeechCandidate(
                     method=m_method,
@@ -325,6 +330,7 @@ async def find_all_candidates(
                         "sub_srt_path": m.get("sub_srt_path"),
                         "portal": m_portal,
                         "post_url": m.get("post_url"),
+                        "is_already_hardsubbed": m_is_hardsub,
                     },
                 )
             )
@@ -1080,6 +1086,19 @@ async def _execute_leech(
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
         slug = f"{_slugify(title, year)}{ep_suffix}"
 
+        # Check if the source video has Sinhala subtitles pre-burned by the portal (SinhalaSub, CineSubz, etc.)
+        is_already_hardsubbed = bool(
+            (chosen_candidate and chosen_candidate.extra and chosen_candidate.extra.get("is_already_hardsubbed"))
+            or (chosen_candidate and any(k in str(chosen_candidate.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer")))
+            or (chosen_candidate and chosen_candidate.extra and any(k in str(chosen_candidate.extra.get("portal", "")).lower() for k in ("sinhalasub", "cinesubz")))
+        )
+        if is_already_hardsubbed:
+            log.info(
+                "[LeechService] Source candidate '%s' has pre-burned Sinhala subtitles (is_already_hardsubbed=True). "
+                "Disabling secondary video subtitle burn to avoid double subtitles.",
+                chosen_candidate.method_name if chosen_candidate else "Unknown"
+            )
+
         # 1. Check if subtitle was already cached by Stage 1 (/add) or /sub; otherwise auto-acquire
         sub_srt_path: Optional[str] = None
         sub_vtt_path: Optional[str] = None
@@ -1159,6 +1178,8 @@ async def _execute_leech(
         remuxed = os.path.join(temp_dir, f"remux_tmp_{slug}.mp4") if os.path.abspath(final_mp4) == os.path.abspath(local_file) else final_mp4
 
         sub_to_merge = sub_srt_path if (sub_srt_path and os.path.exists(sub_srt_path)) else (sub_vtt_path if (sub_vtt_path and os.path.exists(sub_vtt_path)) else None)
+        # If the video is already pre-hardsubbed by the portal (SinhalaSub, CineSubz), NEVER burn subtitles again
+        sub_to_burn_video = None if is_already_hardsubbed else sub_to_merge
 
         _last_comp_edit = 0.0
         async def _compress_progress(pct: float, pct_str: str) -> None:
@@ -1168,7 +1189,12 @@ async def _execute_leech(
                 return
             _last_comp_edit = now
             p_bar = downloader.format_progress_bar(pct)
-            sub_lbl = "සිංහල උපසිරැසි Soft-Mux වේ" if sub_to_merge else "උපසිරැසි රහිතව"
+            if is_already_hardsubbed:
+                sub_lbl = "මූලාශ්‍රයේම සිංහල උපසිරැසි අඩංගුයි (Pre-hardsubbed)"
+            elif sub_to_merge:
+                sub_lbl = "සිංහල උපසිරැසි Soft-Mux වේ"
+            else:
+                sub_lbl = "උපසිරැසි රහිතව"
             txt = (
                 f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.40GB Safe Ceiling)...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
@@ -1204,7 +1230,7 @@ async def _execute_leech(
                 output_path=remuxed,
                 target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
-                sub_path=sub_to_merge,
+                sub_path=sub_to_burn_video,
             )
             if comp_ok and os.path.exists(remuxed) and os.path.getsize(remuxed) <= video_service.MAX_TELEGRAM_BOT_SIZE:
                 if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
@@ -1224,16 +1250,15 @@ async def _execute_leech(
         else:
             # File is <= 1.95 GB
             try:
-                sub_status_text = (
-                    "සිංහල උපසිරැසි Hard-Burn Engine වෙත යොමු කෙරේ (Single-Decode NVENC)"
-                    if sub_to_merge
-                    else "උපසිරැසි රහිතව Remux වේ"
-                )
-                method_text = (
-                    f"Fast MP4 Remux + Hard-Burn Prep ({ext.upper()} ➔ MP4)"
-                    if sub_to_merge
-                    else f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
-                )
+                if is_already_hardsubbed:
+                    sub_status_text = "මූලාශ්‍රයේම සිංහල උපසිරැසි අඩංගුයි (Pre-hardsubbed ✅ Single Clean Sub)"
+                    method_text = f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
+                elif sub_to_merge:
+                    sub_status_text = "සිංහල උපසිරැසි Hard-Burn Engine වෙත යොමු කෙරේ (Single-Decode NVENC)"
+                    method_text = f"Fast MP4 Remux + Hard-Burn Prep ({ext.upper()} ➔ MP4)"
+                else:
+                    sub_status_text = "උපසිරැසි රහිතව Remux වේ"
+                    method_text = f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
                 await status_msg.edit_text(
                     f"⚙️ <b>පියවර 3/5: වීඩියෝ සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
@@ -1247,9 +1272,9 @@ async def _execute_leech(
                 pass
 
             task_tracker.tracker.set_step(user_id, "Video Remux & Subtitle Prep (FFmpeg)...")
-            log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_merge)
+            log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_burn_video)
 
-            if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remuxed, disposition="default"):
+            if await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remuxed, disposition="default"):
                 if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                     try:
                         os.remove(local_file)
@@ -1266,7 +1291,7 @@ async def _execute_leech(
                 log.info("[LeechService] Instantaneous stream-copy muxing succeeded: %s", local_file)
             elif ext in (".mkv", ".webm", ".avi"):
                 # Always attempt to convert MKV/WebM/AVI into Web-Streamable MP4 with Sinhala subtitles (+faststart)
-                if await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
+                if await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_burn_video):
                     if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                         try:
                             os.remove(local_file)
@@ -1281,7 +1306,7 @@ async def _execute_leech(
                     local_file = remuxed
                     is_faststart_done = True
                     log.info("[LeechService] Web streamable MP4 conversion succeeded: %s", local_file)
-                elif await video_service.stream_copy_subtitles(local_file, sub_to_merge, remux_native := os.path.join(temp_dir, f"remux_{slug}{ext}"), disposition="default"):
+                elif await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remux_native := os.path.join(temp_dir, f"remux_{slug}{ext}"), disposition="default"):
                     if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remux_native):
                         try:
                             os.remove(local_file)
@@ -1290,16 +1315,16 @@ async def _execute_leech(
                     local_file = remux_native
                     is_faststart_done = ext == ".mp4"
                     log.info("[LeechService] Native container stream-copy muxing succeeded: %s", local_file)
-                elif sub_to_merge and os.path.exists(sub_to_merge):
+                elif sub_to_burn_video and os.path.exists(sub_to_burn_video):
                     sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
-                    if await video_service.embed_subtitles_soft(local_file, sub_to_merge, sub_muxed, disposition="default"):
+                    if await video_service.embed_subtitles_soft(local_file, sub_to_burn_video, sub_muxed, disposition="default"):
                         try:
                             os.remove(local_file)
                         except Exception:
                             pass
                         local_file = sub_muxed
                         is_faststart_done = sub_muxed.lower().endswith(".mp4")
-            elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_merge):
+            elif await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_burn_video):
                 if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                     try:
                         os.remove(local_file)
@@ -1314,10 +1339,10 @@ async def _execute_leech(
                 local_file = remuxed
                 is_faststart_done = True
                 log.info("[LeechService] Single-pass MP4 + Sinhala subtitle merge succeeded: %s", local_file)
-            elif sub_to_merge and os.path.exists(sub_to_merge):
+            elif sub_to_burn_video and os.path.exists(sub_to_burn_video):
                 # Fallback soft-embed if stream-copy was skipped
                 sub_muxed = os.path.join(temp_dir, f"sub_{os.path.basename(local_file)}")
-                if await video_service.embed_subtitles_soft(local_file, sub_to_merge, sub_muxed, disposition="default"):
+                if await video_service.embed_subtitles_soft(local_file, sub_to_burn_video, sub_muxed, disposition="default"):
                     try:
                         os.remove(local_file)
                     except Exception:
@@ -1351,7 +1376,7 @@ async def _execute_leech(
                 output_path=comp_guard_out,
                 target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
-                sub_path=sub_to_merge,
+                sub_path=sub_to_burn_video,
             )
             if comp_ok and os.path.exists(comp_guard_out) and os.path.getsize(comp_guard_out) <= video_service.MAX_TELEGRAM_BOT_SIZE:
                 try:
@@ -1694,8 +1719,8 @@ async def _execute_leech(
                 await _render_dashboard(force=True)
                 return
             try:
-                has_hard_sub = bool(sub_to_merge and os.path.exists(sub_to_merge))
-                # When Sinhala subtitle is present, include primary_quality in Single-Decode Hard-Burn (split=3)
+                has_hard_sub = bool(sub_to_burn_video and os.path.exists(sub_to_burn_video))
+                # When Sinhala subtitle is present and not pre-burned, include primary_quality in Single-Decode Hard-Burn (split=3)
                 # so 1080p, 720p, and 480p ALL get libass Noto Sans Sinhala Bold hard-burned simultaneously!
                 if primary_quality == "1080p":
                     requested_qualities = ("1080p", "720p", "480p") if has_hard_sub else ("720p", "480p")
@@ -1710,18 +1735,85 @@ async def _execute_leech(
                     await _render_dashboard(force=True)
                     return
 
-                dashboard_state["mq_encode_status"] = "encoding"
-                dashboard_state["mq_target"] = "/".join(requested_qualities)
-                await _render_dashboard(force=True)
+                # ── Fast-Path: Direct Multi-Quality Download from Same Portal ────────
+                # If the portal (e.g. SinhalaSub) already provides pre-encoded 720p and 480p files,
+                # directly download them over high-speed HTTP instead of spending minutes transcoding!
+                needed_qualities = [q for q in requested_qualities if q != primary_quality]
+                direct_downloaded: dict[str, str] = {}
 
-                variant_files = await video_service.generate_multi_quality_variants_ram(
-                    input_path=local_file,
-                    output_dir=temp_dir,
-                    slug=slug,
-                    sub_path=sub_to_merge,
-                    qualities=requested_qualities,
-                    progress_callback=_mq_progress_cb,
-                )
+                if is_already_hardsubbed and chosen_candidate and needed_qualities:
+                    chosen_portal = (chosen_candidate.extra or {}).get("portal", "")
+                    chosen_host = urllib.parse.urlparse(str(chosen_candidate.source_url)).netloc
+
+                    matched_variants: dict[str, LeechCandidate] = {}
+                    for c in candidates:
+                        if c == chosen_candidate:
+                            continue
+                        c_q = (c.quality or "").lower()
+                        if c_q in needed_qualities and c_q not in matched_variants:
+                            c_portal = (c.extra or {}).get("portal", "")
+                            c_host = urllib.parse.urlparse(str(c.source_url)).netloc
+                            if (chosen_portal and c_portal == chosen_portal) or (chosen_host and c_host == chosen_host):
+                                matched_variants[c_q] = c
+
+                    if matched_variants:
+                        log.info(
+                            "[LeechService] Found %d pre-encoded direct variant(s) on %s (%s). Starting direct turbo download...",
+                            len(matched_variants), chosen_portal or chosen_host, list(matched_variants.keys())
+                        )
+                        dashboard_state["mq_encode_status"] = "encoding"
+                        dashboard_state["mq_target"] = "/".join(matched_variants.keys()) + " (Direct CDN)"
+                        await _render_dashboard(force=True)
+
+                        async def _dl_single_variant(vq: str, vcand: LeechCandidate) -> Optional[tuple[str, str]]:
+                            v_clean_name = f"{slug}-{vq}.mp4"
+                            dl_out = await downloader.download_http(
+                                url=vcand.source_url,
+                                dest_dir=temp_dir,
+                                filename=v_clean_name,
+                                task_key=f"{task_key}_{vq}",
+                            )
+                            if dl_out and downloader.is_valid_downloaded_video(dl_out):
+                                fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")
+                                if await video_service.apply_faststart(dl_out, fs_out):
+                                    try:
+                                        os.remove(dl_out)
+                                    except Exception:
+                                        pass
+                                    dl_out = fs_out
+                                log.info("[LeechService] Direct variant %s download complete: %s (%s)", vq, dl_out, downloader.format_bytes(os.path.getsize(dl_out)))
+                                return (vq, dl_out)
+                            return None
+
+                        dl_tasks = [
+                            _dl_single_variant(vq, vcand)
+                            for vq, vcand in matched_variants.items()
+                        ]
+                        dl_results = await asyncio.gather(*dl_tasks, return_exceptions=True)
+                        for r in dl_results:
+                            if isinstance(r, tuple) and r[0] and r[1]:
+                                direct_downloaded[r[0]] = r[1]
+                                variant_files[r[0]] = r[1]
+
+                remaining_qualities = tuple(q for q in requested_qualities if q not in direct_downloaded)
+
+                if remaining_qualities and any(q != primary_quality for q in remaining_qualities):
+                    dashboard_state["mq_encode_status"] = "encoding"
+                    dashboard_state["mq_target"] = "/".join(remaining_qualities)
+                    await _render_dashboard(force=True)
+
+                    sub_for_encode = None if is_already_hardsubbed else sub_to_burn_video
+                    ffmpeg_variants = await video_service.generate_multi_quality_variants_ram(
+                        input_path=local_file,
+                        output_dir=temp_dir,
+                        slug=slug,
+                        sub_path=sub_for_encode,
+                        qualities=remaining_qualities,
+                        progress_callback=_mq_progress_cb,
+                    )
+                    if ffmpeg_variants:
+                        variant_files.update(ffmpeg_variants)
+
                 if variant_files:
                     q_keys = "/".join(variant_files.keys())
                     # If primary_quality was hard-burned in the single-decode pass, promote it to local_file
@@ -2172,8 +2264,10 @@ async def _execute_leech(
             "genres": tmdb_meta.get("genres", ["Action", "Adventure"]),
             "language": "English",
             "subtitle_language": "Sinhala",
-            "has_sinhala_sub": has_sinhala,
-            "sub_merged": has_sinhala,
+            "has_sinhala_sub": has_sinhala or is_already_hardsubbed,
+            "sub_merged": has_sinhala or is_already_hardsubbed,
+            "is_already_hardsubbed": is_already_hardsubbed,
+            "sub_hardcoded": is_already_hardsubbed,
             "quality": chosen_candidate.quality,
             "duration": dur_str,
             "description": tmdb_meta.get("description", ""),
@@ -2197,7 +2291,7 @@ async def _execute_leech(
                     "srclang": "si",
                     "label": "සිංහල උපසිරැසි (Sinhala)",
                     "url": default_sub_url,
-                    "default": True,
+                    "default": not is_already_hardsubbed,
                 }
             ] if (has_sinhala and default_sub_url) else [],
             "source_method": chosen_candidate.method,

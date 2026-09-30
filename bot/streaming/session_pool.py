@@ -245,25 +245,47 @@ class TelegramStreamPool:
         chunk_idx: int,
     ) -> bytes:
         """
-        Fetch a single 1 MiB chunk (offset=chunk_idx, limit=1) from Telegram MTProto
-        using the next available client in the stream pool. Retries on FloodWait.
+        Fetch a single 1 MiB chunk (offset=chunk_idx, limit=1) from Telegram MTProto.
+        Prioritizes the owning client of the Message or the main bot client (guaranteed access),
+        then tries pool clients as fallback. Retries on FloodWait.
         """
-        for attempt in range(2):
-            client = await self.get_client()
+        primary_client = getattr(media_source, "_client", None)
+        if not primary_client or not getattr(primary_client, "is_connected", False):
+            primary_client = self._main_client
+
+        candidates = []
+        if primary_client and getattr(primary_client, "is_connected", False):
+            candidates.append(primary_client)
+
+        for c in self.clients:
+            if c != primary_client and getattr(c, "is_connected", False):
+                candidates.append(c)
+                if len(candidates) >= 5:
+                    break
+
+        if not candidates:
+            candidates = [await self.get_client()]
+
+        last_exc = None
+        for client in candidates:
             buf = bytearray()
             try:
                 async for piece in client.stream_media(media_source, offset=chunk_idx, limit=1):
                     if piece:
                         buf.extend(piece)
-                return bytes(buf)
+                if buf:
+                    return bytes(buf)
             except FloodWait as fw:
-                log.warning("[StreamPool] FloodWait %ds on chunk %d. Switching to backup client...", fw.value, chunk_idx)
+                log.warning("[StreamPool] FloodWait %ds on chunk %d with client %s", fw.value, chunk_idx, getattr(client, "name", ""))
                 await asyncio.sleep(min(fw.value, 1.0))
             except Exception as exc:
-                log.warning("[StreamPool] Chunk %d fetch attempt %d failed: %s", chunk_idx, attempt, exc)
-                if attempt == 1:
-                    raise
-                await asyncio.sleep(0.05)
+                last_exc = exc
+                log.debug("[StreamPool] Client %s cannot stream chunk %d: %s", getattr(client, "name", ""), chunk_idx, exc)
+                continue
+
+        if last_exc:
+            log.warning("[StreamPool] All candidate clients failed for chunk %d: %s", chunk_idx, last_exc)
+            raise last_exc
         return b""
 
     async def stream_media_chunks(

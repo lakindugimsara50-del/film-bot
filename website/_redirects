@@ -8,7 +8,7 @@
 
 # ── High-Speed Telegram Cloud Stream Proxy ──────────────────────────────────
 # Proxy /stream/* to the live Render streaming backend (Edge-cached & range-enabled)
-/stream/*       https://film-bot-2.onrender.com/stream/:splat   200
+/stream/*       https://described-greatly-confirmed-hand.trycloudflare.com/stream/:splat   200
 
 # ── Clean movie URLs ─────────────────────────────────────────────────────────
 # /movie/the-dark-knight  →  movie.html?id=the-dark-knight  (stays in URL bar)

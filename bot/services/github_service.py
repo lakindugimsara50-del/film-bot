@@ -330,18 +330,22 @@ async def upload_file(
 
 _STREAM_ENDPOINT_PATH = "website/data/stream_endpoint.json"
 _STREAM_ENDPOINT_JS_PATH = "website/data/stream_endpoint.js"
+_REDIRECTS_PATH = "website/_redirects"
 _LOCAL_STREAM_ENDPOINT_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "website", "data", "stream_endpoint.json")
 )
 _LOCAL_STREAM_ENDPOINT_JS_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "website", "data", "stream_endpoint.js")
 )
+_LOCAL_REDIRECTS_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "website", "_redirects")
+)
 
 
 async def publish_live_stream_endpoint(stream_base_url: str) -> bool:
     """
     Publish the active streaming server base URL (e.g. Cloudflare tunnel or Render URL)
-    to website/data/stream_endpoint.json and stream_endpoint.js on GitHub and locally.
+    to website/data/stream_endpoint.json, stream_endpoint.js, and website/_redirects on GitHub and locally.
     Enables zero-configuration live Telegram video streaming on the website.
     """
     clean_url = stream_base_url.strip().rstrip("/")
@@ -368,6 +372,30 @@ async def publish_live_stream_endpoint(stream_base_url: str) -> bool:
 
     token = _get_active_token()
     repo = _get_active_repo()
+
+    # Sync local and remote _redirects
+    try:
+        if os.path.exists(_LOCAL_REDIRECTS_PATH):
+            with open(_LOCAL_REDIRECTS_PATH, "r", encoding="utf-8") as f:
+                redir_text = f.read()
+            new_redir = re.sub(
+                r"^/stream/\*\s+https?://[^\s]+/stream/:splat\s+200",
+                f"/stream/*       {clean_url}/stream/:splat   200",
+                redir_text,
+                flags=re.MULTILINE
+            )
+            if new_redir != redir_text:
+                with open(_LOCAL_REDIRECTS_PATH, "w", encoding="utf-8") as f:
+                    f.write(new_redir)
+                if token and repo not in ("", "username/repo"):
+                    await upload_file(
+                        content=new_redir.encode("utf-8"),
+                        path=_REDIRECTS_PATH,
+                        message=f"feat(stream): update _redirects proxy to {clean_url}",
+                    )
+    except Exception as red_err:
+        log.debug("[GitHubService] _redirects sync note: %s", red_err)
+
     if not token or repo in ("", "username/repo"):
         return True
 

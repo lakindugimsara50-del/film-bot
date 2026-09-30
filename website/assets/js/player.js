@@ -59,8 +59,8 @@ async function probeStreamServerHealth(baseUrl) {
   if (!baseUrl || !baseUrl.startsWith('http')) return false;
   try {
     const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 2500);
-    const resp = await fetch(`${baseUrl.replace(/\/+$/, '')}/stream/ping?t=${Date.now()}`, {
+    const tId = setTimeout(() => ctrl.abort(), 3500);
+    const resp = await fetch(`${baseUrl.replace(/\/+$/, '')}/health?t=${Date.now()}`, {
       method: 'GET',
       signal: ctrl.signal,
       mode: 'cors',
@@ -69,8 +69,8 @@ async function probeStreamServerHealth(baseUrl) {
     if (resp && resp.ok) return true;
 
     const ctrl2 = new AbortController();
-    const tId2 = setTimeout(() => ctrl2.abort(), 1500);
-    const resp2 = await fetch(`${baseUrl.replace(/\/+$/, '')}/health?t=${Date.now()}`, {
+    const tId2 = setTimeout(() => ctrl2.abort(), 2000);
+    const resp2 = await fetch(`${baseUrl.replace(/\/+$/, '')}/stream/ping?t=${Date.now()}`, {
       method: 'GET',
       signal: ctrl2.signal,
       mode: 'cors',
@@ -87,7 +87,7 @@ async function loadLiveStreamConfig() {
   const cachedHealthy = sessionStorage.getItem('filmsub_stream_healthy');
   const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
   const cacheTtl = cachedHealthy === '1' ? 30000 : 5000;
-  if (cached !== null && (Date.now() - cachedTime) < cacheTtl) {
+  if (cached !== null && cached !== '' && (Date.now() - cachedTime) < cacheTtl) {
     activeStreamBaseUrl = cached;
     streamServerHealthy = cachedHealthy === '1';
     return activeStreamBaseUrl;
@@ -99,7 +99,7 @@ async function loadLiveStreamConfig() {
   try {
     const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
     const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 2500);
+    const tId = setTimeout(() => ctrl.abort(), 3000);
     const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
     clearTimeout(tId);
     if (rGh.ok) {
@@ -110,7 +110,7 @@ async function loadLiveStreamConfig() {
     }
   } catch (e) {}
 
-  // 2. Fallback to local endpoint only if GitHub raw was unreachable
+  // 2. Fallback to local endpoint if GitHub raw was unreachable
   if (!candidateUrl) {
     try {
       const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
@@ -123,21 +123,28 @@ async function loadLiveStreamConfig() {
     } catch (e) {}
   }
 
-  // 3. Verify direct browser reachability to candidateUrl (/stream/ping or /health);
-  //    if blocked by ISP or offline, fall back to '' so requests route via
-  //    Cloudflare Pages Edge Proxy (/stream/channel/:chat_id/:msg_id)
-  if (candidateUrl) {
-    const directOk = await probeStreamServerHealth(candidateUrl);
-    if (directOk) {
-      activeStreamBaseUrl = candidateUrl;
-      streamServerHealthy = true;
-    } else {
-      activeStreamBaseUrl = '';
-      streamServerHealthy = false;
+  // 3. Fallback scan of existing movies catalog for live trycloudflare.com URL
+  if (!candidateUrl && window.FilmSub && typeof FilmSub.getAllMovies === 'function') {
+    const allM = FilmSub.getAllMovies();
+    for (const m of allM) {
+      const u = m.stream_url || (m.variant_media && m.variant_media['1080p'] && m.variant_media['1080p'].stream_url) || '';
+      const match = u.match(/(https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com)/i);
+      if (match) {
+        candidateUrl = match[1];
+        break;
+      }
     }
-  } else {
-    activeStreamBaseUrl = '';
-    streamServerHealthy = false;
+  }
+
+  // 4. Retain candidateUrl as activeStreamBaseUrl and probe health in background
+  if (candidateUrl) {
+    activeStreamBaseUrl = candidateUrl;
+    probeStreamServerHealth(candidateUrl).then(ok => {
+      streamServerHealthy = ok;
+      try {
+        sessionStorage.setItem('filmsub_stream_healthy', ok ? '1' : '0');
+      } catch (e) {}
+    });
   }
 
   try {
@@ -195,6 +202,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   currentMovie = FilmSub.findMovieBySlug(slug);
+  if (!currentMovie) {
+    try {
+      const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
+      const ctrl = new AbortController();
+      const tId = setTimeout(() => ctrl.abort(), 3000);
+      const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(tId);
+      if (rGh.ok) {
+        const d = await rGh.json();
+        const moviesList = Array.isArray(d) ? d : (d.movies || []);
+        const found = moviesList.find(m => m.slug === slug || m.id === slug);
+        if (found) {
+          currentMovie = found;
+          if (window.FilmSub && Array.isArray(FilmSub.movies)) {
+            FilmSub.movies.unshift(found);
+          }
+        }
+      }
+    } catch (e) {}
+  }
   if (!currentMovie) {
     showError('Movie not found. It may have been removed.');
     return;
@@ -482,11 +509,12 @@ function getMovieStreams(movie) {
     const qKey = (currentEffectiveQuality || '1080p').toLowerCase();
     const vOpt = vm[qKey] || vm['1080p'] || vm['720p'] || vm['480p'] || vm['360p'] || Object.values(vm)[0];
     if (vOpt) {
-      if (vOpt.message_id) {
-        tgMsgId = vOpt.message_id;
-      } else if (vOpt.stream_url) {
+      if (vOpt.stream_url) {
         const norm = normalizeStreamUrl(vOpt.stream_url);
         if (norm) nativeStreamUrl = norm;
+      }
+      if (vOpt.message_id) {
+        tgMsgId = vOpt.message_id;
       }
     }
   }
@@ -1991,8 +2019,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       ${buildSuperLoaderHtml(movie, stream.label || stream.server)}
       <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
              controls preload="auto" playsinline webkit-playsinline
-             style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000000 !important"
-             data-setup='{"fluid": true, "responsive": true}'>
+             style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000000 !important">
         <source src="${FilmSub.escHtml(stream.stream_url)}" type="${FilmSub.escHtml(stream.type || 'video/mp4')}">
         ${tracksHTML}
         <p class="vjs-no-js">Enable JavaScript or use a modern browser to watch videos.</p>
@@ -2085,8 +2112,17 @@ function createVjsPlayer(playerEl, stream, movie) {
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
       attachMobileTouchControls(playerEl, vjsPlayer);
-      setTimeout(hideLoader, 600);
-      try { vjsPlayer.play().catch(() => {}); } catch (e) {}
+      setTimeout(hideLoader, 500);
+      try {
+        const p = vjsPlayer.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => {
+            hideLoader();
+          });
+        }
+      } catch (e) {
+        hideLoader();
+      }
     });
 
     vjsPlayer.on('loadedmetadata', () => {
@@ -2111,7 +2147,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       } catch (e) {}
     });
 
-    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 6.5s
+    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 18s
     // (e.g. stream server sleeping, Colab proxy offline, or network stall),
     // display the Telegram Reconnect / Retry screen so playback never hangs indefinitely.
     const slowHeaderWatchdog = setTimeout(() => {
@@ -2121,7 +2157,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         renderPlayerFallback(playerEl, movie);
       }
-    }, 6500);
+    }, 18000);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);

@@ -152,31 +152,61 @@ async def download_and_upload(
             )
 
         # Userbot upload fallback if bot_client not provided
+        from services.video_service import get_video_metadata, generate_video_thumbnail
+        meta = get_video_metadata(local_path)
+        width = meta.get("width", 1280)
+        height = meta.get("height", 720)
+        duration = meta.get("duration", 0)
+
+        thumb_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        thumb_temp.close()
+        thumb_path = generate_video_thumbnail(local_path, thumb_path=thumb_temp.name, duration=duration)
+        if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
+            thumb_path = None
+            if os.path.exists(thumb_temp.name):
+                try:
+                    os.remove(thumb_temp.name)
+                except Exception:
+                    pass
+
         userbot = Client(
             SESSION_NAME,
             api_id=API_ID,
             api_hash=API_HASH,
             max_concurrent_transmissions=getattr(config, "TG_MAX_CONCURRENT_TRANSMISSIONS", 10),
         )
-        async with userbot:
-            with LowRamFileReader(local_path) as reader:
+        try:
+            async with userbot:
+                with LowRamFileReader(local_path) as reader:
+                    try:
+                        message = await userbot.send_video(
+                            chat_id=target_chat,
+                            video=reader,
+                            file_name=file_name,
+                            duration=duration,
+                            width=width,
+                            height=height,
+                            thumb=thumb_path,
+                            supports_streaming=True,
+                            disable_notification=True,
+                        )
+                    except Exception as vid_err:
+                        log.warning("[TelegramUpload] userbot send_video failed (%s). Retrying send_document...", vid_err)
+                        reader.seek(0)
+                        message = await userbot.send_document(
+                            chat_id=target_chat,
+                            document=reader,
+                            file_name=file_name,
+                            thumb=thumb_path,
+                            force_document=True,
+                            disable_notification=True,
+                        )
+        finally:
+            if thumb_path and os.path.exists(thumb_path):
                 try:
-                    message = await userbot.send_video(
-                        chat_id=target_chat,
-                        video=reader,
-                        file_name=file_name,
-                        disable_notification=True,
-                    )
-                except Exception as vid_err:
-                    log.warning("[TelegramUpload] userbot send_video failed (%s). Retrying send_document...", vid_err)
-                    reader.seek(0)
-                    message = await userbot.send_document(
-                        chat_id=target_chat,
-                        document=reader,
-                        file_name=file_name,
-                        force_document=True,
-                        disable_notification=True,
-                    )
+                    os.remove(thumb_path)
+                except Exception:
+                    pass
 
         file_id: str = message.video.file_id if message.video else (message.document.file_id if message.document else "")
         message_id: int = message.id
@@ -217,6 +247,24 @@ async def upload_video_file(
         pass
 
     log.info("[TelegramUpload] Uploading '%s' (%d bytes) to chat %s", file_name, file_size, target)
+
+    # ── Probe video metadata & generate 16:9 widescreen thumbnail ────────────
+    from services.video_service import get_video_metadata, generate_video_thumbnail
+    meta = get_video_metadata(file_path)
+    width = meta.get("width", 1280)
+    height = meta.get("height", 720)
+    duration = meta.get("duration", 0)
+
+    thumb_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+    thumb_temp.close()
+    thumb_path = generate_video_thumbnail(file_path, thumb_path=thumb_temp.name, duration=duration)
+    if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
+        thumb_path = None
+        if os.path.exists(thumb_temp.name):
+            try:
+                os.remove(thumb_temp.name)
+            except Exception:
+                pass
 
     # Enable multi-chunk parallel MTProto pipelining for ultra-fast upload
     if hasattr(bot_client, "max_concurrent_transmissions"):
@@ -317,6 +365,11 @@ async def upload_video_file(
                         video=reader,
                         file_name=file_name,
                         caption=caption,
+                        duration=duration,
+                        width=width,
+                        height=height,
+                        thumb=thumb_path,
+                        supports_streaming=True,
                         progress=_pyrogram_progress,
                         disable_notification=True,
                     )
@@ -329,6 +382,7 @@ async def upload_video_file(
                         document=reader,
                         file_name=file_name,
                         caption=caption,
+                        thumb=thumb_path,
                         force_document=True,
                         progress=_pyrogram_progress,
                         disable_notification=True,
@@ -341,6 +395,11 @@ async def upload_video_file(
                     video=file_path,
                     file_name=file_name,
                     caption=caption,
+                    duration=duration,
+                    width=width,
+                    height=height,
+                    thumb=thumb_path,
+                    supports_streaming=True,
                     progress=_pyrogram_progress,
                     disable_notification=True,
                 )
@@ -352,6 +411,7 @@ async def upload_video_file(
                     document=file_path,
                     file_name=file_name,
                     caption=caption,
+                    thumb=thumb_path,
                     force_document=True,
                     progress=_pyrogram_progress,
                     disable_notification=True,
@@ -376,6 +436,11 @@ async def upload_video_file(
             await asyncio.wait_for(monitor_task, timeout=0.5)
         except (asyncio.CancelledError, asyncio.TimeoutError, Exception):
             pass
+        if thumb_path and os.path.exists(thumb_path):
+            try:
+                os.remove(thumb_path)
+            except Exception:
+                pass
 
     # Ensure a final 100% progress update is dispatched if not already reported
     if progress_callback and file_size > 0:

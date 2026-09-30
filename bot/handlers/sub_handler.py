@@ -239,12 +239,41 @@ def register(app: Client) -> None:
                                 
                                 await status_msg.edit_text("⏳ <b>Telegram Channel එක වෙත නැවත Upload කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
                                 ch_id = target_movie.get("channel_id") or config.PRIVATE_CHANNEL_ID
-                                sent_msg = await client.send_video(
-                                    chat_id=ch_id,
-                                    video=output_mp4,
-                                    caption=f"{movie_title} - Hard-Subbed",
-                                    supports_streaming=True
-                                )
+                                
+                                from services.video_service import get_video_metadata, generate_video_thumbnail
+                                meta_remux = get_video_metadata(output_mp4)
+                                w_remux = meta_remux.get("width", 1280)
+                                h_remux = meta_remux.get("height", 720)
+                                d_remux = meta_remux.get("duration", 0)
+                                
+                                th_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                                th_temp.close()
+                                th_path = generate_video_thumbnail(output_mp4, thumb_path=th_temp.name, duration=d_remux)
+                                if not (th_path and os.path.exists(th_path) and os.path.getsize(th_path) > 500):
+                                    th_path = None
+                                    if os.path.exists(th_temp.name):
+                                        try:
+                                            os.remove(th_temp.name)
+                                        except Exception:
+                                            pass
+
+                                try:
+                                    sent_msg = await client.send_video(
+                                        chat_id=ch_id,
+                                        video=output_mp4,
+                                        caption=f"{movie_title} - Hard-Subbed",
+                                        duration=d_remux,
+                                        width=w_remux,
+                                        height=h_remux,
+                                        thumb=th_path,
+                                        supports_streaming=True
+                                    )
+                                finally:
+                                    if th_path and os.path.exists(th_path):
+                                        try:
+                                            os.remove(th_path)
+                                        except Exception:
+                                            pass
                                 
                                 target_movie["file_id"] = sent_msg.video.file_id
                                 target_movie["message_id"] = sent_msg.id

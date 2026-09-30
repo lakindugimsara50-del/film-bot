@@ -17,6 +17,7 @@ import re
 import multiprocessing
 import shutil
 import subprocess
+import tempfile
 from typing import Callable, Optional
 
 log = logging.getLogger(__name__)
@@ -214,10 +215,13 @@ def get_ffmpeg_binary() -> Optional[str]:
     return None
 
 
-def get_video_duration(file_path: str, ffmpeg_bin: str) -> float:
+def get_video_duration(file_path: str, ffmpeg_bin: Optional[str] = None) -> float:
     """Extract duration in seconds using ffmpeg -i (supports both container Duration and MKV stream DURATION tags)."""
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return 0.0
     try:
-        cmd = [ffmpeg_bin, "-hide_banner", "-i", file_path]
+        cmd = [exe, "-hide_banner", "-i", file_path]
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -247,7 +251,7 @@ def get_video_duration(file_path: str, ffmpeg_bin: str) -> float:
 
 
 def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tuple[int, int]:
-    """Extract (width, height) resolution using ffmpeg -i."""
+    """Extract (width, height) resolution using ffmpeg -i, accounting for anamorphic display aspect ratio (DAR)."""
     exe = ffmpeg_bin or get_ffmpeg_binary()
     if not exe or not os.path.exists(file_path):
         return (0, 0)
@@ -263,18 +267,163 @@ def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tu
             timeout=10,
         )
         stderr_text = getattr(proc, "stderr", "") or ""
+        w, h = 0, 0
         # Prefer matching directly on the Video stream line
         v_match = re.search(r"Stream #.*?Video:.*?,\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*|$)", stderr_text)
         if v_match:
-            w, h = v_match.groups()
-            return (int(w), int(h))
-        match = re.search(r",\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*)", stderr_text)
-        if match:
-            w, h = match.groups()
-            return (int(w), int(h))
+            w, h = int(v_match.group(1)), int(v_match.group(2))
+        else:
+            match = re.search(r",\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*)", stderr_text)
+            if match:
+                w, h = int(match.group(1)), int(match.group(2))
+
+        # Check for Display Aspect Ratio (DAR) in case of anamorphic video (e.g. 720x576 or 1440x1080 with DAR 16:9)
+        if w > 0 and h > 0:
+            dar_match = re.search(r"DAR\s*(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)", stderr_text)
+            if dar_match:
+                try:
+                    dar_num = float(dar_match.group(1))
+                    dar_den = float(dar_match.group(2))
+                    if dar_den > 0:
+                        dar = dar_num / dar_den
+                        sar_ratio = w / h
+                        if abs(dar - sar_ratio) > 0.1 and dar >= 1.3:
+                            display_w = int(round(h * dar))
+                            if display_w % 2 != 0:
+                                display_w += 1
+                            return (display_w, h)
+                except Exception:
+                    pass
+            return (w, h)
     except Exception as exc:
         log.debug("[VideoService] Could not parse resolution: %s", exc)
     return (0, 0)
+
+
+def get_video_metadata(file_path: str, ffmpeg_bin: Optional[str] = None) -> dict:
+    """
+    Extract video width, height, and duration.
+    Guarantees valid widescreen (16:9) dimensions (e.g. 1920x1080, 1280x720, 854x480, 640x360)
+    for Telegram native widescreen video cards without square pillarboxing ("කොටු size").
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    w, h = get_video_resolution(file_path, exe)
+    duration = get_video_duration(file_path, exe)
+
+    # If resolution was not detected or invalid, infer from filename or fallback to standard 16:9 HD
+    if w <= 0 or h <= 0:
+        fn_lower = os.path.basename(file_path).lower()
+        if "1080" in fn_lower:
+            w, h = 1920, 1080
+        elif "720" in fn_lower:
+            w, h = 1280, 720
+        elif "480" in fn_lower:
+            w, h = 854, 480
+        elif "360" in fn_lower:
+            w, h = 640, 360
+        else:
+            w, h = 1280, 720
+
+    # Ensure valid even numbers for video encoder / player compatibility
+    w = int(w)
+    h = int(h)
+    if w % 2 != 0:
+        w += 1
+    if h % 2 != 0:
+        h += 1
+
+    dur_sec = max(0, int(round(duration)))
+    return {
+        "width": w,
+        "height": h,
+        "duration": dur_sec,
+    }
+
+
+def generate_video_thumbnail(
+    file_path: str,
+    thumb_path: Optional[str] = None,
+    duration: float = 0.0,
+    ffmpeg_bin: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Generate a crisp 16:9 widescreen thumbnail image (.jpg) from the video.
+    Uses 640x360 resolution with high JPEG quality so Telegram renders
+    a native full-width 16:9 widescreen video preview card across Mobile,
+    Laptop, and Smart TV screens without square pillarboxing.
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return None
+
+    if not thumb_path:
+        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        thumb_path = tmp.name
+        tmp.close()
+
+    if duration <= 0:
+        duration = get_video_duration(file_path, exe)
+
+    # Pick a scene timestamp avoiding black screen at the start
+    if duration > 30:
+        seek_time = max(5.0, min(duration * 0.12, 120.0))
+    elif duration > 5:
+        seek_time = 2.0
+    else:
+        seek_time = 0.0
+
+    # 16:9 widescreen thumbnail filter: scale to 640x360 keeping aspect ratio and pad with black if cinematic
+    vf = "scale=640:360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2:black"
+
+    cmd = [
+        exe,
+        "-y",
+        "-hide_banner",
+        "-ss", f"{seek_time:.2f}",
+        "-i", file_path,
+        "-vframes", "1",
+        "-vf", vf,
+        "-q:v", "2",
+        thumb_path,
+    ]
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=15,
+        )
+        if proc.returncode == 0 and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500:
+            return thumb_path
+    except Exception as exc:
+        log.debug("[VideoService] First attempt to generate thumbnail failed: %s", exc)
+
+    # Fallback attempt at timestamp 00:00:01 if seek_time failed
+    try:
+        cmd_fallback = [
+            exe,
+            "-y",
+            "-hide_banner",
+            "-ss", "00:00:01",
+            "-i", file_path,
+            "-vframes", "1",
+            "-vf", vf,
+            "-q:v", "2",
+            thumb_path,
+        ]
+        proc = subprocess.run(
+            cmd_fallback,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+        )
+        if proc.returncode == 0 and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500:
+            return thumb_path
+    except Exception as exc:
+        log.debug("[VideoService] Fallback thumbnail generation failed: %s", exc)
+
+    return None
 
 
 def get_audio_codec(file_path: str, ffmpeg_bin: Optional[str] = None) -> Optional[str]:

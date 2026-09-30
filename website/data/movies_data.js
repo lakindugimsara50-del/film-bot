@@ -9409,16 +9409,46 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
-      "imdb": "N/A",
-      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 6,
       "episode": 3,
       "episode_title": "Oathbreaker",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "en",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
+      "rating": "8.5",
       "number_of_seasons": 8,
-      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -9477,143 +9507,42 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
-      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "English",
-      "subtitle_language": "Sinhala",
-      "has_sinhala_sub": true,
-      "sub_merged": true,
-      "quality": "720p",
-      "duration": "53 min",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
       "featured": false,
-      "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQADoWq82Ux0G8tXdbOF9uA2E_Jg8ksxAAJ4JgACU8XpVYY9Sqvj-McGHgQ",
-      "message_id": 161,
-      "file_name": "game-of-thrones-2011-s06e03.mp4",
-      "file_size": 980389571,
-      "drive_file_id": "",
-      "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
+      "trending": false,
+      "added_at": "2026-09-30T09:26:04Z",
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
-          "type": "video/mp4",
-          "mode": "telegram_stream",
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADoWq82Ux0G8tXdbOF9uA2E_Jg8ksxAAJ4JgACU8XpVYY9Sqvj-McGHgQ",
-          "message_id": 161,
-          "quality": "1080p"
-        },
-        {
-          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/6/3"
+          "stream_url": "https://vidlink.pro/tv/1399/6/3?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s06e03-s06e03-si.vtt&sub_label=Sinhala&sub=true"
         },
         {
-          "server": "Server 3",
+          "server": "Server 2",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-6-3"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/6/3"
         },
         {
-          "server": "Server 4",
-          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Pro)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=6&e=3"
         }
       ],
-      "qualities": {
-        "auto": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-        "1080p": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-        "720p": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-        "480p": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/160",
-        "360p": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161"
-      },
       "downloads": [
         {
-          "quality": "720p (Telegram Direct)",
-          "label": "720p HD (Telegram Channel • Fast)",
-          "size": "935.0 MB",
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "0.91 GB",
           "size_bytes": 980389571,
-          "url": "https://t.me/c/4325759505/161",
-          "telegram_url": "https://t.me/c/4325759505/161",
           "file_id": "BAACAgUAAyEGAAMBAdXaEQADoWq82Ux0G8tXdbOF9uA2E_Jg8ksxAAJ4JgACU8XpVYY9Sqvj-McGHgQ",
           "message_id": 161,
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "480p (Telegram Direct)",
-          "label": "480p SD (Telegram Channel • Fast)",
-          "size": "225.3 MB",
-          "size_bytes": 236282540,
-          "url": "https://t.me/c/4325759505/160",
-          "telegram_url": "https://t.me/c/4325759505/160",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADoGq82Eqpg3BZg9e7IDWq_OzOhP-5AAJ0JgACU8XpVUXriSYdavadHgQ",
-          "message_id": 160,
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/160",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "1080p",
-          "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "935.0 MB",
-          "size_bytes": 980389571,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e03_1080p",
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "720p",
-          "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "935.0 MB",
-          "size_bytes": 980389571,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e03_720p",
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
+          "url": "https://t.me/c/4325759505/161",
+          "telegram_url": "https://t.me/c/4325759505/161",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -9621,36 +9550,36 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         },
         {
           "quality": "480p",
-          "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "225.3 MB",
+          "label": "480p SD",
+          "size": "0.22 GB",
           "size_bytes": 236282540,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e03_480p",
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/160",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "168.3 MB",
-          "size_bytes": 176470122,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e03_360p",
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADoGq82Eqpg3BZg9e7IDWq_OzOhP-5AAJ0JgACU8XpVUXriSYdavadHgQ",
+          "message_id": 160,
+          "url": "https://t.me/c/4325759505/160",
+          "telegram_url": "https://t.me/c/4325759505/160",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
         }
       ],
+      "telegram_status": "complete",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s06e03-si.vtt",
+      "has_sinhala_sub": true,
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "සිංහල",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s06e03-si.vtt",
+          "default": true,
+          "srclang": "si"
+        }
+      ],
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s06e03",
+      "channel_post_id": 159,
+      "channel_chat_id": -1004325759505,
+      "added_date": "2026-09-30",
       "variant_media": {
-        "1080p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "",
-          "size_bytes": 0
-        },
         "720p": {
           "file_id": "BAACAgUAAyEGAAMBAdXaEQADoWq82Ux0G8tXdbOF9uA2E_Jg8ksxAAJ4JgACU8XpVYY9Sqvj-McGHgQ",
           "message_id": 161,
@@ -9662,29 +9591,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "message_id": 160,
           "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/160",
           "size_bytes": 236282540
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://inquiries-proceed-inexpensive-shaft.trycloudflare.com/stream/channel/-1004325759505/161",
-          "size_bytes": 176470122
         }
       },
-      "subtitles": [
-        {
-          "language": "Sinhala",
-          "srclang": "si",
-          "label": "සිංහල උපසිරැසි (Sinhala)",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s06e03-si.vtt",
-          "default": true
-        }
-      ],
-      "source_method": "torrent",
-      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s06e03",
-      "added_date": "2026-09-30",
-      "added_at": "2026-09-30T09:41:34Z",
-      "added_by": "bot_auto_leech"
+      "sub_merged": true
     }
   ],
-  "last_updated": "2026-09-30T09:41:35Z"
+  "last_updated": "2026-09-30T09:26:28Z"
 };

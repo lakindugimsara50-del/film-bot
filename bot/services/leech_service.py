@@ -1258,11 +1258,25 @@ async def _execute_leech(
             base_site = "https://filmsub.pages.dev"
         site_url = f"{base_site}/movie.html?id={slug}"
 
-        # Detect source resolution upfront to cleanly route primary and variant pipelines
+        # Detect source resolution upfront to cleanly route primary and variant pipelines (mutually exclusive)
         src_w, src_h = video_service.get_video_resolution(local_file)
-        is_source_1080p = (src_w >= 1600 or src_h >= 900)
-        is_source_720p = (1000 <= src_w < 1600) or (550 <= src_h < 900) or (is_series and src_h < 900)
-        primary_quality = "720p" if is_source_720p else "1080p"
+        if src_w >= 1600 or src_h >= 900:
+            is_source_1080p = True
+            is_source_720p = False
+            primary_quality = "1080p"
+        elif src_w >= 1000 or src_h >= 540:
+            is_source_1080p = False
+            is_source_720p = True
+            primary_quality = "720p"
+        elif src_w == 0 and src_h == 0:
+            _cand_q = (getattr(chosen_candidate, "quality", "") or "").lower()
+            is_source_720p = ("720p" in _cand_q) or ("720p" in file_name.lower()) or bool(is_series)
+            is_source_1080p = not is_source_720p
+            primary_quality = "720p" if is_source_720p else "1080p"
+        else:
+            is_source_1080p = False
+            is_source_720p = bool(is_series)
+            primary_quality = "720p" if is_source_720p else "1080p"
         log.info("[LeechService] Source resolution: %dx%d -> primary_quality='%s' (is_series=%s)", src_w, src_h, primary_quality, is_series)
 
         task_tracker.tracker.set_step(

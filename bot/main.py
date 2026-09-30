@@ -726,9 +726,9 @@ async def sessions_handler(client: Client, message: Message) -> None:
     )
 
 
-BOT_VERSION = "v2.6.3-live-drive-stats"
-BOT_COMMIT = "live-drive-stats"
-BOT_FEATURES = "✅ In-Memory Session | ✅ Live Drive Speed & ETA | ✅ Instant GitHub Raw Web Sync | ✅ Clean URL Rewrites"
+BOT_VERSION = "v2.7.0-multi-quality-permanent-fix"
+BOT_COMMIT = "multi-quality-permanent-fix"
+BOT_FEATURES = "✅ Self-Healing Static FFmpeg | ✅ Guaranteed 1080p/720p/480p Multi-Quality | ✅ 98-Session Pool | ✅ Instant Web Stream"
 
 
 
@@ -817,6 +817,15 @@ async def _on_start(client: Client) -> None:
         log.info("[DriveManager] Cloud Drive storage initialized.")
     except Exception as dm_err:
         log.warning("[DriveManager] Initialization error: %s", dm_err)
+
+    # Validate and self-heal FFmpeg binary (especially on Google Colab CPU/GPU runtimes)
+    try:
+        from services import video_service
+        ff_bin = await asyncio.to_thread(video_service.get_ffmpeg_binary)
+        hw_enc = await asyncio.to_thread(video_service.detect_hw_encoder, ff_bin)
+        log.info("[VideoService] Startup FFmpeg verified: binary=%s, encoder=%s", ff_bin, hw_enc)
+    except Exception as ff_err:
+        log.warning("[VideoService] Startup FFmpeg check note: %s", ff_err)
 
     # Prime channel peers in session database to avoid [400 PEER_ID_INVALID]
     for ch_name, ch_id in [("Private channel (Filmhost)", config.PRIVATE_CHANNEL_ID), ("Public channel", config.PUBLIC_CHANNEL_ID)]:

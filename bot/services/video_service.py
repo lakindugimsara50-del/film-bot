@@ -36,20 +36,140 @@ log.info(
 )
 
 
-def get_ffmpeg_binary() -> Optional[str]:
-    """Find system ffmpeg or bundled imageio_ffmpeg binary."""
-    # Check /usr/local/bin/ffmpeg first (where Colab CUDA NVENC ffmpeg is placed)
-    if os.path.exists("/usr/local/bin/ffmpeg") and os.access("/usr/local/bin/ffmpeg", os.X_OK):
-        return "/usr/local/bin/ffmpeg"
+_VALIDATED_FFMPEG: dict[str, bool] = {}
+_COLAB_FFMPEG_REPAIR_ATTEMPTED: bool = False
 
-    sys_ffmpeg = shutil.which("ffmpeg")
-    if sys_ffmpeg:
-        return sys_ffmpeg
 
+def _is_working_ffmpeg(exe_path: Optional[str]) -> bool:
+    """Verify that an ffmpeg candidate binary actually executes without missing-library errors (exit code 127)."""
+    if not exe_path:
+        return False
+    if exe_path in _VALIDATED_FFMPEG:
+        return _VALIDATED_FFMPEG[exe_path]
+    try:
+        proc = subprocess.run(
+            [exe_path, "-version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5,
+        )
+        ok = getattr(proc, "returncode", 0) == 0
+        _VALIDATED_FFMPEG[exe_path] = ok
+        if not ok:
+            log.warning(
+                "[VideoService] Rejecting broken ffmpeg binary '%s' (exit=%s): %s",
+                exe_path,
+                getattr(proc, "returncode", "N/A"),
+                (getattr(proc, "stderr", "") or "")[:200].strip(),
+            )
+        return ok
+    except Exception as exc:
+        log.debug("[VideoService] ffmpeg candidate '%s' check failed: %s", exe_path, exc)
+        _VALIDATED_FFMPEG[exe_path] = False
+        return False
+
+
+def ensure_colab_working_ffmpeg() -> Optional[str]:
+    """
+    Ensure a static, fully functional FFmpeg binary (with libx264, libass, aac, mov_text, and NVENC)
+    is installed at /usr/local/bin/ffmpeg on Google Colab (works on BOTH CPU and GPU runtimes),
+    and automatically heal /usr/bin/ffmpeg if it was overwritten by an incompatible binary.
+    """
+    global _COLAB_FFMPEG_REPAIR_ATTEMPTED
+    if not os.path.exists("/content"):
+        return None
+
+    local_bin = "/usr/local/bin/ffmpeg"
+    sys_bin = "/usr/bin/ffmpeg"
+
+    if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+        if os.path.exists(sys_bin) and not _is_working_ffmpeg(sys_bin):
+            try:
+                shutil.copyfile(local_bin, sys_bin)
+                os.chmod(sys_bin, 0o755)
+                _VALIDATED_FFMPEG[sys_bin] = True
+                log.info("[VideoService] Healed corrupted /usr/bin/ffmpeg from /usr/local/bin/ffmpeg")
+            except Exception:
+                pass
+        return local_bin
+
+    if not _COLAB_FFMPEG_REPAIR_ATTEMPTED:
+        _COLAB_FFMPEG_REPAIR_ATTEMPTED = True
+        log.info("[VideoService] Installing static BtbN FFmpeg (CPU + NVENC + libass) to /usr/local/bin/ffmpeg...")
+        try:
+            os.makedirs("/usr/local/bin", exist_ok=True)
+            cmd = (
+                "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o /tmp/ff_static.tar.xz "
+                "&& tar -xf /tmp/ff_static.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
+                "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+                "&& rm -rf /tmp/ff_static.tar.xz"
+            )
+            res = subprocess.run(cmd, shell=True, timeout=180)
+            _VALIDATED_FFMPEG.pop(local_bin, None)
+            if getattr(res, "returncode", 1) == 0 and os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+                log.info("[VideoService] Static BtbN FFmpeg successfully installed at /usr/local/bin/ffmpeg")
+                if not os.path.exists(sys_bin) or not _is_working_ffmpeg(sys_bin):
+                    try:
+                        shutil.copyfile(local_bin, sys_bin)
+                        os.chmod(sys_bin, 0o755)
+                        _VALIDATED_FFMPEG[sys_bin] = True
+                        log.info("[VideoService] Repaired /usr/bin/ffmpeg with static BtbN FFmpeg")
+                    except Exception:
+                        pass
+                return local_bin
+        except Exception as exc:
+            log.warning("[VideoService] Static BtbN FFmpeg install error: %s", exc)
+
+    # Fallback: copy bundled imageio_ffmpeg static binary if available
     try:
         import imageio_ffmpeg
         exe = imageio_ffmpeg.get_ffmpeg_exe()
-        if exe and os.path.exists(exe):
+        if exe and os.path.exists(exe) and _is_working_ffmpeg(exe):
+            try:
+                os.makedirs("/usr/local/bin", exist_ok=True)
+                shutil.copyfile(exe, local_bin)
+                os.chmod(local_bin, 0o755)
+                _VALIDATED_FFMPEG[local_bin] = True
+                if not os.path.exists(sys_bin) or not _is_working_ffmpeg(sys_bin):
+                    shutil.copyfile(exe, sys_bin)
+                    os.chmod(sys_bin, 0o755)
+                    _VALIDATED_FFMPEG[sys_bin] = True
+                log.info("[VideoService] Installed imageio_ffmpeg static binary to /usr/local/bin/ffmpeg")
+                return local_bin
+            except Exception:
+                return exe
+    except Exception:
+        pass
+
+    return None
+
+
+def get_ffmpeg_binary() -> Optional[str]:
+    """Find and validate a working system ffmpeg or bundled imageio_ffmpeg binary."""
+    # 1. Check /usr/local/bin/ffmpeg first (where static BtbN / CUDA NVENC ffmpeg is placed)
+    if os.path.exists("/usr/local/bin/ffmpeg") and os.access("/usr/local/bin/ffmpeg", os.X_OK):
+        if _is_working_ffmpeg("/usr/local/bin/ffmpeg"):
+            return "/usr/local/bin/ffmpeg"
+
+    # 2. Check system PATH ffmpeg and verify it actually runs (protects against broken colab-ffmpeg-cuda exit 127)
+    sys_ffmpeg = shutil.which("ffmpeg")
+    if sys_ffmpeg and _is_working_ffmpeg(sys_ffmpeg):
+        return sys_ffmpeg
+
+    # 3. On Google Colab, if system ffmpeg is missing or corrupted, self-heal immediately
+    if os.path.exists("/content"):
+        repaired = ensure_colab_working_ffmpeg()
+        if repaired and _is_working_ffmpeg(repaired):
+            return repaired
+
+    # 4. Fallback to bundled imageio_ffmpeg binary
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and os.path.exists(exe) and _is_working_ffmpeg(exe):
             return exe
     except Exception as exc:
         log.debug("[VideoService] imageio_ffmpeg lookup error: %s", exc)
@@ -58,7 +178,7 @@ def get_ffmpeg_binary() -> Optional[str]:
 
 
 def get_video_duration(file_path: str, ffmpeg_bin: str) -> float:
-    """Extract duration in seconds using ffmpeg -i."""
+    """Extract duration in seconds using ffmpeg -i (supports both container Duration and MKV stream DURATION tags)."""
     try:
         cmd = [ffmpeg_bin, "-hide_banner", "-i", file_path]
         proc = subprocess.run(
@@ -70,10 +190,20 @@ def get_video_duration(file_path: str, ffmpeg_bin: str) -> float:
             errors="replace",
             timeout=10,
         )
-        match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", proc.stderr)
+        stderr_text = getattr(proc, "stderr", "") or ""
+        match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text)
         if match:
             h, m, s = match.groups()
-            return int(h) * 3600 + int(m) * 60 + float(s)
+            dur = int(h) * 3600 + int(m) * 60 + float(s)
+            if dur > 0:
+                return dur
+        # Fallback for MKV files where container Duration is N/A but stream tag has DURATION: HH:MM:SS.nnnnnnnnn
+        tag_match = re.search(r"DURATION\s*:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text, re.IGNORECASE)
+        if tag_match:
+            h, m, s = tag_match.groups()
+            dur = int(h) * 3600 + int(m) * 60 + float(s)
+            if dur > 0:
+                return dur
     except Exception as exc:
         log.debug("[VideoService] Could not parse duration: %s", exc)
     return 0.0
@@ -95,7 +225,13 @@ def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tu
             errors="replace",
             timeout=10,
         )
-        match = re.search(r",\s*(\d{3,5})x(\d{3,5})(?:,\s*|\s*\[|\s*)", proc.stderr)
+        stderr_text = getattr(proc, "stderr", "") or ""
+        # Prefer matching directly on the Video stream line
+        v_match = re.search(r"Stream #.*?Video:.*?,\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*|$)", stderr_text)
+        if v_match:
+            w, h = v_match.groups()
+            return (int(w), int(h))
+        match = re.search(r",\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*)", stderr_text)
         if match:
             w, h = match.groups()
             return (int(w), int(h))
@@ -120,7 +256,8 @@ def get_audio_codec(file_path: str, ffmpeg_bin: Optional[str] = None) -> Optiona
             errors="replace",
             timeout=15,
         )
-        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", proc.stderr)
+        stderr_text = getattr(proc, "stderr", "") or ""
+        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", stderr_text)
         if audio_matches:
             return audio_matches[0].lower()
     except Exception as exc:
@@ -140,37 +277,13 @@ _CACHED_HW_ENCODER: Optional[str] = None
 
 def setup_colab_cuda_ffmpeg() -> bool:
     """
-    On Google Colab (with NVIDIA T4 GPU), ensure a CUDA-enabled FFmpeg binary with
-    h264_nvenc support is installed into /usr/local/bin/ffmpeg.
+    On Google Colab, ensure a static FFmpeg binary with h264_nvenc and libx264 support
+    is installed into /usr/local/bin/ffmpeg.
     """
     if not os.path.exists("/content"):
         return False
-    try:
-        smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if smi.returncode != 0:
-            return False
-
-        # If /usr/local/bin/ffmpeg already has working h264_nvenc, skip re-download
-        if os.path.exists("/usr/local/bin/ffmpeg"):
-            test_probe = subprocess.run(
-                ["/usr/local/bin/ffmpeg", "-hide_banner", "-f", "lavfi", "-i", "nullsrc=s=256x256:d=0.04", "-c:v", "h264_nvenc", "-f", "null", "-"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4,
-            )
-            if test_probe.returncode == 0:
-                return True
-
-        log.info("[VideoService] Colab NVIDIA GPU detected. Installing CUDA FFmpeg (NVENC)...")
-        cmd = (
-            "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o /tmp/ff_cuda.tar.xz "
-            "&& tar -xf /tmp/ff_cuda.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
-            "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
-            "&& rm -rf /tmp/ff_cuda.tar.xz"
-        )
-        res = subprocess.run(cmd, shell=True, timeout=180)
-        return res.returncode == 0
-    except Exception as exc:
-        log.debug("[VideoService] Colab CUDA FFmpeg auto-setup note: %s", exc)
-        return False
+    repaired = ensure_colab_working_ffmpeg()
+    return bool(repaired and os.path.exists(repaired))
 
 
 def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
@@ -846,11 +959,13 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
     import tempfile
 
     ram_disk = "/dev/shm"
-    min_bytes = int(min_free_gb * 1024 * 1024 * 1024)
+    # On Colab, downloading + remuxing + multi-quality encoding needs at least 4.5 GB headroom in /dev/shm
+    effective_min_gb = max(min_free_gb, 4.5) if (min_free_gb >= 1.0 and os.path.exists("/content")) else min_free_gb
+    min_bytes = int(effective_min_gb * 1024 * 1024 * 1024)
     if os.path.isdir(ram_disk) and os.access(ram_disk, os.W_OK):
         try:
             free_ram = shutil.disk_usage(ram_disk).free
-            if free_ram >= min_bytes or free_ram >= int(1.5 * 1024 * 1024 * 1024):
+            if free_ram >= min_bytes:
                 work_dir = tempfile.mkdtemp(prefix=prefix, dir=ram_disk)
                 log.info(
                     "[VideoService] Allocated 12GB RAM Disk workspace: %s (%.2f GB free in /dev/shm)",
@@ -863,7 +978,9 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
 
     if os.path.isdir("/content") and os.access("/content", os.W_OK):
         try:
-            return tempfile.mkdtemp(prefix=prefix, dir="/content")
+            work_dir = tempfile.mkdtemp(prefix=prefix, dir="/content")
+            log.info("[VideoService] Allocated /content high-capacity workspace: %s", work_dir)
+            return work_dir
         except Exception:
             pass
 
@@ -1317,10 +1434,9 @@ async def generate_multi_quality_variants_ram(
     target_qualities: Optional[tuple[str, ...]] = None,
 ) -> dict[str, str]:
     """
-    Leverage 12GB RAM (/dev/shm) and all CPU cores (-threads 0 -preset ultrafast)
-    to generate multi-quality MP4 streams/downloads (720p, 480p, 360p) in a single
-    FFmpeg multi-output pass with BOTH burned-in Sinhala subtitles AND dual default+forced
-    mov_text tracks plus +faststart.
+    Leverage 12GB RAM (/dev/shm) or /content high-capacity workspace and all CPU/GPU cores
+    (-threads 0 -preset ultrafast) to generate multi-quality MP4 streams/downloads (720p, 480p, 360p)
+    in a single FFmpeg pass with Sinhala subtitles (burn-in + mov_text soft-sub) and +faststart.
     Returns a dict mapping quality label (e.g. '720p') -> generated local file path.
     """
     if base_stem:
@@ -1329,12 +1445,30 @@ async def generate_multi_quality_variants_ram(
         qualities = target_qualities
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin or not os.path.exists(input_path):
+        log.error("[VideoService] generate_multi_quality_variants_ram aborted: ffmpeg_bin=%s, input_exists=%s (%s)",
+                  ffmpeg_bin, os.path.exists(input_path) if input_path else False, input_path)
         return {}
 
     abs_out_dir = os.path.abspath(output_dir)
+    # Guard against /dev/shm running out of space mid-encode when input_path is already occupying RAM disk
+    if abs_out_dir.startswith("/dev/shm") and os.path.isdir("/content") and os.access("/content", os.W_OK):
+        try:
+            free_shm = shutil.disk_usage(abs_out_dir).free
+            if free_shm < int(2.2 * 1024 * 1024 * 1024):
+                alt_dir = os.path.join("/content", os.path.basename(abs_out_dir) + "_variants")
+                os.makedirs(alt_dir, exist_ok=True)
+                log.info(
+                    "[VideoService] /dev/shm free space low (%.2f GB) -> redirecting variant output to %s",
+                    free_shm / (1024 ** 3), alt_dir,
+                )
+                abs_out_dir = alt_dir
+        except Exception:
+            pass
+
     os.makedirs(abs_out_dir, exist_ok=True)
     duration = get_video_duration(input_path, ffmpeg_bin)
     input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    effective_duration = duration if duration > 0 else max(1200.0, (input_size / (1024 * 1024)) * 2.5)
     min_valid_size = min(256 * 1024, max(1024, int(input_size * 0.05)))
 
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
@@ -1377,7 +1511,7 @@ async def generate_multi_quality_variants_ram(
     if (src_w >= 1600 or src_h >= 900):
         is_source_1080p = True
         is_source_720p = is_source_480p = is_source_360p = False
-    elif (src_w >= 1000 or src_h >= 576):
+    elif (src_w >= 1000 or src_h >= 540):
         is_source_720p = True
         is_source_1080p = is_source_480p = is_source_360p = False
     elif (src_w >= 650 or src_h >= 420):
@@ -1479,106 +1613,27 @@ async def generate_multi_quality_variants_ram(
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     num_q = len(target_q_list)
 
-    # ── Ultra-Fast Single-Pass Direct Pipeline when only 1 quality variant is requested (e.g. 480p for TV Series) ──
-    if num_q == 1:
-        q_single = target_q_list[0]
-        prof_single = profiles[q_single]
-        out_single = os.path.join(abs_out_dir, f"{slug}-{q_single}.mp4")
-        h_single = prof_single["height"]
-
-        has_sub_single = bool(has_sub and os.path.exists(local_burn_srt))
-
-        fast_cmd = [
-            ffmpeg_bin, "-y", "-hide_banner", "-threads", "0",
-            "-i", os.path.abspath(input_path),
-        ]
-        if has_sub_single:
-            fast_cmd.extend([
-                "-filter_complex", f"[0:v:0]subtitles=filename='sub_burn_multi.srt',scale=w=-2:h={h_single}:flags=fast_bilinear[v_{q_single}]",
-                "-map", f"[v_{q_single}]",
-            ])
-        else:
-            fast_cmd.extend([
-                "-vf", f"scale=-2:{h_single}",
-                "-map", "0:v:0",
-            ])
-        fast_cmd.extend(["-map", "0:a:0?"])
-
-        if hw_enc == "h264_nvenc":
-            fast_cmd.extend([
-                "-c:v", "h264_nvenc", "-preset", "fast", "-rc", "vbr",
-                "-cq", prof_single["crf"], "-maxrate", prof_single["maxrate"], "-bufsize", prof_single["bufsize"],
-            ])
-        else:
-            fast_cmd.extend([
-                "-c:v", "libx264", "-preset", "ultrafast", "-tune", "fastdecode",
-                "-crf", "28", "-threads", "0",
-            ])
-        fast_cmd.append("-pix_fmt")
-        fast_cmd.append("yuv420p")
-
-        if needs_aac_transcode:
-            fast_cmd.extend(["-c:a", "aac", "-b:a", prof_single["abitrate"], "-ac", "2"])
-        else:
-            fast_cmd.extend(["-c:a", "copy"])
-        fast_cmd.extend(["-movflags", "+faststart", out_single])
-
-        log.info("[VideoService] Executing ultra-fast single-pass encode for %s: %s", q_single, out_single)
-        timeout_single = max(180.0, min(1200.0, duration * 0.8)) if hw_enc == "h264_nvenc" else max(300.0, min(2400.0, duration * 1.5))
-        try:
-            p_fast = await asyncio.create_subprocess_exec(
-                *fast_cmd,
-                cwd=abs_out_dir,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-            await asyncio.wait_for(p_fast.wait(), timeout=timeout_single)
-            if p_fast.returncode == 0 and os.path.exists(out_single) and os.path.getsize(out_single) >= min_valid_size:
-                valid_outputs[q_single] = out_single
-                log.info("[VideoService] Ultra-fast single-pass encode succeeded for %s: %s", q_single, out_single)
-                return valid_outputs
-        except Exception as fast_err:
-            log.warning("[VideoService] Fast single-pass encode for %s error: %s", q_single, fast_err)
-
-        # Fallback without subtitle if subtitle was the cause of failure
-        fast_cmd_nosub = [
-            ffmpeg_bin, "-y", "-hide_banner", "-threads", "0",
-            "-i", os.path.abspath(input_path),
-            "-vf", f"scale=-2:{h_single}",
-            "-map", "0:v:0",
-            "-map", "0:a:0?",
-            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "fastdecode", "-crf", "28", "-threads", "0", "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", prof_single["abitrate"], "-ac", "2",
-            "-movflags", "+faststart", out_single,
-        ]
-        try:
-            p_nosub = await asyncio.create_subprocess_exec(
-                *fast_cmd_nosub,
-                cwd=abs_out_dir,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-            await asyncio.wait_for(p_nosub.wait(), timeout=timeout_single)
-            if p_nosub.returncode == 0 and os.path.exists(out_single) and os.path.getsize(out_single) >= min_valid_size:
-                valid_outputs[q_single] = out_single
-                log.info("[VideoService] Ultra-fast single-pass no-sub fallback succeeded for %s: %s", q_single, out_single)
-                return valid_outputs
-        except Exception as nosub_err:
-            log.warning("[VideoService] Fast single-pass no-sub fallback error: %s", nosub_err)
-
     def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
         escaped_sub_file = "sub_burn_multi.srt"
-        split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
-        split_head = (
-            f"[0:v:0]subtitles=filename='{escaped_sub_file}',split={num_q}{split_labels}"
-            if burn_subs
-            else f"[0:v:0]split={num_q}{split_labels}"
-        )
-        scale_branches = ";".join(
-            f"[sp_{q}]scale=w=-2:h=min(ih\\,{profiles[q]['height']}):flags=fast_bilinear[v_{q}]"
-            for q in target_q_list
-        )
-        fc = f"{split_head};{scale_branches}"
+        if num_q == 1:
+            q0 = target_q_list[0]
+            h0 = profiles[q0]["height"]
+            if burn_subs:
+                fc = f"[0:v:0]subtitles=filename='{escaped_sub_file}',scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+            else:
+                fc = f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+        else:
+            split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
+            split_head = (
+                f"[0:v:0]subtitles=filename='{escaped_sub_file}',split={num_q}{split_labels}"
+                if burn_subs
+                else f"[0:v:0]split={num_q}{split_labels}"
+            )
+            scale_branches = ";".join(
+                f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
+                for q in target_q_list
+            )
+            fc = f"{split_head};{scale_branches}"
 
         c: list[str] = [
             ffmpeg_bin,
@@ -1638,35 +1693,33 @@ async def generate_multi_quality_variants_ram(
                     "-crf", "28",
                     "-threads", "0",
                 ])
-            c.append("-pix_fmt")
-            c.append("yuv420p")
-            if needs_aac_transcode:
-                c.extend([
-                    "-c:a", "aac",
-                    "-b:a", prof["abitrate"],
-                    "-ac", "2",
-                ])
-            else:
-                c.extend(["-c:a", "copy"])
             c.extend([
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", prof["abitrate"],
+                "-ac", "2",
                 "-movflags", "+faststart",
                 out_file,
             ])
         return c, paths
 
-    # Build ordered attempt strategies (prefer fast soft-subs and avoid fragile libass burn failure):
+    # Build ordered attempt strategies:
+    # 1. Burn + soft-sub (works on BtbN static FFmpeg with libass)
+    # 2. Soft-sub mov_text without burn (works on imageio_ffmpeg and builds without libass)
+    # 3. Clean video + audio without subtitle (guaranteed fallback if subtitle file is malformed)
     strategies: list[tuple[str, bool, bool]] = []
     if hw_enc == "h264_nvenc":
         if has_sub:
+            strategies.append(("h264_nvenc", True, True))
             strategies.append(("h264_nvenc", False, True))
-            strategies.append(("h264_nvenc", True, False))
         strategies.append(("h264_nvenc", False, False))
-        strategies.append(("libx264", False, True))
+        if has_sub:
+            strategies.append(("libx264", False, True))
         strategies.append(("libx264", False, False))
     else:
         if has_sub:
+            strategies.append(("libx264", True, True))
             strategies.append(("libx264", False, True))
-            strategies.append(("libx264", True, False))
         strategies.append(("libx264", False, False))
 
     proc = None
@@ -1685,22 +1738,27 @@ async def generate_multi_quality_variants_ram(
 
             async def _read_stderr():
                 nonlocal last_pct
+                stderr_stream = getattr(proc, "stderr", None)
+                if stderr_stream is None:
+                    return
                 while True:
-                    if hasattr(proc.stderr, "read"):
-                        chunk = await proc.stderr.read(4096)
+                    if hasattr(stderr_stream, "read"):
+                        chunk = await stderr_stream.read(4096)
+                    elif hasattr(stderr_stream, "readline"):
+                        chunk = await stderr_stream.readline()
                     else:
-                        chunk = await proc.stderr.readline()
+                        break
                     if not chunk:
                         break
                     decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
                     for line in decoded.splitlines(keepends=True):
                         stderr_tail.append(line)
                     matches = time_pattern.findall(decoded)
-                    if matches and duration > 0:
+                    if matches and effective_duration > 0:
                         h, mm, ss = matches[-1]
                         cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                        pct = min(99.0, (cur_secs / duration) * 100.0)
-                        if pct - last_pct >= 3.0:
+                        pct = min(99.0, (cur_secs / effective_duration) * 100.0)
+                        if pct - last_pct >= 2.5:
                             last_pct = pct
                             if progress_callback:
                                 try:
@@ -1711,7 +1769,11 @@ async def generate_multi_quality_variants_ram(
                                 except Exception:
                                     pass
 
-            timeout_val = max(300.0, min(1800.0, duration * 0.5)) if enc_choice == "h264_nvenc" else max(900.0, min(5400.0, duration * 2.0))
+            timeout_val = (
+                max(360.0, min(2400.0, effective_duration * 0.8))
+                if enc_choice == "h264_nvenc"
+                else max(900.0, min(5400.0, effective_duration * 2.2))
+            )
             try:
                 await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=timeout_val)
             except asyncio.TimeoutError:
@@ -1752,6 +1814,14 @@ async def generate_multi_quality_variants_ram(
                     )
 
             if all(q in valid_outputs for q in target_q_list):
+                if progress_callback:
+                    try:
+                        if asyncio.iscoroutinefunction(progress_callback):
+                            await progress_callback(100.0, "100.0%")
+                        else:
+                            progress_callback(100.0, "100.0%")
+                    except Exception:
+                        pass
                 log.info(
                     "[VideoService] Multi-quality RAM generation complete (attempt %d, encoder=%s, burn=%s): %s",
                     attempt_idx + 1, enc_choice, burn_choice, list(valid_outputs.keys()),
@@ -1760,6 +1830,14 @@ async def generate_multi_quality_variants_ram(
 
             # If all newly targeted qualities were produced in this attempt, return
             if proc and proc.returncode == 0 and any(q in valid_outputs for q in out_paths.keys()):
+                if progress_callback:
+                    try:
+                        if asyncio.iscoroutinefunction(progress_callback):
+                            await progress_callback(100.0, "100.0%")
+                        else:
+                            progress_callback(100.0, "100.0%")
+                    except Exception:
+                        pass
                 log.info(
                     "[VideoService] Multi-quality variants successfully produced: %s",
                     list(valid_outputs.keys()),
@@ -1836,7 +1914,7 @@ async def generate_multi_quality_variants_ram(
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.DEVNULL,
                 )
-                await asyncio.wait_for(fb_proc.wait(), timeout=max(300.0, min(1800.0, duration * 1.5)))
+                await asyncio.wait_for(fb_proc.wait(), timeout=max(300.0, min(1800.0, effective_duration * 1.5)))
                 if fb_proc.returncode == 0 and os.path.exists(fallback_out) and os.path.getsize(fallback_out) >= min_valid_size:
                     valid_outputs[q] = fallback_out
                     log.info("[VideoService] Guaranteed single-pass fallback succeeded for %s: %s", q, fallback_out)
@@ -1855,7 +1933,7 @@ async def generate_multi_quality_variants_ram(
                         *simple_cmd, cwd=abs_out_dir,
                         stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
                     )
-                    await asyncio.wait_for(p_simple.wait(), timeout=max(300.0, min(1800.0, duration * 1.5)))
+                    await asyncio.wait_for(p_simple.wait(), timeout=max(300.0, min(1800.0, effective_duration * 1.5)))
                     if p_simple.returncode == 0 and os.path.exists(fallback_out) and os.path.getsize(fallback_out) >= min_valid_size:
                         valid_outputs[q] = fallback_out
                         log.info("[VideoService] Simple single-pass fallback succeeded for %s: %s", q, fallback_out)

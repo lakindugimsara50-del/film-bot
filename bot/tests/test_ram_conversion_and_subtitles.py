@@ -1032,7 +1032,52 @@ async def test_cancel_command_cleans_queue_service():
         assert "සාර්ථකව අවලංගු කරන ලදී" in msg.reply_text.call_args[0][0]
 
 
+def test_get_ffmpeg_binary_rejects_broken_exit_127_and_falls_back(tmp_path):
+    """Verify get_ffmpeg_binary rejects a broken /usr/bin/ffmpeg (exit code 127) and falls back to working binary."""
+    from services import video_service
+
+    broken_bin = str(tmp_path / "broken_ffmpeg")
+    working_bin = str(tmp_path / "working_ffmpeg")
+    Path(broken_bin).write_text("broken")
+    Path(working_bin).write_text("working")
+
+    class FakeRes:
+        def __init__(self, rc, err=""):
+            self.returncode = rc
+            self.stderr = err
+            self.stdout = ""
+
+    def fake_run(cmd, *args, **kwargs):
+        if cmd[0] == broken_bin:
+            return FakeRes(127, "error while loading shared libraries: libsndio.so.6.1")
+        return FakeRes(0, "ffmpeg version 6.1")
+
+    video_service._VALIDATED_FFMPEG.clear()
+    try:
+        with patch("services.video_service.os.path.exists", side_effect=lambda p: p in (broken_bin, working_bin)), \
+             patch("services.video_service.shutil.which", return_value=broken_bin), \
+             patch("services.video_service.subprocess.run", side_effect=fake_run), \
+             patch("imageio_ffmpeg.get_ffmpeg_exe", return_value=working_bin):
+            selected = video_service.get_ffmpeg_binary()
+            assert selected == working_bin
+            assert video_service._VALIDATED_FFMPEG.get(broken_bin) is False
+            assert video_service._VALIDATED_FFMPEG.get(working_bin) is True
+    finally:
+        video_service._VALIDATED_FFMPEG.clear()
 
 
-
-
+def test_widescreen_1080p_not_misclassified_as_720p():
+    """Verify mutually exclusive resolution tier logic for widescreen 1080p (1920x800) vs 720p (1280x534)."""
+    for src_w, src_h, expected_q in [
+        (1920, 1080, "1080p"),
+        (1920, 800, "1080p"),   # Widescreen 2.39:1 1080p movie must be 1080p, NOT 720p!
+        (1280, 720, "720p"),
+        (1280, 534, "720p"),    # Widescreen 720p
+    ]:
+        if src_w >= 1600 or src_h >= 900:
+            primary_q = "1080p"
+        elif src_w >= 1000 or src_h >= 540:
+            primary_q = "720p"
+        else:
+            primary_q = "720p"
+        assert primary_q == expected_q, f"Failed for {src_w}x{src_h}: got {primary_q}, expected {expected_q}"

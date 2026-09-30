@@ -9601,46 +9601,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 6,
       "episode": 4,
       "episode_title": "Book of the Stranger",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -9699,49 +9669,214 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "quality": "720p",
+      "duration": "59 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-09-30T09:58:41Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADpWq84a8L_t7LW_lMMTqRORM1zJKqAAKSJgACU8XpVfOD2Agct8wSHgQ",
+      "message_id": 165,
+      "file_name": "game-of-thrones-2011-s06e04-720p.mp4",
+      "file_size": 576951034,
+      "drive_file_id": "",
+      "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
       "streams": [
         {
           "server": "Server 1",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/6/4?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s06e04-s06e04-si.vtt&sub_label=Sinhala&sub=true"
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADpWq84a8L_t7LW_lMMTqRORM1zJKqAAKSJgACU8XpVfOD2Agct8wSHgQ",
+          "message_id": 165,
+          "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/6/4"
+          "stream_url": "https://vidlink.pro/tv/1399/6/4"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-6-4"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=6&e=4"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s06e04-s06e04-si.vtt",
-      "has_sinhala_sub": true,
+      "qualities": {
+        "auto": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+        "1080p": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+        "720p": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+        "480p": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/164",
+        "360p": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "550.2 MB",
+          "size_bytes": 576951034,
+          "url": "https://t.me/c/4325759505/165",
+          "telegram_url": "https://t.me/c/4325759505/165",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADpWq84a8L_t7LW_lMMTqRORM1zJKqAAKSJgACU8XpVfOD2Agct8wSHgQ",
+          "message_id": 165,
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "280.6 MB",
+          "size_bytes": 294271795,
+          "url": "https://t.me/c/4325759505/164",
+          "telegram_url": "https://t.me/c/4325759505/164",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADpGq84SW_HNuQirR7zrdG0-yfZivGAAKRJgACU8XpVfnMvzAe2C5fHgQ",
+          "message_id": 164,
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/164",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "550.2 MB",
+          "size_bytes": 576951034,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e04_1080p",
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "550.2 MB",
+          "size_bytes": 576951034,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e04_720p",
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "280.6 MB",
+          "size_bytes": 294271795,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e04_480p",
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/164",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "99.0 MB",
+          "size_bytes": 103851186,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s06e04_360p",
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADpWq84a8L_t7LW_lMMTqRORM1zJKqAAKSJgACU8XpVfOD2Agct8wSHgQ",
+          "message_id": 165,
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "size_bytes": 576951034
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADpGq84SW_HNuQirR7zrdG0-yfZivGAAKRJgACU8XpVfnMvzAe2C5fHgQ",
+          "message_id": 164,
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/164",
+          "size_bytes": 294271795
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://duration-nest-restaurants-foster.trycloudflare.com/stream/channel/-1004325759505/165",
+          "size_bytes": 103851186
+        }
+      },
       "subtitles": [
         {
           "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s06e04-s06e04-si.vtt",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s06e04-si.vtt",
           "default": true
         }
       ],
+      "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s06e04",
-      "channel_post_id": 163,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-30"
+      "added_date": "2026-09-30",
+      "added_at": "2026-09-30T10:17:21Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-30T09:58:58Z"
+  "last_updated": "2026-09-30T10:17:22Z"
 };

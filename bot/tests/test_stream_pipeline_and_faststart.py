@@ -243,6 +243,23 @@ async def test_stream_by_file_id_uses_header_cache():
 
 
 @pytest.mark.asyncio
+async def test_stream_safari_probe_range_not_expanded():
+    """Verify that Safari/iOS Range: bytes=0-1 probe requests are NOT expanded to 8MB."""
+    stream_server._HEADER_CACHE.clear()
+    file_id = "test_safari_probe_id"
+    cache_key = f"file:{file_id}"
+    await stream_server._save_to_header_cache(cache_key, b"SAFARI_PROBE_DATA_12345678", offset=0)
+
+    req = MagicMock(spec=Request)
+    req.headers = {"range": "bytes=0-1"}
+    req.method = "GET"
+    resp = await stream_server.stream_by_file_id(file_id, req, size=10 * 1024 * 1024)
+    assert resp.status_code == 206
+    assert resp.headers.get("Content-Range") == f"bytes 0-1/{10 * 1024 * 1024}"
+    assert resp.headers.get("Content-Length") == "2"
+
+
+@pytest.mark.asyncio
 async def test_apply_faststart_fallback_on_initial_failure(tmp_path):
     in_file = tmp_path / "in.mkv"
     in_file.write_bytes(b"mkvcontent" * 50)

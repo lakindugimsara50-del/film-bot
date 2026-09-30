@@ -520,6 +520,105 @@ function getMovieStreams(movie) {
     srvCounter++;
   }
 
+  // =========================================================================
+  // Server 2: 🎬 VIP Player 1 (VidLink Pro Ultra HD • Zero Ads • Auto Sinhala Sub)
+  // [Universal Embed Player containing every movie & series in the world]
+  // =========================================================================
+  let vidlinkUrl = '';
+  let autoEmbedUrl = '';
+  let twoEmbedUrl = '';
+
+  if (isSeries) {
+    if (tmdbId) {
+      vidlinkUrl = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/${imdbId || tmdbId}/${sNum}/${eNum}`;
+      twoEmbedUrl = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
+    } else if (imdbId) {
+      vidlinkUrl = `https://vidlink.pro/tv/${imdbId}/${sNum}/${eNum}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}`;
+      twoEmbedUrl = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
+    } else {
+      vidlinkUrl = `https://vidlink.pro/tv/1399/${sNum}/${eNum}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/tt0944947/${sNum}/${eNum}`;
+    }
+  } else {
+    if (tmdbId) {
+      vidlinkUrl = `https://vidlink.pro/movie/${tmdbId}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/${imdbId || tmdbId}`;
+      twoEmbedUrl = `https://www.2embed.cc/embed/${tmdbId}`;
+    } else if (imdbId) {
+      vidlinkUrl = `https://vidlink.pro/movie/${imdbId}`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/${imdbId}`;
+      twoEmbedUrl = `https://www.2embed.cc/embed/${imdbId}`;
+    } else {
+      vidlinkUrl = `https://vidlink.pro/movie/550`;
+      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/tt0137523`;
+    }
+  }
+
+  // Inject Sinhala subtitle URL into VidLink if available
+  const subList = getMovieSubtitles(movie);
+  const primarySub = subList && subList[0] && subList[0].url && !subList[0].url.startsWith('data:') ? subList[0].url : '';
+  if (primarySub && vidlinkUrl && !vidlinkUrl.includes('sub.Sinhala')) {
+    const sep = vidlinkUrl.includes('?') ? '&' : '?';
+    vidlinkUrl = `${vidlinkUrl}${sep}sub.Sinhala=${encodeURIComponent(primarySub)}`;
+  }
+
+  const s2Url = vidlinkUrl || autoEmbedUrl || twoEmbedUrl;
+  if (s2Url) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: `🎬 VIP Player 1 (VidLink Pro Ultra HD • Zero Ads)`,
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: s2Url,
+      hasLocalFile: true,
+      alt_urls: {
+        vidlink: vidlinkUrl,
+        autoembed: autoEmbedUrl,
+        twoembed: twoEmbedUrl,
+      },
+    });
+    srvCounter++;
+  }
+
+  // =========================================================================
+  // Server 3: ⚡ VIP Player 2 (AutoEmbed HD • Zero Ads)
+  // =========================================================================
+  if (autoEmbedUrl && autoEmbedUrl !== s2Url) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: `⚡ VIP Player 2 (AutoEmbed HD • Zero Ads)`,
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: autoEmbedUrl,
+      hasLocalFile: true,
+      alt_urls: {
+        autoembed: autoEmbedUrl,
+        twoembed: twoEmbedUrl,
+      },
+    });
+    srvCounter++;
+  }
+
+  // =========================================================================
+  // Server 4: 🚀 VIP Player 3 (MultiEmbed / 2Embed Fast Stream)
+  // =========================================================================
+  if (twoEmbedUrl && twoEmbedUrl !== s2Url && twoEmbedUrl !== autoEmbedUrl) {
+    list.push({
+      server: `Server ${srvCounter}`,
+      label: `🚀 VIP Player 3 (2Embed Fast Stream)`,
+      mode: 'external_embed',
+      type: 'embed',
+      embed: true,
+      stream_url: twoEmbedUrl,
+      hasLocalFile: true,
+    });
+    srvCounter++;
+  }
+
   return list;
 }
 
@@ -1216,6 +1315,24 @@ function initAdaptiveQuality(movie) {
   }
 }
 
+function getBufferAhead(player) {
+  try {
+    if (!player || typeof player.currentTime !== 'function') return 0;
+    const ct = player.currentTime() || 0;
+    const b = player.buffered();
+    if (!b || b.length === 0) return 0;
+    for (let i = 0; i < b.length; i++) {
+      if (ct >= b.start(i) && ct <= b.end(i)) {
+        return b.end(i) - ct;
+      }
+    }
+    if (b.end(b.length - 1) > ct) {
+      return b.end(b.length - 1) - ct;
+    }
+  } catch (e) {}
+  return 0;
+}
+
 /**
  * Attaches real-time buffer stall & frame-drop monitoring to Video.js.
  * Automatically steps down quality (1080p -> 720p -> 480p -> 360p) if lagging,
@@ -1236,6 +1353,16 @@ function attachAdaptiveStallMonitor(player) {
     if (idx !== -1 && idx < QUALITY_LADDER.length - 1) {
       const nextLower = QUALITY_LADDER[idx + 1];
       applyQualitySwitch(nextLower, { isAutoDowngrade: true });
+    }
+  };
+
+  const triggerStepUpIfNeeded = () => {
+    if (selectedQuality !== 'auto') return;
+    if (Date.now() - lastAutoSwitchEpoch < 25000) return;
+    const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
+    if (idx > 0) {
+      const nextHigher = QUALITY_LADDER[idx - 1];
+      applyQualitySwitch(nextHigher, { isAutoDowngrade: false });
     }
   };
 
@@ -1265,7 +1392,7 @@ function attachAdaptiveStallMonitor(player) {
       }
     }
 
-    // Or if a single mid-playback buffer stall persists longer than 2.6 seconds, auto step-down & stall recovery nudge
+    // Or if a single mid-playback buffer stall persists longer than 2.4 seconds, auto step-down & stall recovery nudge
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
       if (player && !player.paused() && !(player.seeking && player.seeking())) {
@@ -1281,7 +1408,7 @@ function attachAdaptiveStallMonitor(player) {
           }
         } catch (e) {}
       }
-    }, 2600);
+    }, 2400);
   });
 
   player.on('playing', () => {
@@ -1291,10 +1418,29 @@ function attachAdaptiveStallMonitor(player) {
     }
   });
 
+  let lastBufferCheck = 0;
   player.on('timeupdate', () => {
     if (activeStallTimer) {
       clearTimeout(activeStallTimer);
       activeStallTimer = null;
+    }
+
+    const now = Date.now();
+    if (now - lastBufferCheck < 2500) return;
+    lastBufferCheck = now;
+
+    if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking())) {
+      const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+      if (curT > 6.0) {
+        const ahead = getBufferAhead(player);
+        // Proactive Step-Down: if buffer ahead drops below 3.0s, step down BEFORE freezing
+        if (ahead > 0 && ahead < 3.0 && (now - lastAutoSwitchEpoch > 12000)) {
+          triggerStepDownIfNeeded();
+        } else if (ahead > 18.0 && (now - lastAutoSwitchEpoch > 25000)) {
+          // Proactive Step-Up: if buffer ahead is healthy (> 18s) and network allows, step up
+          triggerStepUpIfNeeded();
+        }
+      }
     }
   });
 }
@@ -1324,6 +1470,52 @@ function applySubtitleVisualStyle() {
     .video-js .vjs-text-track-display {
       opacity: 0 !important;
       pointer-events: none !important;
+    }
+    .seek-ripple-overlay {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 42%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 25;
+      animation: fs-ripple-fade 0.65s ease-out forwards;
+    }
+    .seek-ripple-overlay.forward {
+      right: 0;
+      border-radius: 0 8px 8px 0;
+      background: radial-gradient(circle, rgba(229,9,20,0.35) 0%, rgba(0,0,0,0) 75%);
+    }
+    .seek-ripple-overlay.backward {
+      left: 0;
+      border-radius: 8px 0 0 8px;
+      background: radial-gradient(circle, rgba(229,9,20,0.35) 0%, rgba(0,0,0,0) 75%);
+    }
+    .seek-ripple-bubble {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      background: rgba(15,15,15,0.85);
+      padding: 12px 18px;
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
+    .seek-ripple-bubble span {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    @keyframes fs-ripple-fade {
+      0% { opacity: 0; transform: scale(0.85); }
+      35% { opacity: 1; transform: scale(1.05); }
+      100% { opacity: 0; transform: scale(1); }
     }
   `;
 }
@@ -1791,6 +1983,58 @@ function injectInPlayerQualityControl(player) {
   });
 }
 
+/**
+ * Displays a smooth Netflix/YouTube style ripple overlay during double-tap seek (+10s / -10s).
+ */
+function showSeekRipple(playerEl, direction) {
+  if (!playerEl) return;
+  const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+  const ripple = document.createElement('div');
+  ripple.className = `seek-ripple-overlay ${direction}`;
+  ripple.innerHTML = direction === 'forward'
+    ? '<div class="seek-ripple-bubble"><i class="fa-solid fa-rotate-right"></i><span>+10s</span></div>'
+    : '<div class="seek-ripple-bubble"><i class="fa-solid fa-rotate-left"></i><span>-10s</span></div>';
+  wrap.appendChild(ripple);
+  setTimeout(() => {
+    if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+  }, 650);
+}
+
+/**
+ * Configures touch gestures on Mobile:
+ * - Double-tap right: +10s forward seek
+ * - Double-tap left: -10s backward seek
+ */
+function attachMobileTouchControls(playerEl, player) {
+  if (!playerEl || !player) return;
+  let lastTapTime = 0;
+  let lastTapX = 0;
+
+  const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+  wrap.addEventListener('touchend', (e) => {
+    if (e.target.closest('.vjs-control-bar, .vjs-menu, button, input, a, .sub-controls-toolbar')) return;
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    const now = Date.now();
+    const rect = wrap.getBoundingClientRect();
+    const touchX = touch.clientX - rect.left;
+    const isRightHalf = touchX > (rect.width / 2);
+
+    if (now - lastTapTime < 320 && Math.abs(touchX - lastTapX) < 100) {
+      const delta = isRightHalf ? 10 : -10;
+      try {
+        const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+        player.currentTime(Math.max(0, curT + delta));
+      } catch (err) {}
+      showSeekRipple(playerEl, isRightHalf ? 'forward' : 'backward');
+      lastTapTime = 0;
+    } else {
+      lastTapTime = now;
+      lastTapX = touchX;
+    }
+  }, { passive: true });
+}
+
 function createVjsPlayer(playerEl, stream, movie) {
   const subtitles = getMovieSubtitles(movie);
   const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));
@@ -1898,6 +2142,7 @@ function createVjsPlayer(playerEl, stream, movie) {
 
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
+      attachMobileTouchControls(playerEl, vjsPlayer);
       setTimeout(hideLoader, 600);
       try { vjsPlayer.play().catch(() => {}); } catch (e) {}
     });
@@ -1911,6 +2156,17 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.on('playing', () => {
       hideLoader();
       syncSubtitles();
+    });
+
+    // Auto-landscape orientation on mobile devices during fullscreen
+    vjsPlayer.on('fullscreenchange', () => {
+      try {
+        if (vjsPlayer.isFullscreen() && window.innerWidth < 768 && screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        } else if (!vjsPlayer.isFullscreen() && screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock().catch(() => {});
+        }
+      } catch (e) {}
     });
 
     // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 4.5s

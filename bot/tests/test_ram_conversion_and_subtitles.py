@@ -662,12 +662,12 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     assert res.returncode == 0, f"Node eval error: {res.stderr}"
     import json
     st_list = json.loads(res.stdout.strip())
-    assert len(st_list) >= 1, f"Expected at least 1 Telegram stream server, got {len(st_list)}"
+    assert len(st_list) >= 2, f"Expected at least 2 servers in matrix, got {len(st_list)}"
     urls = [s['url'] for s in st_list]
+    assert len(set(urls)) == len(urls), f"Expected distinct URLs without duplicates, got: {urls}"
     assert any("/stream/channel/" in u for u in urls), f"Expected Telegram stream URL in {urls}"
-    # Verify Pure Telegram Super Player policy (zero external embed fallback servers)
-    assert not any("vidlink.pro" in u for u in urls), f"VidLink should not be present: {urls}"
-    assert not any("autoembed.cc" in u for u in urls), f"AutoEmbed should not be present: {urls}"
+    assert any("vidlink.pro" in u for u in urls), f"Expected VidLink fallback server in {urls}"
+    assert any("autoembed.cc" in u for u in urls), f"Expected AutoEmbed fallback server in {urls}"
 
 
 @pytest.mark.asyncio

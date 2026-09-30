@@ -105,6 +105,15 @@ def _parse_range(range_header: Optional[str], file_size: int) -> tuple[int, int]
         return 0, max(file_size - 1, 0)
 
 
+def _is_explicit_end(range_header: Optional[str]) -> bool:
+    """Return True if Range header explicitly specified an end offset (e.g. 'bytes=0-1')."""
+    if not range_header or not range_header.startswith("bytes="):
+        return False
+    val = range_header[len("bytes="):].strip()
+    _, sep, e_str = val.partition("-")
+    return bool(sep and e_str.strip())
+
+
 @stream_router.options("/stream/{path:path}")
 async def options_stream(path: str) -> Response:
     return Response(
@@ -205,10 +214,15 @@ async def stream_channel_message(
 
     range_header = request.headers.get("range")
     start, end = _parse_range(range_header, file_size)
+    explicit_end = _is_explicit_end(range_header)
 
-    # Pre-buffering: Serve at least 8 MiB per response so the browser pre-buffers fast.
-    # This is the secret to smooth CineSubz/Netflix-like zero-lag playback.
+    # Pre-buffering: Serve at least 8 MiB per response for open-ended requests
+    # so the browser pre-buffers fast without stalling.
+    # For explicit closed ranges (e.g. Safari probe 'bytes=0-1'), preserve the requested end
+    # so Safari / iOS doesn't fail RFC 7233 range verification.
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
+    is_probe_range = explicit_end and (end - start + 1) <= 128
+
     if dl == 1:
         # Full file one-click download: do not truncate range unless client sent an explicit Range
         if not range_header:
@@ -217,8 +231,8 @@ async def stream_channel_message(
     elif not range_header:
         # Initial request without range -> serve first 8 MiB
         end = min(start + MIN_SERVE - 1, file_size - 1)
-    elif (end - start + 1) < MIN_SERVE and end < file_size - 1:
-        # Browser asked for tiny range -> expand to at least 8 MiB
+    elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
+        # Expand small chunk requests to at least 8 MiB for fast pre-buffering (unless tiny metadata probe)
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
     content_length = end - start + 1
@@ -270,11 +284,14 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
 
     range_header = request.headers.get("range")
     start, end = _parse_range(range_header, file_size)
+    explicit_end = _is_explicit_end(range_header)
 
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
+    is_probe_range = explicit_end and (end - start + 1) <= 128
+
     if not range_header:
         end = min(start + MIN_SERVE - 1, file_size - 1)
-    elif (end - start + 1) < MIN_SERVE and end < file_size - 1:
+    elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
     content_length = end - start + 1

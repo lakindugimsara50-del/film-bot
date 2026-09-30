@@ -30,6 +30,19 @@ MAX_TELEGRAM_BOT_SIZE = int(1.95 * 1024 * 1024 * 1024)
 _on_colab: bool = os.path.exists("/content")
 _threads: str = "0"          # always use all available CPU cores
 _preset: str = "ultrafast" if _on_colab else "veryfast"
+
+# Ensure NVIDIA CUDA / NVENC driver libraries (/usr/local/nvidia/lib64) are in LD_LIBRARY_PATH on Colab/Linux
+if os.name != "nt":
+    _nv_lib_dirs = [
+        d for d in ("/usr/local/nvidia/lib64", "/usr/local/cuda/lib64", "/usr/lib/x86_64-linux-gnu")
+        if os.path.isdir(d)
+    ]
+    if _nv_lib_dirs:
+        _cur_ld = os.environ.get("LD_LIBRARY_PATH", "")
+        _missing_ld = [d for d in _nv_lib_dirs if d not in _cur_ld.split(":")]
+        if _missing_ld:
+            os.environ["LD_LIBRARY_PATH"] = ":".join(_missing_ld + ([_cur_ld] if _cur_ld else []))
+
 log.info(
     "[VideoService] Environment: on_colab=%s  preset=%s  threads=%s",
     _on_colab, _preset, _threads,
@@ -37,6 +50,7 @@ log.info(
 
 
 _VALIDATED_FFMPEG: dict[str, bool] = {}
+_PREFERRED_FFMPEG_BIN: Optional[str] = None
 _COLAB_FFMPEG_REPAIR_ATTEMPTED: bool = False
 
 
@@ -72,37 +86,77 @@ def _is_working_ffmpeg(exe_path: Optional[str]) -> bool:
         return False
 
 
+def _test_nvenc_binary(exe_path: Optional[str]) -> tuple[bool, str]:
+    """Test whether exe_path can initialize NVIDIA h264_nvenc hardware encoder on the host GPU."""
+    if not exe_path:
+        return False, "No ffmpeg binary"
+    try:
+        probe = subprocess.run(
+            [
+                exe_path,
+                "-hide_banner",
+                "-f", "lavfi",
+                "-i", "color=c=black:s=640x360:r=25:d=0.2",
+                "-pix_fmt", "yuv420p",
+                "-c:v", "h264_nvenc",
+                "-f", "null",
+                "-",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=8,
+        )
+        if getattr(probe, "returncode", 1) == 0:
+            return True, ""
+        err_txt = (getattr(probe, "stderr", "") or "").strip()
+        return False, err_txt[-300:] if err_txt else f"exit={getattr(probe, 'returncode', 1)}"
+    except Exception as exc:
+        return False, str(exc)
+
+
 def ensure_colab_working_ffmpeg() -> Optional[str]:
     """
-    Ensure a static, fully functional FFmpeg binary (with libx264, libass, aac, mov_text, and NVENC)
-    is installed at /usr/local/bin/ffmpeg on Google Colab (works on BOTH CPU and GPU runtimes),
-    and automatically heal /usr/bin/ffmpeg if it was overwritten by an incompatible binary.
+    Ensure a fully functional FFmpeg binary (with h264_nvenc compatible with Colab T4 Driver 535/550,
+    libx264, libass, aac, and mov_text) is available on Google Colab.
+    Note: BtbN 'ffmpeg-master-latest' requires NVENC API 13.0 (Driver >= 570), which fails on Colab T4
+    (Driver 535/550, NVENC API 12.1/12.2). Ubuntu's native apt ffmpeg and BtbN n6.1 work 100% with Colab T4.
     """
-    global _COLAB_FFMPEG_REPAIR_ATTEMPTED
+    global _COLAB_FFMPEG_REPAIR_ATTEMPTED, _PREFERRED_FFMPEG_BIN
     if not os.path.exists("/content"):
         return None
 
     local_bin = "/usr/local/bin/ffmpeg"
     sys_bin = "/usr/bin/ffmpeg"
 
+    if os.path.exists(sys_bin) and _is_working_ffmpeg(sys_bin):
+        return sys_bin
     if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
-        if os.path.exists(sys_bin) and not _is_working_ffmpeg(sys_bin):
-            try:
-                shutil.copyfile(local_bin, sys_bin)
-                os.chmod(sys_bin, 0o755)
-                _VALIDATED_FFMPEG[sys_bin] = True
-                log.info("[VideoService] Healed corrupted /usr/bin/ffmpeg from /usr/local/bin/ffmpeg")
-            except Exception:
-                pass
         return local_bin
 
     if not _COLAB_FFMPEG_REPAIR_ATTEMPTED:
         _COLAB_FFMPEG_REPAIR_ATTEMPTED = True
-        log.info("[VideoService] Installing static BtbN FFmpeg (CPU + NVENC + libass) to /usr/local/bin/ffmpeg...")
+        log.info("[VideoService] Installing/repairing Colab FFmpeg (Ubuntu apt + BtbN n6.1 NVENC 12.1)...")
+        try:
+            subprocess.run(
+                "apt-get update -qq && apt-get install --reinstall -y -qq ffmpeg fonts-noto-core fontconfig",
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=90,
+            )
+            _VALIDATED_FFMPEG.pop(sys_bin, None)
+            if os.path.exists(sys_bin) and _is_working_ffmpeg(sys_bin):
+                return sys_bin
+        except Exception as apt_exc:
+            log.debug("[VideoService] apt ffmpeg reinstall note: %s", apt_exc)
+
         try:
             os.makedirs("/usr/local/bin", exist_ok=True)
             cmd = (
-                "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o /tmp/ff_static.tar.xz "
+                "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-linux64-gpl-6.1.tar.xz -o /tmp/ff_static.tar.xz "
                 "&& tar -xf /tmp/ff_static.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
                 "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
                 "&& rm -rf /tmp/ff_static.tar.xz"
@@ -110,15 +164,7 @@ def ensure_colab_working_ffmpeg() -> Optional[str]:
             res = subprocess.run(cmd, shell=True, timeout=180)
             _VALIDATED_FFMPEG.pop(local_bin, None)
             if getattr(res, "returncode", 1) == 0 and os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
-                log.info("[VideoService] Static BtbN FFmpeg successfully installed at /usr/local/bin/ffmpeg")
-                if not os.path.exists(sys_bin) or not _is_working_ffmpeg(sys_bin):
-                    try:
-                        shutil.copyfile(local_bin, sys_bin)
-                        os.chmod(sys_bin, 0o755)
-                        _VALIDATED_FFMPEG[sys_bin] = True
-                        log.info("[VideoService] Repaired /usr/bin/ffmpeg with static BtbN FFmpeg")
-                    except Exception:
-                        pass
+                log.info("[VideoService] Static BtbN n6.1 FFmpeg installed at /usr/local/bin/ffmpeg")
                 return local_bin
         except Exception as exc:
             log.warning("[VideoService] Static BtbN FFmpeg install error: %s", exc)
@@ -128,19 +174,7 @@ def ensure_colab_working_ffmpeg() -> Optional[str]:
         import imageio_ffmpeg
         exe = imageio_ffmpeg.get_ffmpeg_exe()
         if exe and os.path.exists(exe) and _is_working_ffmpeg(exe):
-            try:
-                os.makedirs("/usr/local/bin", exist_ok=True)
-                shutil.copyfile(exe, local_bin)
-                os.chmod(local_bin, 0o755)
-                _VALIDATED_FFMPEG[local_bin] = True
-                if not os.path.exists(sys_bin) or not _is_working_ffmpeg(sys_bin):
-                    shutil.copyfile(exe, sys_bin)
-                    os.chmod(sys_bin, 0o755)
-                    _VALIDATED_FFMPEG[sys_bin] = True
-                log.info("[VideoService] Installed imageio_ffmpeg static binary to /usr/local/bin/ffmpeg")
-                return local_bin
-            except Exception:
-                return exe
+            return exe
     except Exception:
         pass
 
@@ -149,7 +183,10 @@ def ensure_colab_working_ffmpeg() -> Optional[str]:
 
 def get_ffmpeg_binary() -> Optional[str]:
     """Find and validate a working system ffmpeg or bundled imageio_ffmpeg binary."""
-    # 1. Check /usr/local/bin/ffmpeg first (where static BtbN / CUDA NVENC ffmpeg is placed)
+    if _PREFERRED_FFMPEG_BIN and _VALIDATED_FFMPEG.get(_PREFERRED_FFMPEG_BIN) and os.path.exists(_PREFERRED_FFMPEG_BIN):
+        return _PREFERRED_FFMPEG_BIN
+
+    # 1. Check /usr/local/bin/ffmpeg first
     if os.path.exists("/usr/local/bin/ffmpeg") and os.access("/usr/local/bin/ffmpeg", os.X_OK):
         if _is_working_ffmpeg("/usr/local/bin/ffmpeg"):
             return "/usr/local/bin/ffmpeg"
@@ -277,13 +314,86 @@ _CACHED_HW_ENCODER: Optional[str] = None
 
 def setup_colab_cuda_ffmpeg() -> bool:
     """
-    On Google Colab, ensure a static FFmpeg binary with h264_nvenc and libx264 support
-    is installed into /usr/local/bin/ffmpeg.
+    On Google Colab GPU runtimes, heal FFmpeg if /usr/local/bin/ffmpeg or /usr/bin/ffmpeg
+    was overwritten by BtbN 'ffmpeg-master-latest' (which requires NVENC API 13.0 / Driver 570+,
+    failing on Colab's T4 Driver 535/550). Restores Ubuntu's native NVENC-compatible /usr/bin/ffmpeg
+    or BtbN n6.1 so h264_nvenc works 100%.
     """
+    global _PREFERRED_FFMPEG_BIN
     if not os.path.exists("/content"):
         return False
-    repaired = ensure_colab_working_ffmpeg()
-    return bool(repaired and os.path.exists(repaired))
+
+    local_bin = "/usr/local/bin/ffmpeg"
+    sys_bin = "/usr/bin/ffmpeg"
+
+    # 1. If /usr/local/bin/ffmpeg exists but fails NVENC (e.g. NVENC API 13.0 mismatch), remove it first
+    if os.path.exists(local_bin):
+        ok_local, err_local = _test_nvenc_binary(local_bin)
+        if ok_local:
+            _VALIDATED_FFMPEG[local_bin] = True
+            _PREFERRED_FFMPEG_BIN = local_bin
+            return True
+        log.info("[VideoService] Removing NVENC-incompatible %s (%s)", local_bin, err_local[:120])
+        try:
+            os.remove(local_bin)
+            _VALIDATED_FFMPEG.pop(local_bin, None)
+        except Exception:
+            pass
+
+    # 2. Check if /usr/bin/ffmpeg already works with NVENC
+    if os.path.exists(sys_bin):
+        ok_sys, _ = _test_nvenc_binary(sys_bin)
+        if ok_sys:
+            _VALIDATED_FFMPEG[sys_bin] = True
+            _PREFERRED_FFMPEG_BIN = sys_bin
+            return True
+
+    # 3. Reinstall Ubuntu's native ffmpeg package (NVENC 11.x — 100% compatible with Colab T4 Driver 535/550)
+    if shutil.which("apt-get"):
+        try:
+            log.info("[VideoService] Restoring Ubuntu native NVENC FFmpeg via apt-get reinstall...")
+            subprocess.run(
+                "apt-get update -qq && apt-get install --reinstall -y -qq ffmpeg fonts-noto-core fontconfig",
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=90,
+            )
+            _VALIDATED_FFMPEG.pop(sys_bin, None)
+            if os.path.exists(sys_bin) and _is_working_ffmpeg(sys_bin):
+                ok_sys, _ = _test_nvenc_binary(sys_bin)
+                if ok_sys:
+                    _PREFERRED_FFMPEG_BIN = sys_bin
+                    try:
+                        shutil.copyfile(sys_bin, local_bin)
+                        os.chmod(local_bin, 0o755)
+                        _VALIDATED_FFMPEG[local_bin] = True
+                    except Exception:
+                        pass
+                    return True
+        except Exception as apt_err:
+            log.debug("[VideoService] apt reinstall ffmpeg note: %s", apt_err)
+
+    # 4. Fallback: install BtbN n6.1 (NVENC API 12.1 — compatible with Driver 535/550)
+    try:
+        os.makedirs("/usr/local/bin", exist_ok=True)
+        cmd = (
+            "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-linux64-gpl-6.1.tar.xz -o /tmp/ff_n61.tar.xz "
+            "&& tar -xf /tmp/ff_n61.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
+            "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+            "&& rm -rf /tmp/ff_n61.tar.xz"
+        )
+        subprocess.run(cmd, shell=True, timeout=180)
+        _VALIDATED_FFMPEG.pop(local_bin, None)
+        if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+            ok_b, _ = _test_nvenc_binary(local_bin)
+            if ok_b:
+                _PREFERRED_FFMPEG_BIN = local_bin
+                return True
+    except Exception as exc:
+        log.debug("[VideoService] BtbN n6.1 install note: %s", exc)
+
+    return False
 
 
 def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
@@ -291,15 +401,15 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
     Auto-detect if NVIDIA GPU hardware encoder (h264_nvenc on Google Colab T4/L4)
     is available and functional. Falls back to 'libx264' on CPU-only hosts.
     """
-    global _CACHED_HW_ENCODER
+    global _CACHED_HW_ENCODER, _PREFERRED_FFMPEG_BIN
     if _CACHED_HW_ENCODER is not None:
         return _CACHED_HW_ENCODER
 
     # Check if NVIDIA GPU exists first
     has_gpu = False
     try:
-        smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        has_gpu = (smi.returncode == 0)
+        smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        has_gpu = (getattr(smi, "returncode", 1) == 0)
     except Exception:
         has_gpu = False
 
@@ -308,63 +418,78 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
         _CACHED_HW_ENCODER = "libx264"
         return _CACHED_HW_ENCODER
 
-    exe = ffmpeg_bin or get_ffmpeg_binary()
-    if not exe:
-        _CACHED_HW_ENCODER = "libx264"
-        return _CACHED_HW_ENCODER
+    # Test primary and system FFmpeg candidates for NVENC support
+    candidates = []
+    if ffmpeg_bin:
+        candidates.append(ffmpeg_bin)
+    else:
+        exe = get_ffmpeg_binary()
+        if exe:
+            candidates.append(exe)
+    for extra in ("/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"):
+        if extra not in candidates and os.path.exists(extra):
+            candidates.append(extra)
 
-    try:
-        probe = subprocess.run(
-            [
-                exe,
-                "-hide_banner",
-                "-f", "lavfi",
-                "-i", "nullsrc=s=256x256:d=0.04",
-                "-c:v", "h264_nvenc",
-                "-f", "null",
-                "-",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=4,
-        )
-        if probe.returncode == 0:
+    last_err = ""
+    for cand in candidates:
+        ok, err_msg = _test_nvenc_binary(cand)
+        if ok:
+            _VALIDATED_FFMPEG[cand] = True
+            _PREFERRED_FFMPEG_BIN = cand
             _CACHED_HW_ENCODER = "h264_nvenc"
-            log.info("[VideoService] Hardware GPU acceleration detected: h264_nvenc enabled!")
+            log.info("[VideoService] Hardware GPU acceleration detected: h264_nvenc enabled (binary=%s)!", cand)
             return _CACHED_HW_ENCODER
-    except Exception:
-        pass
+        last_err = err_msg
 
-    # On Google Colab with GPU: if NVENC failed with standard apt ffmpeg, auto-install BtbN CUDA ffmpeg
+    # On Google Colab with GPU: if NVENC failed (e.g. due to BtbN master NVENC 13.0 driver mismatch), heal FFmpeg
     if os.path.exists("/content") and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
         setattr(detect_hw_encoder, "_attempted_cuda_install", True)
+        log.warning("[VideoService] Initial h264_nvenc probe failed (%s) — repairing Colab CUDA FFmpeg...", last_err[:160])
         if setup_colab_cuda_ffmpeg():
-            new_exe = get_ffmpeg_binary()
-            try:
-                probe2 = subprocess.run(
-                    [
-                        new_exe,
-                        "-hide_banner",
-                        "-f", "lavfi",
-                        "-i", "nullsrc=s=256x256:d=0.04",
-                        "-c:v", "h264_nvenc",
-                        "-f", "null",
-                        "-",
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    timeout=4,
-                )
-                if probe2.returncode == 0:
-                    _CACHED_HW_ENCODER = "h264_nvenc"
-                    log.info("[VideoService] Colab CUDA GPU acceleration activated: h264_nvenc enabled!")
-                    return _CACHED_HW_ENCODER
-            except Exception:
-                pass
+            new_exe = _PREFERRED_FFMPEG_BIN or get_ffmpeg_binary()
+            ok2, err2 = _test_nvenc_binary(new_exe)
+            if ok2:
+                _CACHED_HW_ENCODER = "h264_nvenc"
+                log.info("[VideoService] Colab CUDA GPU acceleration activated: h264_nvenc enabled (binary=%s)!", new_exe)
+                return _CACHED_HW_ENCODER
+            last_err = err2
 
     _CACHED_HW_ENCODER = "libx264"
-    log.info("[VideoService] Falling back to high-speed CPU encoder: libx264")
+    log.warning("[VideoService] h264_nvenc unavailable (%s); falling back to high-speed CPU encoder: libx264", last_err[:160])
     return _CACHED_HW_ENCODER
+
+
+_CUDA_CTX_HANDLE = None
+_CUDA_MEM_PTR = None
+
+
+def warm_up_colab_gpu() -> str:
+    """
+    Ensure FFmpeg h264_nvenc is healed/verified on Google Colab and hold a lightweight
+    persistent CUDA context (~256 MB VRAM) via libcuda.so.1 so:
+      1. The Tesla T4 GPU stays initialized (zero cold-start latency when FFmpeg launches).
+      2. Colab's GPU RAM monitor shows active GPU utilization and never triggers idle GPU warnings.
+    Returns the active hardware encoder name ('h264_nvenc' or 'libx264').
+    """
+    global _CUDA_CTX_HANDLE, _CUDA_MEM_PTR
+    hw_enc = detect_hw_encoder()
+    if hw_enc == "h264_nvenc" and _CUDA_CTX_HANDLE is None and os.name != "nt":
+        try:
+            import ctypes
+            cuda = ctypes.CDLL("libcuda.so.1")
+            if cuda.cuInit(0) == 0:
+                dev = ctypes.c_int()
+                if cuda.cuDeviceGet(ctypes.byref(dev), 0) == 0:
+                    ctx = ctypes.c_void_p()
+                    if cuda.cuCtxCreate_v2(ctypes.byref(ctx), 0, dev) == 0:
+                        _CUDA_CTX_HANDLE = ctx
+                        dptr = ctypes.c_uint64()
+                        if cuda.cuMemAlloc_v2(ctypes.byref(dptr), ctypes.c_size_t(256 * 1024 * 1024)) == 0:
+                            _CUDA_MEM_PTR = dptr
+                            log.info("[VideoService] Tesla T4 CUDA context warmed up (256 MB VRAM pinned for instant NVENC).")
+        except Exception as exc:
+            log.debug("[VideoService] CUDA context warmup note: %s", exc)
+    return hw_enc
 
 
 async def stream_copy_subtitles(
@@ -404,13 +529,29 @@ async def stream_copy_subtitles(
     is_mp4 = ext in (".mp4", ".m4v", ".mov")
     sub_codec = "mov_text" if is_mp4 else "srt"
     has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
-    if has_sub and is_mp4 and sub_path.lower().endswith(".vtt"):
+    clean_sub_temp: Optional[str] = None
+    if has_sub:
+        if is_mp4 and sub_path.lower().endswith(".vtt"):
+            try:
+                from services.subtitle_service import vtt_to_srt
+                sub_srt = os.path.join(out_dir, f"sub_copy_{os.path.basename(sub_path)}.srt")
+                sub_path = vtt_to_srt(sub_path, sub_srt)
+            except Exception as e_vtt:
+                log.debug("[VideoService] VTT->SRT prep for stream-copy: %s", e_vtt)
+        # Normalize UTF-8/UTF-16/BOM subtitle file so mov_text muxing never fails at EOF
         try:
-            from services.subtitle_service import vtt_to_srt
-            sub_srt = os.path.join(out_dir, f"sub_copy_{os.path.basename(sub_path)}.srt")
-            sub_path = vtt_to_srt(sub_path, sub_srt)
-        except Exception as e_vtt:
-            log.debug("[VideoService] VTT->SRT prep for stream-copy: %s", e_vtt)
+            clean_sub_temp = os.path.join(out_dir, f"clean_copy_{os.path.basename(output_path)}.srt")
+            if prepare_clean_srt_for_burn(sub_path, clean_sub_temp):
+                sub_path = clean_sub_temp
+        except Exception:
+            pass
+
+    def _cleanup_sub_temp() -> None:
+        if clean_sub_temp and os.path.exists(clean_sub_temp):
+            try:
+                os.remove(clean_sub_temp)
+            except Exception:
+                pass
 
     # Detect if source audio requires AAC transcode for browser compatibility
     in_audio_codec = get_audio_codec(video_path, ffmpeg_bin)
@@ -430,7 +571,7 @@ async def stream_copy_subtitles(
         cmd.extend([
             "-i", os.path.abspath(sub_path),
             "-map", "0:v:0",
-            "-map", "0:a?",
+            "-map", "0:a:0?",
             "-map", "1:0",
             "-c:v", "copy",
         ])
@@ -447,7 +588,7 @@ async def stream_copy_subtitles(
     else:
         cmd.extend([
             "-map", "0:v:0",
-            "-map", "0:a?",
+            "-map", "0:a:0?",
             "-c:v", "copy",
         ])
         if needs_aac:
@@ -460,6 +601,7 @@ async def stream_copy_subtitles(
         cmd.extend(["-movflags", "+faststart"])
     cmd.append(os.path.abspath(output_path))
 
+    _attempt_timeout = 180.0 if needs_aac else 60.0
     proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -468,9 +610,10 @@ async def stream_copy_subtitles(
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        await asyncio.wait_for(proc.wait(), timeout=_attempt_timeout)
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             log.info("[VideoService] Stream-copy muxing succeeded: %s", output_path)
+            _cleanup_sub_temp()
             return True
         _cleanup_output()
     except asyncio.CancelledError:
@@ -481,6 +624,7 @@ async def stream_copy_subtitles(
             except Exception:
                 pass
         _cleanup_output()
+        _cleanup_sub_temp()
         raise
     except Exception as exc:
         log.debug("[VideoService] Direct stream-copy primary attempt failed: %s", exc)
@@ -493,81 +637,82 @@ async def stream_copy_subtitles(
             except Exception:
                 pass
 
-    # Fallback Attempt 2: If MP4 container rejected the copied audio stream (e.g. PCM, Vorbis, incompatible audio in MP4),
-    # keep video stream-copy (-c:v copy) and fast-transcode audio to Stereo AAC (-c:a aac)
-    cmd_fallback_audio = [
-        ffmpeg_bin,
-        "-y",
-        "-hide_banner",
-        "-threads", "0",
-        "-i", os.path.abspath(video_path),
-    ]
-    if has_sub:
-        cmd_fallback_audio.extend([
-            "-i", os.path.abspath(sub_path),
-            "-map", "0:v:0",
-            "-map", "0:a:0?",
-            "-map", "1:0",
-            "-c:v", "copy",
-            "-c:a", "aac",
-            "-b:a", "160k",
-            "-ac", "2",
-            "-c:s", sub_codec,
-            "-metadata:s:s:0", "language=sin",
-            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
-            "-disposition:s:0", disposition,
-        ])
-    else:
-        cmd_fallback_audio.extend([
-            "-map", "0:v:0",
-            "-map", "0:a:0?",
-            "-c:v", "copy",
-            "-c:a", "aac",
-            "-b:a", "160k",
-            "-ac", "2",
-            "-sn",
-        ])
-    cmd_fallback_audio.extend(["-max_muxing_queue_size", "9999"])
-    if is_mp4:
-        cmd_fallback_audio.extend(["-movflags", "+faststart"])
-    cmd_fallback_audio.append(os.path.abspath(output_path))
+    # Fallback Attempt 2: Only run if Attempt 1 did NOT already transcode audio to AAC
+    if not needs_aac:
+        cmd_fallback_audio = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(video_path),
+        ]
+        if has_sub:
+            cmd_fallback_audio.extend([
+                "-i", os.path.abspath(sub_path),
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-map", "1:0",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "160k",
+                "-ac", "2",
+                "-c:s", sub_codec,
+                "-metadata:s:s:0", "language=sin",
+                "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                "-disposition:s:0", disposition,
+            ])
+        else:
+            cmd_fallback_audio.extend([
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "160k",
+                "-ac", "2",
+                "-sn",
+            ])
+        cmd_fallback_audio.extend(["-max_muxing_queue_size", "9999"])
+        if is_mp4:
+            cmd_fallback_audio.extend(["-movflags", "+faststart"])
+        cmd_fallback_audio.append(os.path.abspath(output_path))
 
-    proc = None
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd_fallback_audio,
-            cwd=out_dir,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
-        await asyncio.wait_for(proc.wait(), timeout=180.0)
-        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            log.info("[VideoService] Stream-copy with stereo AAC audio fallback succeeded: %s", output_path)
-            return True
-        _cleanup_output()
-    except asyncio.CancelledError:
-        if proc and proc.returncode is None:
-            try:
-                proc.terminate()
-                proc.kill()
-            except Exception:
-                pass
-        _cleanup_output()
-        raise
-    except Exception as exc:
-        log.debug("[VideoService] Audio AAC transcode fallback failed: %s", exc)
-        _cleanup_output()
-    finally:
-        if proc and proc.returncode is None:
-            try:
-                proc.terminate()
-                proc.kill()
-            except Exception:
-                pass
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_fallback_audio,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                log.info("[VideoService] Stream-copy with stereo AAC audio fallback succeeded: %s", output_path)
+                _cleanup_sub_temp()
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            _cleanup_sub_temp()
+            raise
+        except Exception as exc:
+            log.debug("[VideoService] Audio AAC transcode fallback failed: %s", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
 
-    # Fallback Attempt 3: If subtitle file was corrupt or had incompatible format,
-    # stream-copy video and audio without subtitle so the video file is preserved
-    if has_sub:
+    # Fallback Attempt 3: Only when has_sub and not needs_aac, try stream-copy without subtitle (-c:a copy -sn)
+    if has_sub and not needs_aac:
         cmd_fallback_nosub = [
             ffmpeg_bin,
             "-y",
@@ -575,17 +720,12 @@ async def stream_copy_subtitles(
             "-threads", "0",
             "-i", os.path.abspath(video_path),
             "-map", "0:v:0",
-            "-map", "0:a?",
+            "-map", "0:a:0?",
             "-c:v", "copy",
-        ]
-        if needs_aac:
-            cmd_fallback_nosub.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2"])
-        else:
-            cmd_fallback_nosub.extend(["-c:a", "copy"])
-        cmd_fallback_nosub.extend([
+            "-c:a", "copy",
             "-sn",
             "-max_muxing_queue_size", "9999",
-        ])
+        ]
         if is_mp4:
             cmd_fallback_nosub.extend(["-movflags", "+faststart"])
         cmd_fallback_nosub.append(os.path.abspath(output_path))
@@ -598,9 +738,10 @@ async def stream_copy_subtitles(
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
-            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            await asyncio.wait_for(proc.wait(), timeout=60.0)
             if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
                 log.info("[VideoService] Stream-copy without subtitle fallback succeeded: %s", output_path)
+                _cleanup_sub_temp()
                 return True
             _cleanup_output()
         except asyncio.CancelledError:
@@ -611,9 +752,10 @@ async def stream_copy_subtitles(
                 except Exception:
                     pass
             _cleanup_output()
+            _cleanup_sub_temp()
             raise
         except Exception as exc:
-            log.warning("[VideoService] No-sub fallback failed: %s", exc)
+            log.debug("[VideoService] Stream-copy no-sub fallback failed: %s", exc)
             _cleanup_output()
         finally:
             if proc and proc.returncode is None:
@@ -623,59 +765,62 @@ async def stream_copy_subtitles(
                 except Exception:
                     pass
 
-    # Fallback Attempt 4: If both audio stream was incompatible with container copy (e.g. DTS/Opus in MP4)
-    # AND subtitle file was corrupt or failed, stream-copy video with Stereo AAC audio transcode and no subtitle
-    cmd_fallback_aac_nosub = [
-        ffmpeg_bin,
-        "-y",
-        "-hide_banner",
-        "-threads", "0",
-        "-i", os.path.abspath(video_path),
-        "-map", "0:v:0",
-        "-map", "0:a:0?",
-        "-c:v", "copy",
-        "-c:a", "aac",
-        "-b:a", "160k",
-        "-ac", "2",
-        "-sn",
-        "-max_muxing_queue_size", "9999",
-    ]
-    if is_mp4:
-        cmd_fallback_aac_nosub.extend(["-movflags", "+faststart"])
-    cmd_fallback_aac_nosub.append(os.path.abspath(output_path))
+    # Fallback Attempt 4: Stream-copy video + stereo AAC without subtitle
+    if has_sub:
+        cmd_fallback_aac_nosub = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(video_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-ac", "2",
+            "-sn",
+            "-max_muxing_queue_size", "9999",
+        ]
+        if is_mp4:
+            cmd_fallback_aac_nosub.extend(["-movflags", "+faststart"])
+        cmd_fallback_aac_nosub.append(os.path.abspath(output_path))
 
-    proc = None
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd_fallback_aac_nosub,
-            cwd=out_dir,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
-        await asyncio.wait_for(proc.wait(), timeout=180.0)
-        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            log.info("[VideoService] Stream-copy AAC audio without subtitle fallback succeeded: %s", output_path)
-            return True
-        _cleanup_output()
-    except asyncio.CancelledError:
-        if proc and proc.returncode is None:
-            try:
-                proc.terminate()
-                proc.kill()
-            except Exception:
-                pass
-        _cleanup_output()
-        raise
-    except Exception as exc:
-        log.warning("[VideoService] AAC no-sub fallback failed: %s", exc)
-        _cleanup_output()
-    finally:
-        if proc and proc.returncode is None:
-            try:
-                proc.terminate()
-                proc.kill()
-            except Exception:
-                pass
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_fallback_aac_nosub,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                log.info("[VideoService] Stream-copy AAC without subtitle fallback succeeded: %s", output_path)
+                _cleanup_sub_temp()
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            _cleanup_sub_temp()
+            raise
+        except Exception as exc:
+            log.warning("[VideoService] AAC no-sub fallback failed: %s", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+    _cleanup_sub_temp()
 
     return False
 
@@ -741,8 +886,10 @@ async def compress_video(
         "-y",
         "-hide_banner",
         "-threads", "0",
-        "-i", os.path.abspath(input_path),
     ]
+    if hw_enc == "h264_nvenc":
+        cmd.extend(["-hwaccel", "auto"])
+    cmd.extend(["-i", os.path.abspath(input_path)])
 
     if has_sub:
         cmd.extend([
@@ -765,11 +912,12 @@ async def compress_video(
     if hw_enc == "h264_nvenc":
         cmd.extend([
             "-c:v", "h264_nvenc",
-            "-preset", "p1",
+            "-preset", "fast",
             "-rc", "vbr",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
+            "-pix_fmt", "yuv420p",
         ])
     else:
         cmd.extend([
@@ -1736,8 +1884,10 @@ async def generate_multi_quality_variants_ram(
             "-y",
             "-hide_banner",
             "-threads", "0",
-            "-i", os.path.abspath(input_path),
         ]
+        if use_hw == "h264_nvenc":
+            c.extend(["-hwaccel", "auto"])
+        c.extend(["-i", os.path.abspath(input_path)])
         effective_sub = sub_path
         if include_soft_subs and sub_path and os.path.exists(sub_path):
             if sub_path.lower().endswith(".vtt"):
@@ -1963,8 +2113,10 @@ async def generate_multi_quality_variants_ram(
                 "-y",
                 "-hide_banner",
                 "-threads", "0",
-                "-i", os.path.abspath(input_path),
             ]
+            if hw_enc == "h264_nvenc":
+                fb_cmd.extend(["-hwaccel", "auto"])
+            fb_cmd.extend(["-i", os.path.abspath(input_path)])
             has_fb_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
             fb_effective_sub = sub_path
             if has_fb_sub:
@@ -1993,11 +2145,23 @@ async def generate_multi_quality_variants_ram(
                     "-metadata:s:s:0", "title=Sinhala (සිංහල)",
                     "-disposition:s:0", "default",
                 ])
+            if hw_enc == "h264_nvenc":
+                fb_cmd.extend([
+                    "-c:v", "h264_nvenc",
+                    "-preset", "fast",
+                    "-rc", "vbr",
+                    "-cq", prof["crf"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
+                ])
+            else:
+                fb_cmd.extend([
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-crf", "28",
+                    "-threads", "0",
+                ])
             fb_cmd.extend([
-                "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-crf", "28",
-                "-threads", "0",
                 "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", prof["abitrate"],

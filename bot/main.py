@@ -30,7 +30,7 @@ import uvicorn
 
 import config
 
-BOT_VERSION = "v2.8.2-clean-players-pool98"
+BOT_VERSION = "v3.0.0-nvidia-t4-gpu-nvenc"
 
 # Ensure Windows console streams support UTF-8 encoding (Sinhala text)
 if hasattr(sys.stdout, "reconfigure"):
@@ -726,9 +726,9 @@ async def sessions_handler(client: Client, message: Message) -> None:
     )
 
 
-BOT_VERSION = "v2.7.0-multi-quality-permanent-fix"
-BOT_COMMIT = "multi-quality-permanent-fix"
-BOT_FEATURES = "✅ Self-Healing Static FFmpeg | ✅ Guaranteed 1080p/720p/480p Multi-Quality | ✅ 98-Session Pool | ✅ Instant Web Stream"
+BOT_VERSION = "v3.0.0-nvidia-t4-gpu-nvenc"
+BOT_COMMIT = "nvidia-t4-gpu-nvenc"
+BOT_FEATURES = "✅ NVIDIA Tesla T4 GPU (h264_nvenc + CUDA) | ✅ Guaranteed 1080p/720p/480p Multi-Quality | ✅ 98-Session Pool | ✅ Instant Web Stream"
 
 
 
@@ -736,9 +736,13 @@ BOT_FEATURES = "✅ Self-Healing Static FFmpeg | ✅ Guaranteed 1080p/720p/480p 
 @app.on_message(filters.command(["ping", "version"]))
 async def ping_handler(client: Client, message: Message) -> None:
     """Check liveness and active build version."""
+    from services import video_service
+    hw_enc = video_service.detect_hw_encoder()
+    gpu_tag = "🟢 NVIDIA T4 GPU (h264_nvenc)" if hw_enc == "h264_nvenc" else f"🟡 CPU ({hw_enc})"
     await message.reply_text(
         f"🏓 <b>Pong! Bot is Live</b>\n\n"
         f"🔖 <b>Version:</b> <code>{BOT_VERSION}</code> (Commit <code>{BOT_COMMIT}</code>)\n"
+        f"🎮 <b>Encoder:</b> <code>{gpu_tag}</code>\n"
         f"⚡ <b>Active Features:</b>\n{BOT_FEATURES}",
         parse_mode=ParseMode.HTML,
     )
@@ -818,12 +822,13 @@ async def _on_start(client: Client) -> None:
     except Exception as dm_err:
         log.warning("[DriveManager] Initialization error: %s", dm_err)
 
-    # Validate and self-heal FFmpeg binary (especially on Google Colab CPU/GPU runtimes)
+    # Validate, self-heal FFmpeg, and warm up NVIDIA Tesla T4 GPU CUDA context on Colab
+    hw_enc = "libx264"
     try:
         from services import video_service
+        hw_enc = await asyncio.to_thread(video_service.warm_up_colab_gpu)
         ff_bin = await asyncio.to_thread(video_service.get_ffmpeg_binary)
-        hw_enc = await asyncio.to_thread(video_service.detect_hw_encoder, ff_bin)
-        log.info("[VideoService] Startup FFmpeg verified: binary=%s, encoder=%s", ff_bin, hw_enc)
+        log.info("[VideoService] Startup FFmpeg & GPU verified: binary=%s, encoder=%s", ff_bin, hw_enc)
     except Exception as ff_err:
         log.warning("[VideoService] Startup FFmpeg check note: %s", ff_err)
 
@@ -882,6 +887,7 @@ async def _on_start(client: Client) -> None:
     # Notify admins that the bot restarted
     service_name = os.getenv("RENDER_SERVICE_NAME", "") or os.getenv("RENDER_INSTANCE_ID", "")
     service_tag = f" <i>[Service: {service_name}]</i>" if service_name else ""
+    gpu_status_line = "🟢 <b>GPU Engine:</b> NVIDIA Tesla T4 (<code>h264_nvenc</code> CUDA Active)" if hw_enc == "h264_nvenc" else f"🟡 <b>Engine:</b> Multi-Core CPU (<code>{hw_enc}</code>)"
     for admin_id in config.ADMIN_IDS:
         try:
             await client.send_message(
@@ -889,6 +895,7 @@ async def _on_start(client: Client) -> None:
                 text=(
                     f"🤖 <b>Film Bot started!</b> (<code>{BOT_VERSION}</code>){service_tag}\n"
                     f"Bot: @{me.username}\n"
+                    f"{gpu_status_line}\n"
                     f"🔥 Clean VIP Players (VidLink, AutoEmbed, MultiEmbed) Active\n"
                     f"🔥 PirateLK Auto Subtitle Engine Active\n"
                     f"👥 98-Session Upload & Stream Pool Active\n"

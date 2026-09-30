@@ -1,5 +1,5 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://beaver-enables-candidate-convergence.trycloudflare.com",
-  "updated_at": "2026-09-30T15:02:26.840594+00:00",
+  "stream_base_url": "https://sounds-checks-intermediate-looksmart.trycloudflare.com",
+  "updated_at": "2026-09-30T19:38:52.054462+00:00",
   "status": "online"
 };

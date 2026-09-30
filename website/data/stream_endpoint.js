@@ -1,5 +1,5 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://sounds-checks-intermediate-looksmart.trycloudflare.com",
-  "updated_at": "2026-09-30T19:38:52.054462+00:00",
+  "stream_base_url": "https://wishes-nursing-clothes-saints.trycloudflare.com",
+  "updated_at": "2026-09-30T19:59:58.933205+00:00",
   "status": "online"
 };

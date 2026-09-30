@@ -1033,10 +1033,20 @@ async def _execute_leech(
                         progress_callback=_download_progress,
                     )
 
-                if local_file and os.path.exists(local_file) and os.path.getsize(local_file) > 0:
+                if local_file and downloader.is_valid_downloaded_video(local_file):
                     chosen_candidate = candidate
-                    log.info("[LeechService] Download SUCCEEDED via %s", candidate.method_name)
+                    log.info("[LeechService] Download SUCCEEDED via %s (%s)", candidate.method_name, downloader.format_bytes(os.path.getsize(local_file)))
                     break
+                else:
+                    if local_file and os.path.exists(local_file):
+                        try:
+                            os.remove(local_file)
+                        except Exception:
+                            pass
+                    log.warning(
+                        "[LeechService] Downloaded candidate '%s' failed video validation (corrupt/HTML/too small). Trying next candidate...",
+                        candidate.method_name
+                    )
 
             except Exception as dl_err:
                 log.warning(
@@ -1053,7 +1063,7 @@ async def _execute_leech(
                             pass
                 continue
 
-        if not chosen_candidate or not local_file or not os.path.exists(local_file):
+        if not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file):
             task_tracker.tracker.fail_task(user_id, "All download candidates failed.")
             await status_msg.edit_text(
                 f"⚠️ <b>බාගත කිරීම අසාර්ථක විය (Download Failed)!</b>\n\n"

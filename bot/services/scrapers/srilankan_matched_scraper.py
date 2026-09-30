@@ -68,6 +68,97 @@ def resolve_direct_video_url(url: str) -> str:
     return url
 
 
+async def resolve_srilankan_intermediate_link(
+    client: httpx.AsyncClient,
+    link_url: str,
+    referer_url: str = "",
+) -> Optional[str]:
+    """
+    Resolve intermediate ad/locker/unlocker links (e.g. sinhalasub.lk/links/xxxxxx/,
+    cinesubz unlocker, etc.) to the direct video stream URL.
+    """
+    # 1. If already a direct video stream endpoint
+    if "cdn.sinhalasub.net" in link_url or "ddl.sinhalasub.net" in link_url:
+        return link_url
+    pd_m = VIDEO_HOST_PATTERNS["pixeldrain"].search(link_url)
+    if pd_m:
+        return f"https://pixeldrain.com/api/file/{pd_m.group(1)}"
+    if link_url.endswith((".mp4", ".mkv")) and "/links/" not in link_url:
+        return link_url
+
+    # 2. Check if this is an intermediate locker/redirect URL
+    is_intermediate = any(k in link_url.lower() for k in [
+        "/links/", "/api-", "linkvertise", "gplinks", "droplink", "short"
+    ])
+    if not is_intermediate:
+        return None
+
+    try:
+        req_headers = dict(HEADERS)
+        if referer_url:
+            req_headers["Referer"] = referer_url
+
+        resp = await client.get(link_url, headers=req_headers, timeout=10.0)
+        if resp.status_code != 200:
+            return None
+
+        body = resp.text
+
+        # A. ZetaFlix / SinhalaSub Link Unlocker: var zluFinalLink = '...'
+        m_zlu = re.search(r"var\s+zluFinalLink\s*=\s*['\"]([^'\"]+)['\"]", body)
+        if m_zlu:
+            final_link = m_zlu.group(1).strip()
+            log.info("[MatchedScraper] Resolved zluFinalLink: %s", final_link[:90])
+            return resolve_direct_video_url(final_link)
+
+        # B. Generic variable extraction: var final_link = '...' / var download_url = '...'
+        m_var = re.search(
+            r"(?:var|let|const)\s+(?:final_link|download_url|direct_url|target_url)\s*=\s*['\"]([^'\"]+)['\"]",
+            body,
+            re.IGNORECASE,
+        )
+        if m_var:
+            final_link = m_var.group(1).strip()
+            log.info("[MatchedScraper] Resolved final_link variable: %s", final_link[:90])
+            return resolve_direct_video_url(final_link)
+
+        # C. CineSubz / SubzLK urlMappings and #link replacement
+        soup = BeautifulSoup(body, "html.parser")
+        link_elem = soup.find(id="link")
+        if link_elem and link_elem.get("href"):
+            raw_href = link_elem["href"].strip()
+            # Check script mappings
+            if "google.com/server" in raw_href:
+                # Replace server pattern per CineSubz script:
+                # https://google.com/server11/1:/ -> https://drive.csplayer2.space/server1/
+                m_srv = re.search(r"https://google\.com/server(\d+)/1:/", raw_href)
+                if m_srv:
+                    mapped = re.sub(r"https://google\.com/server\d+/1:/", f"https://drive.csplayer2.space/server{m_srv.group(1)[0]}/", raw_href)
+                    log.info("[MatchedScraper] Mapped CineSubz stream URL: %s", mapped[:90])
+                    return mapped
+            return resolve_direct_video_url(raw_href)
+
+        # D. Search anchors inside the resolved page
+        for a in soup.find_all("a", href=True):
+            h = a["href"].strip()
+            if any(k in h.lower() for k in ["cdn.sinhalasub", "ddl.sinhalasub", "pixeldrain.com", "usersdrive.com", "mega.nz"]):
+                return resolve_direct_video_url(h)
+            if h.endswith((".mp4", ".mkv")) and not h.startswith("#"):
+                return h
+
+        # E. Check for window.location redirects
+        m_redir = re.search(r"window\.location(?:\.href)?\s*=\s*['\"]([^'\"]+)['\"]", body)
+        if m_redir:
+            loc = m_redir.group(1).strip()
+            if any(k in loc for k in ["cdn.", "pixeldrain", "usersdrive", "mega", ".mp4", ".mkv"]):
+                return resolve_direct_video_url(loc)
+
+    except Exception as exc:
+        log.debug("[MatchedScraper] Error resolving intermediate link %s: %s", link_url[:60], exc)
+
+    return None
+
+
 def detect_quality_from_context(text: str, href: str) -> str:
     """Infer resolution quality (1080p, 720p, 480p) from surrounding anchor text or URL."""
     combined = f"{text} {href}".lower()
@@ -95,41 +186,51 @@ async def _search_portal(
     p_name = portal["name"]
     candidate_posts: list[str] = []
     title_words = [w.lower() for w in clean_title.split() if len(w) > 2]
+    search_queries = [query]
+    if clean_title and clean_title not in search_queries:
+        search_queries.append(clean_title)
 
-    # 1. Search via WP REST API if supported
-    if portal.get("wp_api"):
-        try:
-            api_url = f"{base_url.rstrip('/')}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(query)}&per_page=6"
-            resp = await client.get(api_url, headers=HEADERS, timeout=8.0)
-            if resp.status_code == 200 and isinstance(resp.json(), list):
-                for p in resp.json():
-                    link = p.get("link") or ""
-                    rendered = (p.get("title", {}) or {}).get("rendered", "").lower()
-                    if link and (not title_words or any(w in rendered or w in link.lower() for w in title_words)):
-                        candidate_posts.append(link)
-        except Exception as e_api:
-            log.debug("[MatchedScraper] %s WP API note: %s", p_name, e_api)
+    for q_try in search_queries:
+        if candidate_posts:
+            break
+        # 1. Search via WP REST API if supported
+        if portal.get("wp_api"):
+            try:
+                api_url = f"{base_url.rstrip('/')}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q_try)}&per_page=6"
+                resp = await client.get(api_url, headers=HEADERS, timeout=8.0)
+                if resp.status_code == 200 and isinstance(resp.json(), list):
+                    for p in resp.json():
+                        link = p.get("link") or ""
+                        rendered = (p.get("title", {}) or {}).get("rendered", "").lower()
+                        if link and (not title_words or any(w in rendered or w in link.lower() for w in title_words)):
+                            candidate_posts.append(link)
+            except Exception as e_api:
+                log.debug("[MatchedScraper] %s WP API note: %s", p_name, e_api)
 
-    # 2. Fallback to HTML search (/?s=)
-    if not candidate_posts:
-        try:
-            s_url = f"{base_url.rstrip('/')}/?s={urllib.parse.quote_plus(query)}"
-            resp = await client.get(s_url, headers=HEADERS, timeout=8.0)
-            if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, "html.parser")
-                for a in soup.select("article a, h2 a, h3 a, .entry-title a, .post-title a, .result-item a"):
-                    href = a.get("href", "")
-                    if href and base_url.split("//")[-1].split("/")[0] in href:
-                        if not any(ign in href for ign in ("/category/", "/tag/", "/author/", "/page/", "#")):
-                            if href not in candidate_posts:
-                                candidate_posts.append(href)
-        except Exception as e_html:
-            log.debug("[MatchedScraper] %s HTML search note: %s", p_name, e_html)
+        # 2. Fallback to HTML search (/?s=)
+        if not candidate_posts:
+            try:
+                s_url = f"{base_url.rstrip('/')}/?s={urllib.parse.quote_plus(q_try)}"
+                resp = await client.get(s_url, headers=HEADERS, timeout=8.0)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    selectors = [
+                        ".display-item a", ".item-box a", ".result-item a", "article a",
+                        "h2 a", "h3 a", ".entry-title a", ".post-title a", "main a",
+                    ]
+                    for a in soup.select(", ".join(selectors)):
+                        href = a.get("href", "")
+                        if href and base_url.split("//")[-1].split("/")[0] in href:
+                            if not any(ign in href for ign in ("/category/", "/tag/", "/author/", "/page/", "#", "wp-login")):
+                                if href not in candidate_posts:
+                                    candidate_posts.append(href)
+            except Exception as e_html:
+                log.debug("[MatchedScraper] %s HTML search note: %s", p_name, e_html)
 
     found_candidates: list[dict] = []
 
     # 3. Inspect matched post pages
-    for post_url in candidate_posts[:3]:
+    for post_url in candidate_posts[:4]:
         try:
             p_resp = await client.get(post_url, headers=HEADERS, timeout=10.0)
             if p_resp.status_code != 200:
@@ -141,13 +242,40 @@ async def _search_portal(
             # Verification: make sure this post actually matches the target title
             if title_words and not any(w in page_text.lower() for w in title_words):
                 continue
-            if season and episode:
-                ep_tokens = [f"s{season:02d}e{episode:02d}", f"s{season}e{episode}", f"{season}x{episode}", f"episode {episode}"]
-                if not any(tok in page_text.lower() for tok in ep_tokens):
-                    # Check if post has episode list or season pack
-                    pass
 
-            # A. Extract Subtitle
+            # TV Series navigation: If season and episode are specified, locate the specific episode page
+            current_target_url = post_url
+            if season and episode:
+                # 1. First try strict season-and-episode regex (prevents S08E05 matching when searching for S06E05)
+                ep_pat = re.compile(
+                    rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b|season[-_\s]*0*{season}/episode[-_\s]*0*{episode}\b)",
+                    re.IGNORECASE,
+                )
+                ep_link = None
+                for a in soup.find_all("a", href=True):
+                    h = a["href"].strip()
+                    if ep_pat.search(h):
+                        ep_link = urllib.parse.urljoin(post_url, h)
+                        break
+
+                # 2. Fallback: check anchor text with strict season and episode
+                if not ep_link:
+                    for a in soup.find_all("a", href=True):
+                        h = a["href"].strip()
+                        t = a.get_text(" ", strip=True).lower()
+                        if ep_pat.search(t):
+                            ep_link = urllib.parse.urljoin(post_url, h)
+                            break
+
+                if ep_link:
+                    log.info("[MatchedScraper] %s found specific episode link: %s", p_name, ep_link)
+                    ep_resp = await client.get(ep_link, headers=HEADERS, timeout=10.0)
+                    if ep_resp.status_code == 200:
+                        soup = BeautifulSoup(ep_resp.text, "html.parser")
+                        current_target_url = ep_link
+                        page_text = soup.get_text(" ", strip=True)
+
+            # A. Extract Subtitle from post/episode page
             sub_srt_path = None
             dl_sub_urls = []
             for a in soup.find_all("a", href=True):
@@ -161,13 +289,13 @@ async def _search_portal(
                     or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt"))
                     or ("උපසිරැසි" in a_txt and "බාගත" in a_txt)
                 ):
-                    full_href = urllib.parse.urljoin(post_url, href)
+                    full_href = urllib.parse.urljoin(current_target_url, href)
                     if full_href not in dl_sub_urls:
                         dl_sub_urls.append(full_href)
 
             for sub_url in dl_sub_urls[:3]:
                 try:
-                    s_res = await client.get(sub_url, headers={"Referer": post_url}, timeout=12.0)
+                    s_res = await client.get(sub_url, headers={"Referer": current_target_url}, timeout=12.0)
                     if s_res.status_code == 200 and len(s_res.content) > 128:
                         srt_p, _ = subtitle_service._extract_srt_from_bytes(
                             s_res.content,
@@ -183,20 +311,69 @@ async def _search_portal(
                 except Exception as sub_dl_err:
                     log.debug("[MatchedScraper] Subtitle download note: %s", sub_dl_err)
 
-            # B. Extract Video Download Links from the same post
+            # If no subtitle was found on the post page, attempt fallback to subtitle_service
+            if not sub_srt_path:
+                try:
+                    fallback_sub = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
+                        clean_title, year, season=season, episode=episode, temp_dir=temp_dir
+                    )
+                    if fallback_sub and os.path.exists(fallback_sub):
+                        sub_srt_path = fallback_sub
+                        log.info("[MatchedScraper] Attached Sri Lankan subtitle via subtitle_service: %s", fallback_sub)
+                except Exception as fb_err:
+                    log.debug("[MatchedScraper] Subtitle fallback lookup note: %s", fb_err)
+
+            # B. Extract Video Download Links from table rows and anchors
             video_links: list[dict] = []
+            seen_dl_urls: set[str] = set()
+
+            # 1. Check table rows (typical for SinhalaSub, DooPlay, ZetaFlix releases)
+            for tr in soup.find_all("tr"):
+                tr_txt = tr.get_text(" ", strip=True)
+                for a in tr.find_all("a", href=True):
+                    h = a["href"].strip()
+                    if h in seen_dl_urls or h.startswith("#"):
+                        continue
+                    seen_dl_urls.add(h)
+
+                    # Skip Telegram channels/bots in direct video candidate list
+                    if "t.me" in h.lower() or "telegram.me" in h.lower():
+                        continue
+
+                    q = detect_quality_from_context(tr_txt, h)
+                    resolved_url = await resolve_srilankan_intermediate_link(client, h, referer_url=current_target_url)
+                    if resolved_url and not any(ign in resolved_url for ign in ["telegram.me", "t.me"]):
+                        h_type = "cdn" if "cdn.sinhalasub" in resolved_url else ("pixeldrain" if "pixeldrain" in resolved_url else "ddl")
+                        video_links.append({
+                            "url": resolved_url,
+                            "original_url": h,
+                            "host_type": h_type,
+                            "quality": q,
+                            "context": tr_txt[:120],
+                        })
+
+            # 2. Check general anchors for direct video hosts or remaining intermediate links
             for a in soup.find_all("a", href=True):
-                href = a["href"].strip()
+                h = a["href"].strip()
+                if h in seen_dl_urls or h.startswith("#"):
+                    continue
+                seen_dl_urls.add(h)
+
+                if "t.me" in h.lower() or "telegram.me" in h.lower():
+                    continue
+
                 txt = a.get_text(" ", strip=True)
                 parent_txt = a.parent.get_text(" ", strip=True) if a.parent else ""
 
-                # Check against video host patterns
+                # Check against known direct video patterns
+                matched_pat = False
                 for h_type, pat in VIDEO_HOST_PATTERNS.items():
-                    m = pat.search(href)
+                    m = pat.search(h)
                     if m:
+                        matched_pat = True
                         matched_url = m.group(0)
                         direct_url = resolve_direct_video_url(matched_url)
-                        q = detect_quality_from_context(f"{txt} {parent_txt}", href)
+                        q = detect_quality_from_context(f"{txt} {parent_txt}", h)
                         video_links.append({
                             "url": direct_url,
                             "original_url": matched_url,
@@ -206,11 +383,25 @@ async def _search_portal(
                         })
                         break
 
-            # If video links found, package them as top-priority candidates
+                # If not matched directly, check if it's an intermediate locker link
+                if not matched_pat and ("/links/" in h or "/api-" in h):
+                    resolved_url = await resolve_srilankan_intermediate_link(client, h, referer_url=current_target_url)
+                    if resolved_url and not any(ign in resolved_url for ign in ["telegram.me", "t.me"]):
+                        q = detect_quality_from_context(f"{txt} {parent_txt}", h)
+                        h_type = "cdn" if "cdn.sinhalasub" in resolved_url else ("pixeldrain" if "pixeldrain" in resolved_url else "ddl")
+                        video_links.append({
+                            "url": resolved_url,
+                            "original_url": h,
+                            "host_type": h_type,
+                            "quality": q,
+                            "context": f"{txt} {parent_txt}"[:120],
+                        })
+
+            # Package found video links as top-priority candidates
             for vl in video_links:
                 found_candidates.append({
                     "portal": p_name,
-                    "post_url": post_url,
+                    "post_url": current_target_url,
                     "url": vl["url"],
                     "quality": vl["quality"],
                     "host_type": vl["host_type"],

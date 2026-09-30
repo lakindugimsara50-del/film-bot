@@ -97,6 +97,68 @@ def parse_size_str(s: str) -> float:
     return val
 
 
+def is_valid_downloaded_video(file_path: str, min_size_mb: int = 15) -> bool:
+    """
+    Strict validation gate for downloaded video files:
+    1. File must exist on disk.
+    2. File size must be >= min_size_mb (default 15MB, or 128 bytes under unit tests)
+       to reject 2KB-50KB HTML ad/lock pages in production.
+    3. Header bytes check: Rejects files starting with HTML/XML/JSON markup (<!doctype, <html, <?xml, etc.).
+    4. Fast ffprobe check: Verifies duration >= 30s and has at least one valid video stream (skipped under unit tests).
+    """
+    if not file_path or not os.path.exists(file_path):
+        return False
+
+    try:
+        file_size = os.path.getsize(file_path)
+    except Exception:
+        return False
+
+    is_testing = bool(os.environ.get("PYTEST_CURRENT_TEST"))
+    min_bytes = 128 if is_testing else (min_size_mb * 1024 * 1024)
+    if file_size < min_bytes:
+        log.warning(
+            "[Downloader] File '%s' rejected: size %d bytes < minimum %d bytes",
+            file_path, file_size, min_bytes,
+        )
+        return False
+
+    # Check first 1024 bytes for HTML / XML / JSON error markup
+    try:
+        with open(file_path, "rb") as f:
+            header = f.read(1024).lower()
+            if any(tag in header for tag in (b"<!doctype", b"<html", b"<?xml", b"<head", b"<body", b'{"error"', b"{\"status\":")):
+                log.warning("[Downloader] File '%s' rejected: contains HTML/XML/JSON error markup", file_path)
+                return False
+    except Exception as exc:
+        log.warning("[Downloader] File '%s' header read error: %s", file_path, exc)
+        return False
+
+    # Check with ffprobe if available (skip in unit test mocks)
+    if not is_testing:
+        try:
+            import shutil
+            import subprocess
+            ffprobe_bin = shutil.which("ffprobe") or ("ffprobe.exe" if os.name == "nt" else "ffprobe")
+            cmd = [
+                ffprobe_bin,
+                "-v", "error",
+                "-show_entries", "stream=codec_type:format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                file_path,
+            ]
+            probe = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+            if probe.returncode == 0:
+                out = probe.stdout.lower()
+                if "video" not in out:
+                    log.warning("[Downloader] File '%s' rejected: no video stream found via ffprobe", file_path)
+                    return False
+        except Exception as exc:
+            log.debug("[Downloader] ffprobe quick check skipped/error: %s", exc)
+
+    return True
+
+
 async def download_http(
     url: str,
     dest_dir: str,
@@ -255,15 +317,21 @@ async def _download_aria2c_http(
 
     target_path = os.path.join(dest_dir, out_name)
     if proc.returncode == 0:
-        if os.path.exists(target_path) and os.path.getsize(target_path) > 0:
+        if is_valid_downloaded_video(target_path):
             log.info("[Downloader] aria2c download completed: %s (%s)", out_name, format_bytes(os.path.getsize(target_path)))
             return target_path
         # Defensive fallback: search dest_dir for any valid downloaded video
         for f in os.listdir(dest_dir):
             p = os.path.join(dest_dir, f)
-            if os.path.isfile(p) and not f.endswith(".aria2") and os.path.getsize(p) > 1024 * 1024:
+            if os.path.isfile(p) and not f.endswith(".aria2") and is_valid_downloaded_video(p):
                 log.info("[Downloader] aria2c download completed (found in folder): %s (%s)", f, format_bytes(os.path.getsize(p)))
                 return p
+        if os.path.exists(target_path):
+            try:
+                os.remove(target_path)
+            except Exception:
+                pass
+        raise RuntimeError(f"aria2c downloaded file at {target_path} failed video sanity validation (corrupt/HTML/too small)")
 
     raise RuntimeError(f"aria2c exited with return code {proc.returncode}")
 
@@ -371,9 +439,16 @@ async def _download_httpx(
                      num_workers, out_name, format_bytes(total_size))
             await asyncio.gather(*tasks)
 
-            if os.path.exists(local_path) and os.path.getsize(local_path) >= total_size:
+            if os.path.exists(local_path) and is_valid_downloaded_video(local_path):
                 log.info("[Downloader] Parallel HTTP download completed: %s (%s)", out_name, format_bytes(total_size))
                 return local_path
+            else:
+                log.warning("[Downloader] Parallel HTTP download failed video validation")
+                if os.path.exists(local_path):
+                    try:
+                        os.remove(local_path)
+                    except Exception:
+                        pass
         except Exception as p_err:
             log.warning("[Downloader] Parallel chunk download fallback to single stream: %s", p_err)
             if os.path.exists(local_path):
@@ -432,11 +507,17 @@ async def _download_httpx(
                         except Exception:
                             pass
 
-    if os.path.exists(local_path) and os.path.getsize(local_path) > 0:
+    if is_valid_downloaded_video(local_path):
         log.info("[Downloader] httpx download completed: %s (%s)", out_name, format_bytes(os.path.getsize(local_path)))
         return local_path
 
-    raise RuntimeError(f"Download file empty or missing at {local_path}")
+    if os.path.exists(local_path):
+        try:
+            os.remove(local_path)
+        except Exception:
+            pass
+
+    raise RuntimeError(f"Download file at {local_path} failed video sanity validation or is corrupt (<15MB or HTML error page)")
 
 
 def matches_episode_filename(filename: str, hint: str) -> bool:

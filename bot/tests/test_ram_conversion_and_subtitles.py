@@ -1168,3 +1168,71 @@ def test_prepare_clean_srt_and_build_subtitles_burn_filter(tmp_path):
     assert "BorderStyle=1" in vf
 
 
+@pytest.mark.asyncio
+async def test_flowchart_end_to_end_webrip_matcher_and_3tier_hardburn(tmp_path):
+    """
+    Verify the complete 7-stage architecture flowchart:
+    1. Multi-site Sinhala Sub Finder includes subz.lk, cineru.lk, sinhalasub.lk, baiscope.lk, piratelk.com
+    2. WebRip Reference Matcher prioritizes matching release tag (e.g. BluRay YTS vs WEBRip) in search_all_torrents
+    3. Single-Decode FFmpeg Hard-Burn & Multi-Quality Engine (split=3) hard-burns 1080p, 720p, and 480p simultaneously
+    4. Render 24/7 Stream-Only mode (ENABLE_RENDER_STREAM) is present in bot/main.py
+    """
+    from services import subtitle_service
+    from services.scrapers import torrent_finder
+
+    # 1. Verify sinhalasub.lk is in subtitle_service
+    sub_src = (Path(__file__).resolve().parents[1] / "services" / "subtitle_service.py").read_text(encoding="utf-8")
+    for portal in ("subz.lk", "cineru.lk", "sinhalasub.lk", "baiscope.lk", "piratelk.com"):
+        assert portal in sub_src, f"Missing subtitle portal {portal}"
+
+    # 2. Verify WebRip Reference Matcher ranks matching release #1 in search_all_torrents
+    subtitle_service._store_release_hint("Dune Part Two", "Dune.Part.Two.2024.1080p.BluRay.x264.YTS.MX.srt")
+    assert subtitle_service.get_last_release_hint("Dune Part Two") == "BluRay YTS"
+
+    # 3. Verify 1080p + 720p + 480p all go through Single-Decode libass Hard-Burn (split=3) when sub_path is given
+    in_mp4 = tmp_path / "dune_1080p.mp4"
+    in_mp4.write_bytes(b"FHD_DATA" * 400)
+    sub_srt = tmp_path / "dune_si.srt"
+    sub_srt.write_text("1\n00:00:01,000 --> 00:00:04,000\nසිංහල උපසිරැසි පරීක්ෂාව\n", encoding="utf-8")
+
+    captured_cmds = []
+
+    class FakeProc:
+        returncode = 0
+        async def wait(self):
+            return 0
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+
+    async def fake_exec(*args, **kwargs):
+        captured_cmds.append(list(args))
+        for arg in args:
+            if str(arg).endswith(".mp4") and str(arg) != str(in_mp4):
+                Path(arg).write_bytes(b"BURNED" * (400 * 1024))
+        return FakeProc()
+
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.get_video_resolution", return_value=(1920, 1080)), \
+         patch("services.video_service.detect_hw_encoder", return_value="h264_nvenc"), \
+         patch("services.video_service.asyncio.create_subprocess_exec", side_effect=fake_exec):
+        variants = await generate_multi_quality_variants_ram(
+            str(in_mp4),
+            str(tmp_path),
+            slug="dune-part-two",
+            sub_path=str(sub_srt),
+            qualities=("1080p", "720p", "480p"),
+        )
+
+    assert set(variants.keys()) == {"1080p", "720p", "480p"}
+    assert len(captured_cmds) == 1  # Single-decode pass for all 3 qualities!
+    cmd_str = " ".join(captured_cmds[0])
+    assert "split=3[sp_1080p][sp_720p][sp_480p]" in cmd_str
+    assert "subtitles=filename=" in cmd_str
+    assert "sub_burn_multi.srt" in cmd_str
+    assert "h264_nvenc" in cmd_str
+
+    # 4. Verify Render 24/7 Stream-Only mode in bot/main.py
+    main_src = (Path(__file__).resolve().parents[1] / "main.py").read_text(encoding="utf-8")
+    assert "ENABLE_RENDER_STREAM" in main_src

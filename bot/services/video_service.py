@@ -881,6 +881,26 @@ async def compress_video(
     is_mp4 = ext in (".mp4", ".m4v", ".mov")
     sub_codec = "mov_text" if is_mp4 else "srt"
 
+    burn_vf = None
+    if has_sub:
+        try:
+            comp_sub_srt = os.path.join(out_dir, "sub_burn_comp.srt")
+            if prepare_clean_srt_for_burn(sub_path, comp_sub_srt):
+                sub_path = comp_sub_srt
+                f_dir = ensure_sinhala_font_dir()
+                f_dir_opt = ""
+                if f_dir and os.path.isdir(f_dir):
+                    f_dir_esc = f_dir.replace("\\", "/").replace(":", "\\:")
+                    f_dir_opt = f":fontsdir={f_dir_esc}"
+                style_str = (
+                    "FontName=Noto Sans Sinhala,FontSize=21,"
+                    "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
+                    "BackColour=&H60000000,Bold=1,Outline=2,Shadow=1,MarginV=24"
+                )
+                burn_vf = f"subtitles=filename=sub_burn_comp.srt:charenc=UTF-8{f_dir_opt}:force_style='{style_str}'"
+        except Exception as b_err:
+            log.debug("[VideoService] compress_video hard-burn prep note: %s", b_err)
+
     cmd = [
         ffmpeg_bin,
         "-y",
@@ -902,6 +922,8 @@ async def compress_video(
             "-metadata:s:s:0", "title=Sinhala (සිංහල)",
             "-disposition:s:0", "default",
         ])
+        if burn_vf:
+            cmd.extend(["-vf", burn_vf])
     else:
         cmd.extend([
             "-map", "0:v:0",
@@ -1766,8 +1788,9 @@ async def generate_multi_quality_variants_ram(
     else:
         is_source_1080p = is_source_720p = is_source_480p = is_source_360p = False
 
-    # If source is already ~1080p and 1080p is in target_q_list, instant copy
-    if is_source_1080p and "1080p" in target_q_list:
+    # If no subtitle hard-burn is requested and source matches target resolution, use instant stream-copy shortcut.
+    # When has_sub is True, all requested qualities go through the Single-Decode libass Hard-Burn + split=N engine!
+    if not has_sub and is_source_1080p and "1080p" in target_q_list:
         direct_1080_path = os.path.join(abs_out_dir, f"{slug}-1080p.mp4")
         if os.path.abspath(input_path) == os.path.abspath(direct_1080_path):
             valid_outputs["1080p"] = direct_1080_path
@@ -1784,8 +1807,8 @@ async def generate_multi_quality_variants_ram(
             except Exception as e1080:
                 log.debug("[VideoService] Direct 1080p copy note: %s", e1080)
 
-    # If source is already ~720p, do not re-encode 720p if copy succeeds.
-    if is_source_720p and "720p" in target_q_list:
+    # If source is already ~720p and no hard-burn is needed, do not re-encode 720p if copy succeeds.
+    if not has_sub and is_source_720p and "720p" in target_q_list:
         direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
         if os.path.abspath(input_path) == os.path.abspath(direct_720_path):
             valid_outputs["720p"] = direct_720_path
@@ -1802,8 +1825,8 @@ async def generate_multi_quality_variants_ram(
             except Exception as e720:
                 log.debug("[VideoService] Direct 720p copy note: %s", e720)
 
-    # If source is already ~480p or smaller, do not re-encode 480p if copy succeeds.
-    if (is_source_480p or (src_h > 0 and src_h <= 500)) and "480p" in target_q_list:
+    # If source is already ~480p or smaller and no hard-burn is needed, do not re-encode 480p if copy succeeds.
+    if not has_sub and (is_source_480p or (src_h > 0 and src_h <= 500)) and "480p" in target_q_list:
         direct_480_path = os.path.join(abs_out_dir, f"{slug}-480p.mp4")
         if os.path.abspath(input_path) == os.path.abspath(direct_480_path):
             valid_outputs["480p"] = direct_480_path
@@ -1823,8 +1846,8 @@ async def generate_multi_quality_variants_ram(
             except Exception as e480:
                 log.debug("[VideoService] Direct 480p copy note: %s", e480)
 
-    # If source is already ~360p, do not re-encode 360p if copy succeeds.
-    if is_source_360p and "360p" in target_q_list:
+    # If source is already ~360p and no hard-burn is needed, do not re-encode 360p if copy succeeds.
+    if not has_sub and is_source_360p and "360p" in target_q_list:
         direct_360_path = os.path.join(abs_out_dir, f"{slug}-360p.mp4")
         if os.path.abspath(input_path) == os.path.abspath(direct_360_path):
             valid_outputs["360p"] = direct_360_path

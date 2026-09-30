@@ -645,6 +645,28 @@ async def _execute_leech(
                         quality="1080p",
                     )
                 )
+        pre_sub_srt: Optional[str] = None
+        if not candidates and not os.environ.get("PYTEST_CURRENT_TEST"):
+            try:
+                temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
+                _show_name_pre = locals().get("show_name", "")
+                clean_sub_title_pre = _show_name_pre if (is_series and _show_name_pre) else (title or display_title)
+                pre_sub_srt = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
+                    title=clean_sub_title_pre,
+                    year=year,
+                    season=season,
+                    episode=episode,
+                    temp_dir=temp_dir,
+                )
+                if pre_sub_srt and os.path.exists(pre_sub_srt):
+                    log.info(
+                        "[LeechService] Pre-discovered Sinhala subtitle & WebRip reference (%r): %s",
+                        subtitle_service.get_last_release_hint(clean_sub_title_pre),
+                        pre_sub_srt,
+                    )
+            except Exception as pre_sub_err:
+                log.debug("[LeechService] Pre-discovery subtitle note: %s", pre_sub_err)
+
         if not candidates:
             candidates = await find_all_candidates(
                 title=title,
@@ -1030,6 +1052,17 @@ async def _execute_leech(
                         break
         except Exception as cache_err:
             log.debug("[LeechService] Cache reuse note: %s", cache_err)
+
+        if not sub_srt_path and pre_sub_srt and os.path.exists(pre_sub_srt):
+            try:
+                local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
+                if os.path.abspath(pre_sub_srt) != os.path.abspath(local_stage_srt):
+                    shutil.copyfile(pre_sub_srt, local_stage_srt)
+                sub_srt_path = local_stage_srt
+                sub_vtt_path = subtitle_service.srt_to_vtt(local_stage_srt)
+                log.info("[LeechService] Reusing pre-discovered Sri Lankan Sinhala subtitle: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
+            except Exception as pre_reuse_err:
+                log.debug("[LeechService] Pre-sub reuse note: %s", pre_reuse_err)
 
         if not sub_srt_path:
             try:
@@ -1576,20 +1609,21 @@ async def _execute_leech(
                     log.error("[LeechService] Direct client fallback upload for variant %s failed: %s", q_label, direct_err)
 
         async def _task_encode_variants_only() -> None:
-            nonlocal variant_files, _mq_progress_str
+            nonlocal variant_files, _mq_progress_str, local_file, file_size, file_name, size_str
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 dashboard_state["mq_encode_status"] = "skipped"
                 await _render_dashboard(force=True)
                 return
             try:
-                # If primary is 1080p, encode 720p and 480p variants
-                # If primary is 720p (like most series), encode ONLY 480p variant (no duplicate 720p!)
+                has_hard_sub = bool(sub_to_merge and os.path.exists(sub_to_merge))
+                # When Sinhala subtitle is present, include primary_quality in Single-Decode Hard-Burn (split=3)
+                # so 1080p, 720p, and 480p ALL get libass Noto Sans Sinhala Bold hard-burned simultaneously!
                 if primary_quality == "1080p":
-                    requested_qualities = ("720p", "480p")
+                    requested_qualities = ("1080p", "720p", "480p") if has_hard_sub else ("720p", "480p")
                 elif primary_quality == "720p":
-                    requested_qualities = ("480p",)
+                    requested_qualities = ("720p", "480p") if has_hard_sub else ("480p",)
                 else:
-                    requested_qualities = ()
+                    requested_qualities = ("480p",) if has_hard_sub else ()
 
                 if not requested_qualities:
                     _mq_progress_str = "Multi-Quality Skipped (Source <= 480p) ✅"
@@ -1611,6 +1645,20 @@ async def _execute_leech(
                 )
                 if variant_files:
                     q_keys = "/".join(variant_files.keys())
+                    # If primary_quality was hard-burned in the single-decode pass, promote it to local_file
+                    if primary_quality in variant_files and os.path.exists(variant_files[primary_quality]):
+                        burned_primary = variant_files.pop(primary_quality)
+                        if os.path.getsize(burned_primary) <= video_service.MAX_TELEGRAM_BOT_SIZE:
+                            if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(burned_primary):
+                                try:
+                                    os.remove(local_file)
+                                except Exception:
+                                    pass
+                            local_file = burned_primary
+                            file_size = os.path.getsize(local_file)
+                            file_name = os.path.basename(local_file)
+                            size_str = downloader.format_bytes(file_size)
+                            log.info("[LeechService] Promoted Hard-Burned %s file as primary upload: %s (%s)", primary_quality, local_file, size_str)
                     _mq_progress_str = f"{q_keys} Complete ✅"
                     dashboard_state["mq_encode_status"] = "complete"
                     dashboard_state["mq_encode_pct"] = "100%"
@@ -1632,7 +1680,7 @@ async def _execute_leech(
                     _mq_progress_str = f"{q_keys} Uploading to Telegram..."
                     from services.upload_pool import upload_pool
                     admin_Pool = await upload_pool.get_admin_sessions(target_channel) if str(target_channel).startswith("-100") else []
-                    if len(admin_Pool) >= 3 and len(variant_files) > 1:
+                    if len(admin_Pool) >= 2 and len(variant_files) > 1:
                         await asyncio.gather(
                             *[
                                 _task_upload_tg_variant(ql, qp)

@@ -755,10 +755,11 @@ async def fetch_sri_lankan_sinhala_subtitle(
 
     try:
         async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=12.0) as client:
-            # 1. Try Subz.lk, Cineru.lk, and Baiscope.lk via WP REST API + HTML scraper
+            # 1. Try Subz.lk, Cineru.lk, SinhalaSub.lk, and Baiscope.lk via WP REST API + HTML scraper
             for site_url, site_label in (
                 ("https://subz.lk", "SubzLK"),
                 ("https://cineru.lk", "CineruLK"),
+                ("https://sinhalasub.lk", "SinhalaSubLK"),
                 ("https://www.baiscope.lk", "BaiscopeLK"),
             ):
                 found_wp = await _scrape_wp_subtitle_site(

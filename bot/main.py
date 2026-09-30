@@ -935,16 +935,50 @@ async def main() -> None:
     # ─────────────────────────────────────────────────────────────────────────
     is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
     enable_render_bot = os.getenv("ENABLE_RENDER_BOT", "false").lower() in ("true", "1", "yes")
+    enable_render_stream = os.getenv("ENABLE_RENDER_STREAM", "false").lower() in ("true", "1", "yes")
 
     if is_render and not enable_render_bot:
-        log.warning(
-            "[Main] Render environment detected! Telegram Bot polling is DISABLED on Render. "
-            "FastAPI health server is listening on port %d to keep Render service Healthy. "
-            "All Telegram bot operations run exclusively on Google Colab (12GB RAM). "
-            "To enable bot on Render instead, set ENABLE_RENDER_BOT=true in Render environment variables.",
-            port,
-        )
-        # Sleep forever to keep the FastAPI thread active and responsive
+        if enable_render_stream:
+            log.info(
+                "[Main] Render 24/7 STREAM-ONLY Mode Enabled (ENABLE_RENDER_STREAM=true)! "
+                "Bot command polling remains on Google Colab (zero conflict), while Render serves "
+                "24/7 Telegram HTTP 206 Byte-Range streams on port %d.",
+                port,
+            )
+            try:
+                from streaming.session_pool import stream_pool
+                await stream_pool.init_extra_sessions(config.API_ID, config.API_HASH)
+                if config.PRIVATE_CHANNEL_ID and stream_pool.clients:
+                    for sc in stream_pool.clients[:5]:
+                        try:
+                            await sc.get_chat(config.PRIVATE_CHANNEL_ID)
+                        except Exception:
+                            pass
+                log.info("[Main] Render 24/7 Stream Pool ready with %d active session(s).", len(stream_pool.clients))
+            except Exception as sp_render_err:
+                log.warning("[Main] Render stream pool init warning: %s", sp_render_err)
+
+            try:
+                from services import github_service
+                render_url = (
+                    os.getenv("STREAM_BASE_URL", "").strip()
+                    or os.getenv("RENDER_EXTERNAL_URL", "").strip()
+                    or getattr(config, "STREAM_BASE_URL", "")
+                )
+                if render_url and render_url.startswith("http"):
+                    await github_service.publish_live_stream_endpoint(render_url)
+                    log.info("[Main] Published Render 24/7 stream endpoint: %s", render_url)
+            except Exception as pub_err:
+                log.warning("[Main] Render stream endpoint publish note: %s", pub_err)
+        else:
+            log.warning(
+                "[Main] Render environment detected! Telegram Bot polling is DISABLED on Render. "
+                "FastAPI health server is listening on port %d to keep Render service Healthy. "
+                "All Telegram bot & stream operations currently run on Google Colab. "
+                "To enable 24/7 Stream-Only mode on Render later, set ENABLE_RENDER_STREAM=true in Render env vars.",
+                port,
+            )
+        # Sleep forever to keep the FastAPI / Stream server thread active and responsive 24/7
         while True:
             await asyncio.sleep(3600)
 

@@ -1019,6 +1019,7 @@ async def search_all_torrents(
     episode: Optional[int] = None,
     is_series: bool = False,
     max_size_bytes: int = MAX_FILE_SIZE_BYTES,
+    release_hint: Optional[str] = None,
 ) -> list[dict]:
     """
     Aggregates results from multiple torrent sources:
@@ -1031,6 +1032,13 @@ async def search_all_torrents(
     """
     clean_title = re.sub(r"[._-]", " ", title).strip()
     series_flag = bool(is_series or season is not None or episode is not None)
+
+    if release_hint is None:
+        try:
+            from services import subtitle_service
+            release_hint = subtitle_service.get_last_release_hint(clean_title)
+        except Exception:
+            release_hint = ""
 
     # If imdb_id is missing, auto-resolve it via Cinemeta so Torrentio can be leveraged
     if not imdb_id:
@@ -1122,13 +1130,14 @@ async def search_all_torrents(
                     continue
 
                 tor.setdefault("provider", "YTS" if tor.get("method") == "yts" else "Torrent")
-                if "relevance_score" not in tor:
+                if "relevance_score" not in tor or release_hint:
                     tor["relevance_score"] = calculate_relevance_score(
                         tor.get("title", ""),
                         clean_title,
                         is_series=series_flag,
                         season=season,
                         episode=episode,
+                        release_hint=release_hint,
                     )
                 if "is_season_pack" not in tor:
                     tor["is_season_pack"] = is_season_pack_release(tor.get("title", ""), season, episode) if series_flag else False
@@ -1151,9 +1160,9 @@ async def search_all_torrents(
                     hash_to_tor[h] = tor
                 all_torrents.append(tor)
 
-    log.info("[TorrentFinder] Total HD torrent candidates collected: %d", len(all_torrents))
+    log.info("[TorrentFinder] Total HD torrent candidates collected: %d (release_hint=%r)", len(all_torrents), release_hint or "")
 
-    def _rank_torrent(tor: dict) -> tuple[int, int, int, int, int, int, int]:
+    def _rank_torrent(tor: dict) -> tuple[int, int, int, int, int, int, int, int]:
         sz = tor.get("size_bytes", 0)
         # Tier 2: 50MB <= sz <= 2.05GB (100% Seedr cloud & direct Telegram compatible)
         # Tier 1: 2.05GB < sz <= max_size_bytes (<= 3.2GB / PikPak / FFmpeg Smart 1080p)
@@ -1201,7 +1210,10 @@ async def search_all_torrents(
         # A Seedr-compatible (<= 2.05GB) single-episode release with viable seeds (>= 5) ranks ahead of season packs of the SAME quality
         is_single_release = 1 if (not tor.get("is_season_pack", False) and seedr_tier == 2 and seeds >= 5) else 0
 
-        return (is_clean, has_seeds, q_score, is_single_release, seedr_tier, seeds, prov_tier)
+        # 6. WebRip / BluRay / YTS subtitle reference match (within same quality & single release tier)
+        release_match = 1 if (release_hint and rel_score >= 120) else 0
+
+        return (is_clean, has_seeds, q_score, is_single_release, release_match, seedr_tier, seeds, prov_tier)
 
     all_torrents.sort(key=_rank_torrent, reverse=True)
     return all_torrents

@@ -11115,46 +11115,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 7,
       "episode": 3,
       "episode_title": "The Queen's Justice",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -11213,49 +11183,231 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "63 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-09-30T22:07:01Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADx2q9iqZB99zcaXdN1CMgksou2Gt0AALeKAACU8XxVcLrAAE4PoCWGx4E",
+      "message_id": 199,
+      "file_name": "game-of-thrones-2011-s07e03.mp4",
+      "file_size": 1588041473,
+      "drive_file_id": "",
+      "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
       "streams": [
         {
           "server": "Server 1",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/7/3?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s07e03-s07e03-si.vtt&sub_label=Sinhala&sub=true"
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADx2q9iqZB99zcaXdN1CMgksou2Gt0AALeKAACU8XxVcLrAAE4PoCWGx4E",
+          "message_id": 199,
+          "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/7/3"
+          "stream_url": "https://vidlink.pro/tv/1399/7/3"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-7-3"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=7&e=3"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e03-s07e03-si.vtt",
-      "has_sinhala_sub": true,
+      "qualities": {
+        "auto": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+        "1080p": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+        "720p": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/198",
+        "480p": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/197",
+        "360p": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1588041473,
+          "url": "https://t.me/c/4325759505/199",
+          "telegram_url": "https://t.me/c/4325759505/199",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADx2q9iqZB99zcaXdN1CMgksou2Gt0AALeKAACU8XxVcLrAAE4PoCWGx4E",
+          "message_id": 199,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "767.6 MB",
+          "size_bytes": 804928924,
+          "url": "https://t.me/c/4325759505/198",
+          "telegram_url": "https://t.me/c/4325759505/198",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADxmq9ihGUokGtQOOZiFPMFVPgC9XAAALZKAACU8XxVeB4W2-k0aMcHgQ",
+          "message_id": 198,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/198",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "394.4 MB",
+          "size_bytes": 413581612,
+          "url": "https://t.me/c/4325759505/197",
+          "telegram_url": "https://t.me/c/4325759505/197",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADxWq9icG6YR6zNuYPQBHDWtU49BtMAALYKAACU8XxVYD2XzMSGaOaHgQ",
+          "message_id": 197,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/197",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1588041473,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e03_1080p",
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "767.6 MB",
+          "size_bytes": 804928924,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e03_720p",
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/198",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "394.4 MB",
+          "size_bytes": 413581612,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e03_480p",
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/197",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "272.6 MB",
+          "size_bytes": 285847465,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e03_360p",
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADx2q9iqZB99zcaXdN1CMgksou2Gt0AALeKAACU8XxVcLrAAE4PoCWGx4E",
+          "message_id": 199,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+          "size_bytes": 1588041473
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADxmq9ihGUokGtQOOZiFPMFVPgC9XAAALZKAACU8XxVeB4W2-k0aMcHgQ",
+          "message_id": 198,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/198",
+          "size_bytes": 804928924
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADxWq9icG6YR6zNuYPQBHDWtU49BtMAALYKAACU8XxVYD2XzMSGaOaHgQ",
+          "message_id": 197,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/197",
+          "size_bytes": 413581612
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://described-greatly-confirmed-hand.trycloudflare.com/stream/channel/-1004325759505/199",
+          "size_bytes": 285847465
+        }
+      },
       "subtitles": [
         {
           "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e03-s07e03-si.vtt",
-          "default": true
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e03-si.vtt",
+          "default": false
         }
       ],
+      "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e03",
-      "channel_post_id": 196,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-30"
+      "added_date": "2026-09-30",
+      "added_at": "2026-09-30T22:18:16Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-30T22:07:17Z"
+  "last_updated": "2026-09-30T22:18:18Z"
 };

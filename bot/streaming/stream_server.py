@@ -139,8 +139,11 @@ async def stream_status() -> dict:
 
 
 @stream_router.get("/stream/ping")
+@stream_router.get("/stream/health")
+@stream_router.get("/health")
+@stream_router.get("/ping")
 async def stream_ping() -> dict:
-    return {"status": "pong", "service": "stream", "mode": "telegram_cloud"}
+    return {"status": "pong", "service": "stream", "mode": "telegram_cloud", "ready": True}
 
 
 async def _cached_stream_generator(

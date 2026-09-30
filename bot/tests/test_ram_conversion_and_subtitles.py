@@ -520,9 +520,8 @@ def test_player_js_two_clean_servers_and_syntax():
     assert res.returncode == 0, f"player.js syntax error: {res.stderr}"
 
     content = player_js.read_text(encoding="utf-8")
-    # Verify zero-ads 2 clean servers logic
-    assert "Super Player (Telegram Cloud HD • Zero Ads)" in content
-    assert "VIP Player (VidLink Ultra HD • Zero Ads)" in content
+    # Verify pure Telegram Cloud HD Super Player logic
+    assert "Super Player (Telegram Cloud HD" in content
     assert "isMatchingEpisode" in content
 
 
@@ -624,8 +623,8 @@ async def test_boost_command_auto_publish():
         assert kwargs.get("auto_publish") is True
 
 
-def test_player_js_no_duplicate_urls_on_imdb_only():
-    """Verify player.js creates distinct VidLink and AutoEmbed stream URLs without duplication."""
+def test_player_js_pure_telegram_player_only():
+    """Verify player.js creates strictly Pure Telegram Super Player and eliminates third-party embeds."""
     import subprocess
     js_code = """
     const fs = require('fs');
@@ -662,12 +661,11 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     assert res.returncode == 0, f"Node eval error: {res.stderr}"
     import json
     st_list = json.loads(res.stdout.strip())
-    assert len(st_list) >= 2, f"Expected at least 2 servers in matrix, got {len(st_list)}"
+    assert len(st_list) == 1, f"Expected exactly 1 server (Pure Telegram Player), got {len(st_list)}"
     urls = [s['url'] for s in st_list]
-    assert len(set(urls)) == len(urls), f"Expected distinct URLs without duplicates, got: {urls}"
     assert any("/stream/channel/" in u for u in urls), f"Expected Telegram stream URL in {urls}"
-    assert any("vidlink.pro" in u for u in urls), f"Expected VidLink fallback server in {urls}"
-    assert any("autoembed.cc" in u for u in urls), f"Expected AutoEmbed fallback server in {urls}"
+    assert not any("vidlink.pro" in u for u in urls), f"Expected no VidLink fallback server in {urls}"
+    assert not any("autoembed.cc" in u for u in urls), f"Expected no AutoEmbed fallback server in {urls}"
 
 
 @pytest.mark.asyncio

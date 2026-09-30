@@ -10687,46 +10687,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 7,
       "episode": 1,
       "episode_title": "Dragonstone",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -10785,49 +10755,231 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "59 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-09-30T20:04:08Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADvWq9bmKtUxjh3oCYSJUM3C6uO41iAAK9KAACU8XxVUOMQgYP71-fHgQ",
+      "message_id": 189,
+      "file_name": "game-of-thrones-2011-s07e01.mp4",
+      "file_size": 1496689442,
+      "drive_file_id": "",
+      "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
       "streams": [
         {
           "server": "Server 1",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/7/1?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s07e01-s07e01-si.vtt&sub_label=Sinhala&sub=true"
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADvWq9bmKtUxjh3oCYSJUM3C6uO41iAAK9KAACU8XxVUOMQgYP71-fHgQ",
+          "message_id": 189,
+          "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/7/1"
+          "stream_url": "https://vidlink.pro/tv/1399/7/1"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-7-1"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=7&e=1"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e01-s07e01-si.vtt",
-      "has_sinhala_sub": true,
+      "qualities": {
+        "auto": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+        "1080p": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+        "720p": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/188",
+        "480p": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/187",
+        "360p": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1496689442,
+          "url": "https://t.me/c/4325759505/189",
+          "telegram_url": "https://t.me/c/4325759505/189",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADvWq9bmKtUxjh3oCYSJUM3C6uO41iAAK9KAACU8XxVUOMQgYP71-fHgQ",
+          "message_id": 189,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "727.5 MB",
+          "size_bytes": 762829649,
+          "url": "https://t.me/c/4325759505/188",
+          "telegram_url": "https://t.me/c/4325759505/188",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADvGq9bcF11JYuWVKqh0_EF4MTEwSNAAK8KAACU8XxVcJ_m5u37YUVHgQ",
+          "message_id": 188,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/188",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "374.5 MB",
+          "size_bytes": 392718185,
+          "url": "https://t.me/c/4325759505/187",
+          "telegram_url": "https://t.me/c/4325759505/187",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADu2q9bRS_2vixkEjWpXPU5wiN46FZAAK7KAACU8XxVayurLKMLt-3HgQ",
+          "message_id": 187,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/187",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1496689442,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e01_1080p",
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "727.5 MB",
+          "size_bytes": 762829649,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e01_720p",
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/188",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "374.5 MB",
+          "size_bytes": 392718185,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e01_480p",
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/187",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "256.9 MB",
+          "size_bytes": 269404099,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e01_360p",
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADvWq9bmKtUxjh3oCYSJUM3C6uO41iAAK9KAACU8XxVUOMQgYP71-fHgQ",
+          "message_id": 189,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+          "size_bytes": 1496689442
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADvGq9bcF11JYuWVKqh0_EF4MTEwSNAAK8KAACU8XxVcJ_m5u37YUVHgQ",
+          "message_id": 188,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/188",
+          "size_bytes": 762829649
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADu2q9bRS_2vixkEjWpXPU5wiN46FZAAK7KAACU8XxVayurLKMLt-3HgQ",
+          "message_id": 187,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/187",
+          "size_bytes": 392718185
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://wishes-nursing-clothes-saints.trycloudflare.com/stream/channel/-1004325759505/189",
+          "size_bytes": 269404099
+        }
+      },
       "subtitles": [
         {
           "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e01-s07e01-si.vtt",
-          "default": true
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e01-si.vtt",
+          "default": false
         }
       ],
+      "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e01",
-      "channel_post_id": 186,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-30"
+      "added_date": "2026-09-30",
+      "added_at": "2026-09-30T20:17:40Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-09-30T20:04:24Z"
+  "last_updated": "2026-09-30T20:17:42Z"
 };

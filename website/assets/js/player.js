@@ -53,45 +53,87 @@ let activeStallTimer = null;
 let lastAutoSwitchEpoch = 0;
 
 let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) || '';
+let streamServerHealthy = false;
+
+async function probeStreamServerHealth(baseUrl) {
+  if (!baseUrl || !baseUrl.startsWith('http')) return false;
+  try {
+    const ctrl = new AbortController();
+    const tId = setTimeout(() => ctrl.abort(), 2500);
+    const resp = await fetch(`${baseUrl.replace(/\/+$/, '')}/health?t=${Date.now()}`, {
+      method: 'GET',
+      signal: ctrl.signal,
+      mode: 'cors',
+    });
+    clearTimeout(tId);
+    return resp.ok;
+  } catch (e) {
+    return false;
+  }
+}
 
 async function loadLiveStreamConfig() {
   const cached = sessionStorage.getItem('filmsub_stream_base');
+  const cachedHealthy = sessionStorage.getItem('filmsub_stream_healthy');
   const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
-  if (cached && (Date.now() - cachedTime) < 45000) {
+  if (cached !== null && (Date.now() - cachedTime) < 30000) {
     activeStreamBaseUrl = cached;
-    return cached;
+    streamServerHealthy = cachedHealthy === '1';
+    return activeStreamBaseUrl;
   }
 
-  // 1. Check local endpoint first
-  try {
-    const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now());
-    if (rLoc.ok) {
-      const d = await rLoc.json();
-      if (d && d.stream_base_url) {
-        activeStreamBaseUrl = d.stream_base_url.replace(/\/+$/, '');
-        sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
-        sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
-        return activeStreamBaseUrl;
-      }
-    }
-  } catch (e) {}
+  let candidateUrl = '';
 
-  // 2. Check fresh GitHub raw config
+  // 1. Check fresh GitHub raw config FIRST (always has the latest Colab/Cloudflare tunnel URL)
   try {
     const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
     const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 2000);
-    const rGh = await fetch(ghUrl, { signal: ctrl.signal });
+    const tId = setTimeout(() => ctrl.abort(), 2500);
+    const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
     clearTimeout(tId);
     if (rGh.ok) {
       const d = await rGh.json();
       if (d && d.stream_base_url) {
-        activeStreamBaseUrl = d.stream_base_url.replace(/\/+$/, '');
-        sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
-        sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
-        return activeStreamBaseUrl;
+        candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
       }
     }
+  } catch (e) {}
+
+  // 2. Fallback to local endpoint only if GitHub raw was unreachable
+  if (!candidateUrl) {
+    try {
+      const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
+      if (rLoc.ok) {
+        const d = await rLoc.json();
+        if (d && d.stream_base_url) {
+          candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 3. Verify direct browser reachability to candidateUrl (/health);
+  //    if blocked by ISP or offline, fall back to '' so requests route via
+  //    Cloudflare Pages Edge Proxy (/stream/channel/:chat_id/:msg_id)
+  if (candidateUrl) {
+    const directOk = await probeStreamServerHealth(candidateUrl);
+    if (directOk) {
+      activeStreamBaseUrl = candidateUrl;
+      streamServerHealthy = true;
+    } else {
+      // Try Edge Proxy health or allow Edge Proxy path `/stream/channel/...`
+      activeStreamBaseUrl = '';
+      streamServerHealthy = false;
+    }
+  } else {
+    activeStreamBaseUrl = '';
+    streamServerHealthy = false;
+  }
+
+  try {
+    sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
+    sessionStorage.setItem('filmsub_stream_healthy', streamServerHealthy ? '1' : '0');
+    sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
   } catch (e) {}
 
   return activeStreamBaseUrl;

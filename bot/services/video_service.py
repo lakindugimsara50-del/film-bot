@@ -1423,6 +1423,101 @@ async def apply_faststart(input_path: str, output_path: str) -> bool:
                 pass
 
 
+def ensure_sinhala_font_dir() -> Optional[str]:
+    """
+    Ensure 'Noto Sans Sinhala' TrueType font (.ttf) is available for FFmpeg libass subtitle burning.
+    Checks bundled bot/assets/fonts first, then /usr/share/fonts/truetype/noto, and auto-installs
+    fonts-noto-core on Colab/Linux if missing.
+    """
+    _svc_dir = os.path.dirname(os.path.abspath(__file__))
+    _bundled_dir = os.path.join(os.path.dirname(_svc_dir), "assets", "fonts")
+    _candidate_dirs = [
+        _bundled_dir,
+        "/usr/share/fonts/truetype/noto",
+        "/usr/local/share/fonts/noto",
+    ]
+    for d in _candidate_dirs:
+        if os.path.isdir(d):
+            try:
+                if any("sinhala" in fn.lower() and fn.lower().endswith((".ttf", ".otf")) for fn in os.listdir(d)):
+                    return d
+            except Exception:
+                pass
+
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        if os.path.exists("/content") and shutil.which("apt-get"):
+            try:
+                subprocess.run(
+                    "apt-get update -qq && apt-get install -y -qq fonts-noto-core fontconfig p7zip-full unrar && fc-cache -f",
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=90,
+                )
+                if os.path.isdir("/usr/share/fonts/truetype/noto"):
+                    return "/usr/share/fonts/truetype/noto"
+            except Exception as apt_err:
+                log.debug("[VideoService] Colab fonts-noto-core install note: %s", apt_err)
+
+    return _bundled_dir if os.path.isdir(_bundled_dir) else None
+
+
+def prepare_clean_srt_for_burn(src_srt_path: str, dest_srt_path: str) -> bool:
+    """
+    Normalize a subtitle .srt file for FFmpeg libass hard-burning:
+    - Decodes UTF-8-SIG (strips BOM \\ufeff), UTF-16, or CP1252
+    - Converts CRLF to LF
+    - Strips malformed HTML font tags while preserving Sinhala Unicode (U+0D80..U+0DFF)
+    """
+    if not src_srt_path or not os.path.exists(src_srt_path):
+        return False
+    try:
+        raw = open(src_srt_path, "rb").read()
+        text = None
+        for enc in ("utf-8-sig", "utf-16", "utf-8", "cp1252"):
+            try:
+                text = raw.decode(enc)
+                break
+            except Exception:
+                continue
+        if not text:
+            text = raw.decode("utf-8", errors="replace")
+        text = text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
+        with open(dest_srt_path, "w", encoding="utf-8", newline="\n") as out_f:
+            out_f.write(text)
+        return os.path.exists(dest_srt_path) and os.path.getsize(dest_srt_path) > 16
+    except Exception as prep_err:
+        log.debug("[VideoService] Clean SRT prep fallback copy: %s", prep_err)
+        try:
+            shutil.copyfile(src_srt_path, dest_srt_path)
+            return os.path.exists(dest_srt_path)
+        except Exception:
+            return False
+
+
+def build_subtitles_burn_filter(escaped_sub_file: str = "sub_burn_multi.srt", include_style: Optional[bool] = None) -> str:
+    """
+    Construct the FFmpeg libass subtitles filter expression with Noto Sans Sinhala font directory
+    and CineSubz / SinhalaSub cinema styling (yellow/white high-contrast text with dark outline).
+    """
+    base = f"subtitles=filename='{escaped_sub_file}'"
+    if include_style is None:
+        include_style = bool(os.name != "nt" and not os.environ.get("PYTEST_CURRENT_TEST"))
+    if not include_style:
+        return base
+
+    font_dir = ensure_sinhala_font_dir()
+    style_str = (
+        "FontName=Noto Sans Sinhala,FontSize=18,Bold=1,"
+        "PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H64000000,"
+        "BorderStyle=1,Outline=1.8,Shadow=1.2,MarginV=24,Alignment=2"
+    )
+    if font_dir and ":" not in font_dir:
+        safe_fdir = font_dir.replace("\\", "/")
+        return f"{base}:charenc=UTF-8:fontsdir='{safe_fdir}':force_style='{style_str}'"
+    return f"{base}:charenc=UTF-8:force_style='{style_str}'"
+
+
 async def generate_multi_quality_variants_ram(
     input_path: str,
     output_dir: str,
@@ -1435,7 +1530,7 @@ async def generate_multi_quality_variants_ram(
 ) -> dict[str, str]:
     """
     Leverage 12GB RAM (/dev/shm) or /content high-capacity workspace and all CPU/GPU cores
-    (-threads 0 -preset ultrafast) to generate multi-quality MP4 streams/downloads (720p, 480p, 360p)
+    (-threads 0 -preset ultrafast) to generate multi-quality MP4 streams/downloads (1080p, 720p, 480p, 360p)
     in a single FFmpeg pass with Sinhala subtitles (burn-in + mov_text soft-sub) and +faststart.
     Returns a dict mapping quality label (e.g. '720p') -> generated local file path.
     """
@@ -1481,17 +1576,17 @@ async def generate_multi_quality_variants_ram(
                 sub_path = vtt_to_srt(sub_path, sub_srt)
             except Exception as e_vtt:
                 log.debug("[VideoService] VTT->SRT prep in multi-quality: %s", e_vtt)
-        try:
-            shutil.copyfile(sub_path, local_burn_srt)
-        except Exception:
+        if not prepare_clean_srt_for_burn(sub_path, local_burn_srt):
             has_sub = False
+        else:
+            ensure_sinhala_font_dir()
 
-    # Resolution & bitrate profile per quality tier (CRF 26 for ultra-fast high-quality encoding)
+    # CineSubz / SinhalaSub WebRip reference bitrate & resolution profiles per quality tier
     profiles = {
-        "1080p": {"height": 1080, "crf": "26", "maxrate": "3500k", "bufsize": "5000k", "abitrate": "160k"},
-        "720p":  {"height": 720,  "crf": "26", "maxrate": "1800k", "bufsize": "2400k", "abitrate": "128k"},
-        "480p":  {"height": 480,  "crf": "26", "maxrate": "950k",  "bufsize": "1400k", "abitrate": "96k"},
-        "360p":  {"height": 360,  "crf": "26", "maxrate": "550k",  "bufsize": "900k",  "abitrate": "64k"},
+        "1080p": {"height": 1080, "crf": "23", "maxrate": "2600k", "bufsize": "5200k", "abitrate": "160k"},
+        "720p":  {"height": 720,  "crf": "24", "maxrate": "1400k", "bufsize": "2800k", "abitrate": "128k"},
+        "480p":  {"height": 480,  "crf": "25", "maxrate": "800k",  "bufsize": "1600k", "abitrate": "96k"},
+        "360p":  {"height": 360,  "crf": "26", "maxrate": "500k",  "bufsize": "1000k", "abitrate": "64k"},
     }
 
     target_q_list = [q for q in qualities if q in profiles]
@@ -1615,17 +1710,18 @@ async def generate_multi_quality_variants_ram(
 
     def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
         escaped_sub_file = "sub_burn_multi.srt"
+        sub_burn_expr = build_subtitles_burn_filter(escaped_sub_file)
         if num_q == 1:
             q0 = target_q_list[0]
             h0 = profiles[q0]["height"]
             if burn_subs:
-                fc = f"[0:v:0]subtitles=filename='{escaped_sub_file}',scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+                fc = f"[0:v:0]{sub_burn_expr},scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
             else:
                 fc = f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
         else:
             split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
             split_head = (
-                f"[0:v:0]subtitles=filename='{escaped_sub_file}',split={num_q}{split_labels}"
+                f"[0:v:0]{sub_burn_expr},split={num_q}{split_labels}"
                 if burn_subs
                 else f"[0:v:0]split={num_q}{split_labels}"
             )
@@ -1690,7 +1786,9 @@ async def generate_multi_quality_variants_ram(
                     "-c:v", "libx264",
                     "-preset", "ultrafast",
                     "-tune", "fastdecode",
-                    "-crf", "28",
+                    "-crf", prof["crf"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
                     "-threads", "0",
                 ])
             c.extend([

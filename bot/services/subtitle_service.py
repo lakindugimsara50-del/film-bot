@@ -431,6 +431,278 @@ async def fetch_online_subtitle_srt(
     return ""
 
 
+# Track matched release reference hints (e.g. WEBRip, BluRay, YTS, PSA) per title for torrent sync matching
+LAST_RELEASE_HINTS: dict[str, str] = {}
+
+
+def extract_release_hint(text: str) -> str:
+    """
+    Extract release source/group hint (WEBRip, WEB-DL, BluRay, HDTV, YTS, PSA, GalaxyRG)
+    from a subtitle filename or Sri Lankan subtitle page description.
+    """
+    if not text:
+        return ""
+    t = text.lower()
+    hints = []
+    if re.search(r"\b(web[\s._-]*rip|webrip|amzn[\s._-]*web|nf[\s._-]*web)\b", t):
+        hints.append("WEBRip")
+    elif re.search(r"\b(web[\s._-]*dl|webdl|web)\b", t):
+        hints.append("WEB-DL")
+    elif re.search(r"\b(blu[\s._-]*ray|bluray|brrip|bdrip)\b", t):
+        hints.append("BluRay")
+    elif re.search(r"\b(hdrip|hdtv)\b", t):
+        hints.append("HDRip")
+
+    for grp in ("yts", "yify", "psa", "galaxyrg", "pahe", "rarbg", "ettv", "tgx"):
+        if re.search(rf"\b{grp}\b", t):
+            hints.append(grp.upper())
+            break
+    return " ".join(hints)
+
+
+def get_last_release_hint(title: str) -> str:
+    """Return the most recently detected release reference hint for a movie/series title."""
+    if not title:
+        return ""
+    key = re.sub(r"[^a-z0-9]+", "", title.lower())
+    return LAST_RELEASE_HINTS.get(key, "")
+
+
+def _store_release_hint(title: str, hint_source_text: str) -> str:
+    hint = extract_release_hint(hint_source_text)
+    if hint and title:
+        key = re.sub(r"[^a-z0-9]+", "", title.lower())
+        LAST_RELEASE_HINTS[key] = hint
+    return hint
+
+
+def _select_episode_srt(
+    srt_paths: list[str],
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+) -> Optional[str]:
+    """Select the matching episode .srt file from a list of extracted .srt paths."""
+    if not srt_paths:
+        return None
+    if season and episode:
+        ep_patterns = [
+            re.compile(rf"[Ss]0?{season}[\s._-]*[Ee][Pp]?0?{episode}\b", re.IGNORECASE),
+            re.compile(rf"\b0?{season}x0?{episode}\b", re.IGNORECASE),
+            re.compile(rf"season[\s._-]*0?{season}.*episode[\s._-]*0?{episode}\b", re.IGNORECASE),
+            re.compile(rf"\b[Ee][Pp]?[\s._-]*0?{episode}\b", re.IGNORECASE),
+        ]
+        for pat in ep_patterns:
+            for sp in srt_paths:
+                if pat.search(os.path.basename(sp)):
+                    return sp
+        return None
+    return srt_paths[0]
+
+
+def _extract_srt_from_bytes(
+    raw_bytes: bytes,
+    temp_dir: str,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    prefix: str = "sri_lanka_sub",
+) -> tuple[Optional[str], str]:
+    """
+    Extract a genuine Sinhala .srt file from downloaded bytes (supports raw .srt/.vtt, .zip, .rar, .7z).
+    Returns (extracted_srt_path, release_hint_source_name).
+    """
+    import io
+    import shutil
+    import subprocess
+    import zipfile
+
+    if not raw_bytes or len(raw_bytes) < 64:
+        return None, ""
+
+    os.makedirs(temp_dir, exist_ok=True)
+
+    # 1. Check if raw_bytes is already a direct .srt or .vtt text file
+    head = raw_bytes[:4096]
+    if b"-->" in head and not head.startswith((b"PK\x03\x04", b"Rar!", b"7z\xbc\xaf")):
+        direct_path = os.path.join(temp_dir, f"{prefix}_direct.srt")
+        with open(direct_path, "wb") as f:
+            f.write(raw_bytes)
+        if is_genuine_sinhala_subtitle(direct_path):
+            return direct_path, os.path.basename(direct_path)
+
+    # 2. Try standard ZIP archive
+    if raw_bytes[:4] == b"PK\x03\x04" or zipfile.is_zipfile(io.BytesIO(raw_bytes)):
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw_bytes)) as zf:
+                srt_members = [
+                    m for m in zf.namelist()
+                    if m.lower().endswith((".srt", ".vtt")) and not os.path.basename(m).startswith("._")
+                ]
+                if srt_members:
+                    chosen = _select_episode_srt(srt_members, season, episode)
+                    if chosen:
+                        ext = ".vtt" if chosen.lower().endswith(".vtt") else ".srt"
+                        safe_base = re.sub(r"[^a-zA-Z0-9._-]", "_", os.path.basename(chosen))
+                        out_srt = os.path.join(temp_dir, f"{prefix}_{safe_base}")
+                        with open(out_srt, "wb") as out_f:
+                            out_f.write(zf.read(chosen))
+                        if ext == ".vtt":
+                            out_srt = vtt_to_srt(out_srt)
+                        if os.path.exists(out_srt) and os.path.getsize(out_srt) > 64 and is_genuine_sinhala_subtitle(out_srt):
+                            return out_srt, chosen
+        except Exception as z_err:
+            log.debug("[SubtitleService] ZIP extraction note: %s", z_err)
+
+    # 3. Try RAR / 7z archive extraction via system CLI tools (7z, unrar, bsdtar)
+    if raw_bytes.startswith((b"Rar!", b"7z\xbc\xaf")) or b".srt" in raw_bytes[:2048].lower():
+        archive_ext = ".rar" if raw_bytes.startswith(b"Rar!") else ".7z"
+        archive_file = os.path.join(temp_dir, f"{prefix}_archive{archive_ext}")
+        extract_dir = os.path.join(temp_dir, f"{prefix}_extracted")
+        os.makedirs(extract_dir, exist_ok=True)
+        try:
+            with open(archive_file, "wb") as af:
+                af.write(raw_bytes)
+
+            extracted_ok = False
+            for cmd in (
+                ["7z", "x", "-y", f"-o{extract_dir}", archive_file],
+                ["unrar", "x", "-y", archive_file, extract_dir],
+                ["bsdtar", "-xf", archive_file, "-C", extract_dir],
+            ):
+                if shutil.which(cmd[0]):
+                    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
+                    if res.returncode == 0:
+                        extracted_ok = True
+                        break
+
+            if extracted_ok:
+                found_srts = []
+                for root, _, files in os.walk(extract_dir):
+                    for fn in files:
+                        if fn.lower().endswith((".srt", ".vtt")) and not fn.startswith("._"):
+                            found_srts.append(os.path.join(root, fn))
+                chosen_path = _select_episode_srt(found_srts, season, episode)
+                if chosen_path and os.path.exists(chosen_path):
+                    if chosen_path.lower().endswith(".vtt"):
+                        chosen_path = vtt_to_srt(chosen_path)
+                    if os.path.getsize(chosen_path) > 64 and is_genuine_sinhala_subtitle(chosen_path):
+                        final_out = os.path.join(temp_dir, f"{prefix}_{os.path.basename(chosen_path)}")
+                        shutil.copyfile(chosen_path, final_out)
+                        return final_out, os.path.basename(chosen_path)
+        except Exception as rar_err:
+            log.debug("[SubtitleService] RAR/7z extraction note: %s", rar_err)
+
+    return None, ""
+
+
+async def _scrape_wp_subtitle_site(
+    client: httpx.AsyncClient,
+    base_url: str,
+    site_name: str,
+    q_str: str,
+    clean_title: str,
+    season: Optional[int],
+    episode: Optional[int],
+    temp_dir: str,
+) -> Optional[str]:
+    """
+    Search WordPress-based Sri Lankan subtitle portals (subz.lk, cineru.lk, baiscope.lk)
+    using WP REST API (/wp-json/wp/v2/posts?search=...) with HTML search fallback (/?s=...).
+    Extracts genuine Sinhala .srt and records WebRip/BluRay release hints.
+    """
+    import urllib.parse
+    from bs4 import BeautifulSoup
+
+    candidate_urls: list[str] = []
+    title_words = [w.lower() for w in clean_title.split() if len(w) > 2]
+
+    # 1. Query WP REST API first (fast JSON response)
+    try:
+        api_url = f"{base_url.rstrip('/')}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q_str)}&per_page=8"
+        r_api = await client.get(api_url, timeout=10.0)
+        if r_api.status_code == 200 and isinstance(r_api.json(), list):
+            for post in r_api.json():
+                link = post.get("link") or ""
+                rendered_title = (post.get("title", {}) or {}).get("rendered", "").lower()
+                if link and (not title_words or any(w in rendered_title or w in link.lower() for w in title_words)):
+                    candidate_urls.append(link)
+    except Exception as wp_err:
+        log.debug("[SubtitleService] %s WP API lookup note: %s", site_name, wp_err)
+
+    # 2. Fallback to standard HTML search /?s=
+    if not candidate_urls:
+        try:
+            s_url = f"{base_url.rstrip('/')}/?s={urllib.parse.quote_plus(q_str)}"
+            r_html = await client.get(s_url, timeout=10.0)
+            if r_html.status_code == 200:
+                soup = BeautifulSoup(r_html.text, "html.parser")
+                for a in soup.select("article a, h2 a, h3 a, .entry-title a, .post-title a, .result-item a"):
+                    href = a.get("href", "")
+                    if href and base_url.split("//")[-1].split("/")[0] in href:
+                        if not any(x in href for x in ("/category/", "/tag/", "/author/", "/page/", "#")):
+                            if href not in candidate_urls:
+                                candidate_urls.append(href)
+        except Exception as h_err:
+            log.debug("[SubtitleService] %s HTML search note: %s", site_name, h_err)
+
+    # 3. Inspect candidate post pages for subtitle download links & release reference hints
+    for post_url in candidate_urls[:5]:
+        try:
+            p_resp = await client.get(post_url, timeout=10.0)
+            if p_resp.status_code != 200:
+                continue
+            p_soup = BeautifulSoup(p_resp.text, "html.parser")
+            page_text = p_soup.get_text(" ", strip=True)
+
+            # Collect any release hints from .dlp-box or release notes on page
+            dlp_text = " ".join(el.get_text(" ", strip=True) for el in p_soup.select(".dlp-box, .entry-content, .subz-info"))
+            _store_release_hint(clean_title, dlp_text or page_text[:2000])
+
+            dl_targets: list[str] = []
+            # A. Subz.lk AJAX / button download links (admin-ajax.php?action=sub_download or .subz-list-btn)
+            for a in p_soup.find_all("a", href=True):
+                href = a["href"].strip()
+                cls = " ".join(a.get("class", [])).lower()
+                a_txt = a.get_text(" ", strip=True).lower()
+                data_link = a.get("data-link") or a.get("data-href") or ""
+
+                if data_link and any(k in data_link.lower() for k in ("download", ".zip", ".rar", ".srt", "admin-ajax")):
+                    dl_targets.append(urllib.parse.urljoin(post_url, data_link))
+
+                if (
+                    "action=sub_download" in href
+                    or "subz-list-btn" in cls
+                    or "js-premium-download" in cls
+                    or a.get("id") == "btn-download"
+                    or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt", "/download/", "/downloads/"))
+                    or ("උපසිරැසි" in a_txt and "බාගත" in a_txt)
+                ):
+                    if not any(ign in href.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz", "t.me/")):
+                        dl_targets.append(urllib.parse.urljoin(post_url, href))
+
+            for dl_url in dl_targets[:4]:
+                try:
+                    sub_resp = await client.get(dl_url, headers={"Referer": post_url}, timeout=15.0)
+                    if sub_resp.status_code != 200 or len(sub_resp.content) < 128:
+                        continue
+                    srt_file, member_name = _extract_srt_from_bytes(
+                        sub_resp.content,
+                        temp_dir=temp_dir,
+                        season=season,
+                        episode=episode,
+                        prefix=f"{site_name.lower()}_sub",
+                    )
+                    if srt_file and os.path.exists(srt_file):
+                        _store_release_hint(clean_title, f"{member_name} {dlp_text}")
+                        log.info("[SubtitleService] Found genuine Sinhala subtitle from %s: %s", site_name, srt_file)
+                        return srt_file
+                except Exception as dl_err:
+                    log.debug("[SubtitleService] %s download link error: %s", site_name, dl_err)
+        except Exception as p_err:
+            log.debug("[SubtitleService] %s post inspect note: %s", site_name, p_err)
+
+    return None
+
+
 async def fetch_sri_lankan_sinhala_subtitle(
     title: str,
     year: Optional[int] = None,
@@ -439,15 +711,15 @@ async def fetch_sri_lankan_sinhala_subtitle(
     temp_dir: str = "/tmp",
 ) -> Optional[str]:
     """
-    Search Sri Lankan subtitle platforms (PirateLK, etc.) for genuine Sinhala subtitles (.srt).
-    Downloads and extracts the specific episode or movie subtitle file into temp_dir.
+    Search top Sri Lankan subtitle platforms (Subz.lk, Cineru.lk, Baiscope.lk, PirateLK.com)
+    for genuine Sinhala subtitles (.srt / .zip / .rar / .7z).
+    Downloads and extracts the specific episode or movie subtitle file into temp_dir,
+    and records the release reference hint (WEBRip / BluRay / YTS / PSA) for torrent matching.
     """
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return None
 
-    import io
     import urllib.parse
-    import zipfile
     from bs4 import BeautifulSoup
 
     # Strip any leaked season/episode tokens or episode titles from title
@@ -469,7 +741,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
     else:
         q_str = f"{clean_title} {year}" if year else clean_title
 
-    log.info("[SubtitleService] Searching Sri Lankan subtitle sources for '%s'...", q_str)
+    log.info("[SubtitleService] Searching Sri Lankan subtitle sources (Subz.lk, Cineru.lk, Baiscope.lk, PirateLK) for '%s'...", q_str)
 
     headers = {
         "User-Agent": (
@@ -481,26 +753,44 @@ async def fetch_sri_lankan_sinhala_subtitle(
         "Accept-Language": "en-US,en;q=0.9",
     }
 
-    # 1. Generate high-probability direct PirateLK URL slugs
-    direct_candidates = []
-    if season:
-        direct_candidates.extend([
-            f"https://piratelk.com/{slug_title}-complete-season-{season:02d}-with-sinhala-subtitles/",
-            f"https://piratelk.com/{slug_title}-season-{season:02d}-with-sinhala-subtitles/",
-            f"https://piratelk.com/{slug_title}-complete-season-{season}-with-sinhala-subtitles/",
-            f"https://piratelk.com/{slug_title}-season-{season}-with-sinhala-subtitles/",
-            f"https://piratelk.com/{slug_title}-tv-series-with-sinhala-subtitles/",
-            f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/",
-        ])
-    else:
-        if year:
-            direct_candidates.append(f"https://piratelk.com/{slug_title}-{year}-with-sinhala-subtitles/")
-        direct_candidates.append(f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/")
-
-    candidate_posts = list(direct_candidates)
-
     try:
         async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=12.0) as client:
+            # 1. Try Subz.lk, Cineru.lk, and Baiscope.lk via WP REST API + HTML scraper
+            for site_url, site_label in (
+                ("https://subz.lk", "SubzLK"),
+                ("https://cineru.lk", "CineruLK"),
+                ("https://www.baiscope.lk", "BaiscopeLK"),
+            ):
+                found_wp = await _scrape_wp_subtitle_site(
+                    client=client,
+                    base_url=site_url,
+                    site_name=site_label,
+                    q_str=q_str,
+                    clean_title=clean_title,
+                    season=season,
+                    episode=episode,
+                    temp_dir=temp_dir,
+                )
+                if found_wp and os.path.exists(found_wp):
+                    return found_wp
+
+            # 2. PirateLK direct slug candidates + search
+            direct_candidates = []
+            if season:
+                direct_candidates.extend([
+                    f"https://piratelk.com/{slug_title}-complete-season-{season:02d}-with-sinhala-subtitles/",
+                    f"https://piratelk.com/{slug_title}-season-{season:02d}-with-sinhala-subtitles/",
+                    f"https://piratelk.com/{slug_title}-complete-season-{season}-with-sinhala-subtitles/",
+                    f"https://piratelk.com/{slug_title}-season-{season}-with-sinhala-subtitles/",
+                    f"https://piratelk.com/{slug_title}-tv-series-with-sinhala-subtitles/",
+                    f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/",
+                ])
+            else:
+                if year:
+                    direct_candidates.append(f"https://piratelk.com/{slug_title}-{year}-with-sinhala-subtitles/")
+                direct_candidates.append(f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/")
+
+            candidate_posts = list(direct_candidates)
             search_url = f"https://piratelk.com/?s={urllib.parse.quote_plus(q_str)}"
             resp = await client.get(search_url)
             if resp.status_code != 200 and season:
@@ -517,7 +807,6 @@ async def fetch_sri_lankan_sinhala_subtitle(
                             s_token = f"season {season}"
                             s_token_padded = f"season {season:02d}"
                             s_token_short = f"s{season:02d}"
-                            # Accept target season OR TV series hub posts
                             is_hub = "tv-series" in p_href_lower or "tv series" in p_title or f"{slug_title}-with-sinhala" in p_href_lower
                             if is_hub or s_token in p_title or s_token_padded in p_title or s_token_short in p_title or \
                                s_token in p_href_lower or s_token_padded in p_href_lower or s_token_short in p_href_lower:
@@ -551,8 +840,8 @@ async def fetch_sri_lankan_sinhala_subtitle(
                         for sa in p_soup.find_all("a", href=True):
                             sa_text = sa.get_text(strip=True).lower()
                             sa_href = sa["href"]
-                            if "/download/" in sa_href or ".zip" in sa_href:
-                                continue  # Do not treat zip download links as HTML pages
+                            if "/download/" in sa_href or ".zip" in sa_href or ".rar" in sa_href:
+                                continue
                             if (s_target in sa_text or s_alt in sa_text or s_slug_target in sa_href.lower() or s_slug_alt in sa_href.lower()) and "piratelk.com/" in sa_href:
                                 s_url = urllib.parse.urljoin(post_url, sa_href)
                                 s_resp = await client.get(s_url)
@@ -563,8 +852,8 @@ async def fetch_sri_lankan_sinhala_subtitle(
                     dl_link = None
                     for da in p_soup.find_all("a", href=True):
                         dh = da["href"]
-                        if "/download/" in dh or ".zip" in dh:
-                            if not any(ign in dh for ign in ["/category/", "/tag/", "usersdrive", "mega.nz"]):
+                        if any(k in dh.lower() for k in ("/download/", ".zip", ".rar", ".7z")):
+                            if not any(ign in dh.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz")):
                                 dl_link = urllib.parse.urljoin(post_url, dh)
                                 break
 
@@ -572,45 +861,20 @@ async def fetch_sri_lankan_sinhala_subtitle(
                         continue
 
                     z_resp = await client.get(dl_link)
-                    if z_resp.status_code != 200 or len(z_resp.content) < 512:
+                    if z_resp.status_code != 200 or len(z_resp.content) < 256:
                         continue
 
-                    with zipfile.ZipFile(io.BytesIO(z_resp.content)) as zf:
-                        srt_members = [m for m in zf.namelist() if m.lower().endswith(".srt")]
-                        if not srt_members:
-                            continue
-
-                        chosen_member = None
-                        if season and episode:
-                            # Strict season + episode matching inside ZIP
-                            ep_patterns = [
-                                re.compile(rf"[Ss]{season:02d}[\s._-]*[Ee]{episode:02d}", re.IGNORECASE),
-                                re.compile(rf"[Ss]{season}[\s._-]*[Ee]{episode:02d}", re.IGNORECASE),
-                                re.compile(rf"{season}x{episode:02d}", re.IGNORECASE),
-                                re.compile(rf"season[\s._-]*0?{season}.*episode[\s._-]*0?{episode}\b", re.IGNORECASE),
-                                re.compile(rf"s0?{season}.*e0?{episode}\b", re.IGNORECASE),
-                            ]
-                            for pat in ep_patterns:
-                                for sm in srt_members:
-                                    if pat.search(sm):
-                                        chosen_member = sm
-                                        break
-                                if chosen_member:
-                                    break
-                        else:
-                            chosen_member = srt_members[0]
-
-                        if not chosen_member:
-                            continue
-
-                        out_srt = os.path.join(temp_dir, f"sri_lanka_sub_{os.path.basename(chosen_member)}")
-                        with open(out_srt, "wb") as out_f:
-                            out_f.write(zf.read(chosen_member))
-
-                        if os.path.exists(out_srt) and os.path.getsize(out_srt) > 64:
-                            if is_genuine_sinhala_subtitle(out_srt):
-                                log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
-                                return out_srt
+                    out_srt, chosen_member = _extract_srt_from_bytes(
+                        z_resp.content,
+                        temp_dir=temp_dir,
+                        season=season,
+                        episode=episode,
+                        prefix="sri_lanka_sub",
+                    )
+                    if out_srt and os.path.exists(out_srt):
+                        _store_release_hint(clean_title, f"{chosen_member} {p_soup.get_text(' ', strip=True)[:1500]}")
+                        log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
+                        return out_srt
                 except Exception as post_err:
                     log.debug("[SubtitleService] Sri Lankan post inspect note: %s", post_err)
     except Exception as scrape_err:

@@ -1081,3 +1081,90 @@ def test_widescreen_1080p_not_misclassified_as_720p():
         else:
             primary_q = "720p"
         assert primary_q == expected_q, f"Failed for {src_w}x{src_h}: got {primary_q}, expected {expected_q}"
+
+
+def test_subtitle_release_hint_extraction_and_torrent_scoring_boost():
+    """Verify release hint extraction from Sinhala subtitle posts and torrent relevance boost."""
+    from services import subtitle_service
+    from services.scrapers.torrent_finder import calculate_relevance_score
+
+    hint = subtitle_service.extract_release_hint(
+        "The Beekeeper.2024.1080p.WEBRip.x264.AAC5.1-[YTS.MX]-Sinhala-Sub.zip"
+    )
+    assert "webrip" in hint.lower()
+    assert "yts" in hint.lower()
+
+    subtitle_service._store_release_hint(
+        "The Beekeeper",
+        "The Beekeeper (2024) 1080p WEBRip YTS Sinhala Subtitles",
+    )
+    stored = subtitle_service.get_last_release_hint("The Beekeeper")
+    assert "webrip" in stored.lower()
+    assert "yts" in stored.lower()
+
+    webrip_name = "The Beekeeper (2024) [1080p] [WEBRip] [5.1] [YTS.MX]"
+    bluray_name = "The Beekeeper (2024) [1080p] [BluRay] [x264]"
+
+    score_webrip = calculate_relevance_score(webrip_name, "The Beekeeper", release_hint=stored)
+    score_bluray = calculate_relevance_score(bluray_name, "The Beekeeper", release_hint=stored)
+    assert score_webrip > score_bluray, "WEBRip + YTS matching subtitle release hint must outscore BluRay"
+
+
+def test_extract_srt_from_bytes_zip_and_episode_selection(tmp_path):
+    """Verify _extract_srt_from_bytes extracts the matching episode SRT from a .zip bundle."""
+    import io
+    import zipfile
+    from services.subtitle_service import _extract_srt_from_bytes
+
+    def _build_12_cue_sinhala_srt(header_line: str) -> str:
+        cues = []
+        for idx in range(1, 13):
+            cues.append(
+                f"{idx}\n00:00:{idx:02d},000 --> 00:00:{idx:02d},800\n"
+                f"{header_line} දෙබස් පේළිය අංක {idx} නිවැරදිව ක්‍රියාත්මක වේ\n"
+            )
+        return "\n".join(cues)
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr(
+            "Show.S01E01.WEBRip.Sinhala.srt",
+            _build_12_cue_sinhala_srt("පළමු කොටස සිංහල උපසිරැසිය"),
+        )
+        zf.writestr(
+            "Show.S01E02.WEBRip.Sinhala.srt",
+            _build_12_cue_sinhala_srt("දෙවන කොටස සිංහල උපසිරැසිය"),
+        )
+
+    extracted_path, member_name = _extract_srt_from_bytes(
+        buf.getvalue(), str(tmp_path), prefix="test_ep", season=1, episode=2
+    )
+    assert extracted_path is not None and os.path.exists(extracted_path)
+    assert "S01E02" in member_name
+    content = Path(extracted_path).read_text(encoding="utf-8")
+    assert "දෙවන කොටස සිංහල උපසිරැසිය" in content
+
+
+def test_prepare_clean_srt_and_build_subtitles_burn_filter(tmp_path):
+    """Verify UTF-8 SRT sanitization and Noto Sans Sinhala libass hard-burn filter construction."""
+    from services.video_service import prepare_clean_srt_for_burn, build_subtitles_burn_filter
+
+    raw_srt = tmp_path / "raw_bom.srt"
+    raw_srt.write_bytes(
+        b"\xef\xbb\xbf1\r\n00:00:01,000 --> 00:00:04,000\r\n<b>\xe0\xb7\x83\xe0\xb7\x92\xe0\xb6\x82\xe0\xb7\x84\xe0\xb6\xbd</b>\r\n"
+    )
+    clean_srt = tmp_path / "clean.srt"
+    ok = prepare_clean_srt_for_burn(str(raw_srt), str(clean_srt))
+    assert ok is True
+    assert clean_srt.exists()
+    cleaned_text = clean_srt.read_text(encoding="utf-8")
+    assert not cleaned_text.startswith("\ufeff")
+    assert "සිංහල" in cleaned_text
+
+    vf = build_subtitles_burn_filter("sub_burn_multi.srt", include_style=True)
+    assert "subtitles=filename=" in vf
+    assert "charenc=UTF-8" in vf
+    assert "FontName=Noto Sans Sinhala" in vf
+    assert "BorderStyle=1" in vf
+
+

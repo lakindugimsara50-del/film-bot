@@ -434,6 +434,11 @@ class TelegramUploadPool:
                 chat_obj = await self._main_client.get_chat(target_channel)
                 channel_username = getattr(chat_obj, "username", None)
                 invite_link = getattr(chat_obj, "invite_link", None)
+                if not invite_link and not channel_username:
+                    try:
+                        invite_link = await self._main_client.export_chat_invite_link(target_channel)
+                    except Exception:
+                        pass
                 async for member in self._main_client.get_chat_members(target_channel, filter=ChatMembersFilter.ADMINISTRATORS):
                     u = getattr(member, "user", None)
                     if not u or getattr(u, "is_bot", False):
@@ -479,17 +484,33 @@ class TelegramUploadPool:
 
             await asyncio.gather(*[_check_c(c) for c in self.clients], return_exceptions=True)
 
-        # 3. Ensure all admin sessions have the channel peer resolved
-        join_dest = channel_username or invite_link
-        if join_dest and admin_clients:
+        # 3. Ensure all admin sessions have the channel peer resolved in their local SQLite peers table
+        if admin_clients:
+            warmup_sem = asyncio.Semaphore(8)
+
             async def _warmup_peer(c: Client):
-                try:
-                    if channel_username:
-                        await c.get_chat(channel_username)
-                    elif invite_link:
-                        await c.join_chat(invite_link)
-                except Exception:
-                    pass
+                async with warmup_sem:
+                    try:
+                        await c.get_chat(target_channel)
+                        return
+                    except Exception:
+                        pass
+                    try:
+                        if channel_username:
+                            await c.get_chat(channel_username)
+                            return
+                        if invite_link:
+                            try:
+                                await c.join_chat(invite_link)
+                                return
+                            except Exception:
+                                pass
+                        async for d in c.get_dialogs(limit=50):
+                            if getattr(getattr(d, "chat", None), "id", None) == t_key:
+                                break
+                    except Exception:
+                        pass
+
             await asyncio.gather(*[_warmup_peer(c) for c in admin_clients], return_exceptions=True)
 
         admin_clients.sort(key=lambda c: getattr(c, "name", ""))

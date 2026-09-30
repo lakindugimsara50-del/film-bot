@@ -1300,7 +1300,7 @@ async def _execute_leech(
             "primary_total": size_str,
             "primary_speed": "--",
             "primary_eta": "--",
-            "primary_status": "uploading",
+            "primary_status": "waiting",
             "mq_target": ("480p" if primary_quality == "720p" else "720p/480p"),
             "mq_encode_pct": "0%",
             "mq_encode_status": "waiting",
@@ -1339,6 +1339,8 @@ async def _execute_leech(
                     p_line = f"✅ <b>{p_q} (Primary):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
                 elif p_status == "failed":
                     p_line = f"❌ <b>{p_q} (Primary):</b> Upload අසාර්ථකයි"
+                elif p_status == "waiting":
+                    p_line = f"⏳ <b>{p_q} (Primary) Upload:</b> Multi-Quality පරිවර්තනයෙන් පසු Full Speed ආරම්භ වේ..."
                 else:
                     p_speed = dashboard_state["primary_speed"]
                     p_eta = dashboard_state["primary_eta"]
@@ -1573,7 +1575,7 @@ async def _execute_leech(
                 except Exception as direct_err:
                     log.error("[LeechService] Direct client fallback upload for variant %s failed: %s", q_label, direct_err)
 
-        async def _task_encode_and_upload_variants() -> None:
+        async def _task_encode_variants_only() -> None:
             nonlocal variant_files, _mq_progress_str
             if not getattr(config, "ENABLE_MULTI_QUALITY_RAM", True):
                 dashboard_state["mq_encode_status"] = "skipped"
@@ -1617,15 +1619,33 @@ async def _execute_leech(
                     _mq_progress_str = "Multi-Quality Skipped (Primary Stream Active) ✅"
                     dashboard_state["mq_encode_status"] = "skipped"
                     await _render_dashboard(force=True)
+            except Exception as mq_err:
+                log.warning("[LeechService] Multi-quality RAM variant encoding skipped: %s", mq_err)
+                dashboard_state["mq_encode_status"] = "skipped"
+                await _render_dashboard(force=True)
 
-                # Upload variants to Telegram channel cleanly to prevent socket contention
+        async def _task_upload_all_variants() -> None:
+            nonlocal _mq_progress_str
+            try:
                 if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
                     q_keys = "/".join(variant_files.keys())
                     _mq_progress_str = f"{q_keys} Uploading to Telegram..."
-                    for ql, qp in variant_files.items():
-                        if ql == primary_quality:
-                            continue
-                        await _task_upload_tg_variant(ql, qp)
+                    from services.upload_pool import upload_pool
+                    admin_Pool = await upload_pool.get_admin_sessions(target_channel) if str(target_channel).startswith("-100") else []
+                    if len(admin_Pool) >= 3 and len(variant_files) > 1:
+                        await asyncio.gather(
+                            *[
+                                _task_upload_tg_variant(ql, qp)
+                                for ql, qp in variant_files.items()
+                                if ql != primary_quality
+                            ],
+                            return_exceptions=True,
+                        )
+                    else:
+                        for ql, qp in variant_files.items():
+                            if ql == primary_quality:
+                                continue
+                            await _task_upload_tg_variant(ql, qp)
                     _mq_progress_str = f"Telegram {q_keys} Upload Complete ✅"
 
                 if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
@@ -1634,15 +1654,15 @@ async def _execute_leech(
                     for ql, qp in variant_files.items():
                         await _task_upload_drive_variant(ql, qp)
                     _mq_progress_str = f"{q_keys} Drive Complete ✅"
-            except Exception as mq_err:
-                log.warning("[LeechService] Multi-quality RAM variant pipeline skipped: %s", mq_err)
-                dashboard_state["mq_encode_status"] = "skipped"
-                await _render_dashboard(force=True)
+            except Exception as v_up_err:
+                log.warning("[LeechService] Variant upload note: %s", v_up_err)
 
         async def _task_upload_telegram() -> None:
             nonlocal file_id, stream_url, message_id
             if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
                 return
+            dashboard_state["primary_status"] = "uploading"
+            await _render_dashboard(force=True)
             try:
                 from services.upload_pool import upload_pool
                 upload_res = await upload_pool.upload_with_pool(
@@ -1671,13 +1691,32 @@ async def _execute_leech(
                 await _render_dashboard(force=True)
                 log.error("[LeechService] Telegram upload failed: %s", tg_err)
 
-        # Execute Drive upload, Telegram primary upload, and RAM variant Encode+Upload concurrently
-        await asyncio.gather(
-            _task_upload_drive_1080(),
-            _task_upload_telegram(),
-            _task_encode_and_upload_variants(),
-            return_exceptions=True,
+        # Phase A: Dedicated 100% CPU/GPU Multi-Quality Encoding (zero upload I/O contention)
+        await _task_encode_variants_only()
+
+        # Phase B: High-Speed Upload Phase
+        # If >= 2 distinct channel admin userbots are active, upload primary & variants in parallel across accounts;
+        # otherwise upload primary first then variants sequentially at 100% single-session bandwidth.
+        from services.upload_pool import upload_pool as _up_pool_ref
+        _active_admins = (
+            await _up_pool_ref.get_admin_sessions(target_channel)
+            if str(target_channel).startswith("-100") and _up_pool_ref.clients
+            else []
         )
+        if len(_active_admins) >= 2:
+            await asyncio.gather(
+                _task_upload_drive_1080(),
+                _task_upload_telegram(),
+                _task_upload_all_variants(),
+                return_exceptions=True,
+            )
+        else:
+            await asyncio.gather(
+                _task_upload_drive_1080(),
+                _task_upload_telegram(),
+                return_exceptions=True,
+            )
+            await _task_upload_all_variants()
 
         cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
         cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""

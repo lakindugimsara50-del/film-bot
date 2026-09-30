@@ -385,6 +385,7 @@ def calculate_relevance_score(
     is_series: bool = False,
     season: Optional[int] = None,
     episode: Optional[int] = None,
+    release_hint: str = "",
 ) -> int:
     """Compute title relevance score penalizing commentary, foreign dubs, and CAM releases."""
     score = 100
@@ -405,9 +406,29 @@ def calculate_relevance_score(
             if re.search(exact_pat, tor_name.lower()):
                 score += 15
 
+    # Match release reference hint from Sri Lankan subtitle (e.g. WEBRip, WEB-DL, BluRay, YTS, PSA)
+    hint = (release_hint or "").strip().lower()
+    if not hint and target_title:
+        try:
+            from services.subtitle_service import get_last_release_hint
+            hint = get_last_release_hint(target_title).lower()
+        except Exception:
+            hint = ""
+    if hint:
+        tor_low = tor_name.lower()
+        if ("webrip" in hint or "web-dl" in hint) and re.search(r"\b(web[\s._-]*rip|webrip|web[\s._-]*dl|webdl)\b", tor_low):
+            score += 35
+        elif "bluray" in hint and re.search(r"\b(blu[\s._-]*ray|bluray|brrip|bdrip)\b", tor_low):
+            score += 35
+        for grp in ("yts", "yify", "psa", "galaxyrg", "pahe", "rarbg"):
+            if grp in hint and grp in tor_low:
+                score += 20
+                break
+
     penalty = get_release_penalty(tor_name)
     score -= penalty
     return score
+
 
 
 async def search_torrentio(

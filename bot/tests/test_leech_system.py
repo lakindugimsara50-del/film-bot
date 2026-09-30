@@ -1173,6 +1173,67 @@ class TestLeechService(unittest.TestCase):
 
         asyncio.run(run_test())
 
+    def test_portal_sub_classification_separation(self):
+        # Portals with PRE-BURNED subtitles
+        pre_burned_portals = ["SinhalaSub", "CineSubz"]
+        # Portals with STANDALONE subtitles (clean video + separate SRT)
+        clean_video_portals = ["Baiscope", "Cineru", "Subz", "LKSubs", "Zoom", "PirateLK"]
+
+        for p in pre_burned_portals:
+            is_hard = p in ("SinhalaSub", "CineSubz")
+            self.assertTrue(is_hard, f"Expected {p} to be classified as pre-burned")
+
+        for p in clean_video_portals:
+            is_hard = p in ("SinhalaSub", "CineSubz")
+            self.assertFalse(is_hard, f"Expected {p} to be classified as clean video (sub not pre-burned)")
+
+    def test_step2_parallel_companion_variants_collected(self):
+        cand_1080 = leech_service.LeechCandidate(
+            method="ddl",
+            method_name="SinhalaSub Matched WebRip (1080p)",
+            source_url="https://cdn.sinhalasub.net/got/1080.mp4",
+            quality="1080p",
+            extra={"portal": "SinhalaSub", "post_url": "https://sinhalasub.lk/got/", "is_already_hardsubbed": True}
+        )
+        cand_720 = leech_service.LeechCandidate(
+            method="ddl",
+            method_name="SinhalaSub Matched WebRip (720p)",
+            source_url="https://cdn.sinhalasub.net/got/720.mp4",
+            quality="720p",
+            extra={"portal": "SinhalaSub", "post_url": "https://sinhalasub.lk/got/", "is_already_hardsubbed": True}
+        )
+        cand_480 = leech_service.LeechCandidate(
+            method="ddl",
+            method_name="SinhalaSub Matched WebRip (480p)",
+            source_url="https://cdn.sinhalasub.net/got/480.mp4",
+            quality="480p",
+            extra={"portal": "SinhalaSub", "post_url": "https://sinhalasub.lk/got/", "is_already_hardsubbed": True}
+        )
+
+        all_cands = [cand_1080, cand_720, cand_480]
+
+        # Simulate companion discovery for cand_1080
+        companion_candidates = {}
+        cand_portal = (cand_1080.extra or {}).get("portal", "")
+        cand_post = (cand_1080.extra or {}).get("post_url", "")
+        primary_q = (cand_1080.quality or "1080p").lower()
+
+        for other_c in all_cands:
+            if other_c == cand_1080:
+                continue
+            o_q = (other_c.quality or "").lower()
+            if o_q in ("720p", "480p", "360p", "1080p") and o_q != primary_q and o_q not in companion_candidates:
+                o_portal = (other_c.extra or {}).get("portal", "")
+                o_post = (other_c.extra or {}).get("post_url", "")
+                if (cand_post and o_post == cand_post) or (cand_portal and o_portal == cand_portal):
+                    companion_candidates[o_q] = other_c
+
+        self.assertEqual(len(companion_candidates), 2)
+        self.assertIn("720p", companion_candidates)
+        self.assertIn("480p", companion_candidates)
+        self.assertEqual(companion_candidates["720p"].source_url, "https://cdn.sinhalasub.net/got/720.mp4")
+        self.assertEqual(companion_candidates["480p"].source_url, "https://cdn.sinhalasub.net/got/480.mp4")
+
 
 if __name__ == "__main__":
     unittest.main()

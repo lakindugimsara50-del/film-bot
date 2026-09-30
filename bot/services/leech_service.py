@@ -757,6 +757,7 @@ async def _execute_leech(
 
         # ── Step 2: Download with Multi-Method Fallback ────────────────────────
         chosen_candidate: Optional[LeechCandidate] = None
+        pre_downloaded_variants: dict[str, str] = {}
         if not temp_dir:
             temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
@@ -770,11 +771,34 @@ async def _execute_leech(
                 user_id, f"1/3 - Downloading via {candidate.method_name}..."
             )
 
+            # Detect companion variants from same portal/post for ALL-QUALITY PARALLEL DOWNLOAD
+            companion_candidates: dict[str, LeechCandidate] = {}
+            if candidate.method in ("ddl", "http"):
+                cand_portal = (candidate.extra or {}).get("portal", "")
+                cand_host = urllib.parse.urlparse(str(candidate.source_url)).netloc
+                cand_post = (candidate.extra or {}).get("post_url", "")
+                primary_q = (candidate.quality or "1080p").lower()
+
+                for other_c in candidates:
+                    if other_c == candidate:
+                        continue
+                    o_q = (other_c.quality or "").lower()
+                    if o_q in ("720p", "480p", "360p", "1080p") and o_q != primary_q and o_q not in companion_candidates:
+                        o_portal = (other_c.extra or {}).get("portal", "")
+                        o_host = urllib.parse.urlparse(str(other_c.source_url)).netloc
+                        o_post = (other_c.extra or {}).get("post_url", "")
+                        if (cand_post and o_post == cand_post) or (cand_portal and o_portal == cand_portal) or (cand_host and o_host == cand_host):
+                            companion_candidates[o_q] = other_c
+
+            cand_display_label = candidate.method_name
+            if companion_candidates:
+                cand_display_label = f"{candidate.method_name} (+ {', '.join(companion_candidates.keys())} Parallel CDN)"
+
             # Inform user immediately that a source was found and download is starting
             found_text = (
                 f"🎯 <b>බාගත කිරීමේ මූලාශ්‍රයක් හමුවිය (Source Found)!</b>\n\n"
                 f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
-                f"⚡ <b>මූලාශ්‍රය ({idx}/{len(candidates)}):</b> {candidate.method_name}\n"
+                f"⚡ <b>මූලාශ්‍රය ({idx}/{len(candidates)}):</b> {cand_display_label}\n"
                 f"📦 <b>ප්‍රමාණය:</b> {candidate.size}\n\n"
                 f"⏳ <b>බාගත කිරීම ආරම්භ කරමින් පවතී (Connecting to peers/server)...</b>"
             )
@@ -801,7 +825,7 @@ async def _execute_leech(
                     text = (
                         f"📥 <b>පියවර 2/4: {cloud_service_name} ➔ {_env_name} වෙත බාගත කරමින්...</b>\n\n"
                         f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                        f"⚡ <b>ක්‍රමය:</b> {candidate.method_name} (Cloud Direct Link)\n"
+                        f"⚡ <b>ක්‍රමය:</b> {cand_display_label} (Cloud Direct Link)\n"
                         f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
                         f"📦 <b>ප්‍රමාණය:</b> {done_str} / {total_str}\n"
                         f"{status_line}\n"
@@ -1030,14 +1054,59 @@ async def _execute_leech(
                     )
                 else:
                     # Direct HTTP / DDL
-                    clean_name = f"{_slugify(title, year)}.mp4"
-                    local_file = await downloader.download_http(
-                        url=candidate.source_url,
-                        dest_dir=temp_dir,
-                        filename=clean_name,
-                        task_key=task_key,
-                        progress_callback=_download_progress,
-                    )
+                    ep_sfx = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
+                    clean_name = f"{_slugify(title, year)}{ep_sfx}.mp4"
+
+                    if companion_candidates:
+                        log.info(
+                            "[LeechService] Step 2: Downloading primary %s AND companions %s in PARALLEL from %s...",
+                            candidate.quality, list(companion_candidates.keys()), cand_portal or cand_host
+                        )
+
+                        async def _dl_companion_file(comp_q: str, comp_cand: LeechCandidate) -> Optional[tuple[str, str]]:
+                            v_clean_name = f"{_slugify(title, year)}{ep_sfx}-{comp_q}.mp4"
+                            c_dl = await downloader.download_http(
+                                url=comp_cand.source_url,
+                                dest_dir=temp_dir,
+                                filename=v_clean_name,
+                                task_key=f"{task_key}_{comp_q}",
+                            )
+                            if c_dl and downloader.is_valid_downloaded_video(c_dl):
+                                fs_out = os.path.join(temp_dir, f"fs_{_slugify(title, year)}{ep_sfx}_{comp_q}.mp4")
+                                if await video_service.apply_faststart(c_dl, fs_out):
+                                    try:
+                                        os.remove(c_dl)
+                                    except Exception:
+                                        pass
+                                    c_dl = fs_out
+                                log.info("[LeechService] Step 2 companion variant %s downloaded in parallel: %s (%s)", comp_q, c_dl, downloader.format_bytes(os.path.getsize(c_dl)))
+                                return (comp_q, c_dl)
+                            return None
+
+                        primary_dl_task = downloader.download_http(
+                            url=candidate.source_url,
+                            dest_dir=temp_dir,
+                            filename=clean_name,
+                            task_key=task_key,
+                            progress_callback=_download_progress,
+                        )
+                        comp_tasks = [
+                            _dl_companion_file(cq, cc)
+                            for cq, cc in companion_candidates.items()
+                        ]
+                        all_dl_results = await asyncio.gather(primary_dl_task, *comp_tasks, return_exceptions=True)
+                        local_file = all_dl_results[0] if (all_dl_results and isinstance(all_dl_results[0], str)) else None
+                        for r in all_dl_results[1:]:
+                            if isinstance(r, tuple) and len(r) == 2 and r[0] and r[1]:
+                                pre_downloaded_variants[r[0]] = r[1]
+                    else:
+                        local_file = await downloader.download_http(
+                            url=candidate.source_url,
+                            dest_dir=temp_dir,
+                            filename=clean_name,
+                            task_key=task_key,
+                            progress_callback=_download_progress,
+                        )
 
                 if local_file and downloader.is_valid_downloaded_video(local_file):
                     chosen_candidate = candidate
@@ -1364,6 +1433,19 @@ async def _execute_leech(
                 local_file = faststart_out
                 is_faststart_done = True
                 log.info("[LeechService] FastStart copy remux complete: moov atom relocated to byte 0 (%s)", local_file)
+
+        # If companion variants were pre-downloaded and subtitle needs to be burned/muxed (is_already_hardsubbed=False)
+        if pre_downloaded_variants and sub_to_burn_video and not is_already_hardsubbed and os.path.exists(sub_to_burn_video):
+            for vq, vpath in list(pre_downloaded_variants.items()):
+                if os.path.exists(vpath):
+                    sub_var_out = os.path.join(temp_dir, f"subbed_{slug}_{vq}.mp4")
+                    if await video_service.stream_copy_subtitles(vpath, sub_to_burn_video, sub_var_out, disposition="default"):
+                        try:
+                            os.remove(vpath)
+                        except Exception:
+                            pass
+                        pre_downloaded_variants[vq] = sub_var_out
+                        log.info("[LeechService] Subtitle muxed into companion variant %s: %s", vq, sub_var_out)
 
         # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.40GB
         if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
@@ -1743,10 +1825,24 @@ async def _execute_leech(
                     return
 
                 # ── Fast-Path: Direct Multi-Quality Download from Same Portal ────────
-                # If the portal (e.g. SinhalaSub) already provides pre-encoded 720p and 480p files,
-                # directly download them over high-speed HTTP instead of spending minutes transcoding!
                 needed_qualities = [q for q in requested_qualities if q != primary_quality]
                 direct_downloaded: dict[str, str] = {}
+
+                # 1. Re-use companion variants already downloaded in parallel during Step 2
+                if pre_downloaded_variants:
+                    for vq, vpath in pre_downloaded_variants.items():
+                        if os.path.exists(vpath) and os.path.getsize(vpath) > 1024:
+                            direct_downloaded[vq] = vpath
+                            variant_files[vq] = vpath
+                            log.info("[LeechService] Reusing Step 2 parallel downloaded variant %s: %s", vq, vpath)
+                    if variant_files:
+                        dashboard_state["mq_encode_status"] = "complete"
+                        dashboard_state["mq_target"] = "/".join(variant_files.keys()) + " (Parallel CDN)"
+                        dashboard_state["mq_encode_pct"] = "100%"
+                        _mq_progress_str = f"{'/'.join(variant_files.keys())} Complete (Parallel CDN) ✅"
+                        await _render_dashboard(force=True)
+
+                needed_qualities = [q for q in needed_qualities if q not in direct_downloaded]
 
                 if chosen_candidate and needed_qualities:
                     chosen_portal = (chosen_candidate.extra or {}).get("portal", "")

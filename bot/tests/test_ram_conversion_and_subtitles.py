@@ -235,8 +235,8 @@ async def test_generate_multi_quality_variants_ram_burns_subtitles(tmp_path):
 
     assert len(captured_cmds) > 0
     cmd_str = " ".join(captured_cmds[0])
-    assert "subtitles=filename=" in cmd_str
-    assert "sub_burn_multi.srt" in cmd_str
+    assert "subtitles=filename=" in cmd_str or "ass=filename=" in cmd_str
+    assert "sub_burn_multi.srt" in cmd_str or "sub_burn_multi.ass" in cmd_str
 
 
 @pytest.mark.asyncio
@@ -643,7 +643,7 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     global.location = { search: '', href: '' };
     global.FilmSub = { escHtml: s => s };
     global.currentSeason = 1;
-    global.currentEpisode = 2;
+    global.currentEpisode = 1;
     global.currentEffectiveQuality = '1080p';
     vm.runInThisContext(code);
 
@@ -652,6 +652,7 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
         type: 'series',
         season: 1,
         episode: 1,
+        message_id: 1234,
         imdb_id: 'tt0944947'
     };
     const streams = getMovieStreams(movie);
@@ -661,11 +662,12 @@ def test_player_js_no_duplicate_urls_on_imdb_only():
     assert res.returncode == 0, f"Node eval error: {res.stderr}"
     import json
     st_list = json.loads(res.stdout.strip())
-    assert len(st_list) >= 2, f"Expected at least 2 clean servers, got {len(st_list)}"
+    assert len(st_list) >= 1, f"Expected at least 1 Telegram stream server, got {len(st_list)}"
     urls = [s['url'] for s in st_list]
-    assert len(set(urls)) == len(urls), f"Expected distinct URLs, got duplicates: {urls}"
-    assert any("vidlink.pro" in u for u in urls), f"Missing vidlink in {urls}"
-    assert any("autoembed.cc" in u for u in urls), f"Missing autoembed in {urls}"
+    assert any("/stream/channel/" in u for u in urls), f"Expected Telegram stream URL in {urls}"
+    # Verify Pure Telegram Super Player policy (zero external embed fallback servers)
+    assert not any("vidlink.pro" in u for u in urls), f"VidLink should not be present: {urls}"
+    assert not any("autoembed.cc" in u for u in urls), f"AutoEmbed should not be present: {urls}"
 
 
 @pytest.mark.asyncio
@@ -1229,8 +1231,8 @@ async def test_flowchart_end_to_end_webrip_matcher_and_3tier_hardburn(tmp_path):
     assert len(captured_cmds) == 1  # Single-decode pass for all 3 qualities!
     cmd_str = " ".join(captured_cmds[0])
     assert "split=3[sp_1080p][sp_720p][sp_480p]" in cmd_str
-    assert "subtitles=filename=" in cmd_str
-    assert "sub_burn_multi.srt" in cmd_str
+    assert "subtitles=filename=" in cmd_str or "ass=filename=" in cmd_str
+    assert "sub_burn_multi.srt" in cmd_str or "sub_burn_multi.ass" in cmd_str
     assert "h264_nvenc" in cmd_str
 
     # 4. Verify Render 24/7 Stream-Only mode in bot/main.py

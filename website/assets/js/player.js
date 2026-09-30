@@ -499,7 +499,7 @@ function getMovieStreams(movie) {
   if (isMatchingEpisode && nativeStreamUrl && !nativeStreamUrl.includes('vidlink') && !nativeStreamUrl.includes('autoembed') && !nativeStreamUrl.includes('multiembed')) {
     list.push({
       server: `Server ${srvCounter}`,
-      label: `⚡ Super Player (Telegram Cloud HD • Zero Ads)`,
+      label: `⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)`,
       mode: 'super_chunk',
       type: 'video/mp4',
       embed: false,
@@ -507,76 +507,15 @@ function getMovieStreams(movie) {
       hasLocalFile: true,
     });
     srvCounter++;
-  }
-
-  // =========================================================================
-  // Server 2: 🎬 VIP Global Player (VidLink Ultra HD • Zero Ads)
-  // [Universal Embed Player containing every movie & series in the world]
-  // =========================================================================
-  let vidlinkUrl = '';
-  let autoEmbedUrl = '';
-  let twoEmbedUrl = '';
-
-  if (isSeries) {
-    if (tmdbId) {
-      vidlinkUrl = `https://vidlink.pro/tv/${tmdbId}/${sNum}/${eNum}`;
-      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/${imdbId || tmdbId}/${sNum}/${eNum}`;
-      twoEmbedUrl = `https://www.2embed.cc/embedtv/${tmdbId}&s=${sNum}&e=${eNum}`;
-    } else if (imdbId) {
-      vidlinkUrl = `https://vidlink.pro/tv/${imdbId}/${sNum}/${eNum}`;
-      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/${imdbId}/${sNum}/${eNum}`;
-      twoEmbedUrl = `https://www.2embed.cc/embedtv/${imdbId}&s=${sNum}&e=${eNum}`;
-    } else {
-      vidlinkUrl = `https://vidlink.pro/tv/1399/${sNum}/${eNum}`;
-      autoEmbedUrl = `https://player.autoembed.cc/embed/tv/tt0944947/${sNum}/${eNum}`;
-    }
-  } else {
-    if (tmdbId) {
-      vidlinkUrl = `https://vidlink.pro/movie/${tmdbId}`;
-      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/${imdbId || tmdbId}`;
-      twoEmbedUrl = `https://www.2embed.cc/embed/${tmdbId}`;
-    } else if (imdbId) {
-      vidlinkUrl = `https://vidlink.pro/movie/${imdbId}`;
-      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/${imdbId}`;
-      twoEmbedUrl = `https://www.2embed.cc/embed/${imdbId}`;
-    } else {
-      vidlinkUrl = `https://vidlink.pro/movie/550`;
-      autoEmbedUrl = `https://player.autoembed.cc/embed/movie/tt0137523`;
-    }
-  }
-
-  const s2Url = vidlinkUrl || autoEmbedUrl || twoEmbedUrl;
-
-  list.push({
-    server: `Server ${srvCounter}`,
-    label: `🎬 VIP Global Player (VidLink Ultra HD • Zero Ads)`,
-    mode: 'external_embed',
-    type: 'embed',
-    embed: true,
-    stream_url: s2Url,
-    hasLocalFile: true,
-    alt_urls: {
-      vidlink: vidlinkUrl,
-      autoembed: autoEmbedUrl,
-      twoembed: twoEmbedUrl,
-    },
-  });
-  srvCounter++;
-
-  const s3Url = autoEmbedUrl || twoEmbedUrl;
-  if (s3Url && s3Url !== s2Url) {
+  } else if (nativeStreamUrl && !nativeStreamUrl.includes('vidlink') && !nativeStreamUrl.includes('autoembed') && !nativeStreamUrl.includes('multiembed')) {
     list.push({
       server: `Server ${srvCounter}`,
-      label: `⚡ VIP Backup Player (AutoEmbed HD • Zero Ads)`,
-      mode: 'external_embed',
-      type: 'embed',
-      embed: true,
-      stream_url: s3Url,
+      label: `⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)`,
+      mode: 'super_chunk',
+      type: 'video/mp4',
+      embed: false,
+      stream_url: nativeStreamUrl,
       hasLocalFile: true,
-      alt_urls: {
-        autoembed: autoEmbedUrl,
-        twoembed: twoEmbedUrl,
-      },
     });
     srvCounter++;
   }

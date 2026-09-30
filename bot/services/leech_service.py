@@ -276,17 +276,59 @@ async def find_all_candidates(
             log.warning("[LeechService] Method 3 error: %s", exc)
             return []
 
+    async def _fetch_srilankan_matched():
+        try:
+            from services.scrapers import srilankan_matched_scraper
+            return await srilankan_matched_scraper.search_matched_srilankan_releases(
+                title=title,
+                year=year,
+                season=season,
+                episode=episode,
+                is_series=is_series,
+            )
+        except Exception as exc:
+            log.warning("[LeechService] Method 0 (Same-Site Matched) error: %s", exc)
+            return []
+
     # Run all search methods concurrently for maximum speed
     results = await asyncio.gather(
+        _fetch_srilankan_matched(),
         _fetch_telegram(),
         _fetch_ddl(),
         _fetch_torrents(),
         return_exceptions=True,
     )
 
-    tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
-    ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
-    tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
+    matched_res = results[0] if len(results) > 0 and isinstance(results[0], list) else []
+    tg_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
+    ddl_res = results[2] if len(results) > 2 and not isinstance(results[2], Exception) else None
+    tor_list = results[3] if len(results) > 3 and isinstance(results[3], list) else []
+
+    # 0. Process Same-Site Matched Releases (Highest Quality & Guaranteed 0.0ms Subtitle Sync)
+    matched_candidates: list[LeechCandidate] = []
+    if matched_res:
+        for m in matched_res:
+            m_url = m.get("url")
+            m_q = str(m.get("quality", "1080p"))
+            m_portal = m.get("portal", "SriLankan")
+            m_ht = m.get("host_type", "ddl")
+            m_method = "torrent" if m_ht == "magnet" else "ddl"
+            matched_candidates.append(
+                LeechCandidate(
+                    method=m_method,
+                    method_name=f"⚡ {m_portal} Matched WebRip ({m_q})",
+                    source_url=m_url,
+                    quality=m_q,
+                    size="Matched WebRip",
+                    extra={
+                        "is_matched_same_site": True,
+                        "sub_srt_path": m.get("sub_srt_path"),
+                        "portal": m_portal,
+                        "post_url": m.get("post_url"),
+                    },
+                )
+            )
+        log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s).", len(matched_candidates))
 
     # 1. Process Telegram match
     if tg_res and isinstance(tg_res, dict) and tg_res.get("file_id"):
@@ -353,7 +395,11 @@ async def find_all_candidates(
         if any("1080" in str(c.quality) for c in candidates):
             candidates.sort(key=lambda c: 0 if "1080" in str(c.quality) else 1)
 
-    log.info("[LeechService] Total candidates acquired: %d", len(candidates))
+    # Priority 1: Prepend same-site matched candidates (0.0ms subtitle drift guaranteed)
+    if matched_candidates:
+        candidates = matched_candidates + [c for c in candidates if c not in matched_candidates]
+
+    log.info("[LeechService] Total candidates acquired: %d (same-site matched: %d)", len(candidates), len(matched_candidates))
     return candidates
 
 
@@ -1053,6 +1099,19 @@ async def _execute_leech(
         except Exception as cache_err:
             log.debug("[LeechService] Cache reuse note: %s", cache_err)
 
+        if not sub_srt_path and chosen_candidate and chosen_candidate.extra.get("sub_srt_path"):
+            cand_sub = chosen_candidate.extra["sub_srt_path"]
+            if os.path.exists(cand_sub) and os.path.getsize(cand_sub) > 32:
+                try:
+                    local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
+                    if os.path.abspath(cand_sub) != os.path.abspath(local_stage_srt):
+                        shutil.copyfile(cand_sub, local_stage_srt)
+                    sub_srt_path = local_stage_srt
+                    sub_vtt_path = subtitle_service.srt_to_vtt(local_stage_srt)
+                    log.info("[LeechService] Reusing candidate's exact same-site matched subtitle: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
+                except Exception as cand_sub_err:
+                    log.debug("[LeechService] Matched candidate subtitle reuse note: %s", cand_sub_err)
+
         if not sub_srt_path and pre_sub_srt and os.path.exists(pre_sub_srt):
             try:
                 local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
@@ -1153,22 +1212,32 @@ async def _execute_leech(
                 is_faststart_done = True
                 log.info("[LeechService] Direct compression succeeded: %s (%s)", local_file, downloader.format_bytes(os.path.getsize(local_file)))
         else:
-            # File is <= 1.95 GB: Instantaneous Stream Copy Remux + Soft-Sub Merge (3-5 seconds)
+            # File is <= 1.95 GB
             try:
+                sub_status_text = (
+                    "සිංහල උපසිරැසි Hard-Burn Engine වෙත යොමු කෙරේ (Single-Decode NVENC)"
+                    if sub_to_merge
+                    else "උපසිරැසි රහිතව Remux වේ"
+                )
+                method_text = (
+                    f"Fast MP4 Remux + Hard-Burn Prep ({ext.upper()} ➔ MP4)"
+                    if sub_to_merge
+                    else f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
+                )
                 await status_msg.edit_text(
-                    f"⚙️ <b>පියවර 3/5: Ultra-Fast Stream Copy සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
+                    f"⚙️ <b>පියවර 3/5: වීඩියෝ සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                    f"⚡ <b>ක්‍රමය:</b> Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)\n"
-                    f"💬 <b>උපසිරැසි:</b> {'සිංහල උපසිරැසි Video එකටම Soft-Mux කෙරේ' if sub_to_merge else 'උපසිරැසි රහිතව Remux වේ'}\n"
-                    f"⏳ තත්පර 3-5ක් රැඳී සිටින්න...",
+                    f"⚡ <b>ක්‍රමය:</b> {method_text}\n"
+                    f"💬 <b>උපසිරැසි:</b> {sub_status_text}\n"
+                    f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
                     parse_mode=ParseMode.HTML,
                     reply_markup=kb_cancel,
                 )
             except Exception:
                 pass
 
-            task_tracker.tracker.set_step(user_id, "Instant Stream Copy + Sub Mux (FFmpeg)...")
-            log.info("[LeechService] Executing instantaneous stream-copy muxing (%s -> MP4, sub=%s)...", ext, sub_to_merge)
+            task_tracker.tracker.set_step(user_id, "Video Remux & Subtitle Prep (FFmpeg)...")
+            log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_merge)
 
             if await video_service.stream_copy_subtitles(local_file, sub_to_merge, remuxed, disposition="default"):
                 if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):

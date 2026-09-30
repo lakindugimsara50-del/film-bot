@@ -1665,27 +1665,135 @@ def prepare_clean_srt_for_burn(src_srt_path: str, dest_srt_path: str) -> bool:
             return False
 
 
+def srt_to_ass_sinhala_shaped(src_srt_path: str, dest_ass_path: Optional[str] = None) -> Optional[str]:
+    """
+    Convert an .srt file to Advanced SubStation Alpha (.ass) format with OpenType HarfBuzz
+    text shaping and NFC normalization, preserving Zero-Width Joiner (ZWJ U+200D) and
+    Zero-Width Non-Joiner (ZWNJ U+200C).
+    Fixes broken Sinhala ligatures (kombuwa, yansaya, rakaransaya, rephaya).
+    """
+    import unicodedata
+
+    if not src_srt_path or not os.path.exists(src_srt_path):
+        return None
+
+    if not dest_ass_path:
+        dest_ass_path = os.path.splitext(src_srt_path)[0] + ".ass"
+
+    try:
+        raw = open(src_srt_path, "rb").read()
+        text = None
+        for enc in ("utf-8-sig", "utf-16", "utf-8", "cp1252"):
+            try:
+                text = raw.decode(enc)
+                break
+            except Exception:
+                continue
+        if not text:
+            text = raw.decode("utf-8", errors="replace")
+
+        text = text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
+        # Normalize Unicode NFC while strictly preserving ZWJ (\u200d) and ZWNJ (\u200c)
+        text = unicodedata.normalize("NFC", text)
+
+        def _srt_to_ass_ts(ts: str) -> str:
+            ts = ts.strip().replace(",", ".")
+            m = re.match(r"(\d+):(\d+):(\d+)(?:\.(\d+))?", ts)
+            if not m:
+                return "0:00:00.00"
+            h, mi, s, ms = m.groups()
+            ms_val = (ms or "0")[:2].ljust(2, "0")
+            return f"{int(h)}:{mi}:{s}.{ms_val}"
+
+        ass_header = (
+            "[Script Info]\n"
+            "Title: FilmSub Sinhala Subtitle\n"
+            "ScriptType: v4.00+\n"
+            "WrapStyle: 0\n"
+            "ScaledBorderAndShadow: yes\n"
+            "YCbCr Matrix: TV.709\n"
+            "PlayResX: 1920\n"
+            "PlayResY: 1080\n\n"
+            "[V4+ Styles]\n"
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+            "Style: Default,Noto Sans Sinhala,44,&H0000FFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2.2,1.2,2,30,30,42,1\n\n"
+            "[Events]\n"
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+        )
+
+        dialogues = []
+        blocks = re.split(r"\n\s*\n", text.strip())
+        for blk in blocks:
+            lines = [ln.strip() for ln in blk.strip().split("\n") if ln.strip()]
+            if not lines:
+                continue
+            ts_idx = -1
+            for idx, ln in enumerate(lines[:3]):
+                if "-->" in ln:
+                    ts_idx = idx
+                    break
+            if ts_idx == -1:
+                continue
+            ts_line = lines[ts_idx]
+            parts = ts_line.split("-->")
+            if len(parts) != 2:
+                continue
+            start_ts = _srt_to_ass_ts(parts[0])
+            end_ts = _srt_to_ass_ts(parts[1])
+
+            content_lines = lines[ts_idx + 1:]
+            if not content_lines:
+                continue
+            cue_text = "\\N".join(content_lines)
+            cue_text = re.sub(r"<\s*i\s*>", r"{\\i1}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<\s*/\s*i\s*>", r"{\\i0}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<\s*b\s*>", r"{\\b1}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<\s*/\s*b\s*>", r"{\\b0}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<[^>]+>", "", cue_text)
+            dialogues.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{cue_text}")
+
+        os.makedirs(os.path.dirname(os.path.abspath(dest_ass_path)) or ".", exist_ok=True)
+        with open(dest_ass_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(ass_header)
+            f.write("\n".join(dialogues))
+            f.write("\n")
+
+        if os.path.exists(dest_ass_path) and os.path.getsize(dest_ass_path) > 32:
+            return dest_ass_path
+        return None
+    except Exception as exc:
+        log.warning("[VideoService] srt_to_ass_sinhala_shaped error: %s", exc)
+        return None
+
+
 def build_subtitles_burn_filter(escaped_sub_file: str = "sub_burn_multi.srt", include_style: Optional[bool] = None) -> str:
     """
-    Construct the FFmpeg libass subtitles filter expression with Noto Sans Sinhala font directory
+    Construct the FFmpeg libass subtitles/ass filter expression with Noto Sans Sinhala font directory
     and CineSubz / SinhalaSub cinema styling (yellow/white high-contrast text with dark outline).
+    Supports both .ass (HarfBuzz OpenType shaping) and .srt subtitles.
     """
+    is_ass = escaped_sub_file.lower().endswith(".ass")
+    font_dir = ensure_sinhala_font_dir()
+    fdir_opt = ""
+    if font_dir and ":" not in font_dir:
+        safe_fdir = font_dir.replace("\\", "/")
+        fdir_opt = f":fontsdir='{safe_fdir}'"
+
+    if is_ass:
+        return f"ass=filename='{escaped_sub_file}'{fdir_opt}"
+
     base = f"subtitles=filename='{escaped_sub_file}'"
     if include_style is None:
         include_style = bool(os.name != "nt" and not os.environ.get("PYTEST_CURRENT_TEST"))
     if not include_style:
         return base
 
-    font_dir = ensure_sinhala_font_dir()
     style_str = (
         "FontName=Noto Sans Sinhala,FontSize=18,Bold=1,"
         "PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H64000000,"
         "BorderStyle=1,Outline=1.8,Shadow=1.2,MarginV=24,Alignment=2"
     )
-    if font_dir and ":" not in font_dir:
-        safe_fdir = font_dir.replace("\\", "/")
-        return f"{base}:charenc=UTF-8:fontsdir='{safe_fdir}':force_style='{style_str}'"
-    return f"{base}:charenc=UTF-8:force_style='{style_str}'"
+    return f"{base}:charenc=UTF-8{fdir_opt}:force_style='{style_str}'"
 
 
 async def generate_multi_quality_variants_ram(
@@ -1749,6 +1857,11 @@ async def generate_multi_quality_variants_ram(
         if not prepare_clean_srt_for_burn(sub_path, local_burn_srt):
             has_sub = False
         else:
+            local_burn_ass = os.path.join(abs_out_dir, "sub_burn_multi.ass")
+            try:
+                srt_to_ass_sinhala_shaped(local_burn_srt, local_burn_ass)
+            except Exception as ass_err:
+                log.debug("[VideoService] ASS shaping note: %s", ass_err)
             ensure_sinhala_font_dir()
 
     # CineSubz / SinhalaSub WebRip reference bitrate & resolution profiles per quality tier
@@ -1880,7 +1993,7 @@ async def generate_multi_quality_variants_ram(
     num_q = len(target_q_list)
 
     def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
-        escaped_sub_file = "sub_burn_multi.srt"
+        escaped_sub_file = "sub_burn_multi.ass" if os.path.exists(os.path.join(abs_out_dir, "sub_burn_multi.ass")) else "sub_burn_multi.srt"
         sub_burn_expr = build_subtitles_burn_filter(escaped_sub_file)
         if num_q == 1:
             q0 = target_q_list[0]

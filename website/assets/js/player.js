@@ -2123,6 +2123,11 @@ function renderPlayerFallback(playerEl, movie) {
     vjsPlayer = null;
   }
 
+  if (window.fallbackRetryInterval) {
+    clearInterval(window.fallbackRetryInterval);
+    window.fallbackRetryInterval = null;
+  }
+
   let countdownSec = 8;
   let countdownTimer = null;
 
@@ -2150,10 +2155,9 @@ function renderPlayerFallback(playerEl, movie) {
       </div>
     </div>`;
 
-  let retryInterval = null;
   const doRetry = async () => {
     if (countdownTimer) clearInterval(countdownTimer);
-    if (retryInterval) clearInterval(retryInterval);
+    if (window.fallbackRetryInterval) clearInterval(window.fallbackRetryInterval);
     FilmSub.showToast('⚡ Stream server නැවත සම්බන්ධ වෙමින් පවතී...', 'info');
     try {
       sessionStorage.removeItem('filmsub_stream_base');
@@ -2176,10 +2180,11 @@ function renderPlayerFallback(playerEl, movie) {
     }
   }, 1000);
 
-  retryInterval = setInterval(async () => {
+  window.fallbackRetryInterval = setInterval(async () => {
     const alive = await probeStreamServerHealth(activeStreamBaseUrl || '');
     if (alive) {
-      clearInterval(retryInterval);
+      clearInterval(window.fallbackRetryInterval);
+      window.fallbackRetryInterval = null;
       if (countdownTimer) clearInterval(countdownTimer);
       FilmSub.showToast('⚡ Stream Server Online! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
       loadStream(movie, 0); // restart Super Player
@@ -2241,41 +2246,50 @@ function syncSubtitles() {
 }
 
 async function loadStream(movie, idx) {
-  const streams = getMovieStreams(movie);
-  if (!streams[idx]) return;
-  const stream = streams[idx];
-  currentStreamIdx = idx;
-
-  // Keep server tabs in sync automatically
-  const tabsEl = document.getElementById('server-tabs');
-  if (tabsEl) {
-    tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
-    const btn = tabsEl.querySelector(`button[data-type="stream"][data-index="${idx}"]`);
-    if (btn) btn.classList.add('active');
-  }
-
-  const playerEl = document.getElementById('video-player-container');
-  if (!playerEl) return;
-
-  if (stream.mode === 'super_chunk' || (!stream.embed && stream.stream_url)) {
-    // PRE-FLIGHT: Quick 2s tunnel probe BEFORE creating VJS player
-    // This prevents the 18-second frozen loader when Colab is offline
-    const tunnelAlive = await probeStreamServerHealth(activeStreamBaseUrl || '');
-    if (!tunnelAlive && streams.length > 1) {
-      // Colab offline — skip straight to VIP Server 2 (embed player)
-      FilmSub.showToast('⚡ Stream Server (Colab) offline. VIP Player 1 ලෙස ස්වයංක්‍රීයව මාරු විය!', 'info');
-      currentStreamIdx = 1;
-      loadStream(movie, 1);
-      return;
+  try {
+    if (window.fallbackRetryInterval) {
+      clearInterval(window.fallbackRetryInterval);
+      window.fallbackRetryInterval = null;
     }
-    if (vjsPlayer) {
-      try { vjsPlayer.dispose(); } catch (e) {}
-      vjsPlayer = null;
+
+    const streams = getMovieStreams(movie);
+    if (!streams[idx]) return;
+    const stream = streams[idx];
+    currentStreamIdx = idx;
+
+    // Keep server tabs in sync automatically
+    const tabsEl = document.getElementById('server-tabs');
+    if (tabsEl) {
+      tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
+      const btn = tabsEl.querySelector(`button[data-type="stream"][data-index="${idx}"]`);
+      if (btn) btn.classList.add('active');
     }
-    isTrailerActive = false;
-    createVjsPlayer(playerEl, stream, movie);
-  } else {
-    renderStreamEmbed(playerEl, stream, movie);
+
+    const playerEl = document.getElementById('video-player-container');
+    if (!playerEl) return;
+
+    if (stream.mode === 'super_chunk' || (!stream.embed && stream.stream_url)) {
+      // PRE-FLIGHT: Quick 2s tunnel probe BEFORE creating VJS player
+      // This prevents the 18-second frozen loader when Colab is offline
+      const tunnelAlive = await probeStreamServerHealth(activeStreamBaseUrl || '');
+      if (!tunnelAlive && streams.length > 1) {
+        // Colab offline — skip straight to VIP Server 2 (embed player)
+        FilmSub.showToast('⚡ Stream Server (Colab) offline. VIP Player 1 ලෙස ස්වයංක්‍රීයව මාරු විය!', 'info');
+        currentStreamIdx = 1;
+        loadStream(movie, 1);
+        return;
+      }
+      if (vjsPlayer) {
+        try { vjsPlayer.dispose(); } catch (e) {}
+        vjsPlayer = null;
+      }
+      isTrailerActive = false;
+      createVjsPlayer(playerEl, stream, movie);
+    } else {
+      renderStreamEmbed(playerEl, stream, movie);
+    }
+  } catch (err) {
+    console.error('loadStream error:', err);
   }
 }
 

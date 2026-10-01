@@ -403,6 +403,10 @@ async def find_all_candidates(
 
     # Priority 1: Prepend same-site matched candidates (0.0ms subtitle drift guaranteed)
     if matched_candidates:
+        if is_series or season is not None or episode is not None:
+            matched_candidates.sort(key=lambda c: 0 if "720" in str(c.quality) else (1 if "1080" in str(c.quality) else 2))
+        else:
+            matched_candidates.sort(key=lambda c: 0 if "1080" in str(c.quality) else (1 if "720" in str(c.quality) else 2))
         candidates = matched_candidates + [c for c in candidates if c not in matched_candidates]
 
     log.info("[LeechService] Total candidates acquired: %d (same-site matched: %d)", len(candidates), len(matched_candidates))
@@ -758,6 +762,19 @@ async def _execute_leech(
         # ── Step 2: Download with Multi-Method Fallback ────────────────────────
         chosen_candidate: Optional[LeechCandidate] = None
         pre_downloaded_variants: dict[str, str] = {}
+        variant_files: dict[str, str] = {}
+        variant_tg_info: dict[str, dict] = {}
+        variant_cloud_urls: dict[str, dict[str, Any]] = {}
+        file_id = ""
+        stream_url = ""
+        message_id = 0
+        ENABLE_TELEGRAM_VIDEO_UPLOAD = True
+        target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
+        ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
+        slug = f"{_slugify(title, year)}{ep_suffix}"
+        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        site_url = f"{base_site}/movie.html?id={slug}"
+
         if not temp_dir:
             temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
@@ -1059,105 +1076,206 @@ async def _execute_leech(
 
                     if companion_candidates:
                         log.info(
-                            "[LeechService] Step 2: Downloading primary %s AND companions %s in PARALLEL from %s...",
+                            "[LeechService] Step 2: Launching Pipelined Multi-Quality Concurrent Download & Upload for %s + %s from %s...",
                             candidate.quality, list(companion_candidates.keys()), cand_portal or cand_host
                         )
 
+                        target_qualities = {candidate.quality: candidate, **companion_candidates}
                         companion_progress: dict[str, dict] = {
-                            candidate.quality: {
-                                "pct": 0.0, "done": "0B", "total": "Unknown", "speed": "0B/s", "eta": "N/A"
+                            q: {
+                                "stage": "downloading",
+                                "dl_pct": 0.0,
+                                "dl_done": "0B",
+                                "dl_total": "Unknown",
+                                "dl_speed": "0B/s",
+                                "dl_eta": "N/A",
+                                "up_pct": 0.0,
+                                "up_done": "0B",
+                                "up_total": "0B",
+                                "up_speed": "0B/s",
+                                "up_eta": "N/A",
+                                "msg_id": 0,
+                                "size": "Unknown",
                             }
+                            for q in target_qualities
                         }
-                        for cq in companion_candidates:
-                            companion_progress[cq] = {
-                                "pct": 0.0, "done": "0B", "total": "Unknown", "speed": "0B/s", "eta": "N/A"
-                            }
 
-                        async def _update_multi_dl_display() -> None:
+                        async def _update_multi_dl_display(force: bool = False) -> None:
                             nonlocal last_edit_time
                             now = time.time()
-                            if (now - last_edit_time < 2.5):
+                            if not force and (now - last_edit_time < 2.5):
                                 return
                             last_edit_time = now
 
                             _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
                             lines = [
-                                f"📥 <b>පියවර 2/4: {_env_name} වෙත Parallel Multi-Quality බාගත කරමින්...</b>\n",
+                                f"⚡ <b>Multi-Quality Parallel Pipeline ({cand_portal or cand_host}) ➔ {_env_name}</b>\n",
                                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",
-                                f"⚡ <b>මූලාශ්‍රය:</b> {cand_portal or cand_host} (Matched Releases)\n",
+                                f"🌐 <b>Website:</b> <a href='{site_url}'>filmsub.pages.dev</a>\n",
                             ]
                             for q_name, q_data in companion_progress.items():
-                                q_pct = q_data.get("pct", 0.0)
-                                q_pbar = downloader.format_progress_bar(q_pct)
-                                if q_pct >= 100.0:
-                                    lines.append(f"• <b>{q_name}:</b> {q_pbar} 100% ({q_data.get('done', 'OK')}) ✅ <i>බාගත විය (Ready)</i>")
-                                else:
+                                st = q_data.get("stage", "downloading")
+                                if st == "downloading":
+                                    pct = q_data.get("dl_pct", 0.0)
+                                    pbar = downloader.format_progress_bar(pct)
                                     lines.append(
-                                        f"• <b>{q_name}:</b> {q_pbar} {q_pct:.1f}% ({q_data.get('done', '0B')}/{q_data.get('total', '0B')}) "
-                                        f"⚡ {q_data.get('speed', '0B/s')} | ⏱ {q_data.get('eta', 'N/A')}"
+                                        f"• <b>{q_name}:</b> {pbar} {pct:.1f}% ({q_data.get('dl_done', '0B')}/{q_data.get('dl_total', '0B')}) "
+                                        f"⚡ {q_data.get('dl_speed', '0B/s')} | ⏱ {q_data.get('dl_eta', 'N/A')} 📥 <i>(බාගත වෙමින්)</i>"
                                     )
-                            lines.append(f"\n☁️ <i>{_env_name} High-Speed Parallel Bandwidth (ඔබේ Data නොයයි)</i>")
+                                elif st == "muxing":
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> [██████████] 100% 🇱🇰 <i>(සිංහල උපසිරැසි Fast-Mux...)</i>"
+                                    )
+                                elif st == "uploading":
+                                    pct = q_data.get("up_pct", 0.0)
+                                    pbar = downloader.format_progress_bar(pct)
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> {pbar} {pct:.1f}% ({q_data.get('up_done', '0B')}/{q_data.get('up_total', '0B')}) "
+                                        f"⚡ {q_data.get('up_speed', '0B/s')} | ⏱ {q_data.get('up_eta', 'N/A')} 🚀 <i>(Telegram Upload...)</i>"
+                                    )
+                                elif st == "uploaded":
+                                    msg_id_val = q_data.get("msg_id", 0)
+                                    msg_tag = f" • Msg #{msg_id_val}" if msg_id_val else ""
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> [██████████] 100% ({q_data.get('size', 'OK')}) ✅ <i>(Telegram HD Uploaded{msg_tag})</i>"
+                                    )
+                                elif st == "failed":
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> ⚠️ <i>Direct Link අසාර්ථකයි (Auto Fallback)</i>"
+                                    )
+
+                            lines.append(f"\n☁️ <i>{_env_name} High-Speed Bandwidth • Multi-Session Direct Streaming</i>")
                             try:
                                 await status_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
                             except Exception as e:
                                 log.debug("[LeechService] Multi progress edit ignored: %s", e)
 
-                        def _make_comp_progress(comp_q_name: str):
-                            async def _comp_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
-                                companion_progress[comp_q_name] = {
-                                    "pct": pct, "done": done_str, "total": total_str, "speed": speed_str, "eta": eta_str
-                                }
+                        cand_is_hardsub = bool(
+                            (candidate.extra and candidate.extra.get("is_already_hardsubbed"))
+                            or any(k in str(candidate.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                            or (candidate.extra and any(k in str(candidate.extra.get("portal", "")).lower() for k in ("sinhalasub", "cinesubz")))
+                        )
+                        active_sub_to_mux = None if cand_is_hardsub else (pre_sub_srt if (pre_sub_srt and os.path.exists(pre_sub_srt)) else None)
+
+                        async def _run_single_quality_pipeline(q_name: str, cand_obj: LeechCandidate, is_primary_flag: bool):
+                            v_clean_name = f"{slug}-{q_name}.mp4"
+
+                            async def _dl_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                                companion_progress[q_name].update({
+                                    "stage": "downloading",
+                                    "dl_pct": pct,
+                                    "dl_done": done_str,
+                                    "dl_total": total_str,
+                                    "dl_speed": speed_str,
+                                    "dl_eta": eta_str,
+                                })
                                 await _update_multi_dl_display()
-                            return _comp_cb
 
-                        async def _primary_multi_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
-                            companion_progress[candidate.quality] = {
-                                "pct": pct, "done": done_str, "total": total_str, "speed": speed_str, "eta": eta_str
-                            }
-                            await _update_multi_dl_display()
-
-                        async def _dl_companion_file(comp_q: str, comp_cand: LeechCandidate) -> Optional[tuple[str, str]]:
-                            v_clean_name = f"{_slugify(title, year)}{ep_sfx}-{comp_q}.mp4"
+                            # 1. Download directly from high-speed portal CDN
                             c_dl = await downloader.download_http(
-                                url=comp_cand.source_url,
+                                url=cand_obj.source_url,
                                 dest_dir=temp_dir,
                                 filename=v_clean_name,
-                                task_key=f"{task_key}_{comp_q}",
-                                progress_callback=_make_comp_progress(comp_q),
+                                task_key=f"{task_key}_{q_name}",
+                                progress_callback=_dl_cb,
                             )
-                            if c_dl and downloader.is_valid_downloaded_video(c_dl):
-                                fs_out = os.path.join(temp_dir, f"fs_{_slugify(title, year)}{ep_sfx}_{comp_q}.mp4")
-                                if await video_service.apply_faststart(c_dl, fs_out):
+                            if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
+                                companion_progress[q_name]["stage"] = "failed"
+                                await _update_multi_dl_display(force=True)
+                                log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
+                                return None
+
+                            # 2. Faststart remux
+                            fs_out = os.path.join(temp_dir, f"fs_{slug}_{q_name}.mp4")
+                            if await video_service.apply_faststart(c_dl, fs_out):
+                                try:
+                                    os.remove(c_dl)
+                                except Exception:
+                                    pass
+                                c_dl = fs_out
+
+                            # 3. Fast stream-copy subtitle mux (~1s) if needed and not already hardsubbed
+                            if active_sub_to_mux and os.path.exists(active_sub_to_mux):
+                                companion_progress[q_name]["stage"] = "muxing"
+                                await _update_multi_dl_display(force=True)
+                                sub_out = os.path.join(temp_dir, f"subbed_{slug}_{q_name}.mp4")
+                                if await video_service.stream_copy_subtitles(c_dl, active_sub_to_mux, sub_out):
                                     try:
                                         os.remove(c_dl)
                                     except Exception:
                                         pass
-                                    c_dl = fs_out
-                                companion_progress[comp_q] = {
-                                    "pct": 100.0, "done": downloader.format_bytes(os.path.getsize(c_dl)),
-                                    "total": downloader.format_bytes(os.path.getsize(c_dl)), "speed": "", "eta": "Ready"
-                                }
-                                await _update_multi_dl_display()
-                                log.info("[LeechService] Step 2 companion variant %s downloaded in parallel: %s (%s)", comp_q, c_dl, downloader.format_bytes(os.path.getsize(c_dl)))
-                                return (comp_q, c_dl)
-                            return None
+                                    c_dl = sub_out
 
-                        primary_dl_task = downloader.download_http(
-                            url=candidate.source_url,
-                            dest_dir=temp_dir,
-                            filename=clean_name,
-                            task_key=task_key,
-                            progress_callback=_primary_multi_progress,
-                        )
-                        comp_tasks = [
-                            _dl_companion_file(cq, cc)
-                            for cq, cc in companion_candidates.items()
+                            c_size_bytes = os.path.getsize(c_dl)
+                            c_size_str = downloader.format_bytes(c_size_bytes)
+                            companion_progress[q_name].update({
+                                "stage": "uploading",
+                                "dl_pct": 100.0,
+                                "size": c_size_str,
+                                "up_pct": 0.0,
+                                "up_done": "0B",
+                                "up_total": c_size_str,
+                                "up_speed": "--",
+                                "up_eta": "--",
+                            })
+                            await _update_multi_dl_display(force=True)
+
+                            # 4. Immediate Upload to Telegram Channel (PIPELINED - NO BLOCKING OTHER QUALITIES!)
+                            async def _up_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                                companion_progress[q_name].update({
+                                    "stage": "uploading",
+                                    "up_pct": pct,
+                                    "up_done": done_str,
+                                    "up_total": total_str,
+                                    "up_speed": speed_str,
+                                    "up_eta": eta_str,
+                                })
+                                await _update_multi_dl_display()
+
+                            up_res = {}
+                            if ENABLE_TELEGRAM_VIDEO_UPLOAD and target_channel:
+                                from services.upload_pool import upload_pool
+                                var_caption = f"🎬 {display_title} [{q_name}]\n\n⚡ Quality: {q_name} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
+                                up_res = await upload_pool.upload_with_pool(
+                                    file_path=c_dl,
+                                    target_chat=target_channel,
+                                    quality=q_name,
+                                    caption=var_caption,
+                                    file_name=os.path.basename(c_dl),
+                                    progress_callback=_up_cb,
+                                    fallback_client=client,
+                                )
+
+                            up_msg_id = up_res.get("message_id", 0) if up_res else 0
+                            companion_progress[q_name].update({
+                                "stage": "uploaded",
+                                "up_pct": 100.0,
+                                "msg_id": up_msg_id,
+                                "size": c_size_str,
+                            })
+                            await _update_multi_dl_display(force=True)
+                            log.info("[LeechService] Pipeline quality %s successfully downloaded & uploaded (msg_id=%s, size=%s)", q_name, up_msg_id, c_size_str)
+                            return (q_name, c_dl, up_res)
+
+                        pipe_tasks = [
+                            _run_single_quality_pipeline(q, c_obj, is_primary_flag=(q == candidate.quality))
+                            for q, c_obj in target_qualities.items()
                         ]
-                        all_dl_results = await asyncio.gather(primary_dl_task, *comp_tasks, return_exceptions=True)
-                        local_file = all_dl_results[0] if (all_dl_results and isinstance(all_dl_results[0], str)) else None
-                        for r in all_dl_results[1:]:
-                            if isinstance(r, tuple) and len(r) == 2 and r[0] and r[1]:
-                                pre_downloaded_variants[r[0]] = r[1]
+                        pipe_results = await asyncio.gather(*pipe_tasks, return_exceptions=True)
+
+                        for r in pipe_results:
+                            if isinstance(r, tuple) and len(r) == 3 and r[0] and r[1]:
+                                q_id, q_path, q_up = r
+                                variant_files[q_id] = q_path
+                                pre_downloaded_variants[q_id] = q_path
+                                if q_up and q_up.get("file_id"):
+                                    variant_tg_info[q_id] = q_up
+                                if q_id == candidate.quality or not local_file:
+                                    local_file = q_path
+                                    if q_up:
+                                        file_id = q_up.get("file_id", "")
+                                        stream_url = q_up.get("stream_url", "")
+                                        message_id = q_up.get("message_id", 0)
                     else:
                         local_file = await downloader.download_http(
                             url=candidate.source_url,
@@ -1618,7 +1736,7 @@ async def _execute_leech(
                 elif p_status == "failed":
                     p_line = f"❌ <b>{p_q} (Primary):</b> Upload අසාර්ථකයි"
                 elif p_status == "waiting":
-                    p_line = f"⏳ <b>{p_q} (Primary) Upload:</b> Multi-Quality සූදානම් වීමෙන් පසු Full Speed ආරම්භ වේ..."
+                    p_line = f"⏳ <b>{p_q} (Primary) Upload:</b> සූදානම් වෙමින්..."
                 else:
                     p_speed = dashboard_state["primary_speed"]
                     p_eta = dashboard_state["primary_eta"]
@@ -1648,10 +1766,25 @@ async def _execute_leech(
                 else:
                     mq_line = f"⏳ <b>Multi-Quality ({mq_target}):</b> ක්‍රියාත්මක වෙමින්..."
 
-                v_status = dashboard_state["variant_status"]
-                v_q = dashboard_state["variant_q"]
                 v_line = ""
-                if v_status == "uploading" and v_q:
+                variants_map = dashboard_state.get("variants", {})
+                if variants_map:
+                    v_items = []
+                    for v_q, v_info in variants_map.items():
+                        v_st = v_info.get("status")
+                        if v_st == "uploading":
+                            v_pct = v_info.get("pct", 0.0)
+                            v_bar = downloader.format_progress_bar(v_pct)
+                            v_items.append(
+                                f"📦 <b>{v_q} Upload:</b> {v_bar} {v_pct:.1f}%\n"
+                                f"   ▫️ ප්‍රමාණය: {v_info.get('done', '0B')} / {v_info.get('total', '0B')} | ⚡ Speed: {v_info.get('speed', '--')} | ⏱ ETA: {v_info.get('eta', '--')}"
+                            )
+                        elif v_st == "complete":
+                            v_items.append(f"✅ <b>{v_q}:</b> Upload සම්පූර්ණයි (Telegram HD ✅)")
+                    if v_items:
+                        v_line = "\n" + "\n".join(v_items)
+                elif dashboard_state.get("variant_status") == "uploading" and dashboard_state.get("variant_q"):
+                    v_q = dashboard_state["variant_q"]
                     v_pct = dashboard_state["variant_pct"]
                     v_bar = downloader.format_progress_bar(v_pct)
                     v_speed = dashboard_state["variant_speed"]
@@ -1662,8 +1795,8 @@ async def _execute_leech(
                         f"\n📦 <b>{v_q} (Variant) Upload:</b> {v_bar} {v_pct:.1f}%\n"
                         f"   ▫️ ප්‍රමාණය: {v_done} / {v_total} | ⚡ Speed: {v_speed} | ⏱ ETA: {v_eta}"
                     )
-                elif v_status == "complete" and v_q:
-                    v_line = f"\n✅ <b>{v_q} (Variant):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
+                elif dashboard_state.get("variant_status") == "complete" and dashboard_state.get("variant_q"):
+                    v_line = f"\n✅ <b>{dashboard_state['variant_q']} (Variant):</b> Upload සම්පූර්ණයි (Telegram HD ✅)"
 
                 drive_line = ""
                 if getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
@@ -1717,6 +1850,16 @@ async def _execute_leech(
                 await _render_dashboard(force=False)
 
         async def _variant_upload_progress(q_label: str, pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
+            if "variants" not in dashboard_state:
+                dashboard_state["variants"] = {}
+            dashboard_state["variants"][q_label] = {
+                "status": "complete" if pct >= 100.0 else "uploading",
+                "pct": pct,
+                "done": done_str,
+                "total": total_str,
+                "speed": speed_str,
+                "eta": eta_str,
+            }
             dashboard_state["variant_q"] = q_label
             dashboard_state["variant_pct"] = pct
             dashboard_state["variant_done"] = done_str
@@ -2019,31 +2162,35 @@ async def _execute_leech(
         async def _task_upload_all_variants() -> None:
             nonlocal _mq_progress_str
             try:
-                if variant_files and ENABLE_TELEGRAM_VIDEO_UPLOAD:
-                    q_keys = "/".join(variant_files.keys())
+                pending_variants = {
+                    ql: qp for ql, qp in variant_files.items()
+                    if ql not in variant_tg_info and ql != primary_quality
+                }
+                if not pending_variants:
+                    log.info("[LeechService] All variants already uploaded. Zero pending uploads.")
+                    return
+                if ENABLE_TELEGRAM_VIDEO_UPLOAD:
+                    q_keys = "/".join(pending_variants.keys())
                     _mq_progress_str = f"{q_keys} Uploading to Telegram..."
                     from services.upload_pool import upload_pool
                     admin_Pool = await upload_pool.get_admin_sessions(target_channel) if str(target_channel).startswith("-100") else []
-                    if len(admin_Pool) >= 2 and len(variant_files) > 1:
+                    if len(admin_Pool) >= 2 and len(pending_variants) > 1:
                         await asyncio.gather(
                             *[
                                 _task_upload_tg_variant(ql, qp)
-                                for ql, qp in variant_files.items()
-                                if ql != primary_quality
+                                for ql, qp in pending_variants.items()
                             ],
                             return_exceptions=True,
                         )
                     else:
-                        for ql, qp in variant_files.items():
-                            if ql == primary_quality:
-                                continue
+                        for ql, qp in pending_variants.items():
                             await _task_upload_tg_variant(ql, qp)
                     _mq_progress_str = f"Telegram {q_keys} Upload Complete ✅"
 
-                if variant_files and getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
-                    q_keys = "/".join(variant_files.keys())
+                if getattr(config, "ENABLE_GDRIVE_UPLOAD", False):
+                    q_keys = "/".join(pending_variants.keys())
                     _mq_progress_str = f"{q_keys} Uploading to Drive..."
-                    for ql, qp in variant_files.items():
+                    for ql, qp in pending_variants.items():
                         await _task_upload_drive_variant(ql, qp)
                     _mq_progress_str = f"{q_keys} Drive Complete ✅"
             except Exception as v_up_err:
@@ -2052,6 +2199,16 @@ async def _execute_leech(
         async def _task_upload_telegram() -> None:
             nonlocal file_id, stream_url, message_id
             if not ENABLE_TELEGRAM_VIDEO_UPLOAD:
+                return
+            if primary_quality in variant_tg_info and variant_tg_info[primary_quality].get("file_id"):
+                up_res = variant_tg_info[primary_quality]
+                file_id = up_res.get("file_id", "")
+                stream_url = up_res.get("stream_url", "")
+                message_id = up_res.get("message_id", 0)
+                dashboard_state["primary_status"] = "complete"
+                dashboard_state["primary_pct"] = 100.0
+                await _render_dashboard(force=True)
+                log.info("[LeechService] Primary quality %s was already uploaded during parallel pipeline (msg_id=%s).", primary_quality, message_id)
                 return
             dashboard_state["primary_status"] = "uploading"
             await _render_dashboard(force=True)
@@ -2083,32 +2240,20 @@ async def _execute_leech(
                 await _render_dashboard(force=True)
                 log.error("[LeechService] Telegram upload failed: %s", tg_err)
 
-        # Phase A: Dedicated 100% CPU/GPU Multi-Quality Encoding (zero upload I/O contention)
-        await _task_encode_variants_only()
-
-        # Phase B: High-Speed Upload Phase
-        # If >= 2 distinct channel admin userbots are active, upload primary & variants in parallel across accounts;
-        # otherwise upload primary first then variants sequentially at 100% single-session bandwidth.
-        from services.upload_pool import upload_pool as _up_pool_ref
-        _active_admins = (
-            await _up_pool_ref.get_admin_sessions(target_channel)
-            if str(target_channel).startswith("-100") and _up_pool_ref.clients
-            else []
-        )
-        if len(_active_admins) >= 2:
-            await asyncio.gather(
-                _task_upload_drive_1080(),
-                _task_upload_telegram(),
-                _task_upload_all_variants(),
-                return_exceptions=True,
-            )
-        else:
-            await asyncio.gather(
-                _task_upload_drive_1080(),
-                _task_upload_telegram(),
-                return_exceptions=True,
-            )
+        # High-Speed Parallel Upload: Primary Telegram upload runs concurrently with Variant processing & Drive
+        async def _encode_and_upload_variants() -> None:
+            await _task_encode_variants_only()
             await _task_upload_all_variants()
+
+        dashboard_state["primary_status"] = "uploading"
+        await _render_dashboard(force=True)
+
+        await asyncio.gather(
+            _task_upload_telegram(),
+            _encode_and_upload_variants(),
+            _task_upload_drive_1080(),
+            return_exceptions=True,
+        )
 
         cloud_stream = cloud_upload_res.get("stream_url") if cloud_upload_res else ""
         cloud_download = cloud_upload_res.get("download_url") if cloud_upload_res else ""

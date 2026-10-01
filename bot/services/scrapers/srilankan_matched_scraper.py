@@ -186,18 +186,42 @@ async def _search_portal(
     p_name = portal["name"]
     candidate_posts: list[str] = []
     title_words = [w.lower() for w in clean_title.split() if len(w) > 2]
-    search_queries = [query]
-    if clean_title and clean_title not in search_queries:
-        search_queries.append(clean_title)
+    # For TV series, search clean_title first to match DooPlay TV show post titles
+    if season and episode:
+        search_queries = [clean_title]
+    else:
+        search_queries = [query]
+        if clean_title and clean_title not in search_queries:
+            search_queries.append(clean_title)
 
     for q_try in search_queries:
         if candidate_posts:
             break
-        # 1. Search via WP REST API if supported
-        if portal.get("wp_api"):
+
+        # 1. HTML search (/?s=) first: DooPlay/WordPress searches ALL post types (movies AND tvshows)
+        try:
+            s_url = f"{base_url.rstrip('/')}/?s={urllib.parse.quote_plus(q_try)}"
+            resp = await client.get(s_url, headers=HEADERS, timeout=6.0)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                selectors = [
+                    ".display-item a", ".item-box a", ".result-item a", "article a",
+                    "h2 a", "h3 a", ".entry-title a", ".post-title a", "main a",
+                ]
+                for a in soup.select(", ".join(selectors)):
+                    href = a.get("href", "")
+                    if href and base_url.split("//")[-1].split("/")[0] in href:
+                        if not any(ign in href for ign in ("/category/", "/tag/", "/author/", "/page/", "#", "wp-login")):
+                            if href not in candidate_posts:
+                                candidate_posts.append(href)
+        except Exception as e_html:
+            log.debug("[MatchedScraper] %s HTML search note: %s", p_name, e_html)
+
+        # 2. Fallback to WP REST API if HTML search found nothing
+        if not candidate_posts and portal.get("wp_api"):
             try:
                 api_url = f"{base_url.rstrip('/')}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q_try)}&per_page=6"
-                resp = await client.get(api_url, headers=HEADERS, timeout=8.0)
+                resp = await client.get(api_url, headers=HEADERS, timeout=6.0)
                 if resp.status_code == 200 and isinstance(resp.json(), list):
                     for p in resp.json():
                         link = p.get("link") or ""
@@ -206,26 +230,6 @@ async def _search_portal(
                             candidate_posts.append(link)
             except Exception as e_api:
                 log.debug("[MatchedScraper] %s WP API note: %s", p_name, e_api)
-
-        # 2. Fallback to HTML search (/?s=)
-        if not candidate_posts:
-            try:
-                s_url = f"{base_url.rstrip('/')}/?s={urllib.parse.quote_plus(q_try)}"
-                resp = await client.get(s_url, headers=HEADERS, timeout=8.0)
-                if resp.status_code == 200:
-                    soup = BeautifulSoup(resp.text, "html.parser")
-                    selectors = [
-                        ".display-item a", ".item-box a", ".result-item a", "article a",
-                        "h2 a", "h3 a", ".entry-title a", ".post-title a", "main a",
-                    ]
-                    for a in soup.select(", ".join(selectors)):
-                        href = a.get("href", "")
-                        if href and base_url.split("//")[-1].split("/")[0] in href:
-                            if not any(ign in href for ign in ("/category/", "/tag/", "/author/", "/page/", "#", "wp-login")):
-                                if href not in candidate_posts:
-                                    candidate_posts.append(href)
-            except Exception as e_html:
-                log.debug("[MatchedScraper] %s HTML search note: %s", p_name, e_html)
 
     found_candidates: list[dict] = []
 
@@ -311,8 +315,8 @@ async def _search_portal(
                 except Exception as sub_dl_err:
                     log.debug("[MatchedScraper] Subtitle download note: %s", sub_dl_err)
 
-            # If no subtitle was found on the post page, attempt fallback to subtitle_service
-            if not sub_srt_path:
+            # If no subtitle was found on the post page, attempt fallback to subtitle_service (skip for pre-hardsubbed portals)
+            if not sub_srt_path and p_name not in ("SinhalaSub", "CineSubz"):
                 try:
                     fallback_sub = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
                         clean_title, year, season=season, episode=episode, temp_dir=temp_dir
@@ -480,7 +484,7 @@ async def search_matched_srilankan_releases(
         return []
 
     if season and episode:
-        query = f"{clean_title} Season {season}"
+        query = clean_title
     elif year:
         query = f"{clean_title} {year}"
     else:
@@ -489,8 +493,8 @@ async def search_matched_srilankan_releases(
     log.info("[MatchedScraper] Querying Sri Lankan portals for matched video+sub for '%s'...", query)
 
     async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, verify=False) as client:
-        tasks = [
-            _search_portal(
+        task_objs = [
+            asyncio.create_task(_search_portal(
                 client=client,
                 portal=portal,
                 query=query,
@@ -499,14 +503,21 @@ async def search_matched_srilankan_releases(
                 season=season,
                 episode=episode,
                 temp_dir=temp_dir,
-            )
+            ))
             for portal in PORTALS
         ]
-        try:
-            results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=10.0)
-        except asyncio.TimeoutError:
-            log.warning("[MatchedScraper] Search exceeded 10.0s deadline, continuing with partial results...")
-            results = []
+        done, pending = await asyncio.wait(task_objs, timeout=18.0)
+        for p in pending:
+            p.cancel()
+
+        results = []
+        for d in done:
+            try:
+                res = d.result()
+                if isinstance(res, list):
+                    results.append(res)
+            except Exception as e_done:
+                log.debug("[MatchedScraper] Portal result note: %s", e_done)
 
     all_matched: list[dict] = []
     seen_urls: set[str] = set()

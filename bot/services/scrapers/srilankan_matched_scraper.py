@@ -98,7 +98,7 @@ async def resolve_srilankan_intermediate_link(
         if referer_url:
             req_headers["Referer"] = referer_url
 
-        resp = await client.get(link_url, headers=req_headers, timeout=10.0)
+        resp = await client.get(link_url, headers=req_headers, timeout=4.5)
         if resp.status_code != 200:
             return None
 
@@ -229,10 +229,10 @@ async def _search_portal(
 
     found_candidates: list[dict] = []
 
-    # 3. Inspect matched post pages
-    for post_url in candidate_posts[:4]:
+    # 3. Inspect top matched post pages (limit 2 for fast response)
+    for post_url in candidate_posts[:2]:
         try:
-            p_resp = await client.get(post_url, headers=HEADERS, timeout=10.0)
+            p_resp = await client.get(post_url, headers=HEADERS, timeout=5.0)
             if p_resp.status_code != 200:
                 continue
 
@@ -326,6 +326,7 @@ async def _search_portal(
             # B. Extract Video Download Links from table rows and anchors
             video_links: list[dict] = []
             seen_dl_urls: set[str] = set()
+            intermediate_to_resolve: list[tuple[str, str, str]] = []
 
             # 1. Check table rows (typical for SinhalaSub, DooPlay, ZetaFlix releases)
             for tr in soup.find_all("tr"):
@@ -341,16 +342,23 @@ async def _search_portal(
                         continue
 
                     q = detect_quality_from_context(tr_txt, h)
-                    resolved_url = await resolve_srilankan_intermediate_link(client, h, referer_url=current_target_url)
-                    if resolved_url and not any(ign in resolved_url for ign in ["telegram.me", "t.me"]):
-                        h_type = "cdn" if "cdn.sinhalasub" in resolved_url else ("pixeldrain" if "pixeldrain" in resolved_url else "ddl")
-                        video_links.append({
-                            "url": resolved_url,
-                            "original_url": h,
-                            "host_type": h_type,
-                            "quality": q,
-                            "context": tr_txt[:120],
-                        })
+                    matched_pat = False
+                    for h_type, pat in VIDEO_HOST_PATTERNS.items():
+                        m = pat.search(h)
+                        if m:
+                            matched_pat = True
+                            direct_url = resolve_direct_video_url(m.group(0))
+                            video_links.append({
+                                "url": direct_url,
+                                "original_url": m.group(0),
+                                "host_type": h_type,
+                                "quality": q,
+                                "context": tr_txt[:120],
+                            })
+                            break
+
+                    if not matched_pat and ("/links/" in h or "/api-" in h or "cinesubz" in h):
+                        intermediate_to_resolve.append((h, q, tr_txt))
 
             # 2. Check general anchors for direct video hosts or remaining intermediate links
             for a in soup.find_all("a", href=True):
@@ -364,6 +372,7 @@ async def _search_portal(
 
                 txt = a.get_text(" ", strip=True)
                 parent_txt = a.parent.get_text(" ", strip=True) if a.parent else ""
+                comb_txt = f"{txt} {parent_txt}"
 
                 # Check against known direct video patterns
                 matched_pat = False
@@ -371,31 +380,47 @@ async def _search_portal(
                     m = pat.search(h)
                     if m:
                         matched_pat = True
-                        matched_url = m.group(0)
-                        direct_url = resolve_direct_video_url(matched_url)
-                        q = detect_quality_from_context(f"{txt} {parent_txt}", h)
+                        direct_url = resolve_direct_video_url(m.group(0))
+                        q = detect_quality_from_context(comb_txt, h)
                         video_links.append({
                             "url": direct_url,
-                            "original_url": matched_url,
+                            "original_url": m.group(0),
                             "host_type": h_type,
                             "quality": q,
-                            "context": f"{txt} {parent_txt}"[:120],
+                            "context": comb_txt[:120],
                         })
                         break
 
-                # If not matched directly, check if it's an intermediate locker link
-                if not matched_pat and ("/links/" in h or "/api-" in h):
-                    resolved_url = await resolve_srilankan_intermediate_link(client, h, referer_url=current_target_url)
-                    if resolved_url and not any(ign in resolved_url for ign in ["telegram.me", "t.me"]):
-                        q = detect_quality_from_context(f"{txt} {parent_txt}", h)
-                        h_type = "cdn" if "cdn.sinhalasub" in resolved_url else ("pixeldrain" if "pixeldrain" in resolved_url else "ddl")
-                        video_links.append({
-                            "url": resolved_url,
-                            "original_url": h,
-                            "host_type": h_type,
-                            "quality": q,
-                            "context": f"{txt} {parent_txt}"[:120],
-                        })
+                # If not matched directly, queue intermediate locker link for parallel resolution
+                if not matched_pat and ("/links/" in h or "/api-" in h or "cinesubz" in h):
+                    q = detect_quality_from_context(comb_txt, h)
+                    intermediate_to_resolve.append((h, q, comb_txt))
+
+            # 3. Resolve all intermediate locker links concurrently (max 6 links, 4.5s timeout)
+            if intermediate_to_resolve:
+                async def _resolve_worker(item_h: str, item_q: str, item_ctx: str):
+                    try:
+                        resolved = await resolve_srilankan_intermediate_link(client, item_h, referer_url=current_target_url)
+                        if resolved and not any(ign in resolved for ign in ["telegram.me", "t.me"]):
+                            h_type = "cdn" if "cdn.sinhalasub" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
+                            return {
+                                "url": resolved,
+                                "original_url": item_h,
+                                "host_type": h_type,
+                                "quality": item_q,
+                                "context": item_ctx[:120],
+                            }
+                    except Exception:
+                        pass
+                    return None
+
+                resolved_items = await asyncio.gather(
+                    *[_resolve_worker(h, q, ctx) for h, q, ctx in intermediate_to_resolve[:6]],
+                    return_exceptions=True,
+                )
+                for item in resolved_items:
+                    if isinstance(item, dict) and item.get("url"):
+                        video_links.append(item)
 
             # Package found video links as top-priority candidates
             for vl in video_links:
@@ -463,7 +488,7 @@ async def search_matched_srilankan_releases(
 
     log.info("[MatchedScraper] Querying Sri Lankan portals for matched video+sub for '%s'...", query)
 
-    async with httpx.AsyncClient(timeout=12.0, follow_redirects=True, verify=False) as client:
+    async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, verify=False) as client:
         tasks = [
             _search_portal(
                 client=client,
@@ -477,7 +502,11 @@ async def search_matched_srilankan_releases(
             )
             for portal in PORTALS
         ]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        try:
+            results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=10.0)
+        except asyncio.TimeoutError:
+            log.warning("[MatchedScraper] Search exceeded 10.0s deadline, continuing with partial results...")
+            results = []
 
     all_matched: list[dict] = []
     seen_urls: set[str] = set()

@@ -221,7 +221,6 @@ async def _download_aria2c_http(
         "--file-allocation=none",
         "--disk-cache=128M" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "--disk-cache=64M",
         "--continue=true",
-        "--conditional-get=true",
         "--timeout=30",
         "--connect-timeout=15",
         "--max-tries=5",
@@ -373,6 +372,27 @@ async def _download_httpx(
                     out_name = cd_m.group(1).strip()
         except Exception:
             pass
+
+        # If HEAD didn't yield file size, perform a 1-byte Range probe (works on CDNs blocking HEAD)
+        if total_size <= 0:
+            try:
+                probe_headers = dict(headers)
+                probe_headers["Range"] = "bytes=0-0"
+                p_resp = await client.get(url, headers=probe_headers, timeout=8.0)
+                if p_resp.status_code == 206:
+                    cr = p_resp.headers.get("content-range", "")
+                    m_cr = re.search(r"/(\d+)$", cr)
+                    if m_cr:
+                        total_size = int(m_cr.group(1))
+                        accept_ranges = True
+                    cd = p_resp.headers.get("content-disposition", "")
+                    cd_m = re.search(r'filename="?([^";]+)"?', cd)
+                    if cd_m and not out_name:
+                        out_name = cd_m.group(1).strip()
+                elif p_resp.status_code == 200:
+                    total_size = int(p_resp.headers.get("content-length", 0))
+            except Exception:
+                pass
 
     if not out_name:
         out_name = url.split("/")[-1].split("?")[0] or "movie.mp4"

@@ -219,15 +219,11 @@ async def stream_channel_message(
     start, end = _parse_range(range_header, file_size)
     explicit_end = _is_explicit_end(range_header)
 
-    # Pre-buffering: Serve at least 8 MiB per response for open-ended requests
-    # so the browser pre-buffers fast without stalling.
-    # For explicit closed ranges (e.g. Safari probe 'bytes=0-1'), preserve the requested end
-    # so Safari / iOS doesn't fail RFC 7233 range verification.
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
     if dl == 1:
-        # Full file one-click download: do not truncate range unless client sent an explicit Range
+        # Full file one-click download: serve entire remaining file unless client gave an explicit range
         if not range_header:
             start = 0
             end = file_size - 1

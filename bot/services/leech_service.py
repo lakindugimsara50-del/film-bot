@@ -1063,6 +1063,59 @@ async def _execute_leech(
                             candidate.quality, list(companion_candidates.keys()), cand_portal or cand_host
                         )
 
+                        companion_progress: dict[str, dict] = {
+                            candidate.quality: {
+                                "pct": 0.0, "done": "0B", "total": "Unknown", "speed": "0B/s", "eta": "N/A"
+                            }
+                        }
+                        for cq in companion_candidates:
+                            companion_progress[cq] = {
+                                "pct": 0.0, "done": "0B", "total": "Unknown", "speed": "0B/s", "eta": "N/A"
+                            }
+
+                        async def _update_multi_dl_display() -> None:
+                            nonlocal last_edit_time
+                            now = time.time()
+                            if (now - last_edit_time < 2.5):
+                                return
+                            last_edit_time = now
+
+                            _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
+                            lines = [
+                                f"📥 <b>පියවර 2/4: {_env_name} වෙත Parallel Multi-Quality බාගත කරමින්...</b>\n",
+                                f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",
+                                f"⚡ <b>මූලාශ්‍රය:</b> {cand_portal or cand_host} (Matched Releases)\n",
+                            ]
+                            for q_name, q_data in companion_progress.items():
+                                q_pct = q_data.get("pct", 0.0)
+                                q_pbar = downloader.format_progress_bar(q_pct)
+                                if q_pct >= 100.0:
+                                    lines.append(f"• <b>{q_name}:</b> {q_pbar} 100% ({q_data.get('done', 'OK')}) ✅ <i>බාගත විය (Ready)</i>")
+                                else:
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> {q_pbar} {q_pct:.1f}% ({q_data.get('done', '0B')}/{q_data.get('total', '0B')}) "
+                                        f"⚡ {q_data.get('speed', '0B/s')} | ⏱ {q_data.get('eta', 'N/A')}"
+                                    )
+                            lines.append(f"\n☁️ <i>{_env_name} High-Speed Parallel Bandwidth (ඔබේ Data නොයයි)</i>")
+                            try:
+                                await status_msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+                            except Exception as e:
+                                log.debug("[LeechService] Multi progress edit ignored: %s", e)
+
+                        def _make_comp_progress(comp_q_name: str):
+                            async def _comp_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                                companion_progress[comp_q_name] = {
+                                    "pct": pct, "done": done_str, "total": total_str, "speed": speed_str, "eta": eta_str
+                                }
+                                await _update_multi_dl_display()
+                            return _comp_cb
+
+                        async def _primary_multi_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                            companion_progress[candidate.quality] = {
+                                "pct": pct, "done": done_str, "total": total_str, "speed": speed_str, "eta": eta_str
+                            }
+                            await _update_multi_dl_display()
+
                         async def _dl_companion_file(comp_q: str, comp_cand: LeechCandidate) -> Optional[tuple[str, str]]:
                             v_clean_name = f"{_slugify(title, year)}{ep_sfx}-{comp_q}.mp4"
                             c_dl = await downloader.download_http(
@@ -1070,6 +1123,7 @@ async def _execute_leech(
                                 dest_dir=temp_dir,
                                 filename=v_clean_name,
                                 task_key=f"{task_key}_{comp_q}",
+                                progress_callback=_make_comp_progress(comp_q),
                             )
                             if c_dl and downloader.is_valid_downloaded_video(c_dl):
                                 fs_out = os.path.join(temp_dir, f"fs_{_slugify(title, year)}{ep_sfx}_{comp_q}.mp4")
@@ -1079,6 +1133,11 @@ async def _execute_leech(
                                     except Exception:
                                         pass
                                     c_dl = fs_out
+                                companion_progress[comp_q] = {
+                                    "pct": 100.0, "done": downloader.format_bytes(os.path.getsize(c_dl)),
+                                    "total": downloader.format_bytes(os.path.getsize(c_dl)), "speed": "", "eta": "Ready"
+                                }
+                                await _update_multi_dl_display()
                                 log.info("[LeechService] Step 2 companion variant %s downloaded in parallel: %s (%s)", comp_q, c_dl, downloader.format_bytes(os.path.getsize(c_dl)))
                                 return (comp_q, c_dl)
                             return None
@@ -1088,7 +1147,7 @@ async def _execute_leech(
                             dest_dir=temp_dir,
                             filename=clean_name,
                             task_key=task_key,
-                            progress_callback=_download_progress,
+                            progress_callback=_primary_multi_progress,
                         )
                         comp_tasks = [
                             _dl_companion_file(cq, cc)

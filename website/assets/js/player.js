@@ -85,12 +85,49 @@ async function probeStreamServerHealth(baseUrl) {
 }
 
 async function loadLiveStreamConfig() {
-  activeStreamBaseUrl = '';
-  streamServerHealthy = await probeStreamServerHealth('');
-  
+  const cached = sessionStorage.getItem('filmsub_stream_base');
+  const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
+  if (cached && (Date.now() - cachedTime) < 30000) {
+    activeStreamBaseUrl = cached;
+    return activeStreamBaseUrl;
+  }
+
+  let candidateUrl = '';
+
+  // 1. Check local endpoint data/stream_endpoint.json
+  try {
+    const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
+    if (rLoc.ok) {
+      const d = await rLoc.json();
+      if (d && d.stream_base_url) {
+        candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
+      }
+    }
+  } catch (e) {}
+
+  // 2. Check GitHub raw endpoint
+  if (!candidateUrl) {
+    try {
+      const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
+      const ctrl = new AbortController();
+      const tId = setTimeout(() => ctrl.abort(), 2500);
+      const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(tId);
+      if (rGh.ok) {
+        const d = await rGh.json();
+        if (d && d.stream_base_url) {
+          candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (candidateUrl) {
+    activeStreamBaseUrl = candidateUrl;
+  }
+
   try {
     sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
-    sessionStorage.setItem('filmsub_stream_healthy', streamServerHealthy ? '1' : '0');
     sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
   } catch (e) {}
 
@@ -2269,16 +2306,6 @@ async function loadStream(movie, idx) {
     if (!playerEl) return;
 
     if (stream.mode === 'super_chunk' || (!stream.embed && stream.stream_url)) {
-      // PRE-FLIGHT: Quick 2s tunnel probe BEFORE creating VJS player
-      // This prevents the 18-second frozen loader when Colab is offline
-      const tunnelAlive = await probeStreamServerHealth(activeStreamBaseUrl || '');
-      if (!tunnelAlive && streams.length > 1) {
-        // Colab offline — skip straight to VIP Server 2 (embed player)
-        FilmSub.showToast('⚡ Stream Server (Colab) offline. VIP Player 1 ලෙස ස්වයංක්‍රීයව මාරු විය!', 'info');
-        currentStreamIdx = 1;
-        loadStream(movie, 1);
-        return;
-      }
       if (vjsPlayer) {
         try { vjsPlayer.dispose(); } catch (e) {}
         vjsPlayer = null;

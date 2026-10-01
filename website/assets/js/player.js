@@ -170,6 +170,14 @@ function normalizeStreamUrl(u) {
     }
     return `/stream/file/${fId}`;
   }
+  const matchRawStream = u.match(/\/stream\/([a-zA-Z0-9_-]{15,})/);
+  if (matchRawStream && !matchRawStream[1].startsWith('channel') && !matchRawStream[1].startsWith('download') && !matchRawStream[1].startsWith('file')) {
+    const fId = matchRawStream[1];
+    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+      return `${activeStreamBaseUrl}/stream/file/${fId}`;
+    }
+    return `/stream/file/${fId}`;
+  }
   return isDeadTunnel(u) ? '' : u;
 }
 

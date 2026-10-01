@@ -24,9 +24,17 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from starlette.requests import ClientDisconnect
+
 from streaming.session_pool import stream_pool
 
 log = logging.getLogger(__name__)
+
+
+class RangeNotSatisfiableError(Exception):
+    """Raised when an HTTP Range request cannot be satisfied (RFC 7233 / RFC 9110)."""
+    pass
+
 
 # APIRouter for inclusion in main.py web_app
 stream_router = APIRouter(tags=["streaming"])
@@ -61,6 +69,8 @@ def _get_cache_key(chat_id: Union[int, str], message_id: int) -> str:
 
 
 async def _save_to_header_cache(key: str, data: bytes, offset: int = 0) -> None:
+    if not data or offset < 0 or offset >= MAX_HEADER_CACHE_BYTES:
+        return
     async with _CACHE_LOCK:
         if key in _HEADER_CACHE:
             _HEADER_CACHE.move_to_end(key)
@@ -78,6 +88,8 @@ async def _save_to_header_cache(key: str, data: bytes, offset: int = 0) -> None:
 
 
 async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[bytes]:
+    if start < 0 or start > end:
+        return None
     async with _CACHE_LOCK:
         if key not in _HEADER_CACHE:
             return None
@@ -90,18 +102,70 @@ async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[byt
 
 
 def _parse_range(range_header: Optional[str], file_size: int) -> tuple[int, int]:
-    """Parse HTTP Range header e.g. 'bytes=0-1048575'."""
-    if not range_header or not range_header.startswith("bytes="):
+    """
+    Parse HTTP Range header e.g. 'bytes=0-1048575', 'bytes=0-', 'bytes=-500'.
+    Returns (start, end) inclusive.
+    Raises RangeNotSatisfiableError if the range is unsatisfiable (RFC 7233 / RFC 9110).
+    """
+    if not range_header or not range_header.strip():
         return 0, max(file_size - 1, 0)
+
+    val = range_header.strip()
+    if not val.startswith("bytes="):
+        # Syntactically invalid unit -> ignore Range header per RFC 7233
+        return 0, max(file_size - 1, 0)
+
+    val = val[len("bytes="):].strip()
+    if not val:
+        return 0, max(file_size - 1, 0)
+
+    # If multipart/multiple ranges e.g. "bytes=0-10, 20-30", process first range
+    if "," in val:
+        val = val.split(",")[0].strip()
+
+    s_str, sep, e_str = val.partition("-")
+    if not sep:
+        return 0, max(file_size - 1, 0)
+
+    s_str = s_str.strip()
+    e_str = e_str.strip()
+
+    if file_size <= 0:
+        raise RangeNotSatisfiableError("File size is zero or negative")
+
     try:
-        val = range_header[len("bytes="):]
-        s_str, _, e_str = val.partition("-")
-        start = int(s_str) if s_str else 0
-        end = int(e_str) if e_str else file_size - 1
-        start = max(0, min(start, file_size - 1))
-        end = max(start, min(end, file_size - 1))
-        return start, end
+        if not s_str and e_str:
+            # Suffix range: bytes=-500 -> last 500 bytes of representation
+            suffix_len = int(e_str)
+            if suffix_len <= 0:
+                raise RangeNotSatisfiableError("Suffix length must be greater than zero")
+            start = max(0, file_size - suffix_len)
+            end = file_size - 1
+            return start, end
+
+        elif s_str and not e_str:
+            # Open-ended range: bytes=500- -> from 500 to EOF
+            start = int(s_str)
+            if start < 0 or start >= file_size:
+                raise RangeNotSatisfiableError(f"Start byte {start} out of bounds for size {file_size}")
+            end = file_size - 1
+            return start, end
+
+        elif s_str and e_str:
+            # Closed range: bytes=0-1024
+            start = int(s_str)
+            end = int(e_str)
+            if start < 0 or start > end or start >= file_size:
+                raise RangeNotSatisfiableError(f"Range {start}-{end} unsatisfiable for size {file_size}")
+            end = min(end, file_size - 1)
+            return start, end
+
+        else:
+            # bytes=- -> invalid syntax, ignore
+            return 0, max(file_size - 1, 0)
+
     except ValueError:
+        # Non-integer values -> ignore Range header per RFC 7233
         return 0, max(file_size - 1, 0)
 
 
@@ -110,8 +174,10 @@ def _is_explicit_end(range_header: Optional[str]) -> bool:
     if not range_header or not range_header.startswith("bytes="):
         return False
     val = range_header[len("bytes="):].strip()
-    _, sep, e_str = val.partition("-")
-    return bool(sep and e_str.strip())
+    if "," in val:
+        val = val.split(",")[0].strip()
+    s_str, sep, e_str = val.partition("-")
+    return bool(sep and s_str.strip() and e_str.strip())
 
 
 @stream_router.options("/stream/{path:path}")
@@ -142,6 +208,10 @@ async def stream_status() -> dict:
 @stream_router.get("/stream/health")
 @stream_router.get("/health")
 @stream_router.get("/ping")
+@stream_router.head("/stream/ping")
+@stream_router.head("/stream/health")
+@stream_router.head("/health")
+@stream_router.head("/ping")
 async def stream_ping() -> dict:
     return {"status": "pong", "service": "stream", "mode": "telegram_cloud", "ready": True}
 
@@ -156,36 +226,36 @@ async def _cached_stream_generator(
     Yields video bytes for range [start, end].
     If the start range is cached in memory, yields from RAM instantly (<50ms),
     then streams any remaining bytes directly from Telegram MTProto with parallel pipelining.
+    Populates RAM header cache in real-time as chunks arrive.
+    Gracefully handles client disconnects, scrubbing, and cancellations without leaking tasks or error spam.
     """
     cur_pos = start
-    cached_part = await _get_from_header_cache(cache_key, cur_pos, end)
+    try:
+        cached_part = await _get_from_header_cache(cache_key, cur_pos, end)
+        if cached_part:
+            yield cached_part
+            cur_pos += len(cached_part)
 
-    if cached_part:
-        yield cached_part
-        cur_pos += len(cached_part)
-
-    if cur_pos <= end:
-        chunk_buffer = bytearray()
-        stream_start_pos = cur_pos
-        try:
+        if cur_pos <= end:
             async for chunk in stream_pool.stream_media_chunks(msg_obj, cur_pos, end):
                 if not chunk:
                     break
-                # Populate 16MB RAM cache if reading within initial movie header portion
-                if stream_start_pos < MAX_HEADER_CACHE_BYTES and len(chunk_buffer) < MAX_HEADER_CACHE_BYTES:
-                    chunk_buffer.extend(chunk)
+                # Populate 16MB RAM cache immediately in real-time if reading within initial header
+                if cur_pos < MAX_HEADER_CACHE_BYTES:
+                    try:
+                        await _save_to_header_cache(cache_key, chunk, offset=cur_pos)
+                    except Exception:
+                        pass
                 yield chunk
-        except asyncio.CancelledError:
-            log.debug("[StreamServer] Client aborted stream range %d-%d for %s", start, end, cache_key)
+                cur_pos += len(chunk)
+    except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError) as abort_exc:
+        log.debug("[StreamServer] Client aborted stream range %d-%d for %s (%s)", start, end, cache_key, type(abort_exc).__name__)
+        return
+    except Exception as exc:
+        if exc.__class__.__name__ == "ClientDisconnect":
+            log.debug("[StreamServer] ClientDisconnect on stream range %d-%d for %s", start, end, cache_key)
             return
-        except Exception as exc:
-            log.error("[StreamServer] Streaming error for %s: %s", cache_key, exc)
-        finally:
-            if chunk_buffer and stream_start_pos < MAX_HEADER_CACHE_BYTES:
-                try:
-                    await _save_to_header_cache(cache_key, bytes(chunk_buffer), offset=stream_start_pos)
-                except Exception:
-                    pass
+        log.error("[StreamServer] Streaming error for %s: %s", cache_key, exc)
 
 
 @stream_router.get("/stream/channel/{chat_id}/{message_id}")
@@ -216,27 +286,45 @@ async def stream_channel_message(
     file_name = info.get("file_name", f"movie_{message_id}.mp4")
 
     range_header = request.headers.get("range")
-    start, end = _parse_range(range_header, file_size)
-    explicit_end = _is_explicit_end(range_header)
+    try:
+        start, end = _parse_range(range_header, file_size)
+    except RangeNotSatisfiableError:
+        return Response(
+            status_code=416,
+            headers={
+                "Content-Range": f"bytes */{file_size}",
+                "Accept-Ranges": "bytes",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Access-Control-Allow-Headers": "Range, Content-Type",
+                "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Disposition",
+            },
+        )
 
-    MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
+    explicit_end = _is_explicit_end(range_header)
+    MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response for unconstrained initial requests
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
     if dl == 1:
         # Full file one-click download: serve entire remaining file unless client gave an explicit range
         if not range_header:
             start = 0
-            end = file_size - 1
+            end = max(file_size - 1, 0)
     elif not range_header:
         # Initial request without range -> serve first 8 MiB
-        end = min(start + MIN_SERVE - 1, file_size - 1)
+        end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
     elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
         # Expand small chunk requests to at least 8 MiB for fast pre-buffering (unless tiny metadata probe)
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
-    content_length = end - start + 1
+    content_length = max(0, end - start + 1)
     cache_key = _get_cache_key(chat_id, message_id)
     is_partial = bool(range_header) or (not dl and end < file_size - 1)
+
+    is_cached = False
+    async with _CACHE_LOCK:
+        if cache_key in _HEADER_CACHE and start < len(_HEADER_CACHE[cache_key]):
+            is_cached = True
 
     headers = {
         "Content-Type": mime_type,
@@ -247,6 +335,7 @@ async def stream_channel_message(
         "Access-Control-Allow-Headers": "Range, Content-Type",
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Disposition, X-Stream-Cached",
         "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
+        "X-Stream-Cached": "HIT" if is_cached else "MISS",
     }
 
     if is_partial:
@@ -282,20 +371,38 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
     file_size = size or 1563733824
 
     range_header = request.headers.get("range")
-    start, end = _parse_range(range_header, file_size)
-    explicit_end = _is_explicit_end(range_header)
+    try:
+        start, end = _parse_range(range_header, file_size)
+    except RangeNotSatisfiableError:
+        return Response(
+            status_code=416,
+            headers={
+                "Content-Range": f"bytes */{file_size}",
+                "Accept-Ranges": "bytes",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Access-Control-Allow-Headers": "Range, Content-Type",
+                "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
+            },
+        )
 
+    explicit_end = _is_explicit_end(range_header)
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
     if not range_header:
-        end = min(start + MIN_SERVE - 1, file_size - 1)
+        end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
     elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
-    content_length = end - start + 1
+    content_length = max(0, end - start + 1)
     cache_key = f"file:{file_id}"
     is_partial = bool(range_header) or (end < file_size - 1)
+
+    is_cached = False
+    async with _CACHE_LOCK:
+        if cache_key in _HEADER_CACHE and start < len(_HEADER_CACHE[cache_key]):
+            is_cached = True
 
     headers = {
         "Content-Type": "video/mp4",
@@ -304,8 +411,9 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
-        "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
+        "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, X-Stream-Cached",
         "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
+        "X-Stream-Cached": "HIT" if is_cached else "MISS",
     }
 
     if is_partial:

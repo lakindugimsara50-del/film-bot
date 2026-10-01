@@ -212,7 +212,7 @@ class TelegramStreamPool:
             except Exception as prime_err:
                 log.warning("[StreamPool] Failed priming peer %s: %s", chat_id_int, prime_err)
 
-        if not msg:
+        if not msg or getattr(msg, "empty", False):
             # Fallback to main client if different
             if self._main_client and self._main_client != client and getattr(self._main_client, "is_connected", False):
                 try:
@@ -220,7 +220,7 @@ class TelegramStreamPool:
                 except Exception as mc_err:
                     log.warning("[StreamPool] Main client also failed to get message: %s", mc_err)
 
-        if not msg:
+        if not msg or getattr(msg, "empty", False):
             raise ValueError(f"Message {message_id} not found in chat {chat_id}")
 
         media = msg.video or msg.document
@@ -246,42 +246,79 @@ class TelegramStreamPool:
     ) -> bytes:
         """
         Fetch a single 1 MiB chunk (offset=chunk_idx, limit=1) from Telegram MTProto.
-        Prioritizes the owning client of the Message or the main bot client (guaranteed access),
-        then tries pool clients as fallback. Retries on FloodWait.
+        Balances concurrent chunk requests across available connected pool clients via
+        session rotation to maximize throughput without hitting FloodWait.
+        Falls back to primary/main bot client if secondary sessions lack channel access.
         """
         primary_client = getattr(media_source, "_client", None)
         if not primary_client or not getattr(primary_client, "is_connected", False):
             primary_client = self._main_client
 
-        candidates = []
-        if primary_client and getattr(primary_client, "is_connected", False):
+        connected_clients = [c for c in self.clients if getattr(c, "is_connected", False)]
+        if not connected_clients:
+            if primary_client and getattr(primary_client, "is_connected", False):
+                connected_clients = [primary_client]
+            else:
+                connected_clients = [await self.get_client()]
+
+        # Round-robin rotate candidate starting client by chunk_idx across all connected clients
+        candidates: List[Client] = []
+        n = len(connected_clients)
+        start_rot = chunk_idx % n
+        rotated = connected_clients[start_rot:] + connected_clients[:start_rot]
+        for c in rotated:
+            if c not in candidates:
+                candidates.append(c)
+
+        # Ensure primary_client is always present as fallback (guaranteed storage channel access)
+        if primary_client and primary_client not in candidates and getattr(primary_client, "is_connected", False):
             candidates.append(primary_client)
 
-        for c in self.clients:
-            if c != primary_client and getattr(c, "is_connected", False):
-                candidates.append(c)
-                if len(candidates) >= 5:
-                    break
-
-        if not candidates:
-            candidates = [await self.get_client()]
-
         last_exc = None
-        for client in candidates:
-            buf = bytearray()
-            try:
-                async for piece in client.stream_media(media_source, offset=chunk_idx, limit=1):
-                    if piece:
-                        buf.extend(piece)
-                if buf:
-                    return bytes(buf)
-            except FloodWait as fw:
-                log.warning("[StreamPool] FloodWait %ds on chunk %d with client %s", fw.value, chunk_idx, getattr(client, "name", ""))
-                await asyncio.sleep(min(fw.value, 1.0))
-            except Exception as exc:
-                last_exc = exc
-                log.debug("[StreamPool] Client %s cannot stream chunk %d: %s", getattr(client, "name", ""), chunk_idx, exc)
-                continue
+        max_attempts = 2
+
+        for attempt in range(max_attempts):
+            for client in candidates:
+                buf = bytearray()
+                stream_gen = None
+                try:
+                    stream_gen = client.stream_media(media_source, offset=chunk_idx, limit=1)
+
+                    async def _collect():
+                        async for piece in stream_gen:
+                            if piece:
+                                buf.extend(piece)
+
+                    # 25-second timeout avoids hanging forever if a TCP socket stalls
+                    await asyncio.wait_for(_collect(), timeout=25.0)
+                    if buf:
+                        return bytes(buf)
+                except FloodWait as fw:
+                    wait_sec = min(fw.value, 1.5)
+                    log.warning("[StreamPool] FloodWait %ds on chunk %d with client %s, pausing %0.1fs", fw.value, chunk_idx, getattr(client, "name", ""), wait_sec)
+                    last_exc = fw
+                    await asyncio.sleep(wait_sec)
+                    continue
+                except (asyncio.CancelledError, ConnectionResetError):
+                    # Clean cancellation during timeline seek / scrubbing
+                    raise
+                except asyncio.TimeoutError:
+                    log.warning("[StreamPool] Timeout (25s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
+                    last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
+                    continue
+                except Exception as exc:
+                    last_exc = exc
+                    log.debug("[StreamPool] Client %s cannot stream chunk %d: %s", getattr(client, "name", ""), chunk_idx, exc)
+                    continue
+                finally:
+                    if stream_gen is not None:
+                        try:
+                            await stream_gen.aclose()
+                        except Exception:
+                            pass
+
+            if attempt < max_attempts - 1:
+                await asyncio.sleep(0.3)
 
         if last_exc:
             log.warning("[StreamPool] All candidate clients failed for chunk %d: %s", chunk_idx, last_exc)
@@ -358,16 +395,18 @@ class TelegramStreamPool:
                 if remaining <= 0:
                     break
 
-        except asyncio.CancelledError:
-            log.debug("[StreamPool] Stream range %d-%d cancelled by client or scrubbed", start, end)
+        except (asyncio.CancelledError, ConnectionResetError) as abort_exc:
+            log.debug("[StreamPool] Stream range %d-%d cancelled/aborted (%s)", start, end, type(abort_exc).__name__)
             return
         except Exception as exc:
             log.error("[StreamPool] Parallel chunk streaming pipeline error: %s", exc)
         finally:
-            # Cleanly cancel all in-flight prefetch tasks to free MTProto workers immediately
+            # Cleanly cancel and await all in-flight prefetch tasks to free MTProto workers immediately
             for t in pending_tasks.values():
                 if not t.done():
                     t.cancel()
+            if pending_tasks:
+                await asyncio.gather(*pending_tasks.values(), return_exceptions=True)
 
     def get_status(self) -> Dict[str, Union[int, str, List[str]]]:
         """Get pool diagnostic status."""

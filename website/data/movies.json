@@ -10115,8 +10115,8 @@
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
-      "season": 6,
-      "episode": 0,
+      "season": null,
+      "episode": null,
       "episode_title": "",
       "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
       "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
@@ -10212,28 +10212,28 @@
       ],
       "featured": false,
       "trending": false,
-      "added_at": "2026-09-30T12:18:32Z",
+      "added_at": "2026-10-01T06:54:25Z",
       "streams": [
         {
           "server": "Server 1",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/6/1?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-si.vtt&sub_label=Sinhala&sub=true"
+          "stream_url": "https://vidlink.pro/tv/1399/1/1?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-si.vtt&sub_label=Sinhala&sub=true"
         },
         {
           "server": "Server 2",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/6/1"
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/1/1"
         },
         {
           "server": "Server 3",
           "label": "🚀 VIP Player 3 (2Embed Pro)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=6&e=1"
+          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=1&e=1"
         }
       ],
       "downloads": [],
@@ -10249,9 +10249,9 @@
         }
       ],
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011",
-      "channel_post_id": 175,
+      "channel_post_id": 201,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-30"
+      "added_date": "2026-10-01"
     },
     {
       "id": "game-of-thrones-2011-s06e07",
@@ -11324,5 +11324,5 @@
       "sub_merged": true
     }
   ],
-  "last_updated": "2026-09-30T22:07:17Z"
+  "last_updated": "2026-10-01T06:55:14Z"
 }

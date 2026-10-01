@@ -13207,7 +13207,195 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e05",
       "added_date": "2026-10-01"
+    },
+    {
+      "id": "irumadi-2026",
+      "slug": "irumadi-2026",
+      "title": "irumadi",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": false,
+      "sub_merged": false,
+      "is_already_hardsubbed": false,
+      "sub_hardcoded": false,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-Wq-25Xxu14QnD_ynm5qxs7VfPYcAALlJgACUXf5VYRcKXAEi_oLHgQ",
+      "message_id": 249,
+      "file_name": "irumadi-2026.mp4",
+      "file_size": 1433427015,
+      "drive_file_id": "",
+      "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-Wq-25Xxu14QnD_ynm5qxs7VfPYcAALlJgACUXf5VYRcKXAEi_oLHgQ",
+          "message_id": 249,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+        "1080p": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+        "720p": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/251",
+        "480p": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/250",
+        "360p": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1433427015,
+          "url": "https://t.me/c/4325759505/249",
+          "telegram_url": "https://t.me/c/4325759505/249",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-Wq-25Xxu14QnD_ynm5qxs7VfPYcAALlJgACUXf5VYRcKXAEi_oLHgQ",
+          "message_id": 249,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1622696770,
+          "url": "https://t.me/c/4325759505/251",
+          "telegram_url": "https://t.me/c/4325759505/251",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-2q-7QdBsnVfOIJtuboZDzS_nICrAALtJgACUXf5VZm2AAHEagyoDB4E",
+          "message_id": 251,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/251",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "907.6 MB",
+          "size_bytes": 951731568,
+          "url": "https://t.me/c/4325759505/250",
+          "telegram_url": "https://t.me/c/4325759505/250",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-mq-6qx_xa-T6ev-0_q3vAaUq3RNAALnJgACUXf5Vf6XKNTxTQg4HgQ",
+          "message_id": 250,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/250",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1433427015,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_irumadi-2026_1080p",
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1622696770,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_irumadi-2026_720p",
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/251",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "907.6 MB",
+          "size_bytes": 951731568,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_irumadi-2026_480p",
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/250",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "246.1 MB",
+          "size_bytes": 258016862,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_irumadi-2026_360p",
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-Wq-25Xxu14QnD_ynm5qxs7VfPYcAALlJgACUXf5VYRcKXAEi_oLHgQ",
+          "message_id": 249,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+          "size_bytes": 1433427015
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-2q-7QdBsnVfOIJtuboZDzS_nICrAALtJgACUXf5VZm2AAHEagyoDB4E",
+          "message_id": 251,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/251",
+          "size_bytes": 1622696770
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-mq-6qx_xa-T6ev-0_q3vAaUq3RNAALnJgACUXf5Vf6XKNTxTQg4HgQ",
+          "message_id": 250,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/250",
+          "size_bytes": 951731568
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://prefer-amount-records-knew.trycloudflare.com/stream/channel/-1004325759505/249",
+          "size_bytes": 258016862
+        }
+      },
+      "subtitles": [],
+      "source_method": "yts",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=irumadi-2026",
+      "added_date": "2026-10-01",
+      "added_at": "2026-10-01T23:30:16Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-01T20:11:57Z"
+  "last_updated": "2026-10-01T23:30:18Z"
 };

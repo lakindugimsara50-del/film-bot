@@ -12926,54 +12926,13 @@
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=8&e=3"
         }
       ],
-      "downloads": [
-        {
-          "quality": "720p",
-          "label": "720p HD (Sinhala Sub Merged)",
-          "size": "1.07 GB",
-          "size_bytes": 1146273267,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD72q-ftBJ1NvDUzW7ej0AAcgMIDogvQACiSUAAlF3-VWqJtc_a8V8Ch4E",
-          "message_id": 239,
-          "url": "https://t.me/c/4325759505/239",
-          "telegram_url": "https://t.me/c/4325759505/239",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "480p",
-          "label": "480p SD",
-          "size": "0.58 GB",
-          "size_bytes": 620997605,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD7mq-fnv6JnZRPePa0P8VyhY4EgPHAAKIJQACUXf5Vep7fUV265OsHgQ",
-          "message_id": 238,
-          "url": "https://t.me/c/4325759505/238",
-          "telegram_url": "https://t.me/c/4325759505/238",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        }
-      ],
-      "telegram_status": "complete",
+      "downloads": [],
+      "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e03",
       "added_date": "2026-10-01",
-      "variant_media": {
-        "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD72q-ftBJ1NvDUzW7ej0AAcgMIDogvQACiSUAAlF3-VWqJtc_a8V8Ch4E",
-          "message_id": 239,
-          "stream_url": "https://asylum-tests-balanced-light.trycloudflare.com/stream/channel/-1004325759505/239",
-          "size_bytes": 1146273267
-        },
-        "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD7mq-fnv6JnZRPePa0P8VyhY4EgPHAAKIJQACUXf5Vep7fUV265OsHgQ",
-          "message_id": 238,
-          "stream_url": "https://asylum-tests-balanced-light.trycloudflare.com/stream/channel/-1004325759505/238",
-          "size_bytes": 620997605
-        }
-      }
+      "channel_post_id": 241,
+      "channel_chat_id": -1004325759505
     }
   ],
   "last_updated": "2026-10-01T15:27:55Z"

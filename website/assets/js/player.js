@@ -55,6 +55,7 @@ let streamServerHealthy = false;
 
 async function probeStreamServerHealth(baseUrl) {
   const base = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
+  if (!base) return false;
   try {
     if (base) {
       const ctrl = new AbortController();
@@ -161,6 +162,15 @@ function normalizeStreamUrl(u) {
       return `${activeStreamBaseUrl}/stream/channel/${cId}/${mId}`;
     }
     return `/stream/channel/${cId}/${mId}`;
+  }
+  const matchDl = u.match(/\/stream\/download\/(-?\d+)\/(\d+)/);
+  if (matchDl) {
+    const cId = matchDl[1];
+    const mId = matchDl[2];
+    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+      return `${activeStreamBaseUrl}/stream/download/${cId}/${mId}`;
+    }
+    return `/stream/download/${cId}/${mId}`;
   }
   const matchFile = u.match(/\/stream\/file\/([a-zA-Z0-9_-]+)/);
   if (matchFile) {

@@ -12,7 +12,8 @@ import glob
 import logging
 import math
 import os
-from typing import AsyncGenerator, Dict, List, Optional, Union
+import time
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from pyrogram import Client, types
 from pyrogram.errors import FloodWait, PeerIdInvalid, SessionPasswordNeeded
@@ -31,6 +32,7 @@ class TelegramStreamPool:
         self._index: int = 0
         self._lock = asyncio.Lock()
         self._main_client: Optional[Client] = None
+        self._client_cooldowns: Dict[Any, float] = {}
 
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client running in main.py."""
@@ -248,7 +250,7 @@ class TelegramStreamPool:
         Fetch a single 1 MiB chunk (offset=chunk_idx, limit=1) from Telegram MTProto.
         Balances concurrent chunk requests across available connected pool clients via
         session rotation to maximize throughput without hitting FloodWait.
-        Falls back to primary/main bot client if secondary sessions lack channel access.
+        Filters out clients currently on rate-limit cooldown and falls back to primary client.
         """
         primary_client = getattr(media_source, "_client", None)
         if not primary_client or not getattr(primary_client, "is_connected", False):
@@ -259,18 +261,37 @@ class TelegramStreamPool:
             if primary_client and getattr(primary_client, "is_connected", False):
                 connected_clients = [primary_client]
             else:
-                connected_clients = [await self.get_client()]
+                try:
+                    cl = await self.get_client()
+                    if cl and getattr(cl, "is_connected", False):
+                        connected_clients = [cl]
+                except Exception:
+                    pass
 
-        # Round-robin rotate candidate starting client by chunk_idx across all connected clients
+        if not connected_clients:
+            if primary_client:
+                connected_clients = [primary_client]
+            else:
+                raise RuntimeError("No active Telegram clients in streaming pool.")
+
+        # Prioritize clients not currently on rate-limit or error cooldown
+        now = time.time()
+        active_candidates = [c for c in connected_clients if self._client_cooldowns.get(c, 0.0) <= now]
+        if not active_candidates:
+            # All clients on cooldown; use all connected clients as fallback
+            active_candidates = connected_clients
+
+        # Round-robin rotate candidate starting client by chunk_idx across available clients
         candidates: List[Client] = []
-        n = len(connected_clients)
-        start_rot = chunk_idx % n
-        rotated = connected_clients[start_rot:] + connected_clients[:start_rot]
-        for c in rotated:
-            if c not in candidates:
-                candidates.append(c)
+        n = len(active_candidates)
+        if n > 0:
+            start_rot = chunk_idx % n
+            rotated = active_candidates[start_rot:] + active_candidates[:start_rot]
+            for c in rotated:
+                if c not in candidates:
+                    candidates.append(c)
 
-        # Ensure primary_client is always present as fallback (guaranteed storage channel access)
+        # Ensure primary_client is always present as ultimate fallback (guaranteed channel access)
         if primary_client and primary_client not in candidates and getattr(primary_client, "is_connected", False):
             candidates.append(primary_client)
 
@@ -289,13 +310,16 @@ class TelegramStreamPool:
                             if piece:
                                 buf.extend(piece)
 
-                    # 25-second timeout avoids hanging forever if a TCP socket stalls
-                    await asyncio.wait_for(_collect(), timeout=25.0)
+                    # 20-second timeout avoids hanging forever if a TCP socket stalls
+                    await asyncio.wait_for(_collect(), timeout=20.0)
                     if buf:
+                        # Client succeeded: clear cooldown
+                        self._client_cooldowns.pop(client, None)
                         return bytes(buf)
                 except FloodWait as fw:
                     wait_sec = min(fw.value, 1.5)
                     log.warning("[StreamPool] FloodWait %ds on chunk %d with client %s, pausing %0.1fs", fw.value, chunk_idx, getattr(client, "name", ""), wait_sec)
+                    self._client_cooldowns[client] = time.time() + min(max(float(fw.value), 2.0), 60.0)
                     last_exc = fw
                     await asyncio.sleep(wait_sec)
                     continue
@@ -303,11 +327,13 @@ class TelegramStreamPool:
                     # Clean cancellation during timeline seek / scrubbing
                     raise
                 except asyncio.TimeoutError:
-                    log.warning("[StreamPool] Timeout (25s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
+                    log.warning("[StreamPool] Timeout (20s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
+                    self._client_cooldowns[client] = time.time() + 10.0
                     last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
                     continue
                 except Exception as exc:
                     last_exc = exc
+                    self._client_cooldowns[client] = time.time() + 5.0
                     log.debug("[StreamPool] Client %s cannot stream chunk %d: %s", getattr(client, "name", ""), chunk_idx, exc)
                     continue
                 finally:
@@ -336,29 +362,35 @@ class TelegramStreamPool:
         multi-connection parallel chunk pipelining for 6-10 MB/s throughput.
         Fetches 1 MiB chunks concurrently across available clients in a sliding window.
         """
+        if start > end or start < 0:
+            return
+
         start_chunk = start // CHUNK_SIZE
         end_chunk = end // CHUNK_SIZE
         total_chunks = end_chunk - start_chunk + 1
 
         offset = start
         remaining = end - start + 1
-
-        if total_chunks <= 1:
-            # Single-chunk fast-path
-            chunk = await self._fetch_chunk(media_source, start_chunk)
-            if chunk:
-                local_start = start % CHUNK_SIZE
-                slice_chunk = chunk[local_start:local_start + remaining]
-                if slice_chunk:
-                    yield slice_chunk
+        if remaining <= 0:
             return
 
-        # Pipelined concurrent chunk fetching across clients
-        # Sliding window concurrency: 4-6 parallel workers
-        concurrency = min(total_chunks, max(4, len(self.clients) * 2), 6)
         pending_tasks: Dict[int, asyncio.Task] = {}
 
         try:
+            if total_chunks <= 1:
+                # Single-chunk fast-path
+                chunk = await self._fetch_chunk(media_source, start_chunk)
+                if chunk:
+                    local_start = start % CHUNK_SIZE
+                    slice_chunk = chunk[local_start:local_start + remaining]
+                    if slice_chunk:
+                        yield slice_chunk
+                return
+
+            # Pipelined concurrent chunk fetching across clients
+            # Sliding window concurrency: 4-6 parallel workers
+            concurrency = min(total_chunks, max(4, len(self.clients) * 2), 6)
+
             # Pre-launch initial batch of concurrent chunk fetches
             for c in range(start_chunk, min(start_chunk + concurrency, end_chunk + 1)):
                 pending_tasks[c] = asyncio.create_task(self._fetch_chunk(media_source, c))
@@ -366,7 +398,10 @@ class TelegramStreamPool:
             next_to_schedule = start_chunk + concurrency
 
             for curr_chunk in range(start_chunk, end_chunk + 1):
-                task = pending_tasks.pop(curr_chunk)
+                task = pending_tasks.get(curr_chunk)
+                if not task:
+                    task = asyncio.create_task(self._fetch_chunk(media_source, curr_chunk))
+                    pending_tasks[curr_chunk] = task
 
                 # Schedule next chunk into sliding window pipeline
                 if next_to_schedule <= end_chunk:
@@ -376,6 +411,9 @@ class TelegramStreamPool:
                     next_to_schedule += 1
 
                 chunk = await task
+                # Pop after await completes so that cancellation during await task will cleanly cancel task in finally:
+                pending_tasks.pop(curr_chunk, None)
+
                 if not chunk or remaining <= 0:
                     break
 
@@ -399,14 +437,18 @@ class TelegramStreamPool:
             log.debug("[StreamPool] Stream range %d-%d cancelled/aborted (%s)", start, end, type(abort_exc).__name__)
             return
         except Exception as exc:
+            if exc.__class__.__name__ in ("ClientDisconnect", "EndOfStream"):
+                log.debug("[StreamPool] Stream range %d-%d client disconnected", start, end)
+                return
             log.error("[StreamPool] Parallel chunk streaming pipeline error: %s", exc)
         finally:
             # Cleanly cancel and await all in-flight prefetch tasks to free MTProto workers immediately
-            for t in pending_tasks.values():
+            for t in list(pending_tasks.values()):
                 if not t.done():
                     t.cancel()
             if pending_tasks:
                 await asyncio.gather(*pending_tasks.values(), return_exceptions=True)
+            pending_tasks.clear()
 
     def get_status(self) -> Dict[str, Union[int, str, List[str]]]:
         """Get pool diagnostic status."""

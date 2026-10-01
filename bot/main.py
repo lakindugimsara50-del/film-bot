@@ -108,7 +108,7 @@ web_app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Content-Length", "Content-Range", "Accept-Ranges"],
+    expose_headers=["Content-Length", "Content-Range", "Accept-Ranges", "Content-Disposition", "X-Stream-Cached"],
 )
 
 from streaming.stream_server import stream_router
@@ -116,6 +116,7 @@ web_app.include_router(stream_router)
 
 
 @web_app.get("/")
+@web_app.head("/")
 async def root() -> dict:
     return {
         "status": "running",
@@ -126,6 +127,9 @@ async def root() -> dict:
 
 
 @web_app.get("/health")
+@web_app.head("/health")
+@web_app.get("/ping")
+@web_app.head("/ping")
 async def health() -> dict:
     return {"status": "healthy", "version": BOT_VERSION}
 

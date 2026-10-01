@@ -15,6 +15,7 @@ Architecture:
 
 import asyncio
 from collections import OrderedDict
+from contextlib import asynccontextmanager
 import logging
 import os
 import re
@@ -39,11 +40,56 @@ class RangeNotSatisfiableError(Exception):
 # APIRouter for inclusion in main.py web_app
 stream_router = APIRouter(tags=["streaming"])
 
+_standalone_client = None
+
+
+@asynccontextmanager
+async def stream_server_lifespan(app_instance: FastAPI):
+    """Initialize streaming pool when stream_server.py is run directly via Uvicorn."""
+    global _standalone_client
+    try:
+        import config
+        api_id = getattr(config, "API_ID", None) or int(os.getenv("TG_API_ID", 0))
+        api_hash = getattr(config, "API_HASH", None) or os.getenv("TG_API_HASH", "")
+        bot_token = getattr(config, "BOT_TOKEN", None) or os.getenv("BOT_TOKEN", "")
+        if api_id and api_hash:
+            if not stream_pool._main_client and bot_token:
+                try:
+                    from pyrogram import Client
+                    _standalone_client = Client(
+                        name="stream_server_bot",
+                        api_id=api_id,
+                        api_hash=api_hash,
+                        bot_token=bot_token,
+                        in_memory=True,
+                        no_updates=True,
+                        max_concurrent_transmissions=10,
+                    )
+                    await _standalone_client.start()
+                    stream_pool.set_main_client(_standalone_client)
+                    log.info("[StreamServer] Standalone main bot client started for streaming.")
+                except Exception as b_err:
+                    log.warning("[StreamServer] Could not start standalone bot client: %s", b_err)
+            await stream_pool.init_extra_sessions(api_id, api_hash)
+            log.info("[StreamServer] Standalone stream pool initialized (%d active sessions).", len(stream_pool.clients))
+    except Exception as exc:
+        log.warning("[StreamServer] Standalone startup note: %s", exc)
+
+    yield
+
+    if _standalone_client and getattr(_standalone_client, "is_connected", False):
+        try:
+            await _standalone_client.stop()
+        except Exception:
+            pass
+
+
 # Standalone FastAPI app
 app = FastAPI(
     title="Telegram Cloud Stream & Download Server",
     description="Ultra-smooth streaming proxy from Telegram MTProto to web browsers.",
     version="3.0.0",
+    lifespan=stream_server_lifespan,
 )
 
 app.add_middleware(
@@ -56,9 +102,10 @@ app.add_middleware(
 )
 
 # ── 16MB In-Memory Header Cache ───────────────────────────────────────────────
-# LRU Cache storing up to 40 movies × 16MB (~640MB RAM max).
-# VPS / Colab (12GB RAM) provides instant (<50ms) first-frame playback.
-MAX_HEADER_CACHE_SIZE = 40
+# LRU Cache storing up to 40 movies × 16MB (~640MB RAM max on VPS/Colab)
+# and 8 movies × 16MB (~128MB RAM on 512MB Render instances) to prevent OOM.
+_is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
+MAX_HEADER_CACHE_SIZE = int(os.getenv("MAX_HEADER_CACHE_SIZE", 8 if _is_render else 40))
 MAX_HEADER_CACHE_BYTES = 16 * 1024 * 1024  # 16 MiB per movie (<50ms first-frame response)
 _HEADER_CACHE: OrderedDict[str, bytearray] = OrderedDict()
 _CACHE_LOCK = asyncio.Lock()
@@ -111,7 +158,7 @@ def _parse_range(range_header: Optional[str], file_size: int) -> tuple[int, int]
         return 0, max(file_size - 1, 0)
 
     val = range_header.strip()
-    if not val.startswith("bytes="):
+    if not val.lower().startswith("bytes="):
         # Syntactically invalid unit -> ignore Range header per RFC 7233
         return 0, max(file_size - 1, 0)
 
@@ -170,14 +217,20 @@ def _parse_range(range_header: Optional[str], file_size: int) -> tuple[int, int]
 
 
 def _is_explicit_end(range_header: Optional[str]) -> bool:
-    """Return True if Range header explicitly specified an end offset (e.g. 'bytes=0-1')."""
-    if not range_header or not range_header.startswith("bytes="):
+    """Return True if Range header explicitly specified an end offset or suffix bound (e.g. 'bytes=0-1', 'bytes=-500')."""
+    if not range_header:
         return False
-    val = range_header[len("bytes="):].strip()
+    val = range_header.strip()
+    if not val.lower().startswith("bytes="):
+        return False
+    val = val[len("bytes="):].strip()
     if "," in val:
         val = val.split(",")[0].strip()
     s_str, sep, e_str = val.partition("-")
-    return bool(sep and s_str.strip() and e_str.strip())
+    # Explicit end if either:
+    # 1. Closed range '0-1' (s_str and e_str)
+    # 2. Suffix range '-500' (not s_str and e_str)
+    return bool(sep and (s_str.strip() and e_str.strip() or (not s_str.strip() and e_str.strip())))
 
 
 @stream_router.options("/stream/{path:path}")
@@ -252,8 +305,9 @@ async def _cached_stream_generator(
         log.debug("[StreamServer] Client aborted stream range %d-%d for %s (%s)", start, end, cache_key, type(abort_exc).__name__)
         return
     except Exception as exc:
-        if exc.__class__.__name__ == "ClientDisconnect":
-            log.debug("[StreamServer] ClientDisconnect on stream range %d-%d for %s", start, end, cache_key)
+        exc_name = exc.__class__.__name__
+        if exc_name in ("ClientDisconnect", "EndOfStream") or "Disconnect" in exc_name or "Cancelled" in exc_name:
+            log.debug("[StreamServer] Client abort (%s) on stream range %d-%d for %s", exc_name, start, end, cache_key)
             return
         log.error("[StreamServer] Streaming error for %s: %s", cache_key, exc)
 
@@ -357,6 +411,7 @@ async def stream_channel_message(
 
 
 @stream_router.get("/stream/download/{chat_id}/{message_id}")
+@stream_router.head("/stream/download/{chat_id}/{message_id}")
 async def download_channel_message(chat_id: str, message_id: int, request: Request) -> Response:
     """One-click binary download proxy with Content-Disposition header."""
     return await stream_channel_message(chat_id, message_id, request, dl=1)
@@ -432,3 +487,4 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
 
 # Attach router to standalone app as well
 app.include_router(stream_router)
+

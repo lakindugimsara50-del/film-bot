@@ -20,6 +20,7 @@ test_stream_server_bugs_and_edge_cases.py — Deep verification tests for:
 import asyncio
 from pathlib import Path
 import sys
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import Request
@@ -272,3 +273,83 @@ async def test_stream_ping_and_health_instant_responses():
     assert res["status"] == "pong"
     assert res["ready"] is True
     assert res["service"] == "stream"
+
+
+def test_parse_range_case_insensitive():
+    file_size = 50 * 1024 * 1024
+    start, end = stream_server._parse_range("BYTES=100-500", file_size)
+    assert start == 100
+    assert end == 500
+
+
+@pytest.mark.asyncio
+async def test_download_channel_message_head_request():
+    file_size = 20 * 1024 * 1024
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "sample_movie.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {}
+        req.method = "HEAD"
+        resp = await stream_server.download_channel_message("-100123", 42, req)
+
+        assert resp.status_code == 200
+        assert resp.headers.get("Content-Length") == str(file_size)
+        assert resp.headers.get("Accept-Ranges") == "bytes"
+        assert 'attachment; filename="sample_movie.mp4"' in resp.headers.get("Content-Disposition", "")
+
+
+@pytest.mark.asyncio
+async def test_session_pool_cooldown_on_floodwait():
+    pool = TelegramStreamPool()
+
+    client0 = MagicMock()
+    client0.is_connected = True
+    client0.name = "client0"
+
+    client1 = MagicMock()
+    client1.is_connected = True
+    client1.name = "client1"
+
+    pool.clients = [client0, client1]
+    pool._main_client = client0
+
+    from pyrogram.errors import FloodWait
+
+    async def flood_stream(media, offset=0, limit=1):
+        fw = FloodWait(value=10)
+        fw.value = 10
+        raise fw
+        yield b""
+
+    async def ok_stream(media, offset=0, limit=1):
+        yield b"RECOVERY_CHUNK"
+
+    client0.stream_media = MagicMock(side_effect=flood_stream)
+    client1.stream_media = MagicMock(side_effect=ok_stream)
+
+    # Chunk 0 hits client0 with FloodWait, sets cooldown, and falls back to client1
+    data = await pool._fetch_chunk("dummy_media", 0)
+    assert data == b"RECOVERY_CHUNK"
+    # Verify client0 is on cooldown
+    assert pool._client_cooldowns.get(client0, 0) > time.time()
+
+
+@pytest.mark.asyncio
+async def test_stream_media_chunks_invalid_range_guard():
+    pool = TelegramStreamPool()
+    chunks = []
+    # start > end
+    async for c in pool.stream_media_chunks("dummy_media", 100, 50):
+        chunks.append(c)
+    assert chunks == []
+
+    # negative start
+    async for c in pool.stream_media_chunks("dummy_media", -10, 50):
+        chunks.append(c)
+    assert chunks == []
+

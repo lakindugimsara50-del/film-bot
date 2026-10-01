@@ -1,25 +1,35 @@
 /* ============================================================
-   FilmSub â€“ Main Stylesheet | Dark Netflix-style theme v1.0
+   FilmSub ï¿½" Main Stylesheet | Dark Netflix-style theme v1.0
    ============================================================ */
 
 :root {
-  --bg: #141414;
-  --bg2: #1f1f1f;
-  --bg3: #2a2a2a;
-  --accent: #e50914;
+  --bg: #000000;
+  --bg-surface: #0a0a0a;
+  --bg2: #121212;
+  --bg3: #1f1f1f;
+  --bg-card: #141414;
+  --bg-card-hover: #1e1e1e;
+  --accent: #E50914;
+  --accent-hover: #f40612;
   --accent-dark: #b20710;
-  --accent-glow: rgba(229, 9, 20, 0.4);
+  --accent-glow: rgba(229, 9, 20, 0.5);
+  --accent-subtle: rgba(229, 9, 20, 0.12);
   --text: #ffffff;
-  --text2: #aaaaaa;
-  --text3: #666666;
+  --text2: #cccccc;
+  --text3: #808080;
   --gold: #f5c518;
+  --gold-glow: rgba(245, 197, 24, 0.35);
   --blue: #1e90ff;
-  --green: #1db954;
-  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --green: #46d369;
+  --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
+  --card-shadow-hover: 0 18px 48px rgba(0, 0, 0, 0.95), 0 0 24px rgba(229, 9, 20, 0.3);
+  --radius-sm: 4px;
   --radius: 8px;
   --radius-lg: 14px;
+  --radius-xl: 18px;
   --header-h: 68px;
-  --transition: 0.25s ease;
+  --transition: 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  --transition-slow: 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -158,40 +168,68 @@ main > .section:first-of-type {
 .carousel-wrap { position: relative; }
 .carousel-track { display: flex; gap: 14px; padding: 8px 24px 20px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none; }
 .carousel-track::-webkit-scrollbar { display: none; }
-.carousel-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; width: 44px; height: 80px; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, rgba(10,10,10,0.95), rgba(10,10,10,0.6)); color: #fff; font-size: 20px; border: none; cursor: pointer; opacity: 0; transition: opacity var(--transition); border-radius: var(--radius); }
-.carousel-arrow.left { left: 0; border-radius: 0 var(--radius) var(--radius) 0; }
-.carousel-arrow.right { right: 0; border-radius: var(--radius) 0 0 var(--radius); }
-.carousel-wrap:hover .carousel-arrow { opacity: 1; }
-.carousel-arrow:hover { background: linear-gradient(90deg, rgba(229,9,20,0.4), transparent); }
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 10, 0.85);
+  color: #ffffff;
+  font-size: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+.carousel-arrow.left { left: 10px; }
+.carousel-arrow.right { right: 10px; }
+.carousel-wrap:hover .carousel-arrow { opacity: 0.9; }
+.carousel-arrow:hover {
+  opacity: 1 !important;
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.7);
+}
 
 /* === MOVIE GRID (Responsive: 3 columns on mobile, scaling up to 8 on 4K TV) === */
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 12px 10px;
+  gap: 12px;
+  padding: 16px 12px;
 }
 
-/* === CINESUBZ STYLE MOVIE CARD === */
+/* === NETFLIX CINEMA MOVIE CARD === */
 .movie-card {
   position: relative;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
-  background: #181818;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.28s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.28s cubic-bezier(0.25, 1, 0.5, 1);
   flex-shrink: 0;
   display: block;
-  width: 155px; /* Default desktop carousel card */
+  width: 172px;
   text-decoration: none;
 }
 .movie-grid .movie-card {
   width: auto;
 }
 .movie-card:hover {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px var(--accent-glow);
-  z-index: 5;
+  transform: translateY(-6px) scale(1.06);
+  border-color: rgba(229, 9, 20, 0.65);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.95), 0 0 24px rgba(229, 9, 20, 0.35);
+  z-index: 10;
 }
 
 /* Card Poster */
@@ -199,85 +237,118 @@ main > .section:first-of-type {
   position: relative;
   aspect-ratio: 2/3;
   overflow: hidden;
-  background: #111;
-  border-radius: 6px;
+  background: #0d0d0d;
+  border-radius: 8px;
 }
 .card-poster img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.35s ease;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .movie-card:hover .card-poster img {
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
-/* CineSubz Top-Left Quality Badge (Red) */
+/* Hover Play Overlay */
+.card-hover-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 38px;
+  opacity: 0;
+  transform: scale(0.75);
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 4;
+  pointer-events: none;
+}
+.movie-card:hover .card-hover-play {
+  opacity: 1;
+  transform: scale(1);
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(229, 9, 20, 0.9);
+}
+
+/* Netflix Top-Left Quality Badge */
 .badge-top-left {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  background: var(--accent);
+  top: 8px;
+  left: 8px;
+  background: rgba(229, 9, 20, 0.9);
   color: #fff;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.3px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
   z-index: 3;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   line-height: 1.2;
 }
 
-/* CineSubz Top-Right IMDb Badge (Gold) */
+/* Netflix Top-Right IMDb Badge */
 .badge-top-right {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  background: var(--gold);
-  color: #000;
-  font-size: 10px;
+  top: 8px;
+  right: 8px;
+  background: rgba(15, 15, 15, 0.85);
+  color: var(--gold);
+  border: 1px solid rgba(245, 197, 24, 0.5);
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 3px 7px;
+  border-radius: 4px;
   z-index: 3;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   line-height: 1.2;
+  backdrop-filter: blur(4px);
 }
 
-/* CineSubz Trending Rank Watermark (1, 2, 3...) */
+/* Netflix Trending Rank Number */
 .card-rank-num {
   position: absolute;
-  top: 45%;
-  left: 8px;
-  transform: translateY(-50%);
-  font-size: 34px;
+  bottom: 26px;
+  left: 6px;
+  font-size: 52px;
   font-weight: 900;
-  color: #ffffff;
-  font-family: 'Roboto', -apple-system, sans-serif;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 2px #000;
-  z-index: 2;
+  color: #000000;
+  -webkit-text-stroke: 2px #ffffff;
+  font-family: 'Roboto', 'Impact', sans-serif;
+  z-index: 3;
   pointer-events: none;
-  line-height: 1;
+  line-height: 0.85;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9));
+  transition: all 0.25s ease;
+}
+.trending-card:hover .card-rank-num {
+  -webkit-text-stroke: 2px var(--accent);
+  color: rgba(229, 9, 20, 0.25);
+  transform: scale(1.08);
 }
 
-/* CineSubz Bottom Title Overlay */
+/* Bottom Title Overlay */
 .card-bottom-bar {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 50%, transparent 100%);
-  padding: 22px 7px 7px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.98) 0%, rgba(0, 0, 0, 0.75) 55%, transparent 100%);
+  padding: 24px 8px 8px;
   z-index: 3;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
 }
 .card-title-text {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
@@ -285,6 +356,15 @@ main > .section:first-of-type {
   width: 100%;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
   line-height: 1.3;
+}
+.card-sub-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* === PAGE HEADER === */
@@ -768,11 +848,15 @@ main > .section:first-of-type {
   padding-bottom: 28px;
 }
 .cs-player-card {
-  background: var(--bg2);
+  background: #000000;
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(229, 9, 20, 0.12);
+  transition: box-shadow 0.3s ease;
+}
+.cs-player-card:hover {
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 1), 0 0 50px rgba(229, 9, 20, 0.2);
 }
 
 /* Movie Details Card */
@@ -1476,10 +1560,10 @@ main > .section:first-of-type {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 12px 16px;
-  background: #181818;
-  border-top-left-radius: var(--radius);
-  border-top-right-radius: var(--radius);
+  padding: 12px 18px;
+  background: #0d0d0d;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .server-tabs {
@@ -1489,28 +1573,31 @@ main > .section:first-of-type {
   flex-wrap: wrap;
 }
 .server-tab {
-  background: #242424;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 7px 14px;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px 18px;
+  border-radius: 30px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   transition: all var(--transition);
+  white-space: nowrap;
 }
 .server-tab:hover {
-  background: #2f2f2f;
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 .server-tab.active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
-  box-shadow: 0 2px 10px var(--accent-glow);
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
 .quality-selector-wrap {
   display: flex;
@@ -1520,8 +1607,10 @@ main > .section:first-of-type {
 }
 .quality-label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -1529,41 +1618,46 @@ main > .section:first-of-type {
 .quality-pills {
   display: flex;
   align-items: center;
-  background: #111;
+  background: rgba(255, 255, 255, 0.06);
   padding: 3px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 2px;
 }
 .q-pill {
   background: transparent;
-  color: var(--text3);
+  color: var(--text2);
   border: none;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 11.5px;
-  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .q-pill:hover {
   color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 .q-pill.active {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 1px 6px rgba(229, 9, 20, 0.4);
+  box-shadow: 0 2px 10px rgba(229, 9, 20, 0.45);
 }
 .network-speed-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #46d369;
-  background: rgba(70, 211, 105, 0.1);
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(70, 211, 105, 0.2);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(70, 211, 105, 0.12);
+  border: 1px solid rgba(70, 211, 105, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
 }
 
 /* ============================================================
@@ -1706,18 +1800,17 @@ main > .section:first-of-type {
    ============================================================ */
 .hero.compact-hero {
   position: relative;
-  height: auto !important;
-  min-height: 280px !important;
-  max-height: 390px !important;
+  min-height: 480px !important;
   margin-top: var(--header-h);
-  padding: 24px 4% !important;
+  padding: 48px 5% 56px !important;
   display: flex !important;
   align-items: center !important;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #000000;
 }
 .hero.compact-hero + #trending-section {
-  padding-top: 18px !important;
+  padding-top: 24px !important;
 }
 .hero.compact-hero .hero-content,
 .hero-content-row {
@@ -1726,8 +1819,8 @@ main > .section:first-of-type {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 22px;
-  max-width: 880px;
+  gap: 32px;
+  max-width: 1060px;
   width: 100%;
   padding: 0 !important;
 }
@@ -1737,64 +1830,123 @@ main > .section:first-of-type {
   align-items: center;
 }
 .hero-poster-mini {
-  width: 118px;
-  height: 176px;
+  width: 160px;
+  height: 240px;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.9), 0 0 24px rgba(229, 9, 20, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+.hero.compact-hero:hover .hero-poster-mini {
+  transform: scale(1.03);
 }
 .hero.compact-hero .hero-info-main,
 .hero-info-col {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   min-width: 0;
   flex: 1;
 }
 .hero.compact-hero .hero-badge {
-  margin-bottom: 2px;
-  font-size: 10.5px;
-  padding: 3px 9px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(229, 9, 20, 0.5);
   width: fit-content;
 }
 .hero.compact-hero .hero-title {
-  font-size: clamp(20px, 2.8vw, 34px);
+  font-size: clamp(26px, 3.8vw, 48px);
+  font-weight: 900;
   margin-bottom: 0;
   line-height: 1.15;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
 }
 .hero.compact-hero .hero-title-si {
-  font-size: clamp(13px, 1.6vw, 17px);
+  font-size: clamp(14px, 1.8vw, 20px);
   margin-bottom: 4px;
   color: var(--gold);
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 .hero.compact-hero .hero-meta {
-  margin-bottom: 4px;
-  gap: 6px;
-}
-.hero.compact-hero .hero-genres {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 6px;
 }
+.hero.compact-hero .hero-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
 .hero.compact-hero .hero-description {
-  font-size: 13px;
-  line-height: 1.5;
-  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #cccccc;
+  margin-bottom: 16px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  max-width: 640px;
 }
 .hero.compact-hero .hero-actions {
-  gap: 10px;
-  flex-wrap: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .btn-hero,
 .btn-compact {
-  padding: 8px 16px !important;
-  font-size: 13px !important;
+  padding: 12px 26px !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
   border-radius: 6px !important;
-  white-space: nowrap;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  text-decoration: none;
+}
+#hero-watch-btn,
+.btn-hero.btn-primary {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: none !important;
+  box-shadow: 0 4px 18px rgba(255, 255, 255, 0.25);
+}
+#hero-watch-btn:hover,
+.btn-hero.btn-primary:hover {
+  background: rgba(255, 255, 255, 0.88) !important;
+  transform: scale(1.05);
+  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.4);
+}
+#hero-download-btn,
+.btn-hero.btn-secondary {
+  background: rgba(109, 109, 110, 0.7) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+#hero-download-btn:hover,
+.btn-hero.btn-secondary:hover {
+  background: rgba(109, 109, 110, 0.9) !important;
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* ============================================================
@@ -2193,7 +2345,7 @@ main > .section:first-of-type {
   position: absolute;
   inset: 0;
   z-index: 22;
-  background: radial-gradient(circle at center, #151515 0%, #030303 100%) !important;
+  background: radial-gradient(circle at center, #150507 0%, #050505 60%, #000000 100%) !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2209,47 +2361,229 @@ main > .section:first-of-type {
   visibility: hidden !important;
   pointer-events: none !important;
 }
-.sp-loader-ring {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.12);
-  border-top-color: var(--accent, #e50914);
-  border-right-color: var(--gold, #f5c518);
-  animation: spSpin 0.85s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
-  box-shadow: 0 0 22px rgba(229, 9, 20, 0.45);
-}
-@keyframes spSpin {
-  to { transform: rotate(360deg); }
-}
-.sp-loader-title {
-  font-size: clamp(14px, 2vw, 18px);
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.3px;
-}
-.sp-loader-sub {
-  font-size: clamp(11.5px, 1.5vw, 13.5px);
-  color: #b3b3b3;
-  max-width: 480px;
-  font-family: 'Noto Sans Sinhala', sans-serif;
-}
-.sp-loader-badges {
+
+/* Netflix Pulse Spinner for Super Loader */
+.netflix-pulse-spinner {
+  position: relative;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  margin-bottom: 6px;
 }
-.sp-loader-badge {
-  background: rgba(229, 9, 20, 0.18);
-  border: 1px solid rgba(229, 9, 20, 0.45);
+
+.netflix-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--accent, #e50914);
+  border-left-color: var(--accent, #e50914);
+  animation: spSpin 0.85s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  box-shadow: 0 0 24px rgba(229, 9, 20, 0.5);
+}
+
+.netflix-pulse-icon {
+  font-size: 20px;
+  color: #ffffff;
+  margin-left: 2px;
+}
+
+@keyframes spSpin {
+  to { transform: rotate(360deg); }
+}
+
+.sp-loader-title {
+  font-size: clamp(15px, 2.2vw, 19px);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+.sp-loader-status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text2, #ccc);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sp-status-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #e50914);
+  box-shadow: 0 0 8px var(--accent, #e50914);
+  animation: dotPulse 1.2s infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* ============================================================
+   NETFLIX CINEMA STANDBY & PULSE LOADER ENGINE
+   ============================================================ */
+.cinema-standby-screen {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #110405 0%, #030303 70%, #000000 100%) !important;
+  color: #ffffff;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(229, 9, 20, 0.2);
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), inset 0 0 60px rgba(229, 9, 20, 0.08);
+}
+
+.cinema-standby-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(229, 9, 20, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  animation: cinemaGlowPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes cinemaGlowPulse {
+  0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
+}
+
+.cinema-standby-spinner {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.cinema-spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent, #e50914);
+  border-right-color: rgba(229, 9, 20, 0.5);
+  animation: spSpin 0.9s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  box-shadow: 0 0 24px rgba(229, 9, 20, 0.45);
+}
+
+.cinema-spinner-icon {
+  font-size: 24px;
+  color: var(--accent, #e50914);
+  animation: iconPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+.cinema-standby-title {
+  font-size: clamp(17px, 2.2vw, 22px);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.2px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.cinema-standby-desc {
+  font-size: clamp(12.5px, 1.5vw, 14px);
+  color: var(--text2, #cccccc);
+  max-width: 520px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.cinema-pulse-loader-line {
+  width: 180px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  margin: 4px 0 8px;
+}
+
+.cinema-pulse-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, var(--accent, #e50914), transparent);
+  animation: cinemaBarMove 1.5s ease-in-out infinite;
+}
+
+@keyframes cinemaBarMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+.cinema-standby-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+  z-index: 2;
+}
+
+.btn-cinema-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent, #e50914);
+  padding: 10px 22px;
+  border-radius: 30px;
+  border: none;
   color: #fff;
-  font-size: 11px;
+  font-size: 13.5px;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 18px rgba(229, 9, 20, 0.4);
+  text-decoration: none;
+}
+
+.btn-cinema-action:hover {
+  background: var(--accent-hover, #f40612);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(229, 9, 20, 0.6);
+}
+
+.btn-cinema-action.tg-action {
+  background: rgba(34, 158, 217, 0.2);
+  border: 1px solid rgba(34, 158, 217, 0.5);
+  box-shadow: none;
+}
+
+.btn-cinema-action.tg-action:hover {
+  background: #229ed9;
+  border-color: #229ed9;
+  box-shadow: 0 4px 18px rgba(34, 158, 217, 0.45);
 }
 
 /* In-Player Quality Selector inside Video.js Control Bar */
@@ -2341,7 +2675,7 @@ main > .section:first-of-type {
 }
 
 /* ============================================================
-   Mobile-first responsive additions – plan §6.1
+   Mobile-first responsive additions - plan ï¿½6.1
    (Super Player + Auto-Subtitle + High-Speed Conversion)
    ============================================================ */
 
@@ -2364,19 +2698,32 @@ main > .section:first-of-type {
     gap: 10px !important;
   }
 
-  /* Player logo overlay hidden (plan §2.5) */
+  /* Player logo overlay hidden (plan ï¿½2.5) */
   .player-logo { display: none !important; }
 
-  /* VIP player tabs stack vertically */
+  /* VIP player tabs: horizontal swipeable pills on mobile */
   .server-tabs,
   .player-server-tabs,
   .cs-server-tabs {
-    flex-direction: column !important;
-    gap: 6px !important;
-  }
-  .server-tab, .cs-server-tab {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
     width: 100% !important;
+    padding-bottom: 4px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .server-tabs::-webkit-scrollbar,
+  .player-server-tabs::-webkit-scrollbar,
+  .cs-server-tabs::-webkit-scrollbar { display: none; }
+
+  .server-tab, .cs-server-tab {
+    width: auto !important;
+    flex-shrink: 0 !important;
     text-align: center !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
   }
 
   /* Download card buttons stack */
@@ -2400,5 +2747,5 @@ main > .section:first-of-type {
   }
 }
 
-/* -- Quality selector badge (plan §6.4) ----------------------- */
+/* -- Quality selector badge (plan ï¿½6.4) ----------------------- */
 .vjs-quality-selector .vjs-menu-button { min-width: 56px; }

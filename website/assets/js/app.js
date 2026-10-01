@@ -322,11 +322,12 @@ function renderHero() {
   const backdrop = movie.backdrop || movie.backdrop_url || SITE_CONFIG.defaultBackdrop;
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
   const imdbVal = movie.imdb || movie.rating || '';
-  const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i>${imdbVal}</span>` : '';
-  const quality = movie.quality ? `<span class="badge badge-quality">${movie.quality}</span>` : '';
+  const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
+  const quality = movie.quality ? `<span class="badge badge-quality">${movie.quality}</span>` : '<span class="badge badge-quality">1080p FHD</span>';
   const year = movie.year ? `<span class="badge badge-year">${movie.year}</span>` : '';
   const durationVal = movie.duration ? (typeof movie.duration === 'number' ? `${movie.duration} min` : movie.duration) : '';
-  const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i>${durationVal}</span>` : '';
+  const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${durationVal}</span>` : '';
+  const subBadge = `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
   const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${g}</a>`).join('');
 
   const posterEl = document.getElementById('hero-poster-mini');
@@ -338,24 +339,34 @@ function renderHero() {
   const backdropEl = document.querySelector('.hero-backdrop');
   if (backdropEl) backdropEl.style.backgroundImage = `url('${backdrop}')`;
   const badgeEl = document.getElementById('hero-badge');
-  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-fire"></i> Featured • සිංහල උපසිරැසි`;
+  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> NETFLIX SPOTLIGHT • සිංහල උපසිරැසි`;
   document.getElementById('hero-title').textContent = movie.title || '';
   document.getElementById('hero-title-si').textContent = movie.title_si || '';
-  document.getElementById('hero-meta').innerHTML = `${imdb}${quality}${year}${duration}`;
+  document.getElementById('hero-meta').innerHTML = `${imdb}${quality}${year}${duration}${subBadge}`;
   document.getElementById('hero-genres').innerHTML = genreChips;
   document.getElementById('hero-description').textContent = movie.description || '';
-  document.getElementById('hero-watch-btn').href = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug)}`;
-  document.getElementById('hero-download-btn').href = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug)}#downloads`;
+  
+  const watchBtn = document.getElementById('hero-watch-btn');
+  if (watchBtn) {
+    watchBtn.href = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug)}`;
+    watchBtn.innerHTML = `<i class="fa-solid fa-play"></i> Watch Now`;
+  }
+  const dlBtn = document.getElementById('hero-download-btn');
+  if (dlBtn) {
+    dlBtn.href = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug)}#downloads`;
+    dlBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Download`;
+  }
 }
 
-// ---- Generate Movie Card (CineSubz Style) ----
+// ---- Generate Movie Card (Netflix Cinema Style) ----
 function generateMovieCard(movie, opts = {}) {
   const isTrending = typeof opts === 'boolean' ? opts : Boolean(opts.isTrending);
   const rank = opts.rank ? `<span class="card-rank-num">${opts.rank}</span>` : '';
   const poster = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
   const imdbVal = movie.imdb || movie.rating || '';
   const imdb = imdbVal ? `<span class="badge-top-right">★ ${imdbVal}</span>` : '';
-  const quality = movie.quality ? `<span class="badge-top-left">${escHtml(movie.quality)}</span>` : '<span class="badge-top-left">WEB-DL</span>';
+  const rawQ = movie.quality || '1080p';
+  const quality = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
   const url = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
   const cardClass = isTrending ? 'movie-card trending-card' : 'movie-card';
 
@@ -364,11 +375,13 @@ function generateMovieCard(movie, opts = {}) {
       <div class="card-poster">
         <img src="${escHtml(poster)}" alt="${escHtml(movie.title || '')}" loading="lazy"
              onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
+        <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
         ${quality}
         ${imdb}
         ${rank}
         <div class="card-bottom-bar">
           <span class="card-title-text">${escHtml(movie.title || 'Untitled')}${movie.year ? ` (${movie.year})` : ''}</span>
+          <span class="card-sub-tag"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</span>
         </div>
       </div>
     </a>`;

@@ -542,7 +542,7 @@ function getMovieStreams(movie) {
 
   list.push({
     server: 'Server 1',
-    label: '⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)',
+    label: '⚡ Super Player (Telegram Cloud HD)',
     mode: 'super_chunk',
     type: 'video/mp4',
     embed: false,
@@ -982,9 +982,9 @@ function renderServerTabs(movie) {
     </button>`).join('');
 
   tabsHtml += `
-    <button class="server-tab" data-type="trailer" type="button">
-      <i class="fa-brands fa-youtube" style="color:#ff0000"></i>
-      Official Trailer
+    <button class="server-tab${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button">
+      <i class="fa-solid fa-film"></i>
+      🎬 Trailer
     </button>`;
 
   tabsEl.innerHTML = tabsHtml;
@@ -1638,17 +1638,16 @@ async function mountLiveSubtitleOverlay(playerEl, movie) {
 // ---- 4. Zero-White-Screen Loader HTML Builder ----
 function buildSuperLoaderHtml(movie, serverLabel) {
   const title = FilmSub.escHtml(movie.title || 'Movie');
-  const sLabel = FilmSub.escHtml(serverLabel || '⚡ Super Player');
-  const qLabel = (selectedQuality === 'auto' ? `Auto (${currentEffectiveQuality})` : selectedQuality).toUpperCase();
   return `
     <div class="super-player-loader" id="super-player-loader">
-      <div class="sp-loader-ring"></div>
-      <div class="sp-loader-title">🎬 ${title}</div>
-      <div class="sp-loader-sub">⚡ අධිවේගී Chunk Stream සූදානම් වෙමින් පවතී... (Initializing High-Speed Stream...)</div>
-      <div class="sp-loader-badges">
-        <span class="sp-loader-badge">${sLabel}</span>
-        <span class="sp-loader-badge">${qLabel}</span>
-        <span class="sp-loader-badge">සිංහල Sub ON</span>
+      <div class="netflix-pulse-spinner">
+        <div class="netflix-pulse-ring"></div>
+        <div class="netflix-pulse-icon"><i class="fa-solid fa-play"></i></div>
+      </div>
+      <div class="sp-loader-title">${title}</div>
+      <div class="sp-loader-status-line">
+        <span class="sp-status-pulse-dot"></span>
+        <span>Streaming HD • සිංහල උපසිරැසි සමඟින්</span>
       </div>
     </div>`;
 }
@@ -2063,43 +2062,44 @@ function renderPlayerFallback(playerEl, movie) {
     window.fallbackRetryInterval = null;
   }
 
-  let countdownSec = 10;
-  let countdownTimer = null;
-
   const isVideoPending = !movie.message_id && !movie.file_id && (!Array.isArray(movie.downloads) || !movie.downloads.some(d => d.message_id));
   const tgDownload = (Array.isArray(movie.downloads) && movie.downloads.find(d => d.url && d.url.includes('t.me'))) || null;
   const tgChannelUrl = tgDownload ? tgDownload.url : (movie.channel_post_id ? `https://t.me/c/${(movie.channel_chat_id || '').replace(/^-100/, '')}/${movie.channel_post_id}` : 'https://t.me/filmsinhala200');
 
   const headingText = isVideoPending
-    ? '⚡ Telegram Cloud වෙත Upload වෙමින් පවතී...'
-    : 'Telegram Cloud Stream සම්බන්ධ වෙමින් පවතී...';
+    ? 'වීඩියෝව සූදානම් වෙමින් පවතී...'
+    : 'චිත්‍රපටය සම්බන්ධ වෙමින් පවතී...';
   const descText = isVideoPending
-    ? `Bot එක මඟින් මෙම වීඩියෝව Telegram Cloud වෙත Upload කරමින් පවතී. තත්පර <strong id="retry-countdown" style="color:var(--accent)">${countdownSec}</strong> කින් ස්වයංක්‍රීයව Check කර Playback ආරම්භ වේ.`
-    : `Stream Server එක සක්‍රිය වෙමින් පවතී (Colab/Render Waking Up). තත්පර <strong id="retry-countdown" style="color:var(--accent)">${countdownSec}</strong> කින් ස්වයංක්‍රීයව Playback නැවත ආරම්භ වේ.`;
+    ? 'මෙම වීඩියෝව Telegram Cloud වෙත Upload වෙමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ.'
+    : 'High-Speed Stream Server එක හා සම්බන්ධ වෙමින් පවතී. කරුණාකර මොහොතක් රැඳෙන්න...';
 
   playerEl.innerHTML = `
-    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050505 !important;color:#fff;padding:24px;text-align:center;gap:14px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);box-sizing:border-box">
-      <div style="width:54px;height:54px;border-radius:50%;background:rgba(229,9,20,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:2px">
-        <i class="fa-solid fa-cloud-bolt" style="font-size:26px;color:var(--accent)"></i>
+    <div class="player-iframe-wrap cinema-standby-screen">
+      <div class="cinema-standby-glow"></div>
+      <div class="cinema-standby-spinner">
+        <div class="cinema-spinner-ring"></div>
+        <i class="fa-solid fa-film cinema-spinner-icon"></i>
       </div>
-      <h3 style="font-size:18px;margin:0;font-weight:700">${headingText}</h3>
-      <p style="font-size:13.5px;color:var(--text2);max-width:480px;margin:0;line-height:1.5">
+      <h3 class="cinema-standby-title">${headingText}</h3>
+      <p class="cinema-standby-desc">
         ${descText}
       </p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px">
-        <button id="btn-manual-reconnect" type="button" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);padding:10px 20px;border-radius:6px;border:none;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;transition:transform 0.15s ease">
-          <i class="fa-solid fa-rotate-right"></i> දැන්ම Check කරන්න (Refresh)
+      <div class="cinema-pulse-loader-line">
+        <div class="cinema-pulse-bar"></div>
+      </div>
+      <div class="cinema-standby-actions">
+        <button id="btn-manual-reconnect" type="button" class="btn-cinema-action">
+          <i class="fa-solid fa-rotate-right"></i> Refresh Player
         </button>
         ${tgChannelUrl ? `
-          <a href="${FilmSub.escHtml(tgChannelUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#229ED9;padding:10px 18px;border-radius:6px;border:none;color:#fff;font-size:13.5px;font-weight:600;text-decoration:none">
-            <i class="fa-brands fa-telegram"></i> Telegram Post එක බලන්න
+          <a href="${FilmSub.escHtml(tgChannelUrl)}" target="_blank" rel="noopener" class="btn-cinema-action tg-action">
+            <i class="fa-brands fa-telegram"></i> Telegram Post
           </a>
         ` : ''}
       </div>
     </div>`;
 
   const doRetry = async () => {
-    if (countdownTimer) clearInterval(countdownTimer);
     if (window.fallbackRetryInterval) clearInterval(window.fallbackRetryInterval);
     FilmSub.showToast('⚡ Live Status Check කරමින් පවතී...', 'info');
 
@@ -2129,26 +2129,16 @@ function renderPlayerFallback(playerEl, movie) {
   const btnRetry = playerEl.querySelector('#btn-manual-reconnect');
   if (btnRetry) btnRetry.addEventListener('click', doRetry);
 
-  countdownTimer = setInterval(() => {
-    countdownSec--;
-    const countEl = playerEl.querySelector('#retry-countdown');
-    if (countEl) countEl.textContent = String(countdownSec);
-    if (countdownSec <= 0) {
-      clearInterval(countdownTimer);
-      doRetry();
-    }
-  }, 1000);
-
+  // Silent automatic background check every 6 seconds
   window.fallbackRetryInterval = setInterval(async () => {
     const alive = await probeStreamServerHealth(activeStreamBaseUrl || '');
     if (alive) {
       clearInterval(window.fallbackRetryInterval);
       window.fallbackRetryInterval = null;
-      if (countdownTimer) clearInterval(countdownTimer);
-      FilmSub.showToast('⚡ Stream Server Online! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
+      FilmSub.showToast('⚡ Stream Ready! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
       loadStream(movie, 0); // restart Super Player
     }
-  }, 10000);
+  }, 6000);
 }
 
 /**
@@ -2300,15 +2290,16 @@ function renderQuickDownloadStrip(movie) {
   const subs = getMovieSubtitles(movie);
 
   let html = downloads.slice(0, 4).map(dl => {
-    const q = dl.quality || '1080p';
+    const rawQ = dl.quality || '1080p';
+    const qBadge = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : rawQ));
     const sz = dl.size || '';
     const url = dl.url || '#';
     return `
-      <button type="button" class="quick-dl-pill" data-url="${FilmSub.escHtml(url)}" data-quality="${FilmSub.escHtml(q)}">
-        <i class="fa-solid fa-download"></i>
-        <strong>${FilmSub.escHtml(q)}</strong>
-        <span class="quick-dl-size">${FilmSub.escHtml(sz)}</span>
-        <span class="quick-dl-sub-tag">සිංහල Sub</span>
+      <button type="button" class="quick-dl-pill" data-url="${FilmSub.escHtml(url)}" data-quality="${FilmSub.escHtml(rawQ)}">
+        <i class="fa-solid fa-cloud-arrow-down"></i>
+        <strong>${FilmSub.escHtml(qBadge)}</strong>
+        ${sz ? `<span class="quick-dl-size">${FilmSub.escHtml(sz)}</span>` : ''}
+        <span class="quick-dl-sub-tag">Sub Merged</span>
       </button>`;
   }).join('');
 
@@ -2316,7 +2307,7 @@ function renderQuickDownloadStrip(movie) {
     html += `
       <a href="${FilmSub.escHtml(subs[0].url)}" download="${FilmSub.escHtml(movie.slug || 'movie')}-sinhala.vtt" class="quick-dl-pill sub-only-pill">
         <i class="fa-solid fa-closed-captioning"></i>
-        <strong>සිංහල .SRT/.VTT</strong>
+        <strong>සිංහල Sub (.SRT)</strong>
       </a>`;
   }
 
@@ -2531,10 +2522,13 @@ function renderDownloadSection(movie) {
 
   if (movie.telegram_status === 'queued' || movie.telegram_status === 'uploading') {
     grid.innerHTML = `
-      <div class="cs-dl-card download-card" style="text-align: center; padding: 30px;">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2em; color: var(--accent); margin-bottom: 15px;"></i>
-        <h4 style="margin: 0; color: #fff;">Cloud Upload in Progress</h4>
-        <p style="margin: 10px 0 0; color: var(--text2);">The video file is currently being processed and uploaded to our Telegram cloud servers. Download links will appear here automatically once the upload completes.</p>
+      <div class="cs-dl-card cinema-standby-card" style="text-align: center; padding: 32px 20px; grid-column: 1 / -1;">
+        <div class="netflix-pulse-spinner" style="margin: 0 auto 16px;">
+          <div class="netflix-pulse-ring"></div>
+          <div class="netflix-pulse-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        </div>
+        <h4 style="margin: 0 0 8px; color: #fff; font-size: 17px; font-weight: 700;">Cloud Upload in Progress</h4>
+        <p style="margin: 0 auto; color: var(--text2); max-width: 500px; font-size: 13.5px; line-height: 1.5;">මෙම වීඩියෝ ගොනුව Telegram Cloud වෙත Upload වෙමින් පවතී. Upload වූ සැනින් Download Links ස්වයංක්‍රීයව මෙහි දිස්වනු ඇත.</p>
       </div>`;
     return;
   }
@@ -2553,7 +2547,8 @@ function renderDownloadSection(movie) {
     });
 
     grid.innerHTML = uniqueDls.map(dl => {
-      const q = dl.quality || '720p';
+      const rawQ = dl.quality || '720p';
+      const qTitle = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : `${rawQ} HD`));
       const sz = dl.size || '';
       const fmt = dl.format || 'MP4';
       const dlUrl = dl.url || '#';
@@ -2585,7 +2580,7 @@ function renderDownloadSection(movie) {
         }
       } else {
         actionBtn = `
-          <button class="btn-direct-dl" data-url="${FilmSub.escHtml(dlUrl)}" data-quality="${FilmSub.escHtml(q)}" type="button">
+          <button class="btn-direct-dl" data-url="${FilmSub.escHtml(dlUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" type="button">
             <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
           </button>`;
       }
@@ -2594,17 +2589,17 @@ function renderDownloadSection(movie) {
         <div class="cs-dl-card download-card">
           <div class="cs-dl-top">
             <div class="cs-dl-quality">
-              <i class="fa-solid fa-file-video" style="color:var(--accent)"></i>
-              <span>${FilmSub.escHtml(q)} WEB-DL</span>
+              <i class="fa-solid fa-film" style="color:var(--accent)"></i>
+              <span>${FilmSub.escHtml(qTitle)}</span>
             </div>
-            <div class="cs-dl-size-badge">${FilmSub.escHtml(sz)}</div>
+            ${sz ? `<div class="cs-dl-size-badge">${FilmSub.escHtml(sz)}</div>` : ''}
           </div>
           <div class="cs-dl-specs">
             <span>${hostIcon} <span style="color:${hostColor}">${FilmSub.escHtml(host)}</span></span>
             <span>•</span>
             <span><i class="fa-solid fa-video"></i> ${FilmSub.escHtml(fmt)}</span>
             <span>•</span>
-            <span style="color:var(--accent)"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</span>
+            <span style="color:var(--accent)"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
           </div>
           <div class="cs-dl-actions" style="display:flex;gap:8px;flex-wrap:wrap">
             ${actionBtn}

@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="assets/css/style.css">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
+  <!-- Netflix VIP Cinema Player Overrides -->
   <style>
     #video-player-container,
     .player-container,
@@ -31,46 +32,99 @@
       background-color: #000000 !important;
       color-scheme: dark !important;
     }
-    .video-js .vjs-big-play-button {
-      background: var(--accent) !important;
-      border: 2px solid rgba(255,255,255,0.85) !important;
-      border-radius: 50% !important;
-      width: 68px !important;
-      height: 68px !important;
-      line-height: 64px !important;
-      margin-top: -34px !important;
-      margin-left: -34px !important;
-      box-shadow: 0 0 28px rgba(229, 9, 20, 0.75) !important;
-      transition: transform 0.2s ease, background 0.2s ease !important;
+    .video-js {
+      font-size: 14px;
+      font-family: 'Roboto', 'Noto Sans Sinhala', sans-serif !important;
     }
-    .video-js .vjs-big-play-button:hover {
-      background: var(--accent-dark) !important;
-      transform: scale(1.08);
+    .video-js .vjs-big-play-button {
+      background: rgba(229, 9, 20, 0.95) !important;
+      border: 2px solid rgba(255, 255, 255, 0.95) !important;
+      border-radius: 50% !important;
+      width: 72px !important;
+      height: 72px !important;
+      line-height: 68px !important;
+      margin-top: -36px !important;
+      margin-left: -36px !important;
+      box-shadow: 0 0 35px rgba(229, 9, 20, 0.85) !important;
+      transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), background 0.2s ease, box-shadow 0.25s ease !important;
+    }
+    .video-js .vjs-big-play-button:hover,
+    .video-js:hover .vjs-big-play-button {
+      background: #f40612 !important;
+      transform: scale(1.12) !important;
+      box-shadow: 0 0 45px rgba(229, 9, 20, 1) !important;
     }
     .video-js .vjs-control-bar {
-      background: linear-gradient(0deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.6) 65%, transparent 100%) !important;
-      height: 44px !important;
-      padding: 0 8px !important;
+      background: linear-gradient(0deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 45%, rgba(0,0,0,0.2) 80%, transparent 100%) !important;
+      height: 52px !important;
+      padding: 0 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      transition: opacity 0.4s ease, visibility 0.4s ease !important;
     }
-    .video-js .vjs-play-progress { background: var(--accent) !important; }
-    .video-js .vjs-load-progress { background: rgba(255,255,255,0.28) !important; }
-    .video-js .vjs-slider { background: rgba(255,255,255,0.16) !important; }
-    .vjs-theme-fantasy .vjs-play-progress:before { color: var(--accent) !important; }
-    .video-js { font-size: 14px; font-family: 'Noto Sans Sinhala', 'Roboto', sans-serif !important; }
-    /* CineSubz-style native WebVTT cue styling inside video frame */
+    .video-js.vjs-user-inactive.vjs-playing .vjs-control-bar {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    .video-js .vjs-progress-control {
+      position: absolute !important;
+      left: 12px !important;
+      right: 12px !important;
+      top: -10px !important;
+      width: calc(100% - 24px) !important;
+      height: 16px !important;
+    }
+    .video-js .vjs-progress-holder {
+      height: 4px !important;
+      border-radius: 4px !important;
+      transition: height 0.15s ease !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+    .video-js .vjs-progress-control:hover .vjs-progress-holder {
+      height: 7px !important;
+    }
+    .video-js .vjs-play-progress {
+      background: var(--accent, #e50914) !important;
+      border-radius: 4px !important;
+      box-shadow: 0 0 10px rgba(229, 9, 20, 0.75) !important;
+    }
+    .video-js .vjs-play-progress:before {
+      color: #ffffff !important;
+      font-size: 14px !important;
+      top: -4px !important;
+      transition: transform 0.15s ease !important;
+    }
+    .video-js .vjs-progress-control:hover .vjs-play-progress:before {
+      transform: scale(1.3) !important;
+      color: #ffffff !important;
+    }
+    .video-js .vjs-load-progress {
+      background: rgba(255, 255, 255, 0.3) !important;
+      border-radius: 4px !important;
+    }
+    .video-js .vjs-button {
+      color: #ffffff !important;
+      transition: color 0.18s ease, transform 0.18s ease !important;
+    }
+    .video-js .vjs-button:hover {
+      color: var(--accent, #e50914) !important;
+      transform: scale(1.1) !important;
+    }
+    /* Native WebVTT cue styling inside video frame */
     .video-js video::cue {
-      background-color: rgba(0, 0, 0, 0.82);
+      background-color: rgba(0, 0, 0, 0.84);
       color: #ffeb3b;
       font-family: 'Noto Sans Sinhala', 'Roboto', sans-serif;
       font-weight: 700;
       text-shadow: 0 2px 4px #000000, 0 0 8px #000000;
     }
     .video-js .vjs-text-track-cue > div {
-      background-color: rgba(0, 0, 0, 0.82) !important;
+      background-color: rgba(0, 0, 0, 0.84) !important;
       color: #ffeb3b !important;
       font-family: 'Noto Sans Sinhala', 'Roboto', sans-serif !important;
       font-weight: 700 !important;
-      padding: 4px 12px !important;
+      padding: 5px 14px !important;
       border-radius: 6px !important;
       text-shadow: 0 2px 4px #000000 !important;
       font-size: clamp(14px, 2.2vw, 22px) !important;
@@ -208,8 +262,9 @@
 
         <!-- Video Player Container -->
         <div class="player-container" id="video-player-container">
-          <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#000">
-            <div class="spinner"></div>
+          <div style="aspect-ratio:16/9;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;background:#000000">
+            <div class="netflix-pulse-spinner"></div>
+            <span style="font-size:0.85rem;letter-spacing:0.5px;color:rgba(255,255,255,0.7);font-weight:500;">Loading Cinema Stream...</span>
           </div>
         </div>
 

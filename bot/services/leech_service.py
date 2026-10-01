@@ -335,6 +335,8 @@ async def find_all_candidates(
                 )
             )
         log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s).", len(matched_candidates))
+        # User instruction: If Sri Lankan releases found, take movies ONLY from Lankan sites (no torrents!)
+        return matched_candidates
 
     # 1. Process Telegram match
     if tg_res and isinstance(tg_res, dict) and tg_res.get("file_id"):
@@ -1162,6 +1164,10 @@ async def _execute_leech(
                                     lines.append(
                                         f"• <b>{q_name}:</b> [██████████] 100% 🇱🇰 <i>(සිංහල උපසිරැසි Fast-Mux...)</i>"
                                     )
+                                elif st == "compressing":
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> [██████████] 100% 🗜️ <i>(FFmpeg 2GB Limit Compression...)</i>"
+                                    )
                                 elif st == "uploading":
                                     pct = q_data.get("up_pct", 0.0)
                                     pbar = downloader.format_progress_bar(pct)
@@ -1270,6 +1276,29 @@ async def _execute_leech(
                                     log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
 
                             c_size_bytes = os.path.getsize(c_dl)
+                            # User requirement: If file > 1.95GB (e.g. 1080p 3.5GB), compress down to 1.85GB using FFmpeg
+                            if c_size_bytes > int(1.95 * 1024 * 1024 * 1024):
+                                log.info(
+                                    "[LeechService] File %s (%s) exceeds Telegram 2GB limit. Running fast FFmpeg compression to fit...",
+                                    q_name, downloader.format_bytes(c_size_bytes)
+                                )
+                                companion_progress[q_name]["stage"] = "compressing"
+                                await _update_multi_dl_display(force=True)
+                                comp_out = os.path.join(temp_dir, f"comp_{slug}_{q_name}.mp4")
+                                comp_ok = await video_service.compress_video(
+                                    input_path=c_dl,
+                                    output_path=comp_out,
+                                    target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                                )
+                                if comp_ok and os.path.exists(comp_out) and os.path.getsize(comp_out) <= int(1.95 * 1024 * 1024 * 1024):
+                                    try:
+                                        os.remove(c_dl)
+                                    except Exception:
+                                        pass
+                                    c_dl = comp_out
+                                    c_size_bytes = os.path.getsize(c_dl)
+                                    log.info("[LeechService] Compression complete for %s: %s", q_name, downloader.format_bytes(c_size_bytes))
+
                             c_size_str = downloader.format_bytes(c_size_bytes)
                             companion_progress[q_name].update({
                                 "stage": "uploading",
@@ -1297,27 +1326,50 @@ async def _execute_leech(
 
                             up_res = {}
                             if ENABLE_TELEGRAM_VIDEO_UPLOAD and target_channel:
-                                from services.upload_pool import upload_pool
                                 var_caption = f"🎬 {display_title} [{q_name}]\n\n⚡ Quality: {q_name} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
-                                up_res = await upload_pool.upload_with_pool(
-                                    file_path=c_dl,
-                                    target_chat=target_channel,
-                                    quality=q_name,
-                                    caption=var_caption,
-                                    file_name=os.path.basename(c_dl),
-                                    progress_callback=_up_cb,
-                                    fallback_client=client,
-                                )
+                                try:
+                                    from services.upload_pool import upload_pool
+                                    up_res = await upload_pool.upload_with_pool(
+                                        file_path=c_dl,
+                                        target_chat=target_channel,
+                                        quality=q_name,
+                                        caption=var_caption,
+                                        file_name=os.path.basename(c_dl),
+                                        progress_callback=_up_cb,
+                                        fallback_client=client,
+                                    )
+                                except Exception as pool_err:
+                                    log.warning("[LeechService] upload_pool failed for %s (%s). Retrying directly via main bot_client...", q_name, pool_err)
+                                    try:
+                                        up_res = await telegram_upload.upload_video_file(
+                                            bot_client=client,
+                                            file_path=c_dl,
+                                            target_chat=target_channel,
+                                            caption=var_caption,
+                                            progress_callback=_up_cb,
+                                            fallback_chat=0,
+                                        )
+                                    except Exception as fb_err:
+                                        log.error("[LeechService] Direct bot_client upload failed for %s: %s", q_name, fb_err)
+                                        up_res = {}
 
                             up_msg_id = up_res.get("message_id", 0) if up_res else 0
-                            companion_progress[q_name].update({
-                                "stage": "uploaded",
-                                "up_pct": 100.0,
-                                "msg_id": up_msg_id,
-                                "size": c_size_str,
-                            })
+                            if up_msg_id > 0:
+                                companion_progress[q_name].update({
+                                    "stage": "uploaded",
+                                    "up_pct": 100.0,
+                                    "msg_id": up_msg_id,
+                                    "size": c_size_str,
+                                })
+                                log.info("[LeechService] Pipeline quality %s successfully downloaded & uploaded (msg_id=%s, size=%s)", q_name, up_msg_id, c_size_str)
+                            else:
+                                companion_progress[q_name].update({
+                                    "stage": "failed",
+                                    "size": c_size_str,
+                                })
+                                log.error("[LeechService] Pipeline quality %s upload failed or returned no message_id.", q_name)
+
                             await _update_multi_dl_display(force=True)
-                            log.info("[LeechService] Pipeline quality %s successfully downloaded & uploaded (msg_id=%s, size=%s)", q_name, up_msg_id, c_size_str)
                             return (q_name, c_dl, up_res)
 
                         pipe_tasks = [

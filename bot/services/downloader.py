@@ -210,13 +210,13 @@ async def _download_aria2c_http(
 
     cmd = [
         aria2_bin,
-        "-x", "32",
-        "-s", "32",
-        "--split=32",
-        "-j", "32",
-        "-k", "512K",
-        "--min-split-size=512K",
-        "--max-connection-per-server=32",
+        "-x", "16",
+        "-s", "64",
+        "--split=64",
+        "-j", "64",
+        "-k", "1M",
+        "--min-split-size=1M",
+        "--max-connection-per-server=16",
         "--optimize-concurrent-downloads=true",
         "--file-allocation=none",
         "--disk-cache=128M" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "--disk-cache=64M",
@@ -401,10 +401,10 @@ async def _download_httpx(
 
     local_path = os.path.join(dest_dir, out_name)
 
-    # 2. If file size >= 20MB and server supports ranges, use 16-32 parallel range workers!
+    # 2. If file size >= 20MB and server supports ranges, use 32-64 parallel range workers!
     if total_size >= 20 * 1024 * 1024 and accept_ranges:
         try:
-            num_workers = 32 if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else 16
+            num_workers = 64 if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else 32
             part_size = total_size // num_workers
             downloaded = [0] * num_workers
             start_time = time.time()
@@ -754,12 +754,12 @@ async def download_torrent(
         "--dir", dest_dir,
         "--check-certificate=false",
         "--seed-time=0",
-        "-x", "32",
-        "-s", "32",
-        "-j", "32",
-        "--min-split-size=512K",
-        "--max-connection-per-server=32",
-        "--split=32",
+        "-x", "16",
+        "-s", "64",
+        "-j", "64",
+        "--min-split-size=1M",
+        "--max-connection-per-server=16",
+        "--split=64",
         "--enable-dht=true",
         "--enable-peer-exchange=true",
         "--bt-enable-lpd=true",

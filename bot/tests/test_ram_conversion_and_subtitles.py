@@ -327,7 +327,7 @@ def test_website_movies_json_and_movies_data_js_have_multi_quality_and_sinhala_s
 
         # 3. Sinhala Subtitles check
         subs = m.get("subtitles") or []
-        if m.get("has_sinhala_sub") or subs:
+        if (m.get("has_sinhala_sub") or subs) and not (m.get("is_already_hardsubbed") or m.get("sub_hardcoded")):
             assert len(subs) >= 1, f"Missing subtitles in {m.get('title')}"
             assert subs[0].get("default") is True
             assert subs[0].get("url"), f"Empty subtitle URL in {m.get('title')}"

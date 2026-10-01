@@ -290,21 +290,8 @@ async def find_all_candidates(
             log.warning("[LeechService] Method 0 (Same-Site Matched) error: %s", exc)
             return []
 
-    # Run all search methods concurrently for maximum speed
-    results = await asyncio.gather(
-        _fetch_srilankan_matched(),
-        _fetch_telegram(),
-        _fetch_ddl(),
-        _fetch_torrents(),
-        return_exceptions=True,
-    )
-
-    matched_res = results[0] if len(results) > 0 and isinstance(results[0], list) else []
-    tg_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
-    ddl_res = results[2] if len(results) > 2 and not isinstance(results[2], Exception) else None
-    tor_list = results[3] if len(results) > 3 and isinstance(results[3], list) else []
-
-    # 0. Process Same-Site Matched Releases (Highest Quality & Guaranteed 0.0ms Subtitle Sync)
+    # 0. Query Lankan matched releases first (guaranteed 0.0ms subtitle sync)
+    matched_res = await _fetch_srilankan_matched()
     matched_candidates: list[LeechCandidate] = []
     if matched_res:
         for m in matched_res:
@@ -334,9 +321,21 @@ async def find_all_candidates(
                     },
                 )
             )
-        log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s).", len(matched_candidates))
-        # User instruction: If Sri Lankan releases found, take movies ONLY from Lankan sites (no torrents!)
+        log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using exclusively (no torrents queried).", len(matched_candidates))
+        # User instruction: When SinhalaSub / CineSubz matched releases are found, use them exclusively and do not query or add torrents!
         return matched_candidates
+
+    # If no Lankan matched releases found, query Telegram, DDL, and Torrents concurrently
+    results = await asyncio.gather(
+        _fetch_telegram(),
+        _fetch_ddl(),
+        _fetch_torrents(),
+        return_exceptions=True,
+    )
+
+    tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
+    ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
+    tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
 
     # 1. Process Telegram match
     if tg_res and isinstance(tg_res, dict) and tg_res.get("file_id"):
@@ -740,10 +739,12 @@ async def _execute_leech(
 
         if is_series and candidates:
             # User requirement: TV Series strictly download 720p & 480p only! NEVER download 1080p for TV Series.
-            series_non_1080 = [c for c in candidates if str(c.quality or "").lower() != "1080p"]
-            if series_non_1080:
-                log.info("[LeechService] TV Series mode: Filtered out 1080p candidates (%d -> %d).", len(candidates), len(series_non_1080))
-                candidates = series_non_1080
+            series_allowed = [c for c in candidates if str(c.quality or "").lower() in ("720p", "480p")]
+            if not series_allowed:
+                series_allowed = [c for c in candidates if str(c.quality or "").lower() != "1080p"]
+            if series_allowed:
+                log.info("[LeechService] TV Series mode: Filtered candidates to 720p/480p (%d -> %d).", len(candidates), len(series_allowed))
+                candidates = series_allowed
 
         if not candidates:
             task_tracker.tracker.fail_task(user_id, "No download candidates found across any method.")
@@ -809,9 +810,11 @@ async def _execute_leech(
                     if other_c == candidate:
                         continue
                     o_q = (other_c.quality or "").lower()
-                    if is_series and o_q == "1080p":
+                    if is_series and o_q not in ("720p", "480p"):
                         continue
-                    if o_q in ("720p", "480p", "360p", "1080p") and o_q != primary_q and o_q not in companion_candidates:
+                    if not is_series and o_q not in ("1080p", "720p", "480p"):
+                        continue
+                    if o_q != primary_q and o_q not in companion_candidates:
                         o_portal = (other_c.extra or {}).get("portal", "")
                         o_host = urllib.parse.urlparse(str(other_c.source_url)).netloc
                         o_post = (other_c.extra or {}).get("post_url", "")
@@ -1096,15 +1099,24 @@ async def _execute_leech(
 
                         if is_series:
                             # User requirement: TV Series strictly 720p & 480p only! NEVER download 1080p for TV Series.
-                            all_cands_by_q = {q: c for q, c in all_cands_by_q.items() if str(q).lower() != "1080p"}
+                            series_cands = {q: c for q, c in all_cands_by_q.items() if str(q).lower() in ("720p", "480p")}
+                            if series_cands:
+                                all_cands_by_q = series_cands
+                            else:
+                                all_cands_by_q = {q: c for q, c in all_cands_by_q.items() if str(q).lower() != "1080p"}
                             if not all_cands_by_q:
                                 all_cands_by_q = {candidate.quality: candidate}
+                        else:
+                            # User requirement: Movies/Films download 1080p, 720p, and 480p
+                            movie_cands = {q: c for q, c in all_cands_by_q.items() if str(q).lower() in ("1080p", "720p", "480p")}
+                            if movie_cands:
+                                all_cands_by_q = movie_cands
 
                         # Prioritize Primary Quality:
-                        # For TV Series: 720p strictly first, then 480p, 360p
-                        # For Movies: 1080p strictly first, then 720p, 480p, 360p
+                        # For TV Series: 720p strictly first, then 480p
+                        # For Movies: 1080p strictly first, then 720p, 480p
                         ordered_qualities = []
-                        pref_order = ("720p", "480p", "360p") if is_series else ("1080p", "720p", "480p", "360p")
+                        pref_order = ("720p", "480p") if is_series else ("1080p", "720p", "480p")
                         for q_pref in pref_order:
                             if q_pref in all_cands_by_q:
                                 ordered_qualities.append(q_pref)
@@ -1353,8 +1365,24 @@ async def _execute_leech(
                                         log.error("[LeechService] Direct bot_client upload failed for %s: %s", q_name, fb_err)
                                         up_res = {}
 
+                                # If upload_pool returned no file_id without raising, execute clean fallback
+                                if not (up_res and up_res.get("file_id")):
+                                    try:
+                                        log.warning("[LeechService] upload_pool returned no file_id for %s. Retrying directly via main bot_client...", q_name)
+                                        up_res = await telegram_upload.upload_video_file(
+                                            bot_client=client,
+                                            file_path=c_dl,
+                                            target_chat=target_channel,
+                                            caption=var_caption,
+                                            progress_callback=_up_cb,
+                                            fallback_chat=0,
+                                        )
+                                    except Exception as fb_err:
+                                        log.error("[LeechService] Direct bot_client upload fallback failed for %s: %s", q_name, fb_err)
+                                        up_res = {}
+
                             up_msg_id = up_res.get("message_id", 0) if up_res else 0
-                            if up_msg_id > 0:
+                            if up_msg_id > 0 and up_res.get("file_id"):
                                 companion_progress[q_name].update({
                                     "stage": "uploaded",
                                     "up_pct": 100.0,
@@ -1365,6 +1393,7 @@ async def _execute_leech(
                             else:
                                 companion_progress[q_name].update({
                                     "stage": "failed",
+                                    "up_pct": 0.0,
                                     "size": c_size_str,
                                 })
                                 log.error("[LeechService] Pipeline quality %s upload failed or returned no message_id.", q_name)
@@ -1570,14 +1599,14 @@ async def _execute_leech(
                 pass
 
         if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
-            log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression...", downloader.format_bytes(curr_size))
+            log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression to <= 1.85GB...", downloader.format_bytes(curr_size))
             task_tracker.tracker.set_step(user_id, "Fast 1080p Compression (FFmpeg)...")
             try:
                 await status_msg.edit_text(
                     f"⚙️ <b>පියවර 3/5: Fast 1080p Compression ආරම්භ විය...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📦 <b>මූලික ප්‍රමාණය:</b> {downloader.format_bytes(curr_size)} (> 1.95 GB Limit)\n"
-                    f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.40 GB (Telegram Safe)\n"
+                    f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.85 GB (Telegram Safe)\n"
                     f"⚡ <b>ක්‍රමය:</b> Multi-Core H.264 Fast Transcoding + Subtitle Muxing\n"
                     f"⏳ මිනිත්තු කිහිපයක් රැඳී සිටින්න...",
                     parse_mode=ParseMode.HTML,
@@ -1589,7 +1618,7 @@ async def _execute_leech(
             comp_ok = await video_service.compress_video(
                 input_path=local_file,
                 output_path=remuxed,
-                target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
+                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
                 sub_path=sub_to_burn_video,
             )
@@ -1739,16 +1768,16 @@ async def _execute_leech(
                         pre_downloaded_variants[vq] = sub_var_out
                         log.info("[LeechService] Subtitle muxed into companion variant %s: %s", vq, sub_var_out)
 
-        # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.40GB
+        # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.85GB
         if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
-            log.warning("[LeechService] File %s (%d bytes) exceeds Telegram 1.95GB limit after remux. Compressing...",
+            log.warning("[LeechService] File %s (%d bytes) exceeds Telegram 1.95GB limit after remux. Compressing to <= 1.85GB...",
                         local_file, os.path.getsize(local_file))
-            task_tracker.tracker.set_step(user_id, "Compressing video <= 1.95GB...")
+            task_tracker.tracker.set_step(user_id, "Compressing video <= 1.85GB...")
             comp_guard_out = os.path.join(temp_dir, f"guard_comp_{slug}.mp4")
             comp_ok = await video_service.compress_video(
                 input_path=local_file,
                 output_path=comp_guard_out,
-                target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
+                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
                 sub_path=sub_to_burn_video,
             )

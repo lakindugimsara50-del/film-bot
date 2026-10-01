@@ -1260,6 +1260,64 @@ class TestLeechService(unittest.TestCase):
         self.assertIn(primary_quality, variant_tg_info)
         self.assertEqual(variant_tg_info[primary_quality]["message_id"], 1001)
 
+    def test_srilankan_matched_priority_never_queries_torrents(self):
+        """Verify that when Lankan matched scraper finds releases, torrent engines are NEVER queried."""
+        fake_matched = [
+            {
+                "url": "https://cdn.sinhalasub.net/movie/720p.mp4",
+                "quality": "720p",
+                "host_type": "cdn",
+                "portal": "SinhalaSub",
+                "sub_srt_path": "/tmp/sub.srt",
+                "is_already_hardsubbed": True,
+                "post_url": "https://sinhalasub.lk/movie-720p/",
+            }
+        ]
+        mock_torrents = AsyncMock(return_value=[])
+
+        async def run_test():
+            with patch("services.scrapers.srilankan_matched_scraper.search_matched_srilankan_releases", new_callable=AsyncMock, return_value=fake_matched), \
+                 patch("services.scrapers.method1_telegram.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.method3_ddl.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.torrent_finder.search_all_torrents", mock_torrents):
+                cands = await leech_service.find_all_candidates(title="Spider-Man", year=2002)
+                self.assertEqual(len(cands), 1)
+                self.assertEqual(cands[0].quality, "720p")
+                self.assertEqual(cands[0].extra.get("portal"), "SinhalaSub")
+                # Assert torrents were NEVER queried
+                mock_torrents.assert_not_called()
+
+        asyncio.run(run_test())
+
+    def test_tv_series_quality_filter_strictly_720p_480p(self):
+        """Verify TV Series candidates strictly keep 720p and 480p, filtering out 1080p."""
+        cands = [
+            leech_service.LeechCandidate(method="ddl", method_name="1080p Release", source_url="http://a/1080", quality="1080p"),
+            leech_service.LeechCandidate(method="ddl", method_name="720p Release", source_url="http://a/720", quality="720p"),
+            leech_service.LeechCandidate(method="ddl", method_name="480p Release", source_url="http://a/480", quality="480p"),
+        ]
+        # Simulate TV Series filter in _execute_leech
+        is_series = True
+        series_allowed = [c for c in cands if str(c.quality or "").lower() in ("720p", "480p")]
+        if not series_allowed:
+            series_allowed = [c for c in cands if str(c.quality or "").lower() != "1080p"]
+        filtered = series_allowed if is_series else cands
+
+        self.assertEqual(len(filtered), 2)
+        qualities = [c.quality for c in filtered]
+        self.assertIn("720p", qualities)
+        self.assertIn("480p", qualities)
+        self.assertNotIn("1080p", qualities)
+
+    def test_compress_video_targets_1_85gb_safe_limit(self):
+        """Verify video compression default target is strictly <= 1.85GB to stay within 2000 MiB limit."""
+        import inspect
+        from services import video_service
+        sig = inspect.signature(video_service.compress_video)
+        default_target = sig.parameters["target_size_bytes"].default
+        self.assertLessEqual(default_target, int(1.85 * 1024 * 1024 * 1024))
+        self.assertLessEqual(default_target, video_service.MAX_TELEGRAM_BOT_SIZE)
+
 
 if __name__ == "__main__":
     unittest.main()

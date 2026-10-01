@@ -977,13 +977,13 @@ async def stream_copy_subtitles(
 async def compress_video(
     input_path: str,
     output_path: str,
-    target_size_bytes: int = int(1.40 * 1024 * 1024 * 1024),
+    target_size_bytes: int = int(1.85 * 1024 * 1024 * 1024),
     progress_callback: Optional[Callable[[float, str], None]] = None,
     sub_path: Optional[str] = None,
 ) -> bool:
     """
-    Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB) down to strictly <= 1.95GB
-    (target 1.40GB safe default) using multi-core CPU (-preset veryfast -threads 0) or GPU NVENC.
+    Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
+    (target 1.85GB safe default) using multi-core CPU (-preset veryfast -threads 0) or GPU NVENC.
     Calculates exact target bitrate from video duration to guarantee the output never exceeds
     the Telegram Bot 1.95GB limit.
     """
@@ -1231,7 +1231,7 @@ async def compress_smart_1080p(
         return await compress_video(
             input_path=input_path,
             output_path=output_path,
-            target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
+            target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
             progress_callback=progress_callback,
             sub_path=sub_path,
         )
@@ -1251,7 +1251,7 @@ async def compress_smart_1080p(
             return await compress_video(
                 input_path=input_path,
                 output_path=output_path,
-                target_size_bytes=int(1.40 * 1024 * 1024 * 1024),
+                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
                 progress_callback=progress_callback,
                 sub_path=sub_path,
             )

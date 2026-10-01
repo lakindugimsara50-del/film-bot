@@ -290,13 +290,19 @@ async def find_all_candidates(
             log.warning("[LeechService] Method 0 (Same-Site Matched) error: %s", exc)
             return []
 
+    is_series_mode = bool(is_series or season is not None or episode is not None)
+
     # 0. Query Lankan matched releases first (guaranteed 0.0ms subtitle sync)
     matched_res = await _fetch_srilankan_matched()
     matched_candidates: list[LeechCandidate] = []
     if matched_res:
         for m in matched_res:
             m_url = m.get("url")
-            m_q = str(m.get("quality", "1080p"))
+            m_q = str(m.get("quality", "1080p")).lower()
+            if is_series_mode and m_q not in ("720p", "480p"):
+                continue
+            if not is_series_mode and m_q not in ("1080p", "720p", "480p"):
+                continue
             m_portal = m.get("portal", "SriLankan")
             m_ht = m.get("host_type", "ddl")
             m_method = "torrent" if m_ht == "magnet" else "ddl"
@@ -321,9 +327,15 @@ async def find_all_candidates(
                     },
                 )
             )
-        log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using exclusively (no torrents queried).", len(matched_candidates))
-        # User instruction: When SinhalaSub / CineSubz matched releases are found, use them exclusively and do not query or add torrents!
-        return matched_candidates
+
+        if matched_candidates:
+            if is_series_mode:
+                matched_candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "720p" else 1)
+            else:
+                matched_candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2))
+            log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using exclusively (no torrents queried).", len(matched_candidates))
+            # User instruction: When SinhalaSub / CineSubz matched releases are found, use them exclusively and do not query or add torrents!
+            return matched_candidates
 
     # If no Lankan matched releases found, query Telegram, DDL, and Torrents concurrently
     results = await asyncio.gather(
@@ -337,10 +349,12 @@ async def find_all_candidates(
     ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
     tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
 
+    allowed_qualities = ("720p", "480p") if is_series_mode else ("1080p", "720p", "480p")
+
     # 1. Process Telegram match
     if tg_res and isinstance(tg_res, dict) and tg_res.get("file_id"):
-        tg_q = str(tg_res.get("quality", "1080p"))
-        if tg_q.lower() not in ("480p", "360p", "sd"):
+        tg_q = str(tg_res.get("quality", "1080p")).lower()
+        if tg_q in allowed_qualities:
             candidates.append(
                 LeechCandidate(
                     method="telegram",
@@ -352,12 +366,12 @@ async def find_all_candidates(
                     extra=tg_res,
                 )
             )
-            log.info("[LeechService] Method 1 yielded Telegram candidate.")
+            log.info("[LeechService] Method 1 yielded Telegram candidate (%s).", tg_q)
 
     # 2. Process DDL matches
     if ddl_res and isinstance(ddl_res, dict) and ddl_res.get("downloads"):
-        ddl_q = str(ddl_res.get("quality", "1080p"))
-        if ddl_q.lower() not in ("480p", "360p", "sd"):
+        ddl_q = str(ddl_res.get("quality", "1080p")).lower()
+        if ddl_q in allowed_qualities:
             for d in ddl_res["downloads"]:
                 url = d.get("direct_url") or d.get("url")
                 host = d.get("host", "DDL").title()
@@ -378,8 +392,8 @@ async def find_all_candidates(
     if tor_list:
         for tor in tor_list:
             source_url = tor.get("magnet") or tor.get("torrent_url")
-            q = str(tor.get("quality", "1080p"))
-            if source_url and q.lower() not in ("480p", "360p", "sd"):
+            q = str(tor.get("quality", "1080p")).lower()
+            if source_url and q in allowed_qualities:
                 prov = tor.get("provider", "Torrent")
                 candidates.append(
                     LeechCandidate(
@@ -394,23 +408,13 @@ async def find_all_candidates(
                 )
         log.info("[LeechService] Method 3 yielded %d candidate(s).", len(tor_list))
 
-    # For TV series, 720p is enough for Telegram upload; for movies, strictly prioritize 1080p
-    if is_series or season is not None or episode is not None:
-        if any("720" in str(c.quality) for c in candidates):
-            candidates.sort(key=lambda c: 0 if "720" in str(c.quality) else (1 if "1080" in str(c.quality) else 2))
+    # Prioritize: for TV series, 720p first, then 480p; for movies, strictly 1080p first, then 720p, 480p
+    if is_series_mode:
+        candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "720p" else 1)
     else:
-        if any("1080" in str(c.quality) for c in candidates):
-            candidates.sort(key=lambda c: 0 if "1080" in str(c.quality) else 1)
+        candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2))
 
-    # Priority 1: Prepend same-site matched candidates (0.0ms subtitle drift guaranteed)
-    if matched_candidates:
-        if is_series or season is not None or episode is not None:
-            matched_candidates.sort(key=lambda c: 0 if "720" in str(c.quality) else (1 if "1080" in str(c.quality) else 2))
-        else:
-            matched_candidates.sort(key=lambda c: 0 if "1080" in str(c.quality) else (1 if "720" in str(c.quality) else 2))
-        candidates = matched_candidates + [c for c in candidates if c not in matched_candidates]
-
-    log.info("[LeechService] Total candidates acquired: %d (same-site matched: %d)", len(candidates), len(matched_candidates))
+    log.info("[LeechService] Total candidates acquired: %d", len(candidates))
     return candidates
 
 
@@ -737,14 +741,18 @@ async def _execute_leech(
                 original_language=tmdb_meta.get("original_language"),
             )
 
-        if is_series and candidates:
+        is_series_mode = bool(is_series or season is not None or episode is not None)
+        if is_series_mode and candidates:
             # User requirement: TV Series strictly download 720p & 480p only! NEVER download 1080p for TV Series.
-            series_allowed = [c for c in candidates if str(c.quality or "").lower() in ("720p", "480p")]
-            if not series_allowed:
-                series_allowed = [c for c in candidates if str(c.quality or "").lower() != "1080p"]
-            if series_allowed:
-                log.info("[LeechService] TV Series mode: Filtered candidates to 720p/480p (%d -> %d).", len(candidates), len(series_allowed))
-                candidates = series_allowed
+            candidates = [c for c in candidates if str(c.quality or "").lower() in ("720p", "480p")]
+            candidates.sort(key=lambda c: 0 if str(c.quality or "").lower() == "720p" else 1)
+            log.info("[LeechService] TV Series mode: Filtered candidates to 720p/480p (%d remaining).", len(candidates))
+        elif not is_series_mode and candidates:
+            # User requirement: Movies download 1080p, 720p, and 480p (prioritizing 1080p)
+            movie_allowed = [c for c in candidates if str(c.quality or "").lower() in ("1080p", "720p", "480p")]
+            if movie_allowed:
+                candidates = movie_allowed
+            candidates.sort(key=lambda c: 0 if str(c.quality or "").lower() == "1080p" else (1 if str(c.quality or "").lower() == "720p" else 2))
 
         if not candidates:
             task_tracker.tracker.fail_task(user_id, "No download candidates found across any method.")
@@ -1099,13 +1107,9 @@ async def _execute_leech(
 
                         if is_series:
                             # User requirement: TV Series strictly 720p & 480p only! NEVER download 1080p for TV Series.
-                            series_cands = {q: c for q, c in all_cands_by_q.items() if str(q).lower() in ("720p", "480p")}
-                            if series_cands:
-                                all_cands_by_q = series_cands
-                            else:
-                                all_cands_by_q = {q: c for q, c in all_cands_by_q.items() if str(q).lower() != "1080p"}
+                            all_cands_by_q = {q: c for q, c in all_cands_by_q.items() if str(q).lower() in ("720p", "480p")}
                             if not all_cands_by_q:
-                                all_cands_by_q = {candidate.quality: candidate}
+                                continue
                         else:
                             # User requirement: Movies/Films download 1080p, 720p, and 480p
                             movie_cands = {q: c for q, c in all_cands_by_q.items() if str(q).lower() in ("1080p", "720p", "480p")}
@@ -1213,193 +1217,215 @@ async def _execute_leech(
 
                         async def _run_single_quality_pipeline(q_name: str, cand_obj: LeechCandidate, is_primary_flag: bool):
                             nonlocal active_sub_to_mux
-                            v_clean_name = f"{slug}-{q_name}.mp4"
+                            try:
+                                v_clean_name = f"{slug}-{q_name}.mp4"
 
-                            async def _dl_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
-                                companion_progress[q_name].update({
-                                    "stage": "downloading",
-                                    "dl_pct": pct,
-                                    "dl_done": done_str,
-                                    "dl_total": total_str,
-                                    "dl_speed": speed_str,
-                                    "dl_eta": eta_str,
-                                })
-                                await _update_multi_dl_display()
+                                async def _dl_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                                    companion_progress[q_name].update({
+                                        "stage": "downloading",
+                                        "dl_pct": pct,
+                                        "dl_done": done_str,
+                                        "dl_total": total_str,
+                                        "dl_speed": speed_str,
+                                        "dl_eta": eta_str,
+                                    })
+                                    await _update_multi_dl_display()
 
-                            # 1. Download with exclusive lock to prevent CDN bandwidth splitting
-                            async with cdn_dl_lock:
-                                companion_progress[q_name]["stage"] = "downloading"
-                                await _update_multi_dl_display(force=True)
-                                log.info("[LeechService] Starting full-speed download for quality %s from %s...", q_name, cand_obj.source_url)
-                                c_dl = await downloader.download_http(
-                                    url=cand_obj.source_url,
-                                    dest_dir=temp_dir,
-                                    filename=v_clean_name,
-                                    task_key=f"{task_key}_{q_name}",
-                                    progress_callback=_dl_cb,
-                                )
-
-                            if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
-                                companion_progress[q_name]["stage"] = "failed"
-                                await _update_multi_dl_display(force=True)
-                                log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
-                                return None
-
-                            # The lock is now RELEASED! The next quality starts downloading immediately from the CDN.
-                            # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
-
-                            # 2. Faststart remux
-                            fs_out = os.path.join(temp_dir, f"fs_{slug}_{q_name}.mp4")
-                            if await video_service.apply_faststart(c_dl, fs_out):
-                                try:
-                                    os.remove(c_dl)
-                                except Exception:
-                                    pass
-                                c_dl = fs_out
-
-                            # 3. Fast stream-copy subtitle mux (~1s) if needed and not already hardsubbed
-                            if not cand_is_hardsub and not active_sub_to_mux:
-                                try:
-                                    clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
-                                    auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
-                                        title=clean_sub_title,
-                                        year=year,
-                                        imdb_id=imdb_id,
-                                        temp_dir=temp_dir,
-                                        season=season,
-                                        episode=episode,
+                                # 1. Download with exclusive lock to prevent CDN bandwidth splitting
+                                async with cdn_dl_lock:
+                                    companion_progress[q_name]["stage"] = "downloading"
+                                    await _update_multi_dl_display(force=True)
+                                    log.info("[LeechService] Starting full-speed download for quality %s from %s...", q_name, cand_obj.source_url)
+                                    c_dl = await downloader.download_http(
+                                        url=cand_obj.source_url,
+                                        dest_dir=temp_dir,
+                                        filename=v_clean_name,
+                                        task_key=f"{task_key}_{q_name}",
+                                        progress_callback=_dl_cb,
                                     )
-                                    if auto_srt and os.path.exists(auto_srt):
-                                        active_sub_to_mux = auto_srt
-                                        log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
-                                except Exception as s_err:
-                                    log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
 
-                            if active_sub_to_mux and os.path.exists(active_sub_to_mux):
-                                companion_progress[q_name]["stage"] = "muxing"
-                                await _update_multi_dl_display(force=True)
-                                sub_out = os.path.join(temp_dir, f"subbed_{slug}_{q_name}.mp4")
-                                if await video_service.stream_copy_subtitles(c_dl, active_sub_to_mux, sub_out):
+                                if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
+                                    companion_progress[q_name].update({
+                                        "stage": "failed",
+                                        "up_pct": 0.0,
+                                    })
+                                    await _update_multi_dl_display(force=True)
+                                    log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
+                                    return None
+
+                                # The lock is now RELEASED! The next quality starts downloading immediately from the CDN.
+                                # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
+
+                                # 2. Faststart remux
+                                fs_out = os.path.join(temp_dir, f"fs_{slug}_{q_name}.mp4")
+                                if await video_service.apply_faststart(c_dl, fs_out):
                                     try:
                                         os.remove(c_dl)
                                     except Exception:
                                         pass
-                                    c_dl = sub_out
-                                    log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
+                                    c_dl = fs_out
 
-                            c_size_bytes = os.path.getsize(c_dl)
-                            # User requirement: If file > 1.95GB (e.g. 1080p 3.5GB), compress down to 1.85GB using FFmpeg
-                            if c_size_bytes > int(1.95 * 1024 * 1024 * 1024):
-                                log.info(
-                                    "[LeechService] File %s (%s) exceeds Telegram 2GB limit. Running fast FFmpeg compression to fit...",
-                                    q_name, downloader.format_bytes(c_size_bytes)
-                                )
-                                companion_progress[q_name]["stage"] = "compressing"
-                                await _update_multi_dl_display(force=True)
-                                comp_out = os.path.join(temp_dir, f"comp_{slug}_{q_name}.mp4")
-                                comp_ok = await video_service.compress_video(
-                                    input_path=c_dl,
-                                    output_path=comp_out,
-                                    target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
-                                )
-                                if comp_ok and os.path.exists(comp_out) and os.path.getsize(comp_out) <= int(1.95 * 1024 * 1024 * 1024):
+                                # 3. Fast stream-copy subtitle mux (~1s) if needed and not already hardsubbed
+                                if not cand_is_hardsub and not active_sub_to_mux:
                                     try:
-                                        os.remove(c_dl)
-                                    except Exception:
-                                        pass
-                                    c_dl = comp_out
-                                    c_size_bytes = os.path.getsize(c_dl)
-                                    log.info("[LeechService] Compression complete for %s: %s", q_name, downloader.format_bytes(c_size_bytes))
+                                        clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
+                                        auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
+                                            title=clean_sub_title,
+                                            year=year,
+                                            imdb_id=imdb_id,
+                                            temp_dir=temp_dir,
+                                            season=season,
+                                            episode=episode,
+                                        )
+                                        if auto_srt and os.path.exists(auto_srt):
+                                            active_sub_to_mux = auto_srt
+                                            log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
+                                    except Exception as s_err:
+                                        log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
 
-                            c_size_str = downloader.format_bytes(c_size_bytes)
-                            companion_progress[q_name].update({
-                                "stage": "uploading",
-                                "dl_pct": 100.0,
-                                "size": c_size_str,
-                                "up_pct": 0.0,
-                                "up_done": "0B",
-                                "up_total": c_size_str,
-                                "up_speed": "--",
-                                "up_eta": "--",
-                            })
-                            await _update_multi_dl_display(force=True)
+                                if active_sub_to_mux and os.path.exists(active_sub_to_mux):
+                                    companion_progress[q_name]["stage"] = "muxing"
+                                    await _update_multi_dl_display(force=True)
+                                    sub_out = os.path.join(temp_dir, f"subbed_{slug}_{q_name}.mp4")
+                                    if await video_service.stream_copy_subtitles(c_dl, active_sub_to_mux, sub_out):
+                                        try:
+                                            os.remove(c_dl)
+                                        except Exception:
+                                            pass
+                                        c_dl = sub_out
+                                        log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
 
-                            # 4. Immediate Upload to Telegram Channel (PIPELINED - NO BLOCKING OTHER QUALITIES!)
-                            async def _up_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                                c_size_bytes = os.path.getsize(c_dl)
+                                # User requirement: If file > 1.95GB (e.g. 1080p 3.5GB), compress down to 1.85GB using FFmpeg
+                                if c_size_bytes > int(1.95 * 1024 * 1024 * 1024):
+                                    log.info(
+                                        "[LeechService] File %s (%s) exceeds Telegram 2GB limit. Running fast FFmpeg compression to fit...",
+                                        q_name, downloader.format_bytes(c_size_bytes)
+                                    )
+                                    companion_progress[q_name]["stage"] = "compressing"
+                                    await _update_multi_dl_display(force=True)
+                                    comp_out = os.path.join(temp_dir, f"comp_{slug}_{q_name}.mp4")
+                                    comp_ok = await video_service.compress_video(
+                                        input_path=c_dl,
+                                        output_path=comp_out,
+                                        target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                                    )
+                                    if comp_ok and os.path.exists(comp_out) and os.path.getsize(comp_out) <= int(1.95 * 1024 * 1024 * 1024):
+                                        try:
+                                            os.remove(c_dl)
+                                        except Exception:
+                                            pass
+                                        c_dl = comp_out
+                                        c_size_bytes = os.path.getsize(c_dl)
+                                        log.info("[LeechService] Compression complete for %s: %s", q_name, downloader.format_bytes(c_size_bytes))
+                                    else:
+                                        log.error("[LeechService] Compression failed or output exceeds 1.95GB for %s. Skipping doomed upload.", q_name)
+                                        companion_progress[q_name].update({
+                                            "stage": "failed",
+                                            "up_pct": 0.0,
+                                            "size": downloader.format_bytes(c_size_bytes),
+                                        })
+                                        await _update_multi_dl_display(force=True)
+                                        return None
+
+                                c_size_str = downloader.format_bytes(c_size_bytes)
                                 companion_progress[q_name].update({
                                     "stage": "uploading",
-                                    "up_pct": pct,
-                                    "up_done": done_str,
-                                    "up_total": total_str,
-                                    "up_speed": speed_str,
-                                    "up_eta": eta_str,
-                                })
-                                await _update_multi_dl_display()
-
-                            up_res = {}
-                            if ENABLE_TELEGRAM_VIDEO_UPLOAD and target_channel:
-                                var_caption = f"🎬 {display_title} [{q_name}]\n\n⚡ Quality: {q_name} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
-                                try:
-                                    from services.upload_pool import upload_pool
-                                    up_res = await upload_pool.upload_with_pool(
-                                        file_path=c_dl,
-                                        target_chat=target_channel,
-                                        quality=q_name,
-                                        caption=var_caption,
-                                        file_name=os.path.basename(c_dl),
-                                        progress_callback=_up_cb,
-                                        fallback_client=client,
-                                    )
-                                except Exception as pool_err:
-                                    log.warning("[LeechService] upload_pool failed for %s (%s). Retrying directly via main bot_client...", q_name, pool_err)
-                                    try:
-                                        up_res = await telegram_upload.upload_video_file(
-                                            bot_client=client,
-                                            file_path=c_dl,
-                                            target_chat=target_channel,
-                                            caption=var_caption,
-                                            progress_callback=_up_cb,
-                                            fallback_chat=0,
-                                        )
-                                    except Exception as fb_err:
-                                        log.error("[LeechService] Direct bot_client upload failed for %s: %s", q_name, fb_err)
-                                        up_res = {}
-
-                                # If upload_pool returned no file_id without raising, execute clean fallback
-                                if not (up_res and up_res.get("file_id")):
-                                    try:
-                                        log.warning("[LeechService] upload_pool returned no file_id for %s. Retrying directly via main bot_client...", q_name)
-                                        up_res = await telegram_upload.upload_video_file(
-                                            bot_client=client,
-                                            file_path=c_dl,
-                                            target_chat=target_channel,
-                                            caption=var_caption,
-                                            progress_callback=_up_cb,
-                                            fallback_chat=0,
-                                        )
-                                    except Exception as fb_err:
-                                        log.error("[LeechService] Direct bot_client upload fallback failed for %s: %s", q_name, fb_err)
-                                        up_res = {}
-
-                            up_msg_id = up_res.get("message_id", 0) if up_res else 0
-                            if up_msg_id > 0 and up_res.get("file_id"):
-                                companion_progress[q_name].update({
-                                    "stage": "uploaded",
-                                    "up_pct": 100.0,
-                                    "msg_id": up_msg_id,
+                                    "dl_pct": 100.0,
                                     "size": c_size_str,
+                                    "up_pct": 0.0,
+                                    "up_done": "0B",
+                                    "up_total": c_size_str,
+                                    "up_speed": "--",
+                                    "up_eta": "--",
                                 })
-                                log.info("[LeechService] Pipeline quality %s successfully downloaded & uploaded (msg_id=%s, size=%s)", q_name, up_msg_id, c_size_str)
-                            else:
+                                await _update_multi_dl_display(force=True)
+
+                                # 4. Immediate Upload to Telegram Channel (PIPELINED - NO BLOCKING OTHER QUALITIES!)
+                                async def _up_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
+                                    companion_progress[q_name].update({
+                                        "stage": "uploading",
+                                        "up_pct": pct,
+                                        "up_done": done_str,
+                                        "up_total": total_str,
+                                        "up_speed": speed_str,
+                                        "up_eta": eta_str,
+                                    })
+                                    await _update_multi_dl_display()
+
+                                up_res = {}
+                                if ENABLE_TELEGRAM_VIDEO_UPLOAD and target_channel:
+                                    var_caption = f"🎬 {display_title} [{q_name}]\n\n⚡ Quality: {q_name} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
+                                    try:
+                                        from services.upload_pool import upload_pool
+                                        up_res = await upload_pool.upload_with_pool(
+                                            file_path=c_dl,
+                                            target_chat=target_channel,
+                                            quality=q_name,
+                                            caption=var_caption,
+                                            file_name=os.path.basename(c_dl),
+                                            progress_callback=_up_cb,
+                                            fallback_client=client,
+                                        )
+                                    except Exception as pool_err:
+                                        log.warning("[LeechService] upload_pool failed for %s (%s). Retrying directly via main bot_client...", q_name, pool_err)
+                                        try:
+                                            up_res = await telegram_upload.upload_video_file(
+                                                bot_client=client,
+                                                file_path=c_dl,
+                                                target_chat=target_channel,
+                                                caption=var_caption,
+                                                progress_callback=_up_cb,
+                                                fallback_chat=0,
+                                            )
+                                        except Exception as fb_err:
+                                            log.error("[LeechService] Direct bot_client upload failed for %s: %s", q_name, fb_err)
+                                            up_res = {}
+
+                                    # If upload_pool returned no file_id without raising, execute clean fallback
+                                    if not (up_res and up_res.get("file_id")):
+                                        try:
+                                            log.warning("[LeechService] upload_pool returned no file_id for %s. Retrying directly via main bot_client...", q_name)
+                                            up_res = await telegram_upload.upload_video_file(
+                                                bot_client=client,
+                                                file_path=c_dl,
+                                                target_chat=target_channel,
+                                                caption=var_caption,
+                                                progress_callback=_up_cb,
+                                                fallback_chat=0,
+                                            )
+                                        except Exception as fb_err:
+                                            log.error("[LeechService] Direct bot_client upload fallback failed for %s: %s", q_name, fb_err)
+                                            up_res = {}
+
+                                up_msg_id = up_res.get("message_id", 0) if up_res else 0
+                                if up_msg_id > 0 and up_res.get("file_id"):
+                                    companion_progress[q_name].update({
+                                        "stage": "uploaded",
+                                        "up_pct": 100.0,
+                                        "msg_id": up_msg_id,
+                                        "size": c_size_str,
+                                    })
+                                    log.info("[LeechService] Pipeline quality %s successfully downloaded & uploaded (msg_id=%s, size=%s)", q_name, up_msg_id, c_size_str)
+                                else:
+                                    companion_progress[q_name].update({
+                                        "stage": "failed",
+                                        "up_pct": 0.0,
+                                        "size": c_size_str,
+                                    })
+                                    log.error("[LeechService] Pipeline quality %s upload failed or returned no message_id.", q_name)
+
+                                await _update_multi_dl_display(force=True)
+                                return (q_name, c_dl, up_res)
+
+                            except Exception as pipe_err:
+                                log.error("[LeechService] Uncaught error in pipeline quality %s: %s", q_name, pipe_err)
                                 companion_progress[q_name].update({
                                     "stage": "failed",
                                     "up_pct": 0.0,
-                                    "size": c_size_str,
                                 })
-                                log.error("[LeechService] Pipeline quality %s upload failed or returned no message_id.", q_name)
-
-                            await _update_multi_dl_display(force=True)
-                            return (q_name, c_dl, up_res)
+                                await _update_multi_dl_display(force=True)
+                                return None
 
                         pipe_tasks = [
                             _run_single_quality_pipeline(q, target_qualities[q], is_primary_flag=(q == primary_q))
@@ -1414,8 +1440,9 @@ async def _execute_leech(
                                 pre_downloaded_variants[q_id] = q_path
                                 if q_up and q_up.get("file_id"):
                                     variant_tg_info[q_id] = q_up
-                                if q_id == candidate.quality or not local_file:
+                                if q_id == primary_q or not local_file:
                                     local_file = q_path
+                                    chosen_candidate = target_qualities.get(q_id, candidate)
                                     if q_up:
                                         file_id = q_up.get("file_id", "")
                                         stream_url = q_up.get("stream_url", "")
@@ -1586,10 +1613,10 @@ async def _execute_leech(
             else:
                 sub_lbl = "උපසිරැසි රහිතව"
             txt = (
-                f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.40GB Safe Ceiling)...</b>\n\n"
+                f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.85GB Safe Ceiling)...</b>\n\n"
                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                 f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                f"📦 <b>ඉලක්කය:</b> 1.40 GB (Telegram Bot 2GB Limit Safe)\n"
+                f"📦 <b>ඉලක්කය:</b> 1.85 GB (Telegram Bot 2GB Limit Safe)\n"
                 f"💬 <b>උපසිරැසි:</b> {sub_lbl}\n"
                 f"⚡ <i>Multi-Core NVENC/CPU High-Speed Encoding</i>"
             )

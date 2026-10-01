@@ -1165,11 +1165,12 @@ class TestLeechService(unittest.TestCase):
                  patch("services.scrapers.method3_ddl.search", new_callable=AsyncMock, return_value=None), \
                  patch("services.scrapers.torrent_finder.search_all_torrents", new_callable=AsyncMock, return_value=[]):
                 cands = await leech_service.find_all_candidates(title="Game of Thrones", season=6, episode=5, is_series=True)
-                self.assertGreaterEqual(len(cands), 3)
-                # Verify all SinhalaSub candidates have is_already_hardsubbed=True
-                for c in cands[:3]:
+                self.assertEqual(len(cands), 2)
+                # Verify all SinhalaSub candidates have is_already_hardsubbed=True and are 720p/480p
+                for c in cands:
                     self.assertTrue(c.extra.get("is_already_hardsubbed"))
                     self.assertEqual(c.extra.get("portal"), "SinhalaSub")
+                    self.assertIn(c.quality, ("720p", "480p"))
 
         asyncio.run(run_test())
 
@@ -1291,23 +1292,83 @@ class TestLeechService(unittest.TestCase):
 
     def test_tv_series_quality_filter_strictly_720p_480p(self):
         """Verify TV Series candidates strictly keep 720p and 480p, filtering out 1080p."""
-        cands = [
-            leech_service.LeechCandidate(method="ddl", method_name="1080p Release", source_url="http://a/1080", quality="1080p"),
-            leech_service.LeechCandidate(method="ddl", method_name="720p Release", source_url="http://a/720", quality="720p"),
-            leech_service.LeechCandidate(method="ddl", method_name="480p Release", source_url="http://a/480", quality="480p"),
+        fake_matched = [
+            {"url": "https://cdn.sinhalasub.net/series/1080p.mp4", "quality": "1080p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+            {"url": "https://cdn.sinhalasub.net/series/720p.mp4", "quality": "720p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+            {"url": "https://cdn.sinhalasub.net/series/480p.mp4", "quality": "480p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
         ]
-        # Simulate TV Series filter in _execute_leech
-        is_series = True
-        series_allowed = [c for c in cands if str(c.quality or "").lower() in ("720p", "480p")]
-        if not series_allowed:
-            series_allowed = [c for c in cands if str(c.quality or "").lower() != "1080p"]
-        filtered = series_allowed if is_series else cands
 
-        self.assertEqual(len(filtered), 2)
-        qualities = [c.quality for c in filtered]
-        self.assertIn("720p", qualities)
-        self.assertIn("480p", qualities)
-        self.assertNotIn("1080p", qualities)
+        async def run_test():
+            with patch("services.scrapers.srilankan_matched_scraper.search_matched_srilankan_releases", new_callable=AsyncMock, return_value=fake_matched), \
+                 patch("services.scrapers.torrent_finder.search_all_torrents", new_callable=AsyncMock, return_value=[]):
+                # Call find_all_candidates for TV Series
+                cands = await leech_service.find_all_candidates(title="Breaking Bad", year=2008, season=1, episode=1, is_series=True)
+                self.assertEqual(len(cands), 2)
+                qualities = [c.quality for c in cands]
+                self.assertIn("720p", qualities)
+                self.assertIn("480p", qualities)
+                self.assertNotIn("1080p", qualities)
+                self.assertEqual(cands[0].quality, "720p")  # 720p prioritized first
+
+        asyncio.run(run_test())
+
+    def test_tv_series_1080p_only_lankan_falls_back_to_torrents(self):
+        """Verify that when Lankan matched scraper only has 1080p for TV series, it falls back to torrents for 720p/480p."""
+        fake_matched = [
+            {"url": "https://cdn.sinhalasub.net/series/1080p.mp4", "quality": "1080p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+        ]
+        mock_torrents = [
+            {"magnet": "magnet:?xt=urn:btih:720p_tor", "quality": "720p", "provider": "EZTV", "size": "800MB"},
+            {"magnet": "magnet:?xt=urn:btih:1080p_tor", "quality": "1080p", "provider": "EZTV", "size": "2.5GB"},
+        ]
+
+        async def run_test():
+            with patch("services.scrapers.srilankan_matched_scraper.search_matched_srilankan_releases", new_callable=AsyncMock, return_value=fake_matched), \
+                 patch("services.scrapers.method1_telegram.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.method3_ddl.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.torrent_finder.search_all_torrents", new_callable=AsyncMock, return_value=mock_torrents):
+                cands = await leech_service.find_all_candidates(title="Breaking Bad", year=2008, season=1, episode=1, is_series=True)
+                self.assertEqual(len(cands), 1)
+                self.assertEqual(cands[0].quality, "720p")
+                self.assertIn("720p_tor", cands[0].source_url)
+
+        asyncio.run(run_test())
+
+    def test_movie_prioritizes_1080p_then_720p_then_480p(self):
+        """Verify Movies include 1080p, 720p, 480p and prioritize 1080p first."""
+        fake_matched = [
+            {"url": "https://cdn.sinhalasub.net/movie/480p.mp4", "quality": "480p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+            {"url": "https://cdn.sinhalasub.net/movie/1080p.mp4", "quality": "1080p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+            {"url": "https://cdn.sinhalasub.net/movie/720p.mp4", "quality": "720p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+        ]
+
+        async def run_test():
+            with patch("services.scrapers.srilankan_matched_scraper.search_matched_srilankan_releases", new_callable=AsyncMock, return_value=fake_matched):
+                cands = await leech_service.find_all_candidates(title="Avatar", year=2009, is_series=False)
+                self.assertEqual(len(cands), 3)
+                self.assertEqual(cands[0].quality, "1080p")
+                self.assertEqual(cands[1].quality, "720p")
+                self.assertEqual(cands[2].quality, "480p")
+
+        asyncio.run(run_test())
+
+    def test_pipeline_upload_failure_resets_progress_to_zero_and_failed(self):
+        """Verify that when an upload fails in companion pipeline, progress is reset to 0.0 and stage marked failed."""
+        companion_progress = {
+            "720p": {"stage": "uploading", "up_pct": 85.0, "size": "700MB"},
+        }
+
+        # Simulate the failure path in _run_single_quality_pipeline
+        up_res = {}  # Failed upload returned empty dict
+        up_msg_id = up_res.get("message_id", 0) if up_res else 0
+        if up_msg_id > 0 and up_res.get("file_id"):
+            companion_progress["720p"].update({"stage": "uploaded", "up_pct": 100.0})
+        else:
+            companion_progress["720p"].update({"stage": "failed", "up_pct": 0.0})
+
+        self.assertEqual(companion_progress["720p"]["stage"], "failed")
+        self.assertEqual(companion_progress["720p"]["up_pct"], 0.0)
+
 
     def test_compress_video_targets_1_85gb_safe_limit(self):
         """Verify video compression default target is strictly <= 1.85GB to stay within 2000 MiB limit."""

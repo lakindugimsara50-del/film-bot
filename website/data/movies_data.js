@@ -1108,8 +1108,6 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
       "sub_merged": true,
-      "is_already_hardsubbed": true,
-      "sub_hardcoded": true,
       "quality": "1080p",
       "duration": "62 min",
       "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
@@ -1138,187 +1136,124 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
-      "message_id": 204,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADK2q1Ki6gzohgTp3nc80LIc1qM-QOAAJ2JAACTLaxVVTpm4m03yaTHgQ",
+      "message_id": 43,
       "file_name": "game-of-thrones-2011-s01e01.mp4",
-      "file_size": 1658016192,
-      "drive_file_id": "",
-      "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
+      "file_size": 573312561,
+      "stream_url": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
       "streams": [
         {
           "server": "Server 1",
-          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sinhala Sub)",
           "type": "video/mp4",
-          "mode": "telegram_stream",
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
-          "message_id": 204,
-          "quality": "1080p"
+          "mode": "super_chunk",
+          "stream_url": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
+          "quality": "1080p",
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
         },
         {
           "server": "Server 2",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "label": "🎬 VIP Player 1 (VidLink / AutoEmbed Ultra HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://vidlink.pro/tv/1399/1/1"
         },
         {
           "server": "Server 3",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-1-1"
-        },
-        {
-          "server": "Server 4",
-          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "label": "🚀 VIP Player 2 (SuperEmbed / 2Embed Fast Stream)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=1&e=1"
         }
       ],
       "qualities": {
-        "auto": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
-        "1080p": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
-        "720p": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/203",
-        "480p": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/202",
-        "360p": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204"
+        "auto": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=auto",
+        "1080p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=1080p",
+        "720p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=720p",
+        "480p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=480p",
+        "360p": "/api/stream?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=360p"
       },
       "downloads": [
         {
-          "quality": "1080p (Telegram Direct)",
-          "label": "1080p Full HD (Telegram Channel • Fast)",
-          "size": "1.5 GB",
-          "size_bytes": 1658016192,
-          "url": "https://t.me/c/4325759505/204",
-          "telegram_url": "https://t.me/c/4325759505/204",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
-          "message_id": 204,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "720p (Telegram Direct)",
-          "label": "720p HD (Telegram Channel • Fast)",
-          "size": "775.8 MB",
-          "size_bytes": 813487277,
-          "url": "https://t.me/c/4325759505/203",
-          "telegram_url": "https://t.me/c/4325759505/203",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADy2q-CHUxOGa0VHo7Yds-G83CsupSAAJQHwACUXfxVb70HivS5A4mHgQ",
-          "message_id": 203,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/203",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "480p (Telegram Direct)",
-          "label": "480p SD (Telegram Channel • Fast)",
-          "size": "392.1 MB",
-          "size_bytes": 411133665,
-          "url": "https://t.me/c/4325759505/202",
-          "telegram_url": "https://t.me/c/4325759505/202",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADymq-B5Q7XLbbrZ8G8Zlxn0W-HTLrAAJPHwACUXfxVc3bAAGlLLtFjR4E",
-          "message_id": 202,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/202",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
           "quality": "1080p",
-          "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "1.5 GB",
-          "size_bytes": 1658016192,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s01e01_1080p",
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "546.8 MB",
+          "size_bytes": 573312561,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=1080p&title=Game%20of%20Thrones%20S01E01&size=573312561",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
-          "host": "Telegram",
+          "host": "Google Drive",
           "sub_merged": true,
           "subtitle_merged": true
         },
         {
           "quality": "720p",
-          "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "775.8 MB",
-          "size_bytes": 813487277,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s01e01_720p",
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/203",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "300.7 MB",
+          "size_bytes": 315321908,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=720p&title=Game%20of%20Thrones%20S01E01&size=315321908",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
-          "host": "Telegram",
+          "host": "Google Drive",
           "sub_merged": true,
           "subtitle_merged": true
         },
         {
           "quality": "480p",
-          "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "392.1 MB",
-          "size_bytes": 411133665,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s01e01_480p",
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/202",
+          "label": "480p SD (Sinhala Sub Merged)",
+          "size": "175.0 MB",
+          "size_bytes": 183460019,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=480p&title=Game%20of%20Thrones%20S01E01&size=183460019",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
           "format": "MP4",
-          "host": "Telegram",
+          "host": "Google Drive",
           "sub_merged": true,
           "subtitle_merged": true
         },
         {
           "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "284.6 MB",
-          "size_bytes": 298442914,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s01e01_360p",
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
+          "label": "360p Data Saver (Sinhala Sub Merged)",
+          "size": "218.6 MB",
+          "size_bytes": 229255719,
+          "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "url": "/api/download?id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7&q=360p&title=Game%20of%20Thrones%20S01E01&size=229255719",
+          "raw_url": "https://drive.google.com/uc?export=download&id=1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+          "format": "MP4",
+          "host": "Google Drive",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p (Telegram Download)",
+          "label": "1080p Full HD (Telegram • Sinhala Sub Merged)",
+          "size": "546.8 MB",
+          "url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/43",
           "format": "MP4",
           "host": "Telegram",
+          "download_only": true,
           "sub_merged": true,
           "subtitle_merged": true
         }
       ],
-      "variant_media": {
-        "1080p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
-          "message_id": 204,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
-          "size_bytes": 1658016192
-        },
-        "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADy2q-CHUxOGa0VHo7Yds-G83CsupSAAJQHwACUXfxVb70HivS5A4mHgQ",
-          "message_id": 203,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/203",
-          "size_bytes": 813487277
-        },
-        "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQADymq-B5Q7XLbbrZ8G8Zlxn0W-HTLrAAJPHwACUXfxVc3bAAGlLLtFjR4E",
-          "message_id": 202,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/202",
-          "size_bytes": 411133665
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
-          "size_bytes": 298442914
-        }
-      },
       "subtitles": [
         {
           "language": "Sinhala",
           "srclang": "si",
           "label": "සිංහල උපසිරැසි (Sinhala)",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s01e01-si.vtt",
-          "default": false
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A08.000%0A%F0%9F%8E%AC%20Game%20of%20Thrones%20S01E01%20-%20Winter%20Is%20Coming%20%282011%29%20%E2%80%94%20FilmSub.lk%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%0A%0A00%3A00%3A08.500%20--%3E%2000%3A00%3A18.000%0A%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B7%8A%E0%B7%80%E0%B6%BA%E0%B6%82%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%93%E0%B6%BA%E0%B7%80%20%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%92%E0%B6%BA%E0%B7%8F%E0%B6%AD%E0%B7%8A%E0%B6%B8%E0%B6%9A%E0%B6%BA%E0%B7%92%20%28Auto%20Sinhala%20Subtitles%20Enabled%29%0A%0A00%3A00%3A18.500%20--%3E%2000%3A00%3A30.000%0A1080p%20/%20720p%20/%20480p%20/%20360p%20High-Speed%20Cloud%20Streaming%20%26%20Download%0A%0A00%3A00%3A30.500%20--%3E%2000%3A00%3A45.000%0AGame%20of%20Thrones%20S01E01%20-%20Winter%20Is%20Coming%20%282011%29%20%E2%80%94%20%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%80%E0%B7%93%E0%B6%A9%E0%B7%92%E0%B6%BA%E0%B7%9D%E0%B7%80%E0%B6%A7%E0%B6%B8%20Merge%20%E0%B6%9A%E0%B6%BB%20%E0%B6%87%E0%B6%AD",
+          "default": true
         }
       ],
-      "source_method": "ddl",
+      "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s01e01",
-      "added_date": "2026-10-01",
-      "added_at": "2026-10-01T07:17:40Z",
-      "added_by": "bot_auto_leech"
+      "added_date": "2026-09-24",
+      "added_at": "2026-09-24T13:44:53Z",
+      "added_by": "bot_auto_leech",
+      "drive_file_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+      "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
     },
     {
       "id": "game-of-thrones-2011-s01e02",
@@ -10301,22 +10236,89 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=1&e=1"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-si.vtt",
+      "downloads": [
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Sinhala Sub Merged)",
+          "size": "1.54 GB",
+          "size_bytes": 1658016192,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
+          "message_id": 204,
+          "url": "https://t.me/c/4325759505/204",
+          "telegram_url": "https://t.me/c/4325759505/204",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Sinhala Sub Merged)",
+          "size": "0.76 GB",
+          "size_bytes": 813487277,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADy2q-CHUxOGa0VHo7Yds-G83CsupSAAJQHwACUXfxVb70HivS5A4mHgQ",
+          "message_id": 203,
+          "url": "https://t.me/c/4325759505/203",
+          "telegram_url": "https://t.me/c/4325759505/203",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD",
+          "size": "0.38 GB",
+          "size_bytes": 411133665,
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADymq-B5Q7XLbbrZ8G8Zlxn0W-HTLrAAJPHwACUXfxVc3bAAGlLLtFjR4E",
+          "message_id": 202,
+          "url": "https://t.me/c/4325759505/202",
+          "telegram_url": "https://t.me/c/4325759505/202",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "telegram_status": "complete",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s01e01-si.vtt",
       "has_sinhala_sub": true,
       "subtitles": [
         {
           "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-si.vtt",
-          "default": true
+          "label": "සිංහල",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s01e01-si.vtt",
+          "default": true,
+          "srclang": "si"
         }
       ],
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011",
       "channel_post_id": 201,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-10-01"
+      "added_date": "2026-10-01",
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
+          "message_id": 204,
+          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/204",
+          "size_bytes": 1658016192
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADy2q-CHUxOGa0VHo7Yds-G83CsupSAAJQHwACUXfxVb70HivS5A4mHgQ",
+          "message_id": 203,
+          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/203",
+          "size_bytes": 813487277
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQADymq-B5Q7XLbbrZ8G8Zlxn0W-HTLrAAJPHwACUXfxVc3bAAGlLLtFjR4E",
+          "message_id": 202,
+          "stream_url": "https://multi-city-rid-presentation.trycloudflare.com/stream/channel/-1004325759505/202",
+          "size_bytes": 411133665
+        }
+      },
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
+      "message_id": 204,
+      "sub_merged": true
     },
     {
       "id": "game-of-thrones-2011-s06e07",
@@ -11389,5 +11391,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "sub_merged": true
     }
   ],
-  "last_updated": "2026-10-01T07:17:43Z"
+  "last_updated": "2026-10-01T06:55:14Z"
 };

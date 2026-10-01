@@ -980,6 +980,7 @@ async def compress_video(
     target_size_bytes: int = int(1.85 * 1024 * 1024 * 1024),
     progress_callback: Optional[Callable[[float, str], None]] = None,
     sub_path: Optional[str] = None,
+    is_hardsub: bool = False,
 ) -> bool:
     """
     Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
@@ -999,6 +1000,29 @@ async def compress_video(
     out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
     os.makedirs(out_dir, exist_ok=True)
 
+    # Disk space safety check: ensure disk/RAM has sufficient space for input + output
+    try:
+        needed_bytes = target_size_bytes + 200 * 1024 * 1024
+        free_space = shutil.disk_usage(out_dir).free
+        if free_space < needed_bytes:
+            log.warning(
+                "[VideoService] Work dir '%s' has only %.2f GB free (target needs %.2f GB). "
+                "Checking alternative storage...",
+                out_dir, free_space / (1024 ** 3), needed_bytes / (1024 ** 3)
+            )
+            fallback_dirs = ["/content", tempfile.gettempdir(), "."]
+            for fb in fallback_dirs:
+                if os.path.isdir(fb) and os.access(fb, os.W_OK):
+                    fb_free = shutil.disk_usage(fb).free
+                    if fb_free >= needed_bytes:
+                        orig_name = os.path.basename(output_path)
+                        output_path = os.path.join(fb, orig_name)
+                        out_dir = fb
+                        log.info("[VideoService] Redirected compression output to disk '%s' (%.2f GB free)", output_path, fb_free / (1024 ** 3))
+                        break
+    except Exception as d_err:
+        log.debug("[VideoService] Disk space check note: %s", d_err)
+
     def _cleanup_output() -> None:
         if os.path.exists(output_path):
             try:
@@ -1008,24 +1032,34 @@ async def compress_video(
 
     duration = get_video_duration(input_path, ffmpeg_bin)
     in_bytes = os.path.getsize(input_path)
-    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, size=%d bytes) -> '%s' (target=%d bytes)",
-             input_path, duration, in_bytes, output_path, target_size_bytes)
+    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
+             input_path, duration, in_bytes, output_path, target_size_bytes, is_hardsub)
 
     # Calculate optimal target bitrate
     audio_bps = 128_000
+    usable_bits = int(target_size_bytes * 8 * 0.95)
     if duration > 10.0:
-        usable_bits = int(target_size_bytes * 8 * 0.95)
         total_bps = usable_bits / duration
         video_bps = max(400_000, int(total_bps - audio_bps))
         v_bitrate_k = int(video_bps / 1000)
     else:
-        v_bitrate_k = 1800
+        # Fallback if duration is unknown/unparsed: assume 3 hours (10800s) to guarantee staying strictly under target_size_bytes
+        log.warning("[VideoService] Duration unparsed or <= 10s (%.1fs). Using safe 3-hour fallback bitrate.", duration)
+        fallback_dur = 10800.0
+        total_bps = usable_bits / fallback_dur
+        video_bps = max(400_000, int(total_bps - audio_bps))
+        v_bitrate_k = int(video_bps / 1000)
 
     maxrate_k = int(v_bitrate_k * 1.15)
     bufsize_k = int(v_bitrate_k * 2)
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
-    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    if is_hardsub:
+        log.info("[VideoService] Video is already hardsubbed (is_hardsub=True). Skipping subtitle burn/mux.")
+        sub_path = None
+        has_sub = False
+    else:
+        has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
     ext = os.path.splitext(output_path)[1].lower()
     is_mp4 = ext in (".mp4", ".m4v", ".mov")
     sub_codec = "mov_text" if is_mp4 else "srt"
@@ -1095,18 +1129,18 @@ async def compress_video(
             "-c:v", "libx264",
             "-preset", _preset,   # ultrafast on Colab GPU, veryfast on Render
             "-tune", "fastdecode",
-            "-threads", _threads,
+            "-threads", "0",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
             "-pix_fmt", "yuv420p",
         ])
 
-
     cmd.extend([
         "-c:a", "aac",
         "-b:a", "128k",
         "-ac", "2",
+        "-af", "aresample=async=1",
         "-max_muxing_queue_size", "9999",
     ])
     if is_mp4:
@@ -1151,7 +1185,8 @@ async def compress_video(
                             except Exception:
                                 pass
 
-        await asyncio.gather(proc.wait(), _read_stderr())
+        # Generous 1800s (30 minute) timeout to ensure long 3-hour movie compression finishes
+        await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             out_sz = os.path.getsize(output_path)
@@ -1174,6 +1209,16 @@ async def compress_video(
             log.error("[VideoService] FFmpeg exited with code %s", proc.returncode)
             _cleanup_output()
             return False
+    except asyncio.TimeoutError:
+        log.error("[VideoService] compress_video timed out after 1800s for: %s", input_path)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        return False
     except asyncio.CancelledError:
         if proc and proc.returncode is None:
             try:
@@ -1207,12 +1252,13 @@ async def compress_smart_1080p(
     output_path: str,
     progress_callback: Optional[Callable[[float, str], None]] = None,
     sub_path: Optional[str] = None,
+    is_hardsub: bool = False,
 ) -> bool:
     """
     Intelligent 1080p Processing:
     1. If file size <= 1.95GB (MAX_TELEGRAM_BOT_SIZE):
        Executes instantaneous Stream Copy & Soft-Sub Muxing in 3-5 seconds.
-    2. If file size > 1.95GB (bloated video like KGF Chapter 2 - 2.3GB):
+    2. If file size > 1.95GB (bloated video like KGF Chapter 2 - 2.3GB, DC 3.5GB):
        Executes fast multi-core compression (compress_video) targeting 1.85GB,
        guaranteeing output <= 1.95GB in minutes (-preset veryfast -threads 0).
     """
@@ -1234,6 +1280,7 @@ async def compress_smart_1080p(
             target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
             progress_callback=progress_callback,
             sub_path=sub_path,
+            is_hardsub=is_hardsub,
         )
 
     log.info("[VideoService] compress_smart_1080p: Executing instant Stream Copy (Soft-sub Muxing) for '%s' -> '%s'", input_path, output_path)
@@ -1254,6 +1301,7 @@ async def compress_smart_1080p(
                 target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
                 progress_callback=progress_callback,
                 sub_path=sub_path,
+                is_hardsub=is_hardsub,
             )
         if progress_callback:
             try:

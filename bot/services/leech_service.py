@@ -1256,17 +1256,15 @@ async def _execute_leech(
                                 # The lock is now RELEASED! The next quality starts downloading immediately from the CDN.
                                 # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
 
-                                # 2. Faststart remux
-                                fs_out = os.path.join(temp_dir, f"fs_{slug}_{q_name}.mp4")
-                                if await video_service.apply_faststart(c_dl, fs_out):
-                                    try:
-                                        os.remove(c_dl)
-                                    except Exception:
-                                        pass
-                                    c_dl = fs_out
+                                # 2. Check candidate-specific hardsub & acquire subtitles if not hardsubbed
+                                q_cand_is_hardsub = bool(
+                                    (cand_obj.extra and cand_obj.extra.get("is_already_hardsubbed"))
+                                    or any(k in str(cand_obj.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                                    or (cand_obj.extra and any(k in str(cand_obj.extra.get("portal", "")).lower() for k in ("sinhalasub", "cinesubz")))
+                                    or cand_is_hardsub
+                                )
 
-                                # 3. Fast stream-copy subtitle mux (~1s) if needed and not already hardsubbed
-                                if not cand_is_hardsub and not active_sub_to_mux:
+                                if not q_cand_is_hardsub and not active_sub_to_mux:
                                     try:
                                         clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
                                         auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
@@ -1283,34 +1281,36 @@ async def _execute_leech(
                                     except Exception as s_err:
                                         log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
 
-                                if active_sub_to_mux and os.path.exists(active_sub_to_mux):
-                                    companion_progress[q_name]["stage"] = "muxing"
-                                    await _update_multi_dl_display(force=True)
-                                    sub_out = os.path.join(temp_dir, f"subbed_{slug}_{q_name}.mp4")
-                                    if await video_service.stream_copy_subtitles(c_dl, active_sub_to_mux, sub_out):
-                                        try:
-                                            os.remove(c_dl)
-                                        except Exception:
-                                            pass
-                                        c_dl = sub_out
-                                        log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
+                                q_sub_to_mux = None if q_cand_is_hardsub else (active_sub_to_mux if active_sub_to_mux and os.path.exists(active_sub_to_mux) else None)
 
                                 c_size_bytes = os.path.getsize(c_dl)
-                                # User requirement: If file > 1.95GB (e.g. 1080p 3.5GB), compress down to 1.85GB using FFmpeg
-                                if c_size_bytes > int(1.95 * 1024 * 1024 * 1024):
+                                # 3. Video Processing & Compression (Guarantee <= 1.95GB / 1.85GB target)
+                                if c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE:
                                     log.info(
-                                        "[LeechService] File %s (%s) exceeds Telegram 2GB limit. Running fast FFmpeg compression to fit...",
+                                        "[LeechService] File %s (%s) exceeds Telegram 1.95GB limit. Running fast FFmpeg compression to fit...",
                                         q_name, downloader.format_bytes(c_size_bytes)
                                     )
                                     companion_progress[q_name]["stage"] = "compressing"
                                     await _update_multi_dl_display(force=True)
+
+                                    async def _comp_cb(pct: float, p_str: str):
+                                        companion_progress[q_name].update({
+                                            "stage": "compressing",
+                                            "dl_pct": pct,
+                                            "dl_done": f"Compressing {p_str}",
+                                        })
+                                        await _update_multi_dl_display()
+
                                     comp_out = os.path.join(temp_dir, f"comp_{slug}_{q_name}.mp4")
                                     comp_ok = await video_service.compress_video(
                                         input_path=c_dl,
                                         output_path=comp_out,
                                         target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                                        progress_callback=_comp_cb,
+                                        sub_path=q_sub_to_mux,
+                                        is_hardsub=q_cand_is_hardsub,
                                     )
-                                    if comp_ok and os.path.exists(comp_out) and os.path.getsize(comp_out) <= int(1.95 * 1024 * 1024 * 1024):
+                                    if comp_ok and os.path.exists(comp_out) and 0 < os.path.getsize(comp_out) <= video_service.MAX_TELEGRAM_BOT_SIZE:
                                         try:
                                             os.remove(c_dl)
                                         except Exception:
@@ -1327,6 +1327,67 @@ async def _execute_leech(
                                         })
                                         await _update_multi_dl_display(force=True)
                                         return None
+                                else:
+                                    # File is <= 1.95GB: Faststart remux + fast stream-copy subtitle mux
+                                    fs_out = os.path.join(temp_dir, f"fs_{slug}_{q_name}.mp4")
+                                    if await video_service.apply_faststart(c_dl, fs_out):
+                                        try:
+                                            os.remove(c_dl)
+                                        except Exception:
+                                            pass
+                                        c_dl = fs_out
+
+                                    if q_sub_to_mux and os.path.exists(q_sub_to_mux):
+                                        companion_progress[q_name]["stage"] = "muxing"
+                                        await _update_multi_dl_display(force=True)
+                                        sub_out = os.path.join(temp_dir, f"subbed_{slug}_{q_name}.mp4")
+                                        if await video_service.stream_copy_subtitles(c_dl, q_sub_to_mux, sub_out):
+                                            try:
+                                                os.remove(c_dl)
+                                            except Exception:
+                                                pass
+                                            c_dl = sub_out
+                                            log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
+
+                                    c_size_bytes = os.path.getsize(c_dl)
+                                    if c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE:
+                                        log.warning("[LeechService] Post-mux file %s (%d bytes) > 1.95GB limit. Compressing...", q_name, c_size_bytes)
+                                        comp_out = os.path.join(temp_dir, f"comp_postmux_{slug}_{q_name}.mp4")
+                                        comp_ok = await video_service.compress_video(
+                                            input_path=c_dl,
+                                            output_path=comp_out,
+                                            target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                                            sub_path=q_sub_to_mux,
+                                            is_hardsub=q_cand_is_hardsub,
+                                        )
+                                        if comp_ok and os.path.exists(comp_out) and 0 < os.path.getsize(comp_out) <= video_service.MAX_TELEGRAM_BOT_SIZE:
+                                            try:
+                                                os.remove(c_dl)
+                                            except Exception:
+                                                pass
+                                            c_dl = comp_out
+                                            c_size_bytes = os.path.getsize(c_dl)
+                                        else:
+                                            log.error("[LeechService] Post-mux compression failed for %s. Skipping doomed upload.", q_name)
+                                            companion_progress[q_name].update({
+                                                "stage": "failed",
+                                                "up_pct": 0.0,
+                                                "size": downloader.format_bytes(c_size_bytes),
+                                            })
+                                            await _update_multi_dl_display(force=True)
+                                            return None
+
+                                # Final pre-upload guard: strictly prevent doomed > 1.95GB uploads from crashing Telegram
+                                if os.path.getsize(c_dl) > video_service.MAX_TELEGRAM_BOT_SIZE:
+                                    log.error("[LeechService] %s strictly exceeds Telegram limit (%d bytes). Aborting doomed upload.",
+                                              q_name, os.path.getsize(c_dl))
+                                    companion_progress[q_name].update({
+                                        "stage": "failed",
+                                        "up_pct": 0.0,
+                                        "size": downloader.format_bytes(os.path.getsize(c_dl)),
+                                    })
+                                    await _update_multi_dl_display(force=True)
+                                    return None
 
                                 c_size_str = downloader.format_bytes(c_size_bytes)
                                 companion_progress[q_name].update({
@@ -1648,8 +1709,9 @@ async def _execute_leech(
                 target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
                 sub_path=sub_to_burn_video,
+                is_hardsub=is_already_hardsubbed,
             )
-            if comp_ok and os.path.exists(remuxed) and os.path.getsize(remuxed) <= video_service.MAX_TELEGRAM_BOT_SIZE:
+            if comp_ok and os.path.exists(remuxed) and 0 < os.path.getsize(remuxed) <= video_service.MAX_TELEGRAM_BOT_SIZE:
                 if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                     try:
                         os.remove(local_file)
@@ -1663,7 +1725,10 @@ async def _execute_leech(
                         pass
                 local_file = remuxed
                 is_faststart_done = True
-                log.info("[LeechService] Direct compression succeeded: %s (%s)", local_file, downloader.format_bytes(os.path.getsize(local_file)))
+                curr_size = os.path.getsize(local_file)
+                log.info("[LeechService] Direct compression succeeded: %s (%s)", local_file, downloader.format_bytes(curr_size))
+            else:
+                log.error("[LeechService] Direct compression failed or produced output > 1.95GB for %s.", local_file)
         else:
             # File is <= 1.95 GB
             try:
@@ -1807,13 +1872,30 @@ async def _execute_leech(
                 target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
                 progress_callback=_compress_progress,
                 sub_path=sub_to_burn_video,
+                is_hardsub=is_already_hardsubbed,
             )
-            if comp_ok and os.path.exists(comp_guard_out) and os.path.getsize(comp_guard_out) <= video_service.MAX_TELEGRAM_BOT_SIZE:
+            if comp_ok and os.path.exists(comp_guard_out) and 0 < os.path.getsize(comp_guard_out) <= video_service.MAX_TELEGRAM_BOT_SIZE:
                 try:
                     os.remove(local_file)
                 except Exception:
                     pass
                 local_file = comp_guard_out
+
+        # Strict validation: If file is still > 1.95GB, DO NOT attempt doomed Telegram upload!
+        if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
+            log.error("[LeechService] FATAL: File %s (%d bytes) strictly exceeds Telegram 1.95GB limit even after compression. Aborting upload.",
+                      local_file, os.path.getsize(local_file))
+            task_tracker.tracker.fail_task(user_id, "File exceeds Telegram 2GB limit after compression.")
+            try:
+                await status_msg.edit_text(
+                    f"⚠️ <b>ගොනුවේ ප්‍රමාණය වැඩියි (File Too Large)!</b>\n\n"
+                    f"🎬 <b>{display_title}</b> ගොනුව Telegram සීමාව වන 2 GB ඉක්මවා ඇත ({downloader.format_bytes(os.path.getsize(local_file))}).\n"
+                    f"Compression මඟින්ද 2 GB ට වඩා අඩු කිරීමට නොහැකි විය. කරුණාකර 720p හෝ වෙනත් ගුණාත්මක භාවයක් තෝරන්න.",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception:
+                pass
+            return
 
         # ── Step 3 & 4: Overlapped Multi-Quality RAM Encoding + Parallel Cloud Drive & Telegram Upload ──
         file_size = os.path.getsize(local_file)
@@ -2134,6 +2216,12 @@ async def _execute_leech(
             if not os.path.exists(q_path) or os.path.getsize(q_path) == 0:
                 return
             q_bytes = os.path.getsize(q_path)
+            if q_bytes > video_service.MAX_TELEGRAM_BOT_SIZE:
+                log.error("[LeechService] Cannot upload variant %s (%d bytes) to Telegram: exceeds 1.95GB bot limit!", q_label, q_bytes)
+                dashboard_state["variant_q"] = q_label
+                dashboard_state["variant_status"] = "failed"
+                await _render_dashboard(force=True)
+                return
             dashboard_state["variant_q"] = q_label
             dashboard_state["variant_status"] = "uploading"
             dashboard_state["variant_total"] = downloader.format_bytes(q_bytes)
@@ -2414,6 +2502,12 @@ async def _execute_leech(
                 dashboard_state["primary_pct"] = 100.0
                 await _render_dashboard(force=True)
                 log.info("[LeechService] Primary quality %s was already uploaded during parallel pipeline (msg_id=%s).", primary_quality, message_id)
+                return
+            if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
+                log.error("[LeechService] Cannot upload primary %s (%d bytes) to Telegram: exceeds 1.95GB bot limit! Aborting doomed upload.",
+                          local_file, os.path.getsize(local_file))
+                dashboard_state["primary_status"] = "failed"
+                await _render_dashboard(force=True)
                 return
             dashboard_state["primary_status"] = "uploading"
             await _render_dashboard(force=True)

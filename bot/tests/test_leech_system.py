@@ -1378,6 +1378,96 @@ class TestLeechService(unittest.TestCase):
         default_target = sig.parameters["target_size_bytes"].default
         self.assertLessEqual(default_target, int(1.85 * 1024 * 1024 * 1024))
         self.assertLessEqual(default_target, video_service.MAX_TELEGRAM_BOT_SIZE)
+        self.assertIn("is_hardsub", sig.parameters)
+
+    def test_compress_video_hardsub_flag_disables_sub_burn(self):
+        """Verify that when is_hardsub=True, subtitle burning is suppressed even if sub_path is provided."""
+        import asyncio
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from services import video_service
+
+        recorded_cmd = []
+
+        async def fake_subprocess_exec(*cmd, **kwargs):
+            nonlocal recorded_cmd
+            recorded_cmd = list(cmd)
+            mock_proc = AsyncMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = AsyncMock(return_value=0)
+            mock_proc.stderr.readline = AsyncMock(return_value=b"")
+            mock_proc.stderr.read = AsyncMock(return_value=b"")
+            return mock_proc
+
+        with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1000), \
+             patch("services.video_service.get_video_duration", return_value=7200.0), \
+             patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess_exec), \
+             patch("shutil.disk_usage", return_value=MagicMock(free=10 * 1024 * 1024 * 1024)):
+            
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                ok = loop.run_until_complete(video_service.compress_video(
+                    input_path="fake_in.mp4",
+                    output_path="fake_out.mp4",
+                    sub_path="fake_sub.srt",
+                    is_hardsub=True,
+                ))
+            finally:
+                loop.close()
+
+            self.assertTrue(ok)
+            # Ensure -vf subtitles= is NOT present when is_hardsub=True
+            vf_args = [arg for arg in recorded_cmd if "subtitles=" in str(arg)]
+            self.assertEqual(vf_args, [], "Subtitle burning must not be applied to hardsubbed videos")
+            self.assertIn("-sn", recorded_cmd)
+
+    def test_compress_video_fallback_bitrate_when_duration_zero(self):
+        """Verify safe 3-hour fallback bitrate calculation when duration is 0 or unparsed."""
+        import asyncio
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from services import video_service
+
+        recorded_cmd = []
+
+        async def fake_subprocess_exec(*cmd, **kwargs):
+            nonlocal recorded_cmd
+            recorded_cmd = list(cmd)
+            mock_proc = AsyncMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = AsyncMock(return_value=0)
+            mock_proc.stderr.readline = AsyncMock(return_value=b"")
+            mock_proc.stderr.read = AsyncMock(return_value=b"")
+            return mock_proc
+
+        with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1000), \
+             patch("services.video_service.get_video_duration", return_value=0.0), \
+             patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess_exec), \
+             patch("shutil.disk_usage", return_value=MagicMock(free=10 * 1024 * 1024 * 1024)):
+            
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                ok = loop.run_until_complete(video_service.compress_video(
+                    input_path="fake_in.mkv",
+                    output_path="fake_out.mp4",
+                ))
+            finally:
+                loop.close()
+
+            self.assertTrue(ok)
+            # Find the -b:v parameter
+            b_v_index = recorded_cmd.index("-b:v")
+            bitrate_str = recorded_cmd[b_v_index + 1]
+            bitrate_val = int(bitrate_str.rstrip("k"))
+            # With 3-hour fallback (10800s), bitrate should be around 1200-1400k, strictly <= 1500k
+            self.assertLessEqual(bitrate_val, 1500)
+            # Guaranteed 3 hour movie at this bitrate + 128k audio stays strictly under 1.85 GB
+            calc_bytes = ((bitrate_val + 128) * 1000 * 10800) / 8
+            self.assertLessEqual(calc_bytes, int(1.85 * 1024 * 1024 * 1024))
 
 
 if __name__ == "__main__":

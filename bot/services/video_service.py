@@ -1070,17 +1070,10 @@ async def compress_video(
             comp_sub_srt = os.path.join(out_dir, "sub_burn_comp.srt")
             if prepare_clean_srt_for_burn(sub_path, comp_sub_srt):
                 sub_path = comp_sub_srt
-                f_dir = ensure_sinhala_font_dir()
-                f_dir_opt = ""
-                if f_dir and os.path.isdir(f_dir):
-                    f_dir_esc = f_dir.replace("\\", "/").replace(":", "\\:")
-                    f_dir_opt = f":fontsdir={f_dir_esc}"
-                style_str = (
-                    "FontName=Noto Sans Sinhala,FontSize=21,"
-                    "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
-                    "BackColour=&H60000000,Bold=1,Outline=2,Shadow=1,MarginV=24"
-                )
-                burn_vf = f"subtitles=filename=sub_burn_comp.srt:charenc=UTF-8{f_dir_opt}:force_style='{style_str}'"
+            ass_path = os.path.splitext(sub_path)[0] + ".ass"
+            shaped_ass = srt_to_ass_sinhala_shaped(sub_path, ass_path)
+            sub_to_use = shaped_ass if (shaped_ass and os.path.exists(shaped_ass)) else sub_path
+            burn_vf = build_subtitles_burn_filter(sub_to_use)
         except Exception as b_err:
             log.debug("[VideoService] compress_video hard-burn prep note: %s", b_err)
 
@@ -1968,18 +1961,22 @@ def build_subtitles_burn_filter(escaped_sub_file: str = "sub_burn_multi.srt", in
     Construct the FFmpeg libass subtitles/ass filter expression with Noto Sans Sinhala font directory
     and CineSubz / SinhalaSub cinema styling (yellow/white high-contrast text with dark outline).
     Supports both .ass (HarfBuzz OpenType shaping) and .srt subtitles.
+    Properly escapes colons, backslashes, and quotes for FFmpeg filter parser cross-platform.
     """
     is_ass = escaped_sub_file.lower().endswith(".ass")
+    # Convert path to forward slashes and escape colon for FFmpeg filter syntax (e.g. C\: -> C\:)
+    safe_sub = os.path.abspath(escaped_sub_file).replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
+
     font_dir = ensure_sinhala_font_dir()
     fdir_opt = ""
-    if font_dir and ":" not in font_dir:
-        safe_fdir = font_dir.replace("\\", "/")
+    if font_dir:
+        safe_fdir = os.path.abspath(font_dir).replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
         fdir_opt = f":fontsdir='{safe_fdir}'"
 
     if is_ass:
-        return f"ass=filename='{escaped_sub_file}'{fdir_opt}"
+        return f"ass=filename='{safe_sub}'{fdir_opt}"
 
-    base = f"subtitles=filename='{escaped_sub_file}'"
+    base = f"subtitles=filename='{safe_sub}'"
     if include_style is None:
         include_style = bool(os.name != "nt" and not os.environ.get("PYTEST_CURRENT_TEST"))
     if not include_style:
@@ -1991,6 +1988,128 @@ def build_subtitles_burn_filter(escaped_sub_file: str = "sub_burn_multi.srt", in
         "BorderStyle=1,Outline=1.8,Shadow=1.2,MarginV=24,Alignment=2"
     )
     return f"{base}:charenc=UTF-8{fdir_opt}:force_style='{style_str}'"
+
+
+async def burn_subtitles_to_video(
+    video_path: str,
+    sub_path: Optional[str],
+    output_path: str,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+) -> bool:
+    """
+    Burn Sinhala subtitles directly into video frames with libass / HarfBuzz OpenType shaping
+    and Noto Sans Sinhala font.
+    If sub_path is None or missing, executes instant stream copy remux.
+    Falls back gracefully to stream_copy_subtitles if burning encounters an error.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(video_path):
+        log.error("[VideoService] burn_subtitles_to_video: ffmpeg or video missing: %s", video_path)
+        return False
+
+    if not sub_path or not os.path.exists(sub_path) or os.path.getsize(sub_path) < 16:
+        log.info("[VideoService] No subtitle to burn; delegating to stream_copy_subtitles.")
+        return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    try:
+        clean_srt = os.path.join(out_dir, f"sub_burn_{os.path.splitext(os.path.basename(video_path))[0]}.srt")
+        working_sub = sub_path
+        if working_sub.lower().endswith(".vtt"):
+            try:
+                from services.subtitle_service import vtt_to_srt
+                working_sub = vtt_to_srt(working_sub, clean_srt)
+            except Exception as e_vtt:
+                log.debug("[VideoService] VTT->SRT note in burn: %s", e_vtt)
+
+        if not prepare_clean_srt_for_burn(working_sub, clean_srt):
+            clean_srt = working_sub
+
+        ass_path = os.path.splitext(clean_srt)[0] + ".ass"
+        shaped_ass = srt_to_ass_sinhala_shaped(clean_srt, ass_path)
+        sub_to_use = shaped_ass if (shaped_ass and os.path.exists(shaped_ass)) else clean_srt
+
+        burn_vf = build_subtitles_burn_filter(sub_to_use)
+        hw_enc = detect_hw_encoder(ffmpeg_bin)
+
+        cmd = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+        ]
+        if hw_enc == "h264_nvenc":
+            cmd.extend(["-hwaccel", "auto"])
+        cmd.extend(["-i", os.path.abspath(video_path)])
+        cmd.extend(["-vf", burn_vf])
+
+        if hw_enc == "h264_nvenc":
+            cmd.extend([
+                "-c:v", "h264_nvenc",
+                "-preset", "p4",
+                "-rc", "vbr",
+                "-cq", "23",
+                "-maxrate", "3000k",
+                "-bufsize", "6000k",
+                "-pix_fmt", "yuv420p",
+            ])
+        else:
+            cmd.extend([
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-crf", "23",
+                "-tune", "fastdecode",
+                "-threads", "0",
+                "-pix_fmt", "yuv420p",
+            ])
+
+        cmd.extend([
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-ac", "2",
+            "-af", "aresample=async=1",
+            "-sn",
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            os.path.abspath(output_path),
+        ])
+
+        log.info("[VideoService] Executing subtitle burn: %s + %s -> %s", os.path.basename(video_path), os.path.basename(sub_to_use), os.path.basename(output_path))
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=600.0)
+        except asyncio.TimeoutError:
+            log.warning("[VideoService] Subtitle burn timed out after 600s: %s", video_path)
+            if proc and proc.returncode is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+            return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+            raise
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Subtitle burn succeeded: %s (%d bytes)", output_path, os.path.getsize(output_path))
+            return True
+        else:
+            err_msg = stderr_bytes.decode("utf-8", errors="replace")[-300:] if stderr_bytes else ""
+            log.warning("[VideoService] Subtitle burn failed (exit=%s, stderr=%s). Falling back to stream_copy_subtitles.", proc.returncode, err_msg)
+    except Exception as exc:
+        log.warning("[VideoService] burn_subtitles_to_video exception: %s. Falling back to stream_copy_subtitles.", exc)
+
+    return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
 
 
 async def generate_multi_quality_variants_ram(

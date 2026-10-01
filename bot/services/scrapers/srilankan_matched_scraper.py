@@ -2,14 +2,17 @@
 srilankan_matched_scraper.py — Priority 1 Same-Site Matched Video & Subtitle Scraper.
 
 Solves Subtitle Timing Drift (0.0ms desync guaranteed):
-Sri Lankan subtitle sites (sinhalasub.lk, cineru.lk, baiscope.lk, subz.lk, lksubs.com, zoom.lk, piratelk.com)
+Sri Lankan subtitle sites (sinhalasub.lk, cinesubz.co, baiscope.lk, baiscopedownloads.co,
+piratelk.com, cines.lk, cineru.lk, subz.lk, lksubs.com, zoom.lk)
 publish posts where the translator's subtitle was timed to the exact WebRip / WEB-DL / BluRay video releases
-hosted directly in that same post (PixelDrain, Mega, Google Drive, direct MP4/MKV, or matched torrents).
+hosted directly in that same post (PixelDrain, Mega, Google Drive, direct MP4/MKV, cdn/ddl endpoints).
 
-By downloading the exact video release and burning the exact subtitle provided in the same post:
-1. The video and subtitle are 100% frame-perfect synchronized (0.0ms drift).
-2. Video quality (1080p, 720p, 480p) matches the translator's master release.
-3. Fallback to general torrent search only occurs if the site doesn't host direct video links.
+Strict Constraints:
+1. DO NOT use torrents. Only direct HTTP/DDL from Sri Lankan portals.
+2. Short queries like "hi" or "hi 2026" handled properly without failing min-length or regex filters.
+3. Portals with pre-hardsubbed video (SinhalaSub, CineSubz) -> is_already_hardsubbed=True, DO NOT burn again.
+4. Portals with standalone subtitles (Baiscope, PirateLK, Cineru, Cines, Subz, Zoom, etc.) ->
+   is_already_hardsubbed=False, MUST download/extract standalone subtitle and burn/mux into the video.
 """
 
 import asyncio
@@ -39,14 +42,20 @@ HEADERS = {
 
 # Sri Lankan Subtitle & Matched Video Portals
 PORTALS = [
-    {"name": "Cineru",      "base": "https://cineru.lk",      "wp_api": True},
-    {"name": "SinhalaSub",  "base": "https://sinhalasub.lk",  "wp_api": True},
-    {"name": "Subz",        "base": "https://subz.lk",        "wp_api": True},
-    {"name": "Baiscope",    "base": "https://baiscope.lk",    "wp_api": True},
-    {"name": "LKSubs",      "base": "https://lksubs.com",     "wp_api": True},
-    {"name": "Zoom",        "base": "https://zoom.lk",        "wp_api": False},
-    {"name": "PirateLK",    "base": "https://piratelk.com",    "wp_api": False},
+    {"name": "SinhalaSub",        "base": "https://sinhalasub.lk",        "wp_api": True},
+    {"name": "CineSubz",          "base": "https://cinesubz.co",          "wp_api": True},
+    {"name": "Baiscope",          "base": "https://baiscope.lk",          "wp_api": True},
+    {"name": "BaiscopeDownloads", "base": "https://baiscopedownloads.co", "wp_api": True},
+    {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": False},
+    {"name": "Cines",             "base": "https://cines.lk",             "wp_api": True},
+    {"name": "Cineru",            "base": "https://cineru.lk",            "wp_api": True},
+    {"name": "Subz",              "base": "https://subz.lk",              "wp_api": True},
+    {"name": "Zoom",              "base": "https://zoom.lk",              "wp_api": False},
+    {"name": "LKSubs",            "base": "https://lksubs.com",           "wp_api": True},
 ]
+
+# Portals where video has pre-burned Sinhala subtitles (NEVER burn secondary sub)
+PRE_HARDSUBBED_PORTALS = {"SinhalaSub", "CineSubz"}
 
 # Patterns for direct/cloud video hosts
 VIDEO_HOST_PATTERNS = {
@@ -55,6 +64,8 @@ VIDEO_HOST_PATTERNS = {
     "mega":       re.compile(r"https?://mega\.nz/(?:file/|#!)?[a-zA-Z0-9_#-]+", re.IGNORECASE),
     "gofile":     re.compile(r"https?://gofile\.io/d/[a-zA-Z0-9_-]+", re.IGNORECASE),
     "mediafire":  re.compile(r"https?://(?:www\.)?mediafire\.com/(?:file|download)/[a-zA-Z0-9_-]+", re.IGNORECASE),
+    "usersdrive": re.compile(r"https?://(?:www\.)?usersdrive\.com/[a-zA-Z0-9_-]+(?:\.html)?", re.IGNORECASE),
+    "1fichier":   re.compile(r"https?://(?:www\.)?1fichier\.com/\?[a-zA-Z0-9_-]+", re.IGNORECASE),
     "direct_mp4": re.compile(r"https?://[^\s\"'<>]+\.(?:mp4|mkv)(?:\?[^\s\"'<>]*)?", re.IGNORECASE),
     "magnet":     re.compile(r"magnet:\?xt=urn:btih:[a-zA-Z0-9]+[^\s\"'<>]*", re.IGNORECASE),
 }
@@ -77,6 +88,9 @@ async def resolve_srilankan_intermediate_link(
     Resolve intermediate ad/locker/unlocker links (e.g. sinhalasub.lk/links/xxxxxx/,
     cinesubz unlocker, etc.) to the direct video stream URL.
     """
+    if not link_url:
+        return None
+
     # 1. If already a direct video stream endpoint
     if "cdn.sinhalasub.net" in link_url or "ddl.sinhalasub.net" in link_url:
         return link_url
@@ -88,7 +102,7 @@ async def resolve_srilankan_intermediate_link(
 
     # 2. Check if this is an intermediate locker/redirect URL
     is_intermediate = any(k in link_url.lower() for k in [
-        "/links/", "/api-", "linkvertise", "gplinks", "droplink", "short"
+        "/links/", "/api-", "linkvertise", "gplinks", "droplink", "short", "cinesubz", "#link"
     ])
     if not is_intermediate:
         return None
@@ -127,13 +141,14 @@ async def resolve_srilankan_intermediate_link(
         link_elem = soup.find(id="link")
         if link_elem and link_elem.get("href"):
             raw_href = link_elem["href"].strip()
-            # Check script mappings
             if "google.com/server" in raw_href:
-                # Replace server pattern per CineSubz script:
-                # https://google.com/server11/1:/ -> https://drive.csplayer2.space/server1/
                 m_srv = re.search(r"https://google\.com/server(\d+)/1:/", raw_href)
                 if m_srv:
-                    mapped = re.sub(r"https://google\.com/server\d+/1:/", f"https://drive.csplayer2.space/server{m_srv.group(1)[0]}/", raw_href)
+                    mapped = re.sub(
+                        r"https://google\.com/server\d+/1:/",
+                        f"https://drive.csplayer2.space/server{m_srv.group(1)[0]}/",
+                        raw_href,
+                    )
                     log.info("[MatchedScraper] Mapped CineSubz stream URL: %s", mapped[:90])
                     return mapped
             return resolve_direct_video_url(raw_href)
@@ -171,6 +186,101 @@ def detect_quality_from_context(text: str, href: str) -> str:
     return "720p"  # default to HD if untagged
 
 
+STOP_WORDS = {"the", "a", "an", "and", "or", "in", "on", "of", "with", "film", "movie"}
+
+
+def matches_title_and_year(
+    clean_title: str,
+    text: str,
+    year: Optional[int] = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+) -> bool:
+    """
+    Accurately verify if a post text, title, or URL matches the target movie or series.
+    Uses strict regex word boundaries to support short queries ('hi', 'up', 'it', 'rio')
+    while preventing false matches against words like 'white', 'history', 'his', 'hitman'.
+    Requires all significant title tokens to be present.
+    """
+    t_clean = clean_title.strip().lower()
+    if not t_clean or not text:
+        return False
+    text_lower = text.lower()
+
+    # Split into clean alphanumeric tokens
+    raw_tokens = [w for w in re.findall(r"[a-z0-9]+", t_clean) if w]
+    if not raw_tokens:
+        return False
+
+    # Filter out stop words unless all words are stop words
+    tokens = [w for w in raw_tokens if w not in STOP_WORDS] or raw_tokens
+
+    # Remove year from title tokens if year is also passed or checked separately
+    if year:
+        tokens_no_year = [w for w in tokens if w != str(year)]
+        title_tokens = tokens_no_year or tokens
+    else:
+        title_tokens = tokens
+
+    # Every title token must match with word boundary
+    for token in title_tokens:
+        pat = rf"(?:\b|[-_/]){re.escape(token)}(?:\b|[-_/])"
+        if not re.search(pat, text_lower):
+            return False
+
+    # Season and episode check (for series)
+    if season and episode:
+        ep_pat = rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b|season[-_\s]*0*{season}/episode[-_\s]*0*{episode}\b)"
+        if not re.search(ep_pat, text_lower):
+            return False
+
+    # Year check: if year is given and present in text, verify it
+    if year and not (season and episode):
+        found_years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", text_lower)]
+        if found_years:
+            if not any(abs(fy - year) <= 1 for fy in found_years):
+                return False
+
+    return True
+
+
+def score_candidate_post(
+    clean_title: str,
+    post_url: str,
+    post_title: str,
+    year: Optional[int] = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+) -> int:
+    """Score candidate post relevance (higher is better). Returns <= 0 if irrelevant."""
+    combined = f"{post_title} {post_url}".lower()
+
+    if not matches_title_and_year(clean_title, combined, year=year, season=season, episode=episode):
+        # If year was specified, check if title matches but year wasn't in snippet yet
+        if year and matches_title_and_year(clean_title, combined, year=None, season=season, episode=episode):
+            found_years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", combined)]
+            if found_years and not any(abs(fy - year) <= 1 for fy in found_years):
+                return 0  # Conflicting year in post snippet -> irrelevant
+            return 25
+        return 0
+
+    score = 30
+    t_clean = clean_title.strip().lower()
+    if re.search(rf"(?:\b|[-_/]){re.escape(t_clean)}(?:\b|[-_/])", combined):
+        score += 30
+    if post_url and re.search(rf"(?:\b|[-_/]){re.escape(t_clean)}(?:\b|[-_/])", post_url.lower()):
+        score += 20
+
+    if year and str(year) in combined:
+        score += 40
+
+    if season and episode:
+        if f"s{season:02d}e{episode:02d}" in combined or f"s{season}e{episode}" in combined:
+            score += 50
+
+    return score
+
+
 async def _search_portal(
     client: httpx.AsyncClient,
     portal: dict,
@@ -181,24 +291,61 @@ async def _search_portal(
     episode: Optional[int],
     temp_dir: str,
 ) -> list[dict]:
-    """Search a single Sri Lankan portal for matched post, extracting subtitle and video links."""
+    """Search a single Sri Lankan portal for matched post, extracting subtitle and direct video links."""
     base_url = portal["base"]
     p_name = portal["name"]
-    candidate_posts: list[str] = []
-    title_words = [w.lower() for w in clean_title.split() if len(w) > 2]
-    # For TV series, search clean_title first to match DooPlay TV show post titles
+
+    # Check if a dedicated scraper module exists for this portal; if it returns results, use them
+    if p_name == "SinhalaSub":
+        try:
+            from services.scrapers import sinhalasub
+            s_res = await sinhalasub.search(client, clean_title, year=year, season=season, episode=episode, temp_dir=temp_dir)
+            if s_res:
+                return s_res
+        except Exception as e_mod:
+            log.debug("[MatchedScraper] Dedicated sinhalasub note: %s", e_mod)
+    elif p_name == "CineSubz":
+        try:
+            from services.scrapers import cinesubz
+            s_res = await cinesubz.search(client, clean_title, year=year, season=season, episode=episode, temp_dir=temp_dir)
+            if s_res:
+                return s_res
+        except Exception as e_mod:
+            log.debug("[MatchedScraper] Dedicated cinesubz note: %s", e_mod)
+    elif p_name in ("Baiscope", "BaiscopeDownloads"):
+        try:
+            from services.scrapers import baiscope
+            s_res = await baiscope.search(client, clean_title, year=year, season=season, episode=episode, temp_dir=temp_dir)
+            if s_res:
+                return s_res
+        except Exception as e_mod:
+            log.debug("[MatchedScraper] Dedicated baiscope note: %s", e_mod)
+    elif p_name == "PirateLK":
+        try:
+            from services.scrapers import piratelk
+            s_res = await piratelk.search(client, clean_title, year=year, season=season, episode=episode, temp_dir=temp_dir)
+            if s_res:
+                return s_res
+        except Exception as e_mod:
+            log.debug("[MatchedScraper] Dedicated piratelk note: %s", e_mod)
+
+    # General portal search logic (Cineru, Cines, Subz, Zoom, LKSubs, and fallback for dedicated scrapers)
+    candidate_posts: list[tuple[str, int]] = []
+    seen_posts = set()
+
+    clean_t = clean_title.strip()
     if season and episode:
-        search_queries = [clean_title]
+        search_queries = [f"{clean_t} S{season:02d}E{episode:02d}", clean_t]
+    elif year:
+        search_queries = [f"{clean_t} {year}", clean_t, f"{clean_t} ({year})"]
     else:
-        search_queries = [query]
-        if clean_title and clean_title not in search_queries:
-            search_queries.append(clean_title)
+        search_queries = [clean_t]
 
     for q_try in search_queries:
-        if candidate_posts:
+        if any(sc >= 40 for _, sc in candidate_posts):
             break
 
-        # 1. HTML search (/?s=) first: DooPlay/WordPress searches ALL post types (movies AND tvshows)
+        # 1. HTML search (/?s=)
         try:
             s_url = f"{base_url.rstrip('/')}/?s={urllib.parse.quote_plus(q_try)}"
             resp = await client.get(s_url, headers=HEADERS, timeout=6.0)
@@ -208,16 +355,24 @@ async def _search_portal(
                     ".display-item a", ".item-box a", ".result-item a", "article a",
                     "h2 a", "h3 a", ".entry-title a", ".post-title a", "main a",
                 ]
+                domain_part = base_url.split("//")[-1].split("/")[0].lower()
                 for a in soup.select(", ".join(selectors)):
-                    href = a.get("href", "")
-                    if href and base_url.split("//")[-1].split("/")[0] in href:
-                        if not any(ign in href for ign in ("/category/", "/tag/", "/author/", "/page/", "#", "wp-login")):
-                            if href not in candidate_posts:
-                                candidate_posts.append(href)
+                    raw_href = a.get("href", "").strip()
+                    if not raw_href or raw_href.startswith("#"):
+                        continue
+                    full_href = urllib.parse.urljoin(base_url, raw_href)
+                    if domain_part in full_href.lower():
+                        if not any(ign in full_href for ign in ("/category/", "/tag/", "/author/", "/page/", "#", "wp-login")):
+                            if full_href not in seen_posts:
+                                seen_posts.add(full_href)
+                                txt = a.get_text(" ", strip=True) or a.get("title", "")
+                                score = score_candidate_post(clean_t, full_href, txt, year=year, season=season, episode=episode)
+                                if score > 0:
+                                    candidate_posts.append((full_href, score))
         except Exception as e_html:
             log.debug("[MatchedScraper] %s HTML search note: %s", p_name, e_html)
 
-        # 2. Fallback to WP REST API if HTML search found nothing
+        # 2. WP REST API fallback
         if not candidate_posts and portal.get("wp_api"):
             try:
                 api_url = f"{base_url.rstrip('/')}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q_try)}&per_page=6"
@@ -225,32 +380,35 @@ async def _search_portal(
                 if resp.status_code == 200 and isinstance(resp.json(), list):
                     for p in resp.json():
                         link = p.get("link") or ""
-                        rendered = (p.get("title", {}) or {}).get("rendered", "").lower()
-                        if link and (not title_words or any(w in rendered or w in link.lower() for w in title_words)):
-                            candidate_posts.append(link)
+                        rendered = (p.get("title", {}) or {}).get("rendered", "")
+                        if link and link not in seen_posts:
+                            seen_posts.add(link)
+                            score = score_candidate_post(clean_t, link, rendered, year=year, season=season, episode=episode)
+                            if score > 0:
+                                candidate_posts.append((link, score))
             except Exception as e_api:
                 log.debug("[MatchedScraper] %s WP API note: %s", p_name, e_api)
 
+    candidate_posts.sort(key=lambda x: x[1], reverse=True)
     found_candidates: list[dict] = []
 
-    # 3. Inspect top matched post pages (limit 2 for fast response)
-    for post_url in candidate_posts[:2]:
+    # 3. Inspect top matched post pages
+    for post_url, _ in candidate_posts[:4]:
         try:
-            p_resp = await client.get(post_url, headers=HEADERS, timeout=5.0)
+            p_resp = await client.get(post_url, headers=HEADERS, timeout=6.0)
             if p_resp.status_code != 200:
                 continue
 
             soup = BeautifulSoup(p_resp.text, "html.parser")
             page_text = soup.get_text(" ", strip=True)
 
-            # Verification: make sure this post actually matches the target title
-            if title_words and not any(w in page_text.lower() for w in title_words):
+            # Verification: make sure this post actually matches the target title & year
+            verify_text = f"{post_url} {soup.title.get_text() if soup.title else ''} {soup.h1.get_text() if soup.h1 else ''} {page_text[:3000]}"
+            if not matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode):
                 continue
 
-            # TV Series navigation: If season and episode are specified, locate the specific episode page
             current_target_url = post_url
             if season and episode:
-                # 1. First try strict season-and-episode regex (prevents S08E05 matching when searching for S06E05)
                 ep_pat = re.compile(
                     rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b|season[-_\s]*0*{season}/episode[-_\s]*0*{episode}\b)",
                     re.IGNORECASE,
@@ -258,96 +416,96 @@ async def _search_portal(
                 ep_link = None
                 for a in soup.find_all("a", href=True):
                     h = a["href"].strip()
-                    if ep_pat.search(h):
+                    if ep_pat.search(h) or ep_pat.search(a.get_text(" ", strip=True)):
                         ep_link = urllib.parse.urljoin(post_url, h)
                         break
 
-                # 2. Fallback: check anchor text with strict season and episode
-                if not ep_link:
-                    for a in soup.find_all("a", href=True):
-                        h = a["href"].strip()
-                        t = a.get_text(" ", strip=True).lower()
-                        if ep_pat.search(t):
-                            ep_link = urllib.parse.urljoin(post_url, h)
-                            break
-
                 if ep_link:
-                    log.info("[MatchedScraper] %s found specific episode link: %s", p_name, ep_link)
-                    ep_resp = await client.get(ep_link, headers=HEADERS, timeout=10.0)
+                    ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
                     if ep_resp.status_code == 200:
                         soup = BeautifulSoup(ep_resp.text, "html.parser")
                         current_target_url = ep_link
                         page_text = soup.get_text(" ", strip=True)
 
-            # A. Extract Subtitle from post/episode page
+            # A. Subtitle extraction (only needed for clean video portals)
+            is_hardsub = (
+                p_name in PRE_HARDSUBBED_PORTALS
+                or any(k in post_url.lower() for k in ("sinhalasub", "cinesubz"))
+            )
             sub_srt_path = None
-            dl_sub_urls = []
-            for a in soup.find_all("a", href=True):
-                href = a["href"].strip()
-                cls = " ".join(a.get("class", [])).lower()
-                a_txt = a.get_text(" ", strip=True).lower()
-                if (
-                    "action=sub_download" in href
-                    or "subz-list-btn" in cls
-                    or "js-premium-download" in cls
-                    or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt"))
-                    or ("උපසිරැසි" in a_txt and "බාගත" in a_txt)
-                ):
-                    full_href = urllib.parse.urljoin(current_target_url, href)
-                    if full_href not in dl_sub_urls:
-                        dl_sub_urls.append(full_href)
 
-            for sub_url in dl_sub_urls[:3]:
-                try:
-                    s_res = await client.get(sub_url, headers={"Referer": current_target_url}, timeout=12.0)
-                    if s_res.status_code == 200 and len(s_res.content) > 128:
-                        srt_p, _ = subtitle_service._extract_srt_from_bytes(
-                            s_res.content,
-                            temp_dir=temp_dir,
-                            season=season,
-                            episode=episode,
-                            prefix=f"{p_name.lower()}_matched",
+            if not is_hardsub:
+                dl_sub_urls = []
+                for a in soup.find_all("a", href=True):
+                    href = a["href"].strip()
+                    cls = " ".join(a.get("class", [])).lower()
+                    a_txt = a.get_text(" ", strip=True).lower()
+                    if (
+                        "action=sub_download" in href
+                        or "subz-list-btn" in cls
+                        or "js-premium-download" in cls
+                        or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt"))
+                        or ("උපසිරැසි" in a_txt and "බාගත" in a_txt)
+                    ):
+                        full_href = urllib.parse.urljoin(current_target_url, href)
+                        if full_href not in dl_sub_urls and not full_href.startswith("magnet:"):
+                            dl_sub_urls.append(full_href)
+
+                for sub_url in dl_sub_urls[:3]:
+                    try:
+                        s_res = await client.get(sub_url, headers={"Referer": current_target_url}, timeout=10.0)
+                        if s_res.status_code == 200 and len(s_res.content) > 128:
+                            srt_p, _ = subtitle_service._extract_srt_from_bytes(
+                                s_res.content,
+                                temp_dir=temp_dir,
+                                season=season,
+                                episode=episode,
+                                prefix=f"{p_name.lower()}_matched",
+                            )
+                            if srt_p and os.path.exists(srt_p):
+                                sub_srt_path = srt_p
+                                log.info("[MatchedScraper] Extracted matching subtitle from %s: %s", p_name, srt_p)
+                                break
+                    except Exception as sub_dl_err:
+                        log.debug("[MatchedScraper] Subtitle download note: %s", sub_dl_err)
+
+                # Fallback to subtitle_service if post had no standalone sub
+                if not sub_srt_path:
+                    try:
+                        fallback_sub = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
+                            clean_t, year, season=season, episode=episode, temp_dir=temp_dir
                         )
-                        if srt_p and os.path.exists(srt_p):
-                            sub_srt_path = srt_p
-                            log.info("[MatchedScraper] Extracted matching subtitle from %s: %s", p_name, srt_p)
-                            break
-                except Exception as sub_dl_err:
-                    log.debug("[MatchedScraper] Subtitle download note: %s", sub_dl_err)
+                        if fallback_sub and os.path.exists(fallback_sub):
+                            sub_srt_path = fallback_sub
+                    except Exception as fb_err:
+                        log.debug("[MatchedScraper] Subtitle fallback lookup note: %s", fb_err)
 
-            # If no subtitle was found on the post page, attempt fallback to subtitle_service (skip for pre-hardsubbed portals)
-            if not sub_srt_path and p_name not in ("SinhalaSub", "CineSubz"):
-                try:
-                    fallback_sub = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
-                        clean_title, year, season=season, episode=episode, temp_dir=temp_dir
-                    )
-                    if fallback_sub and os.path.exists(fallback_sub):
-                        sub_srt_path = fallback_sub
-                        log.info("[MatchedScraper] Attached Sri Lankan subtitle via subtitle_service: %s", fallback_sub)
-                except Exception as fb_err:
-                    log.debug("[MatchedScraper] Subtitle fallback lookup note: %s", fb_err)
-
-            # B. Extract Video Download Links from table rows and anchors
+            # B. Extract Direct Video Download Links (STRICT: NO TORRENTS)
             video_links: list[dict] = []
             seen_dl_urls: set[str] = set()
             intermediate_to_resolve: list[tuple[str, str, str]] = []
 
-            # 1. Check table rows (typical for SinhalaSub, DooPlay, ZetaFlix releases)
-            for tr in soup.find_all("tr"):
-                tr_txt = tr.get_text(" ", strip=True)
-                for a in tr.find_all("a", href=True):
+            for elem in soup.find_all(["tr", "p", "div", "a"]):
+                ctx = elem.get_text(" ", strip=True)
+                anchors = elem.find_all("a", href=True) if elem.name != "a" else [elem]
+                for a in anchors:
                     h = a["href"].strip()
                     if h in seen_dl_urls or h.startswith("#"):
                         continue
                     seen_dl_urls.add(h)
 
-                    # Skip Telegram channels/bots in direct video candidate list
+                    # Exclude Telegram channels/bots
                     if "t.me" in h.lower() or "telegram.me" in h.lower():
                         continue
+                    # STRICT USER CONSTRAINT: Exclude magnets and torrents
+                    if h.startswith("magnet:") or ".torrent" in h.lower():
+                        continue
 
-                    q = detect_quality_from_context(tr_txt, h)
+                    q = detect_quality_from_context(ctx, h)
                     matched_pat = False
                     for h_type, pat in VIDEO_HOST_PATTERNS.items():
+                        if h_type == "magnet":
+                            continue
                         m = pat.search(h)
                         if m:
                             matched_pat = True
@@ -357,63 +515,28 @@ async def _search_portal(
                                 "original_url": m.group(0),
                                 "host_type": h_type,
                                 "quality": q,
-                                "context": tr_txt[:120],
+                                "context": ctx[:120],
                             })
                             break
 
                     if not matched_pat and ("/links/" in h or "/api-" in h or "cinesubz" in h):
-                        intermediate_to_resolve.append((h, q, tr_txt))
+                        intermediate_to_resolve.append((h, q, ctx))
 
-            # 2. Check general anchors for direct video hosts or remaining intermediate links
-            for a in soup.find_all("a", href=True):
-                h = a["href"].strip()
-                if h in seen_dl_urls or h.startswith("#"):
-                    continue
-                seen_dl_urls.add(h)
-
-                if "t.me" in h.lower() or "telegram.me" in h.lower():
-                    continue
-
-                txt = a.get_text(" ", strip=True)
-                parent_txt = a.parent.get_text(" ", strip=True) if a.parent else ""
-                comb_txt = f"{txt} {parent_txt}"
-
-                # Check against known direct video patterns
-                matched_pat = False
-                for h_type, pat in VIDEO_HOST_PATTERNS.items():
-                    m = pat.search(h)
-                    if m:
-                        matched_pat = True
-                        direct_url = resolve_direct_video_url(m.group(0))
-                        q = detect_quality_from_context(comb_txt, h)
-                        video_links.append({
-                            "url": direct_url,
-                            "original_url": m.group(0),
-                            "host_type": h_type,
-                            "quality": q,
-                            "context": comb_txt[:120],
-                        })
-                        break
-
-                # If not matched directly, queue intermediate locker link for parallel resolution
-                if not matched_pat and ("/links/" in h or "/api-" in h or "cinesubz" in h):
-                    q = detect_quality_from_context(comb_txt, h)
-                    intermediate_to_resolve.append((h, q, comb_txt))
-
-            # 3. Resolve all intermediate locker links concurrently (max 6 links, 4.5s timeout)
+            # Resolve intermediate locker links concurrently
             if intermediate_to_resolve:
                 async def _resolve_worker(item_h: str, item_q: str, item_ctx: str):
                     try:
                         resolved = await resolve_srilankan_intermediate_link(client, item_h, referer_url=current_target_url)
-                        if resolved and not any(ign in resolved for ign in ["telegram.me", "t.me"]):
-                            h_type = "cdn" if "cdn.sinhalasub" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
-                            return {
-                                "url": resolved,
-                                "original_url": item_h,
-                                "host_type": h_type,
-                                "quality": item_q,
-                                "context": item_ctx[:120],
-                            }
+                        if resolved and not resolved.startswith("magnet:") and ".torrent" not in resolved.lower():
+                            if not any(ign in resolved for ign in ["telegram.me", "t.me"]):
+                                h_type = "cdn" if "cdn.sinhalasub" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
+                                return {
+                                    "url": resolved,
+                                    "original_url": item_h,
+                                    "host_type": h_type,
+                                    "quality": item_q,
+                                    "context": item_ctx[:120],
+                                }
                     except Exception:
                         pass
                     return None
@@ -426,11 +549,11 @@ async def _search_portal(
                     if isinstance(item, dict) and item.get("url"):
                         video_links.append(item)
 
-            # Package found video links as top-priority candidates
+            # Package found video links
             for vl in video_links:
                 u_str = str(vl.get("url", "")).lower()
-                is_hardsub = (
-                    p_name in ("SinhalaSub", "CineSubz")
+                final_is_hardsub = (
+                    is_hardsub
                     or any(k in u_str for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
                 )
                 found_candidates.append({
@@ -439,14 +562,14 @@ async def _search_portal(
                     "url": vl["url"],
                     "quality": vl["quality"],
                     "host_type": vl["host_type"],
-                    "sub_srt_path": sub_srt_path,
-                    "is_already_hardsubbed": is_hardsub,
+                    "sub_srt_path": None if final_is_hardsub else sub_srt_path,
+                    "is_already_hardsubbed": final_is_hardsub,
                 })
 
             if found_candidates:
                 log.info(
-                    "[MatchedScraper] Found %d matched video release(s) on %s (sub_found=%s)",
-                    len(found_candidates), p_name, bool(sub_srt_path)
+                    "[MatchedScraper] Found %d matched release(s) on %s (hardsub=%s, sub_found=%s)",
+                    len(found_candidates), p_name, is_hardsub, bool(sub_srt_path)
                 )
                 return found_candidates
 
@@ -466,8 +589,8 @@ async def search_matched_srilankan_releases(
 ) -> list[dict]:
     """
     Search top Sri Lankan subtitle portals concurrently for the exact matched post.
-    Returns a list of candidate dictionaries with exact direct/cloud video links and
-    the synchronously matched Sinhala subtitle file path.
+    Returns candidate list of direct/cloud HTTP/DDL links.
+    STRICT: NEVER returns torrents or magnet links.
     """
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return []
@@ -478,6 +601,9 @@ async def search_matched_srilankan_releases(
         title,
         flags=re.IGNORECASE,
     ).strip(" -_")
+    # Strip any trailing year from clean_title if year was also parsed
+    if year:
+        clean_title = re.sub(rf"\b{year}\b", "", clean_title).strip()
     clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", clean_title).strip()
 
     if not clean_title:
@@ -526,11 +652,14 @@ async def search_matched_srilankan_releases(
         if isinstance(res, list):
             for item in res:
                 u = item.get("url")
+                # Strictly reject any torrents or magnets
+                if not u or u.startswith("magnet:") or ".torrent" in u.lower():
+                    continue
                 q = str(item.get("quality", "")).lower()
                 # User requirement: TV Series strictly 720p & 480p only! NEVER download 1080p for TV Series.
                 if (is_series or season is not None or episode is not None) and q == "1080p":
                     continue
-                if u and u not in seen_urls:
+                if u not in seen_urls:
                     seen_urls.add(u)
                     all_matched.append(item)
 

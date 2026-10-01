@@ -613,7 +613,17 @@ async def _scrape_wp_subtitle_site(
     from bs4 import BeautifulSoup
 
     candidate_urls: list[str] = []
-    title_words = [w.lower() for w in clean_title.split() if len(w) > 2]
+    clean_words = [w.lower() for w in clean_title.split()]
+    title_words = [w for w in clean_words if len(w) > 2] or clean_words
+
+    def _matches_title_words(text: str) -> bool:
+        t = text.lower()
+        if not title_words:
+            return False
+        for w in title_words:
+            if not re.search(rf"(?:\b|[-_/]){re.escape(w)}(?:\b|[-_/])", t):
+                return False
+        return True
 
     # 1. Query WP REST API first (fast JSON response)
     try:
@@ -623,7 +633,7 @@ async def _scrape_wp_subtitle_site(
             for post in r_api.json():
                 link = post.get("link") or ""
                 rendered_title = (post.get("title", {}) or {}).get("rendered", "").lower()
-                if link and (not title_words or any(w in rendered_title or w in link.lower() for w in title_words)):
+                if link and _matches_title_words(f"{rendered_title} {link}"):
                     candidate_urls.append(link)
     except Exception as wp_err:
         log.debug("[SubtitleService] %s WP API lookup note: %s", site_name, wp_err)

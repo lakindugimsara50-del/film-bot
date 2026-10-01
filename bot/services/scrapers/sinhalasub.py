@@ -1,0 +1,195 @@
+"""
+sinhalasub.py — Dedicated Scraper for SinhalaSub.lk.
+
+Characteristics:
+- Pre-hardsubbed: Sinhala subtitles are already burned into video (is_already_hardsubbed=True).
+- Subtitle does NOT need to be burned again.
+- Direct HTTP/DDL downloads: PixelDrain, cdn.sinhalasub.net, ddl.sinhalasub.net, ZetaFlix unlocker.
+- STRICT: NO TORRENTS.
+"""
+
+import logging
+import re
+import urllib.parse
+from typing import Optional
+
+import httpx
+from bs4 import BeautifulSoup
+
+log = logging.getLogger(__name__)
+
+BASE_URL = "https://sinhalasub.lk"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,si;q=0.8",
+}
+
+
+from services.scrapers.srilankan_matched_scraper import (
+    matches_title_and_year,
+    score_candidate_post,
+    resolve_direct_video_url,
+    resolve_srilankan_intermediate_link,
+    detect_quality_from_context,
+    VIDEO_HOST_PATTERNS,
+)
+
+
+async def search(
+    client: httpx.AsyncClient,
+    clean_title: str,
+    year: Optional[int] = None,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    temp_dir: str = "/tmp",
+) -> list[dict]:
+    """Search SinhalaSub for direct pre-hardsubbed downloads."""
+    clean_t = clean_title.strip()
+    search_queries = []
+    if season and episode:
+        search_queries.append(f"{clean_t} S{season:02d}E{episode:02d}")
+        search_queries.append(clean_t)
+    elif year:
+        search_queries.append(f"{clean_t} {year}")
+        search_queries.append(clean_t)
+        search_queries.append(f"{clean_t} ({year})")
+    else:
+        search_queries.append(clean_t)
+
+    candidate_posts: list[tuple[str, int]] = []
+    seen_posts = set()
+
+    for q in search_queries:
+        if any(sc >= 40 for _, sc in candidate_posts):
+            break
+        # 1. HTML Search
+        try:
+            s_url = f"{BASE_URL}/?s={urllib.parse.quote_plus(q)}"
+            resp = await client.get(s_url, headers=HEADERS, timeout=6.0)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                selectors = ".display-item a, .item-box a, .result-item a, article a, h2 a, h3 a, .entry-title a"
+                for a in soup.select(selectors):
+                    raw_href = a.get("href", "").strip()
+                    if not raw_href or raw_href.startswith("#"):
+                        continue
+                    full_href = urllib.parse.urljoin(BASE_URL, raw_href)
+                    if "sinhalasub" in full_href and not any(x in full_href for x in ("/category/", "/tag/", "/author/", "/page/", "#")):
+                        if full_href not in seen_posts:
+                            seen_posts.add(full_href)
+                            txt = a.get_text(" ", strip=True) or a.get("title", "")
+                            score = score_candidate_post(clean_t, full_href, txt, year=year, season=season, episode=episode)
+                            if score > 0:
+                                candidate_posts.append((full_href, score))
+        except Exception as e_html:
+            log.debug("[SinhalaSub] HTML search note: %s", e_html)
+
+        # 2. WP API search
+        if not candidate_posts:
+            try:
+                api_url = f"{BASE_URL}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q)}&per_page=6"
+                resp = await client.get(api_url, headers=HEADERS, timeout=6.0)
+                if resp.status_code == 200 and isinstance(resp.json(), list):
+                    for p in resp.json():
+                        link = p.get("link") or ""
+                        rendered = (p.get("title", {}) or {}).get("rendered", "")
+                        if link and link not in seen_posts:
+                            seen_posts.add(link)
+                            score = score_candidate_post(clean_t, link, rendered, year=year, season=season, episode=episode)
+                            if score > 0:
+                                candidate_posts.append((link, score))
+            except Exception as e_api:
+                log.debug("[SinhalaSub] WP API note: %s", e_api)
+
+    candidate_posts.sort(key=lambda x: x[1], reverse=True)
+    results: list[dict] = []
+
+    for post_url, _ in candidate_posts[:3]:
+        try:
+            p_resp = await client.get(post_url, headers=HEADERS, timeout=6.0)
+            if p_resp.status_code != 200:
+                continue
+            soup = BeautifulSoup(p_resp.text, "html.parser")
+            page_text = soup.get_text(" ", strip=True)
+
+            verify_text = f"{post_url} {soup.title.get_text() if soup.title else ''} {soup.h1.get_text() if soup.h1 else ''} {page_text[:3000]}"
+            if not matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode):
+                continue
+
+            current_url = post_url
+            if season and episode:
+                ep_pat = re.compile(rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b)", re.IGNORECASE)
+                for a in soup.find_all("a", href=True):
+                    h = a["href"].strip()
+                    if ep_pat.search(h) or ep_pat.search(a.get_text(" ", strip=True)):
+                        ep_link = urllib.parse.urljoin(post_url, h)
+                        ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
+                        if ep_resp.status_code == 200:
+                            soup = BeautifulSoup(ep_resp.text, "html.parser")
+                            current_url = ep_link
+                        break
+
+            # Extract direct links & resolve locker links
+            video_links = []
+            for tr in soup.find_all(["tr", "p", "div", "a"]):
+                ctx = tr.get_text(" ", strip=True)
+                anchors = tr.find_all("a", href=True) if tr.name != "a" else [tr]
+                for a in anchors:
+                    h = a["href"].strip()
+                    if any(ign in h.lower() for ign in ["t.me", "telegram.me", "#"]):
+                        continue
+                    # Skip magnets or torrent links strictly
+                    if h.startswith("magnet:") or ".torrent" in h.lower():
+                        continue
+
+                    q = detect_quality_from_context(ctx, h)
+                    matched = False
+                    for h_type, pat in VIDEO_HOST_PATTERNS.items():
+                        if h_type == "magnet":
+                            continue
+                        m = pat.search(h)
+                        if m:
+                            matched = True
+                            video_links.append({
+                                "url": resolve_direct_video_url(m.group(0)),
+                                "quality": q,
+                                "host_type": h_type,
+                            })
+                            break
+
+                    if not matched and ("/links/" in h or "/api-" in h):
+                        try:
+                            resolved = await resolve_srilankan_intermediate_link(client, h, referer_url=current_url)
+                            if resolved and not resolved.startswith("magnet:") and ".torrent" not in resolved.lower():
+                                h_type = "cdn" if "cdn.sinhalasub" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
+                                video_links.append({
+                                    "url": resolved,
+                                    "quality": q,
+                                    "host_type": h_type,
+                                })
+                        except Exception:
+                            pass
+
+            for vl in video_links:
+                results.append({
+                    "portal": "SinhalaSub",
+                    "post_url": current_url,
+                    "url": vl["url"],
+                    "quality": vl["quality"],
+                    "host_type": vl["host_type"],
+                    "sub_srt_path": None,  # Pre-hardsubbed, no secondary sub file needed
+                    "is_already_hardsubbed": True,
+                })
+
+            if results:
+                break
+        except Exception as e_post:
+            log.debug("[SinhalaSub] Post inspect note: %s", e_post)
+
+    return results

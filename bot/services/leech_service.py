@@ -305,7 +305,9 @@ async def find_all_candidates(
                 continue
             m_portal = m.get("portal", "SriLankan")
             m_ht = m.get("host_type", "ddl")
-            m_method = "torrent" if m_ht == "magnet" else "ddl"
+            if m_ht == "magnet" or ".torrent" in str(m_url).lower():
+                continue  # STRICT: Do not use torrents from Sri Lankan portals!
+            m_method = "ddl"
             m_is_hardsub = bool(
                 m.get("is_already_hardsubbed")
                 or m_portal in ("SinhalaSub", "CineSubz")
@@ -416,6 +418,10 @@ async def find_all_candidates(
 
     log.info("[LeechService] Total candidates acquired: %d", len(candidates))
     return candidates
+
+
+# Alias for backwards compatibility / modular orchestration
+_find_candidates = find_all_candidates
 
 
 
@@ -555,9 +561,10 @@ async def _execute_leech(
         except Exception as exc:
             log.warning("[LeechService] TMDB fetch by title failed: %s", exc)
 
+    user_specified_year = parsed.year
     if tmdb_meta:
         title = tmdb_meta.get("title") or title
-        year = tmdb_meta.get("year") or year
+        year = user_specified_year if user_specified_year else (tmdb_meta.get("year") or year)
         imdb_id = imdb_id or tmdb_meta.get("imdb_id")
         if tmdb_meta.get("type") == "series":
             is_series = True
@@ -565,7 +572,7 @@ async def _execute_leech(
             episode = episode or tmdb_meta.get("current_episode", 1)
     else:
         title = title or "Movie"
-        year = year or 2024
+        year = user_specified_year or year or 2026
 
     if is_series:
         ep_name = tmdb_meta.get("episode_title", "")
@@ -1221,7 +1228,10 @@ async def _execute_leech(
                             or any(k in str(candidate.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
                             or (candidate.extra and any(k in str(candidate.extra.get("portal", "")).lower() for k in ("sinhalasub", "cinesubz")))
                         )
-                        active_sub_to_mux = None if cand_is_hardsub else (pre_sub_srt if (pre_sub_srt and os.path.exists(pre_sub_srt)) else None)
+                        active_sub_to_mux = None if cand_is_hardsub else (
+                            (candidate.extra and candidate.extra.get("sub_srt_path"))
+                            or (pre_sub_srt if (pre_sub_srt and os.path.exists(pre_sub_srt)) else None)
+                        )
 
                         async def _run_single_quality_pipeline(q_name: str, cand_obj: LeechCandidate, is_primary_flag: bool):
                             nonlocal active_sub_to_mux
@@ -1272,24 +1282,28 @@ async def _execute_leech(
                                     or cand_is_hardsub
                                 )
 
-                                if not q_cand_is_hardsub and not active_sub_to_mux:
-                                    async with sub_acquire_lock:
-                                        if not active_sub_to_mux:
-                                            try:
-                                                clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
-                                                auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
-                                                    title=clean_sub_title,
-                                                    year=year,
-                                                    imdb_id=imdb_id,
-                                                    temp_dir=temp_dir,
-                                                    season=season,
-                                                    episode=episode,
-                                                )
-                                                if auto_srt and os.path.exists(auto_srt):
-                                                    active_sub_to_mux = auto_srt
-                                                    log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
-                                            except Exception as s_err:
-                                                log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
+                                if not q_cand_is_hardsub:
+                                    cand_sub = (cand_obj.extra and cand_obj.extra.get("sub_srt_path")) or (candidate.extra and candidate.extra.get("sub_srt_path"))
+                                    if cand_sub and os.path.exists(cand_sub):
+                                        active_sub_to_mux = cand_sub
+                                    elif not active_sub_to_mux:
+                                        async with sub_acquire_lock:
+                                            if not active_sub_to_mux:
+                                                try:
+                                                    clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
+                                                    auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
+                                                        title=clean_sub_title,
+                                                        year=year,
+                                                        imdb_id=imdb_id,
+                                                        temp_dir=temp_dir,
+                                                        season=season,
+                                                        episode=episode,
+                                                    )
+                                                    if auto_srt and os.path.exists(auto_srt):
+                                                        active_sub_to_mux = auto_srt
+                                                        log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
+                                                except Exception as s_err:
+                                                    log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
 
                                 q_sub_to_mux = None if q_cand_is_hardsub else (active_sub_to_mux if active_sub_to_mux and os.path.exists(active_sub_to_mux) else None)
 
@@ -1351,13 +1365,17 @@ async def _execute_leech(
                                         companion_progress[q_name]["stage"] = "muxing"
                                         await _update_multi_dl_display(force=True)
                                         sub_out = os.path.join(temp_dir, f"subbed_{slug}_{q_name}.mp4")
-                                        if await video_service.stream_copy_subtitles(c_dl, q_sub_to_mux, sub_out):
+                                        if not q_cand_is_hardsub:
+                                            burn_ok = await video_service.burn_subtitles_to_video(c_dl, q_sub_to_mux, sub_out)
+                                        else:
+                                            burn_ok = await video_service.stream_copy_subtitles(c_dl, None, sub_out)
+                                        if burn_ok and os.path.exists(sub_out):
                                             try:
                                                 os.remove(c_dl)
                                             except Exception:
                                                 pass
                                             c_dl = sub_out
-                                            log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
+                                            log.info("[LeechService] Subtitle burned/muxed into %s: %s (hardsub=%s)", q_name, c_dl, not q_cand_is_hardsub)
 
                                     c_size_bytes = os.path.getsize(c_dl)
                                     if c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE:
@@ -1769,7 +1787,14 @@ async def _execute_leech(
                 task_tracker.tracker.set_step(user_id, "Video Remux & Subtitle Prep (FFmpeg)...")
                 log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_burn_video)
 
-                if await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remuxed, disposition="default"):
+                if sub_to_burn_video and not is_already_hardsubbed and os.path.exists(sub_to_burn_video):
+                    sub_processed = await video_service.burn_subtitles_to_video(local_file, sub_to_burn_video, remuxed)
+                    if not sub_processed:
+                        sub_processed = await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remuxed, disposition="default")
+                else:
+                    sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
+
+                if sub_processed:
                     if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(remuxed):
                         try:
                             os.remove(local_file)
@@ -1783,7 +1808,7 @@ async def _execute_leech(
                             pass
                     local_file = remuxed
                     is_faststart_done = True
-                    log.info("[LeechService] Instantaneous stream-copy muxing succeeded: %s", local_file)
+                    log.info("[LeechService] Video subtitle processing succeeded: %s (burned=%s)", local_file, not is_already_hardsubbed)
                 elif ext in (".mkv", ".webm", ".avi"):
                     # Always attempt to convert MKV/WebM/AVI into Web-Streamable MP4 with Sinhala subtitles (+faststart)
                     if await video_service.ensure_web_streamable(local_file, remuxed, sub_path=sub_to_burn_video):
@@ -1865,13 +1890,16 @@ async def _execute_leech(
                 for vq, vpath in list(pre_downloaded_variants.items()):
                     if os.path.exists(vpath):
                         sub_var_out = os.path.join(temp_dir, f"subbed_{slug}_{vq}.mp4")
-                        if await video_service.stream_copy_subtitles(vpath, sub_to_burn_video, sub_var_out, disposition="default"):
+                        burn_ok = await video_service.burn_subtitles_to_video(vpath, sub_to_burn_video, sub_var_out)
+                        if not burn_ok:
+                            burn_ok = await video_service.stream_copy_subtitles(vpath, sub_to_burn_video, sub_var_out, disposition="default")
+                        if burn_ok and os.path.exists(sub_var_out):
                             try:
                                 os.remove(vpath)
                             except Exception:
                                 pass
                             pre_downloaded_variants[vq] = sub_var_out
-                            log.info("[LeechService] Subtitle muxed into companion variant %s: %s", vq, sub_var_out)
+                            log.info("[LeechService] Subtitle burned/muxed into companion variant %s: %s", vq, sub_var_out)
 
             # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.85GB
             if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
@@ -2393,10 +2421,13 @@ async def _execute_leech(
                                         pass
                                     dl_out = fs_out
 
-                                # If not pre-hardsubbed and subtitle exists, fast stream-copy subtitle into variant (~1 sec)
+                                # If not pre-hardsubbed and subtitle exists, burn subtitle into variant
                                 if not is_already_hardsubbed and sub_to_burn_video and os.path.exists(sub_to_burn_video):
                                     sub_var_out = os.path.join(temp_dir, f"subbed_{slug}_{vq}.mp4")
-                                    if await video_service.stream_copy_subtitles(dl_out, sub_to_burn_video, sub_var_out):
+                                    burn_ok = await video_service.burn_subtitles_to_video(dl_out, sub_to_burn_video, sub_var_out)
+                                    if not burn_ok:
+                                        burn_ok = await video_service.stream_copy_subtitles(dl_out, sub_to_burn_video, sub_var_out)
+                                    if burn_ok and os.path.exists(sub_var_out):
                                         try:
                                             os.remove(dl_out)
                                         except Exception:

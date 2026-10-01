@@ -975,16 +975,20 @@ function renderServerTabs(movie) {
     'fa-solid fa-circle-play'
   ];
 
-  let tabsHtml = streams.map((s, i) => `
+  let tabsHtml = streams.map((s, i) => {
+    let cleanLabel = FilmSub.escHtml(s.label || s.server || `Server ${i + 1}`);
+    cleanLabel = cleanLabel.replace(/^[\s⚡🎬📺🔥🎥]+/, '').trim();
+    return `
     <button class="server-tab${i === currentStreamIdx ? ' active' : ''}" data-type="stream" data-index="${i}" type="button">
-      <i class="${icons[i] || 'fa-solid fa-server'}"></i>
-      ${FilmSub.escHtml(s.label || s.server || `Server ${i + 1}`)}
-    </button>`).join('');
+      <i class="${icons[i] || 'fa-solid fa-bolt'}" style="color:var(--accent)"></i>
+      <span>${cleanLabel}</span>
+    </button>`;
+  }).join('');
 
   tabsHtml += `
     <button class="server-tab${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button">
-      <i class="fa-solid fa-film"></i>
-      🎬 Trailer
+      <i class="fa-solid fa-film" style="color:var(--accent)"></i>
+      <span>Trailer</span>
     </button>`;
 
   tabsEl.innerHTML = tabsHtml;
@@ -1047,16 +1051,16 @@ function updateQualitySpeedBadge(q) {
     if (norm === 'auto') {
       const net = detectNetworkSpeed();
       if (activeTier === '360P') {
-        speedBadge.innerHTML = `<i class="fa-solid fa-signal" style="color:#e50914"></i> Auto (${activeTier} Data Saver)`;
+        speedBadge.innerHTML = `<i class="fa-solid fa-signal" style="color:#e50914"></i> Auto (${activeTier})`;
       } else if (activeTier === '480P') {
         speedBadge.innerHTML = `<i class="fa-solid fa-wifi" style="color:#f5c518"></i> Auto (${activeTier} Smooth)`;
       } else if (activeTier === '720P') {
         speedBadge.innerHTML = `<i class="fa-solid fa-wifi" style="color:#46d369"></i> Auto (${activeTier} HD)`;
       } else {
-        speedBadge.innerHTML = `<i class="fa-solid fa-bolt" style="color:#46d369"></i> Auto (${activeTier} FHD • ${net.downlink || 10}Mbps)`;
+        speedBadge.innerHTML = `<i class="fa-solid fa-bolt" style="color:#46d369"></i> Auto (${activeTier} FHD)`;
       }
     } else {
-      speedBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#46d369"></i> ${activeTier} Locked`;
+      speedBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#46d369"></i> ${activeTier} HD`;
     }
   }
   if (inPlayerBadge) {
@@ -2043,7 +2047,9 @@ function createVjsPlayer(playerEl, stream, movie) {
       const errDisplay = playerEl.querySelector('.vjs-error-display');
       if (errDisplay) errDisplay.style.display = 'none';
       clearTimeout(slowHeaderWatchdog);
-      renderPlayerFallback(playerEl, movie);
+      setTimeout(() => {
+        renderPlayerFallback(playerEl, movie);
+      }, 50);
     });
   } else {
     hideLoader();

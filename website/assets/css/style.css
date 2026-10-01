@@ -1,5 +1,5 @@
 /* ============================================================
-   FilmSub �" Main Stylesheet | Dark Netflix-style theme v1.0
+   FilmSub - Main Stylesheet | Dark Netflix-style theme v2.0
    ============================================================ */
 
 :root {
@@ -753,7 +753,7 @@ main > .section:first-of-type {
 .text-gold { color: var(--gold); }
 .fw-bold { font-weight: 700; }
 .no-scroll { overflow: hidden; }
-.ad-slot { background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.06); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 12px; min-height: 90px; margin: 20px 24px; }
+.ad-slot { display: none !important; }
 
 /* ============================================================
    CineSubz-Inspired Movie Page Styles
@@ -1796,38 +1796,63 @@ main > .section:first-of-type {
 }
 
 /* ============================================================
-   COMPACT HERO SPOTLIGHT (Netflix + CineSubz Mobile-First)
+   GRAND NETFLIX CINEMA HERO BILLBOARD
    ============================================================ */
+.hero,
 .hero.compact-hero {
   position: relative;
-  min-height: 480px !important;
+  min-height: 75vh !important;
   margin-top: var(--header-h);
-  padding: 48px 5% 56px !important;
+  padding: 0 4% 64px !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-end !important;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none !important;
   background: #000000;
 }
+.hero + #trending-section,
 .hero.compact-hero + #trending-section {
   padding-top: 24px !important;
 }
+.hero .hero-backdrop,
+.hero.compact-hero .hero-backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 25%;
+  background-repeat: no-repeat;
+  z-index: 1;
+  transform: scale(1.03);
+  transition: transform 7s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.hero:hover .hero-backdrop,
+.hero.compact-hero:hover .hero-backdrop {
+  transform: scale(1);
+}
+.hero .hero-gradient,
+.hero.compact-hero .hero-gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(77deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.82) 35%, rgba(0,0,0,0.2) 75%, transparent 100%),
+              linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(0,0,0,0.85) 80%, #000000 100%);
+  pointer-events: none;
+}
+.hero .hero-content,
 .hero.compact-hero .hero-content,
 .hero-content-row {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 32px;
-  max-width: 1060px;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 14px;
+  max-width: 720px;
   width: 100%;
   padding: 0 !important;
 }
 .hero-poster-mini-wrap {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
+  display: none !important;
 }
 .hero-poster-mini {
   width: 160px;
@@ -1983,65 +2008,86 @@ main > .section:first-of-type {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 16px;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 .player-notice-left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
+  gap: 10px;
+  font-size: 13px;
   color: var(--text2);
-  flex: 1 1 260px;
+}
+.netflix-sub-pill {
+  background: rgba(229, 9, 20, 0.12);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.2);
+}
+.netflix-sub-pill i {
+  color: var(--accent);
 }
 .player-sub-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .sub-ctrl-btn {
-  background: #222;
-  color: var(--text2);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 11.5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  transition: all 0.2s ease;
+  gap: 6px;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  backdrop-filter: blur(8px);
 }
 .sub-ctrl-btn:hover {
-  background: #2e2e2e;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 .sub-ctrl-btn.active {
-  background: rgba(229, 9, 20, 0.18);
-  color: #fff;
+  background: var(--accent);
+  color: #ffffff;
   border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(229, 9, 20, 0.6);
 }
 .quick-dl-strip {
-  background: #141414;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  padding: 10px 16px;
+  background: #000000;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
-  border-bottom-left-radius: var(--radius);
-  border-bottom-right-radius: var(--radius);
+  gap: 12px;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
 }
 .quick-dl-label {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12.5px;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: #ffffff;
 }
 .quick-dl-label i {
   color: var(--accent);
@@ -2053,39 +2099,42 @@ main > .section:first-of-type {
   flex-wrap: wrap;
 }
 .quick-dl-pill {
-  background: #1f1f1f;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 6px 11px;
-  border-radius: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .quick-dl-pill:hover {
   background: var(--accent);
   border-color: var(--accent);
+  color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.5);
 }
 .quick-dl-size {
   color: var(--gold);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .quick-dl-pill:hover .quick-dl-size {
-  color: #fff;
+  color: #ffffff;
 }
 .quick-dl-sub-tag {
-  background: rgba(70, 211, 105, 0.16);
-  color: #46d369;
+  background: rgba(229, 9, 20, 0.2);
+  color: #ffffff;
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 10px;
 }
 .quick-dl-pill:hover .quick-dl-sub-tag {
   background: rgba(255, 255, 255, 0.22);
@@ -2100,72 +2149,103 @@ main > .section:first-of-type {
   :root {
     --header-h: 54px;
   }
-  /* 1. Compact Mobile Hero Spotlight (Never Oversized) */
+  /* 1. Grand Netflix Mobile Hero Banner */
+  .hero,
   .hero.compact-hero {
     display: flex !important;
-    min-height: 156px !important;
-    max-height: 215px !important;
-    padding: 12px 14px !important;
+    min-height: 52vh !important;
+    max-height: none !important;
+    padding: 0 16px 28px !important;
     margin-top: var(--header-h) !important;
+    align-items: flex-end !important;
   }
+  .hero .hero-backdrop,
+  .hero.compact-hero .hero-backdrop {
+    background-position: center top !important;
+  }
+  .hero .hero-gradient,
+  .hero.compact-hero .hero-gradient {
+    background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 45%, #000000 100%) !important;
+  }
+  .hero .hero-content,
   .hero.compact-hero .hero-content,
   .hero-content-row {
-    gap: 12px !important;
+    gap: 10px !important;
     padding: 0 !important;
+    max-width: 100% !important;
   }
-  .hero-poster-mini {
-    width: 78px;
-    height: 116px;
-    border-radius: 6px;
-  }
-  .hero.compact-hero .hero-badge {
-    font-size: 9.5px;
-    padding: 2px 7px;
-  }
-  .hero.compact-hero .hero-title {
-    font-size: 16.5px !important;
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .hero.compact-hero .hero-title-si {
-    font-size: 12px !important;
-    margin-bottom: 2px;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .hero.compact-hero .hero-genres,
-  .hero.compact-hero .hero-description {
+  .hero-poster-mini-wrap {
     display: none !important;
   }
-  .hero.compact-hero .hero-meta {
-    gap: 4px;
-    margin-bottom: 4px;
+  .hero-badge,
+  .hero.compact-hero .hero-badge {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
   }
+  .hero-title,
+  .hero.compact-hero .hero-title {
+    font-size: clamp(22px, 6.5vw, 32px) !important;
+    line-height: 1.15 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  .hero-title-si,
+  .hero.compact-hero .hero-title-si {
+    font-size: 13px !important;
+    margin-bottom: 2px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  .hero-genres,
+  .hero.compact-hero .hero-genres {
+    display: flex !important;
+    gap: 6px !important;
+    margin-bottom: 2px !important;
+  }
+  .hero-description,
+  .hero.compact-hero .hero-description {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+    color: rgba(255,255,255,0.8) !important;
+    margin-bottom: 6px !important;
+  }
+  .hero-meta,
+  .hero.compact-hero .hero-meta {
+    gap: 6px !important;
+    margin-bottom: 4px !important;
+  }
+  .hero-meta .badge,
   .hero.compact-hero .hero-meta .badge {
-    font-size: 10px;
-    padding: 2px 6px;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
   }
   .btn-hero,
   .btn-compact {
-    padding: 6px 12px !important;
-    font-size: 11.5px !important;
+    padding: 10px 18px !important;
+    font-size: 13.5px !important;
+    flex: 1 1 auto !important;
+    justify-content: center !important;
   }
 
-  /* 2. Proportionate Carousel Cards on Mobile (3+ visible per row) */
+  /* 2. Proportionate Carousel Cards on Mobile (comfortable Netflix width) */
   .carousel-track.trending-track .movie-card {
-    width: calc(36vw - 10px) !important;
-    min-width: 108px !important;
-    max-width: 126px !important;
+    width: 138px !important;
+    min-width: 138px !important;
+    max-width: 138px !important;
   }
-  .carousel-track.compact-track .movie-card {
-    width: calc(29.5vw - 8px) !important;
-    min-width: 94px !important;
-    max-width: 108px !important;
+  .carousel-track.compact-track .movie-card,
+  .carousel-track .movie-card {
+    width: 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
   }
   .card-rank-num {
     font-size: 38px !important;
@@ -2173,7 +2253,7 @@ main > .section:first-of-type {
     left: 4px !important;
   }
   .card-title-text {
-    font-size: 11px !important;
+    font-size: 11.5px !important;
   }
   .badge-top-left,
   .badge-top-right {
@@ -2189,9 +2269,7 @@ main > .section:first-of-type {
 
   /* 4. Compact Banners, Ads, and Search Header on Mobile */
   .ad-slot {
-    height: 48px !important;
-    margin: 8px 0 !important;
-    font-size: 10px !important;
+    display: none !important;
   }
   .search-hero {
     padding: calc(var(--header-h) + 14px) 14px 14px !important;
@@ -2675,19 +2753,12 @@ main > .section:first-of-type {
 }
 
 /* ============================================================
-   Mobile-first responsive additions - plan �6.1
+   Mobile-first responsive additions - plan -6.1
    (Super Player + Auto-Subtitle + High-Speed Conversion)
    ============================================================ */
 
-/* -- Hero banner shrink on small phones ----------------------- */
+/* -- Hero banner styling on small phones ----------------------- */
 @media (max-width: 600px) {
-  .hero-banner,
-  .hero-section {
-    min-height: 180px !important;
-    padding: 16px 12px !important;
-  }
-  .hero-title { font-size: 22px !important; }
-  .hero-subtitle, .hero-desc { font-size: 13px !important; }
 
   /* Movie grid: 2-column compact layout on mobile */
   .movies-grid,
@@ -2698,7 +2769,7 @@ main > .section:first-of-type {
     gap: 10px !important;
   }
 
-  /* Player logo overlay hidden (plan �2.5) */
+  /* Player logo overlay hidden (plan -2.5) */
   .player-logo { display: none !important; }
 
   /* VIP player tabs: horizontal swipeable pills on mobile */
@@ -2747,5 +2818,5 @@ main > .section:first-of-type {
   }
 }
 
-/* -- Quality selector badge (plan �6.4) ----------------------- */
+/* -- Quality selector badge (plan -6.4) ----------------------- */
 .vjs-quality-selector .vjs-menu-button { min-width: 56px; }

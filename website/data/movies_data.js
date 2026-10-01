@@ -12652,54 +12652,13 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=8&e=1"
         }
       ],
-      "downloads": [
-        {
-          "quality": "720p",
-          "label": "720p HD (Sinhala Sub Merged)",
-          "size": "0.71 GB",
-          "size_bytes": 766805903,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD6Gq-aO9kMCEL0Nvcrc3vFNZeQ2JmAAInJQACUXf5VT_l0kW9cyYQHgQ",
-          "message_id": 232,
-          "url": "https://t.me/c/4325759505/232",
-          "telegram_url": "https://t.me/c/4325759505/232",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "480p",
-          "label": "480p SD",
-          "size": "0.39 GB",
-          "size_bytes": 415741605,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD52q-ZZR0ZOmftlD_7Uu166uiixOWAAIeJQACUXf5VdOLn9SkXBI-HgQ",
-          "message_id": 231,
-          "url": "https://t.me/c/4325759505/231",
-          "telegram_url": "https://t.me/c/4325759505/231",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        }
-      ],
-      "telegram_status": "complete",
+      "downloads": [],
+      "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e01",
       "added_date": "2026-10-01",
-      "variant_media": {
-        "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD6Gq-aO9kMCEL0Nvcrc3vFNZeQ2JmAAInJQACUXf5VT_l0kW9cyYQHgQ",
-          "message_id": 232,
-          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
-          "size_bytes": 766805903
-        },
-        "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD52q-ZZR0ZOmftlD_7Uu166uiixOWAAIeJQACUXf5VdOLn9SkXBI-HgQ",
-          "message_id": 231,
-          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/231",
-          "size_bytes": 415741605
-        }
-      }
+      "channel_post_id": 234,
+      "channel_chat_id": -1004325759505
     }
   ],
   "last_updated": "2026-10-01T13:37:33Z"

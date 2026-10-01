@@ -123,7 +123,12 @@ async function loadLiveStreamConfig() {
   }
 
   if (candidateUrl) {
-    activeStreamBaseUrl = candidateUrl;
+    const isAlive = await probeStreamServerHealth(candidateUrl);
+    if (isAlive) {
+      activeStreamBaseUrl = candidateUrl;
+    } else {
+      activeStreamBaseUrl = ''; // stream server offline — fall back to VIP embeds
+    }
   }
 
   try {
@@ -556,7 +561,7 @@ function getMovieStreams(movie) {
     type: 'video/mp4',
     embed: false,
     stream_url: nativeStreamUrl,
-    hasLocalFile: true,
+    hasLocalFile: Boolean(tgMsgId > 0 && nativeStreamUrl && !nativeStreamUrl.endsWith('/0')),
   });
 
   return list;
@@ -2135,7 +2140,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         renderPlayerFallback(playerEl, movie);
       }
-    }, 8000);
+    }, 20000);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);

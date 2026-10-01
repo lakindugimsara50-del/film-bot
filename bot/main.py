@@ -877,8 +877,8 @@ async def _on_start(client: Client) -> None:
     # Publish live stream endpoint to website for seamless zero-config Telegram streaming
     try:
         from services import github_service
-        active_stream_url = os.getenv("STREAM_BASE_URL", "").strip() or getattr(config, "STREAM_BASE_URL", "")
-        if active_stream_url and ("trycloudflare.com" in active_stream_url or "onrender.com" in active_stream_url):
+        active_stream_url = os.getenv("STREAM_SERVER_URL", "").strip() or os.getenv("STREAM_BASE_URL", "").strip() or getattr(config, "STREAM_BASE_URL", "")
+        if active_stream_url:
             asyncio.create_task(github_service.publish_live_stream_endpoint(active_stream_url))
             log.info("[Main] Scheduled live stream endpoint publication: %s", active_stream_url)
     except Exception as ep_err:

@@ -12659,7 +12659,143 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-01",
       "channel_post_id": 234,
       "channel_chat_id": -1004325759505
+    },
+    {
+      "id": "game-of-thrones-2011-s08e02",
+      "slug": "game-of-thrones-2011-s08e02",
+      "title": "Game of Thrones",
+      "title_si": "",
+      "year": 2011,
+      "imdb_id": "tt0944947",
+      "tmdb_id": "1399",
+      "type": "series",
+      "season": 8,
+      "episode": 2,
+      "episode_title": "A Knight of the Seven Kingdoms",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "en",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
+      "rating": "8.5",
+      "number_of_seasons": 8,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/wgfKiqzuMrFIkU1M68DDDY8kGC1.jpg",
+          "air_date": "2011-04-17"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/9xfNkPwDOqyeUvfNhs1XlWA0esP.jpg",
+          "air_date": "2012-04-01"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/5MkZjRnCKiIGn3bkXrXfndEzqOU.jpg",
+          "air_date": "2013-03-31"
+        },
+        {
+          "season_number": 4,
+          "name": "Season 4",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/jXIMScXE4J4EVHUba1JgxZnWbo4.jpg",
+          "air_date": "2014-04-06"
+        },
+        {
+          "season_number": 5,
+          "name": "Season 5",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/7Q1Hy1AHxAzA2lsmzEMBvuWTX0x.jpg",
+          "air_date": "2015-04-12"
+        },
+        {
+          "season_number": 6,
+          "name": "Season 6",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/p1udLh0gfqyZFmXBGa393gk8go5.jpg",
+          "air_date": "2016-04-24"
+        },
+        {
+          "season_number": 7,
+          "name": "Season 7",
+          "episode_count": 7,
+          "poster_url": "https://image.tmdb.org/t/p/w500/oX51n32QyHeFP5kErksemJsJljL.jpg",
+          "air_date": "2017-07-16"
+        },
+        {
+          "season_number": 8,
+          "name": "Season 8",
+          "episode_count": 6,
+          "poster_url": "https://image.tmdb.org/t/p/w500/yToCshWmirenreC6mrHwFAScFNJ.jpg",
+          "air_date": "2019-04-14"
+        }
+      ],
+      "featured": false,
+      "trending": false,
+      "added_at": "2026-10-01T14:32:27Z",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/1399/8/2"
+        },
+        {
+          "server": "Server 2",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/8/2"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=8&e=2"
+        }
+      ],
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e02",
+      "added_date": "2026-10-01"
     }
   ],
-  "last_updated": "2026-10-01T13:37:33Z"
+  "last_updated": "2026-10-01T14:33:02Z"
 };

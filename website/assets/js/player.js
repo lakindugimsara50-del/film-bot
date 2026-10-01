@@ -126,8 +126,10 @@ async function loadLiveStreamConfig() {
     const isAlive = await probeStreamServerHealth(candidateUrl);
     if (isAlive) {
       activeStreamBaseUrl = candidateUrl;
+      streamServerHealthy = true;
     } else {
       activeStreamBaseUrl = ''; // stream server offline — fall back to VIP embeds
+      streamServerHealthy = false;
     }
   }
 
@@ -561,8 +563,91 @@ function getMovieStreams(movie) {
     type: 'video/mp4',
     embed: false,
     stream_url: nativeStreamUrl,
-    hasLocalFile: Boolean(tgMsgId > 0 && nativeStreamUrl && !nativeStreamUrl.endsWith('/0')),
+    hasLocalFile: Boolean(streamServerHealthy && tgMsgId > 0 && nativeStreamUrl && !nativeStreamUrl.endsWith('/0')),
   });
+
+  // =========================================================================
+  // Server 2 & 3: VIP Embed Players (always available — no stream server needed)
+  // =========================================================================
+  const extId = imdbId || tmdbId;
+  if (extId) {
+    if (isSeries) {
+      const S = sNum, E = eNum;
+      if (tmdbId) {
+        list.push({
+          server: 'Server 2',
+          label: '🎬 VIP Player 1 (VidLink Ultra HD)',
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: `https://vidlink.pro/tv/${tmdbId}/${S}/${E}`,
+        });
+      }
+      if (imdbId) {
+        list.push({
+          server: 'Server 3',
+          label: '⚡ VIP Player 2 (AutoEmbed HD)',
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: `https://player.autoembed.cc/embed/tv/${imdbId}/${S}/${E}`,
+        });
+        list.push({
+          server: 'Server 4',
+          label: '🚀 VIP Player 3 (2Embed Fast)',
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: `https://www.2embed.cc/embedtv/${imdbId}&s=${S}&e=${E}`,
+        });
+      }
+    } else {
+      if (tmdbId) {
+        list.push({
+          server: 'Server 2',
+          label: '🎬 VIP Player 1 (VidLink Ultra HD)',
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: `https://vidlink.pro/movie/${tmdbId}`,
+        });
+      }
+      if (imdbId) {
+        list.push({
+          server: 'Server 3',
+          label: '⚡ VIP Player 2 (AutoEmbed HD)',
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: `https://player.autoembed.cc/embed/movie/${imdbId}`,
+        });
+        list.push({
+          server: 'Server 4',
+          label: '🚀 VIP Player 3 (2Embed Fast)',
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: `https://www.2embed.cc/embed/${imdbId}`,
+        });
+      }
+    }
+  }
+
+  // Also add any extra embed streams stored in movie.streams (e.g. from /add command)
+  if (Array.isArray(movie.streams)) {
+    for (const s of movie.streams) {
+      if (s.embed && s.stream_url && !list.some(l => l.stream_url === s.stream_url)) {
+        list.push({
+          server: s.server || `Server ${list.length + 1}`,
+          label: s.label || s.server || `VIP Player ${list.length}`,
+          mode: 'embed',
+          type: 'embed',
+          embed: true,
+          stream_url: s.stream_url,
+        });
+      }
+    }
+  }
 
   return list;
 }

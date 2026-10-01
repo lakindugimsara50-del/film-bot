@@ -139,6 +139,14 @@ class TelegramUploadPool:
         self._admin_sessions: Dict[int, List[Client]] = {}
         self._admin_check_times: Dict[int, float] = {}
         self._lock = asyncio.Lock()
+        self._client_upload_locks: Dict[int, asyncio.Lock] = {}
+
+    def get_client_lock(self, client: Client) -> asyncio.Lock:
+        """Return a persistent asyncio.Lock for the given Client instance to serialize same-account uploads."""
+        c_id = id(client)
+        if c_id not in self._client_upload_locks:
+            self._client_upload_locks[c_id] = asyncio.Lock()
+        return self._client_upload_locks[c_id]
 
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client as upload fallback."""
@@ -619,6 +627,21 @@ class TelegramUploadPool:
                     target_chat, quality, getattr(fallback, "name", "main_bot")
                 )
                 if fallback:
+                    c_lock = self.get_client_lock(fallback)
+                    async with c_lock:
+                        return await telegram_upload.upload_video_file(
+                            bot_client=fallback,
+                            file_path=file_path,
+                            target_chat=target_chat,
+                            caption=caption,
+                            progress_callback=progress_callback,
+                            fallback_chat=0,
+                        )
+        elif target_chat in self._channel_unwritable or not self.clients:
+            if fallback:
+                log.info("[UploadPool] Uploading [%s] directly via main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
+                c_lock = self.get_client_lock(fallback)
+                async with c_lock:
                     return await telegram_upload.upload_video_file(
                         bot_client=fallback,
                         file_path=file_path,
@@ -627,17 +650,6 @@ class TelegramUploadPool:
                         progress_callback=progress_callback,
                         fallback_chat=0,
                     )
-        elif target_chat in self._channel_unwritable or not self.clients:
-            if fallback:
-                log.info("[UploadPool] Uploading [%s] directly via main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
-                return await telegram_upload.upload_video_file(
-                    bot_client=fallback,
-                    file_path=file_path,
-                    target_chat=target_chat,
-                    caption=caption,
-                    progress_callback=progress_callback,
-                    fallback_chat=0,
-                )
 
         last_exc = None
         tried_clients: list = []
@@ -655,14 +667,16 @@ class TelegramUploadPool:
             )
 
             try:
-                return await telegram_upload.upload_video_file(
-                    bot_client=client,
-                    file_path=file_path,
-                    target_chat=target_chat,
-                    caption=caption,
-                    progress_callback=progress_callback,
-                    fallback_chat=0,
-                )
+                c_lock = self.get_client_lock(client)
+                async with c_lock:
+                    return await telegram_upload.upload_video_file(
+                        bot_client=client,
+                        file_path=file_path,
+                        target_chat=target_chat,
+                        caption=caption,
+                        progress_callback=progress_callback,
+                        fallback_chat=0,
+                    )
             except FloodWait as fw:
                 last_exc = fw
                 log.warning(

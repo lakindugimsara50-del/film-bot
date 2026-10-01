@@ -11802,46 +11802,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 7,
       "episode": 6,
       "episode_title": "Beyond the Wall",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -11900,196 +11870,223 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "70 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-10-01T10:37:13Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQAD3Gq-PGooVFFxVNRjix6wdXrZFxCTAALAJAACUXf5VcMmI8NhBlFvHgQ",
+      "message_id": 220,
+      "file_name": "game-of-thrones-2011-s07e06.mp4",
+      "file_size": 911544638,
+      "drive_file_id": "",
+      "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
       "streams": [
         {
           "server": "Server 1",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/7/6?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s07e06-s07e06-si.vtt&sub_label=Sinhala&sub=true"
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD3Gq-PGooVFFxVNRjix6wdXrZFxCTAALAJAACUXf5VcMmI8NhBlFvHgQ",
+          "message_id": 220,
+          "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/7/6"
+          "stream_url": "https://vidlink.pro/tv/1399/7/6"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-7-6"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=7&e=6"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e06-s07e06-si.vtt",
-      "has_sinhala_sub": true,
-      "subtitles": [
+      "qualities": {
+        "auto": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+        "1080p": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/222",
+        "720p": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+        "480p": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/219",
+        "360p": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220"
+      },
+      "downloads": [
         {
-          "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e06-s07e06-si.vtt",
-          "default": true
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1787644272,
+          "url": "https://t.me/c/4325759505/222",
+          "telegram_url": "https://t.me/c/4325759505/222",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD3mq-PUrOOeogFbkJ8CxsJLP10iCyAALDJAACUXf5VTf0RXndF99RHgQ",
+          "message_id": 222,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/222",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "869.3 MB",
+          "size_bytes": 911544638,
+          "url": "https://t.me/c/4325759505/220",
+          "telegram_url": "https://t.me/c/4325759505/220",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD3Gq-PGooVFFxVNRjix6wdXrZFxCTAALAJAACUXf5VcMmI8NhBlFvHgQ",
+          "message_id": 220,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "448.1 MB",
+          "size_bytes": 469825562,
+          "url": "https://t.me/c/4325759505/219",
+          "telegram_url": "https://t.me/c/4325759505/219",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD22q-O91u1Ngp4ZGE96MyGlwNUfmEAAK_JAACUXf5VavVWctwSw-FHgQ",
+          "message_id": 219,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/219",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "869.3 MB",
+          "size_bytes": 911544638,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e06_1080p",
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "869.3 MB",
+          "size_bytes": 911544638,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e06_720p",
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "448.1 MB",
+          "size_bytes": 469825562,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e06_480p",
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/219",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "156.5 MB",
+          "size_bytes": 164078034,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s07e06_360p",
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
         }
       ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD3mq-PUrOOeogFbkJ8CxsJLP10iCyAALDJAACUXf5VTf0RXndF99RHgQ",
+          "message_id": 222,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/222",
+          "size_bytes": 1787644272
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD3Gq-PGooVFFxVNRjix6wdXrZFxCTAALAJAACUXf5VcMmI8NhBlFvHgQ",
+          "message_id": 220,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "size_bytes": 911544638
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD22q-O91u1Ngp4ZGE96MyGlwNUfmEAAK_JAACUXf5VavVWctwSw-FHgQ",
+          "message_id": 219,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/219",
+          "size_bytes": 469825562
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://venture-sheets-freelance-beautiful.trycloudflare.com/stream/channel/-1004325759505/220",
+          "size_bytes": 164078034
+        }
+      },
+      "subtitles": [],
+      "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e06",
-      "channel_post_id": 215,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-10-01"
-    },
-    {
-      "id": "game-of-thrones-2011-s07e07",
-      "slug": "game-of-thrones-2011-s07e07",
-      "title": "Game of Thrones",
-      "title_si": "",
-      "year": 2011,
-      "imdb_id": "tt0944947",
-      "tmdb_id": "1399",
-      "type": "series",
-      "season": 7,
-      "episode": 7,
-      "episode_title": "The Dragon and the Wolf",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
-      "number_of_seasons": 8,
-      "seasons": [
-        {
-          "season_number": 1,
-          "name": "Season 1",
-          "episode_count": 10,
-          "poster_url": "https://image.tmdb.org/t/p/w500/wgfKiqzuMrFIkU1M68DDDY8kGC1.jpg",
-          "air_date": "2011-04-17"
-        },
-        {
-          "season_number": 2,
-          "name": "Season 2",
-          "episode_count": 10,
-          "poster_url": "https://image.tmdb.org/t/p/w500/9xfNkPwDOqyeUvfNhs1XlWA0esP.jpg",
-          "air_date": "2012-04-01"
-        },
-        {
-          "season_number": 3,
-          "name": "Season 3",
-          "episode_count": 10,
-          "poster_url": "https://image.tmdb.org/t/p/w500/5MkZjRnCKiIGn3bkXrXfndEzqOU.jpg",
-          "air_date": "2013-03-31"
-        },
-        {
-          "season_number": 4,
-          "name": "Season 4",
-          "episode_count": 10,
-          "poster_url": "https://image.tmdb.org/t/p/w500/jXIMScXE4J4EVHUba1JgxZnWbo4.jpg",
-          "air_date": "2014-04-06"
-        },
-        {
-          "season_number": 5,
-          "name": "Season 5",
-          "episode_count": 10,
-          "poster_url": "https://image.tmdb.org/t/p/w500/7Q1Hy1AHxAzA2lsmzEMBvuWTX0x.jpg",
-          "air_date": "2015-04-12"
-        },
-        {
-          "season_number": 6,
-          "name": "Season 6",
-          "episode_count": 10,
-          "poster_url": "https://image.tmdb.org/t/p/w500/p1udLh0gfqyZFmXBGa393gk8go5.jpg",
-          "air_date": "2016-04-24"
-        },
-        {
-          "season_number": 7,
-          "name": "Season 7",
-          "episode_count": 7,
-          "poster_url": "https://image.tmdb.org/t/p/w500/oX51n32QyHeFP5kErksemJsJljL.jpg",
-          "air_date": "2017-07-16"
-        },
-        {
-          "season_number": 8,
-          "name": "Season 8",
-          "episode_count": 6,
-          "poster_url": "https://image.tmdb.org/t/p/w500/yToCshWmirenreC6mrHwFAScFNJ.jpg",
-          "air_date": "2019-04-14"
-        }
-      ],
-      "featured": false,
-      "trending": false,
-      "added_at": "2026-10-01T10:59:02Z",
-      "streams": [
-        {
-          "server": "Server 1",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidlink.pro/tv/1399/7/7?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fgame-of-thrones-2011-s07e07-s07e07-si.vtt&sub_label=Sinhala&sub=true"
-        },
-        {
-          "server": "Server 2",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/7/7"
-        },
-        {
-          "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=7&e=7"
-        }
-      ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e07-s07e07-si.vtt",
-      "has_sinhala_sub": true,
-      "subtitles": [
-        {
-          "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s07e07-s07e07-si.vtt",
-          "default": true
-        }
-      ],
-      "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e07",
-      "channel_post_id": 221,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-10-01"
+      "added_date": "2026-10-01",
+      "added_at": "2026-10-01T11:00:27Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-01T10:59:17Z"
+  "last_updated": "2026-10-01T11:00:28Z"
 };

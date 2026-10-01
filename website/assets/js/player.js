@@ -464,24 +464,16 @@ function getMovieStreams(movie) {
   
   // 1. Resolve real Telegram Cloud stream via channel chat ID and message ID
   let tgChatId = movie.channel_chat_id || '';
-  let tgMsgId = movie.channel_post_id || movie.message_id || 0;
+  // IMPORTANT: NEVER use channel_post_id as video message_id!
+  // channel_post_id is the announcement poster/text message in the public channel, NOT the video stream!
+  let tgMsgId = (typeof movie.message_id === 'number' && movie.message_id > 0) ? movie.message_id : 0;
 
   if (!tgMsgId && Array.isArray(movie.downloads)) {
     for (const d of movie.downloads) {
-      if (d.message_id) {
+      if (d.message_id && typeof d.message_id === 'number' && d.message_id > 0) {
         tgMsgId = d.message_id;
+        break;
       }
-      const matchC = (d.url || '').match(/t\.me\/c\/(\d+)\/(\d+)/);
-      if (matchC) {
-        tgChatId = tgChatId || `-100${matchC[1]}`;
-        tgMsgId = tgMsgId || parseInt(matchC[2], 10);
-      }
-      const matchU = (d.url || '').match(/t\.me\/([^/]+)\/(\d+)/);
-      if (matchU) {
-        tgChatId = tgChatId || matchU[1];
-        tgMsgId = tgMsgId || parseInt(matchU[2], 10);
-      }
-      if (tgMsgId) break;
     }
   }
 
@@ -491,20 +483,20 @@ function getMovieStreams(movie) {
 
   const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
   if (vm && typeof vm === 'object') {
-    const qKey = (currentEffectiveQuality || '1080p').toLowerCase();
-    const vOpt = vm[qKey] || vm['1080p'] || vm['720p'] || vm['480p'] || vm['360p'] || Object.values(vm)[0];
+    const qKey = (currentEffectiveQuality || '720p').toLowerCase();
+    const vOpt = vm[qKey] || vm['720p'] || vm['480p'] || vm['1080p'] || vm['360p'] || Object.values(vm)[0];
     if (vOpt) {
       if (vOpt.stream_url) {
         const norm = normalizeStreamUrl(vOpt.stream_url);
         if (norm) nativeStreamUrl = norm;
       }
-      if (vOpt.message_id) {
+      if (vOpt.message_id && typeof vOpt.message_id === 'number' && vOpt.message_id > 0) {
         tgMsgId = vOpt.message_id;
       }
     }
   }
 
-  if (!nativeStreamUrl && tgMsgId) {
+  if (!nativeStreamUrl && tgMsgId > 0) {
     if (!tgChatId) tgChatId = '-1004325759505';
     if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
       nativeStreamUrl = `${activeStreamBaseUrl}/stream/channel/${tgChatId}/${tgMsgId}`;
@@ -534,9 +526,10 @@ function getMovieStreams(movie) {
              (m.season === sNum && m.episode === eNum);
     });
     if (matchedEp) {
-      const epMsgId = matchedEp.channel_post_id || matchedEp.message_id;
+      const epMsgId = (typeof matchedEp.message_id === 'number' && matchedEp.message_id > 0) ? matchedEp.message_id : 0;
       const epChatId = matchedEp.channel_chat_id || tgChatId || '-1004325759505';
-      if (epMsgId) {
+      if (epMsgId > 0) {
+        tgMsgId = epMsgId;
         nativeStreamUrl = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http'))
           ? `${activeStreamBaseUrl}/stream/channel/${epChatId}/${epMsgId}`
           : `/stream/channel/${epChatId}/${epMsgId}`;
@@ -548,13 +541,7 @@ function getMovieStreams(movie) {
     }
   }
 
-  // Ensure nativeStreamUrl is never blank for Server 1
-  if (!nativeStreamUrl) {
-    const cId = tgChatId || '-1004325759505';
-    nativeStreamUrl = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http'))
-      ? `${activeStreamBaseUrl}/stream/channel/${cId}/${tgMsgId || 0}`
-      : `/stream/channel/${cId}/${tgMsgId || 0}`;
-  }
+  const isRealStreamReady = Boolean((tgMsgId > 0 || movie.file_id) && nativeStreamUrl && !nativeStreamUrl.endsWith('/0'));
 
   list.push({
     server: 'Server 1',
@@ -562,92 +549,9 @@ function getMovieStreams(movie) {
     mode: 'super_chunk',
     type: 'video/mp4',
     embed: false,
-    stream_url: nativeStreamUrl,
-    hasLocalFile: Boolean(streamServerHealthy && tgMsgId > 0 && nativeStreamUrl && !nativeStreamUrl.endsWith('/0')),
+    stream_url: nativeStreamUrl || (activeStreamBaseUrl ? `${activeStreamBaseUrl}/stream/channel/-1004325759505/${tgMsgId}` : `/stream/channel/-1004325759505/${tgMsgId}`),
+    hasLocalFile: isRealStreamReady,
   });
-
-  // =========================================================================
-  // Server 2 & 3: VIP Embed Players (always available — no stream server needed)
-  // =========================================================================
-  const extId = imdbId || tmdbId;
-  if (extId) {
-    if (isSeries) {
-      const S = sNum, E = eNum;
-      if (tmdbId) {
-        list.push({
-          server: 'Server 2',
-          label: '🎬 VIP Player 1 (VidLink Ultra HD)',
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: `https://vidlink.pro/tv/${tmdbId}/${S}/${E}`,
-        });
-      }
-      if (imdbId) {
-        list.push({
-          server: 'Server 3',
-          label: '⚡ VIP Player 2 (AutoEmbed HD)',
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: `https://player.autoembed.cc/embed/tv/${imdbId}/${S}/${E}`,
-        });
-        list.push({
-          server: 'Server 4',
-          label: '🚀 VIP Player 3 (2Embed Fast)',
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: `https://www.2embed.cc/embedtv/${imdbId}&s=${S}&e=${E}`,
-        });
-      }
-    } else {
-      if (tmdbId) {
-        list.push({
-          server: 'Server 2',
-          label: '🎬 VIP Player 1 (VidLink Ultra HD)',
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: `https://vidlink.pro/movie/${tmdbId}`,
-        });
-      }
-      if (imdbId) {
-        list.push({
-          server: 'Server 3',
-          label: '⚡ VIP Player 2 (AutoEmbed HD)',
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: `https://player.autoembed.cc/embed/movie/${imdbId}`,
-        });
-        list.push({
-          server: 'Server 4',
-          label: '🚀 VIP Player 3 (2Embed Fast)',
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: `https://www.2embed.cc/embed/${imdbId}`,
-        });
-      }
-    }
-  }
-
-  // Also add any extra embed streams stored in movie.streams (e.g. from /add command)
-  if (Array.isArray(movie.streams)) {
-    for (const s of movie.streams) {
-      if (s.embed && s.stream_url && !list.some(l => l.stream_url === s.stream_url)) {
-        list.push({
-          server: s.server || `Server ${list.length + 1}`,
-          label: s.label || s.server || `VIP Player ${list.length}`,
-          mode: 'embed',
-          type: 'embed',
-          embed: true,
-          stream_url: s.stream_url,
-        });
-      }
-    }
-  }
 
   return list;
 }
@@ -2255,28 +2159,36 @@ function renderPlayerFallback(playerEl, movie) {
     window.fallbackRetryInterval = null;
   }
 
-  let countdownSec = 8;
+  let countdownSec = 10;
   let countdownTimer = null;
 
+  const isVideoPending = !movie.message_id && !movie.file_id && (!Array.isArray(movie.downloads) || !movie.downloads.some(d => d.message_id));
   const tgDownload = (Array.isArray(movie.downloads) && movie.downloads.find(d => d.url && d.url.includes('t.me'))) || null;
   const tgChannelUrl = tgDownload ? tgDownload.url : (movie.channel_post_id ? `https://t.me/c/${(movie.channel_chat_id || '').replace(/^-100/, '')}/${movie.channel_post_id}` : 'https://t.me/filmsinhala200');
+
+  const headingText = isVideoPending
+    ? '⚡ Telegram Cloud වෙත Upload වෙමින් පවතී...'
+    : 'Telegram Cloud Stream සම්බන්ධ වෙමින් පවතී...';
+  const descText = isVideoPending
+    ? `Bot එක මඟින් මෙම වීඩියෝව Telegram Cloud වෙත Upload කරමින් පවතී. තත්පර <strong id="retry-countdown" style="color:var(--accent)">${countdownSec}</strong> කින් ස්වයංක්‍රීයව Check කර Playback ආරම්භ වේ.`
+    : `Stream Server එක සක්‍රිය වෙමින් පවතී (Colab/Render Waking Up). තත්පර <strong id="retry-countdown" style="color:var(--accent)">${countdownSec}</strong> කින් ස්වයංක්‍රීයව Playback නැවත ආරම්භ වේ.`;
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050505 !important;color:#fff;padding:24px;text-align:center;gap:14px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);box-sizing:border-box">
       <div style="width:54px;height:54px;border-radius:50%;background:rgba(229,9,20,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:2px">
         <i class="fa-solid fa-cloud-bolt" style="font-size:26px;color:var(--accent)"></i>
       </div>
-      <h3 style="font-size:18px;margin:0;font-weight:700">Telegram Cloud Stream සම්බන්ධ වෙමින් පවතී...</h3>
+      <h3 style="font-size:18px;margin:0;font-weight:700">${headingText}</h3>
       <p style="font-size:13.5px;color:var(--text2);max-width:480px;margin:0;line-height:1.5">
-        Stream Server එක සක්‍රිය වෙමින් පවතී (Colab/Render Waking Up). තත්පර <strong id="retry-countdown" style="color:var(--accent)">${countdownSec}</strong> කින් ස්වයංක්‍රීයව Playback නැවත ආරම්භ වේ.
+        ${descText}
       </p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px">
         <button id="btn-manual-reconnect" type="button" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);padding:10px 20px;border-radius:6px;border:none;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;transition:transform 0.15s ease">
-          <i class="fa-solid fa-rotate-right"></i> දැන්ම නැවත Play කරන්න (Retry)
+          <i class="fa-solid fa-rotate-right"></i> දැන්ම Check කරන්න (Refresh)
         </button>
         ${tgChannelUrl ? `
           <a href="${FilmSub.escHtml(tgChannelUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#229ED9;padding:10px 18px;border-radius:6px;border:none;color:#fff;font-size:13.5px;font-weight:600;text-decoration:none">
-            <i class="fa-brands fa-telegram"></i> Telegram වෙතින් නරඹන්න
+            <i class="fa-brands fa-telegram"></i> Telegram Post එක බලන්න
           </a>
         ` : ''}
       </div>
@@ -2285,7 +2197,23 @@ function renderPlayerFallback(playerEl, movie) {
   const doRetry = async () => {
     if (countdownTimer) clearInterval(countdownTimer);
     if (window.fallbackRetryInterval) clearInterval(window.fallbackRetryInterval);
-    FilmSub.showToast('⚡ Stream server නැවත සම්බන්ධ වෙමින් පවතී...', 'info');
+    FilmSub.showToast('⚡ Live Status Check කරමින් පවතී...', 'info');
+
+    // Poll latest movies.json in case background Stage 2 upload just finished
+    try {
+      const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
+      const r = await fetch(ghUrl, { cache: 'no-store' });
+      if (r.ok) {
+        const d = await r.json();
+        const mList = Array.isArray(d) ? d : (d.movies || []);
+        const found = mList.find(m => m.slug === movie.slug || m.id === movie.slug || m.slug === movie.id);
+        if (found && (found.message_id || (Array.isArray(found.downloads) && found.downloads.some(x => x.message_id)))) {
+          currentMovie = found;
+          movie = found;
+        }
+      }
+    } catch (e) {}
+
     try {
       sessionStorage.removeItem('filmsub_stream_base');
       sessionStorage.removeItem('filmsub_stream_healthy');

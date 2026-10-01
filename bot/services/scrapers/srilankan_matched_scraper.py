@@ -526,6 +526,10 @@ async def search_matched_srilankan_releases(
         if isinstance(res, list):
             for item in res:
                 u = item.get("url")
+                q = str(item.get("quality", "")).lower()
+                # User requirement: TV Series strictly 720p & 480p only! NEVER download 1080p for TV Series.
+                if (is_series or season is not None or episode is not None) and q == "1080p":
+                    continue
                 if u and u not in seen_urls:
                     seen_urls.add(u)
                     all_matched.append(item)

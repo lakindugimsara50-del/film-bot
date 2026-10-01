@@ -736,6 +736,13 @@ async def _execute_leech(
                 original_language=tmdb_meta.get("original_language"),
             )
 
+        if is_series and candidates:
+            # User requirement: TV Series strictly download 720p & 480p only! NEVER download 1080p for TV Series.
+            series_non_1080 = [c for c in candidates if str(c.quality or "").lower() != "1080p"]
+            if series_non_1080:
+                log.info("[LeechService] TV Series mode: Filtered out 1080p candidates (%d -> %d).", len(candidates), len(series_non_1080))
+                candidates = series_non_1080
+
         if not candidates:
             task_tracker.tracker.fail_task(user_id, "No download candidates found across any method.")
             await status_msg.edit_text(
@@ -800,6 +807,8 @@ async def _execute_leech(
                     if other_c == candidate:
                         continue
                     o_q = (other_c.quality or "").lower()
+                    if is_series and o_q == "1080p":
+                        continue
                     if o_q in ("720p", "480p", "360p", "1080p") and o_q != primary_q and o_q not in companion_candidates:
                         o_portal = (other_c.extra or {}).get("portal", "")
                         o_host = urllib.parse.urlparse(str(other_c.source_url)).netloc
@@ -1083,9 +1092,18 @@ async def _execute_leech(
                         # Build full dict of available qualities (candidate + companions)
                         all_cands_by_q = {candidate.quality: candidate, **companion_candidates}
 
-                        # Prioritize Primary Quality: 1080p strictly first, then descending companions (720p, 480p, 360p)
+                        if is_series:
+                            # User requirement: TV Series strictly 720p & 480p only! NEVER download 1080p for TV Series.
+                            all_cands_by_q = {q: c for q, c in all_cands_by_q.items() if str(q).lower() != "1080p"}
+                            if not all_cands_by_q:
+                                all_cands_by_q = {candidate.quality: candidate}
+
+                        # Prioritize Primary Quality:
+                        # For TV Series: 720p strictly first, then 480p, 360p
+                        # For Movies: 1080p strictly first, then 720p, 480p, 360p
                         ordered_qualities = []
-                        for q_pref in ("1080p", "720p", "480p", "360p"):
+                        pref_order = ("720p", "480p", "360p") if is_series else ("1080p", "720p", "480p", "360p")
+                        for q_pref in pref_order:
                             if q_pref in all_cands_by_q:
                                 ordered_qualities.append(q_pref)
                         for q in all_cands_by_q:
@@ -2075,12 +2093,19 @@ async def _execute_leech(
                 has_hard_sub = bool(sub_to_burn_video and os.path.exists(sub_to_burn_video))
                 # When Sinhala subtitle is present and not pre-burned, include primary_quality in Single-Decode Hard-Burn (split=3)
                 # so 1080p, 720p, and 480p ALL get libass Noto Sans Sinhala Bold hard-burned simultaneously!
-                if primary_quality == "1080p":
-                    requested_qualities = ("1080p", "720p", "480p") if has_hard_sub else ("720p", "480p")
-                elif primary_quality == "720p":
-                    requested_qualities = ("720p", "480p") if has_hard_sub else ("480p",)
+                if is_series:
+                    # User requirement: TV Series strictly 720p & 480p only! NEVER encode or download 1080p for TV Series.
+                    if primary_quality == "720p":
+                        requested_qualities = ("720p", "480p") if has_hard_sub else ("480p",)
+                    else:
+                        requested_qualities = ("480p",) if has_hard_sub else ()
                 else:
-                    requested_qualities = ("480p",) if has_hard_sub else ()
+                    if primary_quality == "1080p":
+                        requested_qualities = ("1080p", "720p", "480p") if has_hard_sub else ("720p", "480p")
+                    elif primary_quality == "720p":
+                        requested_qualities = ("720p", "480p") if has_hard_sub else ("480p",)
+                    else:
+                        requested_qualities = ("480p",) if has_hard_sub else ()
 
                 if not requested_qualities:
                     _mq_progress_str = "Multi-Quality Skipped (Source <= 480p) ✅"

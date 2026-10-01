@@ -1,5 +1,5 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://asylum-tests-balanced-light.trycloudflare.com",
-  "updated_at": "2026-10-01T15:14:46.498499+00:00",
+  "stream_base_url": "https://entrepreneurs-sandra-just-copyrights.trycloudflare.com",
+  "updated_at": "2026-10-01T17:47:55.497923+00:00",
   "status": "online"
 };

@@ -339,7 +339,7 @@ async def upload_video_file(
                 log.warning("[TelegramUpload] bot_client.connect() warning: %s", conn_err)
 
         if hasattr(bot_client, "max_concurrent_transmissions"):
-            bot_client.max_concurrent_transmissions = 10
+            bot_client.max_concurrent_transmissions = 16
 
         try:
             resolved = await bot_client.get_chat(chat_id)

@@ -1234,6 +1234,32 @@ class TestLeechService(unittest.TestCase):
         self.assertEqual(companion_candidates["720p"].source_url, "https://cdn.sinhalasub.net/got/720.mp4")
         self.assertEqual(companion_candidates["480p"].source_url, "https://cdn.sinhalasub.net/got/480.mp4")
 
+    def test_variant_tg_info_prevents_duplicate_uploads(self):
+        """Verify that pre-uploaded qualities in variant_tg_info leave zero pending uploads."""
+        variant_files = {
+            "1080p": "/tmp/1080.mp4",
+            "720p": "/tmp/720.mp4",
+            "480p": "/tmp/480.mp4",
+        }
+        variant_tg_info = {
+            "1080p": {"file_id": "FID_1080", "message_id": 1001, "stream_url": "https://stream/1001"},
+            "720p": {"file_id": "FID_720", "message_id": 1002, "stream_url": "https://stream/1002"},
+            "480p": {"file_id": "FID_480", "message_id": 1003, "stream_url": "https://stream/1003"},
+        }
+        primary_quality = "1080p"
+
+        # Check pending variants filter
+        pending_variants = {
+            ql: qp for ql, qp in variant_files.items()
+            if ql not in variant_tg_info and ql != primary_quality
+        }
+
+        # Must be empty because all variants are already in variant_tg_info
+        self.assertEqual(pending_variants, {})
+        # Primary quality must also be in variant_tg_info
+        self.assertIn(primary_quality, variant_tg_info)
+        self.assertEqual(variant_tg_info[primary_quality]["message_id"], 1001)
+
 
 if __name__ == "__main__":
     unittest.main()

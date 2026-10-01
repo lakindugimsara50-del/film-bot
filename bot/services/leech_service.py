@@ -1715,6 +1715,24 @@ async def _execute_leech(
             "drive_status": "waiting",
         }
 
+        if "variant_tg_info" in locals() and variant_tg_info:
+            if primary_quality in variant_tg_info and variant_tg_info[primary_quality].get("file_id"):
+                dashboard_state["primary_status"] = "complete"
+                dashboard_state["primary_pct"] = 100.0
+                dashboard_state["primary_done"] = size_str
+            dashboard_state["variants"] = {}
+            for vq, vinfo in variant_tg_info.items():
+                if vq != primary_quality and vinfo.get("file_id"):
+                    v_sz_str = downloader.format_bytes(vinfo.get("file_size", 0)) if vinfo.get("file_size") else "OK"
+                    dashboard_state["variants"][vq] = {
+                        "status": "complete",
+                        "pct": 100.0,
+                        "done": v_sz_str,
+                        "total": v_sz_str,
+                        "speed": "Fast (Pipelined)",
+                        "eta": "--",
+                    }
+
         async def _render_dashboard(force: bool = False) -> None:
             nonlocal last_upload_edit, last_rendered_text
             now = time.time()
@@ -1890,13 +1908,14 @@ async def _execute_leech(
             pass
 
         cloud_upload_res = None
-        variant_files: dict[str, str] = {}
-        variant_cloud_urls: dict[str, dict[str, Any]] = {}
+        variant_files = variant_files if ("variant_files" in locals() and variant_files) else {}
+        variant_cloud_urls = variant_cloud_urls if ("variant_cloud_urls" in locals() and variant_cloud_urls) else {}
+        variant_tg_info = variant_tg_info if ("variant_tg_info" in locals() and variant_tg_info) else {}
         ENABLE_TELEGRAM_VIDEO_UPLOAD = True
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
-        file_id = ""
-        stream_url = ""
-        message_id = 0
+        file_id = file_id or (variant_tg_info.get(primary_quality, {}).get("file_id", "") if "variant_tg_info" in locals() else "")
+        stream_url = stream_url or (variant_tg_info.get(primary_quality, {}).get("stream_url", "") if "variant_tg_info" in locals() else "")
+        message_id = message_id or (variant_tg_info.get(primary_quality, {}).get("message_id", 0) if "variant_tg_info" in locals() else 0)
 
         async def _task_upload_drive_1080() -> None:
             nonlocal cloud_upload_res
@@ -1939,8 +1958,6 @@ async def _execute_leech(
                              slug, q_label, downloader.format_bytes(q_bytes), q_res.get("file_id"))
             except Exception as q_up_err:
                 log.debug("[LeechService] Variant %s upload skipped: %s", q_label, q_up_err)
-
-        variant_tg_info: dict[str, dict] = {}
 
         async def _task_upload_tg_variant(q_label: str, q_path: str) -> None:
             if not os.path.exists(q_path) or os.path.getsize(q_path) == 0:
@@ -2024,6 +2041,16 @@ async def _execute_leech(
                     _mq_progress_str = "Multi-Quality Skipped (Source <= 480p) ✅"
                     dashboard_state["mq_encode_status"] = "skipped"
                     await _render_dashboard(force=True)
+                    return
+
+                # If all requested qualities are already in variant_tg_info, mark complete and skip
+                if all(q in variant_tg_info and variant_tg_info[q].get("file_id") for q in requested_qualities):
+                    _mq_progress_str = f"{'/'.join(requested_qualities)} Complete (Pre-Uploaded) ✅"
+                    dashboard_state["mq_encode_status"] = "complete"
+                    dashboard_state["mq_target"] = "/".join(requested_qualities)
+                    dashboard_state["mq_encode_pct"] = "100%"
+                    await _render_dashboard(force=True)
+                    log.info("[LeechService] All requested qualities %s already uploaded in Step 2 pipeline. Skipping re-encode.", requested_qualities)
                     return
 
                 # ── Fast-Path: Direct Multi-Quality Download from Same Portal ────────
@@ -2245,7 +2272,8 @@ async def _execute_leech(
             await _task_encode_variants_only()
             await _task_upload_all_variants()
 
-        dashboard_state["primary_status"] = "uploading"
+        if not (primary_quality in variant_tg_info and variant_tg_info[primary_quality].get("file_id")):
+            dashboard_state["primary_status"] = "uploading"
         await _render_dashboard(force=True)
 
         await asyncio.gather(

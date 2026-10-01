@@ -199,7 +199,7 @@ class TelegramUploadPool:
                             api_id=api_id,
                             api_hash=api_hash,
                             no_updates=True,
-                            max_concurrent_transmissions=10,
+                            max_concurrent_transmissions=16,
                             sleep_threshold=15,  # Auto-sleep minor waits; rotate on longer ones
                         )
                         is_auth = await c.connect()

@@ -1080,10 +1080,20 @@ async def _execute_leech(
                             candidate.quality, list(companion_candidates.keys()), cand_portal or cand_host
                         )
 
-                        target_qualities = {candidate.quality: candidate, **companion_candidates}
+                        # Prioritize Primary Quality (1080p) strictly first, then descending companions (720p, 480p)
+                        primary_q = candidate.quality
+                        ordered_qualities = [primary_q] + [
+                            q for q in ("720p", "480p", "360p")
+                            if q in companion_candidates and q != primary_q
+                        ]
+                        for q in companion_candidates:
+                            if q not in ordered_qualities:
+                                ordered_qualities.append(q)
+
+                        target_qualities = {q: (candidate if q == primary_q else companion_candidates[q]) for q in ordered_qualities}
                         companion_progress: dict[str, dict] = {
                             q: {
-                                "stage": "downloading",
+                                "stage": "downloading" if q == primary_q else "waiting",
                                 "dl_pct": 0.0,
                                 "dl_done": "0B",
                                 "dl_total": "Unknown",
@@ -1099,6 +1109,7 @@ async def _execute_leech(
                             }
                             for q in target_qualities
                         }
+                        cdn_dl_lock = asyncio.Lock()
 
                         async def _update_multi_dl_display(force: bool = False) -> None:
                             nonlocal last_edit_time
@@ -1109,18 +1120,22 @@ async def _execute_leech(
 
                             _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
                             lines = [
-                                f"⚡ <b>Multi-Quality Parallel Pipeline ({cand_portal or cand_host}) ➔ {_env_name}</b>\n",
+                                f"⚡ <b>Sequential Turbo CDN ➔ Pipelined Telegram Upload ({cand_portal or cand_host})</b>\n",
                                 f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",
                                 f"🌐 <b>Website:</b> <a href='{site_url}'>filmsub.pages.dev</a>\n",
                             ]
                             for q_name, q_data in companion_progress.items():
                                 st = q_data.get("stage", "downloading")
-                                if st == "downloading":
+                                if st == "waiting":
+                                    lines.append(
+                                        f"• <b>{q_name}:</b> ⏳ <i>(පෝලිමේ - {primary_q} බාගත වූ පසු ආරම්භ වේ)</i>"
+                                    )
+                                elif st == "downloading":
                                     pct = q_data.get("dl_pct", 0.0)
                                     pbar = downloader.format_progress_bar(pct)
                                     lines.append(
                                         f"• <b>{q_name}:</b> {pbar} {pct:.1f}% ({q_data.get('dl_done', '0B')}/{q_data.get('dl_total', '0B')}) "
-                                        f"⚡ {q_data.get('dl_speed', '0B/s')} | ⏱ {q_data.get('dl_eta', 'N/A')} 📥 <i>(බාගත වෙමින්)</i>"
+                                        f"⚡ {q_data.get('dl_speed', '0B/s')} | ⏱ {q_data.get('dl_eta', 'N/A')} 📥 <i>(Full Speed බාගත වෙමින්)</i>"
                                     )
                                 elif st == "muxing":
                                     lines.append(
@@ -1158,6 +1173,7 @@ async def _execute_leech(
                         active_sub_to_mux = None if cand_is_hardsub else (pre_sub_srt if (pre_sub_srt and os.path.exists(pre_sub_srt)) else None)
 
                         async def _run_single_quality_pipeline(q_name: str, cand_obj: LeechCandidate, is_primary_flag: bool):
+                            nonlocal active_sub_to_mux
                             v_clean_name = f"{slug}-{q_name}.mp4"
 
                             async def _dl_cb(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str):
@@ -1171,19 +1187,27 @@ async def _execute_leech(
                                 })
                                 await _update_multi_dl_display()
 
-                            # 1. Download directly from high-speed portal CDN
-                            c_dl = await downloader.download_http(
-                                url=cand_obj.source_url,
-                                dest_dir=temp_dir,
-                                filename=v_clean_name,
-                                task_key=f"{task_key}_{q_name}",
-                                progress_callback=_dl_cb,
-                            )
+                            # 1. Download with exclusive lock to prevent CDN bandwidth splitting
+                            async with cdn_dl_lock:
+                                companion_progress[q_name]["stage"] = "downloading"
+                                await _update_multi_dl_display(force=True)
+                                log.info("[LeechService] Starting full-speed download for quality %s from %s...", q_name, cand_obj.source_url)
+                                c_dl = await downloader.download_http(
+                                    url=cand_obj.source_url,
+                                    dest_dir=temp_dir,
+                                    filename=v_clean_name,
+                                    task_key=f"{task_key}_{q_name}",
+                                    progress_callback=_dl_cb,
+                                )
+
                             if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
                                 companion_progress[q_name]["stage"] = "failed"
                                 await _update_multi_dl_display(force=True)
                                 log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
                                 return None
+
+                            # The lock is now RELEASED! The next quality starts downloading immediately from the CDN.
+                            # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
 
                             # 2. Faststart remux
                             fs_out = os.path.join(temp_dir, f"fs_{slug}_{q_name}.mp4")
@@ -1195,6 +1219,23 @@ async def _execute_leech(
                                 c_dl = fs_out
 
                             # 3. Fast stream-copy subtitle mux (~1s) if needed and not already hardsubbed
+                            if not cand_is_hardsub and not active_sub_to_mux:
+                                try:
+                                    clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
+                                    auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
+                                        title=clean_sub_title,
+                                        year=year,
+                                        imdb_id=imdb_id,
+                                        temp_dir=temp_dir,
+                                        season=season,
+                                        episode=episode,
+                                    )
+                                    if auto_srt and os.path.exists(auto_srt):
+                                        active_sub_to_mux = auto_srt
+                                        log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
+                                except Exception as s_err:
+                                    log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
+
                             if active_sub_to_mux and os.path.exists(active_sub_to_mux):
                                 companion_progress[q_name]["stage"] = "muxing"
                                 await _update_multi_dl_display(force=True)
@@ -1205,6 +1246,7 @@ async def _execute_leech(
                                     except Exception:
                                         pass
                                     c_dl = sub_out
+                                    log.info("[LeechService] Subtitle muxed into %s: %s", q_name, c_dl)
 
                             c_size_bytes = os.path.getsize(c_dl)
                             c_size_str = downloader.format_bytes(c_size_bytes)
@@ -1258,8 +1300,8 @@ async def _execute_leech(
                             return (q_name, c_dl, up_res)
 
                         pipe_tasks = [
-                            _run_single_quality_pipeline(q, c_obj, is_primary_flag=(q == candidate.quality))
-                            for q, c_obj in target_qualities.items()
+                            _run_single_quality_pipeline(q, target_qualities[q], is_primary_flag=(q == primary_q))
+                            for q in ordered_qualities
                         ]
                         pipe_results = await asyncio.gather(*pipe_tasks, return_exceptions=True)
 

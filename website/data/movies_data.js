@@ -12528,46 +12528,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 8,
       "episode": 1,
       "episode_title": "Winterfell",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -12626,38 +12596,208 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "55 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-10-01T13:37:04Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQAD6Gq-aO9kMCEL0Nvcrc3vFNZeQ2JmAAInJQACUXf5VT_l0kW9cyYQHgQ",
+      "message_id": 232,
+      "file_name": "game-of-thrones-2011-s08e01.mp4",
+      "file_size": 766805903,
+      "drive_file_id": "",
+      "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
       "streams": [
         {
           "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD6Gq-aO9kMCEL0Nvcrc3vFNZeQ2JmAAInJQACUXf5VT_l0kW9cyYQHgQ",
+          "message_id": 232,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://vidlink.pro/tv/1399/8/1"
         },
         {
-          "server": "Server 2",
+          "server": "Server 3",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/8/1"
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-8-1"
         },
         {
-          "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=8&e=1"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "",
+      "qualities": {
+        "auto": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+        "1080p": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+        "720p": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+        "480p": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/231",
+        "360p": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "731.3 MB",
+          "size_bytes": 766805903,
+          "url": "https://t.me/c/4325759505/232",
+          "telegram_url": "https://t.me/c/4325759505/232",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD6Gq-aO9kMCEL0Nvcrc3vFNZeQ2JmAAInJQACUXf5VT_l0kW9cyYQHgQ",
+          "message_id": 232,
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "396.5 MB",
+          "size_bytes": 415741605,
+          "url": "https://t.me/c/4325759505/231",
+          "telegram_url": "https://t.me/c/4325759505/231",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD52q-ZZR0ZOmftlD_7Uu166uiixOWAAIeJQACUXf5VdOLn9SkXBI-HgQ",
+          "message_id": 231,
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/231",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "731.3 MB",
+          "size_bytes": 766805903,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e01_1080p",
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "731.3 MB",
+          "size_bytes": 766805903,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e01_720p",
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "396.5 MB",
+          "size_bytes": 415741605,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e01_480p",
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/231",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "131.6 MB",
+          "size_bytes": 138025062,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e01_360p",
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD6Gq-aO9kMCEL0Nvcrc3vFNZeQ2JmAAInJQACUXf5VT_l0kW9cyYQHgQ",
+          "message_id": 232,
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "size_bytes": 766805903
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD52q-ZZR0ZOmftlD_7Uu166uiixOWAAIeJQACUXf5VdOLn9SkXBI-HgQ",
+          "message_id": 231,
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/231",
+          "size_bytes": 415741605
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://garlic-ooo-quickly-cargo.trycloudflare.com/stream/channel/-1004325759505/232",
+          "size_bytes": 138025062
+        }
+      },
+      "subtitles": [],
+      "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e01",
-      "added_date": "2026-10-01"
+      "added_date": "2026-10-01",
+      "added_at": "2026-10-01T14:08:52Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-01T13:37:33Z"
+  "last_updated": "2026-10-01T14:08:55Z"
 };

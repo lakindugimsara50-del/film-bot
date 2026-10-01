@@ -56,21 +56,23 @@ let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM
 let streamServerHealthy = false;
 
 async function probeStreamServerHealth(baseUrl) {
-  if (!baseUrl || !baseUrl.startsWith('http')) return false;
+  const base = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
   try {
-    const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 3500);
-    const resp = await fetch(`${baseUrl.replace(/\/+$/, '')}/health?t=${Date.now()}`, {
-      method: 'GET',
-      signal: ctrl.signal,
-      mode: 'cors',
-    }).catch(() => null);
-    clearTimeout(tId);
-    if (resp && resp.ok) return true;
+    if (base) {
+      const ctrl = new AbortController();
+      const tId = setTimeout(() => ctrl.abort(), 3500);
+      const resp = await fetch(`${base}/health?t=${Date.now()}`, {
+        method: 'GET',
+        signal: ctrl.signal,
+        mode: 'cors',
+      }).catch(() => null);
+      clearTimeout(tId);
+      if (resp && resp.ok) return true;
+    }
 
     const ctrl2 = new AbortController();
     const tId2 = setTimeout(() => ctrl2.abort(), 2000);
-    const resp2 = await fetch(`${baseUrl.replace(/\/+$/, '')}/stream/ping?t=${Date.now()}`, {
+    const resp2 = await fetch(`${base}/stream/ping?t=${Date.now()}`, {
       method: 'GET',
       signal: ctrl2.signal,
       mode: 'cors',
@@ -83,70 +85,9 @@ async function probeStreamServerHealth(baseUrl) {
 }
 
 async function loadLiveStreamConfig() {
-  const cached = sessionStorage.getItem('filmsub_stream_base');
-  const cachedHealthy = sessionStorage.getItem('filmsub_stream_healthy');
-  const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
-  const cacheTtl = cachedHealthy === '1' ? 30000 : 5000;
-  if (cached !== null && cached !== '' && (Date.now() - cachedTime) < cacheTtl) {
-    activeStreamBaseUrl = cached;
-    streamServerHealthy = cachedHealthy === '1';
-    return activeStreamBaseUrl;
-  }
-
-  let candidateUrl = '';
-
-  // 1. Check fresh GitHub raw config FIRST (always has the latest Colab/Cloudflare tunnel URL)
-  try {
-    const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
-    const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 3000);
-    const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
-    clearTimeout(tId);
-    if (rGh.ok) {
-      const d = await rGh.json();
-      if (d && d.stream_base_url) {
-        candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
-      }
-    }
-  } catch (e) {}
-
-  // 2. Fallback to local endpoint if GitHub raw was unreachable
-  if (!candidateUrl) {
-    try {
-      const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
-      if (rLoc.ok) {
-        const d = await rLoc.json();
-        if (d && d.stream_base_url) {
-          candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
-        }
-      }
-    } catch (e) {}
-  }
-
-  // 3. Fallback scan of existing movies catalog for live trycloudflare.com URL
-  if (!candidateUrl && window.FilmSub && typeof FilmSub.getAllMovies === 'function') {
-    const allM = FilmSub.getAllMovies();
-    for (const m of allM) {
-      const u = m.stream_url || (m.variant_media && m.variant_media['1080p'] && m.variant_media['1080p'].stream_url) || '';
-      const match = u.match(/(https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com)/i);
-      if (match) {
-        candidateUrl = match[1];
-        break;
-      }
-    }
-  }
-
-  // 4. Retain candidateUrl as activeStreamBaseUrl and probe health in background
-  if (candidateUrl) {
-    activeStreamBaseUrl = candidateUrl;
-    probeStreamServerHealth(candidateUrl).then(ok => {
-      streamServerHealthy = ok;
-      try {
-        sessionStorage.setItem('filmsub_stream_healthy', ok ? '1' : '0');
-      } catch (e) {}
-    });
-  }
-
+  activeStreamBaseUrl = '';
+  streamServerHealthy = await probeStreamServerHealth('');
+  
   try {
     sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
     sessionStorage.setItem('filmsub_stream_healthy', streamServerHealthy ? '1' : '0');
@@ -2157,7 +2098,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         renderPlayerFallback(playerEl, movie);
       }
-    }, 18000);
+    }, 8000);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);
@@ -2209,8 +2150,10 @@ function renderPlayerFallback(playerEl, movie) {
       </div>
     </div>`;
 
+  let retryInterval = null;
   const doRetry = async () => {
     if (countdownTimer) clearInterval(countdownTimer);
+    if (retryInterval) clearInterval(retryInterval);
     FilmSub.showToast('⚡ Stream server නැවත සම්බන්ධ වෙමින් පවතී...', 'info');
     try {
       sessionStorage.removeItem('filmsub_stream_base');
@@ -2232,6 +2175,16 @@ function renderPlayerFallback(playerEl, movie) {
       doRetry();
     }
   }, 1000);
+
+  retryInterval = setInterval(async () => {
+    const alive = await probeStreamServerHealth(activeStreamBaseUrl || '');
+    if (alive) {
+      clearInterval(retryInterval);
+      if (countdownTimer) clearInterval(countdownTimer);
+      FilmSub.showToast('⚡ Stream Server Online! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
+      loadStream(movie, 0); // restart Super Player
+    }
+  }, 10000);
 }
 
 /**
@@ -2287,7 +2240,7 @@ function syncSubtitles() {
   } catch (e) {}
 }
 
-function loadStream(movie, idx) {
+async function loadStream(movie, idx) {
   const streams = getMovieStreams(movie);
   if (!streams[idx]) return;
   const stream = streams[idx];
@@ -2304,19 +2257,26 @@ function loadStream(movie, idx) {
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
 
-  // If this server is an explicit embed (Server 2 Drive CDN or VIP External Backup 1/2/3), render Zero-White-Screen Embed
-  if (stream.type === 'embed' || stream.embed === true) {
+  if (stream.mode === 'super_chunk' || (!stream.embed && stream.stream_url)) {
+    // PRE-FLIGHT: Quick 2s tunnel probe BEFORE creating VJS player
+    // This prevents the 18-second frozen loader when Colab is offline
+    const tunnelAlive = await probeStreamServerHealth(activeStreamBaseUrl || '');
+    if (!tunnelAlive && streams.length > 1) {
+      // Colab offline — skip straight to VIP Server 2 (embed player)
+      FilmSub.showToast('⚡ Stream Server (Colab) offline. VIP Player 1 ලෙස ස්වයංක්‍රීයව මාරු විය!', 'info');
+      currentStreamIdx = 1;
+      loadStream(movie, 1);
+      return;
+    }
+    if (vjsPlayer) {
+      try { vjsPlayer.dispose(); } catch (e) {}
+      vjsPlayer = null;
+    }
+    isTrailerActive = false;
+    createVjsPlayer(playerEl, stream, movie);
+  } else {
     renderStreamEmbed(playerEl, stream, movie);
-    return;
   }
-
-  // Otherwise (Server 1 Super Player Chunk Stream or Direct MP4), render native Video.js Super Player
-  if (vjsPlayer) {
-    try { vjsPlayer.dispose(); } catch (e) {}
-    vjsPlayer = null;
-  }
-  isTrailerActive = false;
-  createVjsPlayer(playerEl, stream, movie);
 }
 
 function loadTrailer(movie) {

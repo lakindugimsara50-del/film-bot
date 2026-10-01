@@ -1308,7 +1308,7 @@ async def _execute_leech(
                                 q_sub_to_mux = None if q_cand_is_hardsub else (active_sub_to_mux if active_sub_to_mux and os.path.exists(active_sub_to_mux) else None)
 
                                 c_size_bytes = os.path.getsize(c_dl)
-                                # 3. Video Processing & Compression (Guarantee <= 1.95GB / 1.85GB target)
+                                # 3. Video Processing & Compression (Guarantee <= 1.95GB / 1.90GB target)
                                 if c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE:
                                     log.info(
                                         "[LeechService] File %s (%s) exceeds Telegram 1.95GB limit. Running fast FFmpeg compression to fit...",
@@ -1329,7 +1329,7 @@ async def _execute_leech(
                                     comp_ok = await video_service.compress_video(
                                         input_path=c_dl,
                                         output_path=comp_out,
-                                        target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                                        target_size_bytes=video_service.TARGET_COMPRESS_SIZE,
                                         progress_callback=_comp_cb,
                                         sub_path=q_sub_to_mux,
                                         is_hardsub=q_cand_is_hardsub,
@@ -1384,7 +1384,7 @@ async def _execute_leech(
                                         comp_ok = await video_service.compress_video(
                                             input_path=c_dl,
                                             output_path=comp_out,
-                                            target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                                            target_size_bytes=video_service.TARGET_COMPRESS_SIZE,
                                             sub_path=q_sub_to_mux,
                                             is_hardsub=q_cand_is_hardsub,
                                         )
@@ -1667,7 +1667,7 @@ async def _execute_leech(
                 log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
 
         # 2. Intelligent Video Processing & Subtitle Muxing
-        # If file exceeds Telegram limit (1.95 GB), compress directly targeting 1.85 GB
+        # If file exceeds Telegram limit (1.95 GB), compress directly targeting 1.90 GB
         # Otherwise, perform instant stream copy remux in 3-5 seconds
         is_faststart_done = False
         ext = os.path.splitext(local_file)[1].lower()
@@ -1705,10 +1705,10 @@ async def _execute_leech(
                 else:
                     sub_lbl = "උපසිරැසි රහිතව"
                 txt = (
-                    f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.85GB Safe Ceiling)...</b>\n\n"
+                    f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.90GB Safe Ceiling)...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                     f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
-                    f"📦 <b>ඉලක්කය:</b> 1.85 GB (Telegram Bot 2GB Limit Safe)\n"
+                    f"📦 <b>ඉලක්කය:</b> 1.90 GB (Telegram Bot 2GB Limit Safe)\n"
                     f"💬 <b>උපසිරැසි:</b> {sub_lbl}\n"
                     f"⚡ <i>Multi-Core NVENC/CPU High-Speed Encoding</i>"
                 )
@@ -1718,14 +1718,14 @@ async def _execute_leech(
                     pass
 
             if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
-                log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression to <= 1.85GB...", downloader.format_bytes(curr_size))
+                log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression to <= 1.90GB...", downloader.format_bytes(curr_size))
                 task_tracker.tracker.set_step(user_id, "Fast 1080p Compression (FFmpeg)...")
                 try:
                     await status_msg.edit_text(
                         f"⚙️ <b>පියවර 3/5: Fast 1080p Compression ආරම්භ විය...</b>\n\n"
                         f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
                         f"📦 <b>මූලික ප්‍රමාණය:</b> {downloader.format_bytes(curr_size)} (> 1.95 GB Limit)\n"
-                        f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.85 GB (Telegram Safe)\n"
+                        f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.90 GB (Telegram Safe)\n"
                         f"⚡ <b>ක්‍රමය:</b> Multi-Core H.264 Fast Transcoding + Subtitle Muxing\n"
                         f"⏳ මිනිත්තු කිහිපයක් රැඳී සිටින්න...",
                         parse_mode=ParseMode.HTML,
@@ -1737,7 +1737,7 @@ async def _execute_leech(
                 comp_ok = await video_service.compress_video(
                     input_path=local_file,
                     output_path=remuxed,
-                    target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                    target_size_bytes=video_service.TARGET_COMPRESS_SIZE,
                     progress_callback=_compress_progress,
                     sub_path=sub_to_burn_video,
                     is_hardsub=is_already_hardsubbed,
@@ -1901,16 +1901,16 @@ async def _execute_leech(
                             pre_downloaded_variants[vq] = sub_var_out
                             log.info("[LeechService] Subtitle burned/muxed into companion variant %s: %s", vq, sub_var_out)
 
-            # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.85GB
+            # 2.8 Post-Remux Guarantee: If output is still > 1.95GB, compress to 1.90GB
             if os.path.exists(local_file) and os.path.getsize(local_file) > video_service.MAX_TELEGRAM_BOT_SIZE:
-                log.warning("[LeechService] File %s (%d bytes) exceeds Telegram 1.95GB limit after remux. Compressing to <= 1.85GB...",
+                log.warning("[LeechService] File %s (%d bytes) exceeds Telegram 1.95GB limit after remux. Compressing to <= 1.90GB...",
                             local_file, os.path.getsize(local_file))
-                task_tracker.tracker.set_step(user_id, "Compressing video <= 1.85GB...")
+                task_tracker.tracker.set_step(user_id, "Compressing video <= 1.90GB...")
                 comp_guard_out = os.path.join(temp_dir, f"guard_comp_{slug}.mp4")
                 comp_ok = await video_service.compress_video(
                     input_path=local_file,
                     output_path=comp_guard_out,
-                    target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                    target_size_bytes=video_service.TARGET_COMPRESS_SIZE,
                     progress_callback=_compress_progress,
                     sub_path=sub_to_burn_video,
                     is_hardsub=is_already_hardsubbed,

@@ -131,8 +131,12 @@ class TestPipelineUpgrade(unittest.TestCase):
     def test_is_genuine_sinhala_subtitle(self):
         from bot.services.subtitle_service import is_genuine_sinhala_subtitle
 
-        # Genuine Sinhala text with > 15 characters
-        sinhala_text = "මෙම චිත්‍රපටය සිංහල උපසිරැසි සමඟ නරඹන්න සහ බාගත කරන්න."
+        # Genuine Sinhala subtitle with > 10 cues and genuine Sinhala content
+        cues = [
+            f"{i}\n00:{i:02d}:00,000 --> 00:{i:02d}:05,000\nමෙම ජවනිකාවේ චරිත කතාබස් කරන දේ සිංහලෙන් සඳහන් වේ."
+            for i in range(12)
+        ]
+        sinhala_text = "\n\n".join(cues)
         self.assertTrue(is_genuine_sinhala_subtitle(sinhala_text))
 
         # English-only subtitle
@@ -173,7 +177,7 @@ class TestPipelineUpgrade(unittest.TestCase):
                     self.assertTrue(res)
                     self.assertTrue(mock_comp.called)
                     self.assertEqual(mock_comp.call_args[1]["input_path"], in_path)
-                    self.assertEqual(mock_comp.call_args[1]["target_size_bytes"], int(1.40 * 1024 * 1024 * 1024))
+                    self.assertEqual(mock_comp.call_args[1]["target_size_bytes"], int(1.90 * 1024 * 1024 * 1024))
             finally:
                 if os.path.exists(in_path):
                     os.remove(in_path)

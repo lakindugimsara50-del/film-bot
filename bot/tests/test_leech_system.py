@@ -1370,13 +1370,14 @@ class TestLeechService(unittest.TestCase):
         self.assertEqual(companion_progress["720p"]["up_pct"], 0.0)
 
 
-    def test_compress_video_targets_1_85gb_safe_limit(self):
-        """Verify video compression default target is strictly <= 1.85GB to stay within 2000 MiB limit."""
+    def test_compress_video_targets_1_90gb_safe_limit(self):
+        """Verify video compression default target is around 1.90GB (strictly <= 1.92GB and <= 1.95GB limit) to maximize quality."""
         import inspect
         from services import video_service
         sig = inspect.signature(video_service.compress_video)
         default_target = sig.parameters["target_size_bytes"].default
-        self.assertLessEqual(default_target, int(1.85 * 1024 * 1024 * 1024))
+        self.assertGreaterEqual(default_target, int(1.85 * 1024 * 1024 * 1024))
+        self.assertLessEqual(default_target, int(1.92 * 1024 * 1024 * 1024))
         self.assertLessEqual(default_target, video_service.MAX_TELEGRAM_BOT_SIZE)
         self.assertIn("is_hardsub", sig.parameters)
 
@@ -1465,9 +1466,75 @@ class TestLeechService(unittest.TestCase):
             bitrate_val = int(bitrate_str.rstrip("k"))
             # With 3-hour fallback (10800s), bitrate should be around 1200-1400k, strictly <= 1500k
             self.assertLessEqual(bitrate_val, 1500)
-            # Guaranteed 3 hour movie at this bitrate + 128k audio stays strictly under 1.85 GB
+            # Guaranteed 3 hour movie at this bitrate + 128k audio stays strictly under 1.92 GB and 1.95 GB limit
             calc_bytes = ((bitrate_val + 128) * 1000 * 10800) / 8
-            self.assertLessEqual(calc_bytes, int(1.85 * 1024 * 1024 * 1024))
+            self.assertLessEqual(calc_bytes, int(1.92 * 1024 * 1024 * 1024))
+            self.assertLessEqual(calc_bytes, video_service.MAX_TELEGRAM_BOT_SIZE)
+
+    def test_compress_video_high_quality_settings(self):
+        """Verify 1080p compression retains high bitrate (~2Mbps for 2h), High Profile 4.1, and no fastdecode degradation."""
+        import asyncio
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from services import video_service
+
+        recorded_cmd = []
+
+        async def fake_subprocess_exec(*cmd, **kwargs):
+            nonlocal recorded_cmd
+            recorded_cmd = list(cmd)
+            mock_proc = AsyncMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = AsyncMock(return_value=0)
+            mock_proc.stderr.readline = AsyncMock(return_value=b"")
+            mock_proc.stderr.read = AsyncMock(return_value=b"")
+            return mock_proc
+
+        with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1000), \
+             patch("services.video_service.get_video_duration", return_value=7200.0), \
+             patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess_exec), \
+             patch("shutil.disk_usage", return_value=MagicMock(free=10 * 1024 * 1024 * 1024)):
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                ok = loop.run_until_complete(video_service.compress_video(
+                    input_path="bloated_1080p.mkv",
+                    output_path="crisp_1080p.mp4",
+                ))
+            finally:
+                loop.close()
+
+            self.assertTrue(ok)
+            # Verify high profile & level 4.1 are used for maximum 1080p fidelity
+            self.assertIn("-profile:v", recorded_cmd)
+            prof_idx = recorded_cmd.index("-profile:v")
+            self.assertEqual(recorded_cmd[prof_idx + 1], "high")
+            self.assertIn("-level:v", recorded_cmd)
+            lvl_idx = recorded_cmd.index("-level:v")
+            self.assertEqual(recorded_cmd[lvl_idx + 1], "4.1")
+
+            # Verify fastdecode is NOT used (so deblocking, b-frames, CABAC are intact)
+            self.assertNotIn("fastdecode", recorded_cmd)
+
+            # Verify preset is veryfast (preserving B-frames, CABAC, and motion estimation)
+            self.assertIn("-preset", recorded_cmd)
+            preset_idx = recorded_cmd.index("-preset")
+            self.assertEqual(recorded_cmd[preset_idx + 1], "veryfast")
+
+            # Verify bitrate retains high 1080p quality (around 2000-2100k for 2 hours)
+            b_v_index = recorded_cmd.index("-b:v")
+            bitrate_str = recorded_cmd[b_v_index + 1]
+            bitrate_val = int(bitrate_str.rstrip("k"))
+            self.assertGreaterEqual(bitrate_val, 1900)
+            self.assertLessEqual(bitrate_val, 2300)
+
+            # Total calculated bytes for 2 hours should be close to 1.90 GB and strictly under 1.95 GB
+            calc_bytes = ((bitrate_val + 128) * 1000 * 7200) / 8
+            self.assertGreaterEqual(calc_bytes, int(1.80 * 1024 * 1024 * 1024))
+            self.assertLessEqual(calc_bytes, video_service.MAX_TELEGRAM_BOT_SIZE)
 
 
 if __name__ == "__main__":

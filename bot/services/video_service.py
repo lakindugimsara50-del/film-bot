@@ -24,6 +24,8 @@ log = logging.getLogger(__name__)
 
 # Max upload limit for standard Telegram Bot API (1.95 GB safe ceiling)
 MAX_TELEGRAM_BOT_SIZE = int(1.95 * 1024 * 1024 * 1024)
+# Target compression size for 1080p: ~1.90 GB (close to 2GB to maximize visual fidelity without hitting 1.95GB limit)
+TARGET_COMPRESS_SIZE = int(1.90 * 1024 * 1024 * 1024)
 
 # ── Colab / Render environment detection ─────────────────────────────────────
 # Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
@@ -977,16 +979,16 @@ async def stream_copy_subtitles(
 async def compress_video(
     input_path: str,
     output_path: str,
-    target_size_bytes: int = int(1.85 * 1024 * 1024 * 1024),
+    target_size_bytes: int = TARGET_COMPRESS_SIZE,
     progress_callback: Optional[Callable[[float, str], None]] = None,
     sub_path: Optional[str] = None,
     is_hardsub: bool = False,
 ) -> bool:
     """
     Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
-    (target 1.85GB safe default) using multi-core CPU (-preset veryfast -threads 0) or GPU NVENC.
+    (target ~1.90GB safe ceiling to maximize 1080p visual fidelity) using multi-core CPU or GPU NVENC.
     Calculates exact target bitrate from video duration to guarantee the output never exceeds
-    the Telegram Bot 1.95GB limit.
+    the Telegram Bot 1.95GB limit while preserving sharp resolution, audio fidelity, and crisp detail.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
@@ -1035,19 +1037,19 @@ async def compress_video(
     log.info("[VideoService] compress_video: '%s' (duration=%.1fs, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
              input_path, duration, in_bytes, output_path, target_size_bytes, is_hardsub)
 
-    # Calculate optimal target bitrate
+    # Calculate optimal target bitrate with ~3% margin reserved for container/muxing overhead
     audio_bps = 128_000
-    usable_bits = int(target_size_bytes * 8 * 0.95)
+    usable_bits = int(target_size_bytes * 8 * 0.97)
     if duration > 10.0:
         total_bps = usable_bits / duration
-        video_bps = max(400_000, int(total_bps - audio_bps))
+        video_bps = max(500_000, int(total_bps - audio_bps))
         v_bitrate_k = int(video_bps / 1000)
     else:
         # Fallback if duration is unknown/unparsed: assume 3 hours (10800s) to guarantee staying strictly under target_size_bytes
         log.warning("[VideoService] Duration unparsed or <= 10s (%.1fs). Using safe 3-hour fallback bitrate.", duration)
         fallback_dur = 10800.0
         total_bps = usable_bits / fallback_dur
-        video_bps = max(400_000, int(total_bps - audio_bps))
+        video_bps = max(500_000, int(total_bps - audio_bps))
         v_bitrate_k = int(video_bps / 1000)
 
     maxrate_k = int(v_bitrate_k * 1.15)
@@ -1115,17 +1117,19 @@ async def compress_video(
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
+            "-profile:v", "high",
             "-pix_fmt", "yuv420p",
         ])
     else:
         cmd.extend([
             "-c:v", "libx264",
-            "-preset", _preset,   # ultrafast on Colab GPU, veryfast on Render
-            "-tune", "fastdecode",
+            "-preset", "veryfast",   # veryfast preserves B-frames, CABAC, and crisp 1080p visual fidelity
             "-threads", "0",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
+            "-profile:v", "high",
+            "-level:v", "4.1",
             "-pix_fmt", "yuv420p",
         ])
 
@@ -1252,8 +1256,8 @@ async def compress_smart_1080p(
     1. If file size <= 1.95GB (MAX_TELEGRAM_BOT_SIZE):
        Executes instantaneous Stream Copy & Soft-Sub Muxing in 3-5 seconds.
     2. If file size > 1.95GB (bloated video like KGF Chapter 2 - 2.3GB, DC 3.5GB):
-       Executes fast multi-core compression (compress_video) targeting 1.85GB,
-       guaranteeing output <= 1.95GB in minutes (-preset veryfast -threads 0).
+       Executes fast multi-core compression (compress_video) targeting ~1.90GB,
+       guaranteeing output <= 1.95GB while preserving maximal 1080p visual fidelity.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
@@ -1270,7 +1274,7 @@ async def compress_smart_1080p(
         return await compress_video(
             input_path=input_path,
             output_path=output_path,
-            target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+            target_size_bytes=TARGET_COMPRESS_SIZE,
             progress_callback=progress_callback,
             sub_path=sub_path,
             is_hardsub=is_hardsub,
@@ -1291,7 +1295,7 @@ async def compress_smart_1080p(
             return await compress_video(
                 input_path=input_path,
                 output_path=output_path,
-                target_size_bytes=int(1.85 * 1024 * 1024 * 1024),
+                target_size_bytes=TARGET_COMPRESS_SIZE,
                 progress_callback=progress_callback,
                 sub_path=sub_path,
                 is_hardsub=is_hardsub,

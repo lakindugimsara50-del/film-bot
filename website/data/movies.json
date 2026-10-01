@@ -13064,54 +13064,13 @@
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=8&e=4"
         }
       ],
-      "downloads": [
-        {
-          "quality": "720p",
-          "label": "720p HD (Sinhala Sub Merged)",
-          "size": "1.01 GB",
-          "size_bytes": 1081497567,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD8mq-oH4hOWHJNtfgiAxdRD4x6zNmAAKiJQACUXf5VYhuSO6VDTVIHgQ",
-          "message_id": 242,
-          "url": "https://t.me/c/4325759505/242",
-          "telegram_url": "https://t.me/c/4325759505/242",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        },
-        {
-          "quality": "480p",
-          "label": "480p SD",
-          "size": "0.55 GB",
-          "size_bytes": 585552032,
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD82q-oKQ1JJUxtmLvrgmwIBYH4pZAAAKjJQACUXf5Veppc-WV5VNWHgQ",
-          "message_id": 243,
-          "url": "https://t.me/c/4325759505/243",
-          "telegram_url": "https://t.me/c/4325759505/243",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
-        }
-      ],
-      "telegram_status": "complete",
+      "downloads": [],
+      "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e04",
       "added_date": "2026-10-01",
-      "variant_media": {
-        "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD8mq-oH4hOWHJNtfgiAxdRD4x6zNmAAKiJQACUXf5VYhuSO6VDTVIHgQ",
-          "message_id": 242,
-          "stream_url": "https://entrepreneurs-sandra-just-copyrights.trycloudflare.com/stream/channel/-1004325759505/242",
-          "size_bytes": 1081497567
-        },
-        "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD82q-oKQ1JJUxtmLvrgmwIBYH4pZAAAKjJQACUXf5Veppc-WV5VNWHgQ",
-          "message_id": 243,
-          "stream_url": "https://entrepreneurs-sandra-just-copyrights.trycloudflare.com/stream/channel/-1004325759505/243",
-          "size_bytes": 585552032
-        }
-      }
+      "channel_post_id": 245,
+      "channel_chat_id": -1004325759505
     }
   ],
   "last_updated": "2026-10-01T17:52:49Z"

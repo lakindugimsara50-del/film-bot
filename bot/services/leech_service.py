@@ -1080,17 +1080,20 @@ async def _execute_leech(
                             candidate.quality, list(companion_candidates.keys()), cand_portal or cand_host
                         )
 
-                        # Prioritize Primary Quality (1080p) strictly first, then descending companions (720p, 480p)
-                        primary_q = candidate.quality
-                        ordered_qualities = [primary_q] + [
-                            q for q in ("720p", "480p", "360p")
-                            if q in companion_candidates and q != primary_q
-                        ]
-                        for q in companion_candidates:
+                        # Build full dict of available qualities (candidate + companions)
+                        all_cands_by_q = {candidate.quality: candidate, **companion_candidates}
+
+                        # Prioritize Primary Quality: 1080p strictly first, then descending companions (720p, 480p, 360p)
+                        ordered_qualities = []
+                        for q_pref in ("1080p", "720p", "480p", "360p"):
+                            if q_pref in all_cands_by_q:
+                                ordered_qualities.append(q_pref)
+                        for q in all_cands_by_q:
                             if q not in ordered_qualities:
                                 ordered_qualities.append(q)
 
-                        target_qualities = {q: (candidate if q == primary_q else companion_candidates[q]) for q in ordered_qualities}
+                        primary_q = ordered_qualities[0]
+                        target_qualities = {q: all_cands_by_q[q] for q in ordered_qualities}
                         companion_progress: dict[str, dict] = {
                             q: {
                                 "stage": "downloading" if q == primary_q else "waiting",

@@ -1,5 +1,5 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://entrepreneurs-sandra-just-copyrights.trycloudflare.com",
-  "updated_at": "2026-10-01T17:47:55.497923+00:00",
+  "stream_base_url": "https://attract-val-situated-modify.trycloudflare.com",
+  "updated_at": "2026-10-01T20:09:10.151929+00:00",
   "status": "online"
 };

@@ -13402,46 +13402,16 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Game of Thrones",
       "title_si": "",
       "year": 2011,
+      "imdb": "N/A",
+      "rating": "N/A",
       "imdb_id": "tt0944947",
       "tmdb_id": "1399",
       "type": "series",
       "season": 8,
       "episode": 6,
       "episode_title": "The Iron Throne",
-      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
-      "genres": [
-        "Sci-Fi & Fantasy",
-        "Drama",
-        "Action & Adventure"
-      ],
-      "language": "en",
-      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
-      "director": "David Benioff, D. B. Weiss",
-      "cast": [
-        {
-          "name": "Peter Dinklage",
-          "character": "Tyrion 'The Halfman' Lannister"
-        },
-        {
-          "name": "Kit Harington",
-          "character": "Jon Snow"
-        },
-        {
-          "name": "Nikolaj Coster-Waldau",
-          "character": "Sir Jaime 'Kingslayer' Lannister"
-        },
-        {
-          "name": "Lena Headey",
-          "character": "Cersei Lannister"
-        },
-        {
-          "name": "Emilia Clarke",
-          "character": "Daenerys Targaryen"
-        }
-      ],
-      "rating": "8.5",
       "number_of_seasons": 8,
+      "number_of_episodes": 73,
       "seasons": [
         {
           "season_number": 1,
@@ -13500,37 +13470,192 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "air_date": "2019-04-14"
         }
       ],
+      "poster": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg",
+      "genres": [
+        "Sci-Fi & Fantasy",
+        "Drama",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": false,
+      "sub_merged": false,
+      "is_already_hardsubbed": false,
+      "sub_hardcoded": false,
+      "quality": "720p",
+      "duration": "80 min",
+      "description": "Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north. Amidst the war, a neglected military order of misfits, the Night's Watch, is all that stands between the realms of men and icy horrors beyond.",
+      "director": "David Benioff, D. B. Weiss",
+      "cast": [
+        {
+          "name": "Peter Dinklage",
+          "character": "Tyrion 'The Halfman' Lannister"
+        },
+        {
+          "name": "Kit Harington",
+          "character": "Jon Snow"
+        },
+        {
+          "name": "Nikolaj Coster-Waldau",
+          "character": "Sir Jaime 'Kingslayer' Lannister"
+        },
+        {
+          "name": "Lena Headey",
+          "character": "Cersei Lannister"
+        },
+        {
+          "name": "Emilia Clarke",
+          "character": "Daenerys Targaryen"
+        }
+      ],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-10-02T16:48:20Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_Wq_5GQR8XNMgQiFTkcgDA4yknZVAAInIQACUXcBVlbCmxe_HEa3HgQ",
+      "message_id": 253,
+      "file_name": "game-of-thrones-2011-s08e06.mp4",
+      "file_size": 1797981890,
+      "drive_file_id": "",
+      "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
       "streams": [
         {
           "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_Wq_5GQR8XNMgQiFTkcgDA4yknZVAAInIQACUXcBVlbCmxe_HEa3HgQ",
+          "message_id": 253,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
           "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://vidlink.pro/tv/1399/8/6"
         },
         {
-          "server": "Server 2",
+          "server": "Server 3",
           "label": "⚡ VIP Player 2 (AutoEmbed HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/tv/tt0944947/8/6"
+          "stream_url": "https://autoembed.co/tv/imdb/tt0944947-8-6"
         },
         {
-          "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embedtv/tt0944947&s=8&e=6"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "",
+      "qualities": {
+        "auto": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+        "1080p": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+        "720p": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+        "480p": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+        "360p": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1797981890,
+          "url": "https://t.me/c/4325759505/253",
+          "telegram_url": "https://t.me/c/4325759505/253",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_Wq_5GQR8XNMgQiFTkcgDA4yknZVAAInIQACUXcBVlbCmxe_HEa3HgQ",
+          "message_id": 253,
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1797981890,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e06_1080p",
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1797981890,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e06_720p",
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "548.7 MB",
+          "size_bytes": 575354204,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e06_480p",
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "308.6 MB",
+          "size_bytes": 323636740,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_game-of-thrones-2011-s08e06_360p",
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_Wq_5GQR8XNMgQiFTkcgDA4yknZVAAInIQACUXcBVlbCmxe_HEa3HgQ",
+          "message_id": 253,
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "size_bytes": 1797981890
+        },
+        "480p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "size_bytes": 575354204
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://kde-korea-duo-til.trycloudflare.com/stream/channel/-1004325759505/253",
+          "size_bytes": 323636740
+        }
+      },
+      "subtitles": [],
+      "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e06",
-      "added_date": "2026-10-02"
+      "added_date": "2026-10-02",
+      "added_at": "2026-10-02T17:21:59Z",
+      "added_by": "bot_auto_leech"
     },
     {
       "id": "game-of-thrones-2011-s08e07",
@@ -13669,5 +13794,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-02"
     }
   ],
-  "last_updated": "2026-10-02T17:16:32Z"
+  "last_updated": "2026-10-02T17:22:00Z"
 };

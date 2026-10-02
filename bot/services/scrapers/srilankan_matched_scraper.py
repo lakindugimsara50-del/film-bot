@@ -230,12 +230,16 @@ def matches_title_and_year(
 
     # Season and episode check (for series)
     if season and episode:
-        ep_pat = rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b|season[-_\s]*0*{season}/episode[-_\s]*0*{episode}\b)"
+        ep_pat = rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b|season[-_\s]*0*{season}[^a-z0-9]+(?:episode|ep)[-_\s]*0*{episode}\b|\b(?:ep|episode)\.?\s*0*{episode}\b)"
         if not re.search(ep_pat, text_lower):
             return False
+    elif season:
+        s_pat = rf"(?:s0*{season}\b|season[\s._-]*0*{season}\b|complete[\s._-]*season[\s._-]*0*{season}\b)"
+        if not re.search(s_pat, text_lower):
+            return False
 
-    # Year check: if year is given and present in text, verify it
-    if year and not (season and episode):
+    # Year check: for movies (when season is not specified), verify release year against found years
+    if year and not season:
         found_years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", text_lower)]
         if found_years:
             if not any(abs(fy - year) <= 1 for fy in found_years):
@@ -277,6 +281,9 @@ def score_candidate_post(
     if season and episode:
         if f"s{season:02d}e{episode:02d}" in combined or f"s{season}e{episode}" in combined:
             score += 50
+    elif season:
+        if f"season {season}" in combined or f"season-{season}" in combined or f"s{season:02d}" in combined or f"season {season:02d}" in combined:
+            score += 40
 
     return score
 
@@ -401,31 +408,46 @@ async def _search_portal(
 
             soup = BeautifulSoup(p_resp.text, "html.parser")
             page_text = soup.get_text(" ", strip=True)
+            title_text = soup.title.get_text(" ", strip=True) if soup.title else ""
+            h1_text = " ".join(h.get_text(" ", strip=True) for h in soup.find_all(["h1", "h2"]))
+            verify_text = f"{post_url} {title_text} {h1_text} {page_text[:3000]}"
 
             # Verification: make sure this post actually matches the target title & year
-            verify_text = f"{post_url} {soup.title.get_text() if soup.title else ''} {soup.h1.get_text() if soup.h1 else ''} {page_text[:3000]}"
-            if not matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode):
+            is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode)
+            if not is_matched and season:
+                is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=None)
+            if not is_matched:
                 continue
 
             current_target_url = post_url
+            main_soup = soup
             if season and episode:
                 ep_pat = re.compile(
-                    rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b|season[-_\s]*0*{season}/episode[-_\s]*0*{episode}\b)",
+                    rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                    rf"|{season}x0*{episode}\b"
+                    rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep)[-_\s]*0*{episode}\b"
+                    rf"|\b(?:ep|episode)\.?\s*0*{episode}\b)",
                     re.IGNORECASE,
                 )
                 ep_link = None
                 for a in soup.find_all("a", href=True):
                     h = a["href"].strip()
-                    if ep_pat.search(h) or ep_pat.search(a.get_text(" ", strip=True)):
+                    txt = a.get_text(" ", strip=True)
+                    is_internal = any(dom in h.lower() for dom in ("piratelk.com", "baiscope.lk", "baiscopedownloads.co", "subz.lk", "cines.lk", "cineru.lk", "zoom.lk")) or h.startswith("/")
+                    is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))
+                    if is_internal and not is_file_or_host and (ep_pat.search(h) or ep_pat.search(txt)):
                         ep_link = urllib.parse.urljoin(post_url, h)
                         break
 
                 if ep_link:
-                    ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
-                    if ep_resp.status_code == 200:
-                        soup = BeautifulSoup(ep_resp.text, "html.parser")
-                        current_target_url = ep_link
-                        page_text = soup.get_text(" ", strip=True)
+                    try:
+                        ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
+                        if ep_resp.status_code == 200:
+                            soup = BeautifulSoup(ep_resp.text, "html.parser")
+                            current_target_url = ep_link
+                            page_text = soup.get_text(" ", strip=True)
+                    except Exception:
+                        pass
 
             # A. Subtitle extraction (only needed for clean video portals)
             is_hardsub = (
@@ -436,36 +458,81 @@ async def _search_portal(
 
             if not is_hardsub:
                 dl_sub_urls = []
-                for a in soup.find_all("a", href=True):
-                    href = a["href"].strip()
-                    cls = " ".join(a.get("class", [])).lower()
-                    a_txt = a.get_text(" ", strip=True).lower()
-                    if (
-                        "action=sub_download" in href
-                        or "subz-list-btn" in cls
-                        or "js-premium-download" in cls
-                        or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt"))
-                        or ("උපසිරැසි" in a_txt and "බාගත" in a_txt)
-                    ):
-                        full_href = urllib.parse.urljoin(current_target_url, href)
-                        if full_href not in dl_sub_urls and not full_href.startswith("magnet:"):
-                            dl_sub_urls.append(full_href)
+                soups_to_scan = [(soup, current_target_url)]
+                if main_soup and main_soup != soup:
+                    soups_to_scan.append((main_soup, post_url))
 
-                for sub_url in dl_sub_urls[:3]:
+                for cur_s, cur_u in soups_to_scan:
+                    if sub_srt_path:
+                        break
+                    article_elem = cur_s.select_one(".entry-content, article, main, .download-links, .box-download") or cur_s
+                    for a in article_elem.find_all("a", href=True):
+                        href = a["href"].strip()
+                        cls = " ".join(a.get("class", [])).lower()
+                        a_txt = a.get_text(" ", strip=True).lower()
+                        if any(ign in href.lower() for ign in ("t.me", "telegram.me", "#", "facebook", "youtube", "imdb", "wikipedia")):
+                            continue
+                        if any(vm in a_txt or vm in href.lower() for vm in ("1080p", "720p", "480p", "x264", "x265", "hevc", "pixeldrain")):
+                            continue
+                        if not any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) and not any(k in href.lower() for k in ("/download/", "/downloads/", "sub-download", "download-sub", "action=sub_download")):
+                            if "-sinhala-sub" in href.lower() or "-with-sinhala" in href.lower():
+                                continue
+                        if (
+                            "action=sub_download" in href
+                            or "subz-list-btn" in cls
+                            or "js-premium-download" in cls
+                            or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt"))
+                            or any(k in href.lower() for k in ("/download/", "/downloads/", "sub-download", "download-sub", "subtitles"))
+                            or (("උපසිරැසි" in a_txt or "sub" in a_txt) and ("බාගත" in a_txt or "download" in a_txt or "zip" in a_txt))
+                            or "download-subtitle" in href.lower()
+                        ):
+                            full_href = urllib.parse.urljoin(cur_u, href)
+                            if full_href not in dl_sub_urls and not full_href.startswith("magnet:"):
+                                dl_sub_urls.append(full_href)
+
+                for sub_url in dl_sub_urls[:6]:
                     try:
                         s_res = await client.get(sub_url, headers={"Referer": current_target_url}, timeout=10.0)
-                        if s_res.status_code == 200 and len(s_res.content) > 128:
-                            srt_p, _ = subtitle_service._extract_srt_from_bytes(
-                                s_res.content,
-                                temp_dir=temp_dir,
-                                season=season,
-                                episode=episode,
-                                prefix=f"{p_name.lower()}_matched",
-                            )
-                            if srt_p and os.path.exists(srt_p):
-                                sub_srt_path = srt_p
-                                log.info("[MatchedScraper] Extracted matching subtitle from %s: %s", p_name, srt_p)
-                                break
+                        res_content = getattr(s_res, "content", b"")
+                        if isinstance(res_content, str):
+                            res_content = res_content.encode("utf-8")
+                        elif not res_content and hasattr(s_res, "text") and s_res.text:
+                            res_content = s_res.text.encode("utf-8")
+
+                        if s_res.status_code == 200 and len(res_content) > 64:
+                            res_headers = getattr(s_res, "headers", {})
+                            content_type = res_headers.get("content-type", "").lower() if hasattr(res_headers, "get") else ""
+                            if "text/html" in content_type or res_content.startswith((b"<!DOCTYPE", b"<html", b"<HTML")):
+                                sub_page_soup = BeautifulSoup(s_res.text if hasattr(s_res, "text") else res_content.decode("utf-8", errors="ignore"), "html.parser")
+                                real_sub_url = None
+                                for sa in sub_page_soup.find_all("a", href=True):
+                                    sh = sa["href"].strip()
+                                    st = sa.get_text(" ", strip=True).lower()
+                                    if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
+                                        real_sub_url = urllib.parse.urljoin(sub_url, sh)
+                                        break
+                                if real_sub_url:
+                                    s_res2 = await client.get(real_sub_url, headers={"Referer": sub_url}, timeout=10.0)
+                                    res_content2 = getattr(s_res2, "content", b"")
+                                    if isinstance(res_content2, str):
+                                        res_content = res_content2.encode("utf-8")
+                                    elif res_content2:
+                                        res_content = res_content2
+                                    elif hasattr(s_res2, "text") and s_res2.text:
+                                        res_content = s_res2.text.encode("utf-8")
+
+                            if len(res_content) > 64:
+                                srt_p, _ = subtitle_service._extract_srt_from_bytes(
+                                    res_content,
+                                    temp_dir=temp_dir,
+                                    season=season,
+                                    episode=episode,
+                                    prefix=f"{p_name.lower()}_matched",
+                                )
+                                if srt_p and os.path.exists(srt_p):
+                                    sub_srt_path = srt_p
+                                    log.info("[MatchedScraper] Extracted matching subtitle from %s: %s", p_name, srt_p)
+                                    break
                     except Exception as sub_dl_err:
                         log.debug("[MatchedScraper] Subtitle download note: %s", sub_dl_err)
 
@@ -549,6 +616,21 @@ async def _search_portal(
                     if isinstance(item, dict) and item.get("url"):
                         video_links.append(item)
 
+            if season and episode and video_links:
+                ep_pat = re.compile(
+                    rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                    rf"|{season}x0*{episode}\b"
+                    rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep)[-_\s]*0*{episode}\b"
+                    rf"|\b(?:ep|episode)\.?\s*0*{episode}\b)",
+                    re.IGNORECASE,
+                )
+                matching_ep_links = [
+                    vl for vl in video_links
+                    if ep_pat.search(vl.get("context", "")) or ep_pat.search(vl.get("original_url", "")) or ep_pat.search(vl.get("url", ""))
+                ]
+                if matching_ep_links:
+                    video_links = matching_ep_links
+
             # Package found video links
             for vl in video_links:
                 u_str = str(vl.get("url", "")).lower()
@@ -595,15 +677,17 @@ async def search_matched_srilankan_releases(
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return []
 
-    clean_title = re.sub(
-        r"[\(\[\{]?\b(s\d{1,2}[\s._-]*e\d{1,2}|season\s*\d{1,2}|episode\s*\d{1,2}|ep\s*\d{1,2})\b.*",
-        "",
-        title,
-        flags=re.IGNORECASE,
-    ).strip(" -_")
-    # Strip any trailing year from clean_title if year was also parsed
-    if year:
-        clean_title = re.sub(rf"\b{year}\b", "", clean_title).strip()
+    if is_series or season:
+        clean_title = subtitle_service.extract_clean_show_name(title)
+    else:
+        clean_title = re.sub(
+            r"[\(\[\{]?\b(s\d{1,2}[\s._-]*e\d{1,2}|season\s*\d{1,2}|episode\s*\d{1,2}|ep\s*\d{1,2})\b.*",
+            "",
+            title,
+            flags=re.IGNORECASE,
+        ).strip(" -_")
+        if year:
+            clean_title = re.sub(rf"\b{year}\b", "", clean_title).strip()
     clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", clean_title).strip()
 
     if not clean_title:

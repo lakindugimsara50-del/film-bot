@@ -40,8 +40,20 @@ def is_genuine_sinhala_subtitle(content_or_path: Optional[str]) -> bool:
     text = content_or_path
     if os.path.isfile(content_or_path):
         try:
-            with open(content_or_path, "r", encoding="utf-8", errors="replace") as f:
-                text = f.read(250000)
+            with open(content_or_path, "rb") as f:
+                raw = f.read(500000)
+            if raw.startswith(b"\xef\xbb\xbf"):
+                text = raw.decode("utf-8-sig", errors="replace")
+            elif raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+                text = raw.decode("utf-16", errors="replace")
+            else:
+                try:
+                    text = raw.decode("utf-8")
+                except UnicodeDecodeError:
+                    try:
+                        text = raw.decode("utf-16")
+                    except UnicodeDecodeError:
+                        text = raw.decode("latin-1", errors="replace")
         except Exception:
             return False
 
@@ -122,8 +134,23 @@ def srt_to_vtt(srt_path: str) -> str:
 
     vtt_path = srt_path.replace(".srt", ".vtt")
 
-    with open(srt_path, "r", encoding="utf-8", errors="replace") as fh:
-        srt_content = fh.read()
+    with open(srt_path, "rb") as fh:
+        raw_b = fh.read()
+    if raw_b.startswith(b"\xef\xbb\xbf"):
+        srt_content = raw_b.decode("utf-8-sig", errors="replace")
+    elif raw_b.startswith((b"\xff\xfe", b"\xfe\xff")):
+        srt_content = raw_b.decode("utf-16", errors="replace")
+    else:
+        try:
+            srt_content = raw_b.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                srt_content = raw_b.decode("utf-16")
+            except UnicodeDecodeError:
+                srt_content = raw_b.decode("latin-1", errors="replace")
+
+    # Universal newline normalization
+    srt_content = srt_content.replace("\r\n", "\n").replace("\r", "\n")
 
     # ── 1. Replace SRT timecode comma separators with dots ────────────────
     #    Pattern: HH:MM:SS,mmm --> HH:MM:SS,mmm  (arrow with optional spaces)
@@ -142,7 +169,7 @@ def srt_to_vtt(srt_path: str) -> str:
     # ── 4. Prepend WEBVTT header ─────────────────────────────────────────
     vtt_content = "WEBVTT\n\n" + vtt_content + "\n"
 
-    with open(vtt_path, "w", encoding="utf-8") as fh:
+    with open(vtt_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(vtt_content)
 
     log.info("Converted SRT → VTT: %s", vtt_path)
@@ -249,7 +276,7 @@ def vtt_to_srt(vtt_path: str, out_path: Optional[str] = None) -> str:
         srt_path = vtt_path + ".srt"
 
     with open(vtt_path, "r", encoding="utf-8", errors="replace") as fh:
-        content = fh.read()
+        content = fh.read().replace("\r\n", "\n").replace("\r", "\n")
 
     # Remove WEBVTT header and metadata blocks
     content = re.sub(r"^WEBVTT[^\n]*\n+", "", content.strip(), flags=re.IGNORECASE)
@@ -269,7 +296,7 @@ def vtt_to_srt(vtt_path: str, out_path: Optional[str] = None) -> str:
             srt_Blocks.append(f"{idx}\n" + "\n".join(lines))
 
     srt_output = "\n\n".join(srt_Blocks) + "\n"
-    with open(srt_path, "w", encoding="utf-8") as fh:
+    with open(srt_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(srt_output)
 
     return srt_path
@@ -476,6 +503,30 @@ def _store_release_hint(title: str, hint_source_text: str) -> str:
     return hint
 
 
+def extract_clean_show_name(text: str) -> str:
+    """
+    Extract a clean TV show name from any title, display_title, or raw query.
+    Removes bracketed years like (2011), season/episode tokens (S08E06, Season 8 Episode 6, 8x06),
+    episode titles (- The Iron Throne), standalone years at end, and trailing punctuation.
+    """
+    if not text:
+        return ""
+    # Strip bracketed year e.g. (2011), [2011]
+    cleaned = re.sub(r"[\(\[]\s*(?:19\d\d|20\d\d)\s*[\)\]]", "", text)
+    # Strip season/episode tokens and everything after
+    cleaned = re.sub(
+        r"[\(\[\{]?\b(?:s\d{1,2}[\s._-]*e\d{1,2}|season\s*\d{1,2}|episode\s*\d{1,2}|ep\s*\d{1,2}|\d{1,2}x\d{1,2})\b.*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    # Strip standalone year at end if present
+    cleaned = re.sub(r"\b(19\d\d|20\d\d)\b.*$", "", cleaned)
+    # Strip trailing hyphens, colons, dots, underscores, whitespace
+    cleaned = re.sub(r"[\s._\-–—:]+$", "", cleaned).strip()
+    return cleaned
+
+
 def _select_episode_srt(
     srt_paths: list[str],
     season: Optional[int] = None,
@@ -484,18 +535,23 @@ def _select_episode_srt(
     """Select the matching episode .srt file from a list of extracted .srt paths."""
     if not srt_paths:
         return None
+    if len(srt_paths) == 1:
+        return srt_paths[0]
     if season and episode:
         ep_patterns = [
-            re.compile(rf"[Ss]0?{season}[\s._-]*[Ee][Pp]?0?{episode}\b", re.IGNORECASE),
-            re.compile(rf"\b0?{season}x0?{episode}\b", re.IGNORECASE),
-            re.compile(rf"season[\s._-]*0?{season}.*episode[\s._-]*0?{episode}\b", re.IGNORECASE),
-            re.compile(rf"\b[Ee][Pp]?[\s._-]*0?{episode}\b", re.IGNORECASE),
+            re.compile(rf"[Ss]0?{season}[\s._-]*[Ee][Pp]?0?{episode}(?:\b|[^a-zA-Z0-9])", re.IGNORECASE),
+            re.compile(rf"(?:\b|[^a-zA-Z0-9])0?{season}x0?{episode}(?:\b|[^a-zA-Z0-9])", re.IGNORECASE),
+            re.compile(rf"season[\s._-]*0?{season}.*episode[\s._-]*0?{episode}(?:\b|[^a-zA-Z0-9])", re.IGNORECASE),
+            re.compile(rf"(?:\b|[^a-zA-Z0-9])[Ee][Pp]?[\s._-]*0?{episode}(?:\b|[^a-zA-Z0-9])", re.IGNORECASE),
+            re.compile(rf"(?:\b|[^a-zA-Z0-9])0*{season}0*{episode}(?:\b|[^a-zA-Z0-9])", re.IGNORECASE),
+            re.compile(rf"(?:\b|[^a-zA-Z0-9])0*{episode}(?:\b|[^a-zA-Z0-9])", re.IGNORECASE),
         ]
         for pat in ep_patterns:
             for sp in srt_paths:
-                if pat.search(os.path.basename(sp)):
+                norm_sp = sp.replace("\\", "/")
+                if pat.search(norm_sp) or pat.search(os.path.basename(sp)):
                     return sp
-        return None
+        return srt_paths[0]
     return srt_paths[0]
 
 
@@ -524,8 +580,24 @@ def _extract_srt_from_bytes(
     head = raw_bytes[:4096]
     if b"-->" in head and not head.startswith((b"PK\x03\x04", b"Rar!", b"7z\xbc\xaf")):
         direct_path = os.path.join(temp_dir, f"{prefix}_direct.srt")
-        with open(direct_path, "wb") as f:
-            f.write(raw_bytes)
+        try:
+            if raw_bytes.startswith(b"\xef\xbb\xbf"):
+                txt = raw_bytes.decode("utf-8-sig", errors="replace")
+            elif raw_bytes.startswith((b"\xff\xfe", b"\xfe\xff")):
+                txt = raw_bytes.decode("utf-16", errors="replace")
+            else:
+                try:
+                    txt = raw_bytes.decode("utf-8")
+                except UnicodeDecodeError:
+                    try:
+                        txt = raw_bytes.decode("utf-16")
+                    except UnicodeDecodeError:
+                        txt = raw_bytes.decode("latin-1", errors="replace")
+            with open(direct_path, "w", encoding="utf-8") as f:
+                f.write(txt)
+        except Exception:
+            with open(direct_path, "wb") as f:
+                f.write(raw_bytes)
         if is_genuine_sinhala_subtitle(direct_path):
             return direct_path, os.path.basename(direct_path)
 
@@ -539,16 +611,35 @@ def _extract_srt_from_bytes(
                 ]
                 if srt_members:
                     chosen = _select_episode_srt(srt_members, season, episode)
-                    if chosen:
-                        ext = ".vtt" if chosen.lower().endswith(".vtt") else ".srt"
-                        safe_base = re.sub(r"[^a-zA-Z0-9._-]", "_", os.path.basename(chosen))
+                    candidates_to_try = [chosen] + [m for m in srt_members if m != chosen] if chosen else srt_members
+                    for cand_m in candidates_to_try:
+                        ext = ".vtt" if cand_m.lower().endswith(".vtt") else ".srt"
+                        safe_base = re.sub(r"[^a-zA-Z0-9._-]", "_", os.path.basename(cand_m))
                         out_srt = os.path.join(temp_dir, f"{prefix}_{safe_base}")
-                        with open(out_srt, "wb") as out_f:
-                            out_f.write(zf.read(chosen))
+                        raw_member = zf.read(cand_m)
+                        try:
+                            if raw_member.startswith(b"\xef\xbb\xbf"):
+                                txt = raw_member.decode("utf-8-sig", errors="replace")
+                            elif raw_member.startswith((b"\xff\xfe", b"\xfe\xff")):
+                                txt = raw_member.decode("utf-16", errors="replace")
+                            else:
+                                try:
+                                    txt = raw_member.decode("utf-8")
+                                except UnicodeDecodeError:
+                                    try:
+                                        txt = raw_member.decode("utf-16")
+                                    except UnicodeDecodeError:
+                                        txt = raw_member.decode("latin-1", errors="replace")
+                            with open(out_srt, "w", encoding="utf-8") as out_f:
+                                out_f.write(txt)
+                        except Exception:
+                            with open(out_srt, "wb") as out_f:
+                                out_f.write(raw_member)
+
                         if ext == ".vtt":
                             out_srt = vtt_to_srt(out_srt)
                         if os.path.exists(out_srt) and os.path.getsize(out_srt) > 64 and is_genuine_sinhala_subtitle(out_srt):
-                            return out_srt, chosen
+                            return out_srt, cand_m
         except Exception as z_err:
             log.debug("[SubtitleService] ZIP extraction note: %s", z_err)
 
@@ -581,13 +672,15 @@ def _extract_srt_from_bytes(
                         if fn.lower().endswith((".srt", ".vtt")) and not fn.startswith("._"):
                             found_srts.append(os.path.join(root, fn))
                 chosen_path = _select_episode_srt(found_srts, season, episode)
-                if chosen_path and os.path.exists(chosen_path):
-                    if chosen_path.lower().endswith(".vtt"):
-                        chosen_path = vtt_to_srt(chosen_path)
-                    if os.path.getsize(chosen_path) > 64 and is_genuine_sinhala_subtitle(chosen_path):
-                        final_out = os.path.join(temp_dir, f"{prefix}_{os.path.basename(chosen_path)}")
-                        shutil.copyfile(chosen_path, final_out)
-                        return final_out, os.path.basename(chosen_path)
+                candidates_to_try = [chosen_path] + [p for p in found_srts if p != chosen_path] if chosen_path else found_srts
+                for cand_p in candidates_to_try:
+                    if cand_p and os.path.exists(cand_p):
+                        if cand_p.lower().endswith(".vtt"):
+                            cand_p = vtt_to_srt(cand_p)
+                        if os.path.getsize(cand_p) > 64 and is_genuine_sinhala_subtitle(cand_p):
+                            final_out = os.path.join(temp_dir, f"{prefix}_{os.path.basename(cand_p)}")
+                            shutil.copyfile(cand_p, final_out)
+                            return final_out, os.path.basename(cand_p)
         except Exception as rar_err:
             log.debug("[SubtitleService] RAR/7z extraction note: %s", rar_err)
 
@@ -689,22 +782,36 @@ async def _scrape_wp_subtitle_site(
                     if not any(ign in href.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz", "t.me/")):
                         dl_targets.append(urllib.parse.urljoin(post_url, href))
 
-            for dl_url in dl_targets[:4]:
+            for dl_url in dl_targets[:6]:
                 try:
                     sub_resp = await client.get(dl_url, headers={"Referer": post_url}, timeout=15.0)
-                    if sub_resp.status_code != 200 or len(sub_resp.content) < 128:
+                    if sub_resp.status_code != 200 or len(sub_resp.content) < 64:
                         continue
-                    srt_file, member_name = _extract_srt_from_bytes(
-                        sub_resp.content,
-                        temp_dir=temp_dir,
-                        season=season,
-                        episode=episode,
-                        prefix=f"{site_name.lower()}_sub",
-                    )
-                    if srt_file and os.path.exists(srt_file):
-                        _store_release_hint(clean_title, f"{member_name} {dlp_text}")
-                        log.info("[SubtitleService] Found genuine Sinhala subtitle from %s: %s", site_name, srt_file)
-                        return srt_file
+                    content_type = sub_resp.headers.get("content-type", "").lower()
+                    if "text/html" in content_type or sub_resp.content.startswith((b"<!DOCTYPE", b"<html", b"<HTML")):
+                        sub_page_soup = BeautifulSoup(sub_resp.text, "html.parser")
+                        real_dl = None
+                        for sa in sub_page_soup.find_all("a", href=True):
+                            sh = sa["href"].strip()
+                            st = sa.get_text(" ", strip=True).lower()
+                            if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
+                                real_dl = urllib.parse.urljoin(dl_url, sh)
+                                break
+                        if real_dl:
+                            sub_resp = await client.get(real_dl, headers={"Referer": dl_url}, timeout=15.0)
+
+                    if sub_resp.status_code == 200 and len(sub_resp.content) >= 64:
+                        srt_file, member_name = _extract_srt_from_bytes(
+                            sub_resp.content,
+                            temp_dir=temp_dir,
+                            season=season,
+                            episode=episode,
+                            prefix=f"{site_name.lower()}_sub",
+                        )
+                        if srt_file and os.path.exists(srt_file):
+                            _store_release_hint(clean_title, f"{member_name} {dlp_text}")
+                            log.info("[SubtitleService] Found genuine Sinhala subtitle from %s: %s", site_name, srt_file)
+                            return srt_file
                 except Exception as dl_err:
                     log.debug("[SubtitleService] %s download link error: %s", site_name, dl_err)
         except Exception as p_err:
@@ -733,12 +840,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
     from bs4 import BeautifulSoup
 
     # Strip any leaked season/episode tokens or episode titles from title
-    clean_series_name = re.sub(
-        r"[\(\[\{]?\b(s\d{1,2}[\s._-]*e\d{1,2}|season\s*\d{1,2}|episode\s*\d{1,2}|ep\s*\d{1,2})\b.*",
-        "",
-        title,
-        flags=re.IGNORECASE,
-    ).strip(" -_")
+    clean_series_name = extract_clean_show_name(title)
     search_title = clean_series_name if (season and clean_series_name) else title
     clean_title = re.sub(r"[^a-zA-Z0-9\s]", " ", search_title).strip()
     slug_title = re.sub(r"[^a-z0-9]+", "-", search_title.lower()).strip("-")
@@ -795,6 +897,9 @@ async def fetch_sri_lankan_sinhala_subtitle(
                     f"https://piratelk.com/{slug_title}-season-{season}-with-sinhala-subtitles/",
                     f"https://piratelk.com/{slug_title}-tv-series-with-sinhala-subtitles/",
                     f"https://piratelk.com/{slug_title}-with-sinhala-subtitles/",
+                    f"https://piratelk.com/tvshows/{slug_title}/",
+                    f"https://piratelk.com/tvshows/{slug_title}-season-{season}/",
+                    f"https://piratelk.com/tvshows/{slug_title}-season-{season:02d}/",
                 ])
             else:
                 if year:
@@ -818,7 +923,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
                             s_token = f"season {season}"
                             s_token_padded = f"season {season:02d}"
                             s_token_short = f"s{season:02d}"
-                            is_hub = "tv-series" in p_href_lower or "tv series" in p_title or f"{slug_title}-with-sinhala" in p_href_lower
+                            is_hub = "tv-series" in p_href_lower or "tv series" in p_title or f"{slug_title}-with-sinhala" in p_href_lower or "tvshows" in p_href_lower
                             if is_hub or s_token in p_title or s_token_padded in p_title or s_token_short in p_title or \
                                s_token in p_href_lower or s_token_padded in p_href_lower or s_token_short in p_href_lower:
                                 candidate_posts.append(href)
@@ -860,32 +965,63 @@ async def fetch_sri_lankan_sinhala_subtitle(
                                     p_soup = BeautifulSoup(s_resp.text, "html.parser")
                                     break
 
-                    dl_link = None
-                    for da in p_soup.find_all("a", href=True):
-                        dh = da["href"]
-                        if any(k in dh.lower() for k in ("/download/", ".zip", ".rar", ".7z")):
-                            if not any(ign in dh.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz")):
-                                dl_link = urllib.parse.urljoin(post_url, dh)
-                                break
+                    candidate_sub_links = []
+                    # Search inside main article content first to avoid header/footer/sidebar noise
+                    article_elem = p_soup.select_one(".entry-content, article, main, .download-links, .box-download") or p_soup
+                    for da in article_elem.find_all("a", href=True):
+                        dh = da["href"].strip()
+                        dt = da.get_text(" ", strip=True).lower()
+                        if any(ign in dh.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz", "t.me", "facebook", "youtube", "imdb", "wikipedia")):
+                            continue
+                        if any(vm in dt or vm in dh.lower() for vm in ("1080p", "720p", "480p", "x264", "x265", "hevc", "pixeldrain")):
+                            continue
+                        # Reject standard post URLs (they are other film pages, not subtitle download links)
+                        if not any(ext in dh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) and not any(k in dh.lower() for k in ("/download/", "/downloads/", "sub-download", "download-sub", "action=sub_download")):
+                            if "-sinhala-sub" in dh.lower() or "-with-sinhala" in dh.lower():
+                                continue
+                        if (
+                            any(ext in dh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt"))
+                            or any(k in dh.lower() for k in ("sub-download", "download-sub", "subtitles", "action=sub_download", "/download/", "/downloads/"))
+                            or (("උපසිරැසි" in dt or "sub" in dt) and ("බාගත" in dt or "download" in dt))
+                            or "download-subtitle" in dh.lower()
+                        ):
+                            full_sub_link = urllib.parse.urljoin(post_url, dh)
+                            if full_sub_link not in candidate_sub_links:
+                                candidate_sub_links.append(full_sub_link)
 
-                    if not dl_link:
-                        continue
+                    for dl_link in candidate_sub_links[:6]:
+                        try:
+                            z_resp = await client.get(dl_link, headers={"Referer": post_url}, timeout=12.0)
+                            if z_resp.status_code != 200 or len(z_resp.content) < 64:
+                                continue
 
-                    z_resp = await client.get(dl_link)
-                    if z_resp.status_code != 200 or len(z_resp.content) < 256:
-                        continue
+                            content_type = z_resp.headers.get("content-type", "").lower()
+                            if "text/html" in content_type or z_resp.content.startswith((b"<!DOCTYPE", b"<html", b"<HTML")):
+                                sub_page_soup = BeautifulSoup(z_resp.text, "html.parser")
+                                real_dl = None
+                                for sa in sub_page_soup.find_all("a", href=True):
+                                    sh = sa["href"].strip()
+                                    st = sa.get_text(" ", strip=True).lower()
+                                    if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
+                                        real_dl = urllib.parse.urljoin(dl_link, sh)
+                                        break
+                                if real_dl:
+                                    z_resp = await client.get(real_dl, headers={"Referer": dl_link}, timeout=12.0)
 
-                    out_srt, chosen_member = _extract_srt_from_bytes(
-                        z_resp.content,
-                        temp_dir=temp_dir,
-                        season=season,
-                        episode=episode,
-                        prefix="sri_lanka_sub",
-                    )
-                    if out_srt and os.path.exists(out_srt):
-                        _store_release_hint(clean_title, f"{chosen_member} {p_soup.get_text(' ', strip=True)[:1500]}")
-                        log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
-                        return out_srt
+                            if z_resp.status_code == 200 and len(z_resp.content) > 64:
+                                out_srt, chosen_member = _extract_srt_from_bytes(
+                                    z_resp.content,
+                                    temp_dir=temp_dir,
+                                    season=season,
+                                    episode=episode,
+                                    prefix="sri_lanka_sub",
+                                )
+                                if out_srt and os.path.exists(out_srt):
+                                    _store_release_hint(clean_title, f"{chosen_member} {p_soup.get_text(' ', strip=True)[:1500]}")
+                                    log.info("[SubtitleService] Found genuine Sri Lankan Sinhala subtitle from PirateLK: %s", out_srt)
+                                    return out_srt
+                        except Exception as dl_err:
+                            log.debug("[SubtitleService] Candidate sub link download note: %s", dl_err)
                 except Exception as post_err:
                     log.debug("[SubtitleService] Sri Lankan post inspect note: %s", post_err)
     except Exception as scrape_err:

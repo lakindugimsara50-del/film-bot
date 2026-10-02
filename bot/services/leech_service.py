@@ -574,16 +574,18 @@ async def _execute_leech(
         title = title or "Movie"
         year = user_specified_year or year or 2026
 
+    show_name: Optional[str] = None
     if is_series:
         ep_name = tmdb_meta.get("episode_title", "")
-        show_name = tmdb_meta.get("title") or title
+        raw_s_name = tmdb_meta.get("title") or title
+        show_name = subtitle_service.extract_clean_show_name(raw_s_name) or raw_s_name
         season = season or 1
         episode = episode or 1
         ep_str = f"S{season:02d}E{episode:02d}"
         display_title = f"{show_name} {ep_str}" + (f" - {ep_name}" if ep_name else "")
         media_icon = "📺"
     else:
-        clean_title_base = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip() or title
+        clean_title_base = re.sub(r"\s*[\(\[]?\d{4}[\)\]]?\s*$", "", title).strip() or title
         title = clean_title_base
         display_title = f"{clean_title_base} ({year})" if year else clean_title_base
         media_icon = "🎬"
@@ -717,8 +719,8 @@ async def _execute_leech(
         if not candidates and not os.environ.get("PYTEST_CURRENT_TEST"):
             try:
                 temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
-                _show_name_pre = locals().get("show_name", "")
-                clean_sub_title_pre = _show_name_pre if (is_series and _show_name_pre) else (title or display_title)
+                _show_name_pre = locals().get("show_name", "") or title or display_title
+                clean_sub_title_pre = subtitle_service.extract_clean_show_name(_show_name_pre) if (is_series or season) else (title or display_title)
                 pre_sub_srt = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
                     title=clean_sub_title_pre,
                     year=year,
@@ -1297,7 +1299,8 @@ async def _execute_leech(
                                         async with sub_acquire_lock:
                                             if not active_sub_to_mux:
                                                 try:
-                                                    clean_sub_title = show_name if (is_series and show_name) else (title or display_title)
+                                                    _p_show_name = show_name if (is_series and show_name) else (title or display_title)
+                                                    clean_sub_title = subtitle_service.extract_clean_show_name(_p_show_name) if (is_series or season) else (title or display_title)
                                                     auto_srt, _ = await subtitle_service.auto_acquire_sinhala_subtitle(
                                                         title=clean_sub_title,
                                                         year=year,
@@ -1658,8 +1661,8 @@ async def _execute_leech(
 
         if not sub_srt_path:
             try:
-                _show_name = locals().get('show_name', '')
-                clean_sub_title = _show_name if (is_series and _show_name) else (title or display_title)
+                _show_name = locals().get('show_name', '') or title or display_title
+                clean_sub_title = subtitle_service.extract_clean_show_name(_show_name) if (is_series or season) else (title or display_title)
                 sub_srt_path, sub_vtt_path = await subtitle_service.auto_acquire_sinhala_subtitle(
                     title=clean_sub_title,
                     year=year,
@@ -1672,6 +1675,33 @@ async def _execute_leech(
                 log.info("[LeechService] Prepared Sinhala subtitle tracks: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
             except Exception as sub_acq_err:
                 log.warning("[LeechService] Auto subtitle acquisition note: %s", sub_acq_err)
+
+        if not sub_srt_path and not is_already_hardsubbed and chosen_candidate:
+            cand_portal = (chosen_candidate.extra and chosen_candidate.extra.get("portal")) or ""
+            if cand_portal in ("PirateLK", "Baiscope", "BaiscopeDownloads"):
+                try:
+                    import httpx
+                    if cand_portal == "PirateLK":
+                        from services.scrapers import piratelk as p_scraper
+                    else:
+                        from services.scrapers import baiscope as p_scraper
+                    async with httpx.AsyncClient(headers=p_scraper.HEADERS, follow_redirects=True, timeout=12.0) as p_client:
+                        p_subs = await p_scraper.search(
+                            client=p_client,
+                            clean_title=clean_sub_title,
+                            year=year,
+                            season=season,
+                            episode=episode,
+                            temp_dir=temp_dir,
+                        )
+                        for ps in p_subs:
+                            if ps.get("sub_srt_path") and os.path.exists(ps["sub_srt_path"]):
+                                sub_srt_path = ps["sub_srt_path"]
+                                sub_vtt_path = subtitle_service.srt_to_vtt(sub_srt_path)
+                                log.info("[LeechService] Acquired %s subtitle via portal retry: %s", cand_portal, sub_srt_path)
+                                break
+                except Exception as e_p:
+                    log.debug("[LeechService] Portal sub retry note: %s", e_p)
 
         # 2. Intelligent Video Processing & Subtitle Muxing
         # If file exceeds Telegram limit (1.95 GB), compress directly targeting 1.90 GB

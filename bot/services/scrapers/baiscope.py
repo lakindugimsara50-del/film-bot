@@ -56,10 +56,14 @@ async def search(
     temp_dir: str = "/tmp",
 ) -> list[dict]:
     """Search Baiscope / BaiscopeDownloads for direct clean video downloads + standalone subtitle."""
-    clean_t = clean_title.strip()
+    if season or episode:
+        clean_t = subtitle_service.extract_clean_show_name(clean_title) or clean_title.strip()
+    else:
+        clean_t = re.sub(r"[\(\[]\s*\d{4}\s*[\)\]]", "", clean_title).strip()
     search_queries = []
     if season and episode:
         search_queries.append(f"{clean_t} S{season:02d}E{episode:02d}")
+        search_queries.append(f"{clean_t} Season {season}")
         search_queries.append(clean_t)
     elif year:
         search_queries.append(f"{clean_t} {year}")
@@ -76,6 +80,20 @@ async def search(
         candidate_posts: list[tuple[str, int]] = []
         seen_posts = set()
         domain_part = base_url.split("//")[-1].split("/")[0].lower()
+
+        slug_title = re.sub(r"[^a-z0-9]+", "-", clean_t.lower()).strip("-")
+        direct_candidates = []
+        if season:
+            direct_candidates.extend([
+                f"{base_url}/{slug_title}-season-{season}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-season-{season:02d}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-season-{season}/",
+            ])
+        direct_candidates.append(f"{base_url}/{slug_title}-sinhala-subtitles/")
+        for dc in direct_candidates:
+            if dc not in seen_posts:
+                seen_posts.add(dc)
+                candidate_posts.append((dc, 25))
 
         for q in search_queries:
             if any(sc >= 40 for _, sc in candidate_posts):
@@ -119,7 +137,7 @@ async def search(
 
         candidate_posts.sort(key=lambda x: x[1], reverse=True)
 
-        for post_url, _ in candidate_posts[:3]:
+        for post_url, _ in candidate_posts[:4]:
             try:
                 p_resp = await client.get(post_url, headers=HEADERS, timeout=6.0)
                 if p_resp.status_code != 200:
@@ -128,41 +146,128 @@ async def search(
                 page_text = soup.get_text(" ", strip=True)
 
                 verify_text = f"{post_url} {soup.title.get_text() if soup.title else ''} {soup.h1.get_text() if soup.h1 else ''} {page_text[:3000]}"
-                if not matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode):
+                is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode)
+                if not is_matched and season:
+                    is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=None)
+                if not is_matched:
                     continue
+
+                current_url = post_url
+                season_soup = soup
+
+                # Follow season-specific link if on a general TV series hub page
+                if season:
+                    s_token_dash = f"season-{season}"
+                    s_token_padded = f"season-{season:02d}"
+                    s_token_space = f"season {season}"
+                    if (
+                        s_token_dash not in current_url.lower()
+                        and s_token_padded not in current_url.lower()
+                        and s_token_space not in current_url.lower()
+                    ):
+                        s_pat = re.compile(rf"(?:season[\s._-]*0*{season}\b|s0*{season}\b)", re.IGNORECASE)
+                        for a in soup.find_all("a", href=True):
+                            h = a["href"].strip()
+                            txt = a.get_text(" ", strip=True)
+                            if (s_pat.search(h) or s_pat.search(txt)) and (any(dom in h for dom in ("baiscope.lk", "baiscopedownloads.co")) or h.startswith("/")):
+                                if not any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv")):
+                                    s_link = urllib.parse.urljoin(current_url, h)
+                                    try:
+                                        s_resp = await client.get(s_link, headers=HEADERS, timeout=8.0)
+                                        if s_resp.status_code == 200:
+                                            soup = BeautifulSoup(s_resp.text, "html.parser")
+                                            current_url = s_link
+                                            season_soup = soup
+                                            break
+                                    except Exception:
+                                        pass
+
+                if season and episode:
+                    ep_pat = re.compile(
+                        rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                        rf"|{season}x0*{episode}\b"
+                        rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep)[-_\s]*0*{episode}\b"
+                        rf"|\b(?:ep|episode)\.?\s*0*{episode}\b)",
+                        re.IGNORECASE,
+                    )
+                    for a in soup.find_all("a", href=True):
+                        h = a["href"].strip()
+                        txt = a.get_text(" ", strip=True)
+                        is_internal = any(dom in h.lower() for dom in ("baiscope.lk", "baiscopedownloads.co")) or h.startswith("/")
+                        is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))
+                        if is_internal and not is_file_or_host and (ep_pat.search(h) or ep_pat.search(txt)):
+                            ep_link = urllib.parse.urljoin(post_url, h)
+                            try:
+                                ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
+                                if ep_resp.status_code == 200:
+                                    soup = BeautifulSoup(ep_resp.text, "html.parser")
+                                    current_url = ep_link
+                            except Exception:
+                                pass
+                            break
 
                 # 1. Standalone Subtitle Extraction
                 sub_srt_path = None
                 dl_sub_urls = []
-                for a in soup.find_all("a", href=True):
-                    h = a["href"].strip()
-                    txt = a.get_text(" ", strip=True).lower()
-                    if (
-                        any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".srt"))
-                        or ("උපසිරැසි" in txt and "බාගත" in txt)
-                        or "download-subtitle" in h.lower()
-                    ):
-                        full_h = urllib.parse.urljoin(post_url, h)
-                        if full_h not in dl_sub_urls and not full_h.startswith("magnet:"):
-                            dl_sub_urls.append(full_h)
+                soups_to_check = [(soup, current_url)]
+                if season_soup and season_soup != soup:
+                    soups_to_check.append((season_soup, post_url))
 
-                for s_url in dl_sub_urls[:3]:
+                for s_soup, ref_url in soups_to_check:
+                    if sub_srt_path:
+                        break
+                    article_elem = s_soup.select_one(".entry-content, article, main, .download-links, .box-download") or s_soup
+                    for a in article_elem.find_all("a", href=True):
+                        h = a["href"].strip()
+                        txt = a.get_text(" ", strip=True).lower()
+                        if any(ign in h.lower() for ign in ("t.me", "telegram.me", "#", "facebook", "youtube", "imdb", "wikipedia")):
+                            continue
+                        if any(vm in txt or vm in h.lower() for vm in ("1080p", "720p", "480p", "x264", "x265", "hevc", "pixeldrain")):
+                            continue
+                        if not any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) and not any(k in h.lower() for k in ("/download/", "/downloads/", "sub-download", "download-sub", "action=sub_download")):
+                            if "-sinhala-sub" in h.lower() or "-with-sinhala" in h.lower():
+                                continue
+                        if (
+                            any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt"))
+                            or any(k in h.lower() for k in ("/download/", "/downloads/", "sub-download", "download-sub", "subtitles", "action=sub_download"))
+                            or (("උපසිරැසි" in txt or "sub" in txt) and ("බාගත" in txt or "download" in txt or "zip" in txt))
+                            or "download-subtitle" in h.lower()
+                        ):
+                            full_h = urllib.parse.urljoin(ref_url, h)
+                            if full_h not in dl_sub_urls and not full_h.startswith("magnet:"):
+                                dl_sub_urls.append(full_h)
+
+                for s_url in dl_sub_urls[:6]:
                     try:
-                        s_resp = await client.get(s_url, headers={"Referer": post_url}, timeout=10.0)
-                        if s_resp.status_code == 200 and len(s_resp.content) > 128:
-                            srt_p, _ = subtitle_service._extract_srt_from_bytes(
-                                s_resp.content,
-                                temp_dir=temp_dir,
-                                season=season,
-                                episode=episode,
-                                prefix="baiscope_sub",
-                            )
-                            if srt_p and os.path.exists(srt_p):
-                                sub_srt_path = srt_p
-                                log.info("[Baiscope] Extracted standalone subtitle: %s", sub_srt_path)
-                                break
-                    except Exception:
-                        pass
+                        s_resp = await client.get(s_url, headers={"Referer": current_url}, timeout=10.0)
+                        if s_resp.status_code == 200 and len(s_resp.content) > 64:
+                            content_type = s_resp.headers.get("content-type", "").lower()
+                            if "text/html" in content_type or s_resp.content.startswith((b"<!DOCTYPE", b"<html", b"<HTML")):
+                                sub_page_soup = BeautifulSoup(s_resp.text, "html.parser")
+                                real_sub_url = None
+                                for sa in sub_page_soup.find_all("a", href=True):
+                                    sh = sa["href"].strip()
+                                    st = sa.get_text(" ", strip=True).lower()
+                                    if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
+                                        real_sub_url = urllib.parse.urljoin(s_url, sh)
+                                        break
+                                if real_sub_url:
+                                    s_resp = await client.get(real_sub_url, headers={"Referer": s_url}, timeout=10.0)
+
+                            if s_resp.status_code == 200 and len(s_resp.content) > 64:
+                                srt_p, _ = subtitle_service._extract_srt_from_bytes(
+                                    s_resp.content,
+                                    temp_dir=temp_dir,
+                                    season=season,
+                                    episode=episode,
+                                    prefix="baiscope_sub",
+                                )
+                                if srt_p and os.path.exists(srt_p):
+                                    sub_srt_path = srt_p
+                                    log.info("[Baiscope] Extracted standalone subtitle: %s", sub_srt_path)
+                                    break
+                    except Exception as sub_err:
+                        log.debug("[Baiscope] Sub extraction error: %s", sub_err)
 
                 if not sub_srt_path:
                     try:
@@ -197,27 +302,47 @@ async def search(
                                 "url": resolve_direct_video_url(m.group(0)),
                                 "quality": q,
                                 "host_type": h_type,
+                                "ctx": ctx,
+                                "raw_href": h,
                             })
                             break
 
                     if not matched and ("/links/" in h or "/api-" in h or "/download/" in h):
                         try:
-                            resolved = await resolve_srilankan_intermediate_link(client, h, referer_url=post_url)
+                            resolved = await resolve_srilankan_intermediate_link(client, h, referer_url=current_url)
                             if resolved and not resolved.startswith("magnet:") and ".torrent" not in resolved.lower():
                                 h_type = "cdn" if "cdn." in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
                                 video_links.append({
                                     "url": resolved,
                                     "quality": q,
                                     "host_type": h_type,
+                                    "ctx": ctx,
+                                    "raw_href": h,
                                 })
                         except Exception:
                             pass
+
+                # Filter for requested episode if page contains multiple episode download links
+                if season and episode and video_links:
+                    ep_pat = re.compile(
+                        rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                        rf"|{season}x0*{episode}\b"
+                        rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep)[-_\s]*0*{episode}\b"
+                        rf"|\b(?:ep|episode)\.?\s*0*{episode}\b)",
+                        re.IGNORECASE,
+                    )
+                    matching_ep_links = [
+                        vl for vl in video_links
+                        if ep_pat.search(vl.get("ctx", "")) or ep_pat.search(vl.get("raw_href", "")) or ep_pat.search(vl.get("url", ""))
+                    ]
+                    if matching_ep_links:
+                        video_links = matching_ep_links
 
                 portal_label = "BaiscopeDownloads" if "baiscopedownloads" in base_url else "Baiscope"
                 for vl in video_links:
                     results.append({
                         "portal": portal_label,
-                        "post_url": post_url,
+                        "post_url": current_url,
                         "url": vl["url"],
                         "quality": vl["quality"],
                         "host_type": vl["host_type"],

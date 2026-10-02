@@ -1191,8 +1191,10 @@ async def _execute_leech(
                                             f"• <b>{q_name}:</b> [██████████] 100% 🇱🇰 <i>(සිංහල උපසිරැසි Fast-Mux...)</i>"
                                         )
                                     elif st == "compressing":
+                                        c_pct = q_data.get("dl_pct", 0.0)
+                                        c_pbar = downloader.format_progress_bar(c_pct)
                                         lines.append(
-                                            f"• <b>{q_name}:</b> [██████████] 100% 🗜️ <i>(FFmpeg 2GB Limit Compression...)</i>"
+                                            f"• <b>{q_name}:</b> {c_pbar} {c_pct:.1f}% 🗜️ <i>(FFmpeg 1.90GB Safe Compression...)</i>"
                                         )
                                     elif st == "uploading":
                                         pct = q_data.get("up_pct", 0.0)
@@ -1208,9 +1210,14 @@ async def _execute_leech(
                                             f"• <b>{q_name}:</b> [██████████] 100% ({q_data.get('size', 'OK')}) ✅ <i>(Telegram HD Uploaded{msg_tag})</i>"
                                         )
                                     elif st == "failed":
-                                        lines.append(
-                                            f"• <b>{q_name}:</b> ⚠️ <i>Direct Link අසාර්ථකයි (Auto Fallback)</i>"
-                                        )
+                                        if q_data.get("dl_pct", 0.0) >= 100.0:
+                                            lines.append(
+                                                f"• <b>{q_name}:</b> ⚠️ <i>Telegram Upload අසාර්ථකයි (Auto Fallback)</i>"
+                                            )
+                                        else:
+                                            lines.append(
+                                                f"• <b>{q_name}:</b> ⚠️ <i>බාගත කිරීම අසාර්ථකයි (Auto Fallback)</i>"
+                                            )
 
                                 lines.append(f"\n☁️ <i>{_env_name} High-Speed Bandwidth • Multi-Session Direct Streaming</i>")
                                 full_text = "\n".join(lines)
@@ -1958,11 +1965,28 @@ async def _execute_leech(
             is_source_1080p = False
             is_source_720p = True
             primary_quality = "720p"
+        elif src_w >= 600 or src_h >= 340:
+            is_source_1080p = False
+            is_source_720p = False
+            primary_quality = "480p"
+        elif src_w > 0 or src_h > 0:
+            is_source_1080p = False
+            is_source_720p = False
+            primary_quality = "360p"
         elif src_w == 0 and src_h == 0:
             _cand_q = (getattr(chosen_candidate, "quality", "") or "").lower()
-            is_source_720p = ("720p" in _cand_q) or ("720p" in file_name.lower()) or bool(is_series)
-            is_source_1080p = not is_source_720p
-            primary_quality = "720p" if is_source_720p else "1080p"
+            if "480p" in _cand_q or "480p" in file_name.lower():
+                is_source_1080p = False
+                is_source_720p = False
+                primary_quality = "480p"
+            elif "720p" in _cand_q or "720p" in file_name.lower() or bool(is_series):
+                is_source_1080p = False
+                is_source_720p = True
+                primary_quality = "720p"
+            else:
+                is_source_1080p = True
+                is_source_720p = False
+                primary_quality = "1080p"
         else:
             is_source_1080p = False
             is_source_720p = bool(is_series)
@@ -2319,6 +2343,13 @@ async def _execute_leech(
                         log.info("[LeechService] Direct client fallback upload for variant %s succeeded: msg_id=%s", q_label, direct_res.get("message_id"))
                 except Exception as direct_err:
                     log.error("[LeechService] Direct client fallback upload for variant %s failed: %s", q_label, direct_err)
+
+            if not variant_tg_info.get(q_label):
+                if "variants" in dashboard_state and q_label in dashboard_state["variants"]:
+                    dashboard_state["variants"][q_label]["status"] = "failed"
+                dashboard_state["variant_status"] = "failed"
+                await _render_dashboard(force=True)
+                log.error("[LeechService] All upload attempts for variant %s failed.", q_label)
 
         async def _task_encode_variants_only() -> None:
             nonlocal variant_files, _mq_progress_str, local_file, file_size, file_name, size_str

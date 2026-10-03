@@ -258,6 +258,9 @@ class PikPakService:
                     ep_matches = [f for f in video_files if downloader.matches_episode_filename(f.get("name", ""), episode_hint)]
                     if ep_matches:
                         video_files = ep_matches
+                    else:
+                        log.warning("[PikPak] Requested episode '%s' not found among files: %s", episode_hint, [f.get("name") for f in video_files])
+                        return None
                 # Pick largest matching video file in the folder
                 video_files.sort(key=lambda x: int(x.get("size", 0)), reverse=True)
                 chosen = video_files[0]

@@ -44,14 +44,14 @@ HEADERS = {
 PORTALS = [
     {"name": "SinhalaSub",        "base": "https://sinhalasub.lk",        "wp_api": True},
     {"name": "CineSubz",          "base": "https://cinesubz.co",          "wp_api": True},
-    {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": False},
+    {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": True},
     {"name": "Baiscope",          "base": "https://baiscope.lk",          "wp_api": True},
     {"name": "BaiscopeDownloads", "base": "https://baiscopedownloads.co", "wp_api": True},
     {"name": "Subz",              "base": "https://subz.lk",              "wp_api": True},
     {"name": "Cines",             "base": "https://cines.lk",             "wp_api": True},
     {"name": "Cineru",            "base": "https://cineru.lk",            "wp_api": True},
     {"name": "Zoom",              "base": "https://zoom.lk",              "wp_api": False},
-    {"name": "LKSubs",            "base": "https://lksubs.com",           "wp_api": False},
+    {"name": "LKSubs",            "base": "https://www.lksubs.com",       "wp_api": False},
 ]
 
 # Portals where video has pre-burned Sinhala subtitles (NEVER burn secondary sub)
@@ -285,7 +285,8 @@ def score_candidate_post(
     episode: Optional[int] = None,
 ) -> int:
     """Score candidate post relevance (higher is better). Returns <= 0 if irrelevant."""
-    combined = f"{post_title} {post_url}".lower()
+    url_slug = urllib.parse.unquote(post_url.split("?")[0].rstrip("/").split("/")[-1]).replace("-", " ")
+    combined = f"{post_title} {post_url} {url_slug}".lower()
 
     if not matches_title_and_year(clean_title, combined, year=year, season=season, episode=episode):
         # Check if this is a TV series hub page (e.g. /tvshows/, /tv/, or title has tv/series/season)

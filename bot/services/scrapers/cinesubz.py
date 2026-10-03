@@ -64,6 +64,22 @@ async def search(
     else:
         search_queries.append(clean_t)
 
+    slug_title = re.sub(r"[^a-z0-9]+", "-", clean_t.lower()).strip("-")
+    direct_candidates = []
+    if season and episode:
+        direct_candidates.extend([
+            f"{BASE_URL}/episodes/{slug_title}-{season}x{episode}/",
+            f"{BASE_URL}/episodes/{slug_title}-{season}x{episode:02d}/",
+            f"{BASE_URL}/tvshows/{slug_title}/",
+            f"{BASE_URL}/{slug_title}/",
+        ])
+    elif year:
+        direct_candidates.append(f"{BASE_URL}/movies/{slug_title}-{year}/")
+        direct_candidates.append(f"{BASE_URL}/{slug_title}-{year}/")
+        direct_candidates.append(f"{BASE_URL}/{slug_title}/")
+    else:
+        direct_candidates.append(f"{BASE_URL}/{slug_title}/")
+
     candidate_posts: list[tuple[str, int]] = []
     seen_posts = set()
 
@@ -108,6 +124,12 @@ async def search(
                                 candidate_posts.append((link, score))
             except Exception as e_api:
                 log.debug("[CineSubz] WP API note: %s", e_api)
+
+    if not candidate_posts:
+        for dc in direct_candidates:
+            if dc not in seen_posts:
+                seen_posts.add(dc)
+                candidate_posts.append((dc, 20))
 
     candidate_posts.sort(key=lambda x: x[1], reverse=True)
     results: list[dict] = []

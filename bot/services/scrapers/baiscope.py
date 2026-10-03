@@ -22,8 +22,8 @@ from services import subtitle_service
 log = logging.getLogger(__name__)
 
 DOMAINS = [
+    "https://www.baiscope.lk",
     "https://baiscopedownloads.co",
-    "https://baiscope.lk",
 ]
 
 HEADERS = {
@@ -90,7 +90,17 @@ async def search(
 
         slug_title = re.sub(r"[^a-z0-9]+", "-", clean_t.lower()).strip("-")
         direct_candidates = []
-        if season:
+        if season and episode:
+            direct_candidates.extend([
+                f"{base_url}/tv/{slug_title}-s{season:02d}-e{episode:02d}-sinhala-subtitles/",
+                f"{base_url}/tv/{slug_title}-s{season:02d}e{episode:02d}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-s{season:02d}-e{episode:02d}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-season-{season}-episode-{episode}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-season-{season}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-season-{season:02d}-sinhala-subtitles/",
+                f"{base_url}/{slug_title}-season-{season}/",
+            ])
+        elif season:
             direct_candidates.extend([
                 f"{base_url}/{slug_title}-season-{season}-sinhala-subtitles/",
                 f"{base_url}/{slug_title}-season-{season:02d}-sinhala-subtitles/",

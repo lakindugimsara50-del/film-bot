@@ -215,6 +215,13 @@ class SeedrService:
                                         log.info("[Seedr] Matched requested episode '%s' -> %s", episode_hint, vf.get("name"))
                                         break
                             if not target_file:
+                                if episode_hint:
+                                    log.warning(
+                                        "[Seedr] Torrent does not contain requested episode '%s' among files: %s",
+                                        episode_hint,
+                                        [f.get("name") for f in video_files],
+                                    )
+                                    return None
                                 video_files.sort(key=lambda x: x.get("size", 0), reverse=True)
                                 target_file = video_files[0]
 

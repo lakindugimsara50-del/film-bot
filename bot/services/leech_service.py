@@ -813,13 +813,17 @@ async def _execute_leech(
 
         is_series_mode = bool(is_series or season is not None or episode is not None)
         if is_series_mode and candidates:
-            # User requirement: TV Series strictly download 720p & 480p only! NEVER download 1080p for TV Series.
-            candidates = [c for c in candidates if str(c.quality or "").lower() in ("720p", "480p")]
+            # User requirement: TV Series prioritize 720p & 480p. If unavailable, permit 1080p individual episode fallback.
+            series_preferred = [c for c in candidates if str(c.quality or "").lower() in ("720p", "480p")]
+            if series_preferred:
+                candidates = series_preferred
+            else:
+                candidates = [c for c in candidates if str(c.quality or "").lower() in ("1080p", "720p", "480p")]
             candidates.sort(key=lambda c: (
                 0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                0 if str(c.quality or "").lower() == "720p" else 1,
+                0 if str(c.quality or "").lower() == "720p" else (1 if str(c.quality or "").lower() == "480p" else 2),
             ))
-            log.info("[LeechService] TV Series mode: Filtered candidates to 720p/480p (%d remaining).", len(candidates))
+            log.info("[LeechService] TV Series mode: Filtered candidates (%d remaining).", len(candidates))
         elif not is_series_mode and candidates:
             # User requirement: Movies download 1080p, 720p, and 480p (prioritizing 1080p)
             movie_allowed = [c for c in candidates if str(c.quality or "").lower() in ("1080p", "720p", "480p")]

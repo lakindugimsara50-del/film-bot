@@ -69,6 +69,10 @@ async def search(
 
     if season and episode:
         direct_candidates.extend([
+            f"{BASE_URL}/{slug_title}-{year}-e{episode:02d}-sinhala-subtitles/",
+            f"{BASE_URL}/{slug_title}-s{season:02d}-e{episode:02d}-sinhala-subtitles/",
+            f"{BASE_URL}/{slug_title}-s{season:02d}e{episode:02d}-sinhala-subtitles/",
+            f"{BASE_URL}/{slug_title}-e{episode:02d}-sinhala-subtitles/",
             f"{BASE_URL}/{slug_title}-complete-season-{season:02d}-with-sinhala-subtitles/",
             f"{BASE_URL}/{slug_title}-season-{season:02d}-with-sinhala-subtitles/",
             f"{BASE_URL}/{slug_title}-complete-season-{season}-with-sinhala-subtitles/",
@@ -99,9 +103,31 @@ async def search(
     for q in search_queries:
         if any(sc >= 40 for _, sc in candidate_posts):
             break
+        # 1. Try WP REST API first (fast & reliable)
+        try:
+            wp_url = f"{BASE_URL}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q)}&per_page=15"
+            wp_resp = await _http_get(client, wp_url, headers=HEADERS, timeout=4.0, follow_redirects=True)
+            if wp_resp.status_code == 200:
+                posts_data = wp_resp.json()
+                if isinstance(posts_data, list):
+                    for p in posts_data:
+                        link = p.get("link", "").strip()
+                        rendered = (p.get("title", {}) or {}).get("rendered", "")
+                        if link and link not in seen_posts and "piratelk" in link:
+                            seen_posts.add(link)
+                            score = score_candidate_post(clean_t, link, rendered, year=year, season=season, episode=episode)
+                            if score > 0:
+                                candidate_posts.append((link, score))
+        except Exception as e_wp:
+            log.debug("[PirateLK] WP REST API note: %s", e_wp)
+
+        if any(sc >= 40 for _, sc in candidate_posts):
+            break
+
+        # 2. HTML search fallback
         try:
             s_url = f"{BASE_URL}/?s={urllib.parse.quote_plus(q)}"
-            resp = await _http_get(client, s_url, headers=HEADERS, timeout=6.0, follow_redirects=True)
+            resp = await _http_get(client, s_url, headers=HEADERS, timeout=5.0, follow_redirects=True)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 for a in soup.select("article a, h2 a, h3 a, .entry-title a, .post-title a"):

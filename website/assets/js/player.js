@@ -92,6 +92,7 @@ async function loadLiveStreamConfig() {
   }
 
   let candidateUrl = '';
+  let fallbackUrl = '';
 
   // 1. Check local endpoint data/stream_endpoint.json
   try {
@@ -100,6 +101,9 @@ async function loadLiveStreamConfig() {
       const d = await rLoc.json();
       if (d && d.stream_base_url) {
         candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
+      }
+      if (d && d.fallback_stream_url) {
+        fallbackUrl = String(d.fallback_stream_url).replace(/\/+$/, '');
       }
     }
   } catch (e) {}
@@ -117,19 +121,35 @@ async function loadLiveStreamConfig() {
         if (d && d.stream_base_url) {
           candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
         }
+        if (d && d.fallback_stream_url) {
+          fallbackUrl = String(d.fallback_stream_url).replace(/\/+$/, '');
+        }
       }
     } catch (e) {}
   }
 
+  // 3. Probe primary candidate URL (e.g. active Colab tunnel)
+  let activeUrl = '';
   if (candidateUrl) {
     const isAlive = await probeStreamServerHealth(candidateUrl);
     if (isAlive) {
-      activeStreamBaseUrl = candidateUrl;
+      activeUrl = candidateUrl;
       streamServerHealthy = true;
-    } else {
-      activeStreamBaseUrl = ''; // stream server offline — fall back to VIP embeds
-      streamServerHealthy = false;
     }
+  }
+
+  // 4. If primary is dead or missing, probe fallback URL (e.g. Render 24/7 backend)
+  if (!activeUrl && fallbackUrl) {
+    const isFallbackAlive = await probeStreamServerHealth(fallbackUrl);
+    if (isFallbackAlive) {
+      activeUrl = fallbackUrl;
+      streamServerHealthy = true;
+    }
+  }
+
+  activeStreamBaseUrl = activeUrl;
+  if (!activeUrl) {
+    streamServerHealthy = false;
   }
 
   try {
@@ -556,7 +576,12 @@ function getMovieStreams(movie) {
     }
   }
 
-  const isRealStreamReady = Boolean((tgMsgId > 0 || movie.file_id) && nativeStreamUrl && !nativeStreamUrl.endsWith('/0'));
+  const isRealStreamReady = Boolean(
+    (tgMsgId > 0 || movie.file_id || driveId) &&
+    nativeStreamUrl &&
+    !nativeStreamUrl.endsWith('/0') &&
+    !nativeStreamUrl.includes('/channel/-1004325759505/0')
+  );
 
   list.push({
     server: 'Server 1',

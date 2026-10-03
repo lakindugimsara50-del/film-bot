@@ -342,9 +342,9 @@ _LOCAL_REDIRECTS_PATH = os.path.abspath(
 )
 
 
-async def publish_live_stream_endpoint(stream_base_url: str) -> bool:
+async def publish_live_stream_endpoint(stream_base_url: str, fallback_stream_url: str = "") -> bool:
     """
-    Publish the active streaming server base URL (e.g. Cloudflare tunnel or Render URL)
+    Publish live streaming server base URL (e.g. TryCloudflare / Render URL)
     to website/data/stream_endpoint.json, stream_endpoint.js, and website/_redirects on GitHub and locally.
     Enables zero-configuration live Telegram video streaming on the website.
     """
@@ -352,8 +352,15 @@ async def publish_live_stream_endpoint(stream_base_url: str) -> bool:
     if not clean_url or "localhost" in clean_url or "127.0.0.1" in clean_url:
         return False
 
+    render_fallback = (
+        fallback_stream_url.strip().rstrip("/")
+        or os.getenv("RENDER_EXTERNAL_URL", "").strip().rstrip("/")
+        or "https://film-bot-2.onrender.com"
+    )
+
     payload = {
         "stream_base_url": clean_url,
+        "fallback_stream_url": render_fallback,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "status": "online",
     }

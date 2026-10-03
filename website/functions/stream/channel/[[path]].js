@@ -38,6 +38,8 @@ async function resolveLiveStreamBaseUrl(env) {
   }
 
   // 1. Fetch fresh stream_endpoint.json from GitHub Raw
+  let primaryUrl = '';
+  let fallbackUrl = '';
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 2500);
@@ -50,20 +52,51 @@ async function resolveLiveStreamBaseUrl(env) {
       const data = await resp.json();
       if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
         const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
-        if (cleaned.startsWith('http')) {
-          cachedStreamBaseUrl = cleaned;
-          cachedAtEpoch = now;
-          return cachedStreamBaseUrl;
-        }
+        if (cleaned.startsWith('http')) primaryUrl = cleaned;
+      }
+      if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
+        const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
+        if (cleanedFb.startsWith('http')) fallbackUrl = cleanedFb;
       }
     }
   } catch (err) {
     // Ignore and fall through to env/fallback
   }
 
-  // 2. Fallback to Cloudflare env var if configured
+  // Probe primary URL with rapid 1.5s ping
+  if (primaryUrl) {
+    try {
+      const pCtrl = new AbortController();
+      const pTimer = setTimeout(() => pCtrl.abort(), 1500);
+      const pResp = await fetch(`${primaryUrl}/stream/ping?t=${now}`, {
+        signal: pCtrl.signal,
+      }).catch(() => null);
+      clearTimeout(pTimer);
+      if (pResp && pResp.ok) {
+        cachedStreamBaseUrl = primaryUrl;
+        cachedAtEpoch = now;
+        return cachedStreamBaseUrl;
+      }
+    } catch (e) {}
+  }
+
+  // Fallback to fallbackUrl (Render 24/7 backend)
+  if (fallbackUrl) {
+    cachedStreamBaseUrl = fallbackUrl;
+    cachedAtEpoch = now;
+    return cachedStreamBaseUrl;
+  }
+
+  // Fallback to Cloudflare env var if configured
   if (env && env.STREAM_BACKEND_URL) {
     cachedStreamBaseUrl = String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, '');
+    cachedAtEpoch = now;
+    return cachedStreamBaseUrl;
+  }
+
+  // Return primaryUrl if nothing else is available
+  if (primaryUrl) {
+    cachedStreamBaseUrl = primaryUrl;
     cachedAtEpoch = now;
     return cachedStreamBaseUrl;
   }

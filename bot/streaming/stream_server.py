@@ -368,7 +368,7 @@ async def stream_channel_message(
         # Initial request without range -> serve first 8 MiB
         end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
     elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
-        # Expand small chunk requests to at least 8 MiB for fast pre-buffering (unless tiny metadata probe)
+        # Expand small chunk requests to at least 8 MiB for fast pre-buffering (unless tiny metadata probe like Safari bytes=0-1)
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
     content_length = max(0, end - start + 1)

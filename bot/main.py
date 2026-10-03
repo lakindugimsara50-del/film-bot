@@ -939,7 +939,8 @@ async def main() -> None:
     # ─────────────────────────────────────────────────────────────────────────
     is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
     enable_render_bot = os.getenv("ENABLE_RENDER_BOT", "false").lower() in ("true", "1", "yes")
-    enable_render_stream = os.getenv("ENABLE_RENDER_STREAM", "false").lower() in ("true", "1", "yes")
+    # Default to true on Render so Render runs 24/7 stream server out-of-the-box
+    enable_render_stream = os.getenv("ENABLE_RENDER_STREAM", "true").lower() in ("true", "1", "yes")
 
     if is_render and not enable_render_bot:
         if enable_render_stream:
@@ -979,7 +980,7 @@ async def main() -> None:
                 "[Main] Render environment detected! Telegram Bot polling is DISABLED on Render. "
                 "FastAPI health server is listening on port %d to keep Render service Healthy. "
                 "All Telegram bot & stream operations currently run on Google Colab. "
-                "To enable 24/7 Stream-Only mode on Render later, set ENABLE_RENDER_STREAM=true in Render env vars.",
+                "To enable 24/7 Stream-Only mode on Render, ensure ENABLE_RENDER_STREAM is set to true.",
                 port,
             )
         # Sleep forever to keep the FastAPI / Stream server thread active and responsive 24/7

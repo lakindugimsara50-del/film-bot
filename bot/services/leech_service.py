@@ -202,6 +202,7 @@ async def find_all_candidates(
     is_series: bool = False,
     original_title: Optional[str] = None,
     original_language: Optional[str] = None,
+    skip_srilankan: bool = False,
 ) -> list[LeechCandidate]:
     """
     Query all acquisition sources in priority order:
@@ -213,8 +214,8 @@ async def find_all_candidates(
     """
     candidates: list[LeechCandidate] = []
     log.info(
-        "[LeechService] Finding candidates for: '%s' (%s), imdb=%s, S%sE%s, is_series=%s, orig='%s' (%s)",
-        title, year, imdb_id, season, episode, is_series, original_title, original_language
+        "[LeechService] Finding candidates for: '%s' (%s), imdb=%s, S%sE%s, is_series=%s, orig='%s' (%s), skip_sl=%s",
+        title, year, imdb_id, season, episode, is_series, original_title, original_language, skip_srilankan
     )
 
     async def _fetch_telegram():
@@ -293,56 +294,57 @@ async def find_all_candidates(
     is_series_mode = bool(is_series or season is not None or episode is not None)
 
     # 0. Query Lankan matched releases first (guaranteed 0.0ms subtitle sync)
-    matched_res = await _fetch_srilankan_matched()
     matched_candidates: list[LeechCandidate] = []
-    if matched_res:
-        for m in matched_res:
-            m_url = m.get("url")
-            m_q = str(m.get("quality", "1080p")).lower()
-            if is_series_mode and m_q not in ("720p", "480p"):
-                continue
-            if not is_series_mode and m_q not in ("1080p", "720p", "480p"):
-                continue
-            m_portal = m.get("portal", "SriLankan")
-            m_ht = m.get("host_type", "ddl")
-            if m_ht == "magnet" or ".torrent" in str(m_url).lower():
-                continue  # STRICT: Do not use torrents from Sri Lankan portals!
-            m_method = "ddl"
-            m_is_hardsub = bool(
-                m.get("is_already_hardsubbed")
-                or m_portal in ("SinhalaSub", "CineSubz")
-                or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
-            )
-            matched_candidates.append(
-                LeechCandidate(
-                    method=m_method,
-                    method_name=f"⚡ {m_portal} Matched WebRip ({m_q})",
-                    source_url=m_url,
-                    quality=m_q,
-                    size="Matched WebRip",
-                    extra={
-                        "is_matched_same_site": True,
-                        "sub_srt_path": m.get("sub_srt_path"),
-                        "portal": m_portal,
-                        "post_url": m.get("post_url"),
-                        "is_already_hardsubbed": m_is_hardsub,
-                    },
+    if not skip_srilankan:
+        matched_res = await _fetch_srilankan_matched()
+        if matched_res:
+            for m in matched_res:
+                m_url = m.get("url")
+                m_q = str(m.get("quality", "1080p")).lower()
+                if is_series_mode and m_q not in ("720p", "480p"):
+                    continue
+                if not is_series_mode and m_q not in ("1080p", "720p", "480p"):
+                    continue
+                m_portal = m.get("portal", "SriLankan")
+                m_ht = m.get("host_type", "ddl")
+                if m_ht == "magnet" or ".torrent" in str(m_url).lower():
+                    continue  # STRICT: Do not use torrents from Sri Lankan portals!
+                m_method = "ddl"
+                m_is_hardsub = bool(
+                    m.get("is_already_hardsubbed")
+                    or m_portal in ("SinhalaSub", "CineSubz")
+                    or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
                 )
-            )
+                matched_candidates.append(
+                    LeechCandidate(
+                        method=m_method,
+                        method_name=f"⚡ {m_portal} Matched WebRip ({m_q})",
+                        source_url=m_url,
+                        quality=m_q,
+                        size="Matched WebRip",
+                        extra={
+                            "is_matched_same_site": True,
+                            "sub_srt_path": m.get("sub_srt_path"),
+                            "portal": m_portal,
+                            "post_url": m.get("post_url"),
+                            "is_already_hardsubbed": m_is_hardsub,
+                        },
+                    )
+                )
 
-        if matched_candidates:
-            if is_series_mode:
-                matched_candidates.sort(key=lambda c: (
-                    0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                    0 if str(c.quality).lower() == "720p" else 1,
-                ))
-            else:
-                matched_candidates.sort(key=lambda c: (
-                    0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                    0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2),
-                ))
-            log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
-            return matched_candidates
+            if matched_candidates:
+                if is_series_mode:
+                    matched_candidates.sort(key=lambda c: (
+                        0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                        0 if str(c.quality).lower() == "720p" else 1,
+                    ))
+                else:
+                    matched_candidates.sort(key=lambda c: (
+                        0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                        0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2),
+                    ))
+                log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
+                return matched_candidates
 
     # If no Lankan matched releases found, query Telegram, DDL, and Torrents concurrently
     results = await asyncio.gather(
@@ -871,14 +873,28 @@ async def _execute_leech(
             temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
 
-        for idx, candidate in enumerate(candidates, 1):
+        candidate_queue = list(candidates)
+        attempted_idx = 0
+        tried_fallback = False
+
+        while candidate_queue:
+            candidate = candidate_queue.pop(0)
+            attempted_idx += 1
+            idx = attempted_idx
+            total_cands = attempted_idx + len(candidate_queue)
             log.info(
                 "[LeechService] Attempting download with candidate %d/%d: %s",
-                idx, len(candidates), candidate.method_name
+                idx, total_cands, candidate.method_name
             )
             task_tracker.tracker.set_step(
                 user_id, f"1/3 - Downloading via {candidate.method_name}..."
             )
+
+            # Preserve any candidate subtitle in pre_sub_srt
+            if candidate.extra and candidate.extra.get("sub_srt_path"):
+                cand_sub_file = candidate.extra.get("sub_srt_path")
+                if cand_sub_file and os.path.exists(cand_sub_file) and (not pre_sub_srt or not os.path.exists(pre_sub_srt)):
+                    pre_sub_srt = cand_sub_file
 
             # Detect companion variants from same portal/post for ALL-QUALITY PARALLEL DOWNLOAD
             companion_candidates: dict[str, LeechCandidate] = {}
@@ -911,7 +927,7 @@ async def _execute_leech(
             found_text = (
                 f"🎯 <b>බාගත කිරීමේ මූලාශ්‍රයක් හමුවිය (Source Found)!</b>\n\n"
                 f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
-                f"⚡ <b>මූලාශ්‍රය ({idx}/{len(candidates)}):</b> {cand_display_label}\n"
+                f"⚡ <b>මූලාශ්‍රය ({idx}/{total_cands}):</b> {cand_display_label}\n"
                 f"📦 <b>ප්‍රමාණය:</b> {candidate.size}\n\n"
                 f"⏳ <b>බාගත කිරීම ආරම්භ කරමින් පවතී (Connecting to peers/server)...</b>"
             )
@@ -1640,7 +1656,52 @@ async def _execute_leech(
                             os.remove(p)
                         except Exception:
                             pass
-                continue
+
+            # Fallback trigger: If candidate_queue is now empty, download has not succeeded, and we haven't tried fallback yet
+            if not candidate_queue and (not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file)) and not tried_fallback:
+                had_only_matched = all((c.extra or {}).get("is_matched_same_site") for c in candidates)
+                if had_only_matched:
+                    tried_fallback = True
+                    log.warning(
+                        "[LeechService] All %d Sri Lankan matched candidate(s) failed. Querying fallback sources (Telegram, DDL, Torrents/Seedr)...",
+                        len(candidates)
+                    )
+                    try:
+                        await status_msg.edit_text(
+                            f"🔄 <b>ප්‍රාථමික මූලාශ්‍ර සම්බන්ධ කරගැනීම අසාර්ථක විය.</b>\n\n"
+                            f"🎬 <b>{display_title}</b> සඳහා Cloud Debrid සහ විකල්ප මූලාශ්‍ර පරීක්ෂා කරමින් පවතී...",
+                            parse_mode=ParseMode.HTML,
+                            reply_markup=kb_cancel,
+                        )
+                    except Exception:
+                        pass
+
+                    fallback_cands = await find_all_candidates(
+                        title=title,
+                        year=year,
+                        imdb_id=imdb_id,
+                        bot_client=client,
+                        season=season,
+                        episode=episode,
+                        is_series=is_series,
+                        original_title=tmdb_meta.get("original_title"),
+                        original_language=tmdb_meta.get("original_language"),
+                        skip_srilankan=True,
+                    )
+                    if is_series_mode and fallback_cands:
+                        fallback_cands = [c for c in fallback_cands if str(c.quality or "").lower() in ("720p", "480p")]
+                        fallback_cands.sort(key=lambda c: 0 if str(c.quality or "").lower() == "720p" else 1)
+                    elif not is_series_mode and fallback_cands:
+                        movie_allowed = [c for c in fallback_cands if str(c.quality or "").lower() in ("1080p", "720p", "480p")]
+                        if movie_allowed:
+                            fallback_cands = movie_allowed
+                        fallback_cands.sort(key=lambda c: (
+                            0 if str(c.quality or "").lower() == "1080p" else (1 if str(c.quality or "").lower() == "720p" else 2)
+                        ))
+
+                    if fallback_cands:
+                        log.info("[LeechService] Acquired %d fallback candidate(s). Adding to download queue.", len(fallback_cands))
+                        candidate_queue.extend(fallback_cands)
 
         if not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file):
             task_tracker.tracker.fail_task(user_id, "All download candidates failed.")

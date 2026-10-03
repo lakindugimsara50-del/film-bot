@@ -409,36 +409,41 @@ async def _download_httpx(
     accept_ranges = False
 
     async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout_config, headers=headers) as client:
+        # Fast 1-byte Range probe first (far more reliable on Sri Lankan CDNs than HEAD)
         try:
-            head_resp = await client.head(url)
-            if head_resp.status_code == 200:
-                total_size = int(head_resp.headers.get("content-length", 0))
-                accept_ranges = "bytes" in head_resp.headers.get("accept-ranges", "").lower()
-                cd = head_resp.headers.get("content-disposition", "")
+            probe_headers = dict(headers)
+            probe_headers["Range"] = "bytes=0-0"
+            p_resp = await client.get(url, headers=probe_headers, timeout=6.0)
+            if p_resp.status_code == 206:
+                cr = p_resp.headers.get("content-range", "")
+                m_cr = re.search(r"/(\d+)$", cr)
+                if m_cr:
+                    total_size = int(m_cr.group(1))
+                    accept_ranges = True
+                cd = p_resp.headers.get("content-disposition", "")
+                cd_m = re.search(r'filename="?([^";]+)"?', cd)
+                if cd_m and not out_name:
+                    out_name = cd_m.group(1).strip()
+            elif p_resp.status_code == 200:
+                total_size = int(p_resp.headers.get("content-length", 0))
+                cd = p_resp.headers.get("content-disposition", "")
                 cd_m = re.search(r'filename="?([^";]+)"?', cd)
                 if cd_m and not out_name:
                     out_name = cd_m.group(1).strip()
         except Exception:
             pass
 
-        # If HEAD didn't yield file size, perform a 1-byte Range probe (works on CDNs blocking HEAD)
+        # Fallback to fast HEAD probe if Range didn't return size
         if total_size <= 0:
             try:
-                probe_headers = dict(headers)
-                probe_headers["Range"] = "bytes=0-0"
-                p_resp = await client.get(url, headers=probe_headers, timeout=8.0)
-                if p_resp.status_code == 206:
-                    cr = p_resp.headers.get("content-range", "")
-                    m_cr = re.search(r"/(\d+)$", cr)
-                    if m_cr:
-                        total_size = int(m_cr.group(1))
-                        accept_ranges = True
-                    cd = p_resp.headers.get("content-disposition", "")
+                head_resp = await client.head(url, timeout=4.0)
+                if head_resp.status_code == 200:
+                    total_size = int(head_resp.headers.get("content-length", 0))
+                    accept_ranges = "bytes" in head_resp.headers.get("accept-ranges", "").lower()
+                    cd = head_resp.headers.get("content-disposition", "")
                     cd_m = re.search(r'filename="?([^";]+)"?', cd)
                     if cd_m and not out_name:
                         out_name = cd_m.group(1).strip()
-                elif p_resp.status_code == 200:
-                    total_size = int(p_resp.headers.get("content-length", 0))
             except Exception:
                 pass
 

@@ -64,7 +64,6 @@ VIDEO_HOST_PATTERNS = {
     "mega":       re.compile(r"https?://mega\.nz/(?:file/|#!)?[a-zA-Z0-9_#-]+", re.IGNORECASE),
     "gofile":     re.compile(r"https?://gofile\.io/d/[a-zA-Z0-9_-]+", re.IGNORECASE),
     "mediafire":  re.compile(r"https?://(?:www\.)?mediafire\.com/(?:file|download)/[a-zA-Z0-9_-]+", re.IGNORECASE),
-    "usersdrive": re.compile(r"https?://(?:www\.)?usersdrive\.com/[a-zA-Z0-9_-]+(?:\.html)?", re.IGNORECASE),
     "1fichier":   re.compile(r"https?://(?:www\.)?1fichier\.com/\?[a-zA-Z0-9_-]+", re.IGNORECASE),
     "direct_mp4": re.compile(r"https?://[^\s\"'<>]+\.(?:mp4|mkv)(?:\?[^\s\"'<>]*)?", re.IGNORECASE),
     "magnet":     re.compile(r"magnet:\?xt=urn:btih:[a-zA-Z0-9]+[^\s\"'<>]*", re.IGNORECASE),
@@ -164,18 +163,19 @@ async def resolve_srilankan_intermediate_link(
         for a in soup.find_all("a", href=True):
             h = a["href"].strip()
             txt = a.get_text(" ", strip=True).lower()
-            if any(k in h.lower() for k in ["cdn.sinhalasub", "ddl.sinhalasub", "pixeldrain.com", "usersdrive.com", "mega.nz"]):
+            if any(k in h.lower() for k in ["cdn.sinhalasub", "ddl.sinhalasub", "pixeldrain.com", "mega.nz"]):
                 return resolve_direct_video_url(h)
-            if any(ext in h.lower() for ext in (".mp4", ".mkv", ".zip", ".rar")) and not h.startswith("#"):
+            if any(ext in h.lower() for ext in (".mp4", ".mkv")) and not h.startswith("#"):
                 return urllib.parse.urljoin(link_url, h)
             if "continue" in txt and not h.startswith("#"):
-                return urllib.parse.urljoin(link_url, h)
+                if any(ext in h.lower() for ext in (".mp4", ".mkv")) or any(k in h.lower() for k in ["cdn.", "pixeldrain"]):
+                    return urllib.parse.urljoin(link_url, h)
 
         # E. Check for window.location redirects
         m_redir = re.search(r"window\.location(?:\.href)?\s*=\s*['\"]([^'\"]+)['\"]", body)
         if m_redir:
             loc = m_redir.group(1).strip()
-            if any(k in loc for k in ["cdn.", "pixeldrain", "usersdrive", "mega", ".mp4", ".mkv"]):
+            if any(k in loc for k in ["cdn.", "pixeldrain", "mega", ".mp4", ".mkv"]):
                 return resolve_direct_video_url(loc)
 
     except Exception as exc:
@@ -691,6 +691,32 @@ async def _search_portal(
                 ]
                 if matching_ep_links:
                     video_links = matching_ep_links
+
+            # Sort video links by host reliability (PixelDrain > CDN > Gofile > Mega > etc.)
+            def _host_rank(item: dict) -> int:
+                u = str(item.get("url", "")).lower()
+                ht = str(item.get("host_type", "")).lower()
+                if "pixeldrain" in u or ht == "pixeldrain":
+                    return 0
+                if "cdn.sinhalasub" in u:
+                    return 1
+                if "ddl.sinhalasub" in u:
+                    return 2
+                if "gofile" in u or ht == "gofile":
+                    return 3
+                if "mega" in u or ht == "mega":
+                    return 4
+                if "mediafire" in u or ht == "mediafire":
+                    return 5
+                if "1fichier" in u or ht == "1fichier":
+                    return 6
+                if "drive.google" in u or ht == "gdrive":
+                    return 7
+                if "csplayer" in u or "cinesubz" in u:
+                    return 9
+                return 8
+
+            video_links.sort(key=_host_rank)
 
             # Package found video links
             for vl in video_links:

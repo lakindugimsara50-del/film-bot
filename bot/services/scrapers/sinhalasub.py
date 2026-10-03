@@ -287,6 +287,19 @@ async def search(
                         except Exception:
                             pass
 
+            def _sh_rank(item: dict) -> int:
+                u = str(item.get("url", "")).lower()
+                ht = str(item.get("host_type", "")).lower()
+                if "pixeldrain" in u or ht == "pixeldrain":
+                    return 0
+                if "cdn.sinhalasub" in u:
+                    return 1
+                if "ddl.sinhalasub" in u:
+                    return 2
+                return 3
+
+            video_links.sort(key=_sh_rank)
+
             for vl in video_links:
                 results.append({
                     "portal": "SinhalaSub",

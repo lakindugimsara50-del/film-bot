@@ -1352,6 +1352,29 @@ class TestLeechService(unittest.TestCase):
 
         asyncio.run(run_test())
 
+    def test_find_all_candidates_skip_srilankan_queries_torrents(self):
+        """Verify that when skip_srilankan=True is passed to find_all_candidates, Sri Lankan scrapers are bypassed and torrents are queried."""
+        fake_matched = [
+            {"url": "https://cdn.sinhalasub.net/movie/720p.mp4", "quality": "720p", "host_type": "cdn", "portal": "SinhalaSub", "is_already_hardsubbed": True},
+        ]
+        mock_torrents = [
+            {"magnet": "magnet:?xt=urn:btih:fallback_tor", "quality": "720p", "provider": "EZTV", "size": "800MB"},
+        ]
+
+        async def run_test():
+            with patch("services.scrapers.srilankan_matched_scraper.search_matched_srilankan_releases", new_callable=AsyncMock, return_value=fake_matched) as mock_sl, \
+                 patch("services.scrapers.method1_telegram.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.method3_ddl.search", new_callable=AsyncMock, return_value=None), \
+                 patch("services.scrapers.torrent_finder.search_all_torrents", new_callable=AsyncMock, return_value=mock_torrents) as mock_tor:
+                cands = await leech_service.find_all_candidates(title="Squid Game", year=2021, season=1, episode=2, is_series=True, skip_srilankan=True)
+                self.assertEqual(len(cands), 1)
+                self.assertEqual(cands[0].quality, "720p")
+                self.assertIn("fallback_tor", cands[0].source_url)
+                mock_sl.assert_not_called()
+                mock_tor.assert_called_once()
+
+        asyncio.run(run_test())
+
     def test_pipeline_upload_failure_resets_progress_to_zero_and_failed(self):
         """Verify that when an upload fails in companion pipeline, progress is reset to 0.0 and stage marked failed."""
         companion_progress = {

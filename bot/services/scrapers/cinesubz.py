@@ -8,6 +8,7 @@ Characteristics:
 - STRICT: NO TORRENTS.
 """
 
+import asyncio
 import logging
 import re
 import urllib.parse
@@ -54,6 +55,7 @@ async def search(
     search_queries = []
     if season and episode:
         search_queries.append(f"{clean_t} S{season:02d}E{episode:02d}")
+        search_queries.append(f"{clean_t} E{episode:02d}")
         search_queries.append(clean_t)
     elif year:
         search_queries.append(f"{clean_t} {year}")
@@ -110,7 +112,7 @@ async def search(
     candidate_posts.sort(key=lambda x: x[1], reverse=True)
     results: list[dict] = []
 
-    for post_url, _ in candidate_posts[:3]:
+    for post_url, _ in candidate_posts[:6]:
         try:
             p_resp = await client.get(post_url, headers=HEADERS, timeout=6.0)
             if p_resp.status_code != 200:
@@ -119,12 +121,21 @@ async def search(
             page_text = soup.get_text(" ", strip=True)
 
             verify_text = f"{post_url} {soup.title.get_text() if soup.title else ''} {soup.h1.get_text() if soup.h1 else ''} {page_text[:3000]}"
-            if not matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode):
+            is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode)
+            if not is_matched and (season or episode):
+                is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=None, episode=None)
+            if not is_matched:
                 continue
 
             current_url = post_url
             if season and episode:
-                ep_pat = re.compile(rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b|{season}x0*{episode}\b)", re.IGNORECASE)
+                ep_pat = re.compile(
+                    rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                    rf"|{season}x0*{episode}\b"
+                    rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep|e)[-_\s]*0*{episode}\b"
+                    rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
+                    re.IGNORECASE,
+                )
                 for a in soup.find_all("a", href=True):
                     h = a["href"].strip()
                     if ep_pat.search(h) or ep_pat.search(a.get_text(" ", strip=True)):
@@ -137,9 +148,17 @@ async def search(
 
             # Extract direct links & CineSubz csplayer mapping
             video_links = []
-            for a in soup.find_all("a", href=True):
+            intermediate_tasks = []
+
+            # Only scan relevant container elements to avoid header/footer navigation
+            scan_container = soup.find(id="directandtgdownload") or soup.find(id="links") or soup.find(class_="links-table") or soup.find("article") or soup
+            for a in scan_container.find_all("a", href=True):
                 h = a["href"].strip()
-                if any(ign in h.lower() for ign in ["t.me", "telegram.me", "#"]):
+                if any(ign in h.lower() for ign in [
+                    "t.me", "telegram.me", "#", "contact", "about", "terms", "privacy",
+                    "dmca", "disclaimer", "wp-login", "account", "category", "tag",
+                    "facebook", "twitter", "instagram", "youtube", "imdb", "wp-admin"
+                ]):
                     continue
                 if h.startswith("magnet:") or ".torrent" in h.lower():
                     continue
@@ -162,18 +181,31 @@ async def search(
                         })
                         break
 
-                if not matched and ("cinesubz" in h or "/links/" in h or "#link" in h or "csplayer" in h):
+                if not matched and any(k in h.lower() for k in ["api-", "/links/", "csplayer", "drive.google.com/server"]):
+                    intermediate_tasks.append((h, q))
+
+            if intermediate_tasks:
+                async def _res_worker(link_u: str, link_q: str):
                     try:
-                        resolved = await resolve_srilankan_intermediate_link(client, h, referer_url=current_url)
+                        resolved = await resolve_srilankan_intermediate_link(client, link_u, referer_url=current_url)
                         if resolved and not resolved.startswith("magnet:") and ".torrent" not in resolved.lower():
-                            h_type = "cdn" if "csplayer" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
-                            video_links.append({
+                            ht = "cdn" if "csplayer" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
+                            return {
                                 "url": resolved,
-                                "quality": q,
-                                "host_type": h_type,
-                            })
+                                "quality": link_q,
+                                "host_type": ht,
+                            }
                     except Exception:
                         pass
+                    return None
+
+                resolved_list = await asyncio.gather(
+                    *[_res_worker(u, q) for u, q in intermediate_tasks[:5]],
+                    return_exceptions=True,
+                )
+                for r_item in resolved_list:
+                    if isinstance(r_item, dict) and r_item.get("url"):
+                        video_links.append(r_item)
 
             for vl in video_links:
                 results.append({

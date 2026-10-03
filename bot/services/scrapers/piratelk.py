@@ -73,8 +73,9 @@ async def search(
             f"{BASE_URL}/tvshows/{slug_title}-season-{season:02d}/",
         ])
         search_queries = [
-            f"{clean_t} Season {season}",
+            f"{clean_t} E{episode:02d}",
             f"{clean_t} S{season:02d}E{episode:02d}",
+            f"{clean_t} Season {season}",
             clean_t,
         ]
     elif year:
@@ -87,11 +88,6 @@ async def search(
 
     candidate_posts: list[tuple[str, int]] = []
     seen_posts = set()
-
-    for dc in direct_candidates:
-        if dc not in seen_posts:
-            seen_posts.add(dc)
-            candidate_posts.append((dc, 25))
 
     for q in search_queries:
         if any(sc >= 40 for _, sc in candidate_posts):
@@ -116,10 +112,17 @@ async def search(
         except Exception as e_html:
             log.debug("[PirateLK] HTML search note: %s", e_html)
 
+    # Fallback to direct guessed URLs only if search yielded low confidence
+    if not candidate_posts:
+        for dc in direct_candidates:
+            if dc not in seen_posts:
+                seen_posts.add(dc)
+                candidate_posts.append((dc, 20))
+
     candidate_posts.sort(key=lambda x: x[1], reverse=True)
     results: list[dict] = []
 
-    for post_url, _ in candidate_posts[:4]:
+    for post_url, _ in candidate_posts[:8]:
         try:
             p_resp = await client.get(post_url, headers=HEADERS, timeout=6.0)
             if p_resp.status_code != 200:
@@ -129,8 +132,8 @@ async def search(
 
             verify_text = f"{post_url} {soup.title.get_text() if soup.title else ''} {soup.h1.get_text() if soup.h1 else ''} {page_text[:3000]}"
             is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=episode)
-            if not is_matched and season:
-                is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=season, episode=None)
+            if not is_matched and (season or episode):
+                is_matched = matches_title_and_year(clean_t, verify_text, year=year, season=None, episode=None)
             if not is_matched:
                 continue
 
@@ -168,8 +171,8 @@ async def search(
                 ep_pat = re.compile(
                     rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
                     rf"|{season}x0*{episode}\b"
-                    rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep)[-_\s]*0*{episode}\b"
-                    rf"|\b(?:ep|episode)\.?\s*0*{episode}\b)",
+                    rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep|e)[-_\s]*0*{episode}\b"
+                    rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
                     re.IGNORECASE,
                 )
                 for a in soup.find_all("a", href=True):

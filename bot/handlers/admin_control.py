@@ -499,6 +499,28 @@ def register(app: Client) -> None:
         # General AI query using Gemini API
         await _handle_gemini_query(message, query)
 
+    @app.on_message(filters.command(["audit", "missing", "catalog"]) & filters.private)
+    async def catalog_audit_command_handler(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            await message.reply_text("⛔ Access denied. Admin only command.")
+            return
+
+        status_msg = await message.reply_text(
+            "🔍 <b>Sri Lankan Sites Catalog Audit ක්‍රියාත්මක වෙමින් පවතී...</b>\n\n"
+            "⏳ SinhalaSub, CineSubz, PirateLK, Baiscope, Subz.lk වෙබ් අඩවිවල නවතම නිකුතු පරීක්ෂා කරමින් පවතී...",
+            parse_mode=ParseMode.HTML,
+        )
+
+        try:
+            from services.catalog_audit_service import audit_catalog_vs_srilankan_sites, format_audit_report
+            audit_res = await audit_catalog_vs_srilankan_sites(max_per_portal=15)
+            report_text = format_audit_report(audit_res, limit=12)
+            await status_msg.edit_text(report_text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        except Exception as exc:
+            log.error("[AdminControl] Catalog audit error: %s", exc)
+            await status_msg.edit_text(f"❌ <b>Catalog Audit දෝෂයක්:</b> {exc}", parse_mode=ParseMode.HTML)
+
 
 async def _handle_system_status(message: Message) -> None:
     """Show live CPU, RAM, Disk, GPU status."""

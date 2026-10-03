@@ -162,7 +162,7 @@ def register(app: Client) -> None:
         )
 
     @app.on_message(
-        filters.private & filters.command(["leech", "auto", "boost"])
+        filters.private & filters.command(["leech", "auto", "boost", "batch", "series", "leechseries"])
     )
     async def leech_command(client: Client, message: Message) -> None:
         user_id = message.from_user.id if message.from_user else 0
@@ -216,20 +216,23 @@ def register(app: Client) -> None:
         if not query_arg and not reply_media:
             await message.reply_text(
                 "🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
-                "ඕනෑම චිත්‍රපටයක් ඔබගේ Data වැය නොවී VPS එකට Download කර Channel එකට Upload කිරීම.\n\n"
+                "ඕනෑම චිත්‍රපටයක් හෝ TV Series ඔබගේ Data වැය නොවී VPS එකට Download කර Channel එකට Upload කිරීම.\n\n"
                 "<b>භාවිතය (Usage):</b>\n"
                 "  • <code>/leech &lt;Movie Name&gt;</code> — උදා: <code>/leech Inception</code>\n"
                 "  • <code>/leech &lt;Movie Name&gt; &lt;Year&gt;</code> — උදා: <code>/leech Deadpool 2024</code>\n"
+                "  • <code>/series &lt;Series&gt; S01</code> — Batch download entire season (720p/480p)\n"
+                "  • <code>/leech &lt;Series&gt; S01E01</code> — Single episode download\n"
                 "  • <code>/leech &lt;IMDb ID&gt;</code> — උදා: <code>/leech tt1375666</code>\n"
                 "  • <code>/leech &lt;Magnet/Direct URL&gt;</code> — Direct download & upload\n"
                 "  • <code>/queue</code> — බාගත වීමට ඇති පෝලිම බලන්න\n"
                 "  • <code>/cancel</code> — ක්‍රියාත්මක කාර්යය නවත්වන්න\n\n"
-                "<b>සහාය දක්වන ක්‍රම (4 Acquisition Methods):</b>\n"
+                "<b>සහාය දක්වන ක්‍රම (Acquisition Methods):</b>\n"
+                "  ⚡ Method 0: Sri Lankan Matched Releases (SinhalaSub, CineSubz, PirateLK, Baiscope, Subz.lk)\n"
                 "  1️⃣ Method A: DDL Scrapers (PixelDrain, Pahe, PSA)\n"
                 "  2️⃣ Method B: YTS Torrents (&lt; 1.95GB via aria2c)\n"
                 "  3️⃣ Method C: Telegram Movie Channels\n"
                 "  4️⃣ Method D: Web Stream Extractors (FlixHQ)\n\n"
-                "<i>Aliases: /auto, /boost</i>",
+                "<i>Aliases: /auto, /boost, /batch, /series, /leechseries</i>",
                 parse_mode=ParseMode.HTML,
             )
             return
@@ -269,6 +272,66 @@ def register(app: Client) -> None:
             parse_mode=ParseMode.HTML,
             reply_markup=cancel_kb,
         )
+
+        # Check if batch TV series download requested
+        parsed_batch = leech_service.parse_query(query_arg)
+        is_batch_cmd = cmd_name in ("batch", "series", "leechseries")
+        has_explicit_ep = bool(re.search(r"\b(?:e|ep|episode\s*|x)\d{1,2}\b", query_arg, re.IGNORECASE))
+        is_season_without_ep = parsed_batch.is_series and parsed_batch.season is not None and not has_explicit_ep
+
+        if (is_batch_cmd or is_season_without_ep) and not reply_media and not (parsed_batch.direct_url or "").startswith("magnet:?") and not has_explicit_ep:
+            ep_count = 0
+            clean_s_name = parsed_batch.title or query_arg
+            t_season = parsed_batch.season or 1
+            s_title = clean_s_name
+            try:
+                from services import tmdb_service
+                tmdb_meta = await tmdb_service.fetch_metadata(
+                    clean_s_name,
+                    parsed_batch.year,
+                    is_series=True,
+                    season=t_season,
+                    episode=1,
+                )
+                if tmdb_meta and tmdb_meta.get("type") == "series":
+                    seasons_list = tmdb_meta.get("seasons", [])
+                    matched_season = next((s for s in seasons_list if s.get("season_number") == t_season), None)
+                    ep_count = matched_season.get("episode_count", 0) if matched_season else 0
+                    if ep_count <= 0:
+                        ep_count = tmdb_meta.get("number_of_episodes", 0) or 8
+                    s_title = tmdb_meta.get("title") or clean_s_name
+            except Exception as batch_err:
+                log.warning("[LeechHandler] Batch series resolution error: %s", batch_err)
+
+            if is_batch_cmd and ep_count <= 0:
+                ep_count = 8
+
+            if ep_count > 0:
+                ep_count = min(ep_count, 35)
+                await status_msg.edit_text(
+                    f"📺 <b>TV Series Batch Enqueued (Season {t_season})!</b>\n\n"
+                    f"🎬 <b>කතා මාලාව:</b> {s_title} Season {t_season}\n"
+                    f"🔢 <b>මුළු Episodes ගණන:</b> {ep_count} (S{t_season:02d}E01 - S{t_season:02d}E{ep_count:02d})\n"
+                    f"⚡ <b>TV Series Rule:</b> strictly 720p & 480p High-Speed DDL\n\n"
+                    f"💡 <i>සියලුම Episodes එකිනෙක පිළිවෙලින් ස්වයංක්‍රීයව බාගත වී Channel එකට Upload වේ.</i>\n"
+                    f"📋 <i>පෝලිම බැලීමට: <code>/queue</code></i>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=cancel_kb,
+                )
+
+                for ep_i in range(1, ep_count + 1):
+                    ep_query_str = f"{s_title} S{t_season:02d}E{ep_i:02d}"
+                    ep_hint = f"{s_title} S{t_season:02d}E{ep_i:02d}"
+                    await queue_service.add_to_queue(
+                        client=client,
+                        status_msg=status_msg,
+                        user_id=user_id,
+                        query_text=ep_query_str,
+                        reply_media=None,
+                        title_hint=ep_hint,
+                        auto_publish=is_auto,
+                    )
+                return
 
         pos = await queue_service.add_to_queue(
             client=client,

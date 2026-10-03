@@ -427,7 +427,7 @@ class TelegramUploadPool:
 
         now = time.time()
         if not refresh and t_key in self._admin_sessions:
-            if now - self._admin_check_times.get(t_key, 0) < 600:
+            if t_key not in self._admin_check_times or (now - self._admin_check_times[t_key] < 600):
                 return [c for c in self._admin_sessions[t_key] if getattr(c, "is_connected", False)]
 
         admin_clients: List[Client] = []
@@ -687,9 +687,14 @@ class TelegramUploadPool:
             except Exception as exc:
                 last_exc = exc
                 err_str = str(exc).lower()
-                if "chat_write_forbidden" in err_str or "channel_private" in err_str or "user_not_participant" in err_str:
+                is_perm_err = any(err_kw in err_str for err_kw in (
+                    "chat_admin_required", "admin_rights_empty", "chat_write_forbidden",
+                    "channel_private", "user_not_participant", "peer_id_invalid",
+                    "right_forbidden", "admins_too_much"
+                ))
+                if is_perm_err:
                     log.warning(
-                        "[UploadPool] Session '%s' lacks write permissions in chat %s (%s) — removing from admin cache and trying next.",
+                        "[UploadPool] Session '%s' lacks admin/write permissions in chat %s (%s) — removing from admin cache and rotating.",
                         getattr(client, "name", "?"), target_chat, exc,
                     )
                     try:
@@ -698,6 +703,48 @@ class TelegramUploadPool:
                         t_key = target_chat
                     if t_key in self._admin_sessions and client in self._admin_sessions[t_key]:
                         self._admin_sessions[t_key].remove(client)
+
+                    # Attempt on-the-fly promotion if main bot is admin with can_promote_members
+                    if self._main_client and getattr(self._main_client, "is_connected", False):
+                        try:
+                            u_me = getattr(client, "me", None)
+                            if not u_me and hasattr(client, "get_me"):
+                                try:
+                                    u_me = await client.get_me()
+                                except Exception:
+                                    pass
+                            if u_me and getattr(u_me, "id", None):
+                                from pyrogram.types import ChatPrivileges
+                                await self._main_client.promote_chat_member(
+                                    chat_id=target_chat,
+                                    user_id=u_me.id,
+                                    privileges=ChatPrivileges(
+                                        can_post_messages=True,
+                                        can_edit_messages=True,
+                                    )
+                                )
+                                log.info("[UploadPool] On-the-fly promoted session '%s' to admin in %s", getattr(client, "name", "session"), target_chat)
+                                if t_key not in self._admin_sessions:
+                                    self._admin_sessions[t_key] = []
+                                if client not in self._admin_sessions[t_key]:
+                                    self._admin_sessions[t_key].append(client)
+
+                                # Immediate retry upload with the newly promoted client!
+                                try:
+                                    c_lock = self.get_client_lock(client)
+                                    async with c_lock:
+                                        return await telegram_upload.upload_video_file(
+                                            bot_client=client,
+                                            file_path=file_path,
+                                            target_chat=target_chat,
+                                            caption=caption,
+                                            progress_callback=progress_callback,
+                                            fallback_chat=0,
+                                        )
+                                except Exception as retry_err:
+                                    log.warning("[UploadPool] Immediate upload retry after promotion failed on session '%s': %s", getattr(client, "name", "?"), retry_err)
+                        except Exception as prom_err:
+                            log.debug("[UploadPool] On-the-fly promotion note: %s", prom_err)
                     continue
 
                 log.warning(
@@ -710,14 +757,16 @@ class TelegramUploadPool:
         if fallback:
             log.info("[UploadPool] Uploading [%s] via verified main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
             try:
-                return await telegram_upload.upload_video_file(
-                    bot_client=fallback,
-                    file_path=file_path,
-                    target_chat=target_chat,
-                    caption=caption,
-                    progress_callback=progress_callback,
-                    fallback_chat=0,
-                )
+                c_lock = self.get_client_lock(fallback)
+                async with c_lock:
+                    return await telegram_upload.upload_video_file(
+                        bot_client=fallback,
+                        file_path=file_path,
+                        target_chat=target_chat,
+                        caption=caption,
+                        progress_callback=progress_callback,
+                        fallback_chat=0,
+                    )
             except Exception as final_exc:
                 log.error("[UploadPool] Final fallback client upload failed for [%s]: %s", quality, final_exc)
                 raise final_exc

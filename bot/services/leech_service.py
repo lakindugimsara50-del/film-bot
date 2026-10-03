@@ -110,7 +110,7 @@ def parse_query(text: str) -> ParsedQuery:
       /leech https://pixeldrain.com/u/...
       /boost@Bot Inception 2010
     """
-    raw = re.sub(r"^/(?:leech|auto|boost)(?:@\w+)?\s*", "", text.strip())
+    raw = re.sub(r"^/(?:leechseries|series|batch|leech|auto|boost)(?:@\w+)?\s*", "", text.strip())
 
     # Check for magnet
     if raw.startswith("magnet:?"):
@@ -332,9 +332,15 @@ async def find_all_candidates(
 
         if matched_candidates:
             if is_series_mode:
-                matched_candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "720p" else 1)
+                matched_candidates.sort(key=lambda c: (
+                    0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                    0 if str(c.quality).lower() == "720p" else 1,
+                ))
             else:
-                matched_candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2))
+                matched_candidates.sort(key=lambda c: (
+                    0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                    0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2),
+                ))
             log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using exclusively (no torrents queried).", len(matched_candidates))
             # User instruction: When SinhalaSub / CineSubz matched releases are found, use them exclusively and do not query or add torrents!
             return matched_candidates
@@ -664,57 +670,108 @@ async def _execute_leech(
                 )
 
         if direct_link:
-            # User provided a direct download link or magnet directly
-            if direct_link.startswith("magnet:?"):
-                candidates.append(
-                    LeechCandidate(
-                        method="magnet",
-                        method_name="Direct Magnet Link",
-                        source_url=direct_link,
-                        quality="1080p",
+            # User provided a direct download link, magnet, or Sri Lankan portal post URL
+            sl_domains = ("sinhalasub", "cinesubz", "piratelk", "baiscope", "subz.lk", "cines.lk", "cineru", "zoom.lk", "lksubs")
+            if any(dom in direct_link.lower() for dom in sl_domains):
+                try:
+                    from services.scrapers import srilankan_matched_scraper
+                    temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
+                    resolved_sl = await srilankan_matched_scraper.resolve_srilankan_post_url(
+                        post_url=direct_link,
+                        season=season,
+                        episode=episode,
+                        temp_dir=temp_dir,
                     )
-                )
-            elif direct_link.endswith(".torrent") or ".torrent" in direct_link.lower():
-                candidates.append(
-                    LeechCandidate(
-                        method="torrent",
-                        method_name="Direct Torrent URL",
-                        source_url=direct_link,
-                        quality="1080p",
-                    )
-                )
-            elif "pixeldrain.com" in direct_link:
-                direct_pd = method3_ddl.resolve_direct_url(direct_link) or direct_link
-                candidates.append(
-                    LeechCandidate(
-                        method="ddl",
-                        method_name="PixelDrain Direct",
-                        source_url=direct_pd,
-                        quality="1080p",
-                    )
-                )
-            elif "t.me" in direct_link:
-                tg_direct = await method1_telegram.resolve_telegram_link(client, direct_link)
-                if tg_direct and tg_direct.get("file_id"):
+                    if resolved_sl:
+                        for m in resolved_sl:
+                            m_url = m.get("url")
+                            m_q = str(m.get("quality", "1080p")).lower()
+                            is_ser_entry = bool(is_series or season is not None or episode is not None)
+                            if is_ser_entry and m_q not in ("720p", "480p"):
+                                continue
+                            if not is_ser_entry and m_q not in ("1080p", "720p", "480p"):
+                                continue
+                            m_portal = m.get("portal", "SriLankan")
+                            m_ht = m.get("host_type", "ddl")
+                            if m_ht == "magnet" or ".torrent" in str(m_url).lower():
+                                continue
+                            m_is_hard = bool(
+                                m.get("is_already_hardsubbed")
+                                or m_portal in ("SinhalaSub", "CineSubz")
+                                or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                            )
+                            candidates.append(
+                                LeechCandidate(
+                                    method="ddl",
+                                    method_name=f"⚡ {m_portal} Matched WebRip ({m_q})",
+                                    source_url=m_url,
+                                    quality=m_q,
+                                    size="Direct SL Post",
+                                    extra={
+                                        "is_matched_same_site": True,
+                                        "sub_srt_path": m.get("sub_srt_path"),
+                                        "portal": m_portal,
+                                        "post_url": direct_link,
+                                        "is_already_hardsubbed": m_is_hard,
+                                    },
+                                )
+                            )
+                        if candidates:
+                            log.info("[LeechService] Resolved %d candidate(s) from Sri Lankan portal direct link %s", len(candidates), direct_link)
+                except Exception as sl_err:
+                    log.warning("[LeechService] Failed resolving direct Sri Lankan portal URL %s: %s", direct_link, sl_err)
+
+            if not candidates:
+                if direct_link.startswith("magnet:?"):
                     candidates.append(
                         LeechCandidate(
-                            method="telegram",
-                            method_name="Telegram Message Link",
-                            source_url=tg_direct["file_id"],
+                            method="magnet",
+                            method_name="Direct Magnet Link",
+                            source_url=direct_link,
                             quality="1080p",
-                            size=downloader.format_bytes(tg_direct.get("file_size", 0)),
-                            extra=tg_direct,
                         )
                     )
-            else:
-                candidates.append(
-                    LeechCandidate(
-                        method="direct",
-                        method_name="Direct HTTP Link",
-                        source_url=direct_link,
-                        quality="1080p",
+                elif direct_link.endswith(".torrent") or ".torrent" in direct_link.lower():
+                    candidates.append(
+                        LeechCandidate(
+                            method="torrent",
+                            method_name="Direct Torrent URL",
+                            source_url=direct_link,
+                            quality="1080p",
+                        )
                     )
-                )
+                elif "pixeldrain.com" in direct_link:
+                    direct_pd = method3_ddl.resolve_direct_url(direct_link) or direct_link
+                    candidates.append(
+                        LeechCandidate(
+                            method="ddl",
+                            method_name="PixelDrain Direct",
+                            source_url=direct_pd,
+                            quality="1080p",
+                        )
+                    )
+                elif "t.me" in direct_link:
+                    tg_direct = await method1_telegram.resolve_telegram_link(client, direct_link)
+                    if tg_direct and tg_direct.get("file_id"):
+                        candidates.append(
+                            LeechCandidate(
+                                method="telegram",
+                                method_name="Telegram Message Link",
+                                source_url=tg_direct["file_id"],
+                                quality="1080p",
+                                size=downloader.format_bytes(tg_direct.get("file_size", 0)),
+                                extra=tg_direct,
+                            )
+                        )
+                else:
+                    candidates.append(
+                        LeechCandidate(
+                            method="direct",
+                            method_name="Direct HTTP Link",
+                            source_url=direct_link,
+                            quality="1080p",
+                        )
+                    )
         pre_sub_srt: Optional[str] = None
         if not candidates and not os.environ.get("PYTEST_CURRENT_TEST"):
             try:
@@ -754,14 +811,20 @@ async def _execute_leech(
         if is_series_mode and candidates:
             # User requirement: TV Series strictly download 720p & 480p only! NEVER download 1080p for TV Series.
             candidates = [c for c in candidates if str(c.quality or "").lower() in ("720p", "480p")]
-            candidates.sort(key=lambda c: 0 if str(c.quality or "").lower() == "720p" else 1)
+            candidates.sort(key=lambda c: (
+                0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                0 if str(c.quality or "").lower() == "720p" else 1,
+            ))
             log.info("[LeechService] TV Series mode: Filtered candidates to 720p/480p (%d remaining).", len(candidates))
         elif not is_series_mode and candidates:
             # User requirement: Movies download 1080p, 720p, and 480p (prioritizing 1080p)
             movie_allowed = [c for c in candidates if str(c.quality or "").lower() in ("1080p", "720p", "480p")]
             if movie_allowed:
                 candidates = movie_allowed
-            candidates.sort(key=lambda c: 0 if str(c.quality or "").lower() == "1080p" else (1 if str(c.quality or "").lower() == "720p" else 2))
+            candidates.sort(key=lambda c: (
+                0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                0 if str(c.quality or "").lower() == "1080p" else (1 if str(c.quality or "").lower() == "720p" else 2),
+            ))
 
         if not candidates:
             task_tracker.tracker.fail_task(user_id, "No download candidates found across any method.")
@@ -1141,7 +1204,7 @@ async def _execute_leech(
                         target_qualities = {q: all_cands_by_q[q] for q in ordered_qualities}
                         companion_progress: dict[str, dict] = {
                             q: {
-                                "stage": "downloading" if q == primary_q else "waiting",
+                                "stage": "downloading",
                                 "dl_pct": 0.0,
                                 "dl_done": "0B",
                                 "dl_total": "Unknown",
@@ -1157,7 +1220,6 @@ async def _execute_leech(
                             }
                             for q in target_qualities
                         }
-                        cdn_dl_lock = asyncio.Lock()
                         multi_dl_lock = asyncio.Lock()
                         sub_acquire_lock = asyncio.Lock()
                         last_rendered_multi_text = ""
@@ -1171,7 +1233,7 @@ async def _execute_leech(
 
                                 _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
                                 lines = [
-                                    f"⚡ <b>Sequential Turbo CDN ➔ Pipelined Telegram Upload ({cand_portal or cand_host})</b>\n",
+                                    f"⚡ <b>Parallel Multi-Quality Direct Download ➔ Pipelined Telegram Upload ({cand_portal or cand_host})</b>\n",
                                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",
                                     f"🌐 <b>Website:</b> <a href='{site_url}'>filmsub.pages.dev</a>\n",
                                 ]
@@ -1179,7 +1241,7 @@ async def _execute_leech(
                                     st = q_data.get("stage", "downloading")
                                     if st == "waiting":
                                         lines.append(
-                                            f"• <b>{q_name}:</b> ⏳ <i>(පෝලිමේ - {primary_q} බාගත වූ පසු ආරම්භ වේ)</i>"
+                                            f"• <b>{q_name}:</b> ⏳ <i>(පෝලිමේ...)</i>"
                                         )
                                     elif st == "downloading":
                                         pct = q_data.get("dl_pct", 0.0)
@@ -1258,18 +1320,17 @@ async def _execute_leech(
                                     })
                                     await _update_multi_dl_display()
 
-                                # 1. Download with exclusive lock to prevent CDN bandwidth splitting
-                                async with cdn_dl_lock:
-                                    companion_progress[q_name]["stage"] = "downloading"
-                                    await _update_multi_dl_display(force=True)
-                                    log.info("[LeechService] Starting full-speed download for quality %s from %s...", q_name, cand_obj.source_url)
-                                    c_dl = await downloader.download_http(
-                                        url=cand_obj.source_url,
-                                        dest_dir=temp_dir,
-                                        filename=v_clean_name,
-                                        task_key=f"{task_key}_{q_name}",
-                                        progress_callback=_dl_cb,
-                                    )
+                                # 1. Download concurrently at full speed (all qualities in parallel)
+                                companion_progress[q_name]["stage"] = "downloading"
+                                await _update_multi_dl_display(force=True)
+                                log.info("[LeechService] Starting concurrent download for quality %s from %s...", q_name, cand_obj.source_url)
+                                c_dl = await downloader.download_http(
+                                    url=cand_obj.source_url,
+                                    dest_dir=temp_dir,
+                                    filename=v_clean_name,
+                                    task_key=f"{task_key}_{q_name}",
+                                    progress_callback=_dl_cb,
+                                )
 
                                 if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
                                     companion_progress[q_name].update({
@@ -1280,7 +1341,8 @@ async def _execute_leech(
                                     log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
                                     return None
 
-                                # The lock is now RELEASED! The next quality starts downloading immediately from the CDN.
+                                # Download finished for this quality! It proceeds immediately to faststart, subtitle muxing, and Telegram upload
+                                # while all other qualities continue downloading in parallel!
                                 # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
 
                                 # 2. Check candidate-specific hardsub & acquire subtitles if not hardsubbed
@@ -1659,6 +1721,17 @@ async def _execute_leech(
             except Exception as pre_reuse_err:
                 log.debug("[LeechService] Pre-sub reuse note: %s", pre_reuse_err)
 
+        if not sub_srt_path and "active_sub_to_mux" in locals() and active_sub_to_mux and os.path.exists(active_sub_to_mux):
+            try:
+                local_stage_srt = os.path.join(temp_dir, "sinhala_merged.srt")
+                if os.path.abspath(active_sub_to_mux) != os.path.abspath(local_stage_srt):
+                    shutil.copyfile(active_sub_to_mux, local_stage_srt)
+                sub_srt_path = local_stage_srt
+                sub_vtt_path = subtitle_service.srt_to_vtt(local_stage_srt)
+                log.info("[LeechService] Reusing pipeline-acquired Sinhala subtitle: srt=%s, vtt=%s", sub_srt_path, sub_vtt_path)
+            except Exception as pipe_sub_err:
+                log.debug("[LeechService] Pipeline sub reuse note: %s", pipe_sub_err)
+
         if not sub_srt_path:
             try:
                 _show_name = locals().get('show_name', '') or title or display_title
@@ -1925,6 +1998,8 @@ async def _execute_leech(
             # If companion variants were pre-downloaded and subtitle needs to be burned/muxed (is_already_hardsubbed=False)
             if pre_downloaded_variants and sub_to_burn_video and not is_already_hardsubbed and os.path.exists(sub_to_burn_video):
                 for vq, vpath in list(pre_downloaded_variants.items()):
+                    if vq in variant_tg_info and variant_tg_info[vq].get("file_id"):
+                        continue
                     if os.path.exists(vpath):
                         sub_var_out = os.path.join(temp_dir, f"subbed_{slug}_{vq}.mp4")
                         burn_ok = await video_service.burn_subtitles_to_video(vpath, sub_to_burn_video, sub_var_out)

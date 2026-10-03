@@ -14033,7 +14033,248 @@
       "added_date": "2026-10-03",
       "added_at": "2026-10-03T08:00:29Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "squid-game-2021-s01e02",
+      "slug": "squid-game-2021-s01e02",
+      "title": "Squid Game",
+      "title_si": "",
+      "year": 2021,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt10919420",
+      "tmdb_id": "93405",
+      "type": "series",
+      "season": 1,
+      "episode": 2,
+      "episode_title": "Hell",
+      "number_of_seasons": 3,
+      "number_of_episodes": 22,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 9,
+          "poster_url": "https://image.tmdb.org/t/p/w500/oSk0j4yeDOqXNHIjYehgSJ2WujM.jpg",
+          "air_date": "2021-09-17"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 7,
+          "poster_url": "https://image.tmdb.org/t/p/w500/yEB6bMYgNu6qEQWoBvlkg6Ea5P.jpg",
+          "air_date": "2024-12-26"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 6,
+          "poster_url": "https://image.tmdb.org/t/p/w500/okJESjE3wqN4qDNFOM8TecUVfHX.jpg",
+          "air_date": "2025-06-27"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/1QdXdRYfktUSONkl1oD5gc6Be0s.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1QdXdRYfktUSONkl1oD5gc6Be0s.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/2meX1nMdScFOoV4370rqHWKmXhY.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/2meX1nMdScFOoV4370rqHWKmXhY.jpg",
+      "genres": [
+        "Action & Adventure",
+        "Mystery",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": false,
+      "sub_merged": false,
+      "is_already_hardsubbed": false,
+      "sub_hardcoded": false,
+      "quality": "720p",
+      "duration": "63 min",
+      "description": "Hundreds of cash-strapped players accept a strange invitation to compete in children's games. Inside, a tempting prize awaits — with deadly high stakes.",
+      "director": "Hwang Dong-hyuk",
+      "cast": [
+        {
+          "name": "Lee Jung-jae",
+          "character": "Seong Gi-hun / Player 456"
+        },
+        {
+          "name": "Yim Si-wan",
+          "character": "Lee Myung-gi / Player 333"
+        },
+        {
+          "name": "Wi Ha-jun",
+          "character": "Detective Hwang Jun-ho"
+        },
+        {
+          "name": "Jo Yuri",
+          "character": "Kim Jun-hee / Player 222"
+        },
+        {
+          "name": "Lee Byung-hun",
+          "character": "Front Man / Hwang In-ho"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
+      "message_id": 258,
+      "file_name": "squid-game-2021-s01e02.mp4",
+      "file_size": 708507999,
+      "drive_file_id": "",
+      "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
+          "message_id": 258,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/93405/1/2"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt10919420-1-2"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt10919420&s=1&e=2"
+        }
+      ],
+      "qualities": {
+        "auto": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+        "1080p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+        "720p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+        "480p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
+        "360p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "675.7 MB",
+          "size_bytes": 708507999,
+          "url": "https://t.me/c/4325759505/258",
+          "telegram_url": "https://t.me/c/4325759505/258",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
+          "message_id": 258,
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "370.4 MB",
+          "size_bytes": 388389847,
+          "url": "https://t.me/c/4325759505/259",
+          "telegram_url": "https://t.me/c/4325759505/259",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQNqwNMNa7TfDKRLUcmUQdK5N9OtsgAC3SYAAlw4CVaC6XJrEGhlHB4E",
+          "message_id": 259,
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "675.7 MB",
+          "size_bytes": 708507999,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_1080p",
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "675.7 MB",
+          "size_bytes": 708507999,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_720p",
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "370.4 MB",
+          "size_bytes": 388389847,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_480p",
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "121.6 MB",
+          "size_bytes": 127531439,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_360p",
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
+          "message_id": 258,
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "size_bytes": 708507999
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQNqwNMNa7TfDKRLUcmUQdK5N9OtsgAC3SYAAlw4CVaC6XJrEGhlHB4E",
+          "message_id": 259,
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
+          "size_bytes": 388389847
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "size_bytes": 127531439
+        }
+      },
+      "subtitles": [],
+      "source_method": "torrent",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e02",
+      "added_date": "2026-10-03",
+      "added_at": "2026-10-03T10:03:58Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-03T08:00:30Z"
+  "last_updated": "2026-10-03T10:03:59Z"
 }

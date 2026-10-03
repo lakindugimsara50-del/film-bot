@@ -47,6 +47,13 @@ from services.scrapers.srilankan_matched_scraper import (
 )
 
 
+async def _http_get(client, url: str, headers=None, timeout: float = 6.0, follow_redirects: bool = True):
+    try:
+        return await client.get(url, headers=headers, timeout=timeout, follow_redirects=follow_redirects)
+    except TypeError:
+        return await client.get(url, headers=headers, timeout=timeout)
+
+
 async def search(
     client: httpx.AsyncClient,
     clean_title: str,
@@ -100,7 +107,7 @@ async def search(
                 break
             try:
                 s_url = f"{base_url}/?s={urllib.parse.quote_plus(q)}"
-                resp = await client.get(s_url, headers=HEADERS, timeout=6.0)
+                resp = await _http_get(client, s_url, headers=HEADERS, timeout=6.0, follow_redirects=True)
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, "html.parser")
                     for a in soup.select("article a, h2 a, h3 a, .entry-title a, .post-title a, .result-item a"):
@@ -122,7 +129,7 @@ async def search(
             if not candidate_posts:
                 try:
                     api_url = f"{base_url}/wp-json/wp/v2/posts?search={urllib.parse.quote_plus(q)}&per_page=6"
-                    resp = await client.get(api_url, headers=HEADERS, timeout=6.0)
+                    resp = await _http_get(client, api_url, headers=HEADERS, timeout=6.0, follow_redirects=True)
                     if resp.status_code == 200 and isinstance(resp.json(), list):
                         for p in resp.json():
                             link = p.get("link") or ""
@@ -139,7 +146,7 @@ async def search(
 
         for post_url, _ in candidate_posts[:4]:
             try:
-                p_resp = await client.get(post_url, headers=HEADERS, timeout=6.0)
+                p_resp = await _http_get(client, post_url, headers=HEADERS, timeout=6.0, follow_redirects=True)
                 if p_resp.status_code != 200:
                     continue
                 soup = BeautifulSoup(p_resp.text, "html.parser")
@@ -155,8 +162,21 @@ async def search(
                 current_url = post_url
                 season_soup = soup
 
-                # Follow season-specific link if on a general TV series hub page
-                if season:
+                # Check if this post is ALREADY an episode page for the requested episode
+                is_already_ep = False
+                if episode is not None:
+                    ep_chk = re.compile(
+                        rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                        rf"|{season}x0*{episode}\b"
+                        rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep|e)[-_\s]*0*{episode}\b"
+                        rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
+                        re.IGNORECASE,
+                    )
+                    if ep_chk.search(current_url) or (soup.title and ep_chk.search(soup.title.get_text())):
+                        is_already_ep = True
+
+                # Follow season-specific link only if on a general TV series hub page AND not already an episode page
+                if season and not is_already_ep:
                     s_token_dash = f"season-{season}"
                     s_token_padded = f"season-{season:02d}"
                     s_token_space = f"season {season}"
@@ -166,14 +186,16 @@ async def search(
                         and s_token_space not in current_url.lower()
                     ):
                         s_pat = re.compile(rf"(?:season[\s._-]*0*{season}\b|s0*{season}\b)", re.IGNORECASE)
+                        slug_tokens = [t for t in slug_title.split("-") if len(t) > 2]
                         for a in soup.find_all("a", href=True):
                             h = a["href"].strip()
                             txt = a.get_text(" ", strip=True)
-                            if (s_pat.search(h) or s_pat.search(txt)) and (any(dom in h for dom in ("baiscope.lk", "baiscopedownloads.co")) or h.startswith("/")):
+                            is_show_match = any(tok in h.lower() for tok in slug_tokens) or any(tok in txt.lower() for tok in slug_tokens)
+                            if is_show_match and (s_pat.search(h) or s_pat.search(txt)) and (any(dom in h for dom in ("baiscope.lk", "baiscopedownloads.co")) or h.startswith("/")):
                                 if not any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv")):
                                     s_link = urllib.parse.urljoin(current_url, h)
                                     try:
-                                        s_resp = await client.get(s_link, headers=HEADERS, timeout=8.0)
+                                        s_resp = await _http_get(client, s_link, headers=HEADERS, timeout=8.0, follow_redirects=True)
                                         if s_resp.status_code == 200:
                                             soup = BeautifulSoup(s_resp.text, "html.parser")
                                             current_url = s_link
@@ -182,7 +204,7 @@ async def search(
                                     except Exception:
                                         pass
 
-                if season and episode:
+                if season and episode and not is_already_ep:
                     ep_pat = re.compile(
                         rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
                         rf"|{season}x0*{episode}\b"
@@ -190,15 +212,17 @@ async def search(
                         rf"|\b(?:ep|episode)\.?\s*0*{episode}\b)",
                         re.IGNORECASE,
                     )
+                    slug_tokens = [t for t in slug_title.split("-") if len(t) > 2]
                     for a in soup.find_all("a", href=True):
                         h = a["href"].strip()
                         txt = a.get_text(" ", strip=True)
                         is_internal = any(dom in h.lower() for dom in ("baiscope.lk", "baiscopedownloads.co")) or h.startswith("/")
                         is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))
-                        if is_internal and not is_file_or_host and (ep_pat.search(h) or ep_pat.search(txt)):
+                        is_show_match = any(tok in h.lower() for tok in slug_tokens) or any(tok in txt.lower() for tok in slug_tokens)
+                        if is_internal and not is_file_or_host and is_show_match and (ep_pat.search(h) or ep_pat.search(txt)):
                             ep_link = urllib.parse.urljoin(post_url, h)
                             try:
-                                ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
+                                ep_resp = await _http_get(client, ep_link, headers=HEADERS, timeout=8.0, follow_redirects=True)
                                 if ep_resp.status_code == 200:
                                     soup = BeautifulSoup(ep_resp.text, "html.parser")
                                     current_url = ep_link
@@ -239,7 +263,7 @@ async def search(
 
                 for s_url in dl_sub_urls[:6]:
                     try:
-                        s_resp = await client.get(s_url, headers={"Referer": current_url}, timeout=10.0)
+                        s_resp = await _http_get(client, s_url, headers={"Referer": current_url}, timeout=10.0)
                         if s_resp.status_code == 200 and len(s_resp.content) > 64:
                             content_type = s_resp.headers.get("content-type", "").lower()
                             if "text/html" in content_type or s_resp.content.startswith((b"<!DOCTYPE", b"<html", b"<HTML")):
@@ -252,7 +276,7 @@ async def search(
                                         real_sub_url = urllib.parse.urljoin(s_url, sh)
                                         break
                                 if real_sub_url:
-                                    s_resp = await client.get(real_sub_url, headers={"Referer": s_url}, timeout=10.0)
+                                    s_resp = await _http_get(client, real_sub_url, headers={"Referer": s_url}, timeout=10.0)
 
                             if s_resp.status_code == 200 and len(s_resp.content) > 64:
                                 srt_p, _ = subtitle_service._extract_srt_from_bytes(

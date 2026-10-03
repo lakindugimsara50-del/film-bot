@@ -341,8 +341,7 @@ async def find_all_candidates(
                     0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
                     0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2),
                 ))
-            log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using exclusively (no torrents queried).", len(matched_candidates))
-            # User instruction: When SinhalaSub / CineSubz matched releases are found, use them exclusively and do not query or add torrents!
+            log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
             return matched_candidates
 
     # If no Lankan matched releases found, query Telegram, DDL, and Torrents concurrently
@@ -422,7 +421,10 @@ async def find_all_candidates(
     else:
         candidates.sort(key=lambda c: 0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2))
 
-    log.info("[LeechService] Total candidates acquired: %d", len(candidates))
+    if matched_candidates:
+        candidates = matched_candidates + candidates
+
+    log.info("[LeechService] Total candidates acquired: %d (Sri Lankan prioritized: %d)", len(candidates), len(matched_candidates))
     return candidates
 
 

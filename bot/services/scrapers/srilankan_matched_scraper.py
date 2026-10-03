@@ -44,14 +44,14 @@ HEADERS = {
 PORTALS = [
     {"name": "SinhalaSub",        "base": "https://sinhalasub.lk",        "wp_api": True},
     {"name": "CineSubz",          "base": "https://cinesubz.co",          "wp_api": True},
+    {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": False},
     {"name": "Baiscope",          "base": "https://baiscope.lk",          "wp_api": True},
     {"name": "BaiscopeDownloads", "base": "https://baiscopedownloads.co", "wp_api": True},
-    {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": False},
+    {"name": "Subz",              "base": "https://subz.lk",              "wp_api": True},
     {"name": "Cines",             "base": "https://cines.lk",             "wp_api": True},
     {"name": "Cineru",            "base": "https://cineru.lk",            "wp_api": True},
-    {"name": "Subz",              "base": "https://subz.lk",              "wp_api": True},
     {"name": "Zoom",              "base": "https://zoom.lk",              "wp_api": False},
-    {"name": "LKSubs",            "base": "https://lksubs.com",           "wp_api": True},
+    {"name": "LKSubs",            "base": "https://lksubs.com",           "wp_api": False},
 ]
 
 # Portals where video has pre-burned Sinhala subtitles (NEVER burn secondary sub)
@@ -458,7 +458,19 @@ async def _search_portal(
 
             current_target_url = post_url
             main_soup = soup
-            if season and episode:
+            is_already_ep = False
+            if episode is not None:
+                ep_chk = re.compile(
+                    rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
+                    rf"|{season}x0*{episode}\b"
+                    rf"|season[\s._-]*0*{season}[^a-z0-9]+(?:episode|ep|e)[-_\s]*0*{episode}\b"
+                    rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
+                    re.IGNORECASE,
+                )
+                if ep_chk.search(current_target_url) or (soup.title and ep_chk.search(soup.title.get_text())):
+                    is_already_ep = True
+
+            if season and episode and not is_already_ep:
                 ep_pat = re.compile(
                     rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
                     rf"|{season}x0*{episode}\b"
@@ -466,19 +478,21 @@ async def _search_portal(
                     rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
                     re.IGNORECASE,
                 )
+                slug_tokens = [t for t in re.sub(r"[^a-zA-Z0-9]+", " ", clean_t.lower()).split() if len(t) > 2]
                 ep_link = None
                 for a in soup.find_all("a", href=True):
                     h = a["href"].strip()
                     txt = a.get_text(" ", strip=True)
-                    is_internal = any(dom in h.lower() for dom in ("piratelk.com", "baiscope.lk", "baiscopedownloads.co", "subz.lk", "cines.lk", "cineru.lk", "zoom.lk")) or h.startswith("/")
+                    is_internal = any(dom in h.lower() for dom in ("sinhalasub.lk", "cinesubz.co", "piratelk.com", "baiscope.lk", "baiscopedownloads.co", "subz.lk", "cines.lk", "cineru.lk", "zoom.lk")) or h.startswith("/")
                     is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))
-                    if is_internal and not is_file_or_host and (ep_pat.search(h) or ep_pat.search(txt)):
+                    is_show_match = any(tok in h.lower() for tok in slug_tokens) or any(tok in txt.lower() for tok in slug_tokens) or not slug_tokens
+                    if is_internal and not is_file_or_host and is_show_match and (ep_pat.search(h) or ep_pat.search(txt)):
                         ep_link = urllib.parse.urljoin(post_url, h)
                         break
 
                 if ep_link:
                     try:
-                        ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
+                        ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0, follow_redirects=True)
                         if ep_resp.status_code == 200:
                             soup = BeautifulSoup(ep_resp.text, "html.parser")
                             current_target_url = ep_link
@@ -757,60 +771,59 @@ async def search_matched_srilankan_releases(
         return matched_batch
 
     async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, verify=False) as client:
-        # Tier 1: Pre-hardsubbed Portals (CineSubz, SinhalaSub) - User requirement: TOP PRIORITY
-        tier1_portals = [p for p in PORTALS if p["name"] in PRE_HARDSUBBED_PORTALS]
-        tier1_tasks = [
-            _search_portal(
-                client=client,
-                portal=portal,
-                query=query,
-                clean_title=clean_title,
-                year=year,
-                season=season,
-                episode=episode,
-                temp_dir=temp_dir,
-            )
-            for portal in tier1_portals
-        ]
-        for coro in asyncio.as_completed(tier1_tasks):
+        async def _safe_search(portal):
             try:
-                r = await coro
-                if r and isinstance(r, list):
-                    tier1_matched = _package_results([r])
-                    if tier1_matched:
-                        log.info("[MatchedScraper] Fast Tier 1 match (%d releases). Using immediately.", len(tier1_matched))
-                        return tier1_matched
-            except Exception as e_t1:
-                log.debug("[MatchedScraper] Tier 1 note: %s", e_t1)
+                return await asyncio.wait_for(
+                    _search_portal(
+                        client=client,
+                        portal=portal,
+                        query=query,
+                        clean_title=clean_title,
+                        year=year,
+                        season=season,
+                        episode=episode,
+                        temp_dir=temp_dir,
+                    ),
+                    timeout=20.0,
+                )
+            except Exception as e_s:
+                log.debug("[MatchedScraper] Portal %s error or timeout: %s", portal.get("name"), e_s)
+                return []
+
+        # Tier 1: Pre-hardsubbed Portals (SinhalaSub, CineSubz) - User requirement: TOP PRIORITY
+        tier1_portals = [p for p in PORTALS if p["name"] in PRE_HARDSUBBED_PORTALS]
+        tier1_tasks = [_safe_search(portal) for portal in tier1_portals]
 
         # Tier 2: Separate Subtitle Portals (PirateLK, Baiscope, Subz, etc.)
         tier2_portals = [p for p in PORTALS if p["name"] not in PRE_HARDSUBBED_PORTALS]
-        tier2_tasks = [
-            _search_portal(
-                client=client,
-                portal=portal,
-                query=query,
-                clean_title=clean_title,
-                year=year,
-                season=season,
-                episode=episode,
-                temp_dir=temp_dir,
-            )
-            for portal in tier2_portals
-        ]
-        for coro in asyncio.as_completed(tier2_tasks):
-            try:
-                r = await coro
-                if r and isinstance(r, list):
-                    tier2_matched = _package_results([r])
-                    if tier2_matched:
-                        log.info("[MatchedScraper] Fast Tier 2 match (%d releases). Using immediately.", len(tier2_matched))
-                        return tier2_matched
-            except Exception as e_t2:
-                log.debug("[MatchedScraper] Tier 2 note: %s", e_t2)
+        tier2_tasks = [_safe_search(portal) for portal in tier2_portals]
 
-    log.info("[MatchedScraper] Total matched same-site candidates discovered: %d", len(all_matched))
-    return all_matched
+        all_tasks = tier1_tasks + tier2_tasks
+        raw_results = await asyncio.gather(*all_tasks, return_exceptions=True)
+
+        tier1_raw = raw_results[:len(tier1_tasks)]
+        tier2_raw = raw_results[len(tier1_tasks):]
+
+        tier1_matched = _package_results(tier1_raw)
+        tier2_matched = _package_results(tier2_raw)
+
+        # Pre-hardsubbed (SinhalaSub, CineSubz) ALWAYS prioritized first!
+        # Standalone subtitle portals (PirateLK, Baiscope, Subz) appended as reliable fallbacks!
+        seen_matched_urls = set()
+        final_matched: list[dict] = []
+        for item in (tier1_matched + tier2_matched):
+            u = item.get("url")
+            if u and u not in seen_matched_urls:
+                seen_matched_urls.add(u)
+                final_matched.append(item)
+
+        log.info(
+            "[MatchedScraper] Search complete: %d Tier 1 (pre-hardsubbed) + %d Tier 2 (separate sub) = %d total matched candidates",
+            len(tier1_matched),
+            len(tier2_matched),
+            len(final_matched),
+        )
+        return final_matched
 
 
 async def resolve_srilankan_post_url(

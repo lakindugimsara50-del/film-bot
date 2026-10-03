@@ -1,5 +1,5 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://kde-korea-duo-til.trycloudflare.com",
-  "updated_at": "2026-10-02T16:46:10.497938+00:00",
+  "stream_base_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com",
+  "updated_at": "2026-10-03T07:32:07.752739+00:00",
   "status": "online"
 };

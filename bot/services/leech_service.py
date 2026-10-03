@@ -1330,6 +1330,7 @@ async def _execute_leech(
                                     filename=v_clean_name,
                                     task_key=f"{task_key}_{q_name}",
                                     progress_callback=_dl_cb,
+                                    referer=(cand_obj.extra.get("post_url") or None) if cand_obj.extra else None,
                                 )
 
                                 if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
@@ -1605,6 +1606,7 @@ async def _execute_leech(
                             filename=clean_name,
                             task_key=task_key,
                             progress_callback=_download_progress,
+                            referer=(candidate.extra.get("post_url") or None) if candidate.extra else None,
                         )
 
                 if local_file and downloader.is_valid_downloaded_video(local_file):
@@ -2547,6 +2549,7 @@ async def _execute_leech(
                                 dest_dir=temp_dir,
                                 filename=v_clean_name,
                                 task_key=f"{task_key}_{vq}",
+                                referer=(vcand.extra.get("post_url") or None) if vcand.extra else None,
                             )
                             if dl_out and downloader.is_valid_downloaded_video(dl_out):
                                 fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")

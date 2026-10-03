@@ -159,22 +159,56 @@ def is_valid_downloaded_video(file_path: str, min_size_mb: int = 15) -> bool:
     return True
 
 
+def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
+    """
+    Derive appropriate Referer header for CDNs that require it to prevent 403 Forbidden.
+    Many Sri Lankan CDNs (e.g. drive.csplayer2.space, cinesubz.co, sinhalasub.lk) reject
+    requests without a matching Referer header with a 403 HTML error page (~757 bytes).
+    """
+    if custom_referer:
+        return custom_referer
+    u_lower = (url or "").lower()
+    if "cinesubz" in u_lower or "csplayer" in u_lower:
+        return "https://cinesubz.co/"
+    elif "sinhalasub" in u_lower:
+        return "https://sinhalasub.lk/"
+    elif "piratelk" in u_lower:
+        return "https://piratelk.com/"
+    elif "baiscope" in u_lower:
+        return "https://baiscopedownloads.co/"
+    elif "cines.lk" in u_lower:
+        return "https://cines.lk/"
+    elif "zoom.lk" in u_lower:
+        return "https://zoom.lk/"
+    elif "subz.lk" in u_lower:
+        return "https://subz.lk/"
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}/"
+    except Exception:
+        pass
+    return "https://google.com/"
+
+
 async def download_http(
     url: str,
     dest_dir: str,
     filename: Optional[str] = None,
     task_key: str = "",
     progress_callback: Optional[Callable] = None,
+    referer: Optional[str] = None,
 ) -> str:
     """
     Download video from HTTP/HTTPS URL.
     Attempts multi-connection aria2c first (16 threads).
     Falls back to async httpx streaming if aria2c is unavailable or fails.
     """
+    effective_referer = get_referer_for_url(url, custom_referer=referer)
     aria2_bin = find_aria2c()
     if aria2_bin:
         try:
-            log.info("[Downloader] Attempting aria2c download for: %s", url[:80])
+            log.info("[Downloader] Attempting aria2c download for: %s (referer: %s)", url[:80], effective_referer)
             return await _download_aria2c_http(
                 aria2_bin=aria2_bin,
                 url=url,
@@ -182,16 +216,18 @@ async def download_http(
                 filename=filename,
                 task_key=task_key,
                 progress_callback=progress_callback,
+                referer=effective_referer,
             )
         except Exception as exc:
             log.warning("[Downloader] aria2c download failed (%s). Falling back to httpx...", exc)
 
-    log.info("[Downloader] Using async httpx stream for: %s", url[:80])
+    log.info("[Downloader] Using async httpx stream for: %s (referer: %s)", url[:80], effective_referer)
     return await _download_httpx(
         url=url,
         dest_dir=dest_dir,
         filename=filename,
         progress_callback=progress_callback,
+        referer=effective_referer,
     )
 
 
@@ -202,11 +238,14 @@ async def _download_aria2c_http(
     filename: Optional[str],
     task_key: str,
     progress_callback: Optional[Callable],
+    referer: Optional[str] = None,
 ) -> str:
     """Download direct HTTP URL using aria2c multi-connection acceleration."""
     out_name = filename or (url.split("/")[-1].split("?")[0] or "movie.mp4")
     if not os.path.splitext(out_name)[1]:
         out_name += ".mp4"
+
+    ref = referer or get_referer_for_url(url)
 
     cmd = [
         aria2_bin,
@@ -227,6 +266,8 @@ async def _download_aria2c_http(
         "--retry-wait=2",
         "--check-certificate=false",
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        f"--referer={ref}",
+        f"--header=Referer: {ref}",
         "--summary-interval=1",
         "--console-log-level=warn",
         "--allow-overwrite=true",
@@ -340,17 +381,20 @@ async def _download_httpx(
     dest_dir: str,
     filename: Optional[str],
     progress_callback: Optional[Callable],
+    referer: Optional[str] = None,
 ) -> str:
     """
     High-speed HTTP download via httpx with multi-connection parallel chunk acceleration (8-16 workers)
     and graceful single-stream fallback.
     """
+    ref = referer or get_referer_for_url(url)
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/124.0.0.0 Safari/537.36"
-        )
+        ),
+        "Referer": ref,
     }
 
     timeout_config = httpx.Timeout(connect=25.0, read=120.0, write=30.0, pool=30.0)

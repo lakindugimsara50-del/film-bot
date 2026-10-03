@@ -181,7 +181,7 @@ async def search(
                         })
                         break
 
-                if not matched and any(k in h.lower() for k in ["api-", "/links/", "csplayer", "drive.google.com/server"]):
+                if not matched and any(k in h.lower() for k in ["api-", "/links/", "zt-links", "csplayer", "drive.google.com/server"]):
                     intermediate_tasks.append((h, q))
 
             if intermediate_tasks:

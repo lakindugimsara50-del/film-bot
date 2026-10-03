@@ -182,6 +182,10 @@ def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
         return "https://zoom.lk/"
     elif "subz.lk" in u_lower:
         return "https://subz.lk/"
+    elif "lksubs" in u_lower:
+        return "https://www.lksubs.com/"
+    elif "cineru" in u_lower:
+        return "https://cineru.lk/"
     try:
         parsed = urllib.parse.urlparse(url)
         if parsed.scheme and parsed.netloc:
@@ -404,7 +408,7 @@ async def _download_httpx(
     total_size = 0
     accept_ranges = False
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_config, headers=headers) as client:
+    async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout_config, headers=headers) as client:
         try:
             head_resp = await client.head(url)
             if head_resp.status_code == 200:
@@ -461,7 +465,7 @@ async def _download_httpx(
                 nonlocal last_notify
                 w_headers = dict(headers)
                 w_headers["Range"] = f"bytes={start_byte}-{end_byte}"
-                async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_config, headers=w_headers) as w_client:
+                async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout_config, headers=w_headers) as w_client:
                     async with w_client.stream("GET", url) as w_resp:
                         if w_resp.status_code != 206:
                             raise RuntimeError(f"Range request returned status {w_resp.status_code} instead of 206")
@@ -522,7 +526,7 @@ async def _download_httpx(
                     pass
 
     # 3. Fallback: single-stream GET
-    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_config, headers=headers) as client:
+    async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout_config, headers=headers) as client:
         async with client.stream("GET", url) as resp:
             resp.raise_for_status()
 

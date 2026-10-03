@@ -775,9 +775,11 @@ async def _scrape_wp_subtitle_site(
                     "action=sub_download" in href
                     or "subz-list-btn" in cls
                     or "js-premium-download" in cls
+                    or "download-button" in cls
                     or a.get("id") == "btn-download"
-                    or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt", "/download/", "/downloads/"))
-                    or ("උපසිරැසි" in a_txt and "බාගත" in a_txt)
+                    or any(ext in href.lower() for ext in (".zip", ".rar", ".7z", ".srt", "/download/", "/downloads/", "/sub-download/", "/links/"))
+                    or ("උපසිරැසි" in a_txt and ("බාගත" in a_txt or "download" in a_txt))
+                    or ("download" in a_txt and "subtitle" in a_txt)
                 ):
                     if not any(ign in href.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz", "t.me/")):
                         dl_targets.append(urllib.parse.urljoin(post_url, href))
@@ -867,12 +869,15 @@ async def fetch_sri_lankan_sinhala_subtitle(
 
     try:
         async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=12.0) as client:
-            # 1. Try Subz.lk, Cineru.lk, SinhalaSub.lk, and Baiscope.lk via WP REST API + HTML scraper
+            # 1. Try Subz.lk, Cineru.lk, SinhalaSub.lk, Baiscope.lk, Zoom.lk, LKSubs.com, Cines.lk
             for site_url, site_label in (
                 ("https://subz.lk", "SubzLK"),
                 ("https://cineru.lk", "CineruLK"),
                 ("https://sinhalasub.lk", "SinhalaSubLK"),
                 ("https://www.baiscope.lk", "BaiscopeLK"),
+                ("https://zoom.lk", "ZoomLK"),
+                ("https://www.lksubs.com", "LKSubs"),
+                ("https://cines.lk", "CinesLK"),
             ):
                 found_wp = await _scrape_wp_subtitle_site(
                     client=client,

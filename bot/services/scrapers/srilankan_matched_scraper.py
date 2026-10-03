@@ -102,7 +102,7 @@ async def resolve_srilankan_intermediate_link(
 
     # 2. Check if this is an intermediate locker/redirect URL
     is_intermediate = any(k in link_url.lower() for k in [
-        "/links/", "/api-", "linkvertise", "gplinks", "droplink", "short", "cinesubz", "#link"
+        "/links/", "/api-", "zt-links", "linkvertise", "gplinks", "droplink", "short", "cinesubz", "#link"
     ])
     if not is_intermediate:
         return None
@@ -112,7 +112,7 @@ async def resolve_srilankan_intermediate_link(
         if referer_url:
             req_headers["Referer"] = referer_url
 
-        resp = await client.get(link_url, headers=req_headers, timeout=4.5)
+        resp = await client.get(link_url, headers=req_headers, timeout=6.0)
         if resp.status_code != 200:
             return None
 
@@ -142,24 +142,34 @@ async def resolve_srilankan_intermediate_link(
         if link_elem and link_elem.get("href"):
             raw_href = link_elem["href"].strip()
             if "google.com/server" in raw_href:
-                m_srv = re.search(r"https://google\.com/server(\d+)/1:/", raw_href)
+                # Map server6 / server7 / serverX with or without trailing digits
+                m_srv = re.search(r"https://google\.com/server(\d+)(?:/1:)?/", raw_href)
                 if m_srv:
+                    srv_num = m_srv.group(1)[0]
                     mapped = re.sub(
-                        r"https://google\.com/server\d+/1:/",
-                        f"https://drive.csplayer2.space/server{m_srv.group(1)[0]}/",
+                        r"https://google\.com/server\d+(?:/1:)?/",
+                        f"https://drive.csplayer2.space/server{srv_num}/",
                         raw_href,
                     )
+                    # Also replace extension formatting according to CineSubz JS
+                    if ".mp4" in mapped:
+                        mapped = mapped.replace(".mp4", "?ext=mp4")
+                    elif ".mkv" in mapped:
+                        mapped = mapped.replace(".mkv", "?ext=mkv")
                     log.info("[MatchedScraper] Mapped CineSubz stream URL: %s", mapped[:90])
                     return mapped
             return resolve_direct_video_url(raw_href)
 
-        # D. Search anchors inside the resolved page
+        # D. Search anchors inside the resolved page (e.g. LKSubs /links/ -> Continue button)
         for a in soup.find_all("a", href=True):
             h = a["href"].strip()
+            txt = a.get_text(" ", strip=True).lower()
             if any(k in h.lower() for k in ["cdn.sinhalasub", "ddl.sinhalasub", "pixeldrain.com", "usersdrive.com", "mega.nz"]):
                 return resolve_direct_video_url(h)
-            if h.endswith((".mp4", ".mkv")) and not h.startswith("#"):
-                return h
+            if any(ext in h.lower() for ext in (".mp4", ".mkv", ".zip", ".rar")) and not h.startswith("#"):
+                return urllib.parse.urljoin(link_url, h)
+            if "continue" in txt and not h.startswith("#"):
+                return urllib.parse.urljoin(link_url, h)
 
         # E. Check for window.location redirects
         m_redir = re.search(r"window\.location(?:\.href)?\s*=\s*['\"]([^'\"]+)['\"]", body)
@@ -637,7 +647,7 @@ async def _search_portal(
                             })
                             break
 
-                    if not matched_pat and ("/links/" in h or "/api-" in h or "cinesubz" in h):
+                    if not matched_pat and ("/links/" in h or "/api-" in h or "zt-links" in h or "cinesubz" in h):
                         intermediate_to_resolve.append((h, q, ctx))
 
             # Resolve intermediate locker links concurrently

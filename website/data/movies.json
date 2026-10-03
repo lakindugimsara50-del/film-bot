@@ -14116,21 +14116,21 @@
       ],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
-      "message_id": 258,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQVqwO0fHETpsGDRWAde8VQQae6pHQACGCcAAlw4CVaINnPNFSUTYx4E",
+      "message_id": 261,
       "file_name": "squid-game-2021-s01e02.mp4",
       "file_size": 708507999,
       "drive_file_id": "",
-      "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+      "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
-          "message_id": 258,
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQVqwO0fHETpsGDRWAde8VQQae6pHQACGCcAAlw4CVaINnPNFSUTYx4E",
+          "message_id": 261,
           "quality": "1080p"
         },
         {
@@ -14156,11 +14156,11 @@
         }
       ],
       "qualities": {
-        "auto": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
-        "1080p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
-        "720p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
-        "480p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
-        "360p": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258"
+        "auto": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
+        "1080p": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
+        "720p": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
+        "480p": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/262",
+        "360p": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261"
       },
       "downloads": [
         {
@@ -14168,11 +14168,11 @@
           "label": "720p HD (Telegram Channel • Fast)",
           "size": "675.7 MB",
           "size_bytes": 708507999,
-          "url": "https://t.me/c/4325759505/258",
-          "telegram_url": "https://t.me/c/4325759505/258",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
-          "message_id": 258,
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "url": "https://t.me/c/4325759505/261",
+          "telegram_url": "https://t.me/c/4325759505/261",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQVqwO0fHETpsGDRWAde8VQQae6pHQACGCcAAlw4CVaINnPNFSUTYx4E",
+          "message_id": 261,
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14181,13 +14181,13 @@
         {
           "quality": "480p (Telegram Direct)",
           "label": "480p SD (Telegram Channel • Fast)",
-          "size": "370.4 MB",
-          "size_bytes": 388389847,
-          "url": "https://t.me/c/4325759505/259",
-          "telegram_url": "https://t.me/c/4325759505/259",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQNqwNMNa7TfDKRLUcmUQdK5N9OtsgAC3SYAAlw4CVaC6XJrEGhlHB4E",
-          "message_id": 259,
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
+          "size": "329.5 MB",
+          "size_bytes": 345529180,
+          "url": "https://t.me/c/4325759505/262",
+          "telegram_url": "https://t.me/c/4325759505/262",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQZqwO9NQ-NbWoFyzKetbw9IMXVHrwACKCcAAlw4CVZgHy2R0LdlTx4E",
+          "message_id": 262,
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/262",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14199,7 +14199,7 @@
           "size": "675.7 MB",
           "size_bytes": 708507999,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_1080p",
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14211,7 +14211,7 @@
           "size": "675.7 MB",
           "size_bytes": 708507999,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_720p",
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14220,10 +14220,10 @@
         {
           "quality": "480p",
           "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "370.4 MB",
-          "size_bytes": 388389847,
+          "size": "329.5 MB",
+          "size_bytes": 345529180,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_480p",
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/262",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14235,7 +14235,7 @@
           "size": "121.6 MB",
           "size_bytes": 127531439,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e02_360p",
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14250,21 +14250,21 @@
           "size_bytes": 0
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQJqwM_cVc4OzBq-flBO2XA4QBSSQwAC2iYAAlw4CVb7-_r2cwi08R4E",
-          "message_id": 258,
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQVqwO0fHETpsGDRWAde8VQQae6pHQACGCcAAlw4CVaINnPNFSUTYx4E",
+          "message_id": 261,
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
           "size_bytes": 708507999
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQNqwNMNa7TfDKRLUcmUQdK5N9OtsgAC3SYAAlw4CVaC6XJrEGhlHB4E",
-          "message_id": 259,
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/259",
-          "size_bytes": 388389847
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQZqwO9NQ-NbWoFyzKetbw9IMXVHrwACKCcAAlw4CVZgHy2R0LdlTx4E",
+          "message_id": 262,
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/262",
+          "size_bytes": 345529180
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://patch-reactions-tone-father.trycloudflare.com/stream/channel/-1004325759505/258",
+          "stream_url": "https://zones-teams-definition-setup.trycloudflare.com/stream/channel/-1004325759505/261",
           "size_bytes": 127531439
         }
       },
@@ -14272,9 +14272,9 @@
       "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e02",
       "added_date": "2026-10-03",
-      "added_at": "2026-10-03T10:03:58Z",
+      "added_at": "2026-10-03T12:04:30Z",
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-03T10:03:59Z"
+  "last_updated": "2026-10-03T12:04:31Z"
 }

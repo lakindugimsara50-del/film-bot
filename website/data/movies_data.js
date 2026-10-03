@@ -14160,7 +14160,233 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-03",
       "added_at": "2026-10-03T12:04:30Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-uprising-2026",
+      "slug": "the-uprising-2026",
+      "title": "The Uprising",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.9",
+      "rating": "7.9",
+      "imdb_id": "tt36983905",
+      "tmdb_id": "977942",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/7TUl15TOsIvndKlgMWTtLgtEzZP.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/7TUl15TOsIvndKlgMWTtLgtEzZP.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/y0reRTsewsPh0ePtgvDeLIsb5Wk.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/y0reRTsewsPh0ePtgvDeLIsb5Wk.jpg",
+      "genres": [
+        "History",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "128 min",
+      "description": "As war and plague devastate 14th-century England, a humble peasant ignites a rebellion, uniting an army of commoners to defy the King’s might in a desperate fight for justice and survival.",
+      "director": "Paul Greengrass",
+      "cast": [
+        {
+          "name": "Andrew Garfield",
+          "character": "Ploughman"
+        },
+        {
+          "name": "Jamie Bell",
+          "character": "John Ball"
+        },
+        {
+          "name": "Stephen Dillane",
+          "character": "Archbishop Sudbury"
+        },
+        {
+          "name": "Woody Norman",
+          "character": "King Richard II"
+        },
+        {
+          "name": "Tom Hollander",
+          "character": "Treasurer Hales"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
+      "message_id": 266,
+      "file_name": "fs_the-uprising-2026_720p.mp4",
+      "file_size": 1658122286,
+      "drive_file_id": "",
+      "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
+          "message_id": 266,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/977942"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36983905"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36983905"
+        }
+      ],
+      "qualities": {
+        "auto": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+        "1080p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+        "720p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+        "480p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+        "360p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1658122286,
+          "url": "https://t.me/c/4325759505/266",
+          "telegram_url": "https://t.me/c/4325759505/266",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
+          "message_id": 266,
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "816.1 MB",
+          "size_bytes": 855699751,
+          "url": "https://t.me/c/4325759505/265",
+          "telegram_url": "https://t.me/c/4325759505/265",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQlqwUF4snqjW5vvC5LCD17f-lRptAAC0icAAlw4CVbVC8dIxnRNsx4E",
+          "message_id": 265,
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1658122286,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_1080p",
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1658122286,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_720p",
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "816.1 MB",
+          "size_bytes": 855699751,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_480p",
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "284.6 MB",
+          "size_bytes": 298462011,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_360p",
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
+          "message_id": 266,
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "size_bytes": 1658122286
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQlqwUF4snqjW5vvC5LCD17f-lRptAAC0icAAlw4CVbVC8dIxnRNsx4E",
+          "message_id": 265,
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+          "size_bytes": 855699751
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "size_bytes": 298462011
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-uprising-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-uprising-2026",
+      "added_date": "2026-10-03",
+      "added_at": "2026-10-03T18:27:57Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-03T16:38:47Z"
+  "last_updated": "2026-10-03T18:28:00Z"
 };

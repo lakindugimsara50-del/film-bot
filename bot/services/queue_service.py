@@ -45,9 +45,12 @@ class QueueService:
 
     def start_worker(self) -> None:
         """Start background queue consumer."""
-        if not self._is_worker_running:
+        if self._worker_task is None or self._worker_task.done():
             self._is_worker_running = True
-            loop = asyncio.get_event_loop()
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.get_event_loop()
             self._worker_task = loop.create_task(self._worker_loop())
             log.info("[QueueService] Background worker started.")
 
@@ -128,18 +131,18 @@ class QueueService:
 
         self._pending_items = remaining
 
-        # Purge and drain cancelled items from asyncio.Queue
-        new_queue: asyncio.Queue = asyncio.Queue()
+        # Purge cancelled items from asyncio.Queue without replacing the instance
+        kept_items = []
         while not self._queue.empty():
             try:
                 q_item = self._queue.get_nowait()
                 if not q_item.is_cancelled and (user_id is not None and q_item.user_id != user_id):
-                    new_queue.put_nowait(q_item)
-                else:
-                    self._queue.task_done()
+                    kept_items.append(q_item)
+                self._queue.task_done()
             except (asyncio.QueueEmpty, Exception):
                 break
-        self._queue = new_queue
+        for q_item in kept_items:
+            self._queue.put_nowait(q_item)
 
         return cancelled
 
@@ -224,6 +227,8 @@ class QueueService:
             except Exception as loop_err:
                 log.error("[QueueService] Worker loop error: %s", loop_err)
                 await asyncio.sleep(3)
+        self._is_worker_running = False
+        log.info("[QueueService] Queue loop terminated.")
 
 
 # Global singleton

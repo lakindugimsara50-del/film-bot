@@ -828,7 +828,7 @@ async def search_matched_srilankan_releases(
                         episode=episode,
                         temp_dir=temp_dir,
                     ),
-                    timeout=20.0,
+                    timeout=35.0,
                 )
             except Exception as e_s:
                 log.debug("[MatchedScraper] Portal %s error or timeout: %s", portal.get("name"), e_s)

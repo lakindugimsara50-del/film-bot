@@ -83,49 +83,79 @@ async def fetch_metadata(
                     selected_item = tv_results[0]
                     selected_media_type = "tv"
         else:
-            # Disambiguate using /search/multi (or movie vs tv popularity check)
-            multi_resp = await client.get(
-                f"{_BASE}/search/multi",
-                params={"api_key": TMDB_API_KEY, "query": clean_query, "language": "en-US"},
-            )
-            if multi_resp.status_code == 200:
-                multi_results = multi_resp.json().get("results", [])
-                tv_candidates = [it for it in multi_results if it.get("media_type") == "tv"]
-                movie_candidates = [it for it in multi_results if it.get("media_type") == "movie"]
+            # If a specific year is provided, first query /search/movie with year filter
+            if year:
+                try:
+                    yr_params = {"api_key": TMDB_API_KEY, "query": clean_query, "year": year, "language": "en-US", "include_adult": False}
+                    yr_resp = await client.get(f"{_BASE}/search/movie", params=yr_params)
+                    if yr_resp.status_code == 200:
+                        yr_results = yr_resp.json().get("results", [])
+                        q_clean_norm = re.sub(r"[^a-z0-9]+", "", clean_query.lower())
+                        for cand in yr_results:
+                            cand_norm = re.sub(r"[^a-z0-9]+", "", (cand.get("title") or "").lower())
+                            if cand_norm == q_clean_norm:
+                                selected_item = cand
+                                selected_media_type = "movie"
+                                break
+                        if not selected_item and yr_results:
+                            selected_item = yr_results[0]
+                            selected_media_type = "movie"
+                except Exception as e_yr:
+                    log.debug("TMDB: year search fallback: %s", e_yr)
 
-                top_tv = tv_candidates[0] if tv_candidates else None
-                top_movie = movie_candidates[0] if movie_candidates else None
+            if not selected_item:
+                # Disambiguate using /search/multi (or movie vs tv popularity check)
+                multi_resp = await client.get(
+                    f"{_BASE}/search/multi",
+                    params={"api_key": TMDB_API_KEY, "query": clean_query, "language": "en-US"},
+                )
+                if multi_resp.status_code == 200:
+                    multi_results = multi_resp.json().get("results", [])
+                    tv_candidates = [it for it in multi_results if it.get("media_type") == "tv"]
+                    movie_candidates = [it for it in multi_results if it.get("media_type") == "movie"]
 
-                if top_tv and top_movie:
-                    tv_name = (top_tv.get("name") or "").strip().lower()
-                    movie_title = (top_movie.get("title") or "").strip().lower()
-                    q_lower = clean_query.lower()
+                    # If year provided, prefer candidate with matching year
+                    if year:
+                        m_yr = [it for it in movie_candidates if (it.get("release_date") or "").startswith(str(year))]
+                        tv_yr = [it for it in tv_candidates if (it.get("first_air_date") or "").startswith(str(year))]
+                        if m_yr and not tv_yr:
+                            movie_candidates = m_yr
+                        elif tv_yr and not m_yr:
+                            tv_candidates = tv_yr
 
-                    # Exact title check
-                    tv_exact = (tv_name == q_lower)
-                    movie_exact = (movie_title == q_lower)
+                    top_tv = tv_candidates[0] if tv_candidates else None
+                    top_movie = movie_candidates[0] if movie_candidates else None
 
-                    tv_pop = float(top_tv.get("popularity", 0))
-                    movie_pop = float(top_movie.get("popularity", 0))
+                    if top_tv and top_movie:
+                        tv_name = (top_tv.get("name") or "").strip().lower()
+                        movie_title = (top_movie.get("title") or "").strip().lower()
+                        q_lower = clean_query.lower()
 
-                    if tv_exact and not movie_exact:
+                        # Exact title check
+                        tv_exact = (tv_name == q_lower)
+                        movie_exact = (movie_title == q_lower)
+
+                        tv_pop = float(top_tv.get("popularity", 0))
+                        movie_pop = float(top_movie.get("popularity", 0))
+
+                        if tv_exact and not movie_exact:
+                            selected_item = top_tv
+                            selected_media_type = "tv"
+                        elif movie_exact and not tv_exact:
+                            selected_item = top_movie
+                            selected_media_type = "movie"
+                        elif tv_pop > movie_pop * 1.5 and not year:
+                            selected_item = top_tv
+                            selected_media_type = "tv"
+                        else:
+                            selected_item = top_movie
+                            selected_media_type = "movie"
+                    elif top_tv:
                         selected_item = top_tv
                         selected_media_type = "tv"
-                    elif movie_exact and not tv_exact:
+                    elif top_movie:
                         selected_item = top_movie
                         selected_media_type = "movie"
-                    elif tv_pop > movie_pop * 1.5:
-                        selected_item = top_tv
-                        selected_media_type = "tv"
-                    else:
-                        selected_item = top_movie
-                        selected_media_type = "movie"
-                elif top_tv:
-                    selected_item = top_tv
-                    selected_media_type = "tv"
-                elif top_movie:
-                    selected_item = top_movie
-                    selected_media_type = "movie"
 
         if not selected_item:
             # Fallback 1: try search/movie directly

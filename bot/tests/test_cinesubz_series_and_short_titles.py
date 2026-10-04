@@ -138,3 +138,53 @@ async def test_queue_service_cancel_user_purges_all_and_stops_active():
         pass
     assert t.cancelled() is True
 
+
+def test_has_explicit_episode_patterns():
+    """Verify that _has_explicit_episode correctly differentiates single episodes from seasons."""
+    from handlers.leech_handler import _has_explicit_episode
+
+    # Explicit episode queries (MUST be recognized as single episodes)
+    assert _has_explicit_episode("squid game S01E01") is True
+    assert _has_explicit_episode("squid game S01 E01") is True
+    assert _has_explicit_episode("squid game s1e1") is True
+    assert _has_explicit_episode("squid game 1x01") is True
+    assert _has_explicit_episode("squid game Episode 5") is True
+    assert _has_explicit_episode("squid game ep 5") is True
+    assert _has_explicit_episode("squid game E05") is True
+
+    # Series/Season queries (MUST NOT be treated as single episodes)
+    assert _has_explicit_episode("squid game S01") is False
+    assert _has_explicit_episode("squid game Season 1") is False
+    assert _has_explicit_episode("squid game") is False
+    assert _has_explicit_episode("Game of Thrones Season 2") is False
+
+
+@pytest.mark.asyncio
+async def test_queue_service_preserves_queue_instance_and_worker_task():
+    """Verify that cancel_user drains the queue without reassigning self._queue, preventing deadlock."""
+    from services.queue_service import QueueService, QueueItem
+    qs = QueueService()
+    original_queue = qs._queue
+
+    mock_msg = AsyncMock()
+    mock_client = AsyncMock()
+
+    item1 = QueueItem(item_id="1", user_id=123, query_text="Q1", reply_media=None, status_msg=mock_msg, client=mock_client, title="T1")
+    item2 = QueueItem(item_id="2", user_id=456, query_text="Q2", reply_media=None, status_msg=mock_msg, client=mock_client, title="T2")
+
+    await qs._queue.put(item1)
+    await qs._queue.put(item2)
+    qs._pending_items = [item1, item2]
+
+    # Cancel user 123
+    qs.cancel_user(123)
+
+    # Queue instance must NOT be replaced!
+    assert qs._queue is original_queue
+    # User 456's item must remain in the queue
+    assert not qs._queue.empty()
+    remaining_item = await qs._queue.get()
+    assert remaining_item.user_id == 456
+    assert remaining_item.title == "T2"
+
+

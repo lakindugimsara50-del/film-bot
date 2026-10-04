@@ -35,6 +35,20 @@ def _is_admin(uid: int) -> bool:
     return uid in config.ADMIN_IDS or auth_service.is_admin(uid)
 
 
+def _has_explicit_episode(query_str: str) -> bool:
+    """Return True if query explicitly specifies an episode number (e.g. S01E01, 1x01, ep 1, E01)."""
+    if not query_str:
+        return False
+    patterns = [
+        r"[sS]\d{1,2}\s*[eExX]\d{1,2}",
+        r"[sS]\d{1,2}\s*[-._/]\s*[eExX]\d{1,2}",
+        r"\b\d{1,2}[xX]\d{1,2}\b",
+        r"\b(?:ep|episode)\.?\s*\d{1,2}\b",
+        r"(?:^|\s)[eE]\d{1,2}\b",
+    ]
+    return any(re.search(p, query_str, re.IGNORECASE) for p in patterns)
+
+
 async def setup_seedr_account(client: Client, message: Message, email: str, password: str) -> bool:
     """Authenticate with Seedr.cc and persist credentials in SeedrPool."""
     user_id = message.from_user.id if message.from_user else 0
@@ -276,7 +290,7 @@ def register(app: Client) -> None:
         # Check if batch TV series download requested
         parsed_batch = leech_service.parse_query(query_arg)
         is_batch_cmd = cmd_name in ("batch", "series", "leechseries")
-        has_explicit_ep = bool(re.search(r"\b(?:e|ep|episode\s*|x)\d{1,2}\b", query_arg, re.IGNORECASE))
+        has_explicit_ep = _has_explicit_episode(query_arg)
         is_season_without_ep = parsed_batch.is_series and parsed_batch.season is not None and not has_explicit_ep
 
         if (is_batch_cmd or is_season_without_ep) and not reply_media and not (parsed_batch.direct_url or "").startswith("magnet:?") and not has_explicit_ep:

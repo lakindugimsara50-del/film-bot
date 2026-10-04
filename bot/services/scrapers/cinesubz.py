@@ -113,7 +113,7 @@ async def search(
     temp_dir: str = "/tmp",
 ) -> list[dict]:
     """Search CineSubz for direct pre-hardsubbed downloads."""
-    clean_t = clean_title.strip()
+    clean_t = re.sub(r"[^a-zA-Z0-9\s]", " ", clean_title).strip() or clean_title.strip()
     search_queries = []
     if season and episode:
         search_queries.append(f"{clean_t} S{season:02d}E{episode:02d}")
@@ -205,11 +205,12 @@ async def search(
             except Exception as e_api:
                 log.debug("[CineSubz] WP API note: %s", e_api)
 
-    if not candidate_posts:
-        for dc in direct_candidates:
-            if dc not in seen_posts:
-                seen_posts.add(dc)
-                candidate_posts.append((dc, 20))
+    # Inject direct candidates with high priority so exact slug URLs (e.g. /movies/hi-2026-sinhala-subtitles/)
+    # are always evaluated even if fuzzy WP API search returned unrelated items
+    for dc in direct_candidates:
+        if dc not in seen_posts:
+            seen_posts.add(dc)
+            candidate_posts.append((dc, 200))
 
     candidate_posts.sort(key=lambda x: x[1], reverse=True)
     results: list[dict] = []

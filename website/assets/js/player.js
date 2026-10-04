@@ -137,7 +137,7 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     const cached = sessionStorage.getItem('filmsub_stream_base');
     const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
     const cachedHealthy = sessionStorage.getItem('filmsub_stream_healthy') === 'true';
-    if (cached && cachedHealthy && (Date.now() - cachedTime) < 15000) {
+    if (cached && cachedHealthy && (Date.now() - cachedTime) < 60000) {
       activeStreamBaseUrl = cached;
       streamServerHealthy = true;
       edgeProxyHealthy = sessionStorage.getItem('filmsub_edge_healthy') === 'true';
@@ -611,9 +611,9 @@ function getMovieStreams(movie) {
   const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
   if (vm && typeof vm === 'object') {
     const qKey = (currentEffectiveQuality || '720p').toLowerCase();
-    const vOpt = vm[qKey] || vm['720p'] || vm['480p'] || vm['1080p'] || vm['360p'] || Object.values(vm)[0];
+    const vOpt = vm[qKey] || vm['720p'] || vm['480p'] || vm['1080p'] || Object.values(vm).find(v => v && (v.message_id > 0 || (v.stream_url && !v.stream_url.includes('/0'))));
     if (vOpt) {
-      if (vOpt.stream_url) {
+      if (vOpt.stream_url && !vOpt.stream_url.includes('/0')) {
         const norm = normalizeStreamUrl(vOpt.stream_url);
         if (norm) nativeStreamUrl = norm;
       }
@@ -690,7 +690,7 @@ function buildDefaultSinhalaVttText(movie) {
     '',
     '2',
     '00:00:05.800 --> 00:00:12.500',
-    'FilmSub.lk Super Player — 1080p / 720p / 480p / 360p Adaptive Chunk Stream',
+    'FilmSub.lk Super Player — 1080p / 720p / 480p Ultra-Smooth Adaptive Stream',
     '',
     '3',
     '00:00:12.800 --> 00:00:24.000',

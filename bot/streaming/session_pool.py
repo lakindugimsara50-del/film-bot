@@ -371,6 +371,11 @@ class TelegramStreamPool:
                 for c in verified_admins:
                     if c not in candidates and getattr(c, "is_connected", False):
                         candidates.append(c)
+
+            # Rotate candidates across chunk_idx to balance MTProto streaming load across all sessions!
+            if len(candidates) > 1:
+                rot_idx = chunk_idx % len(candidates)
+                candidates = candidates[rot_idx:] + candidates[:rot_idx]
         else:
             for c in rotated:
                 if c not in candidates:
@@ -460,49 +465,8 @@ class TelegramStreamPool:
         pending_tasks: Dict[int, asyncio.Task] = {}
 
         try:
-            # 1. High-Performance Persistent Session Fast-Path:
-            # Avoids tearing down and recreating MTProto TCP sessions / DC auth for every 1MB chunk.
-            # Streams continuously over an established session at wire speed (30-50 MB/s).
-            primary_client = getattr(media_source, "_client", None)
-            if not primary_client or not getattr(primary_client, "is_connected", False):
-                primary_client = self._main_client
-
-            if primary_client and getattr(primary_client, "is_connected", False):
-                try:
-                    stream_gen = primary_client.stream_media(media_source, offset=start_chunk, limit=total_chunks)
-                    curr_c = start_chunk
-                    async for chunk in stream_gen:
-                        if not chunk or remaining <= 0:
-                            break
-                        if curr_c == start_chunk:
-                            local_start = start % CHUNK_SIZE
-                            slice_chunk = chunk[local_start:]
-                        else:
-                            slice_chunk = chunk
-
-                        if len(slice_chunk) > remaining:
-                            slice_chunk = slice_chunk[:remaining]
-
-                        yield slice_chunk
-                        remaining -= len(slice_chunk)
-                        offset += len(slice_chunk)
-                        curr_c += 1
-                        if remaining <= 0:
-                            break
-
-                    if remaining <= 0:
-                        return
-                    # If stream finished early but bytes remain, update boundaries for sliding window fallback
-                    start_chunk = curr_c
-                    total_chunks = max(0, end_chunk - start_chunk + 1)
-                    start = offset
-                except (asyncio.CancelledError, ConnectionResetError):
-                    raise
-                except Exception as stream_err:
-                    log.debug("[StreamPool] Persistent stream exception (%s), falling back to sliding window: %s", type(stream_err).__name__, stream_err)
-
             if total_chunks <= 1:
-                # Single-chunk fast-path fallback
+                # Single-chunk fast-path: fetch single 1MB block directly
                 chunk = await self._fetch_chunk(media_source, start_chunk)
                 if chunk:
                     local_start = start % CHUNK_SIZE
@@ -511,7 +475,8 @@ class TelegramStreamPool:
                         yield slice_chunk
                 return
 
-            # Pipelined concurrent chunk fetching across clients
+            # Multi-chunk parallel pipelined sliding window streaming:
+            # Concurrently pre-fetches chunks across multiple client sessions for 20-30+ MB/s throughput!
             # Sliding window concurrency: up to 8 parallel workers (matching STREAM_BATCH=8)
             concurrency = min(total_chunks, max(4, len(self.clients) * 2), 8)
 

@@ -255,12 +255,15 @@ function isRunningOnCloudflarePages() {
 }
 
 function getStreamEndpointPrefix() {
-  // If edge proxy is healthy and confirmed JSON, use relative prefix
+  // 1. Direct live tunnel for ultra-fast zero-latency streaming if healthy
+  if (streamServerHealthy && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
+    return activeStreamBaseUrl;
+  }
+  // 2. Cloudflare Pages edge proxy fallback
   if (edgeProxyHealthy) {
     return '';
   }
-  // If we have an active live stream backend, connect directly
-  if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+  if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
     return activeStreamBaseUrl;
   }
   return '';
@@ -2228,12 +2231,11 @@ function createVjsPlayer(playerEl, stream, movie) {
       } catch (e) {}
     });
 
-    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 12s
-    // (e.g. edge proxy cold start or network stall),
-    // automatically attempt failover to direct live tunnel before displaying fallback.
+    // Ultra-smooth zero-lag watchdog: only intervenes if user or browser initiated playback
+    // (!vjsPlayer.paused()) but video data stalled at readyState 0 for over 25 seconds.
     const slowHeaderWatchdog = setTimeout(() => {
       const isLocalSample = stream.stream_url && (stream.stream_url.includes('sample_stream') || stream.stream_url.startsWith('assets/'));
-      if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
+      if (vjsPlayer && !vjsPlayer.paused() && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
           !isLocalSample &&
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
@@ -2248,9 +2250,21 @@ function createVjsPlayer(playerEl, stream, movie) {
           vjsPlayer.play().catch(() => {});
           return;
         }
+        if (!vjsPlayer._retriedEdge && currentSrc.startsWith('http')) {
+          vjsPlayer._retriedEdge = true;
+          const match = currentSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+          if (match) {
+            const edgeUrl = `/stream/channel/${match[1]}/${match[2]}`;
+            console.warn('[FilmSub Player] Direct tunnel stalled (watchdog), switching to edge proxy:', edgeUrl);
+            vjsPlayer.src({ type: stream.type || 'video/mp4', src: edgeUrl });
+            vjsPlayer.load();
+            vjsPlayer.play().catch(() => {});
+            return;
+          }
+        }
         renderPlayerFallback(playerEl, movie);
       }
-    }, 12000);
+    }, 25000);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);
@@ -2263,7 +2277,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       clearTimeout(slowHeaderWatchdog);
 
       const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
-      // If relative edge stream failed and we have a live direct tunnel, retry immediately with direct tunnel!
+      // 1. If relative edge stream failed and we have a live direct tunnel, retry immediately with direct tunnel!
       if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl) && !currentSrc.startsWith('http')) {
         vjsPlayer._retriedDirect = true;
         edgeProxyHealthy = false;
@@ -2274,6 +2288,20 @@ function createVjsPlayer(playerEl, stream, movie) {
         vjsPlayer.load();
         vjsPlayer.play().catch(() => {});
         return;
+      }
+
+      // 2. If direct tunnel failed, retry with same-origin edge proxy!
+      if (!vjsPlayer._retriedEdge && currentSrc.startsWith('http')) {
+        vjsPlayer._retriedEdge = true;
+        const match = currentSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+        if (match) {
+          const edgeUrl = `/stream/channel/${match[1]}/${match[2]}`;
+          console.warn('[FilmSub Player] Direct tunnel failed, switching to edge proxy:', edgeUrl);
+          vjsPlayer.src({ type: stream.type || 'video/mp4', src: edgeUrl });
+          vjsPlayer.load();
+          vjsPlayer.play().catch(() => {});
+          return;
+        }
       }
 
       setTimeout(() => {

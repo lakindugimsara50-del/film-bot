@@ -17,8 +17,9 @@ const GITHUB_ENDPOINT_JSON =
   'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json';
 
 let cachedStreamBaseUrl = '';
+let cachedFallbackBaseUrl = '';
 let cachedAtEpoch = 0;
-const CACHE_TTL_MS = 20000; // 20 seconds
+const CACHE_TTL_MS = 15000; // 15 seconds
 
 function buildCorsHeaders() {
   return {
@@ -34,7 +35,7 @@ function buildCorsHeaders() {
 async function resolveLiveStreamBaseUrl(env) {
   const now = Date.now();
   if (cachedStreamBaseUrl && now - cachedAtEpoch < CACHE_TTL_MS) {
-    return cachedStreamBaseUrl;
+    return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
   }
 
   // 1. Fetch fresh stream_endpoint.json from GitHub Raw
@@ -53,8 +54,16 @@ async function resolveLiveStreamBaseUrl(env) {
         if (cleaned.startsWith('http')) {
           cachedStreamBaseUrl = cleaned;
           cachedAtEpoch = now;
-          return cachedStreamBaseUrl;
         }
+      }
+      if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
+        const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
+        if (cleanedFb.startsWith('http')) {
+          cachedFallbackBaseUrl = cleanedFb;
+        }
+      }
+      if (cachedStreamBaseUrl) {
+        return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
       }
     }
   } catch (err) {
@@ -65,10 +74,9 @@ async function resolveLiveStreamBaseUrl(env) {
   if (env && env.STREAM_BACKEND_URL) {
     cachedStreamBaseUrl = String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, '');
     cachedAtEpoch = now;
-    return cachedStreamBaseUrl;
   }
 
-  return cachedStreamBaseUrl;
+  return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
 }
 
 export async function onRequest(context) {
@@ -111,8 +119,8 @@ export async function onRequest(context) {
   const chatId = pathSegments[0];
   const msgId = pathSegments[1];
 
-  const baseUrl = await resolveLiveStreamBaseUrl(env);
-  if (!baseUrl) {
+  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env);
+  if (!baseUrl && !fallbackUrl) {
     return new Response(
       JSON.stringify({ error: 'Stream backend endpoint not configured' }),
       {
@@ -122,71 +130,81 @@ export async function onRequest(context) {
     );
   }
 
-  const targetUrl = `${baseUrl}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
-  const rangeHeader = request.headers.get('Range');
+  const urlsToTry = [baseUrl, fallbackUrl].filter(Boolean);
+  let lastErr = null;
+  let lastStatus = 503;
 
-  const upstreamHeaders = {
-    'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
-    'Accept': '*/*',
-  };
-  if (rangeHeader) {
-    upstreamHeaders['Range'] = rangeHeader;
-  }
+  for (const activeBase of urlsToTry) {
+    const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
+    const rangeHeader = request.headers.get('Range');
 
-  try {
-    const upstreamRes = await fetch(targetUrl, {
-      method: request.method,
-      headers: upstreamHeaders,
-      redirect: 'follow',
-      signal: request.signal,
-    });
+    const upstreamHeaders = {
+      'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
+      'Accept': '*/*',
+    };
+    if (rangeHeader) {
+      upstreamHeaders['Range'] = rangeHeader;
+    }
 
-    if (!upstreamRes.ok && upstreamRes.status !== 206) {
-      return new Response(
-        JSON.stringify({
-          error: 'Upstream stream server unavailable',
-          upstream_status: upstreamRes.status,
-        }),
-        {
-          status: upstreamRes.status >= 500 ? 503 : upstreamRes.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    try {
+      const upstreamRes = await fetch(targetUrl, {
+        method: request.method,
+        headers: upstreamHeaders,
+        redirect: 'follow',
+        signal: request.signal,
+      });
+
+      if (!upstreamRes.ok && upstreamRes.status !== 206) {
+        if (activeBase === baseUrl) {
+          cachedStreamBaseUrl = '';
+          cachedAtEpoch = 0;
         }
-      );
-    }
-
-    const outHeaders = new Headers(corsHeaders);
-    outHeaders.set('Content-Type', upstreamRes.headers.get('Content-Type') || 'video/mp4');
-    outHeaders.set('Accept-Ranges', 'bytes');
-    outHeaders.set('X-Stream-Backend', baseUrl);
-
-    const contentRange = upstreamRes.headers.get('Content-Range');
-    if (contentRange) {
-      outHeaders.set('Content-Range', contentRange);
-    }
-    const contentLength = upstreamRes.headers.get('Content-Length');
-    if (contentLength) {
-      outHeaders.set('Content-Length', contentLength);
-    }
-    const cacheControl = upstreamRes.headers.get('Cache-Control');
-    outHeaders.set(
-      'Cache-Control',
-      cacheControl || 'public, max-age=3600, stale-while-revalidate=86400'
-    );
-
-    return new Response(request.method === 'HEAD' ? null : upstreamRes.body, {
-      status: upstreamRes.status,
-      headers: outHeaders,
-    });
-  } catch (err) {
-    return new Response(
-      JSON.stringify({
-        error: 'Stream tunnel unreachable',
-        detail: String((err && err.message) || err),
-      }),
-      {
-        status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        lastStatus = upstreamRes.status >= 500 ? 503 : upstreamRes.status;
+        continue;
       }
-    );
+
+      const outHeaders = new Headers(corsHeaders);
+      outHeaders.set('Content-Type', upstreamRes.headers.get('Content-Type') || 'video/mp4');
+      outHeaders.set('Accept-Ranges', 'bytes');
+      outHeaders.set('X-Stream-Backend', activeBase);
+
+      const contentRange = upstreamRes.headers.get('Content-Range');
+      if (contentRange) {
+        outHeaders.set('Content-Range', contentRange);
+      }
+      const contentLength = upstreamRes.headers.get('Content-Length');
+      if (contentLength) {
+        outHeaders.set('Content-Length', contentLength);
+      }
+      const cacheControl = upstreamRes.headers.get('Cache-Control');
+      outHeaders.set(
+        'Cache-Control',
+        cacheControl || 'public, max-age=3600, stale-while-revalidate=86400'
+      );
+
+      return new Response(request.method === 'HEAD' ? null : upstreamRes.body, {
+        status: upstreamRes.status,
+        headers: outHeaders,
+      });
+    } catch (err) {
+      if (activeBase === baseUrl) {
+        cachedStreamBaseUrl = '';
+        cachedAtEpoch = 0;
+      }
+      lastErr = err;
+      continue;
+    }
   }
+
+  return new Response(
+    JSON.stringify({
+      error: 'Upstream stream server unavailable',
+      upstream_status: lastStatus,
+      detail: lastErr ? String((lastErr && lastErr.message) || lastErr) : undefined,
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 }

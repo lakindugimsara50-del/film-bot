@@ -187,6 +187,11 @@ def start_health_server_thread(port: int) -> threading.Thread:
     and are NEVER blocked or starved by Pyrogram, event loop contention, or MTProto encryption.
     """
     global _health_server_instance
+    if _health_server_instance is not None:
+        try:
+            _health_server_instance.should_exit = True
+        except Exception:
+            pass
     server_cfg = uvicorn.Config(
         app=web_app,
         host="0.0.0.0",
@@ -883,8 +888,23 @@ async def _on_start(client: Client) -> None:
         from services import github_service
         active_stream_url = os.getenv("STREAM_SERVER_URL", "").strip() or os.getenv("STREAM_BASE_URL", "").strip() or getattr(config, "STREAM_BASE_URL", "")
         if active_stream_url:
-            asyncio.create_task(github_service.publish_live_stream_endpoint(active_stream_url))
-            log.info("[Main] Scheduled live stream endpoint publication: %s", active_stream_url)
+            async def _verify_and_publish():
+                # Verify local health endpoint responds before publishing
+                server_port = int(os.getenv("PORT", 7860))
+                for _ in range(12):
+                    try:
+                        import httpx
+                        async with httpx.AsyncClient(timeout=2.0) as client_http:
+                            r = await client_http.get(f"http://127.0.0.1:{server_port}/health")
+                            if r.status_code == 200:
+                                break
+                    except Exception:
+                        pass
+                    await asyncio.sleep(1)
+                await github_service.publish_live_stream_endpoint(active_stream_url)
+                log.info("[Main] Live stream endpoint published: %s", active_stream_url)
+
+            asyncio.create_task(_verify_and_publish())
     except Exception as ep_err:
         log.debug("[Main] Stream endpoint publication note: %s", ep_err)
 

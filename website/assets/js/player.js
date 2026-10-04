@@ -83,12 +83,16 @@ async function probeStreamServerHealth(baseUrl) {
   }
 }
 
-async function loadLiveStreamConfig() {
-  const cached = sessionStorage.getItem('filmsub_stream_base');
-  const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
-  if (cached && (Date.now() - cachedTime) < 30000) {
-    activeStreamBaseUrl = cached;
-    return activeStreamBaseUrl;
+async function loadLiveStreamConfig(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = sessionStorage.getItem('filmsub_stream_base');
+    const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
+    const cachedHealthy = sessionStorage.getItem('filmsub_stream_healthy') === 'true';
+    if (cached && cachedHealthy && (Date.now() - cachedTime) < 15000) {
+      activeStreamBaseUrl = cached;
+      streamServerHealthy = true;
+      return activeStreamBaseUrl;
+    }
   }
 
   let candidateUrl = '';
@@ -150,12 +154,17 @@ async function loadLiveStreamConfig() {
   activeStreamBaseUrl = activeUrl;
   if (!activeUrl) {
     streamServerHealthy = false;
+    try {
+      sessionStorage.removeItem('filmsub_stream_base');
+      sessionStorage.removeItem('filmsub_stream_healthy');
+    } catch (e) {}
+  } else {
+    try {
+      sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
+      sessionStorage.setItem('filmsub_stream_healthy', 'true');
+      sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
+    } catch (e) {}
   }
-
-  try {
-    sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
-    sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
-  } catch (e) {}
 
   return activeStreamBaseUrl;
 }
@@ -2196,13 +2205,14 @@ function renderPlayerFallback(playerEl, movie) {
   const isVideoPending = !movie.message_id && !movie.file_id && (!Array.isArray(movie.downloads) || !movie.downloads.some(d => d.message_id));
   const tgDownload = (Array.isArray(movie.downloads) && movie.downloads.find(d => d.url && d.url.includes('t.me'))) || null;
   const tgChannelUrl = tgDownload ? tgDownload.url : (movie.channel_post_id ? `https://t.me/c/${(movie.channel_chat_id || '').replace(/^-100/, '')}/${movie.channel_post_id}` : 'https://t.me/filmsinhala200');
+  const tgBotUrl = `https://t.me/Filmsinhala200Bot?start=watch_${encodeURIComponent(movie.slug || movie.id || '')}`;
 
   const headingText = isVideoPending
     ? 'වීඩියෝව සූදානම් වෙමින් පවතී...'
     : 'චිත්‍රපටය සම්බන්ධ වෙමින් පවතී...';
   const descText = isVideoPending
     ? 'මෙම වීඩියෝව Telegram Cloud වෙත Upload වෙමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ.'
-    : 'High-Speed Stream Server එක හා සම්බන්ධ වෙමින් පවතී. කරුණාකර මොහොතක් රැඳෙන්න...';
+    : 'Telegram High-Speed Stream Server එක හා සම්බන්ධ වෙමින් පවතී. Colab සක්‍රීය වූ සැනින් ස්වයංක්‍රීයව Playback ආරම්භ වේ (ස්වයංක්‍රීයව යාවත්කාලීන වේ)...';
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap cinema-standby-screen">
@@ -2218,12 +2228,15 @@ function renderPlayerFallback(playerEl, movie) {
       <div class="cinema-pulse-loader-line">
         <div class="cinema-pulse-bar"></div>
       </div>
-      <div class="cinema-standby-actions">
+      <div class="cinema-standby-actions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
         <button id="btn-manual-reconnect" type="button" class="btn-cinema-action">
           <i class="fa-solid fa-rotate-right"></i> Refresh Player
         </button>
+        <a href="${FilmSub.escHtml(tgBotUrl)}" target="_blank" rel="noopener" class="btn-cinema-action" style="background:#0088cc;color:#fff;border-color:#0088cc;display:inline-flex;align-items:center;gap:6px">
+          <i class="fa-solid fa-robot"></i> Telegram Bot
+        </a>
         ${tgChannelUrl ? `
-          <a href="${FilmSub.escHtml(tgChannelUrl)}" target="_blank" rel="noopener" class="btn-cinema-action tg-action">
+          <a href="${FilmSub.escHtml(tgChannelUrl)}" target="_blank" rel="noopener" class="btn-cinema-action tg-action" style="display:inline-flex;align-items:center;gap:6px">
             <i class="fa-brands fa-telegram"></i> Telegram Post
           </a>
         ` : ''}
@@ -2252,7 +2265,7 @@ function renderPlayerFallback(playerEl, movie) {
     try {
       sessionStorage.removeItem('filmsub_stream_base');
       sessionStorage.removeItem('filmsub_stream_healthy');
-      await loadLiveStreamConfig();
+      await loadLiveStreamConfig(true);
     } catch (e) {}
     loadStream(movie, 0);
   };
@@ -2260,16 +2273,16 @@ function renderPlayerFallback(playerEl, movie) {
   const btnRetry = playerEl.querySelector('#btn-manual-reconnect');
   if (btnRetry) btnRetry.addEventListener('click', doRetry);
 
-  // Silent automatic background check every 6 seconds
+  // Automatic background check every 5 seconds (auto-discovers new tunnel URL when Colab starts)
   window.fallbackRetryInterval = setInterval(async () => {
-    const alive = await probeStreamServerHealth(activeStreamBaseUrl || '');
-    if (alive) {
+    await loadLiveStreamConfig(true);
+    if (streamServerHealthy && activeStreamBaseUrl) {
       clearInterval(window.fallbackRetryInterval);
       window.fallbackRetryInterval = null;
       FilmSub.showToast('⚡ Stream Ready! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
       loadStream(movie, 0); // restart Super Player
     }
-  }, 6000);
+  }, 5000);
 }
 
 /**

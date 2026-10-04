@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://colored-casinos-consequently-helped.trycloudflare.com",
+  "stream_base_url": "https://surveys-makeup-entered-missouri.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-03T17:42:53.050641+00:00",
+  "updated_at": "2026-10-04T07:01:49.736582+00:00",
   "status": "online"
 };

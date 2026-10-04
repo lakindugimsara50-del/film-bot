@@ -282,18 +282,33 @@ class TelegramStreamPool:
             active_candidates = connected_clients
 
         # Round-robin rotate candidate starting client by chunk_idx across available clients
-        candidates: List[Client] = []
         n = len(active_candidates)
+        rotated: List[Client] = []
         if n > 0:
             start_rot = chunk_idx % n
             rotated = active_candidates[start_rot:] + active_candidates[:start_rot]
+
+        # For Telegram channel messages (types.Message in -100 channels), primary_client (main bot)
+        # is the only client guaranteed to have channel access and matching session file references.
+        # For public file_id / string media, rotate across all pool clients for load balancing.
+        is_channel_msg = (
+            isinstance(media_source, types.Message) and
+            getattr(media_source, "chat", None) and
+            str(getattr(media_source.chat, "id", "")).startswith("-100")
+        )
+
+        candidates: List[Client] = []
+        if is_channel_msg and primary_client and getattr(primary_client, "is_connected", False) and self._client_cooldowns.get(primary_client, 0.0) <= now:
+            candidates.append(primary_client)
             for c in rotated:
                 if c not in candidates:
                     candidates.append(c)
-
-        # Ensure primary_client is always present as ultimate fallback (guaranteed channel access)
-        if primary_client and primary_client not in candidates and getattr(primary_client, "is_connected", False):
-            candidates.append(primary_client)
+        else:
+            for c in rotated:
+                if c not in candidates:
+                    candidates.append(c)
+            if primary_client and primary_client not in candidates and getattr(primary_client, "is_connected", False):
+                candidates.append(primary_client)
 
         last_exc = None
         max_attempts = 2
@@ -310,8 +325,8 @@ class TelegramStreamPool:
                             if piece:
                                 buf.extend(piece)
 
-                    # 20-second timeout avoids hanging forever if a TCP socket stalls
-                    await asyncio.wait_for(_collect(), timeout=20.0)
+                    # 6-second timeout avoids blocking video playback if a secondary socket stalls
+                    await asyncio.wait_for(_collect(), timeout=6.0)
                     if buf:
                         # Client succeeded: clear cooldown
                         self._client_cooldowns.pop(client, None)
@@ -327,7 +342,7 @@ class TelegramStreamPool:
                     # Clean cancellation during timeline seek / scrubbing
                     raise
                 except asyncio.TimeoutError:
-                    log.warning("[StreamPool] Timeout (20s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
+                    log.warning("[StreamPool] Timeout (6s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
                     self._client_cooldowns[client] = time.time() + 10.0
                     last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
                     continue

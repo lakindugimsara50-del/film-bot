@@ -54,6 +54,19 @@ let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM
 let streamServerHealthy = false;
 
 async function probeStreamServerHealth(baseUrl) {
+  if (isRunningOnCloudflarePages()) {
+    try {
+      const ctrl = new AbortController();
+      const tId = setTimeout(() => ctrl.abort(), 2500);
+      const resp = await fetch(`/stream/ping?t=${Date.now()}`, {
+        method: 'GET',
+        signal: ctrl.signal,
+      }).catch(() => null);
+      clearTimeout(tId);
+      if (resp && resp.ok) return true;
+    } catch (e) {}
+  }
+
   const base = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
   if (!base) return false;
   try {
@@ -132,9 +145,17 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     } catch (e) {}
   }
 
-  // 3. Probe primary candidate URL (e.g. active Colab tunnel)
+  // 3. Probe candidate URL or Edge proxy
   let activeUrl = '';
-  if (candidateUrl) {
+  if (isRunningOnCloudflarePages()) {
+    const isEdgeAlive = await probeStreamServerHealth('');
+    if (isEdgeAlive) {
+      activeUrl = candidateUrl || fallbackUrl || 'https://filmsub.pages.dev';
+      streamServerHealthy = true;
+    }
+  }
+
+  if (!activeUrl && candidateUrl) {
     const isAlive = await probeStreamServerHealth(candidateUrl);
     if (isAlive) {
       activeUrl = candidateUrl;
@@ -165,8 +186,23 @@ async function loadLiveStreamConfig(forceRefresh = false) {
       sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
     } catch (e) {}
   }
-
   return activeStreamBaseUrl;
+}
+
+function isRunningOnCloudflarePages() {
+  if (typeof window === 'undefined' || !window.location) return false;
+  const h = (window.location.hostname || '').toLowerCase();
+  return h.includes('pages.dev') || h.includes('filmsub');
+}
+
+function getStreamEndpointPrefix() {
+  if (isRunningOnCloudflarePages()) {
+    return '';
+  }
+  if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
+    return activeStreamBaseUrl;
+  }
+  return '';
 }
 
 function isDeadTunnel(u) {
@@ -183,39 +219,28 @@ function isDeadTunnel(u) {
 
 function normalizeStreamUrl(u) {
   if (!u || typeof u !== 'string') return '';
+  const prefix = getStreamEndpointPrefix();
   const match = u.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
   if (match) {
     const cId = match[1];
     const mId = match[2];
-    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-      return `${activeStreamBaseUrl}/stream/channel/${cId}/${mId}`;
-    }
-    return `/stream/channel/${cId}/${mId}`;
+    return `${prefix}/stream/channel/${cId}/${mId}`;
   }
   const matchDl = u.match(/\/stream\/download\/(-?\d+)\/(\d+)/);
   if (matchDl) {
     const cId = matchDl[1];
     const mId = matchDl[2];
-    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-      return `${activeStreamBaseUrl}/stream/download/${cId}/${mId}`;
-    }
-    return `/stream/download/${cId}/${mId}`;
+    return `${prefix}/stream/download/${cId}/${mId}`;
   }
   const matchFile = u.match(/\/stream\/file\/([a-zA-Z0-9_-]+)/);
   if (matchFile) {
     const fId = matchFile[1];
-    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-      return `${activeStreamBaseUrl}/stream/file/${fId}`;
-    }
-    return `/stream/file/${fId}`;
+    return `${prefix}/stream/file/${fId}`;
   }
   const matchRawStream = u.match(/\/stream\/([a-zA-Z0-9_-]{15,})/);
   if (matchRawStream && !matchRawStream[1].startsWith('channel') && !matchRawStream[1].startsWith('download') && !matchRawStream[1].startsWith('file')) {
     const fId = matchRawStream[1];
-    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-      return `${activeStreamBaseUrl}/stream/file/${fId}`;
-    }
-    return `/stream/file/${fId}`;
+    return `${prefix}/stream/file/${fId}`;
   }
   return isDeadTunnel(u) ? '' : u;
 }
@@ -542,17 +567,9 @@ function getMovieStreams(movie) {
 
   if (!nativeStreamUrl && tgMsgId > 0) {
     if (!tgChatId) tgChatId = '-1004325759505';
-    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-      nativeStreamUrl = `${activeStreamBaseUrl}/stream/channel/${tgChatId}/${tgMsgId}`;
-    } else {
-      nativeStreamUrl = `/stream/channel/${tgChatId}/${tgMsgId}`;
-    }
+    nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${tgMsgId}`;
   } else if (!nativeStreamUrl && movie.file_id) {
-    if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-      nativeStreamUrl = `${activeStreamBaseUrl}/stream/file/${encodeURIComponent(movie.file_id)}`;
-    } else {
-      nativeStreamUrl = `/stream/file/${encodeURIComponent(movie.file_id)}`;
-    }
+    nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(movie.file_id)}`;
   } else if (!nativeStreamUrl && existingTgStream && existingTgStream.stream_url && !existingTgStream.stream_url.includes('vidlink') && !existingTgStream.stream_url.includes('autoembed') && !existingTgStream.stream_url.includes('multiembed')) {
     nativeStreamUrl = normalizeStreamUrl(existingTgStream.stream_url);
   } else if (!nativeStreamUrl && driveId) {
@@ -574,13 +591,9 @@ function getMovieStreams(movie) {
       const epChatId = matchedEp.channel_chat_id || tgChatId || '-1004325759505';
       if (epMsgId > 0) {
         tgMsgId = epMsgId;
-        nativeStreamUrl = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http'))
-          ? `${activeStreamBaseUrl}/stream/channel/${epChatId}/${epMsgId}`
-          : `/stream/channel/${epChatId}/${epMsgId}`;
+        nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/channel/${epChatId}/${epMsgId}`;
       } else if (matchedEp.file_id) {
-        nativeStreamUrl = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http'))
-          ? `${activeStreamBaseUrl}/stream/file/${encodeURIComponent(matchedEp.file_id)}`
-          : `/stream/file/${encodeURIComponent(matchedEp.file_id)}`;
+        nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(matchedEp.file_id)}`;
       }
     }
   }
@@ -598,7 +611,7 @@ function getMovieStreams(movie) {
     mode: 'super_chunk',
     type: 'video/mp4',
     embed: false,
-    stream_url: nativeStreamUrl || (activeStreamBaseUrl ? `${activeStreamBaseUrl}/stream/channel/-1004325759505/${tgMsgId}` : `/stream/channel/-1004325759505/${tgMsgId}`),
+    stream_url: nativeStreamUrl || `${getStreamEndpointPrefix()}/stream/channel/-1004325759505/${tgMsgId}`,
     hasLocalFile: isRealStreamReady,
   });
 
@@ -1180,11 +1193,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
           tgChatId = mMatch ? mMatch[1] : '-1004325759505';
         }
         if (vEntry.message_id) {
-          if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
-            newSrc = `${activeStreamBaseUrl}/stream/channel/${tgChatId}/${vEntry.message_id}`;
-          } else {
-            newSrc = `/stream/channel/${tgChatId}/${vEntry.message_id}`;
-          }
+          newSrc = `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${vEntry.message_id}`;
         } else if (vEntry.stream_url) {
           newSrc = normalizeStreamUrl(vEntry.stream_url);
         }
@@ -1215,16 +1224,13 @@ function applyQualitySwitch(targetQuality, opts = {}) {
           newSrc = normalizeStreamUrl(matched.stream_url);
         } else if (matched.message_id) {
           const cId = tgChatId || '-1004325759505';
-          const path = `/stream/channel/${cId}/${matched.message_id}`;
-          newSrc = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) ? `${activeStreamBaseUrl}${path}` : path;
+          newSrc = `${getStreamEndpointPrefix()}/stream/channel/${cId}/${matched.message_id}`;
         } else if (matched.file_id) {
-          const path = `/stream/file/${encodeURIComponent(matched.file_id)}`;
-          newSrc = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) ? `${activeStreamBaseUrl}${path}` : path;
+          newSrc = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(matched.file_id)}`;
         } else if (matched.url && matched.url.includes('/c/')) {
           const mMatch = matched.url.match(/t\.me\/c\/(\d+)\/(\d+)/);
           if (mMatch) {
-            const path = `/stream/channel/-100${mMatch[1]}/${mMatch[2]}`;
-            newSrc = (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) ? `${activeStreamBaseUrl}${path}` : path;
+            newSrc = `${getStreamEndpointPrefix()}/stream/channel/-100${mMatch[1]}/${mMatch[2]}`;
           }
         } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
           newSrc = normalizeStreamUrl(matched.url);

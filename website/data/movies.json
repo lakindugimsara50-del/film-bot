@@ -14200,7 +14200,7 @@
       "sub_merged": true,
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
-      "quality": "720p",
+      "quality": "1080p",
       "duration": "128 min",
       "description": "As war and plague devastate 14th-century England, a humble peasant ignites a rebellion, uniting an army of commoners to defy the King’s might in a desperate fight for justice and survival.",
       "director": "Paul Greengrass",
@@ -14228,21 +14228,21 @@
       ],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
-      "message_id": 266,
-      "file_name": "fs_the-uprising-2026_720p.mp4",
-      "file_size": 1658122286,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAR1qwkUf6MBWVd5CKxst8gAB6iij2g8AAvQpAAImERBWeOXlzBURRZAeBA",
+      "message_id": 285,
+      "file_name": "comp_the-uprising-2026_1080p.mp4",
+      "file_size": 1891650546,
       "drive_file_id": "",
-      "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+      "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
-          "message_id": 266,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAR1qwkUf6MBWVd5CKxst8gAB6iij2g8AAvQpAAImERBWeOXlzBURRZAeBA",
+          "message_id": 285,
           "quality": "1080p"
         },
         {
@@ -14268,23 +14268,38 @@
         }
       ],
       "qualities": {
-        "auto": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
-        "1080p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
-        "720p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
-        "480p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
-        "360p": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266"
+        "auto": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
+        "1080p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
+        "720p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/284",
+        "480p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/283",
+        "360p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285"
       },
       "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1891650546,
+          "url": "https://t.me/c/4325759505/285",
+          "telegram_url": "https://t.me/c/4325759505/285",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAR1qwkUf6MBWVd5CKxst8gAB6iij2g8AAvQpAAImERBWeOXlzBURRZAeBA",
+          "message_id": 285,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
         {
           "quality": "720p (Telegram Direct)",
           "label": "720p HD (Telegram Channel • Fast)",
           "size": "1.5 GB",
           "size_bytes": 1658122286,
-          "url": "https://t.me/c/4325759505/266",
-          "telegram_url": "https://t.me/c/4325759505/266",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
-          "message_id": 266,
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "url": "https://t.me/c/4325759505/284",
+          "telegram_url": "https://t.me/c/4325759505/284",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARxqwkJ5XjqQZft8t_JLSze61ZYZ4QAC7SkAAiYREFanjHqik2oyiB4E",
+          "message_id": 284,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/284",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14295,11 +14310,11 @@
           "label": "480p SD (Telegram Channel • Fast)",
           "size": "816.1 MB",
           "size_bytes": 855699751,
-          "url": "https://t.me/c/4325759505/265",
-          "telegram_url": "https://t.me/c/4325759505/265",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQlqwUF4snqjW5vvC5LCD17f-lRptAAC0icAAlw4CVbVC8dIxnRNsx4E",
-          "message_id": 265,
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+          "url": "https://t.me/c/4325759505/283",
+          "telegram_url": "https://t.me/c/4325759505/283",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARtqwkBnTPaZhorrVh0a-aH4A-psrwAC4ikAAiYREFZR3Qdiz7dIqh4E",
+          "message_id": 283,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/283",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14308,10 +14323,10 @@
         {
           "quality": "1080p",
           "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "1.5 GB",
-          "size_bytes": 1658122286,
+          "size": "1.8 GB",
+          "size_bytes": 1891650546,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_1080p",
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14323,7 +14338,7 @@
           "size": "1.5 GB",
           "size_bytes": 1658122286,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_720p",
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/284",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14335,7 +14350,7 @@
           "size": "816.1 MB",
           "size_bytes": 855699751,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_480p",
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/283",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14344,10 +14359,10 @@
         {
           "quality": "360p",
           "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "284.6 MB",
-          "size_bytes": 298462011,
+          "size": "324.7 MB",
+          "size_bytes": 340497098,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_the-uprising-2026_360p",
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -14356,28 +14371,28 @@
       ],
       "variant_media": {
         "1080p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "",
-          "size_bytes": 0
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAR1qwkUf6MBWVd5CKxst8gAB6iij2g8AAvQpAAImERBWeOXlzBURRZAeBA",
+          "message_id": 285,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
+          "size_bytes": 1891650546
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQpqwULCTIzhAkbaAhzEVju18WkZxQAC1icAAlw4CVbzZ8rUVlDojB4E",
-          "message_id": 266,
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARxqwkJ5XjqQZft8t_JLSze61ZYZ4QAC7SkAAiYREFanjHqik2oyiB4E",
+          "message_id": 284,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/284",
           "size_bytes": 1658122286
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQlqwUF4snqjW5vvC5LCD17f-lRptAAC0icAAlw4CVbVC8dIxnRNsx4E",
-          "message_id": 265,
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/265",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARtqwkBnTPaZhorrVh0a-aH4A-psrwAC4ikAAiYREFZR3Qdiz7dIqh4E",
+          "message_id": 283,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/283",
           "size_bytes": 855699751
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://colored-casinos-consequently-helped.trycloudflare.com/stream/channel/-1004325759505/266",
-          "size_bytes": 298462011
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/285",
+          "size_bytes": 340497098
         }
       },
       "subtitles": [
@@ -14391,8 +14406,8 @@
       ],
       "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=the-uprising-2026",
-      "added_date": "2026-10-03",
-      "added_at": "2026-10-03T18:27:57Z",
+      "added_date": "2026-10-04",
+      "added_at": "2026-10-04T12:22:58Z",
       "added_by": "bot_auto_leech"
     },
     {
@@ -14886,5 +14901,5 @@
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-04T11:50:47Z"
+  "last_updated": "2026-10-04T12:23:00Z"
 }

@@ -13729,8 +13729,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "language": "English",
       "subtitle_language": "Sinhala",
-      "has_sinhala_sub": false,
-      "sub_merged": false,
+      "has_sinhala_sub": true,
+      "sub_merged": true,
       "is_already_hardsubbed": false,
       "sub_hardcoded": false,
       "quality": "720p",
@@ -13761,21 +13761,21 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_2rAs5zAdJNpKkvmR5mN2DEEm8XbAAJUJgACXDgJVoq2jSLlEs-YHgQ",
-      "message_id": 255,
-      "file_name": "squid-game-2021-s01e01.mp4",
-      "file_size": 850598296,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
+      "message_id": 268,
+      "file_name": "squid-game-2021-s01e01-720p.mp4",
+      "file_size": 659231613,
       "drive_file_id": "",
-      "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
+      "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_2rAs5zAdJNpKkvmR5mN2DEEm8XbAAJUJgACXDgJVoq2jSLlEs-YHgQ",
-          "message_id": 255,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
+          "message_id": 268,
           "quality": "1080p"
         },
         {
@@ -13801,23 +13801,23 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       ],
       "qualities": {
-        "auto": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
-        "1080p": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
-        "720p": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
-        "480p": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/256",
-        "360p": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255"
+        "auto": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+        "1080p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+        "720p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+        "480p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
+        "360p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268"
       },
       "downloads": [
         {
           "quality": "720p (Telegram Direct)",
           "label": "720p HD (Telegram Channel • Fast)",
-          "size": "811.2 MB",
-          "size_bytes": 850598296,
-          "url": "https://t.me/c/4325759505/255",
-          "telegram_url": "https://t.me/c/4325759505/255",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_2rAs5zAdJNpKkvmR5mN2DEEm8XbAAJUJgACXDgJVoq2jSLlEs-YHgQ",
-          "message_id": 255,
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
+          "size": "811.3 MB",
+          "size_bytes": 850658250,
+          "url": "https://t.me/c/4325759505/268",
+          "telegram_url": "https://t.me/c/4325759505/268",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
+          "message_id": 268,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13826,13 +13826,13 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "480p (Telegram Direct)",
           "label": "480p SD (Telegram Channel • Fast)",
-          "size": "366.8 MB",
-          "size_bytes": 384655790,
-          "url": "https://t.me/c/4325759505/256",
-          "telegram_url": "https://t.me/c/4325759505/256",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQABasC2HTVS0TgZUwW5H_mMLKDq9C0AAl8mAAJcOAlWPdkY0SasUv0eBA",
-          "message_id": 256,
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/256",
+          "size": "366.9 MB",
+          "size_bytes": 384719703,
+          "url": "https://t.me/c/4325759505/269",
+          "telegram_url": "https://t.me/c/4325759505/269",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ1qwgGzm2RMypX82VOYBdHOZnDXZQACLykAAiYREFYHBd8E6kUqBR4E",
+          "message_id": 269,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13841,10 +13841,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "1080p",
           "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "811.2 MB",
-          "size_bytes": 850598296,
+          "size": "628.7 MB",
+          "size_bytes": 659231613,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_1080p",
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13853,10 +13853,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "720p",
           "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "811.2 MB",
-          "size_bytes": 850598296,
+          "size": "811.3 MB",
+          "size_bytes": 850658250,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_720p",
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13865,10 +13865,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "480p",
           "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "366.8 MB",
-          "size_bytes": 384655790,
+          "size": "366.9 MB",
+          "size_bytes": 384719703,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_480p",
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/256",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13877,10 +13877,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "360p",
           "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "146.0 MB",
-          "size_bytes": 153107693,
+          "size": "113.2 MB",
+          "size_bytes": 118661690,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_360p",
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13895,29 +13895,37 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "size_bytes": 0
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQAD_2rAs5zAdJNpKkvmR5mN2DEEm8XbAAJUJgACXDgJVoq2jSLlEs-YHgQ",
-          "message_id": 255,
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
-          "size_bytes": 850598296
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
+          "message_id": 268,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "size_bytes": 850658250
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQABasC2HTVS0TgZUwW5H_mMLKDq9C0AAl8mAAJcOAlWPdkY0SasUv0eBA",
-          "message_id": 256,
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/256",
-          "size_bytes": 384655790
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ1qwgGzm2RMypX82VOYBdHOZnDXZQACLykAAiYREFYHBd8E6kUqBR4E",
+          "message_id": 269,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
+          "size_bytes": 384719703
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://gardening-clouds-enjoyed-ultimately.trycloudflare.com/stream/channel/-1004325759505/255",
-          "size_bytes": 153107693
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "size_bytes": 118661690
         }
       },
-      "subtitles": [],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/squid-game-2021-s01e01-si.vtt",
+          "default": true
+        }
+      ],
       "source_method": "torrent",
       "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e01",
-      "added_date": "2026-10-03",
-      "added_at": "2026-10-03T08:00:29Z",
+      "added_date": "2026-10-04",
+      "added_at": "2026-10-04T07:35:17Z",
       "added_by": "bot_auto_leech"
     },
     {
@@ -14388,5 +14396,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-03T18:28:00Z"
+  "last_updated": "2026-10-04T07:35:19Z"
 };

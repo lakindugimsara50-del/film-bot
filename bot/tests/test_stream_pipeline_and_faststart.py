@@ -6,6 +6,7 @@ test_stream_pipeline_and_faststart.py — Deep verification tests for:
 """
 
 import asyncio
+import time
 from pathlib import Path
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -339,5 +340,60 @@ async def test_cached_stream_generator_preserves_bytes_on_cancellation():
         # Verify that accumulated chunks were saved in header cache despite cancellation
         cached = await stream_server._get_from_header_cache(key, 0, len(b"CHUNK_ALPHACHUNK_BETA") - 1)
         assert cached == b"CHUNK_ALPHACHUNK_BETA"
+
+
+@pytest.mark.asyncio
+async def test_get_client_user_id_fallback_to_storage():
+    """Verify get_client_user_id extracts UID from storage when c.me is None."""
+    pool = stream_server.stream_pool
+    dummy_client = MagicMock()
+    dummy_client._user_id = None
+    dummy_client.me = None
+    dummy_storage = MagicMock()
+    dummy_storage.user_id = AsyncMock(return_value="1967609462")
+    dummy_client.storage = dummy_storage
+
+    uid = await pool.get_client_user_id(dummy_client)
+    assert uid == 1967609462
+    assert dummy_client._user_id == 1967609462
+
+
+@pytest.mark.asyncio
+async def test_fetch_chunk_selects_admin_userbot_when_c_me_is_none():
+    """Verify _fetch_chunk prioritizes admin userbot even when c.me is None."""
+    pool = stream_server.stream_pool
+    admin_uid = 1967609462
+
+    admin_client = MagicMock()
+    admin_client.is_connected = True
+    admin_client.me = None
+    admin_client._user_id = admin_uid
+    admin_client.name = "admin_userbot_session"
+
+    async def fake_stream_media(media, offset=0, limit=1):
+        yield b"USERBOT_CHUNK_DATA_1MB"
+
+    admin_client.stream_media = fake_stream_media
+    admin_client.get_messages = AsyncMock(return_value=MagicMock())
+
+    main_client = MagicMock()
+    main_client.is_connected = True
+    main_client.me = MagicMock(id=99999999)
+    main_client._user_id = 99999999
+
+    pool.clients = [admin_client]
+    pool._main_client = main_client
+    pool._admin_uids_cache = {-1004325759505: (time.time(), {admin_uid})}
+
+    dummy_chat = MagicMock()
+    dummy_chat.id = -1004325759505
+    dummy_msg = MagicMock()
+    dummy_msg.chat = dummy_chat
+    dummy_msg._client = main_client
+    dummy_msg.id = 280
+
+    chunk = await pool._fetch_chunk(dummy_msg, 0)
+    assert chunk == b"USERBOT_CHUNK_DATA_1MB"
+
 
 

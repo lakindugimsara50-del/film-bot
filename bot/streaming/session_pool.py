@@ -119,14 +119,19 @@ class TelegramStreamPool:
                                 return
 
                             try:
-                                await c.get_me()
+                                me = await c.get_me()
+                                c.me = me
+                                c._user_id = getattr(me, "id", None)
                                 self.clients.append(c)
-                                log.info("[StreamPool] Loaded extra session file: %s (10x transmission enabled)", base_name)
+                                log.info("[StreamPool] Loaded extra session file: %s (UID: %s)", base_name, getattr(me, "id", ""))
                             except SessionPasswordNeeded:
                                 try:
                                     await c.check_password(password)
+                                    me = await c.get_me()
+                                    c.me = me
+                                    c._user_id = getattr(me, "id", None)
                                     self.clients.append(c)
-                                    log.info("[StreamPool] 2FA OK for stream session: %s", base_name)
+                                    log.info("[StreamPool] 2FA OK for stream session: %s (UID: %s)", base_name, getattr(me, "id", ""))
                                 except Exception as pw_e:
                                     if c.is_initialized:
                                         await c.stop()
@@ -164,8 +169,11 @@ class TelegramStreamPool:
                         max_concurrent_transmissions=10,
                     )
                     await c.start()
+                    me = getattr(c, "me", None) or await c.get_me()
+                    c.me = me
+                    c._user_id = getattr(me, "id", None)
                     self.clients.append(c)
-                    log.info("[StreamPool] Loaded session string #%d into streaming pool (10x transmission enabled).", i)
+                    log.info("[StreamPool] Loaded session string #%d into streaming pool (UID: %s).", i, getattr(me, "id", ""))
                 except Exception as exc:
                     log.warning("[StreamPool] Could not start session string #%d: %s", i, exc)
 
@@ -339,6 +347,34 @@ class TelegramStreamPool:
 
         return admin_uids
 
+    async def get_client_user_id(self, client: Client) -> Optional[int]:
+        """Retrieve Telegram user ID for client via cached attribute, c.me, or local session storage."""
+        uid = getattr(client, "_user_id", None)
+        if uid:
+            return uid
+        c_me = getattr(client, "me", None)
+        if c_me and getattr(c_me, "id", None):
+            client._user_id = c_me.id
+            return c_me.id
+        try:
+            if hasattr(client, "storage") and hasattr(client.storage, "user_id"):
+                storage_uid = await client.storage.user_id()
+                if storage_uid:
+                    client._user_id = int(storage_uid)
+                    return client._user_id
+        except Exception:
+            pass
+        try:
+            if getattr(client, "is_connected", False) and hasattr(client, "get_me"):
+                me = await client.get_me()
+                if me:
+                    client.me = me
+                    client._user_id = me.id
+                    return me.id
+        except Exception:
+            pass
+        return None
+
     async def _get_client_media(
         self,
         client: Client,
@@ -452,32 +488,24 @@ class TelegramStreamPool:
 
             # 1. TOP PRIORITY: Any connected client whose user_id is a verified channel administrator!
             # Userbot accounts stream at unthrottled wire speed (20-30 MB/s)!
-            for c in self.clients:
+            all_pool_clients = list(self.clients)
+            try:
+                from services.upload_pool import upload_pool
+                for uc in upload_pool.clients:
+                    if uc not in all_pool_clients:
+                        all_pool_clients.append(uc)
+            except Exception:
+                pass
+
+            for c in all_pool_clients:
                 if not getattr(c, "is_connected", False):
                     continue
                 if self._client_cooldowns.get(c, 0.0) > now:
                     continue
-                c_me = getattr(c, "me", None)
-                c_uid = getattr(c_me, "id", None)
+                c_uid = await self.get_client_user_id(c)
                 if c_uid and c_uid in admin_uids and c is not self._main_client and c is not primary_client:
                     if c not in candidates:
                         candidates.append(c)
-
-            # Also check upload_pool clients if any
-            try:
-                from services.upload_pool import upload_pool
-                for c in upload_pool.clients:
-                    if not getattr(c, "is_connected", False):
-                        continue
-                    if self._client_cooldowns.get(c, 0.0) > now:
-                        continue
-                    c_me = getattr(c, "me", None)
-                    c_uid = getattr(c_me, "id", None)
-                    if c_uid and c_uid in admin_uids and c is not self._main_client and c is not primary_client:
-                        if c not in candidates:
-                            candidates.append(c)
-            except Exception:
-                pass
 
             # Rotate verified admin userbots across chunk_idx to balance MTProto streaming load
             if len(candidates) > 1:
@@ -608,16 +636,27 @@ class TelegramStreamPool:
             )
             active_workers = 1
             if is_ch:
+                ch_id = getattr(media_source.chat, "id")
+                admin_uids = await self.get_channel_admin_uids(ch_id)
+                admin_count = 0
+                all_pool = list(self.clients)
                 try:
                     from services.upload_pool import upload_pool
-                    ch_id = getattr(media_source.chat, "id")
-                    active_workers = len(upload_pool.get_admin_sessions_cached(ch_id)) or 1
+                    for uc in upload_pool.clients:
+                        if uc not in all_pool:
+                            all_pool.append(uc)
                 except Exception:
-                    active_workers = 1
+                    pass
+                for c in all_pool:
+                    if getattr(c, "is_connected", False):
+                        uid = getattr(c, "_user_id", None) or getattr(getattr(c, "me", None), "id", None)
+                        if uid and uid in admin_uids:
+                            admin_count += 1
+                active_workers = max(1, admin_count)
             else:
                 active_workers = len([c for c in self.clients if getattr(c, "is_connected", False)]) or 1
 
-            concurrency = min(total_chunks, max(2, min(active_workers * 2, 6)))
+            concurrency = min(total_chunks, max(2, min(active_workers * 2, 8)))
 
             # Pre-launch initial batch of concurrent chunk fetches
             for c in range(start_chunk, min(start_chunk + concurrency, end_chunk + 1)):

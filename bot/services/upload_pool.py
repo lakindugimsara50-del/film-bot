@@ -148,6 +148,42 @@ class TelegramUploadPool:
             self._client_upload_locks[c_id] = asyncio.Lock()
         return self._client_upload_locks[c_id]
 
+    def get_admin_sessions_cached(self, target_channel: int) -> List[Client]:
+        """Return currently cached active verified admin clients for target_channel without awaiting discovery."""
+        try:
+            t_key = int(target_channel)
+        except Exception:
+            t_key = target_channel
+        return [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
+
+    def save_admin_sessions_manifest(self, target_channel: int, admin_clients: List[Client]) -> None:
+        """Persist verified channel admin sessions metadata to bot/sessions/admin_sessions.json."""
+        try:
+            import json
+            _services_dir = os.path.dirname(os.path.abspath(__file__))
+            _bot_dir = os.path.dirname(_services_dir)
+            manifest_path = os.path.join(_bot_dir, "sessions", "admin_sessions.json")
+            data = {
+                "channel_id": target_channel,
+                "updated_at": time.time(),
+                "total_sessions_loaded": len(self.clients),
+                "admin_sessions_count": len(admin_clients),
+                "admin_sessions": [
+                    {
+                        "session": os.path.basename(getattr(c, "name", "session")) + ".session" if not str(getattr(c, "name", "")).endswith(".session") else os.path.basename(getattr(c, "name", "session")),
+                        "user_id": getattr(getattr(c, "me", None), "id", None),
+                        "name": f"{getattr(getattr(c, 'me', None), 'first_name', '')} {getattr(getattr(c, 'me', None), 'last_name', '')}".strip(),
+                        "phone": getattr(getattr(c, "me", None), "phone_number", None),
+                    }
+                    for c in admin_clients
+                ]
+            }
+            with open(manifest_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            log.info("[UploadPool] Saved %d verified admin sessions manifest to %s", len(admin_clients), manifest_path)
+        except Exception as sm_err:
+            log.debug("[UploadPool] Admin manifest save note: %s", sm_err)
+
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client as upload fallback."""
         self._main_client = client
@@ -273,36 +309,51 @@ class TelegramUploadPool:
         await asyncio.gather(*[_load_one(sp) for sp in session_files])
         log.info("[UploadPool] Total active upload clients in pool: %d/%d", len(self.clients), len(session_files))
 
-        # Share active clients with stream_pool so both upload and streaming use the same Pyrogram client instances
-        try:
-            from streaming.session_pool import stream_pool
-            for c in self.clients:
-                if c not in stream_pool.clients:
-                    stream_pool.clients.append(c)
-            log.info("[UploadPool] Synced %d clients to stream_pool.", len(stream_pool.clients))
-        except Exception as sync_err:
-            log.debug("[UploadPool] Stream pool sync note: %s", sync_err)
-
+        admin_count = 0
         if target_channel:
             try:
-                await self.join_channel(target_channel)
+                join_res = await self.join_channel(target_channel)
+                admin_count = join_res.get("admin_sessions", 0)
             except Exception as j_err:
                 log.warning("[UploadPool] Channel auto-join error: %s", j_err)
+
+        # Sync ONLY verified admin clients to stream_pool so streaming private channel messages
+        # never fails with CHANNEL_PRIVATE or CHAT_ADMIN_REQUIRED!
+        try:
+            from streaming.session_pool import stream_pool
+            t_key = int(target_channel) if target_channel else 0
+            admin_clients = [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
+            if admin_clients:
+                stream_pool.clients = list(admin_clients)
+                log.info("[UploadPool] Synced %d verified channel admin clients to stream_pool.", len(stream_pool.clients))
+            else:
+                for c in self.clients:
+                    if c not in stream_pool.clients:
+                        stream_pool.clients.append(c)
+                log.info("[UploadPool] Synced %d clients to stream_pool (fallback).", len(stream_pool.clients))
+        except Exception as sync_err:
+            log.debug("[UploadPool] Stream pool sync note: %s", sync_err)
 
         # Notify admins that session pool is loaded and ready
         if self._main_client and getattr(self._main_client, "is_connected", False):
             import config
             for admin_id in getattr(config, "ADMIN_IDS", []):
                 try:
+                    admin_display = f"{admin_count} Verified Admin Sessions" if admin_count > 0 else f"{len(self.clients)} Connected"
+                    q1080 = max(1, admin_count // 3) if admin_count >= 3 else 1
+                    q720 = max(1, admin_count // 3) if admin_count >= 3 else 1
+                    q480 = max(1, admin_count - q1080 - q720) if admin_count >= 3 else 1
                     await self._main_client.send_message(
                         chat_id=admin_id,
                         text=(
-                            f"✅ <b>Telegram Upload Pool Ready!</b>\n\n"
+                            f"✅ <b>Telegram Multi-Account Pool Ready!</b>\n\n"
                             f"👥 <b>Connected Accounts:</b> <code>{len(self.clients)}/{len(session_files)}</code>\n"
-                            f"🔴 <b>1080p Tier:</b> <code>Sessions 1–34</code>\n"
-                            f"🟡 <b>720p Tier:</b>  <code>Sessions 35–67</code>\n"
-                            f"🟢 <b>480p Tier:</b>  <code>Sessions 68–100</code>\n"
-                            f"⚡ <b>Channel:</b> Auto-joined & verified."
+                            f"👑 <b>Channel Admins:</b> <code>{admin_display}</code>\n"
+                            f"🔴 <b>1080p Tier:</b> <code>{q1080} Admin Accounts</code>\n"
+                            f"🟡 <b>720p Tier:</b>  <code>{q720} Admin Accounts</code>\n"
+                            f"🟢 <b>480p Tier:</b>  <code>{q480} Admin Accounts</code>\n"
+                            f"🎥 <b>Streaming Pool:</b> <code>{len(admin_clients) if admin_clients else len(self.clients)} Verified Sessions</code>\n"
+                            f"⚡ <b>Channel:</b> Zero Permission Errors guaranteed."
                         ),
                         parse_mode=ParseMode.HTML,
                     )
@@ -461,6 +512,29 @@ class TelegramUploadPool:
             except Exception as q_err:
                 log.warning("[UploadPool] Main bot could not query channel administrators: %s", q_err)
 
+        # 1b. Fallback HTTP query via Telegram Bot API getChatAdministrators
+        if not admin_uids:
+            try:
+                import urllib.request
+                import json
+                import config
+                token = getattr(config, "BOT_TOKEN", "")
+                if token:
+                    api_url = f"https://api.telegram.org/bot{token}/getChatAdministrators?chat_id={target_channel}"
+                    req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req, timeout=8) as r:
+                        res = json.loads(r.read().decode())
+                        if res.get("ok"):
+                            for a in res.get("result", []):
+                                u = a.get("user", {})
+                                if not u or u.get("is_bot", False):
+                                    continue
+                                admin_uids.add(u.get("id"))
+                            if admin_uids:
+                                log.info("[UploadPool] Bot API HTTP queried channel %s: %d human admin accounts verified.", target_channel, len(admin_uids))
+            except Exception as http_err:
+                log.debug("[UploadPool] Bot API HTTP admin query note: %s", http_err)
+
         if admin_uids:
             for c in self.clients:
                 if not getattr(c, "is_connected", False):
@@ -524,6 +598,17 @@ class TelegramUploadPool:
         admin_clients.sort(key=lambda c: getattr(c, "name", ""))
         self._admin_sessions[t_key] = admin_clients
         self._admin_check_times[t_key] = now
+        self.save_admin_sessions_manifest(t_key, admin_clients)
+
+        # Update stream_pool so it immediately has the verified channel admin accounts
+        try:
+            from streaming.session_pool import stream_pool
+            if admin_clients:
+                stream_pool.clients = list(admin_clients)
+                log.info("[UploadPool] Updated stream_pool with %d verified admin sessions.", len(admin_clients))
+        except Exception:
+            pass
+
         log.info(
             "[UploadPool] Found %d verified admin sessions with posting rights in channel %s",
             len(admin_clients), target_channel

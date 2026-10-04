@@ -1,0 +1,11 @@
+{
+  "channel_id": -100123456789,
+  "updated_at": 1791119037.8407645,
+  "total_sessions_loaded": 4,
+  "admin_sessions_count": 2,
+  "admin_sessions": [
+    {
+      "session": "session_001.session",
+      "user_id": 12345,
+      "name": "Test <MagicMock name='mock.last_name' id='1580868079120'>",
+      "phone": 

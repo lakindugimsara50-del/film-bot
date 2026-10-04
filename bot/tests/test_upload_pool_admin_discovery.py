@@ -185,3 +185,71 @@ async def test_auth_service_sync_channel_admins(tmp_path, monkeypatch):
     assert auth.is_admin(test_user_id)
     assert auth.is_authorized(test_user_id)
 
+
+@pytest.mark.asyncio
+async def test_get_admin_sessions_cached():
+    pool = TelegramUploadPool()
+    target_channel = -100123456789
+    c1 = MockClient(name="admin_01")
+    c2 = MockClient(name="admin_02")
+    pool._admin_sessions[target_channel] = [c1, c2]
+
+    cached = pool.get_admin_sessions_cached(target_channel)
+    assert cached == [c1, c2]
+    # Check string chat_id normalization
+    cached_str = pool.get_admin_sessions_cached(str(target_channel))
+    assert cached_str == [c1, c2]
+
+
+@pytest.mark.asyncio
+async def test_save_admin_sessions_manifest(tmp_path, monkeypatch):
+    import json
+    pool = TelegramUploadPool()
+    target_channel = -1004325759505
+    c1 = MockClient(name="94718522440")
+    c1.me.id = 1967609462
+    c1.me.first_name = "Dhananjaya"
+    c1.me.phone_number = "+94718522440"
+
+    test_manifest = tmp_path / "admin_sessions.json"
+    monkeypatch.setattr("services.upload_pool.os.path.join", lambda *args: str(test_manifest) if "admin_sessions.json" in args else "/".join(args))
+
+    pool.clients = [c1]
+    pool.save_admin_sessions_manifest(target_channel, [c1])
+
+    assert test_manifest.exists()
+    data = json.loads(test_manifest.read_text(encoding="utf-8"))
+    assert data["channel_id"] == target_channel
+    assert data["admin_sessions_count"] == 1
+    assert data["admin_sessions"][0]["user_id"] == 1967609462
+
+
+@pytest.mark.asyncio
+async def test_stream_pool_channel_media_info_prefers_main_client():
+    from streaming.session_pool import TelegramStreamPool
+    sp = TelegramStreamPool()
+    main_bot = MockClient(name="main_bot")
+    sp.set_main_client(main_bot)
+
+    mock_msg = MagicMock()
+    mock_msg.empty = False
+    mock_msg.video = MagicMock()
+    mock_msg.video.file_size = 50000000
+    mock_msg.video.file_name = "hi_2026.mp4"
+    mock_msg.video.mime_type = "video/mp4"
+
+    main_bot.get_messages = AsyncMock(return_value=mock_msg)
+
+    # Random non-admin client in pool
+    non_admin = MockClient(name="non_admin_userbot")
+    from pyrogram.errors import ChannelPrivate
+    non_admin.get_messages = AsyncMock(side_effect=ChannelPrivate)
+    sp.clients = [non_admin]
+
+    # Calling get_media_info on private channel must use main_bot and succeed
+    info = await sp.get_media_info(-1004325759505, 280)
+    assert info["file_name"] == "hi_2026.mp4"
+    assert info["file_size"] == 50000000
+    main_bot.get_messages.assert_awaited_once_with(-1004325759505, 280)
+
+

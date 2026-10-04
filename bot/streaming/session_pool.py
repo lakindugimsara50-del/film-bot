@@ -60,14 +60,18 @@ class TelegramStreamPool:
             except Exception:
                 pass
 
-        # If upload_pool already has clients, reuse them directly to avoid SQLite 'database is locked' errors!
+        # If upload_pool already has clients, reuse verified channel admin sessions directly to avoid SQLite 'database is locked' errors!
         try:
+            import config
             from services.upload_pool import upload_pool
             if upload_pool.clients:
-                for c in upload_pool.clients:
+                target_ch = getattr(config, "PRIVATE_CHANNEL_ID", 0)
+                admin_sessions = upload_pool.get_admin_sessions_cached(target_ch) if target_ch else []
+                source_clients = admin_sessions if admin_sessions else upload_pool.clients
+                for c in source_clients:
                     if c not in self.clients:
                         self.clients.append(c)
-                log.info("[StreamPool] Reused %d clients from upload_pool (zero lock contention).", len(self.clients))
+                log.info("[StreamPool] Reused %d clients from upload_pool (admin prioritized: %s).", len(self.clients), bool(admin_sessions))
                 return
         except Exception:
             pass
@@ -181,19 +185,31 @@ class TelegramStreamPool:
             return int(f"-100{s}")
         return int(s)
 
-    async def get_client(self) -> Client:
-        """Round-robin through active, connected clients."""
+    async def get_client(self, chat_id: Optional[Union[int, str]] = None) -> Client:
+        """Round-robin through active, connected clients suitable for the target chat."""
         async with self._lock:
-            if not self.clients:
-                if self._main_client:
-                    return self._main_client
-                raise RuntimeError("No active Telegram clients in streaming pool.")
+            candidates = self.clients
+            if chat_id is not None:
+                chat_id_int = self.normalize_chat_id(chat_id)
+                if chat_id_int < 0:
+                    # Target is a channel: prioritize verified channel admin sessions or main client
+                    try:
+                        from services.upload_pool import upload_pool
+                        admin_pool = upload_pool.get_admin_sessions_cached(chat_id_int)
+                        if admin_pool:
+                            candidates = [c for c in admin_pool if getattr(c, "is_connected", False)]
+                    except Exception:
+                        pass
+                    if not candidates and self._main_client and getattr(self._main_client, "is_connected", False):
+                        return self._main_client
 
-            connected = [c for c in self.clients if getattr(c, "is_connected", False)]
+            connected = [c for c in candidates if getattr(c, "is_connected", False)]
             if not connected:
                 if self._main_client and getattr(self._main_client, "is_connected", False):
                     return self._main_client
-                return self.clients[0]
+                if self.clients:
+                    return self.clients[0]
+                raise RuntimeError("No active Telegram clients in streaming pool.")
 
             self._index = (self._index + 1) % len(connected)
             return connected[self._index]
@@ -201,26 +217,55 @@ class TelegramStreamPool:
     async def get_media_info(self, chat_id: Union[int, str], message_id: int) -> dict:
         """Fetch message from Telegram and extract media details."""
         chat_id_int = self.normalize_chat_id(chat_id)
-        client = await self.get_client()
-
+        is_channel = chat_id_int < 0
         msg = None
-        try:
-            msg = await client.get_messages(chat_id_int, message_id)
-        except PeerIdInvalid:
-            # Attempt to prime chat peer on client
-            try:
-                await client.get_chat(chat_id_int)
-                msg = await client.get_messages(chat_id_int, message_id)
-            except Exception as prime_err:
-                log.warning("[StreamPool] Failed priming peer %s: %s", chat_id_int, prime_err)
 
+        # 1. Primary: Use main bot client directly for channel messages
+        # Main bot is a guaranteed channel admin with valid MTProto channel access & message peers.
+        if is_channel and self._main_client and getattr(self._main_client, "is_connected", False):
+            try:
+                msg = await self._main_client.get_messages(chat_id_int, message_id)
+            except Exception as mc_err:
+                log.warning("[StreamPool] Main client get_messages error for channel %s/%s: %s", chat_id_int, message_id, mc_err)
+
+        # 2. If message was not fetched by main client, try candidate clients
         if not msg or getattr(msg, "empty", False):
-            # Fallback to main client if different
-            if self._main_client and self._main_client != client and getattr(self._main_client, "is_connected", False):
+            candidates: List[Client] = []
+            if is_channel:
+                try:
+                    from services.upload_pool import upload_pool
+                    admin_pool = upload_pool.get_admin_sessions_cached(chat_id_int)
+                    candidates.extend([c for c in admin_pool if getattr(c, "is_connected", False)])
+                except Exception:
+                    pass
+            for c in self.clients:
+                if c not in candidates and getattr(c, "is_connected", False):
+                    candidates.append(c)
+
+            for client in candidates:
+                try:
+                    msg = await client.get_messages(chat_id_int, message_id)
+                    if msg and not getattr(msg, "empty", False):
+                        break
+                except PeerIdInvalid:
+                    try:
+                        await client.get_chat(chat_id_int)
+                        msg = await client.get_messages(chat_id_int, message_id)
+                        if msg and not getattr(msg, "empty", False):
+                            break
+                    except Exception:
+                        pass
+                except Exception as c_err:
+                    log.debug("[StreamPool] Client %s get_messages error: %s", getattr(client, "name", ""), c_err)
+                    continue
+
+        # 3. Final fallback to main client
+        if not msg or getattr(msg, "empty", False):
+            if self._main_client and getattr(self._main_client, "is_connected", False):
                 try:
                     msg = await self._main_client.get_messages(chat_id_int, message_id)
                 except Exception as mc_err:
-                    log.warning("[StreamPool] Main client also failed to get message: %s", mc_err)
+                    log.warning("[StreamPool] Final fallback to main client failed: %s", mc_err)
 
         if not msg or getattr(msg, "empty", False):
             raise ValueError(f"Message {message_id} not found in chat {chat_id}")
@@ -289,7 +334,7 @@ class TelegramStreamPool:
             rotated = active_candidates[start_rot:] + active_candidates[:start_rot]
 
         # For Telegram channel messages (types.Message in -100 channels), primary_client (main bot)
-        # is the only client guaranteed to have channel access and matching session file references.
+        # and verified channel admin accounts are the ONLY clients that can access the private channel.
         # For public file_id / string media, rotate across all pool clients for load balancing.
         is_channel_msg = (
             isinstance(media_source, types.Message) and
@@ -298,11 +343,34 @@ class TelegramStreamPool:
         )
 
         candidates: List[Client] = []
-        if is_channel_msg and primary_client and getattr(primary_client, "is_connected", False) and self._client_cooldowns.get(primary_client, 0.0) <= now:
-            candidates.append(primary_client)
-            for c in rotated:
-                if c not in candidates:
+        if is_channel_msg:
+            ch_id = getattr(media_source.chat, "id")
+            verified_admins: List[Client] = []
+            try:
+                from services.upload_pool import upload_pool
+                verified_admins = upload_pool.get_admin_sessions_cached(ch_id)
+            except Exception:
+                pass
+
+            # 1. Primary client if connected and not on cooldown
+            if primary_client and getattr(primary_client, "is_connected", False) and self._client_cooldowns.get(primary_client, 0.0) <= now:
+                candidates.append(primary_client)
+            # 2. Main bot client
+            if self._main_client and self._main_client not in candidates and getattr(self._main_client, "is_connected", False) and self._client_cooldowns.get(self._main_client, 0.0) <= now:
+                candidates.append(self._main_client)
+            # 3. Verified channel admin userbots
+            for c in verified_admins:
+                if c not in candidates and getattr(c, "is_connected", False) and self._client_cooldowns.get(c, 0.0) <= now:
                     candidates.append(c)
+            # 4. If all active are on cooldown, add connected admins + main as emergency fallback
+            if not candidates:
+                if primary_client and getattr(primary_client, "is_connected", False):
+                    candidates.append(primary_client)
+                if self._main_client and getattr(self._main_client, "is_connected", False) and self._main_client not in candidates:
+                    candidates.append(self._main_client)
+                for c in verified_admins:
+                    if c not in candidates and getattr(c, "is_connected", False):
+                        candidates.append(c)
         else:
             for c in rotated:
                 if c not in candidates:

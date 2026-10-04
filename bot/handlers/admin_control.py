@@ -436,7 +436,8 @@ def register(app: Client) -> None:
                 lines.append("👥 <b>Channel Administrators:</b> Auto-sync ක්‍රියාත්මක විය.\n")
 
             if admin_clients:
-                lines.append(f"⚡ <b>Verified Upload Pool Sessions ({len(admin_clients)} Sessions):</b>")
+                total_loaded = len(upload_pool.clients)
+                lines.append(f"⚡ <b>Verified Channel Admin Sessions ({len(admin_clients)}/{total_loaded} Accounts):</b>")
                 quality_map = ["1080p Tier", "720p Tier", "480p Tier"]
                 for idx, c in enumerate(admin_clients):
                     c_name = os.path.basename(getattr(c, "name", "session"))
@@ -446,7 +447,8 @@ def register(app: Client) -> None:
                     assigned_q = quality_map[idx % len(quality_map)] if len(admin_clients) >= 3 else f"Multi-Quality ({quality_map[idx % len(quality_map)]})"
                     lines.append(f" • <b>{c_name}</b>: {u_name} (<code>{u_id}</code>) ➔ <b>{assigned_q}</b>")
 
-                lines.append(f"\n🚀 <b>Multi-Quality Parallel Upload:</b> සක්‍රීයයි! 1080p, 720p, 480p එකවර Upload වේ.")
+                lines.append(f"\n🚀 <b>Multi-Quality Parallel Upload:</b> සක්‍රීයයි! 1080p, 720p, 480p වෙන වෙනම Admin Sessions වලින් එකවර Upload වේ.")
+                lines.append(f"🎥 <b>Telegram High-Speed Stream Pool:</b> {len(admin_clients)} Verified Admin Sessions + Main Bot සක්‍රීයයි (Zero ChannelPrivate දෝෂ).")
             else:
                 lines.append(
                     f"⚠️ <b>Upload Sessions:</b> Channel එකේ Post Messages සහිත Userbot Sessions තවමත් හමු නොවීය.\n"

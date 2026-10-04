@@ -1790,17 +1790,99 @@ function renderStreamEmbed(playerEl, stream, movie) {
     vjsPlayer = null;
   }
   isTrailerActive = false;
-  // External embed players (VidLink, AutoEmbed, 2Embed) removed.
-  // Strictly route to native Telegram Cloud Super Player or upload-in-progress card.
-  if (!stream || !stream.hasLocalFile || !stream.stream_url || stream.stream_url.endsWith('/0')) {
-    renderPlayerFallback(playerEl, movie);
-    return;
+
+  let baseEmbedUrl = stream.stream_url || '';
+  const autoMatchTv = baseEmbedUrl.match(/autoembed\.(?:co|cc|to)\/tv\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)-(\d+)-(\d+)/i);
+  if (autoMatchTv) {
+    baseEmbedUrl = `https://player.autoembed.cc/embed/tv/${autoMatchTv[1]}/${autoMatchTv[2]}/${autoMatchTv[3]}`;
+  } else {
+    const autoMatchMovie = baseEmbedUrl.match(/autoembed\.(?:co|cc|to)\/movie\/(?:imdb|tmdb)\/([a-zA-Z0-9_-]+)/i);
+    if (autoMatchMovie) {
+      baseEmbedUrl = `https://player.autoembed.cc/embed/movie/${autoMatchMovie[1]}`;
+    }
   }
-  createVjsPlayer(playerEl, stream, movie);
+
+  const streams = getMovieStreams(movie);
+  const sIdx = streams.findIndex(s => s.stream_url === stream.stream_url) !== -1
+    ? streams.findIndex(s => s.stream_url === stream.stream_url)
+    : currentStreamIdx;
+
+  const altUrls = stream.alt_urls || {};
+  const hasAlt = Boolean(altUrls.vidlink || altUrls.autoembed || altUrls.twoembed);
+
+  playerEl.innerHTML = `
+    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;background-color:#000000 !important;border-radius:8px;overflow:hidden">
+      ${buildSuperLoaderHtml(movie, stream.label || stream.server)}
+      <iframe id="player-drive-iframe"
+              data-base-embed="${FilmSub.escHtml(baseEmbedUrl)}"
+              src="${FilmSub.escHtml(baseEmbedUrl)}"
+              title="${FilmSub.escHtml(movie.title || 'Movie')} Streaming Player"
+              frameborder="0"
+              loading="eager"
+              referrerpolicy="no-referrer-when-downgrade"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+              allowfullscreen="true"
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
+              playsinline="true"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;background:#000000 !important;background-color:#000000 !important;color-scheme:dark !important;opacity:0;transition:opacity 0.25s ease;z-index:5">
+      </iframe>
+    </div>
+    <div class="player-server-helper" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:8px 12px;background:#101010;border-radius:6px;margin-top:8px;border:1px solid rgba(255,255,255,0.06);font-size:12.5px;color:#aaa">
+      <div style="display:flex;align-items:center;gap:7px">
+        <i class="fa-solid fa-circle-play" style="color:var(--accent)"></i>
+        <span>Active Server: <strong style="color:#fff">${FilmSub.escHtml(stream.label || stream.server)}</strong></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        ${hasAlt ? `
+          <span style="color:#777">Stream Source:</span>
+          ${altUrls.vidlink ? `<button type="button" class="sub-ctrl-btn active alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.vidlink)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🎬 VidLink</button>` : ''}
+          ${altUrls.autoembed ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.autoembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">⚡ AutoEmbed</button>` : ''}
+          ${altUrls.twoembed ? `<button type="button" class="sub-ctrl-btn alt-src-btn" onclick="window.switchEmbedSource(this, '${FilmSub.escHtml(altUrls.twoembed)}')" style="padding:4px 9px;font-size:11.5px;cursor:pointer">🚀 2Embed</button>` : ''}
+        ` : `
+          <span style="color:#777">Switch Player:</span>
+          ${streams.map((st, i) => `
+            <button type="button" class="sub-ctrl-btn${sIdx === i ? ' active' : ''}" onclick="loadStream(currentMovie, ${i})" style="padding:4px 9px;font-size:11.5px;cursor:pointer">
+              ${FilmSub.escHtml((st.label || st.server || `Server ${i + 1}`).split('(')[0].trim())}
+            </button>
+          `).join('')}
+        `}
+      </div>
+    </div>`;
+
+  const iframeEl = document.getElementById('player-drive-iframe');
+  const loaderEl = document.getElementById('super-player-loader');
+
+  const revealIframe = () => {
+    setTimeout(() => {
+      if (iframeEl && iframeEl.isConnected) iframeEl.style.opacity = '1';
+      if (loaderEl && loaderEl.isConnected) loaderEl.classList.add('hidden');
+    }, 100);
+  };
+
+  if (iframeEl) {
+    iframeEl.addEventListener('load', revealIframe);
+    iframeEl.addEventListener('error', revealIframe);
+  }
+  setTimeout(revealIframe, 1200);
+  mountLiveSubtitleOverlay(playerEl, movie);
 }
 
 window.switchEmbedSource = function(btn, url) {
-  // External embed switching removed — strictly native Telegram Cloud Super Player
+  if (!url) return;
+  const iframeEl = document.getElementById('player-drive-iframe');
+  const loaderEl = document.getElementById('super-player-loader');
+  if (loaderEl) loaderEl.classList.remove('hidden');
+  if (iframeEl) {
+    iframeEl.style.opacity = '0';
+    iframeEl.src = url;
+  }
+  document.querySelectorAll('.alt-src-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  setTimeout(() => {
+    if (iframeEl && iframeEl.isConnected) iframeEl.style.opacity = '1';
+    if (loaderEl && loaderEl.isConnected) loaderEl.classList.add('hidden');
+  }, 1200);
 };
 
 /**
@@ -2069,7 +2151,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       } catch (e) {}
     });
 
-    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 18s
+    // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 12s
     // (e.g. stream server sleeping, Colab proxy offline, or network stall),
     // display the Telegram Reconnect / Retry screen so playback never hangs indefinitely.
     const slowHeaderWatchdog = setTimeout(() => {
@@ -2079,7 +2161,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         renderPlayerFallback(playerEl, movie);
       }
-    }, 20000);
+    }, 12000);
 
     vjsPlayer.on('dispose', () => {
       clearTimeout(slowHeaderWatchdog);
@@ -2266,7 +2348,21 @@ async function loadStream(movie, idx) {
     const playerEl = document.getElementById('video-player-container');
     if (!playerEl) return;
 
+    if (stream.embed) {
+      if (vjsPlayer) {
+        try { vjsPlayer.dispose(); } catch (e) {}
+        vjsPlayer = null;
+      }
+      isTrailerActive = false;
+      renderStreamEmbed(playerEl, stream, movie);
+      return;
+    }
+
     if (!stream.hasLocalFile || !stream.stream_url || stream.stream_url.endsWith('/0')) {
+      if (streams.length > 1 && idx === 0) {
+        loadStream(movie, 1);
+        return;
+      }
       if (vjsPlayer) {
         try { vjsPlayer.dispose(); } catch (e) {}
         vjsPlayer = null;

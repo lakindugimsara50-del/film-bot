@@ -14650,19 +14650,33 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "title": "Hi!",
       "title_si": "",
       "year": 2026,
+      "imdb": "4.8",
+      "rating": "4.8",
       "imdb_id": "tt33029123",
       "tmdb_id": "1314279",
       "type": "movie",
       "season": null,
       "episode": null,
       "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/9Vgmpa0tcCzkbXf9AY0zXrai1oi.jpg",
       "poster_url": "https://image.tmdb.org/t/p/w500/9Vgmpa0tcCzkbXf9AY0zXrai1oi.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/30pNvXUYKA0nLBStE7QcR6cuVJl.jpg",
       "backdrop_url": "https://image.tmdb.org/t/p/original/30pNvXUYKA0nLBStE7QcR6cuVJl.jpg",
       "genres": [
         "Romance",
         "Drama"
       ],
-      "language": "ta",
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "143 min",
       "description": "Two individuals initially exchange a simple \"Hi,\" but through a series of chance encounters, shared experiences, and deep conversations, they gradually develop a strong connection and eventually fall in love.",
       "director": "Vishnu Edavan",
       "cast": [
@@ -14687,52 +14701,190 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "character": ""
         }
       ],
-      "rating": "4.8",
-      "number_of_seasons": 0,
-      "seasons": [],
       "featured": false,
-      "trending": false,
-      "added_at": "2026-10-04T09:46:37Z",
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACARhqwjzVjtQyZjY7sI3DhJf19KLeGgAC1ikAAiYREFaWJI_9FMQclR4E",
+      "message_id": 280,
+      "file_name": "comp_hi-2026_1080p.mp4",
+      "file_size": 1937549934,
+      "drive_file_id": "",
+      "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
       "streams": [
         {
           "server": "Server 1",
-          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
-          "type": "embed",
-          "embed": true,
-          "stream_url": "https://vidlink.pro/movie/1314279?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fhi-2026-si.vtt&sub_label=Sinhala&sub=true"
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARhqwjzVjtQyZjY7sI3DhJf19KLeGgAC1ikAAiYREFaWJI_9FMQclR4E",
+          "message_id": 280,
+          "quality": "1080p"
         },
         {
           "server": "Server 2",
-          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
           "type": "embed",
           "embed": true,
-          "stream_url": "https://player.autoembed.cc/embed/movie/tt33029123"
+          "stream_url": "https://vidlink.pro/movie/1314279"
         },
         {
           "server": "Server 3",
-          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt33029123"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
           "type": "embed",
           "embed": true,
           "stream_url": "https://www.2embed.cc/embed/tt33029123"
         }
       ],
-      "downloads": [],
-      "telegram_status": "queued",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/hi-2026-si.vtt",
-      "has_sinhala_sub": true,
+      "qualities": {
+        "auto": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+        "1080p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+        "720p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/281",
+        "480p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/279",
+        "360p": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1937549934,
+          "url": "https://t.me/c/4325759505/280",
+          "telegram_url": "https://t.me/c/4325759505/280",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARhqwjzVjtQyZjY7sI3DhJf19KLeGgAC1ikAAiYREFaWJI_9FMQclR4E",
+          "message_id": 280,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1865585576,
+          "url": "https://t.me/c/4325759505/281",
+          "telegram_url": "https://t.me/c/4325759505/281",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARlqwj2SaVO7ELxyUrd3KlMFpQABBkgAAtgpAAImERBW1tPuTEyl-u0eBA",
+          "message_id": 281,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/281",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "917.0 MB",
+          "size_bytes": 961559008,
+          "url": "https://t.me/c/4325759505/279",
+          "telegram_url": "https://t.me/c/4325759505/279",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARdqwjruwz_GSosoWneTHsvkjnP7gQAC0CkAAiYREFaliGRKRtYc7x4E",
+          "message_id": 279,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/279",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1937549934,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hi-2026_1080p",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1865585576,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hi-2026_720p",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/281",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "917.0 MB",
+          "size_bytes": 961559008,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hi-2026_480p",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/279",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "332.6 MB",
+          "size_bytes": 348758988,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hi-2026_360p",
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARhqwjzVjtQyZjY7sI3DhJf19KLeGgAC1ikAAiYREFaWJI_9FMQclR4E",
+          "message_id": 280,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+          "size_bytes": 1937549934
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARlqwj2SaVO7ELxyUrd3KlMFpQABBkgAAtgpAAImERBW1tPuTEyl-u0eBA",
+          "message_id": 281,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/281",
+          "size_bytes": 1865585576
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARdqwjruwz_GSosoWneTHsvkjnP7gQAC0CkAAiYREFaliGRKRtYc7x4E",
+          "message_id": 279,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/279",
+          "size_bytes": 961559008
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://lcd-irc-shuttle-five.trycloudflare.com/stream/channel/-1004325759505/280",
+          "size_bytes": 348758988
+        }
+      },
       "subtitles": [
         {
           "language": "Sinhala",
-          "label": "සිංහල උපසිරැසි",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
           "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/hi-2026-si.vtt",
-          "default": true
+          "default": false
         }
       ],
+      "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=hi-2026",
-      "channel_post_id": 277,
-      "channel_chat_id": -1004325759505,
-      "added_date": "2026-10-04"
+      "added_date": "2026-10-04",
+      "added_at": "2026-10-04T11:50:45Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-04T09:46:47Z"
+  "last_updated": "2026-10-04T11:50:47Z"
 };

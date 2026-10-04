@@ -7,8 +7,9 @@
 #   302 = temporary redirect
 
 # ── High-Speed Telegram Cloud Stream Proxy ──────────────────────────────────
-# Proxy /stream/* to the live Render streaming backend (Edge-cached & range-enabled)
-/stream/*       https://colored-casinos-consequently-helped.trycloudflare.com/stream/:splat   200
+# Dynamic edge proxy handled by Cloudflare Pages Functions (/functions/stream/channel/[[path]].js)
+# Do NOT put static /stream/* proxy here as it intercepts Pages Functions and breaks on tunnel changes.
+
 
 # ── Clean movie URLs ─────────────────────────────────────────────────────────
 # /movie/the-dark-knight  →  movie.html?id=the-dark-knight  (stays in URL bar)

@@ -52,9 +52,12 @@ let lastAutoSwitchEpoch = 0;
 
 let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) || '';
 let streamServerHealthy = false;
+let edgeProxyHealthy = false;
 
 async function probeStreamServerHealth(baseUrl) {
-  if (isRunningOnCloudflarePages()) {
+  // If baseUrl is empty, probe the edge proxy /stream/ping
+  if (!baseUrl) {
+    if (!isRunningOnCloudflarePages()) return false;
     try {
       const ctrl = new AbortController();
       const tId = setTimeout(() => ctrl.abort(), 2500);
@@ -63,23 +66,40 @@ async function probeStreamServerHealth(baseUrl) {
         signal: ctrl.signal,
       }).catch(() => null);
       clearTimeout(tId);
-      if (resp && resp.ok) return true;
+      if (resp && resp.ok) {
+        const ct = (resp.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('application/json')) {
+          const data = await resp.json().catch(() => null);
+          if (data && (data.ready === true || data.status === 'pong')) {
+            return true;
+          }
+        }
+      }
     } catch (e) {}
+    return false;
   }
 
+  // Probe specific backend (e.g. TryCloudflare tunnel or Render)
   const base = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
   if (!base) return false;
   try {
-    if (base) {
-      const ctrl = new AbortController();
-      const tId = setTimeout(() => ctrl.abort(), 3500);
-      const resp = await fetch(`${base}/health?t=${Date.now()}`, {
-        method: 'GET',
-        signal: ctrl.signal,
-        mode: 'cors',
-      }).catch(() => null);
-      clearTimeout(tId);
-      if (resp && resp.ok) return true;
+    const ctrl = new AbortController();
+    const tId = setTimeout(() => ctrl.abort(), 3500);
+    const resp = await fetch(`${base}/health?t=${Date.now()}`, {
+      method: 'GET',
+      signal: ctrl.signal,
+      mode: 'cors',
+    }).catch(() => null);
+    clearTimeout(tId);
+    if (resp && resp.ok) {
+      const ct = (resp.headers.get('content-type') || '').toLowerCase();
+      if (ct.includes('application/json')) {
+        const data = await resp.json().catch(() => null);
+        if (data && (data.ready === true || data.status === 'pong')) {
+          return true;
+        }
+      }
+      return true;
     }
 
     const ctrl2 = new AbortController();
@@ -90,7 +110,17 @@ async function probeStreamServerHealth(baseUrl) {
       mode: 'cors',
     }).catch(() => null);
     clearTimeout(tId2);
-    return resp2 ? resp2.ok : false;
+    if (resp2 && resp2.ok) {
+      const ct2 = (resp2.headers.get('content-type') || '').toLowerCase();
+      if (ct2.includes('application/json')) {
+        const data2 = await resp2.json().catch(() => null);
+        if (data2 && (data2.ready === true || data2.status === 'pong')) {
+          return true;
+        }
+      }
+      return true;
+    }
+    return false;
   } catch (e) {
     return false;
   }
@@ -104,6 +134,7 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     if (cached && cachedHealthy && (Date.now() - cachedTime) < 15000) {
       activeStreamBaseUrl = cached;
       streamServerHealthy = true;
+      edgeProxyHealthy = sessionStorage.getItem('filmsub_edge_healthy') === 'true';
       return activeStreamBaseUrl;
     }
   }
@@ -111,21 +142,31 @@ async function loadLiveStreamConfig(forceRefresh = false) {
   let candidateUrl = '';
   let fallbackUrl = '';
 
-  // 1. Check local endpoint data/stream_endpoint.json
+  // 1. Check window.FILMSUB_STREAM_CONFIG (loaded from stream_endpoint.js)
+  if (window.FILMSUB_STREAM_CONFIG && typeof window.FILMSUB_STREAM_CONFIG === 'object') {
+    if (window.FILMSUB_STREAM_CONFIG.stream_base_url) {
+      candidateUrl = String(window.FILMSUB_STREAM_CONFIG.stream_base_url).trim().replace(/\/+$/, '');
+    }
+    if (window.FILMSUB_STREAM_CONFIG.fallback_stream_url) {
+      fallbackUrl = String(window.FILMSUB_STREAM_CONFIG.fallback_stream_url).trim().replace(/\/+$/, '');
+    }
+  }
+
+  // 2. Check local endpoint data/stream_endpoint.json
   try {
     const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
     if (rLoc.ok) {
       const d = await rLoc.json();
       if (d && d.stream_base_url) {
-        candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
+        candidateUrl = String(d.stream_base_url).trim().replace(/\/+$/, '');
       }
       if (d && d.fallback_stream_url) {
-        fallbackUrl = String(d.fallback_stream_url).replace(/\/+$/, '');
+        fallbackUrl = String(d.fallback_stream_url).trim().replace(/\/+$/, '');
       }
     }
   } catch (e) {}
 
-  // 2. Check GitHub raw endpoint
+  // 3. Check GitHub raw endpoint
   if (!candidateUrl) {
     try {
       const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
@@ -136,26 +177,18 @@ async function loadLiveStreamConfig(forceRefresh = false) {
       if (rGh.ok) {
         const d = await rGh.json();
         if (d && d.stream_base_url) {
-          candidateUrl = String(d.stream_base_url).replace(/\/+$/, '');
+          candidateUrl = String(d.stream_base_url).trim().replace(/\/+$/, '');
         }
         if (d && d.fallback_stream_url) {
-          fallbackUrl = String(d.fallback_stream_url).replace(/\/+$/, '');
+          fallbackUrl = String(d.fallback_stream_url).trim().replace(/\/+$/, '');
         }
       }
     } catch (e) {}
   }
 
-  // 3. Probe candidate URL or Edge proxy
+  // 4. Test candidate URL (Colab tunnel)
   let activeUrl = '';
-  if (isRunningOnCloudflarePages()) {
-    const isEdgeAlive = await probeStreamServerHealth('');
-    if (isEdgeAlive) {
-      activeUrl = candidateUrl || fallbackUrl || 'https://filmsub.pages.dev';
-      streamServerHealthy = true;
-    }
-  }
-
-  if (!activeUrl && candidateUrl) {
+  if (candidateUrl) {
     const isAlive = await probeStreamServerHealth(candidateUrl);
     if (isAlive) {
       activeUrl = candidateUrl;
@@ -163,7 +196,7 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     }
   }
 
-  // 4. If primary is dead or missing, probe fallback URL (e.g. Render 24/7 backend)
+  // 5. Test fallback URL (e.g. Render 24/7 backend)
   if (!activeUrl && fallbackUrl) {
     const isFallbackAlive = await probeStreamServerHealth(fallbackUrl);
     if (isFallbackAlive) {
@@ -172,20 +205,36 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     }
   }
 
-  activeStreamBaseUrl = activeUrl;
-  if (!activeUrl) {
-    streamServerHealthy = false;
-    try {
-      sessionStorage.removeItem('filmsub_stream_base');
-      sessionStorage.removeItem('filmsub_stream_healthy');
-    } catch (e) {}
+  // 6. Test Edge proxy (/stream/ping)
+  edgeProxyHealthy = false;
+  if (isRunningOnCloudflarePages()) {
+    edgeProxyHealthy = await probeStreamServerHealth('');
+  }
+
+  if (activeUrl) {
+    activeStreamBaseUrl = activeUrl;
+    streamServerHealthy = true;
+  } else if (edgeProxyHealthy) {
+    activeStreamBaseUrl = candidateUrl || fallbackUrl || 'https://filmsub.pages.dev';
+    streamServerHealthy = true;
   } else {
-    try {
+    activeStreamBaseUrl = candidateUrl || fallbackUrl || '';
+    streamServerHealthy = false;
+  }
+
+  try {
+    if (streamServerHealthy && activeStreamBaseUrl) {
       sessionStorage.setItem('filmsub_stream_base', activeStreamBaseUrl);
       sessionStorage.setItem('filmsub_stream_healthy', 'true');
+      sessionStorage.setItem('filmsub_edge_healthy', edgeProxyHealthy ? 'true' : 'false');
       sessionStorage.setItem('filmsub_stream_base_time', String(Date.now()));
-    } catch (e) {}
-  }
+    } else {
+      sessionStorage.removeItem('filmsub_stream_base');
+      sessionStorage.removeItem('filmsub_stream_healthy');
+      sessionStorage.removeItem('filmsub_edge_healthy');
+    }
+  } catch (e) {}
+
   return activeStreamBaseUrl;
 }
 
@@ -196,9 +245,11 @@ function isRunningOnCloudflarePages() {
 }
 
 function getStreamEndpointPrefix() {
-  if (isRunningOnCloudflarePages()) {
+  // If edge proxy is healthy and confirmed JSON, use relative prefix
+  if (edgeProxyHealthy) {
     return '';
   }
+  // If we have an active live stream backend, connect directly
   if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http')) {
     return activeStreamBaseUrl;
   }
@@ -1173,6 +1224,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     const wasPaused = vjsPlayer.paused();
     let newSrc = '';
     const qNorm = String(currentEffectiveQuality || '').toLowerCase();
+    let defaultTgChatId = (currentMovie && currentMovie.channel_chat_id) || '-1004325759505';
 
     // 1. Check if movie has multi-quality variant_media (Telegram Cloud)
     const vm = currentMovie && (currentMovie.variant_media || (currentMovie.movie_entry && currentMovie.movie_entry.variant_media));
@@ -1190,7 +1242,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
         if (!tgChatId) {
           const mUrl = currentMovie.stream_url || (vEntry.stream_url || '');
           const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
-          tgChatId = mMatch ? mMatch[1] : '-1004325759505';
+          tgChatId = mMatch ? mMatch[1] : defaultTgChatId;
         }
         if (vEntry.message_id) {
           newSrc = `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${vEntry.message_id}`;
@@ -1223,7 +1275,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
         if (matched.stream_url && !matched.stream_url.includes('t.me')) {
           newSrc = normalizeStreamUrl(matched.stream_url);
         } else if (matched.message_id) {
-          const cId = tgChatId || '-1004325759505';
+          const cId = defaultTgChatId;
           newSrc = `${getStreamEndpointPrefix()}/stream/channel/${cId}/${matched.message_id}`;
         } else if (matched.file_id) {
           newSrc = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(matched.file_id)}`;
@@ -2167,13 +2219,25 @@ function createVjsPlayer(playerEl, stream, movie) {
     });
 
     // Ultra-smooth zero-lag watchdog: if stream header is still at readyState 0 after 12s
-    // (e.g. stream server sleeping, Colab proxy offline, or network stall),
-    // display the Telegram Reconnect / Retry screen so playback never hangs indefinitely.
+    // (e.g. edge proxy cold start or network stall),
+    // automatically attempt failover to direct live tunnel before displaying fallback.
     const slowHeaderWatchdog = setTimeout(() => {
       const isLocalSample = stream.stream_url && (stream.stream_url.includes('sample_stream') || stream.stream_url.startsWith('assets/'));
       if (vjsPlayer && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
           !isLocalSample &&
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
+        const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
+        if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !currentSrc.startsWith('http')) {
+          vjsPlayer._retriedDirect = true;
+          edgeProxyHealthy = false;
+          const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
+          const directUrl = directPrefix + (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc);
+          console.warn('[FilmSub Player] Edge stream stalled (watchdog), switching to direct tunnel:', directUrl);
+          vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
+          vjsPlayer.load();
+          vjsPlayer.play().catch(() => {});
+          return;
+        }
         renderPlayerFallback(playerEl, movie);
       }
     }, 12000);
@@ -2182,11 +2246,26 @@ function createVjsPlayer(playerEl, stream, movie) {
       clearTimeout(slowHeaderWatchdog);
     });
 
-    // Seamless retry on upstream error
+    // Seamless failover on upstream error
     vjsPlayer.on('error', () => {
       const errDisplay = playerEl.querySelector('.vjs-error-display');
       if (errDisplay) errDisplay.style.display = 'none';
       clearTimeout(slowHeaderWatchdog);
+
+      const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
+      // If relative edge stream failed and we have a live direct tunnel, retry immediately with direct tunnel!
+      if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !currentSrc.startsWith('http')) {
+        vjsPlayer._retriedDirect = true;
+        edgeProxyHealthy = false;
+        const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
+        const directUrl = directPrefix + (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc);
+        console.warn('[FilmSub Player] Edge stream failed, switching directly to live tunnel:', directUrl);
+        vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
+        vjsPlayer.load();
+        vjsPlayer.play().catch(() => {});
+        return;
+      }
+
       setTimeout(() => {
         renderPlayerFallback(playerEl, movie);
       }, 50);

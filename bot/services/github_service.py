@@ -385,9 +385,10 @@ async def publish_live_stream_endpoint(stream_base_url: str, fallback_stream_url
         if os.path.exists(_LOCAL_REDIRECTS_PATH):
             with open(_LOCAL_REDIRECTS_PATH, "r", encoding="utf-8") as f:
                 redir_text = f.read()
+            # Ensure no static /stream/* line exists in _redirects (Pages Functions handle edge streaming dynamically)
             new_redir = re.sub(
-                r"^/stream/\*\s+https?://[^\s]+/stream/:splat\s+200",
-                f"/stream/*       {clean_url}/stream/:splat   200",
+                r"^/stream/\*\s+https?://[^\s]+/stream/:splat\s+200\r?\n?",
+                "",
                 redir_text,
                 flags=re.MULTILINE
             )
@@ -398,7 +399,7 @@ async def publish_live_stream_endpoint(stream_base_url: str, fallback_stream_url
                     await upload_file(
                         content=new_redir.encode("utf-8"),
                         path=_REDIRECTS_PATH,
-                        message=f"feat(stream): update _redirects proxy to {clean_url}",
+                        message="fix(stream): remove static _redirects stream proxy in favor of edge functions",
                     )
     except Exception as red_err:
         log.debug("[GitHubService] _redirects sync note: %s", red_err)

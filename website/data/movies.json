@@ -14643,7 +14643,96 @@
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T08:35:28Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "hi-2026",
+      "slug": "hi-2026",
+      "title": "Hi!",
+      "title_si": "",
+      "year": 2026,
+      "imdb_id": "tt33029123",
+      "tmdb_id": "1314279",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "poster_url": "https://image.tmdb.org/t/p/w500/9Vgmpa0tcCzkbXf9AY0zXrai1oi.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/30pNvXUYKA0nLBStE7QcR6cuVJl.jpg",
+      "genres": [
+        "Romance",
+        "Drama"
+      ],
+      "language": "ta",
+      "description": "Two individuals initially exchange a simple \"Hi,\" but through a series of chance encounters, shared experiences, and deep conversations, they gradually develop a strong connection and eventually fall in love.",
+      "director": "Vishnu Edavan",
+      "cast": [
+        {
+          "name": "Kavin Raj",
+          "character": "Mayilsami"
+        },
+        {
+          "name": "Nayanthara",
+          "character": "Devayani"
+        },
+        {
+          "name": "K. Bhagyaraj",
+          "character": ""
+        },
+        {
+          "name": "Prabhu",
+          "character": "Indhiran"
+        },
+        {
+          "name": "Radhika Sarathkumar",
+          "character": ""
+        }
+      ],
+      "rating": "4.8",
+      "number_of_seasons": 0,
+      "seasons": [],
+      "featured": false,
+      "trending": false,
+      "added_at": "2026-10-04T09:46:37Z",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1314279?sub_file=https%3A%2F%2Fraw.githubusercontent.com%2Flakindugimsara50-del%2Ffilm-bot%2Fmain%2Fsubs%2Fhi-2026-si.vtt&sub_label=Sinhala&sub=true"
+        },
+        {
+          "server": "Server 2",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://player.autoembed.cc/embed/movie/tt33029123"
+        },
+        {
+          "server": "Server 3",
+          "label": "🚀 VIP Player 3 (2Embed Pro)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt33029123"
+        }
+      ],
+      "downloads": [],
+      "telegram_status": "queued",
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/hi-2026-si.vtt",
+      "has_sinhala_sub": true,
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "සිංහල උපසිරැසි",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/hi-2026-si.vtt",
+          "default": true
+        }
+      ],
+      "site_url": "https://filmsub.pages.dev/movie.html?id=hi-2026",
+      "channel_post_id": 277,
+      "channel_chat_id": -1004325759505,
+      "added_date": "2026-10-04"
     }
   ],
-  "last_updated": "2026-10-04T09:40:33Z"
+  "last_updated": "2026-10-04T09:46:47Z"
 }

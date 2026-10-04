@@ -287,6 +287,58 @@ class TelegramStreamPool:
             "mime_type": mime_type,
         }
 
+    async def get_channel_admin_uids(self, channel_id: int) -> set[int]:
+        """Fetch and cache verified channel admin user IDs (via Bot API or upload_pool)."""
+        now = time.time()
+        if not hasattr(self, "_admin_uids_cache"):
+            self._admin_uids_cache: Dict[int, tuple[float, set[int]]] = {}
+
+        try:
+            ch_key = int(channel_id)
+        except Exception:
+            ch_key = channel_id
+
+        if ch_key in self._admin_uids_cache:
+            cache_time, uids = self._admin_uids_cache[ch_key]
+            if now - cache_time < 900 and uids:
+                return uids
+
+        admin_uids: set[int] = set()
+
+        # 1. Query Telegram Bot API (instant and authoritative)
+        try:
+            import config, urllib.request, json
+            token = getattr(config, "BOT_TOKEN", "") or os.getenv("BOT_TOKEN", "")
+            if token:
+                api_url = f"https://api.telegram.org/bot{token}/getChatAdministrators?chat_id={channel_id}"
+                req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    data = json.loads(r.read().decode("utf-8", errors="ignore"))
+                    if data.get("ok"):
+                        for a in data.get("result", []):
+                            u = a.get("user", {})
+                            if u and not u.get("is_bot", False):
+                                admin_uids.add(u.get("id"))
+        except Exception as api_err:
+            log.debug("[StreamPool] Bot API admin query note: %s", api_err)
+
+        # 2. Fallback to upload_pool cache
+        if not admin_uids:
+            try:
+                from services.upload_pool import upload_pool
+                for c in upload_pool.get_admin_sessions_cached(channel_id):
+                    c_uid = getattr(getattr(c, "me", None), "id", None)
+                    if c_uid:
+                        admin_uids.add(c_uid)
+            except Exception:
+                pass
+
+        if admin_uids:
+            self._admin_uids_cache[ch_key] = (now, admin_uids)
+            log.info("[StreamPool] Verified %d human channel administrators for channel %s", len(admin_uids), channel_id)
+
+        return admin_uids
+
     async def _get_client_media(
         self,
         client: Client,
@@ -319,6 +371,15 @@ class TelegramStreamPool:
                 if len(self._msg_cache) > 200:
                     self._msg_cache.pop(next(iter(self._msg_cache)))
                 return client_msg
+        except PeerIdInvalid:
+            try:
+                await client.get_chat(chat_id)
+                client_msg = await client.get_messages(chat_id, msg_id)
+                if client_msg and not getattr(client_msg, "empty", False):
+                    self._msg_cache[cache_key] = client_msg
+                    return client_msg
+            except Exception:
+                pass
         except Exception as ref_err:
             log.debug("[StreamPool] Client %s cannot fetch message %s/%s for file_ref: %s", getattr(client, "name", ""), chat_id, msg_id, ref_err)
             raise ref_err
@@ -387,26 +448,43 @@ class TelegramStreamPool:
         candidates: List[Client] = []
         if is_channel_msg:
             ch_id = getattr(media_source.chat, "id")
-            verified_admins: List[Client] = []
+            admin_uids = await self.get_channel_admin_uids(ch_id)
+
+            # 1. TOP PRIORITY: Any connected client whose user_id is a verified channel administrator!
+            # Userbot accounts stream at unthrottled wire speed (20-30 MB/s)!
+            for c in self.clients:
+                if not getattr(c, "is_connected", False):
+                    continue
+                if self._client_cooldowns.get(c, 0.0) > now:
+                    continue
+                c_me = getattr(c, "me", None)
+                c_uid = getattr(c_me, "id", None)
+                if c_uid and c_uid in admin_uids and c is not self._main_client and c is not primary_client:
+                    if c not in candidates:
+                        candidates.append(c)
+
+            # Also check upload_pool clients if any
             try:
                 from services.upload_pool import upload_pool
-                verified_admins = upload_pool.get_admin_sessions_cached(ch_id)
+                for c in upload_pool.clients:
+                    if not getattr(c, "is_connected", False):
+                        continue
+                    if self._client_cooldowns.get(c, 0.0) > now:
+                        continue
+                    c_me = getattr(c, "me", None)
+                    c_uid = getattr(c_me, "id", None)
+                    if c_uid and c_uid in admin_uids and c is not self._main_client and c is not primary_client:
+                        if c not in candidates:
+                            candidates.append(c)
             except Exception:
                 pass
-
-            # 1. TOP PRIORITY: Verified Channel Admin USERBOT sessions (Unthrottled wire speed: 20-30 MB/s!)
-            for c in verified_admins:
-                if c not in candidates and getattr(c, "is_connected", False) and self._client_cooldowns.get(c, 0.0) <= now:
-                    candidates.append(c)
 
             # Rotate verified admin userbots across chunk_idx to balance MTProto streaming load
             if len(candidates) > 1:
                 rot_idx = chunk_idx % len(candidates)
                 candidates = candidates[rot_idx:] + candidates[:rot_idx]
 
-            # 2. Main Bot Client:
-            # If no verified admin userbots exist, the main bot is the ONLY client with channel access!
-            # If verified admin userbots DO exist, the main bot is appended as fallback.
+            # 2. Main Bot Client as Fallback
             bot_fallbacks = []
             if primary_client and getattr(primary_client, "is_connected", False) and primary_client not in candidates:
                 bot_fallbacks.append(primary_client)

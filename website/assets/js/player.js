@@ -29,7 +29,7 @@ let isTrailerActive = false;
 let currentSeason = 1;
 let currentEpisode = 1;
 
-const QUALITY_LADDER = ['1080p', '720p', '480p', '360p'];
+const QUALITY_LADDER = ['1080p', '720p', '480p'];
 let selectedQuality = 'auto';
 let currentEffectiveQuality = '720p';
 let liveSubEnabled = true;
@@ -1244,11 +1244,14 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     const vm = currentMovie && (currentMovie.variant_media || (currentMovie.movie_entry && currentMovie.movie_entry.variant_media));
     if (vm && typeof vm === 'object') {
       let vEntry = vm[qNorm] || vm[currentEffectiveQuality];
-      if (!vEntry) {
-        // Fallback to highest available quality
-        const order = ['1080p', '720p', '480p', '360p'];
+      if (!vEntry || (!vEntry.message_id && !vEntry.stream_url)) {
+        // Fallback to highest available quality that actually exists
+        const order = ['720p', '480p', '1080p'];
         for (const q of order) {
-          if (vm[q]) { vEntry = vm[q]; break; }
+          if (vm[q] && (vm[q].message_id > 0 || (vm[q].stream_url && !vm[q].stream_url.includes('/0')))) {
+            vEntry = vm[q];
+            break;
+          }
         }
       }
       if (vEntry) {
@@ -1258,9 +1261,9 @@ function applyQualitySwitch(targetQuality, opts = {}) {
           const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
           tgChatId = mMatch ? mMatch[1] : defaultTgChatId;
         }
-        if (vEntry.message_id) {
+        if (vEntry.message_id && Number(vEntry.message_id) > 0) {
           newSrc = `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${vEntry.message_id}`;
-        } else if (vEntry.stream_url) {
+        } else if (vEntry.stream_url && !vEntry.stream_url.includes('/0')) {
           newSrc = normalizeStreamUrl(vEntry.stream_url);
         }
       }

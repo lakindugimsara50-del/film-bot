@@ -13731,8 +13731,8 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
       "sub_merged": true,
-      "is_already_hardsubbed": false,
-      "sub_hardcoded": false,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
       "quality": "720p",
       "duration": "61 min",
       "description": "Hundreds of cash-strapped players accept a strange invitation to compete in children's games. Inside, a tempting prize awaits — with deadly high stakes.",
@@ -13761,21 +13761,21 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
-      "message_id": 268,
-      "file_name": "squid-game-2021-s01e01-720p.mp4",
-      "file_size": 659231613,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACARNqwh8NX-muEKTlQh1jVmCJNinCJQACeCkAAiYREFbUbqn7LfYxXB4E",
+      "message_id": 275,
+      "file_name": "fs_squid-game-2021-s01e01_720p.mp4",
+      "file_size": 716606037,
       "drive_file_id": "",
-      "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+      "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
-          "message_id": 268,
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARNqwh8NX-muEKTlQh1jVmCJNinCJQACeCkAAiYREFbUbqn7LfYxXB4E",
+          "message_id": 275,
           "quality": "1080p"
         },
         {
@@ -13801,23 +13801,23 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       ],
       "qualities": {
-        "auto": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
-        "1080p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
-        "720p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
-        "480p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
-        "360p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268"
+        "auto": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
+        "1080p": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
+        "720p": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
+        "480p": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/274",
+        "360p": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275"
       },
       "downloads": [
         {
           "quality": "720p (Telegram Direct)",
           "label": "720p HD (Telegram Channel • Fast)",
-          "size": "811.3 MB",
-          "size_bytes": 850658250,
-          "url": "https://t.me/c/4325759505/268",
-          "telegram_url": "https://t.me/c/4325759505/268",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
-          "message_id": 268,
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "size": "683.4 MB",
+          "size_bytes": 716606037,
+          "url": "https://t.me/c/4325759505/275",
+          "telegram_url": "https://t.me/c/4325759505/275",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARNqwh8NX-muEKTlQh1jVmCJNinCJQACeCkAAiYREFbUbqn7LfYxXB4E",
+          "message_id": 275,
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13826,13 +13826,13 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "480p (Telegram Direct)",
           "label": "480p SD (Telegram Channel • Fast)",
-          "size": "366.9 MB",
-          "size_bytes": 384719703,
-          "url": "https://t.me/c/4325759505/269",
-          "telegram_url": "https://t.me/c/4325759505/269",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ1qwgGzm2RMypX82VOYBdHOZnDXZQACLykAAiYREFYHBd8E6kUqBR4E",
-          "message_id": 269,
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
+          "size": "331.8 MB",
+          "size_bytes": 347882173,
+          "url": "https://t.me/c/4325759505/274",
+          "telegram_url": "https://t.me/c/4325759505/274",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARJqwh5uYlFk2QwBAWyZTN6jFWyRQwACdSkAAiYREFaIU0q3kTPyFR4E",
+          "message_id": 274,
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/274",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13841,10 +13841,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "1080p",
           "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "628.7 MB",
-          "size_bytes": 659231613,
+          "size": "683.4 MB",
+          "size_bytes": 716606037,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_1080p",
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13853,10 +13853,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "720p",
           "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "811.3 MB",
-          "size_bytes": 850658250,
+          "size": "683.4 MB",
+          "size_bytes": 716606037,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_720p",
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13865,10 +13865,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "480p",
           "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "366.9 MB",
-          "size_bytes": 384719703,
+          "size": "331.8 MB",
+          "size_bytes": 347882173,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_480p",
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/274",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13877,10 +13877,10 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         {
           "quality": "360p",
           "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "113.2 MB",
-          "size_bytes": 118661690,
+          "size": "123.0 MB",
+          "size_bytes": 128989086,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e01_360p",
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -13895,22 +13895,22 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "size_bytes": 0
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQxqwf8Lf0N7dRpW0fsMW7VXZcHOSAACAykAAiYREFZMIYTpTb_uQB4E",
-          "message_id": 268,
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
-          "size_bytes": 850658250
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARNqwh8NX-muEKTlQh1jVmCJNinCJQACeCkAAiYREFbUbqn7LfYxXB4E",
+          "message_id": 275,
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
+          "size_bytes": 716606037
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ1qwgGzm2RMypX82VOYBdHOZnDXZQACLykAAiYREFYHBd8E6kUqBR4E",
-          "message_id": 269,
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/269",
-          "size_bytes": 384719703
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARJqwh5uYlFk2QwBAWyZTN6jFWyRQwACdSkAAiYREFaIU0q3kTPyFR4E",
+          "message_id": 274,
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/274",
+          "size_bytes": 347882173
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/268",
-          "size_bytes": 118661690
+          "stream_url": "https://symantec-euro-colleges-wax.trycloudflare.com/stream/channel/-1004325759505/275",
+          "size_bytes": 128989086
         }
       },
       "subtitles": [
@@ -13919,13 +13919,13 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "srclang": "si",
           "label": "සිංහල උපසිරැසි (Sinhala)",
           "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/squid-game-2021-s01e01-si.vtt",
-          "default": true
+          "default": false
         }
       ],
-      "source_method": "torrent",
+      "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e01",
       "added_date": "2026-10-04",
-      "added_at": "2026-10-04T07:35:17Z",
+      "added_at": "2026-10-04T09:40:32Z",
       "added_by": "bot_auto_leech"
     },
     {
@@ -14645,5 +14645,5 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-04T08:35:30Z"
+  "last_updated": "2026-10-04T09:40:33Z"
 };

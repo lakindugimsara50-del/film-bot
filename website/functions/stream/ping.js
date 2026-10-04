@@ -75,11 +75,30 @@ export async function onRequest(context) {
   const { primary, fallback } = await resolveLiveStreamBaseUrl(env);
   const targetBackend = primary || fallback || 'https://film-bot-2.onrender.com';
 
+  let backendReady = false;
+  if (targetBackend && targetBackend.startsWith('http')) {
+    try {
+      const probeCtrl = new AbortController();
+      const probeTimer = setTimeout(() => probeCtrl.abort(), 1800);
+      const probeResp = await fetch(`${targetBackend}/health?t=${Date.now()}`, {
+        method: 'GET',
+        headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0' },
+        signal: probeCtrl.signal,
+      });
+      clearTimeout(probeTimer);
+      if (probeResp.ok) {
+        backendReady = true;
+      }
+    } catch (e) {
+      backendReady = false;
+    }
+  }
+
   return new Response(JSON.stringify({
     status: 'pong',
     service: 'filmsub_edge_stream',
     mode: 'telegram_cloud',
-    ready: true,
+    ready: backendReady,
     backend: targetBackend
   }), {
     status: 200,

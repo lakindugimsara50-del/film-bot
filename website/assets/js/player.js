@@ -70,8 +70,14 @@ async function probeStreamServerHealth(baseUrl) {
         const ct = (resp.headers.get('content-type') || '').toLowerCase();
         if (ct.includes('application/json')) {
           const data = await resp.json().catch(() => null);
+          if (data && data.backend && typeof data.backend === 'string' && data.backend.startsWith('http')) {
+            const b = data.backend.trim().replace(/\/+$/, '');
+            if (!isDeadTunnel(b)) {
+              activeStreamBaseUrl = b;
+            }
+          }
           if (data && (data.ready === true || data.status === 'pong')) {
-            return true;
+            return data.ready === true;
           }
         }
       }
@@ -142,8 +148,28 @@ async function loadLiveStreamConfig(forceRefresh = false) {
   let candidateUrl = '';
   let fallbackUrl = '';
 
-  // 1. Check window.FILMSUB_STREAM_CONFIG (loaded from stream_endpoint.js)
-  if (window.FILMSUB_STREAM_CONFIG && typeof window.FILMSUB_STREAM_CONFIG === 'object') {
+  // 1. Fetch fresh stream_endpoint.json from GitHub Raw FIRST (real-time source of truth pushed by Colab)
+  try {
+    const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
+    const ctrl = new AbortController();
+    const tId = setTimeout(() => ctrl.abort(), 2500);
+    const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(tId);
+    if (rGh.ok) {
+      const d = await rGh.json();
+      if (d && d.stream_base_url && typeof d.stream_base_url === 'string') {
+        const u = d.stream_base_url.trim().replace(/\/+$/, '');
+        if (u.startsWith('http')) candidateUrl = u;
+      }
+      if (d && d.fallback_stream_url && typeof d.fallback_stream_url === 'string') {
+        const uFb = d.fallback_stream_url.trim().replace(/\/+$/, '');
+        if (uFb.startsWith('http')) fallbackUrl = uFb;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Check window.FILMSUB_STREAM_CONFIG (loaded from stream_endpoint.js) if GitHub Raw didn't return
+  if (!candidateUrl && window.FILMSUB_STREAM_CONFIG && typeof window.FILMSUB_STREAM_CONFIG === 'object') {
     if (window.FILMSUB_STREAM_CONFIG.stream_base_url) {
       candidateUrl = String(window.FILMSUB_STREAM_CONFIG.stream_base_url).trim().replace(/\/+$/, '');
     }
@@ -152,30 +178,12 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     }
   }
 
-  // 2. Check local endpoint data/stream_endpoint.json
-  try {
-    const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
-    if (rLoc.ok) {
-      const d = await rLoc.json();
-      if (d && d.stream_base_url) {
-        candidateUrl = String(d.stream_base_url).trim().replace(/\/+$/, '');
-      }
-      if (d && d.fallback_stream_url) {
-        fallbackUrl = String(d.fallback_stream_url).trim().replace(/\/+$/, '');
-      }
-    }
-  } catch (e) {}
-
-  // 3. Check GitHub raw endpoint
+  // 3. Check local endpoint data/stream_endpoint.json
   if (!candidateUrl) {
     try {
-      const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json?t=' + Date.now();
-      const ctrl = new AbortController();
-      const tId = setTimeout(() => ctrl.abort(), 2500);
-      const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
-      clearTimeout(tId);
-      if (rGh.ok) {
-        const d = await rGh.json();
+      const rLoc = await fetch('data/stream_endpoint.json?t=' + Date.now(), { cache: 'no-store' });
+      if (rLoc.ok) {
+        const d = await rLoc.json();
         if (d && d.stream_base_url) {
           candidateUrl = String(d.stream_base_url).trim().replace(/\/+$/, '');
         }
@@ -196,8 +204,14 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     }
   }
 
-  // 5. Test fallback URL (e.g. Render 24/7 backend)
-  if (!activeUrl && fallbackUrl) {
+  // 5. Test Edge proxy (/stream/ping)
+  edgeProxyHealthy = false;
+  if (isRunningOnCloudflarePages()) {
+    edgeProxyHealthy = await probeStreamServerHealth('');
+  }
+
+  // 6. Test fallback URL (e.g. Render 24/7 backend)
+  if (!activeUrl && !edgeProxyHealthy && fallbackUrl) {
     const isFallbackAlive = await probeStreamServerHealth(fallbackUrl);
     if (isFallbackAlive) {
       activeUrl = fallbackUrl;
@@ -205,17 +219,13 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     }
   }
 
-  // 6. Test Edge proxy (/stream/ping)
-  edgeProxyHealthy = false;
-  if (isRunningOnCloudflarePages()) {
-    edgeProxyHealthy = await probeStreamServerHealth('');
-  }
-
   if (activeUrl) {
     activeStreamBaseUrl = activeUrl;
     streamServerHealthy = true;
   } else if (edgeProxyHealthy) {
-    activeStreamBaseUrl = candidateUrl || fallbackUrl || 'https://filmsub.pages.dev';
+    if (!activeStreamBaseUrl || !activeStreamBaseUrl.startsWith('http')) {
+      activeStreamBaseUrl = candidateUrl || fallbackUrl || 'https://filmsub.pages.dev';
+    }
     streamServerHealthy = true;
   } else {
     activeStreamBaseUrl = candidateUrl || fallbackUrl || '';
@@ -2227,7 +2237,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           !isLocalSample &&
           (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
         const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
-        if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !currentSrc.startsWith('http')) {
+        if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl) && !currentSrc.startsWith('http')) {
           vjsPlayer._retriedDirect = true;
           edgeProxyHealthy = false;
           const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
@@ -2254,7 +2264,7 @@ function createVjsPlayer(playerEl, stream, movie) {
 
       const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
       // If relative edge stream failed and we have a live direct tunnel, retry immediately with direct tunnel!
-      if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !currentSrc.startsWith('http')) {
+      if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl) && !currentSrc.startsWith('http')) {
         vjsPlayer._retriedDirect = true;
         edgeProxyHealthy = false;
         const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
@@ -2294,10 +2304,10 @@ function renderPlayerFallback(playerEl, movie) {
 
   const headingText = isVideoPending
     ? 'වීඩියෝව සූදානම් වෙමින් පවතී...'
-    : 'චිත්‍රපටය සම්බන්ධ වෙමින් පවතී...';
+    : 'Stream Server එක සම්බන්ධ වෙමින් පවතී...';
   const descText = isVideoPending
     ? 'මෙම වීඩියෝව Telegram Cloud වෙත Upload වෙමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ.'
-    : 'Telegram High-Speed Stream Server එක හා සම්බන්ධ වෙමින් පවතී. Colab සක්‍රීය වූ සැනින් ස්වයංක්‍රීයව Playback ආරම්භ වේ (ස්වයංක්‍රීයව යාවත්කාලීන වේ)...';
+    : 'Telegram High-Speed Stream Server එක (Google Colab) සම්බන්ධ කර ගනිමින් පවතී. Colab සක්‍රීය වූ සැනින් ස්වයංක්‍රීයව Playback ආරම්භ වේ (ස්වයංක්‍රීයව Live සම්බන්ධ වේ)...';
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap cinema-standby-screen">
@@ -2358,16 +2368,16 @@ function renderPlayerFallback(playerEl, movie) {
   const btnRetry = playerEl.querySelector('#btn-manual-reconnect');
   if (btnRetry) btnRetry.addEventListener('click', doRetry);
 
-  // Automatic background check every 5 seconds (auto-discovers new tunnel URL when Colab starts)
+  // Automatic background check every 4 seconds (auto-discovers new tunnel URL when Colab starts)
   window.fallbackRetryInterval = setInterval(async () => {
     await loadLiveStreamConfig(true);
-    if (streamServerHealthy && activeStreamBaseUrl) {
+    if (streamServerHealthy && activeStreamBaseUrl && !isDeadTunnel(activeStreamBaseUrl)) {
       clearInterval(window.fallbackRetryInterval);
       window.fallbackRetryInterval = null;
       FilmSub.showToast('⚡ Stream Ready! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
       loadStream(movie, 0); // restart Super Player
     }
-  }, 5000);
+  }, 4000);
 }
 
 /**

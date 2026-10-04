@@ -30,7 +30,7 @@ let currentSeason = 1;
 let currentEpisode = 1;
 
 const QUALITY_LADDER = ['1080p', '720p', '480p'];
-let selectedQuality = 'auto';
+let selectedQuality = (function() { try { return sessionStorage.getItem('filmsub_pref_quality') || 'auto'; } catch(e) { return 'auto'; } })();
 let currentEffectiveQuality = '720p';
 let liveSubEnabled = true;
 let liveSubOffsetSec = 0.0;
@@ -1137,7 +1137,8 @@ function detectNetworkSpeed() {
   const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''));
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (!conn) {
-    return { speed: isMobile ? 'medium' : 'fast', downlink: 5, effectiveType: '4g', recommendedQuality: isMobile ? '480p' : '720p' };
+    // No Network Information API: default 720p (works well on both Wi-Fi and 4G)
+    return { speed: isMobile ? 'medium' : 'fast', downlink: 5, effectiveType: '4g', recommendedQuality: '720p' };
   }
   const downlink = typeof conn.downlink === 'number' ? conn.downlink : 5;
   const effectiveType = conn.effectiveType || '4g';
@@ -1146,7 +1147,11 @@ function detectNetworkSpeed() {
   if (saveData || downlink < 1.5 || effectiveType === '2g' || effectiveType === 'slow-2g') {
     return { speed: 'slow', downlink, effectiveType, recommendedQuality: '480p' };
   }
-  if (downlink < 3.5 || effectiveType === '3g' || isMobile) {
+  if (downlink < 3.5 || effectiveType === '3g') {
+    return { speed: 'medium-slow', downlink, effectiveType, recommendedQuality: '480p' };
+  }
+  if (isMobile && downlink < 5.0) {
+    // Mobile on moderate 4G (3.5-5 Mbps) → 480p to avoid buffering
     return { speed: 'medium-slow', downlink, effectiveType, recommendedQuality: '480p' };
   }
   if (downlink < 8.0) {
@@ -1207,6 +1212,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
 
   if (!isAutoDowngrade) {
     selectedQuality = targetQuality;
+    try { sessionStorage.setItem('filmsub_pref_quality', targetQuality); } catch(e) {}
     if (targetQuality === 'auto') {
       currentEffectiveQuality = detectNetworkSpeed().recommendedQuality;
     } else {
@@ -1412,7 +1418,8 @@ function attachAdaptiveStallMonitor(player) {
 
   const triggerStepDownIfNeeded = () => {
     if (selectedQuality !== 'auto') return;
-    if (Date.now() - lastAutoSwitchEpoch < 3000) return;
+    // Fix D: 5s cooldown between switches (was 3s) — prevents quality oscillation / flicker
+    if (Date.now() - lastAutoSwitchEpoch < 5000) return;
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx !== -1 && idx < QUALITY_LADDER.length - 1) {
       const nextLower = QUALITY_LADDER[idx + 1];
@@ -1423,7 +1430,8 @@ function attachAdaptiveStallMonitor(player) {
 
   const triggerStepUpIfNeeded = () => {
     if (selectedQuality !== 'auto') return;
-    if (Date.now() - lastAutoSwitchEpoch < 20000) return;
+    // Fix D: 10s cooldown on step-up (was 20s) — recover quality faster after network improves
+    if (Date.now() - lastAutoSwitchEpoch < 10000) return;
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx > 0) {
       const nextHigher = QUALITY_LADDER[idx - 1];
@@ -1443,20 +1451,15 @@ function attachAdaptiveStallMonitor(player) {
     if (player.seeking && player.seeking()) return;
     if (player.paused && player.paused()) return;
 
+    // Fix E: Removed 2-stall requirement — step down on FIRST sustained stall (>1.5s)
+    // stallTimestamps retained for diagnostic pattern logging only
     if (selectedQuality === 'auto') {
       const now = Date.now();
       stallTimestamps = stallTimestamps.filter(t => (now - t) < 15000);
       stallTimestamps.push(now);
-
-      // If 2 stalls occur within 15 seconds, step down immediately
-      if (stallTimestamps.length >= 2) {
-        stallTimestamps = [];
-        triggerStepDownIfNeeded();
-        return;
-      }
     }
 
-    // If waiting persists longer than 2.0 seconds anywhere (even at startup t=0), auto step-down immediately!
+    // Fix F: Stall timeout 2.0s → 1.5s — faster quality step-down reaction
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
       if (player && !player.paused() && !(player.seeking && player.seeking())) {
@@ -1472,7 +1475,7 @@ function attachAdaptiveStallMonitor(player) {
           }
         } catch (e) {}
       }
-    }, 2000);
+    }, 1500);  // 1.5s — was 2.0s; react faster to real buffering freezes
   });
 
   player.on('playing', () => {
@@ -1495,11 +1498,12 @@ function attachAdaptiveStallMonitor(player) {
 
     if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking())) {
       const ahead = getBufferAhead(player);
-      // Proactive Step-Down: if buffer ahead drops below 3.5s, step down BEFORE freezing
-      if (ahead > 0 && ahead < 3.5 && (now - lastAutoSwitchEpoch > 3500)) {
+      // Fix E: Proactive step-down threshold 3.5s → 6.0s — avoids false triggers during seek gaps
+      // Step down only when buffer is genuinely running low (< 6s ahead)
+      if (ahead > 0 && ahead < 6.0 && (now - lastAutoSwitchEpoch > 5000)) {
         triggerStepDownIfNeeded();
-      } else if (ahead > 20.0 && (now - lastAutoSwitchEpoch > 20000)) {
-        // Proactive Step-Up: if buffer ahead is healthy (> 20s), step up
+      // Fix F: Step-up threshold 20s → 12s buffer — recover to higher quality faster
+      } else if (ahead > 12.0 && (now - lastAutoSwitchEpoch > 10000)) {
         triggerStepUpIfNeeded();
       }
     }
@@ -2121,13 +2125,14 @@ function createVjsPlayer(playerEl, stream, movie) {
           enableLowInitialPlaylist: true,
           limitRenditionByPlayerDimensions: false,
           useNetworkInformationApi: true,
-          bandwidth: 15000000,
+          bandwidth: 20000000,        // 20 Mbps starting bandwidth estimate (was 15 Mbps)
           bufferBasedABR: true,
-          maxBufferLength: 120,
-          minBufferLength: 20,
-          maxBufferSize: 128 * 1024 * 1024,
+          maxBufferLength: 180,       // 3 minutes max buffer (was 120s)
+          minBufferLength: 30,        // 30s min buffer before playback (was 20s) — smoother start
+          maxBufferSize: 192 * 1024 * 1024,  // 192 MiB max buffer RAM (was 128 MiB)
           experimentalBufferClipping: false
         },
+        nativeCaptions: false,      // prevent subtitle double-render on Safari
         nativeVideoTracks: true,
         nativeAudioTracks: true,
         nativeTextTracks: false

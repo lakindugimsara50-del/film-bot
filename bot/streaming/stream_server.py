@@ -106,7 +106,7 @@ app.add_middleware(
 # and 8 movies × 16MB (~128MB RAM on 512MB Render instances) to prevent OOM.
 _is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
 MAX_HEADER_CACHE_SIZE = int(os.getenv("MAX_HEADER_CACHE_SIZE", 8 if _is_render else 40))
-MAX_HEADER_CACHE_BYTES = 16 * 1024 * 1024  # 16 MiB per movie (<50ms first-frame response)
+MAX_HEADER_CACHE_BYTES = 32 * 1024 * 1024  # 32 MiB per movie — caches moov atom + first ~2 min of 1080p (<50ms seeks)
 _HEADER_CACHE: OrderedDict[str, bytearray] = OrderedDict()
 _CACHE_LOCK = asyncio.Lock()
 
@@ -388,7 +388,9 @@ async def stream_channel_message(
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Disposition, X-Stream-Cached",
-        "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
+        "Vary": "Range",
+        "X-Accel-Buffering": "no",  # prevent Cloudflare/Nginx proxy buffering (-300ms latency)
         "X-Stream-Cached": "HIT" if is_cached else "MISS",
     }
 

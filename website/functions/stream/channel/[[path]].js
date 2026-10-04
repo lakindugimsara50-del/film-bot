@@ -19,7 +19,7 @@ const GITHUB_ENDPOINT_JSON =
 let cachedStreamBaseUrl = '';
 let cachedFallbackBaseUrl = '';
 let cachedAtEpoch = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 60000; // 60 seconds — GitHub Raw cold fetch adds 200-500ms; cache 60s for ultra-low stream latency
 
 function buildCorsHeaders() {
   return {
@@ -166,6 +166,7 @@ export async function onRequest(context) {
       const outHeaders = new Headers(corsHeaders);
       outHeaders.set('Content-Type', upstreamRes.headers.get('Content-Type') || 'video/mp4');
       outHeaders.set('Accept-Ranges', 'bytes');
+      outHeaders.set('X-Accel-Buffering', 'no');  // prevent Cloudflare proxy buffering → lower stream latency
       outHeaders.set('X-Stream-Backend', activeBase);
 
       const contentRange = upstreamRes.headers.get('Content-Range');

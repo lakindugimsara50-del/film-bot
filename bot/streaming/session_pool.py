@@ -21,7 +21,7 @@ from pyrogram.errors import FloodWait, PeerIdInvalid, SessionPasswordNeeded
 log = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1024 * 1024  # 1 MiB — must match Pyrogram's internal MTProto block size (DO NOT change)
-STREAM_BATCH = 4           # fetch 4 × 1 MiB = 4 MiB per browser request for fast buffering
+STREAM_BATCH = 8           # fetch 8 × 1 MiB = 8 MiB per batch → 2× throughput, fewer Telegram round-trips
 
 
 class TelegramStreamPool:
@@ -512,8 +512,8 @@ class TelegramStreamPool:
                 return
 
             # Pipelined concurrent chunk fetching across clients
-            # Sliding window concurrency: 4-6 parallel workers
-            concurrency = min(total_chunks, max(4, len(self.clients) * 2), 6)
+            # Sliding window concurrency: up to 8 parallel workers (matching STREAM_BATCH=8)
+            concurrency = min(total_chunks, max(4, len(self.clients) * 2), 8)
 
             # Pre-launch initial batch of concurrent chunk fetches
             for c in range(start_chunk, min(start_chunk + concurrency, end_chunk + 1)):

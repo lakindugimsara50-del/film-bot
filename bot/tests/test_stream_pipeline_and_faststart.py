@@ -155,9 +155,11 @@ async def test_16mb_header_cache_save_and_retrieve():
 
 
 @pytest.mark.asyncio
-async def test_stream_status_reflects_16mb_capacity():
+async def test_stream_status_reflects_cache_capacity():
     status = await stream_server.stream_status()
-    assert status["max_cache_mb"] == stream_server.MAX_HEADER_CACHE_SIZE * 16
+    # max_cache_mb = MAX_HEADER_CACHE_SIZE * (MAX_HEADER_CACHE_BYTES // (1024*1024))
+    expected_mb = stream_server.MAX_HEADER_CACHE_SIZE * (stream_server.MAX_HEADER_CACHE_BYTES // (1024 * 1024))
+    assert status["max_cache_mb"] == expected_mb
     assert status["chunk_size_bytes"] == 1024 * 1024
 
 

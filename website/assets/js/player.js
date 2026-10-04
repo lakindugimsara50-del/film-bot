@@ -31,7 +31,7 @@ let currentEpisode = 1;
 
 const QUALITY_LADDER = ['1080p', '720p', '480p', '360p'];
 let selectedQuality = 'auto';
-let currentEffectiveQuality = '1080p';
+let currentEffectiveQuality = '720p';
 let liveSubEnabled = true;
 let liveSubOffsetSec = 0.0;
 let liveSubTimer = null;
@@ -1140,21 +1140,22 @@ function renderServerTabs(movie) {
 
 // ---- 3b. Adaptive Quality & Network-Aware Streaming Engine ----
 function detectNetworkSpeed() {
+  const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''));
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (!conn) {
-    return { speed: 'fast', downlink: 10, effectiveType: '4g', recommendedQuality: '1080p' };
+    return { speed: isMobile ? 'medium' : 'fast', downlink: 5, effectiveType: '4g', recommendedQuality: isMobile ? '480p' : '720p' };
   }
-  const downlink = typeof conn.downlink === 'number' ? conn.downlink : 6;
+  const downlink = typeof conn.downlink === 'number' ? conn.downlink : 5;
   const effectiveType = conn.effectiveType || '4g';
   const saveData = Boolean(conn.saveData);
 
-  if (saveData || downlink < 1.1 || effectiveType === '2g' || effectiveType === 'slow-2g') {
+  if (saveData || downlink < 1.5 || effectiveType === '2g' || effectiveType === 'slow-2g') {
     return { speed: 'slow', downlink, effectiveType, recommendedQuality: '360p' };
   }
-  if (downlink < 2.2 || effectiveType === '3g') {
+  if (downlink < 3.5 || effectiveType === '3g' || isMobile) {
     return { speed: 'medium-slow', downlink, effectiveType, recommendedQuality: '480p' };
   }
-  if (downlink < 4.5) {
+  if (downlink < 8.0) {
     return { speed: 'medium', downlink, effectiveType, recommendedQuality: '720p' };
   }
   return { speed: 'fast', downlink, effectiveType, recommendedQuality: '1080p' };
@@ -1414,20 +1415,22 @@ function attachAdaptiveStallMonitor(player) {
 
   const triggerStepDownIfNeeded = () => {
     if (selectedQuality !== 'auto') return;
-    if (Date.now() - lastAutoSwitchEpoch < 12000) return;
+    if (Date.now() - lastAutoSwitchEpoch < 3000) return;
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx !== -1 && idx < QUALITY_LADDER.length - 1) {
       const nextLower = QUALITY_LADDER[idx + 1];
+      console.log(`[ABR] Stall detected. Stepping down: ${currentEffectiveQuality} -> ${nextLower}`);
       applyQualitySwitch(nextLower, { isAutoDowngrade: true });
     }
   };
 
   const triggerStepUpIfNeeded = () => {
     if (selectedQuality !== 'auto') return;
-    if (Date.now() - lastAutoSwitchEpoch < 25000) return;
+    if (Date.now() - lastAutoSwitchEpoch < 20000) return;
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx > 0) {
       const nextHigher = QUALITY_LADDER[idx - 1];
+      console.log(`[ABR] Buffer healthy. Stepping up: ${currentEffectiveQuality} -> ${nextHigher}`);
       applyQualitySwitch(nextHigher, { isAutoDowngrade: false });
     }
   };
@@ -1440,17 +1443,15 @@ function attachAdaptiveStallMonitor(player) {
   });
 
   player.on('waiting', () => {
-    // Never count user timeline scrubbing or initial t=0 moov header fetch as a network lag stall
     if (player.seeking && player.seeking()) return;
-    const curT = typeof player.currentTime === 'function' ? (player.currentTime() || 0) : 0;
-    if (curT < 2.0) return;
+    if (player.paused && player.paused()) return;
 
     if (selectedQuality === 'auto') {
       const now = Date.now();
-      stallTimestamps = stallTimestamps.filter(t => (now - t) < 20000);
+      stallTimestamps = stallTimestamps.filter(t => (now - t) < 15000);
       stallTimestamps.push(now);
 
-      // If 2+ real playback stalls occurred within 20 seconds, step down quality immediately
+      // If 2 stalls occur within 15 seconds, step down immediately
       if (stallTimestamps.length >= 2) {
         stallTimestamps = [];
         triggerStepDownIfNeeded();
@@ -1458,14 +1459,14 @@ function attachAdaptiveStallMonitor(player) {
       }
     }
 
-    // Or if a single mid-playback buffer stall persists longer than 2.4 seconds, auto step-down & stall recovery nudge
+    // If waiting persists longer than 2.0 seconds anywhere (even at startup t=0), auto step-down immediately!
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
       if (player && !player.paused() && !(player.seeking && player.seeking())) {
         if (selectedQuality === 'auto') {
           triggerStepDownIfNeeded();
         }
-        // Intelligent stall recovery: if playback is stalled on a keyframe gap, nudge playhead slightly
+        // Intelligent stall recovery: nudge playhead slightly to kick decoder
         try {
           const t = typeof player.currentTime === 'function' ? player.currentTime() : 0;
           if (t > 0) {
@@ -1474,7 +1475,7 @@ function attachAdaptiveStallMonitor(player) {
           }
         } catch (e) {}
       }
-    }, 2400);
+    }, 2000);
   });
 
   player.on('playing', () => {
@@ -1492,20 +1493,17 @@ function attachAdaptiveStallMonitor(player) {
     }
 
     const now = Date.now();
-    if (now - lastBufferCheck < 2500) return;
+    if (now - lastBufferCheck < 2000) return;
     lastBufferCheck = now;
 
     if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking())) {
-      const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-      if (curT > 6.0) {
-        const ahead = getBufferAhead(player);
-        // Proactive Step-Down: if buffer ahead drops below 3.0s, step down BEFORE freezing
-        if (ahead > 0 && ahead < 3.0 && (now - lastAutoSwitchEpoch > 12000)) {
-          triggerStepDownIfNeeded();
-        } else if (ahead > 18.0 && (now - lastAutoSwitchEpoch > 25000)) {
-          // Proactive Step-Up: if buffer ahead is healthy (> 18s) and network allows, step up
-          triggerStepUpIfNeeded();
-        }
+      const ahead = getBufferAhead(player);
+      // Proactive Step-Down: if buffer ahead drops below 3.5s, step down BEFORE freezing
+      if (ahead > 0 && ahead < 3.5 && (now - lastAutoSwitchEpoch > 3500)) {
+        triggerStepDownIfNeeded();
+      } else if (ahead > 20.0 && (now - lastAutoSwitchEpoch > 20000)) {
+        // Proactive Step-Up: if buffer ahead is healthy (> 20s), step up
+        triggerStepUpIfNeeded();
       }
     }
   });
@@ -2129,11 +2127,11 @@ function createVjsPlayer(playerEl, stream, movie) {
           enableLowInitialPlaylist: true,
           limitRenditionByPlayerDimensions: false,
           useNetworkInformationApi: true,
-          bandwidth: 10000000,
+          bandwidth: 15000000,
           bufferBasedABR: true,
-          maxBufferLength: 60,
-          minBufferLength: 12,
-          maxBufferSize: 64 * 1024 * 1024,
+          maxBufferLength: 120,
+          minBufferLength: 20,
+          maxBufferSize: 128 * 1024 * 1024,
           experimentalBufferClipping: false
         },
         nativeVideoTracks: true,

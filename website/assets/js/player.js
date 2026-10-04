@@ -1150,7 +1150,7 @@ function detectNetworkSpeed() {
   const saveData = Boolean(conn.saveData);
 
   if (saveData || downlink < 1.5 || effectiveType === '2g' || effectiveType === 'slow-2g') {
-    return { speed: 'slow', downlink, effectiveType, recommendedQuality: '360p' };
+    return { speed: 'slow', downlink, effectiveType, recommendedQuality: '480p' };
   }
   if (downlink < 3.5 || effectiveType === '3g' || isMobile) {
     return { speed: 'medium-slow', downlink, effectiveType, recommendedQuality: '480p' };
@@ -2000,9 +2000,6 @@ function injectInPlayerQualityControl(player) {
       </button>
       <button type="button" class="vjs-sq-item${selectedQuality === '480p' ? ' active' : ''}" data-quality="480p">
         <span>480p Smooth</span><span>SD</span>
-      </button>
-      <button type="button" class="vjs-sq-item${selectedQuality === '360p' ? ' active' : ''}" data-quality="360p">
-        <span>360p Data Saver</span><span>LOW</span>
       </button>
     </div>
   `;

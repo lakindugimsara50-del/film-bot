@@ -14394,7 +14394,256 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-03",
       "added_at": "2026-10-03T18:27:57Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "squid-game-2021-s01e03",
+      "slug": "squid-game-2021-s01e03",
+      "title": "Squid Game",
+      "title_si": "",
+      "year": 2021,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt10919420",
+      "tmdb_id": "93405",
+      "type": "series",
+      "season": 1,
+      "episode": 3,
+      "episode_title": "The Man with the Umbrella",
+      "number_of_seasons": 3,
+      "number_of_episodes": 22,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 9,
+          "poster_url": "https://image.tmdb.org/t/p/w500/oSk0j4yeDOqXNHIjYehgSJ2WujM.jpg",
+          "air_date": "2021-09-17"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 7,
+          "poster_url": "https://image.tmdb.org/t/p/w500/yEB6bMYgNu6qEQWoBvlkg6Ea5P.jpg",
+          "air_date": "2024-12-26"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 6,
+          "poster_url": "https://image.tmdb.org/t/p/w500/okJESjE3wqN4qDNFOM8TecUVfHX.jpg",
+          "air_date": "2025-06-27"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/1QdXdRYfktUSONkl1oD5gc6Be0s.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1QdXdRYfktUSONkl1oD5gc6Be0s.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/2meX1nMdScFOoV4370rqHWKmXhY.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/2meX1nMdScFOoV4370rqHWKmXhY.jpg",
+      "genres": [
+        "Action & Adventure",
+        "Mystery",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": false,
+      "sub_hardcoded": false,
+      "quality": "720p",
+      "duration": "55 min",
+      "description": "Hundreds of cash-strapped players accept a strange invitation to compete in children's games. Inside, a tempting prize awaits — with deadly high stakes.",
+      "director": "Hwang Dong-hyuk",
+      "cast": [
+        {
+          "name": "Lee Jung-jae",
+          "character": "Seong Gi-hun / Player 456"
+        },
+        {
+          "name": "Yim Si-wan",
+          "character": "Lee Myung-gi / Player 333"
+        },
+        {
+          "name": "Wi Ha-jun",
+          "character": "Detective Hwang Jun-ho"
+        },
+        {
+          "name": "Jo Yuri",
+          "character": "Kim Jun-hee / Player 222"
+        },
+        {
+          "name": "Lee Byung-hun",
+          "character": "Front Man / Hwang In-ho"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ9qwg1BHsVSm8qXsb2igMs3M98L8wACUSkAAiYREFZGMbcgnZMCnR4E",
+      "message_id": 271,
+      "file_name": "squid-game-2021-s01e03-720p.mp4",
+      "file_size": 621022977,
+      "drive_file_id": "",
+      "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ9qwg1BHsVSm8qXsb2igMs3M98L8wACUSkAAiYREFZGMbcgnZMCnR4E",
+          "message_id": 271,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/93405/1/3"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt10919420-1-3"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt10919420&s=1&e=3"
+        }
+      ],
+      "qualities": {
+        "auto": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+        "1080p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+        "720p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+        "480p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/272",
+        "360p": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "956.7 MB",
+          "size_bytes": 1003128649,
+          "url": "https://t.me/c/4325759505/271",
+          "telegram_url": "https://t.me/c/4325759505/271",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ9qwg1BHsVSm8qXsb2igMs3M98L8wACUSkAAiYREFZGMbcgnZMCnR4E",
+          "message_id": 271,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "344.6 MB",
+          "size_bytes": 361386617,
+          "url": "https://t.me/c/4325759505/272",
+          "telegram_url": "https://t.me/c/4325759505/272",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARBqwg_O-uEQ0DlSauJoUQtuHpqdCgACWCkAAiYREFauwEiy7g1xtx4E",
+          "message_id": 272,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/272",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "592.3 MB",
+          "size_bytes": 621022977,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e03_1080p",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "956.7 MB",
+          "size_bytes": 1003128649,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e03_720p",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "344.6 MB",
+          "size_bytes": 361386617,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e03_480p",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/272",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "106.6 MB",
+          "size_bytes": 111784135,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_squid-game-2021-s01e03_360p",
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAQ9qwg1BHsVSm8qXsb2igMs3M98L8wACUSkAAiYREFZGMbcgnZMCnR4E",
+          "message_id": 271,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "size_bytes": 1003128649
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACARBqwg_O-uEQ0DlSauJoUQtuHpqdCgACWCkAAiYREFauwEiy7g1xtx4E",
+          "message_id": 272,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/272",
+          "size_bytes": 361386617
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://surveys-makeup-entered-missouri.trycloudflare.com/stream/channel/-1004325759505/271",
+          "size_bytes": 111784135
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/squid-game-2021-s01e03-si.vtt",
+          "default": true
+        }
+      ],
+      "source_method": "torrent",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e03",
+      "added_date": "2026-10-04",
+      "added_at": "2026-10-04T08:35:28Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-04T07:35:19Z"
+  "last_updated": "2026-10-04T08:35:30Z"
 };

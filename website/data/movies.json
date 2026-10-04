@@ -14899,7 +14899,255 @@
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T11:50:45Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "money-heist-2017-s01e01",
+      "slug": "money-heist-2017-s01e01",
+      "title": "Money Heist",
+      "title_si": "",
+      "year": 2017,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt6468322",
+      "tmdb_id": "71446",
+      "type": "series",
+      "season": 1,
+      "episode": 1,
+      "episode_title": "Episode 1",
+      "number_of_seasons": 3,
+      "number_of_episodes": 41,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 15,
+          "poster_url": "https://image.tmdb.org/t/p/w500/aDS48mRJcJQvJSOql0Lq2wyWZJI.jpg",
+          "air_date": "2017-05-02"
+        },
+        {
+          "season_number": 2,
+          "name": "Season 2",
+          "episode_count": 16,
+          "poster_url": "https://image.tmdb.org/t/p/w500/4sjfcxqq7CXMi7Omozt72lvBbJL.jpg",
+          "air_date": "2019-07-19"
+        },
+        {
+          "season_number": 3,
+          "name": "Season 3",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/xvSfsOcMW5iJWPpFu2L7JjO0b0.jpg",
+          "air_date": "2021-09-03"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/xGexTKCJDkl12dTW4YCBDXWb1AD.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/xGexTKCJDkl12dTW4YCBDXWb1AD.jpg",
+      "genres": [
+        "Crime",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "90 min",
+      "description": "To carry out the biggest heist in history, a mysterious man called The Professor recruits a band of eight robbers who have a single characteristic: none of them has anything to lose. Five months of seclusion - memorizing every step, every detail, every probability - culminate in eleven days locked up in the National Coinage and Stamp Factory of Spain, surrounded by police forces and with dozens of hostages in their power, to find out whether their suicide wager will lead to everything or nothing.",
+      "director": "Álex Pina",
+      "cast": [
+        {
+          "name": "Úrsula Corberó",
+          "character": "Tokio"
+        },
+        {
+          "name": "Itziar Ituño",
+          "character": "Raquel Murillo"
+        },
+        {
+          "name": "Álvaro Morte",
+          "character": "Profesor"
+        },
+        {
+          "name": "Pedro Alonso",
+          "character": "Berlín"
+        },
+        {
+          "name": "Miguel Herrán",
+          "character": "Río"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACASFqwlIBSpSKcAHIuhv4hSF0wzIe1QACHioAAiYREFZ6kgABxIYGAT0eBA",
+      "message_id": 289,
+      "file_name": "fs_money-heist-2017-s01e01_720p.mp4",
+      "file_size": 455376426,
+      "drive_file_id": "",
+      "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASFqwlIBSpSKcAHIuhv4hSF0wzIe1QACHioAAiYREFZ6kgABxIYGAT0eBA",
+          "message_id": 289,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/71446/1/1"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt6468322-1-1"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt6468322&s=1&e=1"
+        }
+      ],
+      "qualities": {
+        "auto": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+        "1080p": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+        "720p": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+        "480p": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/288",
+        "360p": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "434.3 MB",
+          "size_bytes": 455376426,
+          "url": "https://t.me/c/4325759505/289",
+          "telegram_url": "https://t.me/c/4325759505/289",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASFqwlIBSpSKcAHIuhv4hSF0wzIe1QACHioAAiYREFZ6kgABxIYGAT0eBA",
+          "message_id": 289,
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "227.4 MB",
+          "size_bytes": 238488060,
+          "url": "https://t.me/c/4325759505/288",
+          "telegram_url": "https://t.me/c/4325759505/288",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASBqwlGMIAwmSbjVVIl5bh4st9QkUgACGyoAAiYREFa6-GAytD8Dth4E",
+          "message_id": 288,
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/288",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "434.3 MB",
+          "size_bytes": 455376426,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_money-heist-2017-s01e01_1080p",
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "434.3 MB",
+          "size_bytes": 455376426,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_money-heist-2017-s01e01_720p",
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "227.4 MB",
+          "size_bytes": 238488060,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_money-heist-2017-s01e01_480p",
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/288",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "78.2 MB",
+          "size_bytes": 81967756,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_money-heist-2017-s01e01_360p",
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASFqwlIBSpSKcAHIuhv4hSF0wzIe1QACHioAAiYREFZ6kgABxIYGAT0eBA",
+          "message_id": 289,
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "size_bytes": 455376426
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASBqwlGMIAwmSbjVVIl5bh4st9QkUgACGyoAAiYREFa6-GAytD8Dth4E",
+          "message_id": 288,
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/288",
+          "size_bytes": 238488060
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://row-eminem-dietary-walked.trycloudflare.com/stream/channel/-1004325759505/289",
+          "size_bytes": 81967756
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/money-heist-2017-s01e01-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=money-heist-2017-s01e01",
+      "added_date": "2026-10-04",
+      "added_at": "2026-10-04T13:17:57Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-04T12:23:00Z"
+  "last_updated": "2026-10-04T13:17:58Z"
 }

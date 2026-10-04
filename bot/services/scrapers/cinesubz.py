@@ -42,6 +42,68 @@ from services.scrapers.srilankan_matched_scraper import (
 )
 
 
+async def _extract_cinesubz_zetaplayer_streams(
+    client: httpx.AsyncClient,
+    soup: BeautifulSoup,
+    current_url: str,
+) -> list[dict]:
+    """
+    Extract high-speed direct CDN streams from CineSubz ZetaPlayer options.
+    Direct streams from supercloud2.space / setwenna.one / player endpoints contain
+    genuine .mp4 files with pre-hardsubbed Sinhala subtitles.
+    """
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://cinesubz.co/",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    options = soup.select("#playeroptionsul li.zetaflix_player_option, #playeroptionsul li.dooplay_player_option")
+    stream_links = []
+    seen_urls = set()
+
+    for opt in options:
+        post_id = opt.get("data-post")
+        p_type = opt.get("data-type")  # 'mv' or 'ep'
+        nume = opt.get("data-nume")
+        if not (post_id and p_type and nume) or nume == "trailer":
+            continue
+
+        api_url = f"https://cinesubz.co/wp-json/zetaplayer/v2/{post_id}/{p_type}/{nume}"
+        try:
+            r_api = await client.get(api_url, headers=headers, timeout=8.0)
+            if r_api.status_code == 200:
+                data = r_api.json()
+                embed_url = data.get("embed_url") or ""
+                if embed_url:
+                    r_embed = await client.get(embed_url, headers=headers, timeout=8.0)
+                    if r_embed.status_code == 200:
+                        found_urls = re.findall(r"https?://[^\s\"\'<>]+\.(?:mp4|mkv)(?:\?[^\s\"\'<>]*)?", r_embed.text)
+                        for fu in set(found_urls):
+                            # Filter for real media stream hosts (supercloud, setwenna, csplayer CDN)
+                            # Exclude ad lockers or non-media endpoints (e.g. drive.csplayer2.space)
+                            if "drive.csplayer2.space" not in fu and any(k in fu for k in ["supercloud", "setwenna", "play=true", "csplayer", "cdn"]) and fu not in seen_urls:
+                                seen_urls.add(fu)
+                                fu_lower = fu.lower()
+                                q = "1080p" if "1080p" in fu_lower else ("720p" if "720p" in fu_lower else ("480p" if "480p" in fu_lower else "720p"))
+                                stream_links.append({
+                                    "portal": "CineSubz",
+                                    "post_url": current_url,
+                                    "url": fu,
+                                    "quality": q,
+                                    "host_type": "cdn",
+                                    "sub_srt_path": None,  # Pre-hardsubbed
+                                    "is_already_hardsubbed": True,
+                                })
+        except Exception as e_zeta:
+            log.debug("[CineSubz] ZetaPlayer stream extraction note (%s): %s", api_url, e_zeta)
+
+    return stream_links
+
+
 async def search(
     client: httpx.AsyncClient,
     clean_title: str,
@@ -70,15 +132,33 @@ async def search(
         direct_candidates.extend([
             f"{BASE_URL}/episodes/{slug_title}-{season}x{episode}/",
             f"{BASE_URL}/episodes/{slug_title}-{season}x{episode:02d}/",
+            f"{BASE_URL}/episodes/{slug_title}-season-{season}-episode-{episode}/",
             f"{BASE_URL}/tvshows/{slug_title}/",
+            f"{BASE_URL}/series/{slug_title}/",
+            f"{BASE_URL}/{slug_title}/",
+        ])
+    elif season:
+        direct_candidates.extend([
+            f"{BASE_URL}/episodes/{slug_title}-{season}x1/",
+            f"{BASE_URL}/tvshows/{slug_title}/",
+            f"{BASE_URL}/series/{slug_title}/",
             f"{BASE_URL}/{slug_title}/",
         ])
     elif year:
-        direct_candidates.append(f"{BASE_URL}/movies/{slug_title}-{year}/")
-        direct_candidates.append(f"{BASE_URL}/{slug_title}-{year}/")
-        direct_candidates.append(f"{BASE_URL}/{slug_title}/")
+        direct_candidates.extend([
+            f"{BASE_URL}/movies/{slug_title}-{year}/",
+            f"{BASE_URL}/movies/{slug_title}-{year}-sinhala-subtitles/",
+            f"{BASE_URL}/{slug_title}-{year}/",
+            f"{BASE_URL}/{slug_title}/",
+            f"{BASE_URL}/tvshows/{slug_title}/",
+        ])
     else:
-        direct_candidates.append(f"{BASE_URL}/{slug_title}/")
+        direct_candidates.extend([
+            f"{BASE_URL}/movies/{slug_title}/",
+            f"{BASE_URL}/tvshows/{slug_title}/",
+            f"{BASE_URL}/series/{slug_title}/",
+            f"{BASE_URL}/{slug_title}/",
+        ])
 
     candidate_posts: list[tuple[str, int]] = []
     seen_posts = set()
@@ -168,7 +248,12 @@ async def search(
                             current_url = ep_link
                         break
 
-            # Extract direct links & CineSubz csplayer mapping
+            # 1. High-Speed ZetaPlayer Direct Streaming CDN Extraction (Top Priority for CineSubz)
+            zetaplayer_streams = await _extract_cinesubz_zetaplayer_streams(client, soup, current_url)
+            for zs in zetaplayer_streams:
+                results.append(zs)
+
+            # 2. Extract direct links (PixelDrain, Mega, etc.) while skipping non-media ad locker pages
             video_links = []
             intermediate_tasks = []
 
@@ -211,6 +296,9 @@ async def search(
                     try:
                         resolved = await resolve_srilankan_intermediate_link(client, link_u, referer_url=current_url)
                         if resolved and not resolved.startswith("magnet:") and ".torrent" not in resolved.lower():
+                            # Strictly filter out drive.csplayer2.space HTML ad pages
+                            if "drive.csplayer2.space" in resolved:
+                                return None
                             ht = "cdn" if "csplayer" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
                             return {
                                 "url": resolved,
@@ -230,10 +318,13 @@ async def search(
                         video_links.append(r_item)
 
             for vl in video_links:
+                u_link = vl["url"]
+                if "drive.csplayer2.space" in u_link:
+                    continue  # Do not add non-downloadable HTML landing pages
                 results.append({
                     "portal": "CineSubz",
                     "post_url": current_url,
-                    "url": vl["url"],
+                    "url": u_link,
                     "quality": vl["quality"],
                     "host_type": vl["host_type"],
                     "sub_srt_path": None,  # Pre-hardsubbed

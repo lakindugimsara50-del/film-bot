@@ -205,7 +205,8 @@ async def search(
                     rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
                     re.IGNORECASE,
                 )
-                slug_tokens = [t for t in re.sub(r"[^a-zA-Z0-9]+", " ", clean_t.lower()).split() if len(t) > 2]
+                raw_tokens = re.sub(r"[^a-zA-Z0-9]+", " ", clean_t.lower()).split()
+                slug_tokens = [t for t in raw_tokens if len(t) >= 2 or len(raw_tokens) == 1]
                 for a in soup.find_all("a", href=True):
                     h = a["href"].strip()
                     txt = a.get_text(" ", strip=True)

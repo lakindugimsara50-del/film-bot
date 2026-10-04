@@ -140,23 +140,9 @@ async def resolve_srilankan_intermediate_link(
         link_elem = soup.find(id="link")
         if link_elem and link_elem.get("href"):
             raw_href = link_elem["href"].strip()
-            if "google.com/server" in raw_href:
-                # Map server6 / server7 / serverX with or without trailing digits
-                m_srv = re.search(r"https://google\.com/server(\d+)(?:/1:)?/", raw_href)
-                if m_srv:
-                    srv_num = m_srv.group(1)[0]
-                    mapped = re.sub(
-                        r"https://google\.com/server\d+(?:/1:)?/",
-                        f"https://drive.csplayer2.space/server{srv_num}/",
-                        raw_href,
-                    )
-                    # Also replace extension formatting according to CineSubz JS
-                    if ".mp4" in mapped:
-                        mapped = mapped.replace(".mp4", "?ext=mp4")
-                    elif ".mkv" in mapped:
-                        mapped = mapped.replace(".mkv", "?ext=mkv")
-                    log.info("[MatchedScraper] Mapped CineSubz stream URL: %s", mapped[:90])
-                    return mapped
+            if "google.com/server" in raw_href or "drive.csplayer2.space" in raw_href:
+                # drive.csplayer2.space is an interactive HTML ad locker, not a direct media link
+                return None
             return resolve_direct_video_url(raw_href)
 
         # D. Search anchors inside the resolved page (e.g. LKSubs /links/ -> Continue button)
@@ -489,7 +475,8 @@ async def _search_portal(
                     rf"|(?:\b|[-_\[/])(?:ep|episode|e)\.?\s*0*{episode}(?:\b|[-_\]/]))",
                     re.IGNORECASE,
                 )
-                slug_tokens = [t for t in re.sub(r"[^a-zA-Z0-9]+", " ", clean_t.lower()).split() if len(t) > 2]
+                raw_tokens = re.sub(r"[^a-zA-Z0-9]+", " ", clean_t.lower()).split()
+                slug_tokens = [t for t in raw_tokens if len(t) >= 2 or len(raw_tokens) == 1]
                 ep_link = None
                 for a in soup.find_all("a", href=True):
                     h = a["href"].strip()
@@ -614,6 +601,26 @@ async def _search_portal(
             seen_dl_urls: set[str] = set()
             intermediate_to_resolve: list[tuple[str, str, str]] = []
 
+            # CineSubz ZetaPlayer high-speed direct CDN stream extraction
+            if p_name == "CineSubz" or "cinesubz" in post_url.lower() or "cinesubz" in current_target_url.lower():
+                try:
+                    try:
+                        from services.scrapers import cinesubz
+                    except ImportError:
+                        from bot.services.scrapers import cinesubz
+                    zeta_streams = await cinesubz._extract_cinesubz_zetaplayer_streams(client, soup, current_target_url)
+                    for zs in zeta_streams:
+                        video_links.append({
+                            "url": zs["url"],
+                            "original_url": zs["url"],
+                            "host_type": "cdn",
+                            "quality": zs["quality"],
+                            "context": f"CineSubz ZetaPlayer CDN {zs['quality']}",
+                        })
+                        seen_dl_urls.add(zs["url"])
+                except Exception as e_z:
+                    log.debug("[MatchedScraper] CineSubz ZetaPlayer stream extraction error: %s", e_z)
+
             for elem in soup.find_all(["tr", "p", "div", "a"]):
                 ctx = elem.get_text(" ", strip=True)
                 anchors = elem.find_all("a", href=True) if elem.name != "a" else [elem]
@@ -699,10 +706,8 @@ async def _search_portal(
                 ht = str(item.get("host_type", "")).lower()
                 if "pixeldrain" in u or ht == "pixeldrain":
                     return 0
-                if "cdn.sinhalasub" in u:
+                if any(k in u for k in ("supercloud", "setwenna", "cdn.sinhalasub", "ddl.sinhalasub")):
                     return 1
-                if "ddl.sinhalasub" in u:
-                    return 2
                 if "gofile" in u or ht == "gofile":
                     return 3
                 if "mega" in u or ht == "mega":
@@ -722,9 +727,11 @@ async def _search_portal(
             # Package found video links
             for vl in video_links:
                 u_str = str(vl.get("url", "")).lower()
+                if "drive.csplayer2.space" in u_str:
+                    continue
                 final_is_hardsub = (
                     is_hardsub
-                    or any(k in u_str for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                    or any(k in u_str for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer", "supercloud", "setwenna"))
                 )
                 found_candidates.append({
                     "portal": p_name,

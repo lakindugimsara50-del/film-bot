@@ -313,7 +313,7 @@ async def find_all_candidates(
                 m_is_hardsub = bool(
                     m.get("is_already_hardsubbed")
                     or m_portal in ("SinhalaSub", "CineSubz")
-                    or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                    or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer", "supercloud", "setwenna"))
                 )
                 matched_candidates.append(
                     LeechCandidate(
@@ -702,7 +702,7 @@ async def _execute_leech(
                             m_is_hard = bool(
                                 m.get("is_already_hardsubbed")
                                 or m_portal in ("SinhalaSub", "CineSubz")
-                                or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                                or any(k in str(m_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer", "supercloud", "setwenna"))
                             )
                             candidates.append(
                                 LeechCandidate(
@@ -1318,7 +1318,7 @@ async def _execute_leech(
 
                         cand_is_hardsub = bool(
                             (candidate.extra and candidate.extra.get("is_already_hardsubbed"))
-                            or any(k in str(candidate.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                            or any(k in str(candidate.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer", "supercloud", "setwenna"))
                             or (candidate.extra and any(k in str(candidate.extra.get("portal", "")).lower() for k in ("sinhalasub", "cinesubz")))
                         )
                         active_sub_to_mux = None if cand_is_hardsub else (
@@ -1371,7 +1371,7 @@ async def _execute_leech(
                                 # 2. Check candidate-specific hardsub & acquire subtitles if not hardsubbed
                                 q_cand_is_hardsub = bool(
                                     (cand_obj.extra and cand_obj.extra.get("is_already_hardsubbed"))
-                                    or any(k in str(cand_obj.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer"))
+                                    or any(k in str(cand_obj.source_url).lower() for k in ("cdn.sinhalasub.net", "ddl.sinhalasub.net", "cinesubz", "csplayer", "supercloud", "setwenna"))
                                     or (cand_obj.extra and any(k in str(cand_obj.extra.get("portal", "")).lower() for k in ("sinhalasub", "cinesubz")))
                                     or cand_is_hardsub
                                 )

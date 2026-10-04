@@ -168,7 +168,7 @@ def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
     if custom_referer:
         return custom_referer
     u_lower = (url or "").lower()
-    if "cinesubz" in u_lower or "csplayer" in u_lower:
+    if any(k in u_lower for k in ("cinesubz", "csplayer", "supercloud", "setwenna")):
         return "https://cinesubz.co/"
     elif "sinhalasub" in u_lower:
         return "https://sinhalasub.lk/"

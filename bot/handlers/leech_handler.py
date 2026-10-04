@@ -403,7 +403,7 @@ def register(app: Client) -> None:
         from services.queue_service import queue_service
         is_admin = user_id in getattr(config, "ADMIN_IDS", [])
         q_cancelled = queue_service.cancel_user(user_id if not is_admin else None)
-        t_cancelled = await task_tracker.cancel_all_user_operations(user_id)
+        t_cancelled = await task_tracker.cancel_all_user_operations(user_id if not is_admin else None)
         if q_cancelled or t_cancelled:
             await message.reply_text(
                 "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
@@ -416,6 +416,84 @@ def register(app: Client) -> None:
                 "🗑️ <i>Seedr ගිණුම සහ තාවකාලික දත්ත පිරිසිදු කරන ලදී.</i>",
                 parse_mode=ParseMode.HTML,
             )
+
+    @app.on_callback_query(filters.regex(r"^btn:"))
+    async def btn_callback_handler(client: Client, query: CallbackQuery) -> None:
+        user_id = query.from_user.id if query.from_user else 0
+        username = query.from_user.username if query.from_user else ""
+        if not auth_service.is_authorized(user_id, username):
+            await query.answer("Unauthorized.", show_alert=True)
+            return
+
+        action = query.data.split(":", 1)[-1]
+        from services.queue_service import queue_service
+
+        if action == "cancel_active":
+            is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+            q_cancelled = queue_service.cancel_user(user_id if not is_admin else None)
+            t_cancelled = await task_tracker.cancel_all_user_operations(user_id if not is_admin else None)
+            await query.answer("ක්‍රියාකාරී කාර්යය සාර්ථකව අවලංගු කරන ලදී.", show_alert=True)
+            try:
+                await query.message.edit_text(
+                    "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
+                    "🗑️ <i>බාගත කිරීමේ පෝලිම (Queue) සහ තාවකාලික දත්ත සියල්ල පිරිසිදු කරන ලදී.</i>",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception:
+                pass
+        elif action == "queue":
+            items = queue_service.get_queue_status()
+            if not items:
+                empty_kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("➕ Add Movie (/boost)", callback_data="btn:leech_prompt")],
+                    [InlineKeyboardButton("🔄 Refresh Status", callback_data="btn:status_refresh")],
+                ])
+                try:
+                    await query.message.edit_text(
+                        "📋 <b>දැනට බාගත කිරීමේ පෝලිම හිස්ය (Queue is Empty).</b>\n\n"
+                        "💡 අලුතෙන් චිත්‍රපටයක් බාගත කිරීමට <code>/boost &lt;Movie Name&gt;</code> භාවිත කරන්න.",
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=empty_kb,
+                    )
+                except Exception:
+                    pass
+            else:
+                lines = []
+                for idx, it in enumerate(items, 1):
+                    lines.append(f"{idx}. <b>{it['title']}</b>\n   ⚡ {it['status']}")
+                body = "\n\n".join(lines)
+                active_kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔄 Refresh Queue", callback_data="btn:queue")],
+                    [InlineKeyboardButton("❌ Cancel Active Task", callback_data="btn:cancel_active")],
+                ])
+                try:
+                    await query.message.edit_text(
+                        f"📋 <b>වත්මන් බාගත කිරීමේ පෝලිම (Movie Download Queue):</b>\n\n"
+                        f"{body}\n\n"
+                        f"💡 <i>චිත්‍රපට එකිනෙක පිළිවෙලින් ක්‍රියාත්මක වෙමින් පවතී.</i>",
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=active_kb,
+                    )
+                except Exception:
+                    pass
+            await query.answer("Queue updated.")
+        elif action == "status_refresh":
+            status_text = task_tracker.tracker.format_status_message(user_id)
+            refresh_kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Refresh Status", callback_data="btn:status_refresh")],
+                [InlineKeyboardButton("📋 View Queue", callback_data="btn:queue")],
+            ])
+            try:
+                await query.message.edit_text(
+                    status_text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=refresh_kb,
+                )
+            except Exception:
+                pass
+            await query.answer("Status updated.")
+        elif action == "leech_prompt":
+            await query.answer("චිත්‍රපටයක් බාගත කිරීමට /boost <Movie Name> හෝ /leech <Movie Name> එවන්න.", show_alert=True)
 
     @app.on_callback_query(filters.regex(r"^leech:"))
     async def leech_callback_handler(client: Client, query: CallbackQuery) -> None:
@@ -430,7 +508,7 @@ def register(app: Client) -> None:
             from services.queue_service import queue_service
             is_admin = user_id in getattr(config, "ADMIN_IDS", [])
             queue_service.cancel_user(user_id if not is_admin else None)
-            await task_tracker.cancel_all_user_operations(user_id)
+            await task_tracker.cancel_all_user_operations(user_id if not is_admin else None)
             await query.answer("ක්‍රියාවලිය අවලංගු කරන ලදී (Cancelled).", show_alert=True)
             try:
                 await query.message.edit_text(

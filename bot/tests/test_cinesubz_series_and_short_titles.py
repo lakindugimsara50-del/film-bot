@@ -94,3 +94,47 @@ async def test_resolve_srilankan_intermediate_link_filters_csplayer():
         mock_client, "https://cinesubz.co/links/12345"
     )
     assert res is None  # Must reject ad lockers that don't serve direct video
+
+
+@pytest.mark.asyncio
+async def test_queue_service_cancel_user_purges_all_and_stops_active():
+    """Verify that cancel_user clears active item, cancels current task, drains queue, and makes queue idle."""
+    import asyncio
+    from services.queue_service import QueueService, QueueItem
+    qs = QueueService()
+
+    mock_msg = AsyncMock()
+    mock_client = AsyncMock()
+
+    item1 = QueueItem(item_id="1", user_id=777, query_text="Ep 1", reply_media=None, status_msg=mock_msg, client=mock_client, title="Squid Game S01E01")
+    item2 = QueueItem(item_id="2", user_id=777, query_text="Ep 2", reply_media=None, status_msg=mock_msg, client=mock_client, title="Squid Game S01E02")
+    item3 = QueueItem(item_id="3", user_id=777, query_text="Ep 3", reply_media=None, status_msg=mock_msg, client=mock_client, title="Squid Game S01E03")
+
+    qs._pending_items = [item1, item2, item3]
+    qs._active_item = item1
+
+    async def _dummy_task():
+        await asyncio.sleep(100)
+
+    t = asyncio.create_task(_dummy_task())
+    qs._current_task = t
+    await qs._queue.put(item2)
+    await qs._queue.put(item3)
+
+    # Cancel user
+    cancelled = qs.cancel_user(777)
+    assert cancelled is True
+    assert t.cancelling() > 0 or t.cancelled()
+    assert qs._active_item is None
+    assert qs.get_queue_status() == []
+    assert qs.is_idle() is True
+    assert qs._queue.empty() is True
+    assert item1.is_cancelled is True
+    assert item2.is_cancelled is True
+    assert item3.is_cancelled is True
+    try:
+        await t
+    except asyncio.CancelledError:
+        pass
+    assert t.cancelled() is True
+

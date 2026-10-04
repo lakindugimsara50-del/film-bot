@@ -435,38 +435,14 @@ _find_candidates = find_all_candidates
 
 
 
-# ── Global Sequential Leech Queue ────────────────────────────────────────────
-# Ensures only ONE film is downloaded/processed at a time to prevent disk and
-# memory exhaustion. Subsequent /leech requests queue up and auto-start.
+# ── Global Sequential Leech Execution ─────────────────────────────────────────
+# Sequential execution protected by an asyncio.Lock.
+# Ensures only ONE film is downloaded/processed at a time while ensuring that
+# task cancellation propagates synchronously and directly to _execute_leech,
+# immediately terminating aria2c subprocesses, FFmpeg, and purging storage.
 # ─────────────────────────────────────────────────────────────────────────────
 
-_leech_queue: Optional[asyncio.Queue] = None
-_leech_queue_loop: Optional[asyncio.AbstractEventLoop] = None
-_leech_worker_task: Optional[asyncio.Task] = None
-_active_leech_count: int = 0
-
-
-async def _leech_queue_worker(queue: asyncio.Queue) -> None:
-    """Background coroutine that processes leech jobs one at a time."""
-    global _active_leech_count
-    while True:
-        job = await queue.get()
-        client, status_msg, user_id, query_text, reply_media, auto_publish, done_fut = job
-        try:
-            await _execute_leech(client, status_msg, user_id, query_text, reply_media, auto_publish)
-            if not done_fut.done():
-                done_fut.set_result(True)
-        except asyncio.CancelledError:
-            if not done_fut.done():
-                done_fut.cancel()
-            raise
-        except Exception as worker_err:
-            log.error("[LeechQueue] Worker uncaught error: %s", worker_err, exc_info=True)
-            if not done_fut.done():
-                done_fut.set_exception(worker_err)
-        finally:
-            _active_leech_count = max(0, _active_leech_count - 1)
-            queue.task_done()
+_leech_lock: Optional[asyncio.Lock] = None
 
 
 async def run_auto_leech(
@@ -478,41 +454,23 @@ async def run_auto_leech(
     auto_publish: bool = False,
 ) -> None:
     """
-    Public entry point: enqueues the leech request, shows queue position if busy,
-    and awaits completion of this job so task_tracker and callers stay synchronized.
+    Public entry point: runs auto-leech with direct cancellation propagation.
+    Directly awaits _execute_leech under _leech_lock so that task_tracker and callers
+    stay synchronized, and task cancellation immediately aborts the active operation.
     """
-    global _leech_queue, _leech_queue_loop, _leech_worker_task, _active_leech_count
+    global _leech_lock
+    if _leech_lock is None:
+        _leech_lock = asyncio.Lock()
 
-    loop = asyncio.get_running_loop()
-    if _leech_queue is None or _leech_queue_loop is not loop:
-        _leech_queue = asyncio.Queue()
-        _leech_queue_loop = loop
-        _leech_worker_task = None
-        _active_leech_count = 0
-
-    if _leech_worker_task is None or _leech_worker_task.done():
-        _leech_worker_task = loop.create_task(_leech_queue_worker(_leech_queue))
-        log.info("[LeechQueue] Worker task started.")
-
-    _active_leech_count += 1
-    queue_pos = _active_leech_count
-
-    if queue_pos > 1:
-        try:
-            await status_msg.edit_text(
-                f"🕐 <b>Queue Position: {queue_pos}</b> — ඔබේ ඉල්ලීම පෝලිමේ යොදා ඇත!\n\n"
-                f"📋 <b>ඉල්ලීම:</b> <code>{query_text}</code>\n"
-                f"⏳ <b>ඉදිරිය:</b> {queue_pos - 1} ගොනු(වල්) processing නිම වූ පසු ස්වයංක්‍රීයව ආරම්භ වේ.\n\n"
-                f"<i>Cancel කිරීමට /cancel ටයිප් කරන්න.</i>",
-                parse_mode=ParseMode.HTML,
-            )
-        except Exception:
-            pass
-
-    done_fut = loop.create_future()
-    await _leech_queue.put((client, status_msg, user_id, query_text, reply_media, auto_publish, done_fut))
-    log.info("[LeechQueue] Enqueued job for user %d: %r (queue_pos=%d)", user_id, query_text, queue_pos)
-    await done_fut
+    async with _leech_lock:
+        await _execute_leech(
+            client=client,
+            status_msg=status_msg,
+            user_id=user_id,
+            query_text=query_text,
+            reply_media=reply_media,
+            auto_publish=auto_publish,
+        )
 
 
 async def _execute_leech(

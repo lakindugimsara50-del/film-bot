@@ -358,9 +358,12 @@ def register(app: Client) -> None:
             return
 
         had_session = bool(USER_SESSIONS.pop(user_id, None))
-        was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id)
+        from services.queue_service import queue_service
+        is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+        q_cancelled = queue_service.cancel_user(user_id if not is_admin else None)
+        was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id if not is_admin else None)
 
-        if was_task_cancelled or had_session:
+        if was_task_cancelled or had_session or q_cancelled:
             await message.reply_text(
                 "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය සාර්ථකව අවලංගු කරන ලදී (Cancelled).</b>\n\n"
                 "🗑️ <i>Seedr Cloud Storage, බාගත කිරීම් (Downloads) සහ තාවකාලික ගොනු සියල්ල පිරිසිදු කරන ලදී.</i>",
@@ -388,8 +391,11 @@ def register(app: Client) -> None:
         # Cancel
         if data == "wiz:cancel":
             USER_SESSIONS.pop(user_id, None)
-            was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id)
-            if was_task_cancelled:
+            from services.queue_service import queue_service
+            is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+            q_cancelled = queue_service.cancel_user(user_id if not is_admin else None)
+            was_task_cancelled = await task_tracker.cancel_all_user_operations(user_id if not is_admin else None)
+            if was_task_cancelled or q_cancelled:
                 await query.message.edit_text(
                     "❌ <b>ක්‍රියාත්මක වෙමින් පැවති කාර්යය අවලංගු කරන ලදී (Cancelled).</b>\n\n"
                     "🗑️ <i>Seedr ගිණුම සහ බාගත කිරීම් පිරිසිදු කරන ලදී.</i>",

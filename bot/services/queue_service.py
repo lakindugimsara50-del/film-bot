@@ -31,6 +31,7 @@ class QueueItem:
     auto_publish: bool = False
     movie_slug: str = ""
     imdb_id: str = ""
+    is_cancelled: bool = False
 
 
 class QueueService:
@@ -100,18 +101,18 @@ class QueueService:
         """Cancel current active task and remove all matching pending items from queue."""
         cancelled = False
         if self._active_item and (user_id is None or self._active_item.user_id == user_id):
+            self._active_item.is_cancelled = True
             if self._current_task and not self._current_task.done():
                 log.info("[QueueService] Cancelling active task for user %s (%s)", self._active_item.user_id, self._active_item.title)
                 self._current_task.cancel()
                 cancelled = True
+            self._active_item = None
 
         # Remove matching pending items
         remaining: List[QueueItem] = []
         for it in self._pending_items:
-            if it == self._active_item:
-                remaining.append(it)
-                continue
             if user_id is None or it.user_id == user_id:
+                it.is_cancelled = True
                 cancelled = True
                 try:
                     asyncio.create_task(
@@ -126,19 +127,33 @@ class QueueService:
                 remaining.append(it)
 
         self._pending_items = remaining
+
+        # Purge and drain cancelled items from asyncio.Queue
+        new_queue: asyncio.Queue = asyncio.Queue()
+        while not self._queue.empty():
+            try:
+                q_item = self._queue.get_nowait()
+                if not q_item.is_cancelled and (user_id is not None and q_item.user_id != user_id):
+                    new_queue.put_nowait(q_item)
+                else:
+                    self._queue.task_done()
+            except (asyncio.QueueEmpty, Exception):
+                break
+        self._queue = new_queue
+
         return cancelled
 
     def get_queue_status(self) -> List[dict]:
         """Return list of queued items."""
         result = []
-        if self._active_item:
+        if self._active_item and not self._active_item.is_cancelled:
             result.append({
                 "title": self._active_item.title,
                 "status": "ක්‍රියාත්මක වෙමින් පවතී (Active)",
                 "user_id": self._active_item.user_id,
             })
         for i, item in enumerate(self._pending_items, 1):
-            if item != self._active_item:
+            if item != self._active_item and not item.is_cancelled:
                 result.append({
                     "title": item.title,
                     "status": f"පෝලිමේ #{i} (Waiting)",
@@ -148,7 +163,7 @@ class QueueService:
 
     def is_idle(self) -> bool:
         """Check if queue is currently processing anything."""
-        return self._active_item is None and len(self._pending_items) == 0
+        return (self._active_item is None or self._active_item.is_cancelled) and len(self._pending_items) == 0
 
     async def _worker_loop(self) -> None:
         """Sequential FIFO queue consumer."""
@@ -156,6 +171,11 @@ class QueueService:
         while self._is_worker_running:
             try:
                 item: QueueItem = await self._queue.get()
+                if item.is_cancelled or item not in self._pending_items:
+                    log.info("[QueueService] Discarding cancelled queue item: %s", item.title)
+                    self._queue.task_done()
+                    continue
+
                 self._active_item = item
                 log.info("[QueueService] Processing queue item: %s for user %s", item.title, item.user_id)
 
@@ -192,11 +212,12 @@ class QueueService:
                     self._current_task = None
                     if item in self._pending_items:
                         self._pending_items.remove(item)
-                    self._active_item = None
+                    if self._active_item == item:
+                        self._active_item = None
                     self._queue.task_done()
 
-                    # Pause 2 seconds between jobs to allow system memory GC
-                    await asyncio.sleep(2)
+                    # Pause 1 second between jobs to allow system memory GC
+                    await asyncio.sleep(1)
 
             except asyncio.CancelledError:
                 break

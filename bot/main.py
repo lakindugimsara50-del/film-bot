@@ -180,11 +180,13 @@ async def status_endpoint() -> dict:
 _health_server_instance: Optional[uvicorn.Server] = None
 
 
-def start_health_server_thread(port: int) -> threading.Thread:
+def start_health_server_thread(port: int) -> Optional[threading.Thread]:
     """
-    Run FastAPI / Uvicorn in a dedicated daemon OS thread with its own independent
-    asyncio event loop. Render's HTTP health checks (/health and /) respond in <1ms
-    and are NEVER blocked or starved by Pyrogram, event loop contention, or MTProto encryption.
+    Run FastAPI / Uvicorn concurrently in the same active event loop if available,
+    or in a dedicated daemon OS thread if no event loop is currently active.
+    This guarantees that Pyrogram MTProto streams and FastAPI HTTP 206 generators
+    share the identical event loop, eliminating cross-thread Future deadlocks,
+    epoll wake-up latency, and Cloudflare 530 / 1033 tunnel disconnects.
     """
     global _health_server_instance
     if _health_server_instance is not None:
@@ -201,6 +203,17 @@ def start_health_server_thread(port: int) -> threading.Thread:
     )
     server = uvicorn.Server(server_cfg)
     _health_server_instance = server
+
+    try:
+        running_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        running_loop = None
+
+    if running_loop and running_loop.is_running():
+        # SAME LOOP FAST-PATH: Run directly on Pyrogram's loop for zero-latency MTProto streaming
+        running_loop.create_task(server.serve())
+        log.info("FastAPI stream server started on port %d (shared Pyrogram event loop)", port)
+        return None
 
     def _thread_target():
         loop = asyncio.new_event_loop()

@@ -255,17 +255,11 @@ function isRunningOnCloudflarePages() {
 }
 
 function getStreamEndpointPrefix() {
-  // 1. Direct live tunnel for ultra-fast zero-latency streaming if healthy
+  // 1. Direct live tunnel for ultra-fast zero-latency streaming ONLY IF verified healthy
   if (streamServerHealthy && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
     return activeStreamBaseUrl;
   }
-  // 2. Cloudflare Pages edge proxy fallback
-  if (edgeProxyHealthy) {
-    return '';
-  }
-  if (activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
-    return activeStreamBaseUrl;
-  }
+  // 2. Cloudflare Pages edge proxy fallback (zero-hop reliable edge proxy)
   return '';
 }
 

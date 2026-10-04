@@ -342,10 +342,7 @@ class TelegramUploadPool:
                 stream_pool.clients = list(admin_clients)
                 log.info("[UploadPool] Synced %d verified channel admin clients to stream_pool.", len(stream_pool.clients))
             else:
-                for c in self.clients:
-                    if c not in stream_pool.clients:
-                        stream_pool.clients.append(c)
-                log.info("[UploadPool] Synced %d clients to stream_pool (fallback).", len(stream_pool.clients))
+                log.info("[UploadPool] No verified channel admin userbots yet; stream_pool will use main bot client directly.")
         except Exception as sync_err:
             log.debug("[UploadPool] Stream pool sync note: %s", sync_err)
 

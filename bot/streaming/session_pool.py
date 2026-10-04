@@ -33,6 +33,7 @@ class TelegramStreamPool:
         self._lock = asyncio.Lock()
         self._main_client: Optional[Client] = None
         self._client_cooldowns: Dict[Any, float] = {}
+        self._msg_cache: Dict[str, types.Message] = {}
 
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client running in main.py."""
@@ -286,6 +287,44 @@ class TelegramStreamPool:
             "mime_type": mime_type,
         }
 
+    async def _get_client_media(
+        self,
+        client: Client,
+        media_source: Union[types.Message, str],
+    ) -> Union[types.Message, str]:
+        """Ensure media_source is bound to the target client with a valid file_reference."""
+        if not isinstance(media_source, types.Message):
+            return media_source
+
+        # If already bound to this client
+        if getattr(media_source, "_client", None) is client:
+            return media_source
+
+        if client is self._main_client and getattr(media_source, "_client", None) is self._main_client:
+            return media_source
+
+        chat_id = getattr(getattr(media_source, "chat", None), "id", None)
+        msg_id = getattr(media_source, "id", None)
+        if not chat_id or not msg_id:
+            return media_source
+
+        cache_key = f"{id(client)}:{chat_id}:{msg_id}"
+        if cache_key in self._msg_cache:
+            return self._msg_cache[cache_key]
+
+        try:
+            client_msg = await client.get_messages(chat_id, msg_id)
+            if client_msg and not getattr(client_msg, "empty", False):
+                self._msg_cache[cache_key] = client_msg
+                if len(self._msg_cache) > 200:
+                    self._msg_cache.pop(next(iter(self._msg_cache)))
+                return client_msg
+        except Exception as ref_err:
+            log.debug("[StreamPool] Client %s cannot fetch message %s/%s for file_ref: %s", getattr(client, "name", ""), chat_id, msg_id, ref_err)
+            raise ref_err
+
+        return media_source
+
     async def _fetch_chunk(
         self,
         media_source: Union[types.Message, str],
@@ -360,39 +399,24 @@ class TelegramStreamPool:
                 if c not in candidates and getattr(c, "is_connected", False) and self._client_cooldowns.get(c, 0.0) <= now:
                     candidates.append(c)
 
-            # 2. SECONDARY: Other connected userbots from upload_pool or stream_pool
-            # If userbots are already in the channel, they stream at 20-30 MB/s without throttle
-            pool_userbots = []
-            try:
-                from services.upload_pool import upload_pool
-                if upload_pool.clients:
-                    pool_userbots.extend(upload_pool.clients)
-            except Exception:
-                pass
-            for sc in self.clients:
-                if sc not in pool_userbots:
-                    pool_userbots.append(sc)
-
-            for c in pool_userbots:
-                if c not in candidates and getattr(c, "is_connected", False) and self._client_cooldowns.get(c, 0.0) <= now:
-                    # Exclude the bot client from userbot pool list
-                    if c is not self._main_client and c is not primary_client:
-                        candidates.append(c)
-
-            # Rotate userbots across chunk_idx to balance MTProto streaming load across all sessions!
+            # Rotate verified admin userbots across chunk_idx to balance MTProto streaming load
             if len(candidates) > 1:
                 rot_idx = chunk_idx % len(candidates)
                 candidates = candidates[rot_idx:] + candidates[:rot_idx]
 
-            # 3. EMERGENCY FALLBACK ONLY: Main bot client (Telegram MTProto throttles bot tokens to ~100 KB/s)
-            # Only appended at the very end if userbots fail or are on cooldown
+            # 2. Main Bot Client:
+            # If no verified admin userbots exist, the main bot is the ONLY client with channel access!
+            # If verified admin userbots DO exist, the main bot is appended as fallback.
             bot_fallbacks = []
             if primary_client and getattr(primary_client, "is_connected", False) and primary_client not in candidates:
                 bot_fallbacks.append(primary_client)
             if self._main_client and getattr(self._main_client, "is_connected", False) and self._main_client not in candidates and self._main_client not in bot_fallbacks:
                 bot_fallbacks.append(self._main_client)
 
-            candidates.extend(bot_fallbacks)
+            if not candidates:
+                candidates = bot_fallbacks
+            else:
+                candidates.extend(bot_fallbacks)
         else:
             for c in rotated:
                 if c not in candidates:
@@ -408,7 +432,8 @@ class TelegramStreamPool:
                 buf = bytearray()
                 stream_gen = None
                 try:
-                    stream_gen = client.stream_media(media_source, offset=chunk_idx, limit=1)
+                    target_media = await self._get_client_media(client, media_source)
+                    stream_gen = client.stream_media(target_media, offset=chunk_idx, limit=1)
 
                     async def _collect():
                         async for piece in stream_gen:
@@ -492,10 +517,29 @@ class TelegramStreamPool:
                         yield slice_chunk
                 return
 
-            # Multi-chunk parallel pipelined sliding window streaming:
-            # Concurrently pre-fetches chunks across multiple client sessions for 20-30+ MB/s throughput!
-            # Sliding window concurrency: up to 8 parallel workers (matching STREAM_BATCH=8)
-            concurrency = min(total_chunks, max(4, len(self.clients) * 2), 8)
+            # Concurrency tuning:
+            # If only 1 client is available (e.g. main bot), use concurrency 2 (lean pipeline, zero flood throttle).
+            # If multiple verified admin userbots exist, scale concurrency up to 6 workers for 20-30 MB/s.
+            is_ch = (
+                isinstance(media_source, types.Message) and
+                getattr(media_source, "chat", None) and
+                (
+                    str(getattr(media_source.chat, "id", "")).startswith("-100") or
+                    int(getattr(media_source.chat, "id", 0) or 0) < 0
+                )
+            )
+            active_workers = 1
+            if is_ch:
+                try:
+                    from services.upload_pool import upload_pool
+                    ch_id = getattr(media_source.chat, "id")
+                    active_workers = len(upload_pool.get_admin_sessions_cached(ch_id)) or 1
+                except Exception:
+                    active_workers = 1
+            else:
+                active_workers = len([c for c in self.clients if getattr(c, "is_connected", False)]) or 1
+
+            concurrency = min(total_chunks, max(2, min(active_workers * 2, 6)))
 
             # Pre-launch initial batch of concurrent chunk fetches
             for c in range(start_chunk, min(start_chunk + concurrency, end_chunk + 1)):

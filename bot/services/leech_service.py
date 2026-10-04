@@ -1237,9 +1237,15 @@ async def _execute_leech(
                                     elif st == "compressing":
                                         c_pct = q_data.get("dl_pct", 0.0)
                                         c_pbar = downloader.format_progress_bar(c_pct)
-                                        lines.append(
-                                            f"• <b>{q_name}:</b> {c_pbar} {c_pct:.1f}% 🗜️ <i>(FFmpeg 1.90GB Safe Compression...)</i>"
-                                        )
+                                        c_detail = q_data.get("dl_done", f"{c_pct:.1f}%")
+                                        if "⚡" in str(c_detail) or "⏱" in str(c_detail):
+                                            lines.append(
+                                                f"• <b>{q_name}:</b> {c_pbar} {c_detail} 🗜️ <i>(Safe Compression...)</i>"
+                                            )
+                                        else:
+                                            lines.append(
+                                                f"• <b>{q_name}:</b> {c_pbar} {c_pct:.1f}% 🗜️ <i>(FFmpeg 1.90GB Safe Compression...)</i>"
+                                            )
                                     elif st == "uploading":
                                         pct = q_data.get("up_pct", 0.0)
                                         pbar = downloader.format_progress_bar(pct)
@@ -1848,7 +1854,7 @@ async def _execute_leech(
                 txt = (
                     f"⚙️ <b>පියවර 3/5: Fast 1080p Compression (1.90GB Safe Ceiling)...</b>\n\n"
                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                    f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct:.1f}%\n"
+                    f"📊 <b>ප්‍රගතිය:</b> {p_bar} {pct_str if ('⚡' in pct_str or '⏱' in pct_str) else f'{pct:.1f}%'}\n"
                     f"📦 <b>ඉලක්කය:</b> 1.90 GB (Telegram Bot 2GB Limit Safe)\n"
                     f"💬 <b>උපසිරැසි:</b> {sub_lbl}\n"
                     f"⚡ <i>Multi-Core NVENC/CPU High-Speed Encoding</i>"

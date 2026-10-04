@@ -1560,6 +1560,66 @@ class TestLeechService(unittest.TestCase):
             self.assertLessEqual(calc_bytes, video_service.MAX_TELEGRAM_BOT_SIZE)
 
 
+    def test_compress_video_returns_path_and_accepts_mtproto_limit(self):
+        """Verify compress_video returns actual path string and accepts sizes up to MTProto ceiling."""
+        import asyncio
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from services import video_service
+
+        async def fake_subprocess_exec(*cmd, **kwargs):
+            mock_proc = AsyncMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = AsyncMock(return_value=0)
+            mock_proc.stderr.readline = AsyncMock(return_value=b"")
+            mock_proc.stderr.read = AsyncMock(return_value=b"")
+            return mock_proc
+
+        # Size 2,048,000,000 bytes (within MTProto 2,090,000,000 ceiling, even if slightly > 1.95GB)
+        test_file_size = 2_048_000_000
+        with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("services.video_service.detect_hw_encoder", return_value="libx264"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=test_file_size), \
+             patch("services.video_service.get_video_duration", return_value=7200.0), \
+             patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess_exec), \
+             patch("shutil.disk_usage", return_value=MagicMock(free=10 * 1024 * 1024 * 1024)):
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result_path = loop.run_until_complete(video_service.compress_video(
+                    input_path="input_large.mkv",
+                    output_path="comp_1080p.mp4",
+                ))
+            finally:
+                loop.close()
+
+            # Result must be truthy string equal to the output path
+            self.assertTrue(result_path)
+            self.assertIsInstance(result_path, str)
+            self.assertIn("comp_1080p.mp4", result_path)
+
+    def test_get_optimal_work_dir_prioritizes_content_on_colab(self):
+        """Verify get_optimal_work_dir allocates in /content on Colab when /dev/shm has limited space."""
+        from unittest.mock import patch, MagicMock
+        from services import video_service
+
+        # Mock /dev/shm has 5.5GB (standard Colab) and /content exists with 100GB
+        def fake_disk_usage(path):
+            if path == "/dev/shm":
+                return MagicMock(free=int(5.5 * 1024 * 1024 * 1024))
+            return MagicMock(free=int(100 * 1024 * 1024 * 1024))
+
+        with patch("os.path.exists", side_effect=lambda p: p in ("/content", "/dev/shm")), \
+             patch("os.path.isdir", side_effect=lambda p: p in ("/content", "/dev/shm")), \
+             patch("os.access", return_value=True), \
+             patch("shutil.disk_usage", side_effect=fake_disk_usage), \
+             patch("tempfile.mkdtemp", side_effect=lambda prefix, dir=None: f"{dir}/{prefix}abc"):
+
+            work_dir = video_service.get_optimal_work_dir(prefix="leech_")
+            self.assertTrue(work_dir.startswith("/content/"), f"Expected /content workspace on Colab, got: {work_dir}")
+
+
 if __name__ == "__main__":
     unittest.main()
 

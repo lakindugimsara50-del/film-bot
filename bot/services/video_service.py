@@ -24,8 +24,10 @@ log = logging.getLogger(__name__)
 
 # Max upload limit for standard Telegram Bot API (1.95 GB safe ceiling)
 MAX_TELEGRAM_BOT_SIZE = int(1.95 * 1024 * 1024 * 1024)
-# Target compression size for 1080p: ~1.90 GB (close to 2GB to maximize visual fidelity without hitting 1.95GB limit)
+# Target compression size for 1080p: ~1.90 GB (safe headroom below 1.95GB limit to maximize 1080p visual fidelity without overshooting)
 TARGET_COMPRESS_SIZE = int(1.90 * 1024 * 1024 * 1024)
+# Hard MTProto chunk ceiling for 4000 parts * 512KB (2,097,152,000 bytes). Any file strictly <= this is 100% uploadable.
+TELEGRAM_MTPROTO_MAX_BYTES = 2_090_000_000
 
 # ── Colab / Render environment detection ─────────────────────────────────────
 # Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
@@ -1032,14 +1034,15 @@ async def compress_video(
             except Exception:
                 pass
 
+    requested_output_path = output_path
     duration = get_video_duration(input_path, ffmpeg_bin)
     in_bytes = os.path.getsize(input_path)
     log.info("[VideoService] compress_video: '%s' (duration=%.1fs, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
              input_path, duration, in_bytes, output_path, target_size_bytes, is_hardsub)
 
-    # Calculate optimal target bitrate with ~3% margin reserved for container/muxing overhead
+    # Calculate optimal target bitrate with ~4% margin reserved for container/muxing overhead
     audio_bps = 128_000
-    usable_bits = int(target_size_bytes * 8 * 0.97)
+    usable_bits = int(target_size_bytes * 8 * 0.96)
     if duration > 10.0:
         total_bps = usable_bits / duration
         video_bps = max(500_000, int(total_bps - audio_bps))
@@ -1052,8 +1055,9 @@ async def compress_video(
         video_bps = max(500_000, int(total_bps - audio_bps))
         v_bitrate_k = int(video_bps / 1000)
 
-    maxrate_k = int(v_bitrate_k * 1.15)
-    bufsize_k = int(v_bitrate_k * 2)
+    # Strict maxrate & buffer to prevent NVENC/x264 VBR bitrate spikes from overshooting Telegram limit
+    maxrate_k = int(v_bitrate_k * 1.06)
+    bufsize_k = int(v_bitrate_k * 1.5)
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if is_hardsub:
@@ -1114,6 +1118,7 @@ async def compress_video(
             "-c:v", "h264_nvenc",
             "-preset", "fast",
             "-rc", "vbr",
+            "-cq", "24",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
@@ -1188,7 +1193,10 @@ async def compress_video(
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             out_sz = os.path.getsize(output_path)
             log.info("[VideoService] compress_video SUCCESS: %d bytes (<= %d MAX_TELEGRAM_BOT_SIZE)", out_sz, MAX_TELEGRAM_BOT_SIZE)
-            if out_sz <= MAX_TELEGRAM_BOT_SIZE:
+            # Accept if <= MAX_TELEGRAM_BOT_SIZE (1.95GB) or strictly within MTProto upload ceiling (2,090,000,000 bytes)
+            if out_sz <= MAX_TELEGRAM_BOT_SIZE or out_sz <= TELEGRAM_MTPROTO_MAX_BYTES:
+                if out_sz > MAX_TELEGRAM_BOT_SIZE:
+                    log.info("[VideoService] Compressed size %d bytes is slightly > 1.95GB but strictly within MTProto ceiling (%d bytes). Accepting for upload!", out_sz, TELEGRAM_MTPROTO_MAX_BYTES)
                 if progress_callback:
                     try:
                         if asyncio.iscoroutinefunction(progress_callback):
@@ -1197,15 +1205,60 @@ async def compress_video(
                             progress_callback(100.0, "100.0%")
                     except Exception:
                         pass
-                return True
+
+                # If redirected to fallback dir, attempt to move back to requested_output_path if space allows
+                if os.path.abspath(output_path) != os.path.abspath(requested_output_path):
+                    try:
+                        req_dir = os.path.dirname(os.path.abspath(requested_output_path))
+                        if os.path.isdir(req_dir) and shutil.disk_usage(req_dir).free >= (out_sz + 100 * 1024 * 1024):
+                            shutil.move(output_path, requested_output_path)
+                            output_path = requested_output_path
+                            log.info("[VideoService] Moved compressed video from fallback storage to target: %s", output_path)
+                    except Exception as mv_err:
+                        log.debug("[VideoService] Output relocation note: %s", mv_err)
+
+                return output_path
             else:
-                log.warning("[VideoService] Compressed size %d bytes exceeded MAX_TELEGRAM_BOT_SIZE %d", out_sz, MAX_TELEGRAM_BOT_SIZE)
+                log.warning(
+                    "[VideoService] Compressed size %d bytes strictly exceeded MTProto ceiling (%d bytes). "
+                    "Running fast corrective pass with 12%% lower bitrate to guarantee upload...",
+                    out_sz, TELEGRAM_MTPROTO_MAX_BYTES
+                )
                 _cleanup_output()
-                return False
+                # Run quick corrective re-encode with 12% lower bitrate
+                cor_bitrate_k = int(v_bitrate_k * 0.88)
+                cor_maxrate_k = int(cor_bitrate_k * 1.05)
+                cor_bufsize_k = int(cor_bitrate_k * 1.2)
+                cor_cmd = list(cmd)
+                try:
+                    if "-b:v" in cor_cmd:
+                        b_idx = cor_cmd.index("-b:v")
+                        cor_cmd[b_idx + 1] = f"{cor_bitrate_k}k"
+                    if "-maxrate" in cor_cmd:
+                        m_idx = cor_cmd.index("-maxrate")
+                        cor_cmd[m_idx + 1] = f"{cor_maxrate_k}k"
+                    if "-bufsize" in cor_cmd:
+                        buf_idx = cor_cmd.index("-bufsize")
+                        cor_cmd[buf_idx + 1] = f"{cor_bufsize_k}k"
+                    log.info("[VideoService] Running corrective pass (bitrate=%dk)...", cor_bitrate_k)
+                    cor_proc = await asyncio.create_subprocess_exec(
+                        *cor_cmd,
+                        cwd=out_dir,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                    )
+                    await asyncio.wait_for(cor_proc.wait(), timeout=1800.0)
+                    if cor_proc.returncode == 0 and os.path.exists(output_path) and 0 < os.path.getsize(output_path) <= TELEGRAM_MTPROTO_MAX_BYTES:
+                        log.info("[VideoService] Corrective pass SUCCESS: %d bytes (<= %d ceiling)", os.path.getsize(output_path), TELEGRAM_MTPROTO_MAX_BYTES)
+                        return output_path
+                except Exception as cor_err:
+                    log.error("[VideoService] Corrective pass error: %s", cor_err)
+                _cleanup_output()
+                return ""
         else:
             log.error("[VideoService] FFmpeg exited with code %s", proc.returncode)
             _cleanup_output()
-            return False
+            return ""
     except asyncio.TimeoutError:
         log.error("[VideoService] compress_video timed out after 1800s for: %s", input_path)
         if proc and proc.returncode is None:
@@ -1215,7 +1268,7 @@ async def compress_video(
             except Exception:
                 pass
         _cleanup_output()
-        return False
+        return ""
     except asyncio.CancelledError:
         if proc and proc.returncode is None:
             try:
@@ -1234,7 +1287,7 @@ async def compress_video(
             except Exception:
                 pass
         _cleanup_output()
-        return False
+        return ""
     finally:
         if proc and proc.returncode is None:
             try:
@@ -1323,8 +1376,9 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
     import tempfile
 
     ram_disk = "/dev/shm"
-    # On Colab, downloading + remuxing + multi-quality encoding needs at least 4.5 GB headroom in /dev/shm
-    effective_min_gb = max(min_free_gb, 4.5) if (min_free_gb >= 1.0 and os.path.exists("/content")) else min_free_gb
+    # On Colab (/content exists), multi-quality downloads (1080p, 720p, 480p) + compression need >= 15 GB
+    # Since /dev/shm on Colab is only ~5.8 GB, prefer /content which has 100+ GB high-capacity NVMe storage
+    effective_min_gb = max(min_free_gb, 15.0) if (min_free_gb >= 1.0 and os.path.exists("/content")) else min_free_gb
     min_bytes = int(effective_min_gb * 1024 * 1024 * 1024)
     if os.path.isdir(ram_disk) and os.access(ram_disk, os.W_OK):
         try:
@@ -1332,7 +1386,7 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
             if free_ram >= min_bytes:
                 work_dir = tempfile.mkdtemp(prefix=prefix, dir=ram_disk)
                 log.info(
-                    "[VideoService] Allocated 12GB RAM Disk workspace: %s (%.2f GB free in /dev/shm)",
+                    "[VideoService] Allocated RAM Disk workspace: %s (%.2f GB free in /dev/shm)",
                     work_dir,
                     free_ram / (1024 ** 3),
                 )

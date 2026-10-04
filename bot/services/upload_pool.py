@@ -154,7 +154,22 @@ class TelegramUploadPool:
             t_key = int(target_channel)
         except Exception:
             t_key = target_channel
-        return [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
+        res = self._admin_sessions.get(t_key, [])
+        if not res and isinstance(t_key, int):
+            s_key = str(t_key)
+            if s_key.startswith("-100"):
+                try:
+                    alt_pos = int(s_key[4:])
+                    alt_neg = -alt_pos
+                    res = self._admin_sessions.get(alt_pos, []) or self._admin_sessions.get(alt_neg, [])
+                except Exception:
+                    pass
+            elif not s_key.startswith("-"):
+                try:
+                    res = self._admin_sessions.get(int(f"-100{s_key}"), [])
+                except Exception:
+                    pass
+        return [c for c in res if getattr(c, "is_connected", False)]
 
     def save_admin_sessions_manifest(self, target_channel: int, admin_clients: List[Client]) -> None:
         """Persist verified channel admin sessions metadata to bot/sessions/admin_sessions.json."""

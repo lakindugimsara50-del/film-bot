@@ -355,30 +355,44 @@ class TelegramStreamPool:
             except Exception:
                 pass
 
-            # 1. Primary client if connected and not on cooldown
-            if primary_client and getattr(primary_client, "is_connected", False) and self._client_cooldowns.get(primary_client, 0.0) <= now:
-                candidates.append(primary_client)
-            # 2. Main bot client
-            if self._main_client and self._main_client not in candidates and getattr(self._main_client, "is_connected", False) and self._client_cooldowns.get(self._main_client, 0.0) <= now:
-                candidates.append(self._main_client)
-            # 3. Verified channel admin userbots
+            # 1. TOP PRIORITY: Verified Channel Admin USERBOT sessions (Unthrottled wire speed: 20-30 MB/s!)
             for c in verified_admins:
                 if c not in candidates and getattr(c, "is_connected", False) and self._client_cooldowns.get(c, 0.0) <= now:
                     candidates.append(c)
-            # 4. If all active are on cooldown, add connected admins + main as emergency fallback
-            if not candidates:
-                if primary_client and getattr(primary_client, "is_connected", False):
-                    candidates.append(primary_client)
-                if self._main_client and getattr(self._main_client, "is_connected", False) and self._main_client not in candidates:
-                    candidates.append(self._main_client)
-                for c in verified_admins:
-                    if c not in candidates and getattr(c, "is_connected", False):
+
+            # 2. SECONDARY: Other connected userbots from upload_pool or stream_pool
+            # If userbots are already in the channel, they stream at 20-30 MB/s without throttle
+            pool_userbots = []
+            try:
+                from services.upload_pool import upload_pool
+                if upload_pool.clients:
+                    pool_userbots.extend(upload_pool.clients)
+            except Exception:
+                pass
+            for sc in self.clients:
+                if sc not in pool_userbots:
+                    pool_userbots.append(sc)
+
+            for c in pool_userbots:
+                if c not in candidates and getattr(c, "is_connected", False) and self._client_cooldowns.get(c, 0.0) <= now:
+                    # Exclude the bot client from userbot pool list
+                    if c is not self._main_client and c is not primary_client:
                         candidates.append(c)
 
-            # Rotate candidates across chunk_idx to balance MTProto streaming load across all sessions!
+            # Rotate userbots across chunk_idx to balance MTProto streaming load across all sessions!
             if len(candidates) > 1:
                 rot_idx = chunk_idx % len(candidates)
                 candidates = candidates[rot_idx:] + candidates[:rot_idx]
+
+            # 3. EMERGENCY FALLBACK ONLY: Main bot client (Telegram MTProto throttles bot tokens to ~100 KB/s)
+            # Only appended at the very end if userbots fail or are on cooldown
+            bot_fallbacks = []
+            if primary_client and getattr(primary_client, "is_connected", False) and primary_client not in candidates:
+                bot_fallbacks.append(primary_client)
+            if self._main_client and getattr(self._main_client, "is_connected", False) and self._main_client not in candidates and self._main_client not in bot_fallbacks:
+                bot_fallbacks.append(self._main_client)
+
+            candidates.extend(bot_fallbacks)
         else:
             for c in rotated:
                 if c not in candidates:

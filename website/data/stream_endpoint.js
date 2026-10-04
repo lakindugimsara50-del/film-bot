@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://implications-lindsay-substance-attorney.trycloudflare.com",
+  "stream_base_url": "https://ultram-assured-ser-python.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-04T19:20:17.339430+00:00",
+  "updated_at": "2026-10-04T19:35:33.622427+00:00",
   "status": "online"
 };

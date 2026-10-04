@@ -277,18 +277,32 @@ class TelegramUploadPool:
                         try:
                             me = await c.get_me()
                             c.me = me
+                            c._user_id = getattr(me, "id", None)
                             if not hasattr(c.me, "is_premium"):
                                 setattr(c.me, "is_premium", False)
                             self.clients.append(c)
+                            try:
+                                from streaming.session_pool import stream_pool
+                                if c not in stream_pool.clients:
+                                    stream_pool.clients.append(c)
+                            except Exception:
+                                pass
                             return
                         except SessionPasswordNeeded:
                             try:
                                 await c.check_password(password)
                                 me = await c.get_me()
                                 c.me = me
+                                c._user_id = getattr(me, "id", None)
                                 if not hasattr(c.me, "is_premium"):
                                     setattr(c.me, "is_premium", False)
                                 self.clients.append(c)
+                                try:
+                                    from streaming.session_pool import stream_pool
+                                    if c not in stream_pool.clients:
+                                        stream_pool.clients.append(c)
+                                except Exception:
+                                    pass
                                 log.info("[UploadPool] 2FA OK for session: %s", base_name)
                                 return
                             except Exception as pw_err:

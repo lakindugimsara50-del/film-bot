@@ -254,7 +254,25 @@ async def stream_status() -> dict:
     status["status"] = "ready" if status["connected_clients"] > 0 else "initializing"
     status["header_cache_entries"] = len(_HEADER_CACHE)
     status["max_cache_mb"] = MAX_HEADER_CACHE_SIZE * (MAX_HEADER_CACHE_BYTES // (1024 * 1024))
+    try:
+        import subprocess
+        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True, stderr=subprocess.DEVNULL).strip()
+        status["git_commit"] = commit
+    except Exception:
+        status["git_commit"] = "unknown"
     return status
+
+
+@stream_router.post("/stream/admin/restart")
+@stream_router.get("/stream/admin/restart")
+async def stream_restart() -> dict:
+    """Trigger clean restart of bot process on Colab with git pull (exit code 42)."""
+    async def _do_exit():
+        await asyncio.sleep(0.5)
+        sys.exit(42)
+    asyncio.create_task(_do_exit())
+    return {"status": "restarting", "code": 42, "message": "Bot process restarting with latest code in 0.5s..."}
+
 
 
 @stream_router.get("/stream/ping")

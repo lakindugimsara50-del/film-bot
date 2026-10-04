@@ -546,8 +546,8 @@ class TelegramStreamPool:
                             if piece:
                                 buf.extend(piece)
 
-                    # 6-second timeout avoids blocking video playback if a secondary socket stalls
-                    await asyncio.wait_for(_collect(), timeout=6.0)
+                    # 30-second timeout avoids blocking if a socket completely drops while allowing multi-worker bandwidth sharing
+                    await asyncio.wait_for(_collect(), timeout=30.0)
                     if buf:
                         # Client succeeded: clear cooldown
                         self._client_cooldowns.pop(client, None)
@@ -563,7 +563,7 @@ class TelegramStreamPool:
                     # Clean cancellation during timeline seek / scrubbing
                     raise
                 except asyncio.TimeoutError:
-                    log.warning("[StreamPool] Timeout (6s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
+                    log.warning("[StreamPool] Timeout (30s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
                     self._client_cooldowns[client] = time.time() + 10.0
                     last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
                     continue

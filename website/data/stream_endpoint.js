@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://epic-conclude-essay-pads.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-04T10:55:37.780727+00:00",
+  "updated_at": "2026-10-04T10:55:50.564539+00:00",
   "status": "online"
 };

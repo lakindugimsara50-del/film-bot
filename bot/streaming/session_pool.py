@@ -339,7 +339,10 @@ class TelegramStreamPool:
         is_channel_msg = (
             isinstance(media_source, types.Message) and
             getattr(media_source, "chat", None) and
-            str(getattr(media_source.chat, "id", "")).startswith("-100")
+            (
+                str(getattr(media_source.chat, "id", "")).startswith("-100") or
+                int(getattr(media_source.chat, "id", 0) or 0) < 0
+            )
         )
 
         candidates: List[Client] = []

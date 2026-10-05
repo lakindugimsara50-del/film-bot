@@ -36,38 +36,46 @@ function buildCorsHeaders() {
   };
 }
 
-function createByteSliceStream(skip, limit) {
-  let skipped = 0;
-  let sent = 0;
-  return new TransformStream({
-    transform(chunk, controller) {
-      if (sent >= limit) return;
-      let startIdx = 0;
+/**
+ * Reads exactly `limit` bytes from a ReadableStream after skipping `skip` bytes.
+ * Returns a Uint8Array.
+ * Closes and cancels the upstream stream reader as soon as `limit` bytes are acquired,
+ * preventing excess bandwidth waste and tunnel saturation.
+ */
+async function readExactBytes(readableStream, skip, limit) {
+  const reader = readableStream.getReader();
+  const out = new Uint8Array(limit);
+  let bytesSkipped = 0;
+  let bytesWritten = 0;
 
-      if (skipped < skip) {
-        const remainingToSkip = skip - skipped;
-        if (chunk.length <= remainingToSkip) {
-          skipped += chunk.length;
-          return;
+  try {
+    while (bytesWritten < limit) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+
+      let start = 0;
+      if (bytesSkipped < skip) {
+        const remainingToSkip = skip - bytesSkipped;
+        if (value.length <= remainingToSkip) {
+          bytesSkipped += value.length;
+          continue;
         }
-        startIdx = remainingToSkip;
-        skipped = skip;
+        start = remainingToSkip;
+        bytesSkipped = skip;
       }
 
-      const available = chunk.length - startIdx;
-      const needed = limit - sent;
-      const take = Math.min(available, needed);
+      const available = value.length - start;
+      const needed = limit - bytesWritten;
+      const toCopy = Math.min(available, needed);
 
-      if (take > 0) {
-        controller.enqueue(chunk.subarray(startIdx, startIdx + take));
-        sent += take;
-      }
+      out.set(value.subarray(start, start + toCopy), bytesWritten);
+      bytesWritten += toCopy;
+    }
+  } finally {
+    try { await reader.cancel(); } catch (e) {}
+  }
 
-      if (sent >= limit) {
-        controller.terminate();
-      }
-    },
-  });
+  return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
 }
 
 async function resolveLiveStreamBaseUrl(env) {
@@ -240,9 +248,27 @@ export async function onRequest(context) {
             const neededBytes = clientEnd - clientStart + 1;
             outHeaders.set('Content-Range', `bytes ${clientStart}-${clientEnd}/${totalSize}`);
             outHeaders.set('Content-Length', String(neededBytes));
-            if (request.method !== 'HEAD' && responseBody) {
-              responseBody = responseBody.pipeThrough(createByteSliceStream(skipBytes, neededBytes));
+
+            if (request.method === 'HEAD') {
+              return new Response(null, {
+                status: 206,
+                headers: outHeaders,
+              });
             }
+
+            // CRITICAL FIX: Return fixed Uint8Array buffer instead of TransformStream!
+            // Passing a TransformStream / ReadableStream causes Cloudflare Workers runtime
+            // to strip Content-Length and use Transfer-Encoding: chunked, which violates RFC 7233
+            // and causes Safari/iOS and modern media decoders to reject the 206 stream!
+            // Returning a Uint8Array preserves Content-Length and avoids chunked encoding.
+            const slicedBuffer = await readExactBytes(responseBody, skipBytes, neededBytes);
+            outHeaders.set('Content-Length', String(slicedBuffer.byteLength));
+            outHeaders.set('Content-Range', `bytes ${clientStart}-${clientStart + slicedBuffer.byteLength - 1}/${totalSize}`);
+
+            return new Response(slicedBuffer, {
+              status: 206,
+              headers: outHeaders,
+            });
           } else {
             outHeaders.set('Content-Range', contentRange);
             const contentLength = upstreamRes.headers.get('Content-Length');

@@ -321,7 +321,8 @@ async def stream_restart() -> dict:
     """Trigger clean restart of bot process on Colab with git pull (exit code 42)."""
     async def _do_exit():
         await asyncio.sleep(0.5)
-        sys.exit(42)
+        import os
+        os._exit(42)
     asyncio.create_task(_do_exit())
     return {"status": "restarting", "code": 42, "message": "Bot process restarting with latest code in 0.5s..."}
 

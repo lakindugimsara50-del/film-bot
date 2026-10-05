@@ -346,17 +346,17 @@ class TelegramUploadPool:
             except Exception as j_err:
                 log.warning("[UploadPool] Channel auto-join error: %s", j_err)
 
-        # Sync ONLY verified admin clients to stream_pool so streaming private channel messages
-        # never fails with CHANNEL_PRIVATE or CHAT_ADMIN_REQUIRED!
+        # Sync all connected userbot clients to stream_pool so stream_pool has the full multi-account fleet
         try:
             from streaming.session_pool import stream_pool
             t_key = int(target_channel) if target_channel else 0
             admin_clients = [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
             if admin_clients:
-                stream_pool.clients = list(admin_clients)
-                log.info("[UploadPool] Synced %d verified channel admin clients to stream_pool.", len(stream_pool.clients))
-            else:
-                log.info("[UploadPool] No verified channel admin userbots yet; stream_pool will use main bot client directly.")
+                stream_pool._admin_clients = list(admin_clients)
+            for c in self.clients:
+                if getattr(c, "is_connected", False) and c not in stream_pool.clients:
+                    stream_pool.clients.append(c)
+            log.info("[UploadPool] Synced %d connected userbot accounts (%d admins) to stream_pool.", len(self.clients), len(admin_clients))
         except Exception as sync_err:
             log.debug("[UploadPool] Stream pool sync note: %s", sync_err)
 

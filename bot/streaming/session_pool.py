@@ -492,7 +492,7 @@ class TelegramStreamPool:
             client_msg = await client.get_messages(chat_id, msg_id)
             if client_msg and not getattr(client_msg, "empty", False):
                 self._msg_cache[cache_key] = client_msg
-                if len(self._msg_cache) > 200:
+                if len(self._msg_cache) > 500:
                     self._msg_cache.pop(next(iter(self._msg_cache)))
                 return client_msg
         except PeerIdInvalid:
@@ -507,7 +507,9 @@ class TelegramStreamPool:
         except Exception as ref_err:
             log.debug("[StreamPool] Client %s cannot fetch message %s/%s for file_ref: %s", getattr(client, "name", ""), chat_id, msg_id, ref_err)
 
-        return media_source
+        if getattr(media_source, "_client", None) is client:
+            return media_source
+        return None
 
     async def _fetch_chunk_direct(
         self,
@@ -634,37 +636,36 @@ class TelegramStreamPool:
         candidates: List[Client] = []
 
         if is_channel_msg:
-            # 1. TOP PRIORITY: Verified channel admin userbots
-            admin_pool = [c for c in self._admin_clients if getattr(c, "is_connected", False)]
-            if not admin_pool:
-                # If _admin_clients list was empty, discover from all available clients
-                all_pool = list(self.clients)
-                try:
-                    from services.upload_pool import upload_pool
-                    for uc in upload_pool.clients:
-                        if uc not in all_pool:
-                            all_pool.append(uc)
-                except Exception:
-                    pass
-                ch_id = getattr(media_source.chat, "id")
-                admin_uids = await self.get_channel_admin_uids(ch_id)
-                for c in all_pool:
-                    if getattr(c, "is_connected", False):
-                        uid = getattr(c, "_user_id", None) or getattr(getattr(c, "me", None), "id", None)
-                        if uid and uid in admin_uids and c is not self._main_client and c is not primary_client:
-                            if c not in admin_pool:
-                                admin_pool.append(c)
-                self._admin_clients = list(admin_pool)
+            # 1. Gather all connected userbot clients (non-bot accounts)
+            user_clients: List[Client] = []
+            for c in self.clients:
+                if getattr(c, "is_connected", False) and c is not self._main_client and c is not primary_client:
+                    if c not in user_clients:
+                        user_clients.append(c)
 
-            # Filter cooldowns
-            active_admins = [c for c in admin_pool if self._client_cooldowns.get(c, 0.0) <= now]
-            if not active_admins:
-                active_admins = admin_pool
+            try:
+                from services.upload_pool import upload_pool
+                for uc in upload_pool.clients:
+                    if getattr(uc, "is_connected", False) and uc is not self._main_client and uc is not primary_client:
+                        if uc not in user_clients:
+                            user_clients.append(uc)
+            except Exception:
+                pass
 
-            # Round-robin rotate admin workers across chunk_idx to balance MTProto streaming load
+            # Partition into verified admins (top priority) vs regular userbot members
+            admin_pool = [c for c in self._admin_clients if getattr(c, "is_connected", False) and c in user_clients]
+            regular_pool = [c for c in user_clients if c not in admin_pool]
+
+            active_admins = [c for c in admin_pool if self._client_cooldowns.get(c, 0.0) <= now] or admin_pool
+            active_regulars = [c for c in regular_pool if self._client_cooldowns.get(c, 0.0) <= now] or regular_pool
+
+            # Round-robin rotate workers across chunk_idx to balance MTProto streaming load
             if active_admins:
-                rot_idx = chunk_idx % len(active_admins)
-                candidates = active_admins[rot_idx:] + active_admins[:rot_idx]
+                rot_a = chunk_idx % len(active_admins)
+                candidates.extend(active_admins[rot_a:] + active_admins[:rot_a])
+            if active_regulars:
+                rot_r = chunk_idx % len(active_regulars)
+                candidates.extend(active_regulars[rot_r:] + active_regulars[:rot_r])
 
             # 2. Main Bot Client as Fallback
             bot_fallbacks = []
@@ -673,10 +674,7 @@ class TelegramStreamPool:
             if self._main_client and getattr(self._main_client, "is_connected", False) and self._main_client not in candidates and self._main_client not in bot_fallbacks:
                 bot_fallbacks.append(self._main_client)
 
-            if not candidates:
-                candidates = bot_fallbacks
-            else:
-                candidates.extend(bot_fallbacks)
+            candidates.extend(bot_fallbacks)
         else:
             active_candidates = [c for c in connected_clients if self._client_cooldowns.get(c, 0.0) <= now] or connected_clients
             n = len(active_candidates)
@@ -695,6 +693,8 @@ class TelegramStreamPool:
                 stream_gen = None
                 try:
                     target_media = await self._get_client_media(client, media_source)
+                    if not target_media:
+                        continue
 
                     # Fast-path: persistent MTProto session (avoids TCP teardown per 1MB chunk)
                     direct_chunk = None
@@ -702,7 +702,8 @@ class TelegramStreamPool:
                         direct_chunk = await self._fetch_chunk_direct(client, target_media, chunk_idx)
                     except FileReferenceExpired:
                         target_media = await self._get_client_media(client, media_source, force_refresh=True)
-                        direct_chunk = await self._fetch_chunk_direct(client, target_media, chunk_idx)
+                        if target_media:
+                            direct_chunk = await self._fetch_chunk_direct(client, target_media, chunk_idx)
                     except (asyncio.CancelledError, ConnectionResetError):
                         raise
                     except FloodWait:
@@ -723,8 +724,8 @@ class TelegramStreamPool:
                             if piece:
                                 buf.extend(piece)
 
-                    # 25-second timeout avoids blocking if a socket completely drops while allowing multi-worker bandwidth sharing
-                    await asyncio.wait_for(_collect(), timeout=25.0)
+                    # 6-second timeout prevents pipeline stall while allowing multi-worker bandwidth sharing
+                    await asyncio.wait_for(_collect(), timeout=6.0)
                     if buf:
                         # Client succeeded: clear cooldown
                         self._client_cooldowns.pop(client, None)
@@ -740,7 +741,7 @@ class TelegramStreamPool:
                     # Clean cancellation during timeline seek / scrubbing
                     raise
                 except asyncio.TimeoutError:
-                    log.warning("[StreamPool] Timeout (25s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
+                    log.warning("[StreamPool] Timeout (6s) fetching chunk %d with client %s, trying next candidate", chunk_idx, getattr(client, "name", ""))
                     self._client_cooldowns[client] = time.time() + 10.0
                     last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
                     continue
@@ -801,22 +802,19 @@ class TelegramStreamPool:
                 return
 
             # Concurrency tuning:
-            # Scale pipeline depth based on active verified admin userbots (up to 24 concurrent workers)
-            is_ch = (
-                isinstance(media_source, types.Message) and
-                getattr(media_source, "chat", None) and
-                (
-                    str(getattr(media_source.chat, "id", "")).startswith("-100") or
-                    int(getattr(media_source.chat, "id", 0) or 0) < 0
-                )
-            )
-            if is_ch:
-                admin_count = len([c for c in self._admin_clients if getattr(c, "is_connected", False)])
-                active_workers = max(1, admin_count)
-            else:
-                active_workers = len([c for c in self.clients if getattr(c, "is_connected", False)]) or 1
+            # Scale pipeline depth based on all available connected userbot accounts
+            all_users = [c for c in self.clients if getattr(c, "is_connected", False) and c is not self._main_client]
+            try:
+                from services.upload_pool import upload_pool
+                for uc in upload_pool.clients:
+                    if getattr(uc, "is_connected", False) and uc is not self._main_client and uc not in all_users:
+                        all_users.append(uc)
+            except Exception:
+                pass
 
-            # Optimal concurrency: 4-6 workers saturate bandwidth (15-30+ MB/s) without MTProto socket drops
+            active_workers = len(all_users) if all_users else (len([c for c in self.clients if getattr(c, "is_connected", False)]) or 1)
+
+            # Optimal concurrency: 4-6 workers saturate bandwidth (20-35+ MB/s) without MTProto socket drops
             concurrency = min(total_chunks, max(2, min(active_workers, 6)))
 
             # Pre-launch initial batch of concurrent chunk fetches
@@ -882,9 +880,11 @@ class TelegramStreamPool:
         """Get pool diagnostic status."""
         connected = [c for c in self.clients if getattr(c, "is_connected", False)]
         admin_connected = [c for c in self._admin_clients if getattr(c, "is_connected", False)]
+        userbots_connected = [c for c in connected if c is not self._main_client]
         return {
             "total_clients": len(self.clients),
             "connected_clients": len(connected),
+            "userbot_workers_count": len(userbots_connected),
             "admin_clients_count": len(self._admin_clients),
             "active_admin_sessions": len(admin_connected),
             "sessions_supported": "up_to_100",

@@ -454,6 +454,11 @@ export async function onRequest(context) {
               return new Response(null, { status: 206, headers: outHeaders });
             }
 
+            // Zero-buffering progressive streaming: pass stream directly when no slicing is needed
+            if (skipBytes === 0 && (upEnd - upStart + 1) === neededBytes) {
+              return new Response(responseBody, { status: 206, headers: outHeaders });
+            }
+
             const slicedBuffer = await readExactBytes(responseBody, skipBytes, neededBytes);
             outHeaders.set('Content-Length', String(slicedBuffer.byteLength));
             outHeaders.set('Content-Range', `bytes ${clientStart}-${clientStart + slicedBuffer.byteLength - 1}/${totalSize}`);

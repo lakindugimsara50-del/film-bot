@@ -49,6 +49,8 @@ const SUB_COLORS = ['#ffeb3b', '#ffffff', '#00e5ff', '#46d369'];
 let stallTimestamps = [];
 let activeStallTimer = null;
 let lastAutoSwitchEpoch = 0;
+let fallbackAutoRetryCount = 0;
+let lastFallbackRetryEpoch = 0;
 
 let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) || '';
 let streamServerHealthy = false;
@@ -2216,19 +2218,6 @@ function createVjsPlayer(playerEl, stream, movie) {
     if (loader) loader.classList.add('hidden');
   };
 
-  const rawVideoEl = playerEl.querySelector('#filmsubPlayer');
-  if (rawVideoEl) {
-    const rawSourceEl = rawVideoEl.querySelector('source');
-    if (rawSourceEl) {
-      rawSourceEl.addEventListener('error', (e) => {
-        console.warn('[FilmSub Player] Raw source error detected, triggering failover:', e);
-        if (vjsPlayer && typeof vjsPlayer.trigger === 'function') {
-          vjsPlayer.trigger('error');
-        }
-      });
-    }
-  }
-
   if (typeof videojs !== 'undefined') {
     vjsPlayer = videojs('filmsubPlayer', {
       fluid: true,
@@ -2355,8 +2344,10 @@ function createVjsPlayer(playerEl, stream, movie) {
       lastDataProgressEpoch = Date.now();
     });
 
+    let failoverTriggered = false;
     const triggerFailover = (reason) => {
-      if (!vjsPlayer) return;
+      if (!vjsPlayer || failoverTriggered) return;
+      failoverTriggered = true;
       const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
       console.warn(`[FilmSub Player] Failover triggered (${reason}), currentSrc: ${currentSrc}`);
 
@@ -2373,6 +2364,7 @@ function createVjsPlayer(playerEl, stream, movie) {
             const lowerUrl = `${pfx}/stream/channel/${cId}/${targetMsgId}`;
             console.warn('[FilmSub Player] High-res stalled, switching to 480p on edge proxy:', lowerUrl);
             currentEffectiveQuality = '480p';
+            failoverTriggered = false;
             vjsPlayer.src({ type: 'video/mp4', src: lowerUrl });
             vjsPlayer.load();
             vjsPlayer.play().catch(() => {});
@@ -2382,22 +2374,22 @@ function createVjsPlayer(playerEl, stream, movie) {
         }
       }
 
-      // 2. On non-Pages (e.g. localhost/standalone), if edge stream failed, retry with live tunnel
-      if (!isRunningOnCloudflarePages()) {
-        if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl) && !currentSrc.startsWith('http')) {
-          vjsPlayer._retriedDirect = true;
-          const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
-          const directUrl = directPrefix + (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc);
-          console.warn('[FilmSub Player] Edge stream failed/stalled, switching directly to live tunnel:', directUrl);
-          vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
-          vjsPlayer.load();
-          vjsPlayer.play().catch(() => {});
-          resetWatchdog(30000);
-          return;
-        }
+      // 2. Retry with direct live tunnel if edge stream failed or stalled
+      if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
+        vjsPlayer._retriedDirect = true;
+        const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
+        const directUrl = directPrefix + (currentSrc.startsWith('http') ? currentSrc.replace(/^https?:\/\/[^/]+/, '') : (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc));
+        console.warn('[FilmSub Player] Switching directly to live tunnel:', directUrl);
+        failoverTriggered = false;
+        vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
+        vjsPlayer.load();
+        vjsPlayer.play().catch(() => {});
+        resetWatchdog(30000);
+        return;
       }
 
       setTimeout(() => {
+        failoverTriggered = false;
         renderPlayerFallback(playerEl, movie);
       }, 50);
     };
@@ -2434,27 +2426,43 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer.on('canplay', () => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       hideLoader();
+      fallbackAutoRetryCount = 0;
+      lastFallbackRetryEpoch = 0;
     });
     vjsPlayer.on('loadedmetadata', () => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       hideLoader();
       syncSubtitles();
     });
+    vjsPlayer.on('loadeddata', () => {
+      hideLoader();
+      fallbackAutoRetryCount = 0;
+      lastFallbackRetryEpoch = 0;
+    });
     vjsPlayer.on('playing', () => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       hideLoader();
       syncSubtitles();
+      fallbackAutoRetryCount = 0;
+      lastFallbackRetryEpoch = 0;
     });
     vjsPlayer.on('dispose', () => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
     });
 
-    // Seamless failover on upstream error
+    // Seamless failover on real player error
     vjsPlayer.on('error', () => {
+      const err = vjsPlayer ? vjsPlayer.error() : null;
+      console.warn('[FilmSub Player] Video.js error event:', err);
+      const rState = (vjsPlayer && typeof vjsPlayer.readyState === 'function') ? vjsPlayer.readyState() : (vjsPlayer?.tech_?.el_?.readyState || 0);
+      if (rState >= 1) {
+        console.warn('[FilmSub Player] Video already has metadata/frames (readyState=' + rState + '), ignoring transient error event');
+        return;
+      }
       const errDisplay = playerEl.querySelector('.vjs-error-display');
       if (errDisplay) errDisplay.style.display = 'none';
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
-      triggerFailover('player error event');
+      triggerFailover('player error event: ' + (err ? (err.message || err.code) : 'unknown'));
     });
   } else {
     hideLoader();
@@ -2471,6 +2479,10 @@ function renderPlayerFallback(playerEl, movie) {
   if (window.fallbackRetryInterval) {
     clearInterval(window.fallbackRetryInterval);
     window.fallbackRetryInterval = null;
+  }
+  if (window.fallbackRetryTimeout) {
+    clearTimeout(window.fallbackRetryTimeout);
+    window.fallbackRetryTimeout = null;
   }
 
   const isVideoPending = !movie.message_id && !movie.file_id && (!Array.isArray(movie.downloads) || !movie.downloads.some(d => d.message_id));
@@ -2515,7 +2527,16 @@ function renderPlayerFallback(playerEl, movie) {
     </div>`;
 
   const doRetry = async () => {
-    if (window.fallbackRetryInterval) clearInterval(window.fallbackRetryInterval);
+    if (window.fallbackRetryInterval) {
+      clearInterval(window.fallbackRetryInterval);
+      window.fallbackRetryInterval = null;
+    }
+    if (window.fallbackRetryTimeout) {
+      clearTimeout(window.fallbackRetryTimeout);
+      window.fallbackRetryTimeout = null;
+    }
+    fallbackAutoRetryCount = 0;
+    lastFallbackRetryEpoch = 0;
     FilmSub.showToast('⚡ Live Status Check කරමින් පවතී...', 'info');
 
     // Poll latest movies.json in case background Stage 2 upload just finished
@@ -2544,16 +2565,39 @@ function renderPlayerFallback(playerEl, movie) {
   const btnRetry = playerEl.querySelector('#btn-manual-reconnect');
   if (btnRetry) btnRetry.addEventListener('click', doRetry);
 
-  // Automatic background check every 4 seconds (auto-discovers new tunnel URL when Colab starts)
-  window.fallbackRetryInterval = setInterval(async () => {
-    await loadLiveStreamConfig(true);
-    if (streamServerHealthy && activeStreamBaseUrl && !isDeadTunnel(activeStreamBaseUrl)) {
-      clearInterval(window.fallbackRetryInterval);
-      window.fallbackRetryInterval = null;
-      FilmSub.showToast('⚡ Stream Ready! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
-      loadStream(movie, 0); // restart Super Player
+  const now = Date.now();
+  // Prevent infinite refresh loop:
+  // If stream server is already healthy, do NOT loop every 4 seconds!
+  // Instead, allow only ONE single auto-reconnect attempt after 5s.
+  if (streamServerHealthy && activeStreamBaseUrl && !isDeadTunnel(activeStreamBaseUrl)) {
+    if (fallbackAutoRetryCount < 1 && (now - lastFallbackRetryEpoch > 12000)) {
+      fallbackAutoRetryCount++;
+      lastFallbackRetryEpoch = now;
+      console.log('[FilmSub Player] Scheduling single automatic stream reconnect in 5s...');
+      window.fallbackRetryTimeout = setTimeout(async () => {
+        try {
+          await loadLiveStreamConfig(true);
+        } catch (e) {}
+        if (streamServerHealthy && activeStreamBaseUrl && !isDeadTunnel(activeStreamBaseUrl)) {
+          loadStream(movie, 0);
+        }
+      }, 5000);
+    } else {
+      console.log('[FilmSub Player] Fallback auto-retry limit reached. Standby screen active awaiting user action.');
     }
-  }, 4000);
+  } else {
+    // If the server is currently OFFLINE, poll to auto-discover when Colab tunnel comes online
+    window.fallbackRetryInterval = setInterval(async () => {
+      await loadLiveStreamConfig(true);
+      if (streamServerHealthy && activeStreamBaseUrl && !isDeadTunnel(activeStreamBaseUrl)) {
+        clearInterval(window.fallbackRetryInterval);
+        window.fallbackRetryInterval = null;
+        fallbackAutoRetryCount = 0;
+        FilmSub.showToast('⚡ Stream Ready! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
+        loadStream(movie, 0);
+      }
+    }, 8000);
+  }
 }
 
 /**
@@ -2614,6 +2658,10 @@ async function loadStream(movie, idx) {
     if (window.fallbackRetryInterval) {
       clearInterval(window.fallbackRetryInterval);
       window.fallbackRetryInterval = null;
+    }
+    if (window.fallbackRetryTimeout) {
+      clearTimeout(window.fallbackRetryTimeout);
+      window.fallbackRetryTimeout = null;
     }
 
     const streams = getMovieStreams(movie);

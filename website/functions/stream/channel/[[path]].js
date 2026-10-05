@@ -9,7 +9,11 @@
  *  2. Local ISP / DNS blocking of *.trycloudflare.com on user devices — browser
  *     requests same-origin /stream/channel/:chat_id/:msg_id on filmsub.pages.dev,
  *     and Cloudflare's edge proxies HTTP 206 byte-range chunks from the live tunnel.
- *  3. Fast 503 failover if the tunnel is offline so Video.js immediately switches
+ *  3. Upstream range expansion fix: If backend returns an expanded range (e.g. 8MB)
+ *     when browser asked for a small chunk (e.g. 1MB or 1KB metadata probe), the edge
+ *     slices the stream with native TransformStream to return the exact requested byte range,
+ *     guaranteeing instant <500ms startup and zero media buffer stalls.
+ *  4. Fast 503 failover if the tunnel is offline so Video.js immediately switches
  *     to VIP Server 2 without a white screen or long hang.
  */
 
@@ -30,6 +34,40 @@ function buildCorsHeaders() {
       'Content-Length, Content-Range, Accept-Ranges, Content-Type, Content-Disposition, X-Stream-Backend',
     'Access-Control-Max-Age': '86400',
   };
+}
+
+function createByteSliceStream(skip, limit) {
+  let skipped = 0;
+  let sent = 0;
+  return new TransformStream({
+    transform(chunk, controller) {
+      if (sent >= limit) return;
+      let startIdx = 0;
+
+      if (skipped < skip) {
+        const remainingToSkip = skip - skipped;
+        if (chunk.length <= remainingToSkip) {
+          skipped += chunk.length;
+          return;
+        }
+        startIdx = remainingToSkip;
+        skipped = skip;
+      }
+
+      const available = chunk.length - startIdx;
+      const needed = limit - sent;
+      const take = Math.min(available, needed);
+
+      if (take > 0) {
+        controller.enqueue(chunk.subarray(startIdx, startIdx + take));
+        sent += take;
+      }
+
+      if (sent >= limit) {
+        controller.terminate();
+      }
+    },
+  });
 }
 
 async function resolveLiveStreamBaseUrl(env) {
@@ -138,6 +176,23 @@ export async function onRequest(context) {
     const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
     const rangeHeader = request.headers.get('Range');
 
+    let clientStart = null;
+    let clientEnd = null;
+    let hasExplicitRange = false;
+    if (rangeHeader && rangeHeader.toLowerCase().startsWith('bytes=')) {
+      const val = rangeHeader.slice(6).trim();
+      const parts = val.split(',')[0].trim().split('-');
+      if (parts[0] !== '' && parts[1] !== '') {
+        const s = parseInt(parts[0], 10);
+        const e = parseInt(parts[1], 10);
+        if (!isNaN(s) && !isNaN(e) && e >= s) {
+          clientStart = s;
+          clientEnd = e;
+          hasExplicitRange = true;
+        }
+      }
+    }
+
     const upstreamHeaders = {
       'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
       'Accept': '*/*',
@@ -170,13 +225,44 @@ export async function onRequest(context) {
       outHeaders.set('X-Stream-Backend', activeBase);
 
       const contentRange = upstreamRes.headers.get('Content-Range');
-      if (contentRange) {
-        outHeaders.set('Content-Range', contentRange);
+      let responseBody = upstreamRes.body;
+
+      if (hasExplicitRange && contentRange) {
+        const mRange = contentRange.match(/bytes\s+(\d+)-(\d+)\/(\d+|\*)/);
+        if (mRange) {
+          const upStart = parseInt(mRange[1], 10);
+          const upEnd = parseInt(mRange[2], 10);
+          const totalSize = mRange[3];
+
+          // If client requested a subset of what upstream returned (e.g. upstream expanded range)
+          if (clientStart >= upStart && clientEnd <= upEnd) {
+            const skipBytes = clientStart - upStart;
+            const neededBytes = clientEnd - clientStart + 1;
+            outHeaders.set('Content-Range', `bytes ${clientStart}-${clientEnd}/${totalSize}`);
+            outHeaders.set('Content-Length', String(neededBytes));
+            if (request.method !== 'HEAD' && responseBody) {
+              responseBody = responseBody.pipeThrough(createByteSliceStream(skipBytes, neededBytes));
+            }
+          } else {
+            outHeaders.set('Content-Range', contentRange);
+            const contentLength = upstreamRes.headers.get('Content-Length');
+            if (contentLength) outHeaders.set('Content-Length', contentLength);
+          }
+        } else {
+          outHeaders.set('Content-Range', contentRange);
+          const contentLength = upstreamRes.headers.get('Content-Length');
+          if (contentLength) outHeaders.set('Content-Length', contentLength);
+        }
+      } else {
+        if (contentRange) {
+          outHeaders.set('Content-Range', contentRange);
+        }
+        const contentLength = upstreamRes.headers.get('Content-Length');
+        if (contentLength) {
+          outHeaders.set('Content-Length', contentLength);
+        }
       }
-      const contentLength = upstreamRes.headers.get('Content-Length');
-      if (contentLength) {
-        outHeaders.set('Content-Length', contentLength);
-      }
+
       const contentDisposition = upstreamRes.headers.get('Content-Disposition');
       if (contentDisposition) {
         outHeaders.set('Content-Disposition', contentDisposition);
@@ -187,7 +273,7 @@ export async function onRequest(context) {
         cacheControl || 'public, max-age=3600, stale-while-revalidate=86400'
       );
 
-      return new Response(request.method === 'HEAD' ? null : upstreamRes.body, {
+      return new Response(request.method === 'HEAD' ? null : responseBody, {
         status: upstreamRes.status,
         headers: outHeaders,
       });

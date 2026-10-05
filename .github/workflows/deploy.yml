@@ -54,7 +54,9 @@ jobs:
 
       # ── 5. Deploy to Cloudflare Pages ─────────────────────────────────────
       - name: Deploy to Cloudflare Pages
-        if: ${{ secrets.CF_API_TOKEN != '' }}
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        if: ${{ env.CF_API_TOKEN != '' }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
@@ -64,7 +66,9 @@ jobs:
 
       # ── 6. Telegram notification ───────────────────────────────────────────
       - name: Notify Telegram on success
-        if: ${{ success() && secrets.TG_BOT_TOKEN != '' }}
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+        if: ${{ success() && env.TG_BOT_TOKEN != '' }}
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TG_NOTIFY_CHAT_ID }}" \
@@ -72,7 +76,9 @@ jobs:
             || true
 
       - name: Notify Telegram on failure
-        if: ${{ failure() && secrets.TG_BOT_TOKEN != '' }}
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+        if: ${{ failure() && env.TG_BOT_TOKEN != '' }}
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TG_NOTIFY_CHAT_ID }}" \

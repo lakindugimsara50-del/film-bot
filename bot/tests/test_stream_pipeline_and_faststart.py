@@ -6,10 +6,11 @@ test_stream_pipeline_and_faststart.py — Deep verification tests for:
 """
 
 import asyncio
+import json
 import time
 from pathlib import Path
 import sys
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, mock_open
 from fastapi import Request
 import pytest
 
@@ -645,6 +646,76 @@ async def test_warmup_channel_stream_endpoint():
         assert res["chat_id"] == "-1004325759505"
         assert res["message_id"] == 280
         mock_warmup.assert_called_once_with("-1004325759505", 280)
+
+
+@pytest.mark.asyncio
+async def test_preload_catalog_headers_and_catalog_endpoint():
+    """Verify proactive catalog pre-warming reads movies.json and warms up streams."""
+    with patch.object(stream_server, "warmup_channel_message", AsyncMock(return_value=True)) as mock_warmup:
+        count = await stream_server.preload_catalog_headers(max_movies=5)
+        assert count > 0
+        assert mock_warmup.call_count >= 1
+
+        endpoint_res = await stream_server.warmup_catalog_stream(limit=3)
+        assert endpoint_res["status"] == "warming"
+        assert endpoint_res["max_movies"] == 3
+        assert endpoint_res["warmed_streams"] > 0
+
+
+def test_parse_range_suffix_range():
+    """Verify _parse_range correctly handles RFC 7233 suffix byte ranges (e.g. bytes=-500)."""
+    file_size = 10000
+    start, end = stream_server._parse_range("bytes=-500", file_size)
+    assert start == 9500
+    assert end == 9999
+    assert (end - start + 1) == 500
+
+    # Suffix larger than file size clamped to start at 0
+    start_large, end_large = stream_server._parse_range("bytes=-20000", file_size)
+    assert start_large == 0
+    assert end_large == 9999
+
+
+@pytest.mark.asyncio
+async def test_preload_catalog_headers_movie_counting():
+    """Verify preload_catalog_headers groups by movie and warms up 720p and 1080p variants."""
+    fake_catalog = {
+        "movies": [
+            {
+                "id": "movie-1",
+                "title": "Movie 1",
+                "channel_chat_id": "-1001",
+                "message_id": 100,
+                "variant_media": {
+                    "720p": {"message_id": 101},
+                    "1080p": {"message_id": 102}
+                }
+            },
+            {
+                "id": "movie-2",
+                "title": "Movie 2",
+                "channel_chat_id": "-1002",
+                "message_id": 200,
+                "variant_media": {
+                    "720p": {"message_id": 201},
+                    "1080p": {"message_id": 202}
+                }
+            }
+        ]
+    }
+    with patch("builtins.open", mock_open(read_data=json.dumps(fake_catalog))), \
+         patch.object(stream_server, "_find_catalog_path", return_value="dummy/movies.json"), \
+         patch.object(stream_server, "warmup_channel_message", AsyncMock(return_value=True)) as mock_warmup:
+        # Request max_movies=1: should only warm streams for movie-2 (reversed)
+        warmed = await stream_server.preload_catalog_headers(max_movies=1)
+        assert warmed == 3  # 720p (201), 1080p (202), and main (200)
+        calls = [c.args for c in mock_warmup.call_args_list]
+        assert ("-1002", 201) in calls
+        assert ("-1002", 202) in calls
+        assert ("-1002", 200) in calls
+        # movie-1 should not be warmed since max_movies=1
+        assert ("-1001", 101) not in calls
+
 
 
 

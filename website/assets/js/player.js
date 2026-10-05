@@ -309,40 +309,90 @@ function normalizeStreamUrl(u) {
   return isDeadTunnel(u) ? '' : u;
 }
 
+// ── Immediate Early Stream Pre-Warming (fires synchronously on script parse) ──
+(function primeEarlyStream() {
+  try {
+    const slug = getSlugFromURL();
+    if (!slug) return;
+    const list = (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) ? window.FILMSUB_DATA.movies : null;
+    if (list) {
+      const m = list.find(x => x.slug === slug || x.id === slug);
+      if (m) {
+        const wcId = m.channel_chat_id || '-1004325759505';
+        const targetIds = [];
+
+        // Check variant media: default streaming tier is 720p, fallback 1080p, 480p
+        const vm = m.variant_media;
+        if (vm && typeof vm === 'object') {
+          if (vm['720p'] && vm['720p'].message_id > 0) targetIds.push(vm['720p'].message_id);
+          if (vm['1080p'] && vm['1080p'].message_id > 0 && !targetIds.includes(vm['1080p'].message_id)) targetIds.push(vm['1080p'].message_id);
+          if (vm['480p'] && vm['480p'].message_id > 0 && !targetIds.includes(vm['480p'].message_id)) targetIds.push(vm['480p'].message_id);
+        }
+        const wmId = m.message_id || (Array.isArray(m.downloads) && m.downloads.find(d => d.message_id)?.message_id);
+        if (wmId && !targetIds.includes(wmId)) targetIds.push(wmId);
+
+        const pfx = getStreamEndpointPrefix() || '';
+        for (const tid of targetIds.slice(0, 2)) {
+          // Fire warmup and initial 1MB slice probe concurrently to prime Cloudflare Edge and RAM cache
+          fetch(`${pfx}/stream/warmup/${wcId}/${tid}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+          fetch(`${pfx}/stream/channel/${wcId}/${tid}`, { headers: { Range: 'bytes=0-1048575' }, mode: 'cors' }).catch(() => {});
+        }
+      }
+    }
+  } catch (e) {}
+})();
+
+
 document.addEventListener('DOMContentLoaded', async () => {
-  await waitForFilmSub();
-  await FilmSub.loadMovies();
-
-  // Background non-blocking stream config refresh
-  loadLiveStreamConfig().catch(() => {});
-
   const slug = getSlugFromURL();
   if (!slug) {
     showError('Movie not found. Please go back and try again.');
     return;
   }
 
-  currentMovie = FilmSub.findMovieBySlug(slug);
+  // 1. Instant Synchronous Catalog Lookup (<1ms)
+  // window.FILMSUB_DATA is already loaded synchronously by <script src="data/movies_data.js">
+  if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
+    currentMovie = window.FILMSUB_DATA.movies.find(m => m.slug === slug || m.id === slug);
+  }
+
+  // Background non-blocking stream config refresh
+  loadLiveStreamConfig().catch(() => {});
+
+  // 2. Fallback: If movie is not in bundled data, wait for FilmSub.loadMovies()
   if (!currentMovie) {
-    try {
-      const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
-      const ctrl = new AbortController();
-      const tId = setTimeout(() => ctrl.abort(), 3000);
-      const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
-      clearTimeout(tId);
-      if (rGh.ok) {
-        const d = await rGh.json();
-        const moviesList = Array.isArray(d) ? d : (d.movies || []);
-        const found = moviesList.find(m => m.slug === slug || m.id === slug);
-        if (found) {
-          currentMovie = found;
-          if (window.FilmSub && Array.isArray(FilmSub.movies)) {
-            FilmSub.movies.unshift(found);
+    await waitForFilmSub();
+    await FilmSub.loadMovies();
+    currentMovie = FilmSub.findMovieBySlug(slug);
+    if (!currentMovie) {
+      try {
+        const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
+        const ctrl = new AbortController();
+        const tId = setTimeout(() => ctrl.abort(), 3000);
+        const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(tId);
+        if (rGh.ok) {
+          const d = await rGh.json();
+          const moviesList = Array.isArray(d) ? d : (d.movies || []);
+          const found = moviesList.find(m => m.slug === slug || m.id === slug);
+          if (found) {
+            currentMovie = found;
+            if (window.FilmSub && Array.isArray(FilmSub.movies)) {
+              FilmSub.movies.unshift(found);
+            }
           }
         }
+      } catch (e) {}
+    }
+  } else {
+    // If found synchronously, schedule FilmSub.loadMovies() in background without delaying playback start
+    waitForFilmSub().then(() => {
+      if (window.FilmSub && typeof FilmSub.loadMovies === 'function') {
+        FilmSub.loadMovies().catch(() => {});
       }
-    } catch (e) {}
+    });
   }
+
   if (!currentMovie) {
     showError('Movie not found. It may have been removed.');
     return;
@@ -395,13 +445,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { syncSubtitles(); } catch (e) {}
   }).catch(() => {});
 
-  // Trigger instant background pre-buffering (first 16MB) so video starts in <300ms
+  // Trigger instant background pre-buffering (first 8-16MB) so video starts in <300ms
   try {
-    const wmId = currentMovie.message_id || (Array.isArray(currentMovie.downloads) && currentMovie.downloads.find(d => d.message_id)?.message_id);
     const wcId = currentMovie.channel_chat_id || '-1004325759505';
-    if (wmId) {
-      const pfx = getStreamEndpointPrefix() || '';
-      fetch(`${pfx}/stream/warmup/${wcId}/${wmId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+    const targetIds = [];
+    const vm = currentMovie.variant_media;
+    if (vm && typeof vm === 'object') {
+      if (vm['720p'] && vm['720p'].message_id > 0) targetIds.push(vm['720p'].message_id);
+      if (vm['1080p'] && vm['1080p'].message_id > 0 && !targetIds.includes(vm['1080p'].message_id)) targetIds.push(vm['1080p'].message_id);
+    }
+    const wmId = currentMovie.message_id || (Array.isArray(currentMovie.downloads) && currentMovie.downloads.find(d => d.message_id)?.message_id);
+    if (wmId && !targetIds.includes(wmId)) targetIds.push(wmId);
+
+    const pfx = getStreamEndpointPrefix() || '';
+    for (const tid of targetIds.slice(0, 2)) {
+      fetch(`${pfx}/stream/warmup/${wcId}/${tid}`, { method: 'POST', mode: 'cors' }).catch(() => {});
     }
   } catch (e) {}
 });
@@ -2270,7 +2328,9 @@ function createVjsPlayer(playerEl, stream, movie) {
       syncSubtitles();
     });
 
+    vjsPlayer.on('loadeddata', hideLoader);
     vjsPlayer.on('canplay', hideLoader);
+    vjsPlayer.on('canplaythrough', hideLoader);
     vjsPlayer.on('playing', () => {
       hideLoader();
       syncSubtitles();

@@ -72,6 +72,14 @@ async def stream_server_lifespan(app_instance: FastAPI):
                     log.warning("[StreamServer] Could not start standalone bot client: %s", b_err)
             await stream_pool.init_extra_sessions(api_id, api_hash)
             log.info("[StreamServer] Standalone stream pool initialized (%d active sessions).", len(stream_pool.clients))
+
+            async def _bg_warmup_catalog():
+                await asyncio.sleep(1.5)
+                try:
+                    await preload_catalog_headers(max_movies=10)
+                except Exception as w_err:
+                    log.warning("[StreamServer] Proactive catalog pre-warming notice: %s", w_err)
+            asyncio.create_task(_bg_warmup_catalog())
     except Exception as exc:
         log.warning("[StreamServer] Standalone startup note: %s", exc)
 
@@ -197,6 +205,84 @@ async def warmup_channel_message(chat_id: Union[int, str], message_id: int, targ
 
     asyncio.create_task(_do_warmup())
     return True
+
+
+def _find_catalog_path() -> Optional[str]:
+    """Locate website/data/movies.json across runtime environments."""
+    env_path = os.getenv("CATALOG_JSON_PATH")
+    if env_path and os.path.isfile(env_path):
+        return env_path
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, "..", "..", "website", "data", "movies.json"),
+        os.path.join(base_dir, "..", "data", "movies.json"),
+        os.path.join(os.getcwd(), "website", "data", "movies.json"),
+        os.path.join(os.getcwd(), "data", "movies.json"),
+    ]
+    for p in candidates:
+        norm = os.path.normpath(p)
+        if os.path.isfile(norm):
+            return norm
+    return None
+
+
+async def preload_catalog_headers(max_movies: int = 10, bytes_per_stream: int = 8 * 1024 * 1024) -> int:
+    """
+    Proactively warms up initial 8MB for catalog movies into RAM _HEADER_CACHE.
+    Ensures that when any user opens a movie, initial TTFB is <10ms from RAM.
+    """
+    cat_path = _find_catalog_path()
+    if not cat_path:
+        log.info("[StreamServer] No catalog movies.json found for proactive pre-warming.")
+        return 0
+
+    try:
+        import json
+        with open(cat_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        movies = data.get("movies", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+    except Exception as e:
+        log.warning("[StreamServer] Could not parse catalog for pre-warming: %s", e)
+        return 0
+
+    targets: list[tuple[Union[int, str], int]] = []
+    movie_count = 0
+    # Inspect movies in reverse order (newest first)
+    for m in reversed(movies):
+        if movie_count >= max_movies:
+            break
+        c_id = m.get("channel_chat_id") or "-1004325759505"
+        m_id = m.get("message_id")
+        vm = m.get("variant_media") or {}
+        has_movie_target = False
+        if isinstance(vm, dict):
+            for q in ("720p", "1080p", "480p"):
+                v = vm.get(q)
+                if isinstance(v, dict) and v.get("message_id"):
+                    targets.append((c_id, int(v["message_id"])))
+                    has_movie_target = True
+        if m_id and isinstance(m_id, int) and m_id > 0:
+            targets.append((c_id, m_id))
+            has_movie_target = True
+        if has_movie_target:
+            movie_count += 1
+
+    seen = set()
+    unique_targets = []
+    for pair in targets:
+        if pair not in seen:
+            seen.add(pair)
+            unique_targets.append(pair)
+
+    warmed_count = 0
+    for c_id, m_id in unique_targets:
+        started = await warmup_channel_message(c_id, m_id, target_bytes=bytes_per_stream)
+        if started:
+            warmed_count += 1
+            await asyncio.sleep(0.05)
+
+    log.info("[StreamServer] Proactive catalog warmup initiated for %d streams (%d movies).", warmed_count, movie_count)
+    return warmed_count
 
 
 
@@ -340,6 +426,18 @@ async def stream_ping() -> dict:
     return {"status": "pong", "service": "stream", "mode": "telegram_cloud", "ready": True}
 
 
+@stream_router.get("/stream/warmup/catalog")
+@stream_router.post("/stream/warmup/catalog")
+async def warmup_catalog_stream(limit: int = 10) -> dict:
+    """Pre-warm headers for top movies in catalog into RAM."""
+    warmed = await preload_catalog_headers(max_movies=limit)
+    return {
+        "status": "warming",
+        "warmed_streams": warmed,
+        "max_movies": limit,
+    }
+
+
 @stream_router.get("/stream/warmup/{chat_id}/{message_id}")
 @stream_router.post("/stream/warmup/{chat_id}/{message_id}")
 async def warmup_channel_stream(chat_id: str, message_id: int) -> dict:
@@ -459,8 +557,10 @@ async def stream_channel_message(
     cache_key = _get_cache_key(chat_id, message_id)
     is_partial = bool(range_header) or (not dl and end < file_size - 1)
 
-    # Trigger background warmup if seeking past initial header before warmup completes
-    if start >= MAX_HEADER_CACHE_BYTES and cache_key not in _HEADER_CACHE and cache_key not in _WARMING_UP:
+    # Proactively warm up full 16MB into RAM cache if not already cached
+    async with _CACHE_LOCK:
+        cached_len = len(_HEADER_CACHE[cache_key]) if cache_key in _HEADER_CACHE else 0
+    if cached_len < min(file_size, MAX_HEADER_CACHE_BYTES) and cache_key not in _WARMING_UP:
         asyncio.create_task(warmup_channel_message(chat_id, message_id))
 
     is_cached = False

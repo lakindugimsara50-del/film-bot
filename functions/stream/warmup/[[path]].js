@@ -2,11 +2,14 @@
  * Cloudflare Pages Function: /stream/warmup/[[path]]
  * ============================================================
  * Edge Warmup Proxy for Telegram Cloud HD
- * Proxies warmup trigger calls to the live stream server backend
+ * Primes both Cloudflare Edge Cache (caches.default) and upstream RAM cache
  */
 
 const GITHUB_ENDPOINT_JSON =
   'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json';
+
+const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk
+const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
 
 let cachedStreamBaseUrl = '';
 let cachedFallbackBaseUrl = '';
@@ -18,12 +21,62 @@ function buildCorsHeaders() {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Accept, Origin',
-    'Access-Control-Expose-Headers': 'Content-Length, Content-Type, X-Stream-Backend',
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Type, X-Stream-Backend, X-Edge-Cache',
     'Access-Control-Max-Age': '86400',
   };
 }
 
+function getCanonicalCacheKey(chatId, msgId) {
+  return new Request(
+    `${CANONICAL_CACHE_ORIGIN}/__edge_stream_cache/v2/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}/chunk_0_8m`,
+    { method: 'GET' }
+  );
+}
+
+async function readExactBytes(readableStream, skip, limit) {
+  const reader = readableStream.getReader();
+  const out = new Uint8Array(limit);
+  let bytesSkipped = 0;
+  let bytesWritten = 0;
+
+  try {
+    while (bytesWritten < limit) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+
+      let start = 0;
+      if (bytesSkipped < skip) {
+        const remainingToSkip = skip - bytesSkipped;
+        if (value.length <= remainingToSkip) {
+          bytesSkipped += value.length;
+          continue;
+        }
+        start = remainingToSkip;
+        bytesSkipped = skip;
+      }
+
+      const available = value.length - start;
+      const needed = limit - bytesWritten;
+      const toCopy = Math.min(available, needed);
+
+      out.set(value.subarray(start, start + toCopy), bytesWritten);
+      bytesWritten += toCopy;
+    }
+  } finally {
+    try { await reader.cancel(); } catch (e) {}
+  }
+
+  return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
+}
+
 async function resolveLiveStreamBaseUrl(env) {
+  if (env && env.STREAM_BACKEND_URL) {
+    return {
+      primary: String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, ''),
+      fallback: (env.FALLBACK_STREAM_URL ? String(env.FALLBACK_STREAM_URL).trim().replace(/\/+$/, '') : cachedFallbackBaseUrl),
+    };
+  }
+
   const now = Date.now();
   if (cachedStreamBaseUrl && now - cachedAtEpoch < CACHE_TTL_MS) {
     return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
@@ -57,11 +110,6 @@ async function resolveLiveStreamBaseUrl(env) {
       }
     }
   } catch (err) {}
-
-  if (env && env.STREAM_BACKEND_URL) {
-    cachedStreamBaseUrl = String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, '');
-    cachedAtEpoch = now;
-  }
 
   return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
 }
@@ -98,9 +146,64 @@ export async function onRequest(context) {
   const chatId = pathSegments[0];
   const msgId = pathSegments[1];
 
+  const edgeCache = typeof caches !== 'undefined' ? caches.default : null;
+  const cacheKey = getCanonicalCacheKey(chatId, msgId);
+
   const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env);
   const urlsToTry = [baseUrl, fallbackUrl].filter(Boolean);
 
+  // Background task to prime Cloudflare Edge Cache if not already cached
+  const primeEdgeCache = async () => {
+    if (!edgeCache) return;
+    try {
+      const isAlreadyCached = await edgeCache.match(cacheKey);
+      if (isAlreadyCached) return;
+
+      for (const activeBase of urlsToTry) {
+        const streamUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
+        try {
+          const resp = await fetch(streamUrl, {
+            headers: {
+              'Range': `bytes=0-${EDGE_INITIAL_CHUNK_BYTES - 1}`,
+              'User-Agent': 'FilmSub-Edge-Warmup/2.0',
+            },
+          });
+          if (resp.ok || resp.status === 206) {
+            const contentRange = resp.headers.get('Content-Range');
+            let totalSize = '*';
+            if (contentRange) {
+              const m = contentRange.match(/bytes\s+\d+-\d+\/(\d+|\*)/);
+              if (m) totalSize = m[1];
+            } else {
+              totalSize = resp.headers.get('Content-Length') || '*';
+            }
+            const buf = await readExactBytes(resp.body, 0, EDGE_INITIAL_CHUNK_BYTES);
+            if (buf && buf.byteLength > 0) {
+              const cacheableRes = new Response(buf, {
+                status: 200,
+                headers: {
+                  'Content-Type': resp.headers.get('Content-Type') || 'video/mp4',
+                  'Content-Length': String(buf.byteLength),
+                  'X-Total-Size': String(totalSize),
+                  'Cache-Control': 'public, max-age=604800, s-maxage=604800',
+                },
+              });
+              await edgeCache.put(cacheKey, cacheableRes);
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
+  };
+
+  if (context.waitUntil && typeof context.waitUntil === 'function') {
+    context.waitUntil(primeEdgeCache());
+  } else {
+    primeEdgeCache().catch(() => {});
+  }
+
+  // Trigger upstream server RAM cache warmup
   for (const activeBase of urlsToTry) {
     const targetUrl = `${activeBase}/stream/warmup/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
     try {
@@ -115,7 +218,7 @@ export async function onRequest(context) {
         const bodyText = await upstreamRes.text();
         return new Response(bodyText, {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Stream-Backend': activeBase },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Stream-Backend': activeBase, 'X-Edge-Cache': 'WARMING' },
         });
       }
     } catch (err) {}
@@ -123,7 +226,7 @@ export async function onRequest(context) {
 
   // Graceful response even if backend is offline so frontend never errors
   return new Response(
-    JSON.stringify({ status: 'warming_fallback', chat_id: chatId, message_id: Number(msgId) }),
+    JSON.stringify({ status: 'warming_fallback', chat_id: chatId, message_id: Number(msgId), edge_cache: 'priming' }),
     {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

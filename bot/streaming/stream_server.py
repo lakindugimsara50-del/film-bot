@@ -148,6 +148,58 @@ async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[byt
         return None
 
 
+_WARMING_UP: set[str] = set()
+
+
+async def warmup_channel_message(chat_id: Union[int, str], message_id: int, target_bytes: int = 16 * 1024 * 1024) -> bool:
+    """
+    Pre-buffers initial video chunks (e.g. 16-32MB) into RAM cache in background.
+    Runs asynchronously and idempotently to give players instantaneous zero-buffering start.
+    """
+    cache_key = _get_cache_key(chat_id, message_id)
+    async with _CACHE_LOCK:
+        if cache_key in _HEADER_CACHE and len(_HEADER_CACHE[cache_key]) >= min(target_bytes, MAX_HEADER_CACHE_BYTES):
+            return False
+
+    if cache_key in _WARMING_UP:
+        return False
+    _WARMING_UP.add(cache_key)
+
+    async def _do_warmup():
+        try:
+            info = await stream_pool.get_media_info(chat_id, message_id)
+            msg = info["message"]
+            file_size = info["file_size"]
+            warm_limit = min(target_bytes, file_size, MAX_HEADER_CACHE_BYTES) - 1
+            if warm_limit <= 0:
+                return
+
+            async with _CACHE_LOCK:
+                start_offset = len(_HEADER_CACHE[cache_key]) if cache_key in _HEADER_CACHE else 0
+
+            if start_offset >= warm_limit:
+                return
+
+            log.info("[StreamServer] Background warmup started for %s (%d-%d bytes)...", cache_key, start_offset, warm_limit)
+            cur = start_offset
+            async for chunk in stream_pool.stream_media_chunks(msg, start_offset, warm_limit):
+                if not chunk:
+                    break
+                await _save_to_header_cache(cache_key, chunk, offset=cur)
+                cur += len(chunk)
+                if cur > warm_limit:
+                    break
+            log.info("[StreamServer] Background warmup completed for %s (%d bytes cached).", cache_key, cur)
+        except Exception as err:
+            log.warning("[StreamServer] Background warmup error for %s: %s", cache_key, err)
+        finally:
+            _WARMING_UP.discard(cache_key)
+
+    asyncio.create_task(_do_warmup())
+    return True
+
+
+
 def _parse_range(range_header: Optional[str], file_size: int) -> tuple[int, int]:
     """
     Parse HTTP Range header e.g. 'bytes=0-1048575', 'bytes=0-', 'bytes=-500'.
@@ -287,6 +339,19 @@ async def stream_ping() -> dict:
     return {"status": "pong", "service": "stream", "mode": "telegram_cloud", "ready": True}
 
 
+@stream_router.get("/stream/warmup/{chat_id}/{message_id}")
+@stream_router.post("/stream/warmup/{chat_id}/{message_id}")
+async def warmup_channel_stream(chat_id: str, message_id: int) -> dict:
+    """Preload video header and first 16MB into memory cache for zero-buffering start."""
+    started = await warmup_channel_message(chat_id, message_id)
+    return {
+        "status": "warming" if started else "already_cached_or_warming",
+        "chat_id": chat_id,
+        "message_id": message_id,
+    }
+
+
+
 async def _cached_stream_generator(
     cache_key: str,
     msg_obj,
@@ -385,13 +450,17 @@ async def stream_channel_message(
     elif not range_header:
         # Initial request without range -> serve first 8 MiB
         end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
-    elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
-        # Expand small chunk requests to at least 8 MiB for fast pre-buffering (unless tiny metadata probe like Safari bytes=0-1)
+    elif not explicit_end:
+        # Open-ended range (e.g. bytes=0-) -> serve next 8 MiB slice for rapid burst playback
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
     content_length = max(0, end - start + 1)
     cache_key = _get_cache_key(chat_id, message_id)
     is_partial = bool(range_header) or (not dl and end < file_size - 1)
+
+    # Trigger background warmup if seeking past initial header before warmup completes
+    if start >= MAX_HEADER_CACHE_BYTES and cache_key not in _HEADER_CACHE and cache_key not in _WARMING_UP:
+        asyncio.create_task(warmup_channel_message(chat_id, message_id))
 
     is_cached = False
     async with _CACHE_LOCK:

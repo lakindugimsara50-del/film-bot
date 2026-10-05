@@ -72,12 +72,11 @@ async function probeStreamServerHealth(baseUrl) {
           const data = await resp.json().catch(() => null);
           if (data && data.backend && typeof data.backend === 'string' && data.backend.startsWith('http')) {
             const b = data.backend.trim().replace(/\/+$/, '');
-            if (!isDeadTunnel(b)) {
-              activeStreamBaseUrl = b;
-            }
+            activeStreamBaseUrl = b;
           }
           if (data && (data.ready === true || data.status === 'pong')) {
-            return data.ready === true;
+            streamServerHealthy = true;
+            return true;
           }
         }
       }
@@ -255,18 +254,25 @@ function isRunningOnCloudflarePages() {
 }
 
 function getStreamEndpointPrefix() {
-  // 1. Direct live tunnel for ultra-fast zero-latency streaming ONLY IF verified healthy
+  // 1. On Cloudflare Pages, always use the same-origin edge proxy to prevent ISP / DNS blocking of *.trycloudflare.com
+  if (isRunningOnCloudflarePages()) {
+    return '';
+  }
+  // 2. Direct live tunnel for ultra-fast zero-latency streaming on localhost / non-Pages environments
   if (streamServerHealthy && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
     return activeStreamBaseUrl;
   }
-  // 2. Cloudflare Pages edge proxy fallback (zero-hop reliable edge proxy)
   return '';
 }
 
 function isDeadTunnel(u) {
   if (!u || typeof u !== 'string') return true;
   const l = u.toLowerCase();
-  if (activeStreamBaseUrl && u.startsWith(activeStreamBaseUrl)) return false;
+  const cleanU = u.trim().replace(/\/+$/, '');
+  const cleanBase = (activeStreamBaseUrl || '').trim().replace(/\/+$/, '');
+  if (cleanBase && (cleanU === cleanBase || cleanU.startsWith(cleanBase) || cleanBase.startsWith(cleanU))) {
+    return false;
+  }
   return l.includes('trycloudflare.com') ||
          l.includes('loca.lt') ||
          l.includes('ngrok.io') ||
@@ -379,6 +385,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDownloadSection(currentMovie);
   renderRelatedMovies(currentMovie);
   initShareButton(currentMovie);
+
+  // Trigger instant background pre-buffering (first 16MB) so video starts in <300ms
+  try {
+    const wmId = currentMovie.message_id || (Array.isArray(currentMovie.downloads) && currentMovie.downloads.find(d => d.message_id)?.message_id);
+    const wcId = currentMovie.channel_chat_id || '-1004325759505';
+    if (wmId) {
+      const pfx = getStreamEndpointPrefix() || '';
+      fetch(`${pfx}/stream/warmup/${wcId}/${wmId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+    }
+  } catch (e) {}
 });
 
 // ---- Wait for FilmSub global ----
@@ -2086,6 +2102,13 @@ function createVjsPlayer(playerEl, stream, movie) {
     renderPlayerFallback(playerEl, movie);
     return;
   }
+  const warmMatch = (stream.stream_url || '').match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+  if (warmMatch) {
+    const warmPrefix = getStreamEndpointPrefix() || '';
+    const warmUrl = `${warmPrefix}/stream/warmup/${warmMatch[1]}/${warmMatch[2]}`;
+    fetch(warmUrl, { method: 'POST', mode: 'cors' }).catch(() => {});
+  }
+
   const subtitles = getMovieSubtitles(movie);
   const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));
   const tracksHTML = subtitles.map((sub, i) => `
@@ -2111,6 +2134,19 @@ function createVjsPlayer(playerEl, stream, movie) {
     if (loader) loader.classList.add('hidden');
   };
 
+  const rawVideoEl = playerEl.querySelector('#filmsubPlayer');
+  if (rawVideoEl) {
+    const rawSourceEl = rawVideoEl.querySelector('source');
+    if (rawSourceEl) {
+      rawSourceEl.addEventListener('error', (e) => {
+        console.warn('[FilmSub Player] Raw source error detected, triggering failover:', e);
+        if (vjsPlayer && typeof vjsPlayer.trigger === 'function') {
+          vjsPlayer.trigger('error');
+        }
+      });
+    }
+  }
+
   if (typeof videojs !== 'undefined') {
     vjsPlayer = videojs('filmsubPlayer', {
       fluid: true,
@@ -2128,7 +2164,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           bandwidth: 20000000,        // 20 Mbps starting bandwidth estimate (was 15 Mbps)
           bufferBasedABR: true,
           maxBufferLength: 180,       // 3 minutes max buffer (was 120s)
-          minBufferLength: 30,        // 30s min buffer before playback (was 20s) — smoother start
+          minBufferLength: 2,         // 2s buffer allows playback to start in <500ms (was 30s)
           maxBufferSize: 192 * 1024 * 1024,  // 192 MiB max buffer RAM (was 128 MiB)
           experimentalBufferClipping: false
         },
@@ -2228,72 +2264,34 @@ function createVjsPlayer(playerEl, stream, movie) {
       } catch (e) {}
     });
 
-    // Ultra-smooth zero-lag watchdog: only intervenes if user or browser initiated playback
-    // (!vjsPlayer.paused()) but video data stalled at readyState 0 for over 25 seconds.
-    const slowHeaderWatchdog = setTimeout(() => {
-      const isLocalSample = stream.stream_url && (stream.stream_url.includes('sample_stream') || stream.stream_url.startsWith('assets/'));
-      if (vjsPlayer && !vjsPlayer.paused() && typeof vjsPlayer.readyState === 'function' && vjsPlayer.readyState() === 0 &&
-          !isLocalSample &&
-          (stream.mode === 'telegram_stream' || stream.mode === 'super_chunk' || stream.mode === 'direct_mp4')) {
-        const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
-        if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl) && !currentSrc.startsWith('http')) {
-          vjsPlayer._retriedDirect = true;
-          edgeProxyHealthy = false;
-          const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
-          const directUrl = directPrefix + (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc);
-          console.warn('[FilmSub Player] Edge stream stalled (watchdog), switching to direct tunnel:', directUrl);
-          vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
-          vjsPlayer.load();
-          vjsPlayer.play().catch(() => {});
-          return;
-        }
-        if (!vjsPlayer._retriedEdge && currentSrc.startsWith('http')) {
-          vjsPlayer._retriedEdge = true;
-          const match = currentSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
-          if (match) {
-            const edgeUrl = `/stream/channel/${match[1]}/${match[2]}`;
-            console.warn('[FilmSub Player] Direct tunnel stalled (watchdog), switching to edge proxy:', edgeUrl);
-            vjsPlayer.src({ type: stream.type || 'video/mp4', src: edgeUrl });
-            vjsPlayer.load();
-            vjsPlayer.play().catch(() => {});
-            return;
-          }
-        }
-        renderPlayerFallback(playerEl, movie);
-      }
-    }, 25000);
-
-    vjsPlayer.on('dispose', () => {
-      clearTimeout(slowHeaderWatchdog);
-    });
-
-    // Seamless failover on upstream error
-    vjsPlayer.on('error', () => {
-      const errDisplay = playerEl.querySelector('.vjs-error-display');
-      if (errDisplay) errDisplay.style.display = 'none';
-      clearTimeout(slowHeaderWatchdog);
-
+    // Zero-lag watchdog and failover management:
+    // If playback stalls at readyState 0 for more than 7s or network fails, automatically failover
+    let slowHeaderWatchdog = null;
+    const triggerFailover = (reason) => {
+      if (!vjsPlayer) return;
       const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
-      // 1. If relative edge stream failed and we have a live direct tunnel, retry immediately with direct tunnel!
+      console.warn(`[FilmSub Player] Failover triggered (${reason}), currentSrc: ${currentSrc}`);
+
+      // 1. If relative edge stream failed/stalled and we have a live direct tunnel, retry immediately with direct tunnel!
       if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl) && !currentSrc.startsWith('http')) {
         vjsPlayer._retriedDirect = true;
         edgeProxyHealthy = false;
         const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
         const directUrl = directPrefix + (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc);
-        console.warn('[FilmSub Player] Edge stream failed, switching directly to live tunnel:', directUrl);
+        console.warn('[FilmSub Player] Edge stream failed/stalled, switching directly to live tunnel:', directUrl);
         vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
         vjsPlayer.load();
         vjsPlayer.play().catch(() => {});
         return;
       }
 
-      // 2. If direct tunnel failed, retry with same-origin edge proxy!
+      // 2. If direct tunnel failed/stalled, retry with same-origin edge proxy!
       if (!vjsPlayer._retriedEdge && currentSrc.startsWith('http')) {
         vjsPlayer._retriedEdge = true;
         const match = currentSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
         if (match) {
           const edgeUrl = `/stream/channel/${match[1]}/${match[2]}`;
-          console.warn('[FilmSub Player] Direct tunnel failed, switching to edge proxy:', edgeUrl);
+          console.warn('[FilmSub Player] Direct tunnel failed/stalled, switching to edge proxy:', edgeUrl);
           vjsPlayer.src({ type: stream.type || 'video/mp4', src: edgeUrl });
           vjsPlayer.load();
           vjsPlayer.play().catch(() => {});
@@ -2304,6 +2302,42 @@ function createVjsPlayer(playerEl, stream, movie) {
       setTimeout(() => {
         renderPlayerFallback(playerEl, movie);
       }, 50);
+    };
+
+    const resetWatchdog = (timeoutMs = 7000) => {
+      if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
+      slowHeaderWatchdog = setTimeout(() => {
+        if (!vjsPlayer) return;
+        const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : (vjsPlayer.tech_?.el_?.readyState || 0);
+        if (!vjsPlayer.paused() && rState === 0) {
+          triggerFailover('stalled readyState 0');
+        }
+      }, timeoutMs);
+    };
+
+    resetWatchdog(8000);
+
+    vjsPlayer.on('play', () => resetWatchdog(7000));
+    vjsPlayer.on('waiting', () => resetWatchdog(7000));
+    vjsPlayer.on('canplay', () => {
+      if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
+      hideLoader();
+    });
+    vjsPlayer.on('playing', () => {
+      if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
+      hideLoader();
+      syncSubtitles();
+    });
+    vjsPlayer.on('dispose', () => {
+      if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
+    });
+
+    // Seamless failover on upstream error
+    vjsPlayer.on('error', () => {
+      const errDisplay = playerEl.querySelector('.vjs-error-display');
+      if (errDisplay) errDisplay.style.display = 'none';
+      if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
+      triggerFailover('player error event');
     });
   } else {
     hideLoader();

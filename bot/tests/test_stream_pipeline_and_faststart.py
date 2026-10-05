@@ -396,4 +396,257 @@ async def test_fetch_chunk_selects_admin_userbot_when_c_me_is_none():
     assert chunk == b"USERBOT_CHUNK_DATA_1MB"
 
 
+@pytest.mark.asyncio
+async def test_warmup_channel_message_populates_header_cache():
+    """Verify warmup_channel_message fetches chunks and populates _HEADER_CACHE."""
+    key = stream_server._get_cache_key("-1004325759505", 280)
+    async with stream_server._CACHE_LOCK:
+        stream_server._HEADER_CACHE.pop(key, None)
+    stream_server._WARMING_UP.discard(key)
+
+    mock_msg = MagicMock()
+    fake_info = {
+        "message": mock_msg,
+        "file_size": 20 * 1024 * 1024,
+        "mime_type": "video/mp4",
+        "file_name": "test.mp4",
+    }
+
+    async def fake_stream_chunks(msg, start, end):
+        # Yield two 1MB chunks
+        yield b"CHUNK_0_WARMUP_DATA_" + b"0" * (1024 * 1024 - 20)
+        yield b"CHUNK_1_WARMUP_DATA_" + b"1" * (1024 * 1024 - 20)
+
+    with patch.object(stream_server.stream_pool, "get_media_info", AsyncMock(return_value=fake_info)), \
+         patch.object(stream_server.stream_pool, "stream_media_chunks", side_effect=fake_stream_chunks):
+        res = await stream_server.warmup_channel_message("-1004325759505", 280, target_bytes=2 * 1024 * 1024)
+        assert res is True
+        # Allow background task to execute
+        await asyncio.sleep(0.1)
+
+    async with stream_server._CACHE_LOCK:
+        assert key in stream_server._HEADER_CACHE
+        cached = stream_server._HEADER_CACHE[key]
+        assert len(cached) >= 2 * 1024 * 1024
+        assert cached.startswith(b"CHUNK_0_WARMUP_DATA_")
+
+
+@pytest.mark.asyncio
+async def test_warmup_endpoint_triggers_warmup():
+    """Verify HTTP GET /stream/warmup/{chat_id}/{message_id} returns warming status."""
+    with patch("streaming.stream_server.warmup_channel_message", AsyncMock(return_value=True)):
+        from starlette.testclient import TestClient
+        client = TestClient(stream_server.app)
+        resp = client.get("/stream/warmup/-1004325759505/280")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "warming"
+        assert data["chat_id"] == "-1004325759505"
+        assert data["message_id"] == 280
+
+
+@pytest.mark.asyncio
+async def test_stream_pool_admin_status_diagnostics():
+    """Verify stream_pool.get_status() includes admin_clients_count and active_admin_sessions."""
+    pool = TelegramStreamPool()
+    admin_c1 = MagicMock()
+    admin_c1.is_connected = True
+    admin_c2 = MagicMock()
+    admin_c2.is_connected = False
+    bot_c = MagicMock()
+    bot_c.is_connected = True
+
+    pool.clients = [bot_c, admin_c1, admin_c2]
+    pool._admin_clients = [admin_c1, admin_c2]
+
+    st = pool.get_status()
+    assert st["total_clients"] == 3
+    assert st["connected_clients"] == 2
+    assert st["admin_clients_count"] == 2
+    assert st["active_admin_sessions"] == 1
+    assert st["sessions_supported"] == "up_to_100"
+
+
+@pytest.mark.asyncio
+async def test_explicit_closed_range_not_expanded_to_min_serve():
+    """Verify RFC 7233 compliance: explicit closed range (e.g. 1MB) is not expanded to 8MB."""
+    file_size = 100 * 1024 * 1024
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "movie.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info), \
+         patch.object(stream_server.stream_pool, "stream_media_chunks", return_value=MagicMock()):
+        req = MagicMock(spec=Request)
+        req.headers = {"range": "bytes=0-1048575"}  # 1 MiB requested
+        req.method = "GET"
+        resp = await stream_server.stream_channel_message("-100123", 1, req)
+
+        assert resp.status_code == 206
+        assert resp.headers.get("Content-Range") == f"bytes 0-1048575/{file_size}"
+        assert resp.headers.get("Content-Length") == "1048576"
+
+
+@pytest.mark.asyncio
+async def test_open_ended_range_served_min_serve():
+    """Verify open-ended range (e.g. bytes=0-) serves first 8 MiB slice for rapid burst playback."""
+    file_size = 100 * 1024 * 1024
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "movie.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info), \
+         patch.object(stream_server.stream_pool, "stream_media_chunks", return_value=MagicMock()):
+        req = MagicMock(spec=Request)
+        req.headers = {"range": "bytes=0-"}
+        req.method = "GET"
+        resp = await stream_server.stream_channel_message("-100123", 1, req)
+
+        assert resp.status_code == 206
+        expected_end = (8 * 1024 * 1024) - 1
+        assert resp.headers.get("Content-Range") == f"bytes 0-{expected_end}/{file_size}"
+        assert resp.headers.get("Content-Length") == str(8 * 1024 * 1024)
+
+
+@pytest.mark.asyncio
+async def test_fetch_chunk_direct_persistent_session_success():
+    """Verify _fetch_chunk returns bytes directly from _fetch_chunk_direct without calling stream_media."""
+    pool = TelegramStreamPool()
+    client = MagicMock()
+    client.is_connected = True
+    client.name = "test_admin_client"
+    pool.clients = [client]
+    pool._admin_clients = [client]
+
+    mock_msg = MagicMock()
+    mock_msg.chat.id = -1004325759505
+    mock_msg.id = 280
+
+    with patch.object(pool, "_get_client_media", AsyncMock(return_value=mock_msg)), \
+         patch.object(pool, "_fetch_chunk_direct", AsyncMock(return_value=b"DIRECT_PERSISTENT_CHUNK_DATA")):
+        chunk = await pool._fetch_chunk(mock_msg, 0)
+        assert chunk == b"DIRECT_PERSISTENT_CHUNK_DATA"
+        # stream_media should NOT be called when direct fetch succeeds
+        client.stream_media.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_fetch_chunk_handles_file_reference_expired_and_refreshes():
+    """Verify _fetch_chunk catches FileReferenceExpired, refreshes media, and returns chunk."""
+    from pyrogram.errors import FileReferenceExpired
+    pool = TelegramStreamPool()
+    client = MagicMock()
+    client.is_connected = True
+    client.name = "test_admin_client"
+    pool.clients = [client]
+    pool._admin_clients = [client]
+
+    mock_msg = MagicMock()
+    mock_msg.chat.id = -1004325759505
+    mock_msg.id = 280
+
+    call_count = 0
+    async def mock_fetch_direct(c, media, idx):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise FileReferenceExpired()
+        return b"FRESH_REF_CHUNK_DATA"
+
+    with patch.object(pool, "_get_client_media", AsyncMock(return_value=mock_msg)) as mock_get_media, \
+         patch.object(pool, "_fetch_chunk_direct", side_effect=mock_fetch_direct):
+        chunk = await pool._fetch_chunk(mock_msg, 0)
+        assert chunk == b"FRESH_REF_CHUNK_DATA"
+        assert call_count == 2
+        # Verify force_refresh=True was requested on second get_media call
+        mock_get_media.assert_any_call(client, mock_msg, force_refresh=True)
+
+
+@pytest.mark.asyncio
+async def test_stream_media_chunks_concurrency_tuned_to_six():
+    """Verify concurrency is capped at 6 workers even with 26 connected admin userbots."""
+    pool = TelegramStreamPool()
+    # Create 26 mock admin clients
+    admin_clients = [MagicMock(is_connected=True, name=f"admin_{i}") for i in range(26)]
+    pool.clients = list(admin_clients)
+    pool._admin_clients = list(admin_clients)
+
+    mock_msg = MagicMock()
+    mock_msg.chat.id = -1004325759505
+    mock_msg.id = 280
+
+    concurrent_launches = 0
+    max_concurrent = 0
+
+    async def fake_fetch(media, idx):
+        nonlocal concurrent_launches, max_concurrent
+        concurrent_launches += 1
+        max_concurrent = max(max_concurrent, concurrent_launches)
+        await asyncio.sleep(0.01)
+        concurrent_launches -= 1
+        return b"X" * CHUNK_SIZE
+
+    with patch.object(pool, "_fetch_chunk", side_effect=fake_fetch):
+        # Request 20 chunks (20 MB)
+        chunks = []
+        async for chunk in pool.stream_media_chunks(mock_msg, 0, (20 * CHUNK_SIZE) - 1):
+            chunks.append(chunk)
+
+        assert len(chunks) == 20
+        # Maximum concurrent workers should be capped around concurrency + 2 <= 8
+        assert max_concurrent <= 8
+
+
+@pytest.mark.asyncio
+async def test_media_info_cache_hits_and_ttl():
+    """Verify get_media_info caches results to prevent repeated Telegram RPC calls."""
+    pool = TelegramStreamPool()
+    mock_main = MagicMock()
+    mock_main.is_connected = True
+    pool._main_client = mock_main
+
+    mock_msg = MagicMock()
+    mock_msg.empty = False
+    mock_media = MagicMock()
+    mock_media.file_size = 50 * 1024 * 1024
+    mock_media.file_name = "test_movie.mp4"
+    mock_media.mime_type = "video/mp4"
+    mock_msg.video = mock_media
+    mock_msg.document = None
+
+    mock_main.get_messages = AsyncMock(return_value=mock_msg)
+
+    # First call: should query main client and cache the result
+    info1 = await pool.get_media_info("-1004325759505", 280)
+    assert info1["file_size"] == 50 * 1024 * 1024
+    assert mock_main.get_messages.call_count == 1
+
+    # Second call: should serve from cache without calling get_messages
+    info2 = await pool.get_media_info("-1004325759505", 280)
+    assert info2["file_size"] == 50 * 1024 * 1024
+    assert mock_main.get_messages.call_count == 1
+
+    # Third call with force_refresh=True: should bypass cache
+    info3 = await pool.get_media_info("-1004325759505", 280, force_refresh=True)
+    assert info3["file_size"] == 50 * 1024 * 1024
+    assert mock_main.get_messages.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_warmup_channel_stream_endpoint():
+    """Verify /stream/warmup/{chat_id}/{message_id} endpoint triggers background warmup."""
+    with patch.object(stream_server, "warmup_channel_message", AsyncMock(return_value=True)) as mock_warmup:
+        res = await stream_server.warmup_channel_stream("-1004325759505", 280)
+        assert res["status"] == "warming"
+        assert res["chat_id"] == "-1004325759505"
+        assert res["message_id"] == 280
+        mock_warmup.assert_called_once_with("-1004325759505", 280)
+
+
+
+
 

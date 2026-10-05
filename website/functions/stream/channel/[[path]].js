@@ -27,7 +27,7 @@ function buildCorsHeaders() {
     'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     'Access-Control-Allow-Headers': 'Range, Content-Type, Accept, Origin',
     'Access-Control-Expose-Headers':
-      'Content-Length, Content-Range, Accept-Ranges, Content-Type, X-Stream-Backend',
+      'Content-Length, Content-Range, Accept-Ranges, Content-Type, Content-Disposition, X-Stream-Backend',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -95,13 +95,13 @@ export async function onRequest(context) {
   }
 
   // Extract chat_id and message_id from params.path or URL pathname
+  const urlObj = new URL(request.url);
   let pathSegments = [];
   if (params && Array.isArray(params.path)) {
     pathSegments = params.path;
   } else if (params && typeof params.path === 'string') {
     pathSegments = params.path.split('/').filter(Boolean);
   } else {
-    const urlObj = new URL(request.url);
     const m = urlObj.pathname.match(/\/stream\/channel\/([^/]+)\/(\d+)/);
     if (m) pathSegments = [m[1], m[2]];
   }
@@ -135,7 +135,7 @@ export async function onRequest(context) {
   let lastStatus = 503;
 
   for (const activeBase of urlsToTry) {
-    const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
+    const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
     const rangeHeader = request.headers.get('Range');
 
     const upstreamHeaders = {
@@ -176,6 +176,10 @@ export async function onRequest(context) {
       const contentLength = upstreamRes.headers.get('Content-Length');
       if (contentLength) {
         outHeaders.set('Content-Length', contentLength);
+      }
+      const contentDisposition = upstreamRes.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        outHeaders.set('Content-Disposition', contentDisposition);
       }
       const cacheControl = upstreamRes.headers.get('Cache-Control');
       outHeaders.set(

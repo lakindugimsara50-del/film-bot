@@ -312,6 +312,7 @@ function normalizeStreamUrl(u) {
 }
 
 // ── Multi-Quality Edge & RAM Pre-Warming System ─────────────────────────────
+const _warmedTiers = new Set();
 function prewarmQualityTier(movie, quality) {
   if (!movie) return;
   const qNorm = String(quality || '').toLowerCase();
@@ -328,28 +329,21 @@ function prewarmQualityTier(movie, quality) {
   }
 
   if (targetMsgId) {
+    const key = `${wcId}:${targetMsgId}`;
+    if (_warmedTiers.has(key)) return;
+    _warmedTiers.add(key);
+
     const pfx = getStreamEndpointPrefix() || '';
-    // 1. Prime Colab backend RAM cache (asynchronous, idempotent)
+    // Single fast POST (100 bytes): Cloudflare Edge Worker primes Edge Cache and Colab RAM in the cloud
+    // with ZERO client download bandwidth impact, keeping 100% bandwidth free for video playback!
     fetch(`${pfx}/stream/warmup/${wcId}/${targetMsgId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
-    // 2. Pre-probe Cloudflare Edge Cache (8MB chunk containing MP4 moov atom + initial video frames)
-    fetch(`${pfx}/stream/channel/${wcId}/${targetMsgId}`, {
-      headers: { 'Range': 'bytes=0-8388607' },
-      mode: 'cors'
-    }).catch(() => {});
   }
 }
 
 function prewarmAllVariants(movie) {
   if (!movie) return;
-  const qTiers = ['720p', '480p', '1080p'];
-  qTiers.forEach((q, idx) => {
-    // Stagger by 60ms to give immediate bandwidth priority to default tier (720p)
-    if (idx === 0) {
-      prewarmQualityTier(movie, q);
-    } else {
-      setTimeout(() => prewarmQualityTier(movie, q), idx * 60);
-    }
-  });
+  prewarmQualityTier(movie, '720p');
+  setTimeout(() => prewarmQualityTier(movie, '480p'), 100);
 }
 
 // ── Immediate Early Stream Pre-Warming (fires synchronously on script parse) ──

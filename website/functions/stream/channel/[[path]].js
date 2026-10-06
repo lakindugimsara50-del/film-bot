@@ -31,7 +31,7 @@ const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk (moov a
 const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
 
 const DEFAULT_FALLBACK_TUNNEL =
-  'https://continuously-mileage-high-province.trycloudflare.com';
+  'https://genome-taxation-baker-dollars.trycloudflare.com';
 const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
 
 let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;
@@ -48,6 +48,55 @@ function buildCorsHeaders() {
       'Content-Length, Content-Range, Accept-Ranges, Content-Type, Content-Disposition, X-Stream-Backend, X-Edge-Cache',
     'Access-Control-Max-Age': '86400',
   };
+}
+
+function concatStreams(stream1, stream2PromiseFn) {
+  let reader1 = stream1.getReader();
+  let reader2 = null;
+  return new ReadableStream({
+    async pull(controller) {
+      if (reader1) {
+        try {
+          const { done, value } = await reader1.read();
+          if (!done) {
+            controller.enqueue(value);
+            return;
+          }
+        } catch (rErr) {
+          reader1 = null;
+        }
+        reader1 = null;
+      }
+      if (!reader2) {
+        try {
+          const s2 = await stream2PromiseFn();
+          if (s2) {
+            reader2 = s2.getReader();
+          } else {
+            controller.close();
+            return;
+          }
+        } catch (e) {
+          controller.close();
+          return;
+        }
+      }
+      try {
+        const { done, value } = await reader2.read();
+        if (!done) {
+          controller.enqueue(value);
+        } else {
+          controller.close();
+        }
+      } catch (err) {
+        controller.close();
+      }
+    },
+    async cancel(reason) {
+      if (reader1) try { await reader1.cancel(reason); } catch (e) {}
+      if (reader2) try { await reader2.cancel(reason); } catch (e) {}
+    }
+  });
 }
 
 function getCanonicalCacheKey(chatId, msgId) {
@@ -249,17 +298,56 @@ export async function onRequest(context) {
         outHeaders.set('X-Accel-Buffering', 'no');
         outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
 
-        // Fast-path: Open-ended requests (bytes=0- or no range) can stream cachedHit.body directly
-        // without waiting for full Uint8Array ArrayBuffer allocation in isolate memory!
+        // Fast-path: Open-ended requests (bytes=0- or no range):
+        // Stream the cached initial 8MB chunk in <15ms from Edge Cache,
+        // and seamlessly continue piping from upstream starting at byte 8MB!
         if ((clientStart === null || clientStart === 0) && clientEnd === null) {
-          const chunkLen = cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES);
-          outHeaders.set('Content-Length', chunkLen);
-          outHeaders.set('Content-Range', `bytes 0-${parseInt(chunkLen, 10) - 1}/${totalSize}`);
+          const totalSizeNum = parseInt(totalSize, 10);
+          const chunkLenNum = parseInt(cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES), 10);
 
           if (request.method === 'HEAD') {
+            if (!isNaN(totalSizeNum) && totalSizeNum > 0) {
+              outHeaders.set('Content-Length', String(totalSizeNum));
+              outHeaders.set('Content-Range', `bytes 0-${totalSizeNum - 1}/${totalSizeNum}`);
+            } else {
+              outHeaders.set('Content-Length', String(chunkLenNum));
+              outHeaders.set('Content-Range', `bytes 0-${chunkLenNum - 1}/${totalSize}`);
+            }
             return new Response(null, { status: 206, headers: outHeaders });
           }
-          return new Response(cachedHit.body, { status: 206, headers: outHeaders });
+
+          if (!isNaN(totalSizeNum) && totalSizeNum > chunkLenNum) {
+            // Full seamless stream: Yield cached initial 8MB in <15ms from Edge PoP, then seamlessly continue upstream from byte 8MB!
+            outHeaders.set('Content-Length', String(totalSizeNum));
+            outHeaders.set('Content-Range', `bytes 0-${totalSizeNum - 1}/${totalSizeNum}`);
+
+            const compositeStream = concatStreams(cachedHit.body, async () => {
+              const { primary: uBase, fallback: uFb } = await resolveLiveStreamBaseUrl(env, context);
+              const uUrls = [uBase, uFb].filter(Boolean);
+              for (const base of uUrls) {
+                const targetUrl = `${base}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
+                try {
+                  const uRes = await fetch(targetUrl, {
+                    headers: {
+                      'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
+                      'Range': `bytes=${chunkLenNum}-`,
+                    },
+                    signal: request.signal,
+                  });
+                  if (uRes.ok || uRes.status === 206) {
+                    return uRes.body;
+                  }
+                } catch (e) {}
+              }
+              return null;
+            });
+
+            return new Response(compositeStream, { status: 206, headers: outHeaders });
+          } else {
+            outHeaders.set('Content-Length', String(chunkLenNum));
+            outHeaders.set('Content-Range', `bytes 0-${chunkLenNum - 1}/${totalSize}`);
+            return new Response(cachedHit.body, { status: 206, headers: outHeaders });
+          }
         }
 
         const cachedBuffer = new Uint8Array(await cachedHit.arrayBuffer());

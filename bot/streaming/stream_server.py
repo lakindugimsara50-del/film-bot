@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 import logging
 import os
 import re
+import tempfile
 from typing import AsyncGenerator, Optional, Union
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
@@ -73,6 +74,12 @@ async def stream_server_lifespan(app_instance: FastAPI):
             await stream_pool.init_extra_sessions(api_id, api_hash)
             log.info("[StreamServer] Standalone stream pool initialized (%d active sessions).", len(stream_pool.clients))
 
+            async def _on_pool_chunk(c_id, m_id, chunk_bytes, offset):
+                k = _get_cache_key(c_id, m_id)
+                await _save_to_header_cache(k, chunk_bytes, offset=offset)
+
+            stream_pool.register_chunk_cache_callback(_on_pool_chunk)
+
             async def _bg_warmup_catalog():
                 await asyncio.sleep(1.5)
                 try:
@@ -109,14 +116,70 @@ app.add_middleware(
     expose_headers=["Content-Length", "Content-Range", "Accept-Ranges", "Content-Disposition", "X-Stream-Cached"],
 )
 
-# ── 16MB In-Memory Header Cache ───────────────────────────────────────────────
-# LRU Cache storing up to 40 movies × 16MB (~640MB RAM max on VPS/Colab)
+# ── 32MB In-Memory & Persistent NVMe Disk Header Cache ────────────────────────
+# LRU Cache storing up to 40 movies × 32MB (~1.2GB RAM max on VPS/Colab)
 # and 8 movies × 16MB (~128MB RAM on 512MB Render instances) to prevent OOM.
 _is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
 MAX_HEADER_CACHE_SIZE = int(os.getenv("MAX_HEADER_CACHE_SIZE", 8 if _is_render else 40))
 MAX_HEADER_CACHE_BYTES = 32 * 1024 * 1024  # 32 MiB per movie — caches moov atom + first ~2 min of 1080p (<50ms seeks)
 _HEADER_CACHE: OrderedDict[str, bytearray] = OrderedDict()
 _CACHE_LOCK = asyncio.Lock()
+
+STREAM_DISK_CACHE_DIR = os.getenv(
+    "STREAM_DISK_CACHE_DIR",
+    os.path.join(tempfile.gettempdir(), "tg_stream_headers")
+)
+try:
+    os.makedirs(STREAM_DISK_CACHE_DIR, exist_ok=True)
+except Exception:
+    pass
+
+
+def _disk_cache_path(key: str) -> str:
+    safe = str(key).replace("-", "neg").replace(":", "_").replace("/", "_")
+    return os.path.join(STREAM_DISK_CACHE_DIR, f"{safe}.bin")
+
+
+def _is_real_cache_key(key: str) -> bool:
+    try:
+        parts = str(key).split(":")
+        return len(parts) == 2 and parts[0].lstrip("-").isdigit() and parts[1].isdigit()
+    except Exception:
+        return False
+
+
+def _read_disk_cache(key: str) -> Optional[bytearray]:
+    if not _is_real_cache_key(key):
+        return None
+    p = _disk_cache_path(key)
+    try:
+        if os.path.isfile(p):
+            with open(p, "rb") as f:
+                data = f.read(MAX_HEADER_CACHE_BYTES)
+                if data:
+                    return bytearray(data)
+    except Exception:
+        pass
+    return None
+
+
+def _write_disk_cache(key: str, data: bytes, offset: int = 0) -> None:
+    if not _is_real_cache_key(key):
+        return
+    p = _disk_cache_path(key)
+    try:
+        if offset == 0 or not os.path.isfile(p):
+            mode = "wb" if offset == 0 else "w+b"
+            with open(p, mode) as f:
+                if offset > 0:
+                    f.seek(offset)
+                f.write(data[:MAX_HEADER_CACHE_BYTES - offset])
+        else:
+            with open(p, "r+b") as f:
+                f.seek(offset)
+                f.write(data[:MAX_HEADER_CACHE_BYTES - offset])
+    except Exception:
+        pass
 
 
 def _get_cache_key(chat_id: Union[int, str], message_id: int) -> str:
@@ -135,11 +198,25 @@ async def _save_to_header_cache(key: str, data: bytes, offset: int = 0) -> None:
                 if data_to_add:
                     remaining = MAX_HEADER_CACHE_BYTES - len(buf)
                     buf.extend(data_to_add[:remaining])
+            elif offset > len(buf) and offset < MAX_HEADER_CACHE_BYTES:
+                buf.extend(b"\x00" * (offset - len(buf)))
+                remaining = MAX_HEADER_CACHE_BYTES - len(buf)
+                buf.extend(data[:remaining])
         else:
+            if len(_HEADER_CACHE) >= MAX_HEADER_CACHE_SIZE:
+                _HEADER_CACHE.popitem(last=False)
             if offset == 0:
-                if len(_HEADER_CACHE) >= MAX_HEADER_CACHE_SIZE:
-                    _HEADER_CACHE.popitem(last=False)
                 _HEADER_CACHE[key] = bytearray(data[:MAX_HEADER_CACHE_BYTES])
+            else:
+                buf = bytearray(b"\x00" * offset)
+                buf.extend(data[:MAX_HEADER_CACHE_BYTES - offset])
+                _HEADER_CACHE[key] = buf
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(None, _write_disk_cache, key, data, offset)
+    except Exception:
+        _write_disk_cache(key, data, offset)
 
 
 async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[bytes]:
@@ -147,7 +224,13 @@ async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[byt
         return None
     async with _CACHE_LOCK:
         if key not in _HEADER_CACHE:
-            return None
+            disk_buf = _read_disk_cache(key)
+            if disk_buf:
+                if len(_HEADER_CACHE) >= MAX_HEADER_CACHE_SIZE:
+                    _HEADER_CACHE.popitem(last=False)
+                _HEADER_CACHE[key] = disk_buf
+            else:
+                return None
         _HEADER_CACHE.move_to_end(key)
         buf = _HEADER_CACHE[key]
         if start < len(buf):

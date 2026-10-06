@@ -37,6 +37,11 @@ class TelegramStreamPool:
         self._msg_cache: Dict[str, types.Message] = {}
         self._media_info_cache: Dict[str, tuple[float, dict]] = {}
         self._channel_primed: set[int] = set()
+        self._chunk_cache_callback = None
+
+    def register_chunk_cache_callback(self, cb) -> None:
+        """Register callback (chat_id, msg_id, chunk_bytes, offset) to populate RAM/Disk header cache."""
+        self._chunk_cache_callback = cb
 
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client running in main.py."""
@@ -381,6 +386,31 @@ class TelegramStreamPool:
         if not hasattr(self, "_media_info_cache"):
             self._media_info_cache = {}
         self._media_info_cache[cache_key] = (now, res)
+
+        # Share channel peer access_hash with all connected userbots so they resolve and stream at unthrottled wire speed
+        if chat_id_int < 0 and chat_id_int not in self._channel_primed:
+            try:
+                from pyrogram import utils as pyro_utils
+                source_cl = getattr(msg, "_client", None) or self._main_client
+                if source_cl and hasattr(source_cl, "storage") and hasattr(source_cl.storage, "get_peer_by_id"):
+                    peer_obj = await source_cl.storage.get_peer_by_id(chat_id_int)
+                    if peer_obj:
+                        acc_hash = getattr(peer_obj, "access_hash", 0)
+                        ch_id_num = getattr(peer_obj, "channel_id", pyro_utils.get_channel_id(chat_id_int))
+                        peers_to_sync = [
+                            (ch_id_num, acc_hash, "channel", None, None),
+                            (chat_id_int, acc_hash, "channel", None, None),
+                        ]
+                        for cl in self.clients:
+                            if cl is not source_cl and hasattr(cl, "storage") and hasattr(cl.storage, "update_peers"):
+                                try:
+                                    await cl.storage.update_peers(peers_to_sync)
+                                except Exception:
+                                    pass
+                        self._channel_primed.add(chat_id_int)
+            except Exception:
+                pass
+
         return res
 
     async def get_channel_admin_uids(self, channel_id: int) -> set[int]:
@@ -497,6 +527,25 @@ class TelegramStreamPool:
                 return client_msg
         except PeerIdInvalid:
             try:
+                # Share peer from media_source._client if missing
+                src_cl = getattr(media_source, "_client", None) or self._main_client
+                if src_cl and hasattr(src_cl, "storage") and hasattr(client, "storage"):
+                    p_obj = await src_cl.storage.get_peer_by_id(chat_id)
+                    if p_obj:
+                        acc_h = getattr(p_obj, "access_hash", 0)
+                        from pyrogram import utils as pyro_utils
+                        ch_num = getattr(p_obj, "channel_id", pyro_utils.get_channel_id(chat_id))
+                        await client.storage.update_peers([
+                            (ch_num, acc_h, "channel", None, None),
+                            (chat_id, acc_h, "channel", None, None),
+                        ])
+                        client_msg = await client.get_messages(chat_id, msg_id)
+                        if client_msg and not getattr(client_msg, "empty", False):
+                            self._msg_cache[cache_key] = client_msg
+                            return client_msg
+            except Exception:
+                pass
+            try:
                 await client.get_chat(chat_id)
                 client_msg = await client.get_messages(chat_id, msg_id)
                 if client_msg and not getattr(client_msg, "empty", False):
@@ -509,7 +558,8 @@ class TelegramStreamPool:
 
         if getattr(media_source, "_client", None) is client:
             return media_source
-        return None
+        # Fallback to media_source directly so userbot can decode file_id and fetch chunks
+        return media_source
 
     async def _fetch_chunk_direct(
         self,
@@ -694,7 +744,7 @@ class TelegramStreamPool:
                 try:
                     target_media = await self._get_client_media(client, media_source)
                     if not target_media:
-                        continue
+                        target_media = media_source
 
                     # Fast-path: persistent MTProto session (avoids TCP teardown per 1MB chunk)
                     direct_chunk = None
@@ -714,6 +764,16 @@ class TelegramStreamPool:
 
                     if direct_chunk is not None:
                         self._client_cooldowns.pop(client, None)
+                        if self._chunk_cache_callback and isinstance(media_source, types.Message):
+                            c_id = getattr(getattr(media_source, "chat", None), "id", None)
+                            m_id = getattr(media_source, "id", None)
+                            if c_id and m_id:
+                                try:
+                                    cb_res = self._chunk_cache_callback(c_id, m_id, direct_chunk, chunk_idx * CHUNK_SIZE)
+                                    if asyncio.iscoroutine(cb_res):
+                                        asyncio.create_task(cb_res)
+                                except Exception:
+                                    pass
                         return direct_chunk
 
                     # Fallback path: client.stream_media (guarantees mock/test compatibility)
@@ -729,7 +789,18 @@ class TelegramStreamPool:
                     if buf:
                         # Client succeeded: clear cooldown
                         self._client_cooldowns.pop(client, None)
-                        return bytes(buf)
+                        out_b = bytes(buf)
+                        if self._chunk_cache_callback and isinstance(media_source, types.Message):
+                            c_id = getattr(getattr(media_source, "chat", None), "id", None)
+                            m_id = getattr(media_source, "id", None)
+                            if c_id and m_id:
+                                try:
+                                    cb_res = self._chunk_cache_callback(c_id, m_id, out_b, chunk_idx * CHUNK_SIZE)
+                                    if asyncio.iscoroutine(cb_res):
+                                        asyncio.create_task(cb_res)
+                                except Exception:
+                                    pass
+                        return out_b
                 except FloodWait as fw:
                     wait_sec = min(fw.value, 1.5)
                     log.warning("[StreamPool] FloodWait %ds on chunk %d with client %s, pausing %0.1fs", fw.value, chunk_idx, getattr(client, "name", ""), wait_sec)
@@ -791,17 +862,6 @@ class TelegramStreamPool:
         pending_tasks: Dict[int, asyncio.Task] = {}
 
         try:
-            if total_chunks <= 1:
-                # Single-chunk fast-path: fetch single 1MB block directly
-                chunk = await self._fetch_chunk(media_source, start_chunk)
-                if chunk:
-                    local_start = start % CHUNK_SIZE
-                    slice_chunk = chunk[local_start:local_start + remaining]
-                    if slice_chunk:
-                        yield slice_chunk
-                return
-
-            # Concurrency tuning:
             # Scale pipeline depth based on all available connected userbot accounts
             all_users = [c for c in self.clients if getattr(c, "is_connected", False) and c is not self._main_client]
             try:
@@ -813,6 +873,29 @@ class TelegramStreamPool:
                 pass
 
             active_workers = len(all_users) if all_users else (len([c for c in self.clients if getattr(c, "is_connected", False)]) or 1)
+
+            if total_chunks <= 1:
+                # Single-chunk fast-path: fetch single 1MB block directly
+                chunk = await self._fetch_chunk(media_source, start_chunk)
+                if chunk:
+                    local_start = start % CHUNK_SIZE
+                    slice_chunk = chunk[local_start:local_start + remaining]
+                    if slice_chunk:
+                        yield slice_chunk
+
+                # If this was initial header request (chunk 0), proactively pre-warm chunks 1..7 across userbots
+                if start_chunk == 0 and active_workers > 1:
+                    async def _bg_prewarm():
+                        try:
+                            prewarm_tasks = [
+                                self._fetch_chunk(media_source, c)
+                                for c in range(1, 8)
+                            ]
+                            await asyncio.gather(*prewarm_tasks, return_exceptions=True)
+                        except Exception:
+                            pass
+                    asyncio.create_task(_bg_prewarm())
+                return
 
             # Optimal concurrency: 4-6 workers saturate bandwidth (20-35+ MB/s) without MTProto socket drops
             concurrency = min(total_chunks, max(2, min(active_workers, 6)))

@@ -30,8 +30,12 @@ const GITHUB_ENDPOINT_JSON =
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk (moov atom + first video frames)
 const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
 
-let cachedStreamBaseUrl = '';
-let cachedFallbackBaseUrl = '';
+const DEFAULT_FALLBACK_TUNNEL =
+  'https://seo-momentum-titanium-pendant.trycloudflare.com';
+const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
+
+let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;
+let cachedFallbackBaseUrl = DEFAULT_FALLBACK_RENDER;
 let cachedAtEpoch = 0;
 const CACHE_TTL_MS = 60000;
 
@@ -89,7 +93,7 @@ async function readExactBytes(readableStream, skip, limit) {
   return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
 }
 
-async function resolveLiveStreamBaseUrl(env) {
+async function resolveLiveStreamBaseUrl(env, context) {
   if (env && env.STREAM_BACKEND_URL) {
     return {
       primary: String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, ''),
@@ -98,40 +102,56 @@ async function resolveLiveStreamBaseUrl(env) {
   }
 
   const now = Date.now();
-  if (cachedStreamBaseUrl && now - cachedAtEpoch < CACHE_TTL_MS) {
+  // 1. If we already have a cached tunnel URL and TTL is fresh, return in 0ms
+  if (cachedStreamBaseUrl && (now - cachedAtEpoch < CACHE_TTL_MS)) {
     return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
   }
 
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 2500);
-    const resp = await fetch(`${GITHUB_ENDPOINT_JSON}?t=${now}`, {
-      headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0', 'Cache-Control': 'no-cache' },
-      signal: ctrl.signal,
-    });
-    clearTimeout(timer);
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
-        const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
-        if (cleaned.startsWith('http')) {
-          cachedStreamBaseUrl = cleaned;
-          cachedAtEpoch = now;
+  // Helper background task to refresh endpoints from GitHub Raw without blocking client
+  const refreshTask = async () => {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 2500);
+      const resp = await fetch(`${GITHUB_ENDPOINT_JSON}?t=${Date.now()}`, {
+        headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0', 'Cache-Control': 'no-cache' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
+          const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
+          if (cleaned.startsWith('http')) {
+            cachedStreamBaseUrl = cleaned;
+            cachedAtEpoch = Date.now();
+          }
+        }
+        if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
+          const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
+          if (cleanedFb.startsWith('http')) {
+            cachedFallbackBaseUrl = cleanedFb;
+          }
         }
       }
-      if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
-        const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
-        if (cleanedFb.startsWith('http')) {
-          cachedFallbackBaseUrl = cleanedFb;
-        }
-      }
-      if (cachedStreamBaseUrl) {
-        return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
-      }
-    }
-  } catch (err) {}
+    } catch (err) {}
+  };
 
-  return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
+  // 2. If cached URL exists, return immediately (0ms) and revalidate in background
+  if (cachedStreamBaseUrl) {
+    if (context && typeof context.waitUntil === 'function') {
+      context.waitUntil(refreshTask());
+    } else {
+      refreshTask().catch(() => {});
+    }
+    return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
+  }
+
+  // 3. Fallback only if no URL present
+  await refreshTask();
+  return {
+    primary: cachedStreamBaseUrl || DEFAULT_FALLBACK_TUNNEL,
+    fallback: cachedFallbackBaseUrl || DEFAULT_FALLBACK_RENDER,
+  };
 }
 
 export async function onRequest(context) {
@@ -219,18 +239,31 @@ export async function onRequest(context) {
     try {
       const cachedHit = await edgeCache.match(cacheKey);
       if (cachedHit) {
+        const totalSize = cachedHit.headers.get('X-Total-Size') || '*';
+        const contentType = cachedHit.headers.get('Content-Type') || 'video/mp4';
+
+        const outHeaders = new Headers(corsHeaders);
+        outHeaders.set('Content-Type', contentType);
+        outHeaders.set('Accept-Ranges', 'bytes');
+        outHeaders.set('X-Edge-Cache', 'HIT');
+        outHeaders.set('X-Accel-Buffering', 'no');
+        outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+
+        // Fast-path: Open-ended requests (bytes=0- or no range) can stream cachedHit.body directly
+        // without waiting for full Uint8Array ArrayBuffer allocation in isolate memory!
+        if ((clientStart === null || clientStart === 0) && clientEnd === null) {
+          const chunkLen = cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES);
+          outHeaders.set('Content-Length', chunkLen);
+          outHeaders.set('Content-Range', `bytes 0-${parseInt(chunkLen, 10) - 1}/${totalSize}`);
+
+          if (request.method === 'HEAD') {
+            return new Response(null, { status: 206, headers: outHeaders });
+          }
+          return new Response(cachedHit.body, { status: 206, headers: outHeaders });
+        }
+
         const cachedBuffer = new Uint8Array(await cachedHit.arrayBuffer());
         if (cachedBuffer && cachedBuffer.byteLength > 0) {
-          const totalSize = cachedHit.headers.get('X-Total-Size') || '*';
-          const contentType = cachedHit.headers.get('Content-Type') || 'video/mp4';
-
-          const outHeaders = new Headers(corsHeaders);
-          outHeaders.set('Content-Type', contentType);
-          outHeaders.set('Accept-Ranges', 'bytes');
-          outHeaders.set('X-Edge-Cache', 'HIT');
-          outHeaders.set('X-Accel-Buffering', 'no');
-          outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
-
           const effectiveStart = clientStart !== null ? clientStart : 0;
           if (effectiveStart < cachedBuffer.byteLength) {
             const effectiveEnd = (clientEnd !== null)
@@ -252,7 +285,7 @@ export async function onRequest(context) {
   }
 
   // ── 2. Upstream Backend Resolution & Proxying ───────────────────────────────
-  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env);
+  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env, context);
   if (!baseUrl && !fallbackUrl) {
     return new Response(
       JSON.stringify({ error: 'Stream backend endpoint not configured' }),

@@ -11,8 +11,12 @@ const GITHUB_ENDPOINT_JSON =
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk
 const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
 
-let cachedStreamBaseUrl = '';
-let cachedFallbackBaseUrl = '';
+const DEFAULT_FALLBACK_TUNNEL =
+  'https://seo-momentum-titanium-pendant.trycloudflare.com';
+const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
+
+let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;
+let cachedFallbackBaseUrl = DEFAULT_FALLBACK_RENDER;
 let cachedAtEpoch = 0;
 const CACHE_TTL_MS = 60000;
 
@@ -69,7 +73,7 @@ async function readExactBytes(readableStream, skip, limit) {
   return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
 }
 
-async function resolveLiveStreamBaseUrl(env) {
+async function resolveLiveStreamBaseUrl(env, context) {
   if (env && env.STREAM_BACKEND_URL) {
     return {
       primary: String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, ''),
@@ -78,40 +82,56 @@ async function resolveLiveStreamBaseUrl(env) {
   }
 
   const now = Date.now();
-  if (cachedStreamBaseUrl && now - cachedAtEpoch < CACHE_TTL_MS) {
+  // 1. If we already have a cached tunnel URL and TTL is fresh, return in 0ms
+  if (cachedStreamBaseUrl && (now - cachedAtEpoch < CACHE_TTL_MS)) {
     return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
   }
 
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 2500);
-    const resp = await fetch(`${GITHUB_ENDPOINT_JSON}?t=${now}`, {
-      headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0', 'Cache-Control': 'no-cache' },
-      signal: ctrl.signal,
-    });
-    clearTimeout(timer);
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
-        const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
-        if (cleaned.startsWith('http')) {
-          cachedStreamBaseUrl = cleaned;
-          cachedAtEpoch = now;
+  // Helper background task to refresh endpoints from GitHub Raw without blocking client
+  const refreshTask = async () => {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 2500);
+      const resp = await fetch(`${GITHUB_ENDPOINT_JSON}?t=${Date.now()}`, {
+        headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0', 'Cache-Control': 'no-cache' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
+          const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
+          if (cleaned.startsWith('http')) {
+            cachedStreamBaseUrl = cleaned;
+            cachedAtEpoch = Date.now();
+          }
+        }
+        if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
+          const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
+          if (cleanedFb.startsWith('http')) {
+            cachedFallbackBaseUrl = cleanedFb;
+          }
         }
       }
-      if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
-        const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
-        if (cleanedFb.startsWith('http')) {
-          cachedFallbackBaseUrl = cleanedFb;
-        }
-      }
-      if (cachedStreamBaseUrl) {
-        return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
-      }
-    }
-  } catch (err) {}
+    } catch (err) {}
+  };
 
-  return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
+  // 2. If cached URL exists, return immediately (0ms) and revalidate in background
+  if (cachedStreamBaseUrl) {
+    if (context && typeof context.waitUntil === 'function') {
+      context.waitUntil(refreshTask());
+    } else {
+      refreshTask().catch(() => {});
+    }
+    return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
+  }
+
+  // 3. Fallback only if no URL present
+  await refreshTask();
+  return {
+    primary: cachedStreamBaseUrl || DEFAULT_FALLBACK_TUNNEL,
+    fallback: cachedFallbackBaseUrl || DEFAULT_FALLBACK_RENDER,
+  };
 }
 
 export async function onRequest(context) {
@@ -149,7 +169,7 @@ export async function onRequest(context) {
   const edgeCache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheKey = getCanonicalCacheKey(chatId, msgId);
 
-  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env);
+  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env, context);
   const urlsToTry = [baseUrl, fallbackUrl].filter(Boolean);
 
   // Background task to prime Cloudflare Edge Cache if not already cached

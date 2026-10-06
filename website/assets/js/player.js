@@ -1862,8 +1862,12 @@ async function mountLiveSubtitleOverlay(playerEl, movie) {
 // ---- 4. Zero-White-Screen Loader HTML Builder ----
 function buildSuperLoaderHtml(movie, serverLabel) {
   const title = FilmSub.escHtml(movie.title || 'Movie');
+  const bgImg = movie.backdrop || movie.poster || '';
+  const bgStyle = bgImg
+    ? `background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.85)), url('${FilmSub.escHtml(bgImg)}') center/cover no-repeat;`
+    : 'background:#000000;';
   return `
-    <div class="super-player-loader" id="super-player-loader">
+    <div class="super-player-loader" id="super-player-loader" style="${bgStyle}">
       <div class="netflix-pulse-spinner">
         <div class="netflix-pulse-ring"></div>
         <div class="netflix-pulse-icon"><i class="fa-solid fa-play"></i></div>
@@ -1871,7 +1875,7 @@ function buildSuperLoaderHtml(movie, serverLabel) {
       <div class="sp-loader-title">${title}</div>
       <div class="sp-loader-status-line">
         <span class="sp-status-pulse-dot"></span>
-        <span>Streaming HD • සිංහල උපසිරැසි සමඟින්</span>
+        <span>HD Stream Ready • සිංහල උපසිරැසි සමඟින්</span>
       </div>
     </div>`;
 }
@@ -2199,11 +2203,14 @@ function createVjsPlayer(playerEl, stream, movie) {
            label="${FilmSub.escHtml(sub.label || 'සිංහල උපසිරැසි')}"
            ${(sub.default || i === 0) && !isHardcoded ? 'default' : ''}>`).join('');
 
+  const posterUrl = movie.backdrop || movie.poster || '';
+  const posterAttr = posterUrl ? `poster="${FilmSub.escHtml(posterUrl)}"` : '';
+
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:8px;overflow:hidden">
       ${buildSuperLoaderHtml(movie, stream.label || stream.server)}
       <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
-             controls preload="auto" playsinline webkit-playsinline
+             controls preload="auto" playsinline webkit-playsinline ${posterAttr}
              style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000000 !important">
         <source src="${FilmSub.escHtml(stream.stream_url)}" type="${FilmSub.escHtml(stream.type || 'video/mp4')}">
         ${tracksHTML}
@@ -2220,6 +2227,7 @@ function createVjsPlayer(playerEl, stream, movie) {
     vjsPlayer = videojs('filmsubPlayer', {
       fluid: true,
       responsive: true,
+      poster: posterUrl,
       preload: 'auto',
       autoplay: false,
       playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],

@@ -311,6 +311,47 @@ function normalizeStreamUrl(u) {
   return isDeadTunnel(u) ? '' : u;
 }
 
+// ── Multi-Quality Edge & RAM Pre-Warming System ─────────────────────────────
+function prewarmQualityTier(movie, quality) {
+  if (!movie) return;
+  const qNorm = String(quality || '').toLowerCase();
+  const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
+  let targetMsgId = null;
+  const wcId = movie.channel_chat_id || '-1004325759505';
+
+  if (vm && typeof vm === 'object') {
+    const v = vm[qNorm];
+    if (v && v.message_id > 0) targetMsgId = v.message_id;
+  }
+  if (!targetMsgId && (qNorm === '720p' || qNorm === 'auto')) {
+    targetMsgId = movie.message_id || (Array.isArray(movie.downloads) && movie.downloads.find(d => d.message_id)?.message_id);
+  }
+
+  if (targetMsgId) {
+    const pfx = getStreamEndpointPrefix() || '';
+    // 1. Prime Colab backend RAM cache (asynchronous, idempotent)
+    fetch(`${pfx}/stream/warmup/${wcId}/${targetMsgId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+    // 2. Pre-probe Cloudflare Edge Cache (8MB chunk containing MP4 moov atom + initial video frames)
+    fetch(`${pfx}/stream/channel/${wcId}/${targetMsgId}`, {
+      headers: { 'Range': 'bytes=0-8388607' },
+      mode: 'cors'
+    }).catch(() => {});
+  }
+}
+
+function prewarmAllVariants(movie) {
+  if (!movie) return;
+  const qTiers = ['720p', '480p', '1080p'];
+  qTiers.forEach((q, idx) => {
+    // Stagger by 60ms to give immediate bandwidth priority to default tier (720p)
+    if (idx === 0) {
+      prewarmQualityTier(movie, q);
+    } else {
+      setTimeout(() => prewarmQualityTier(movie, q), idx * 60);
+    }
+  });
+}
+
 // ── Immediate Early Stream Pre-Warming (fires synchronously on script parse) ──
 (function primeEarlyStream() {
   try {
@@ -320,34 +361,12 @@ function normalizeStreamUrl(u) {
     if (list) {
       const m = list.find(x => x.slug === slug || x.id === slug);
       if (m) {
-        const wcId = m.channel_chat_id || '-1004325759505';
-        let targetId = null;
-
-        // Warm up ONLY the primary 720p tier in backend RAM — avoid competing socket downloads
-        const vm = m.variant_media;
-        if (vm && typeof vm === 'object') {
-          if (vm['720p'] && vm['720p'].message_id > 0) targetId = vm['720p'].message_id;
-          else if (vm['1080p'] && vm['1080p'].message_id > 0) targetId = vm['1080p'].message_id;
-          else if (vm['480p'] && vm['480p'].message_id > 0) targetId = vm['480p'].message_id;
-        }
-        if (!targetId) {
-          targetId = m.message_id || (Array.isArray(m.downloads) && m.downloads.find(d => d.message_id)?.message_id);
-        }
-
-        if (targetId) {
-          const pfx = getStreamEndpointPrefix() || '';
-          // 1. Prime backend RAM and edge cache
-          fetch(`${pfx}/stream/warmup/${wcId}/${targetId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
-          // 2. Pre-probe first 1MB chunk into Cloudflare Edge Cache so video player has 0ms initial TTFB
-          fetch(`${pfx}/stream/channel/${wcId}/${targetId}`, {
-            headers: { 'Range': 'bytes=0-1048575' },
-            mode: 'cors'
-          }).catch(() => {});
-        }
+        prewarmAllVariants(m);
       }
     }
   } catch (e) {}
 })();
+
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -452,22 +471,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { syncSubtitles(); } catch (e) {}
   }).catch(() => {});
 
-  // Trigger instant background pre-buffering (first 8-16MB) so video starts in <300ms
+  // Trigger instant background pre-buffering (first 8-16MB) for all qualities so video starts in <300ms
   try {
-    const wcId = currentMovie.channel_chat_id || '-1004325759505';
-    const targetIds = [];
-    const vm = currentMovie.variant_media;
-    if (vm && typeof vm === 'object') {
-      if (vm['720p'] && vm['720p'].message_id > 0) targetIds.push(vm['720p'].message_id);
-      if (vm['1080p'] && vm['1080p'].message_id > 0 && !targetIds.includes(vm['1080p'].message_id)) targetIds.push(vm['1080p'].message_id);
-    }
-    const wmId = currentMovie.message_id || (Array.isArray(currentMovie.downloads) && currentMovie.downloads.find(d => d.message_id)?.message_id);
-    if (wmId && !targetIds.includes(wmId)) targetIds.push(wmId);
-
-    const pfx = getStreamEndpointPrefix() || '';
-    for (const tid of targetIds.slice(0, 2)) {
-      fetch(`${pfx}/stream/warmup/${wcId}/${tid}`, { method: 'POST', mode: 'cors' }).catch(() => {});
-    }
+    prewarmAllVariants(currentMovie);
   } catch (e) {}
 });
 
@@ -1411,13 +1417,24 @@ function applyQualitySwitch(targetQuality, opts = {}) {
       const targetTime = (curTime && curTime > 0) ? curTime : (vjsPlayer.currentTime() || 0);
       const shouldResumePlay = !wasPaused;
 
+      // Immediately warm target stream ahead
+      const targetMsgMatch = newSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+      if (targetMsgMatch) {
+        const pfx = getStreamEndpointPrefix() || '';
+        fetch(`${pfx}/stream/warmup/${targetMsgMatch[1]}/${targetMsgMatch[2]}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+      }
+
       vjsPlayer.src({ src: newSrc, type: 'video/mp4' });
       vjsPlayer.load();
 
       let isRestored = false;
       const applySeek = () => {
         if (isRestored) return;
-        const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : 0;
+        const techEl = (vjsPlayer.tech_ && vjsPlayer.tech_.el_) || document.getElementById('filmsubPlayer_html5_api');
+        const rState = Math.max(
+          typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : 0,
+          techEl ? (techEl.readyState || 0) : 0
+        );
         const duration = typeof vjsPlayer.duration === 'function' ? vjsPlayer.duration() : 0;
 
         // Player must have metadata (readyState >= 1) or valid duration to accept currentTime seek
@@ -1425,6 +1442,9 @@ function applyQualitySwitch(targetQuality, opts = {}) {
           if (targetTime > 0.5) {
             try {
               vjsPlayer.currentTime(targetTime);
+              if (techEl && Math.abs((techEl.currentTime || 0) - targetTime) > 0.8) {
+                techEl.currentTime = targetTime;
+              }
               console.log(`[FilmSub] Quality switch: successfully restored playhead to ${targetTime.toFixed(1)}s (ready=${rState}, dur=${duration.toFixed(1)}s)`);
             } catch (err) {
               console.warn('[FilmSub] Seek failed, will retry on next tick:', err);
@@ -1443,16 +1463,16 @@ function applyQualitySwitch(targetQuality, opts = {}) {
       vjsPlayer.one('canplay', applySeek);
       vjsPlayer.one('loadeddata', applySeek);
 
-      // Active polling every 200ms up to 20 seconds to catch readyState transitions
+      // Active high-frequency polling every 40ms to catch readyState transitions immediately
       let pollCount = 0;
       const pollTimer = setInterval(() => {
         pollCount++;
-        if (isRestored || pollCount > 100 || !vjsPlayer) {
+        if (isRestored || pollCount > 150 || !vjsPlayer) {
           clearInterval(pollTimer);
           return;
         }
         applySeek();
-      }, 200);
+      }, 40);
 
       // Extra safeguard: On timeupdate, if video starts playing from 0:00 instead of targetTime, immediately force seek!
       const onGuardTimeUpdate = () => {
@@ -1504,6 +1524,16 @@ function initAdaptiveQuality(movie) {
   updateQualitySpeedBadge(selectedQuality);
 
   pills.forEach(pill => {
+    // Proactive Pre-Warming on hover/touch
+    const warmPillQuality = () => {
+      const q = pill.dataset.quality;
+      if (q && q !== 'auto') {
+        prewarmQualityTier(currentMovie, q);
+      }
+    };
+    pill.addEventListener('pointerenter', warmPillQuality, { passive: true });
+    pill.addEventListener('touchstart', warmPillQuality, { passive: true });
+
     pill.addEventListener('click', () => {
       const q = pill.dataset.quality || 'auto';
       applyQualitySwitch(q, { isAutoDowngrade: false });
@@ -2162,17 +2192,28 @@ function injectInPlayerQualityControl(player) {
   }
 
   const menuEl = qWrap.querySelector('#vjs-super-quality-menu');
+  qWrap.addEventListener('pointerenter', () => {
+    prewarmAllVariants(currentMovie);
+  }, { passive: true });
+
   qWrap.addEventListener('click', (e) => {
     e.stopPropagation();
+    prewarmAllVariants(currentMovie);
     if (menuEl) menuEl.classList.toggle('open');
   });
 
   qWrap.querySelectorAll('.vjs-sq-item').forEach(btn => {
+    const q = btn.dataset.quality;
+    if (q && q !== 'auto') {
+      const warmItem = () => prewarmQualityTier(currentMovie, q);
+      btn.addEventListener('pointerenter', warmItem, { passive: true });
+      btn.addEventListener('touchstart', warmItem, { passive: true });
+    }
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const q = btn.dataset.quality || 'auto';
+      const targetQ = btn.dataset.quality || 'auto';
       if (menuEl) menuEl.classList.remove('open');
-      applyQualitySwitch(q, { isAutoDowngrade: false });
+      applyQualitySwitch(targetQ, { isAutoDowngrade: false });
     });
   });
 
@@ -2380,6 +2421,9 @@ function createVjsPlayer(playerEl, stream, movie) {
       hideLoader();
       syncSubtitles();
     });
+
+    // Safety fallback: Ensure loader fades out after at most 2.2s so big play button is always visible
+    setTimeout(hideLoader, 2200);
 
     // Auto-landscape orientation on mobile devices during fullscreen
     vjsPlayer.on('fullscreenchange', () => {

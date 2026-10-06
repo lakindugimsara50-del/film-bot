@@ -921,6 +921,20 @@ async def _on_start(client: Client) -> None:
     except Exception as ep_err:
         log.debug("[Main] Stream endpoint publication note: %s", ep_err)
 
+    # Proactively warm up headers for top catalog movies into RAM for instant zero-buffering playback
+    try:
+        from streaming.stream_server import preload_catalog_headers
+        async def _bg_warm_catalog():
+            await asyncio.sleep(5)  # wait for upload_pool sessions to connect
+            try:
+                warmed = await preload_catalog_headers(max_movies=10)
+                log.info("[Main] Proactive catalog pre-warming complete (%d streams warmed into RAM).", warmed)
+            except Exception as w_err:
+                log.warning("[Main] Proactive catalog pre-warming note: %s", w_err)
+        asyncio.create_task(_bg_warm_catalog())
+    except Exception as cw_err:
+        log.debug("[Main] Preload catalog init note: %s", cw_err)
+
     # Notify admins that the bot restarted
     service_name = os.getenv("RENDER_SERVICE_NAME", "") or os.getenv("RENDER_INSTANCE_ID", "")
     service_tag = f" <i>[Service: {service_name}]</i>" if service_name else ""

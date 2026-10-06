@@ -9,10 +9,10 @@ const GITHUB_ENDPOINT_JSON =
   'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json';
 
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk
-const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
+const CANONICAL_CACHE_ORIGIN = 'https://filmsub.pages.dev';
 
 const DEFAULT_FALLBACK_TUNNEL =
-  'https://genome-taxation-baker-dollars.trycloudflare.com';
+  'https://discounts-bidding-paperbacks-clinics.trycloudflare.com';
 const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
 
 let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;

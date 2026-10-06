@@ -2273,12 +2273,6 @@ function createVjsPlayer(playerEl, stream, movie) {
     renderPlayerFallback(playerEl, movie);
     return;
   }
-  const warmMatch = (stream.stream_url || '').match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
-  if (warmMatch) {
-    const warmPrefix = getStreamEndpointPrefix() || '';
-    const warmUrl = `${warmPrefix}/stream/warmup/${warmMatch[1]}/${warmMatch[2]}`;
-    fetch(warmUrl, { method: 'POST', mode: 'cors' }).catch(() => {});
-  }
 
   const subtitles = getMovieSubtitles(movie);
   const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));

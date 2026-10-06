@@ -702,6 +702,46 @@ class TelegramStreamPool:
             if primary_client and primary_client not in candidates and getattr(primary_client, "is_connected", False):
                 candidates.append(primary_client)
 
+        # Fast speculative hedged race for chunk 0 (MP4 moov header) across top 2 admin sessions
+        if chunk_idx == 0 and is_channel_msg and len(active_admins) >= 2:
+            try:
+                c1, c2 = active_admins[0], active_admins[1]
+                async def _try_hedged(cl: Client) -> Optional[bytes]:
+                    try:
+                        tm = await self._get_client_media(cl, media_source)
+                        return await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=2.5)
+                    except Exception:
+                        return None
+
+                t1 = asyncio.create_task(_try_hedged(c1))
+                t2 = asyncio.create_task(_try_hedged(c2))
+                done, pending = await asyncio.wait([t1, t2], return_when=asyncio.FIRST_COMPLETED)
+                for d in done:
+                    res_b = d.result()
+                    if res_b:
+                        for p in pending:
+                            p.cancel()
+                        if self._chunk_cache_callback and isinstance(media_source, types.Message):
+                            c_id = getattr(getattr(media_source, "chat", None), "id", None)
+                            m_id = getattr(media_source, "id", None)
+                            if c_id and m_id:
+                                try:
+                                    cb_res = self._chunk_cache_callback(c_id, m_id, res_b, 0)
+                                    if asyncio.iscoroutine(cb_res):
+                                        asyncio.create_task(cb_res)
+                                except Exception:
+                                    pass
+                        return res_b
+                for p in pending:
+                    try:
+                        res_b = await p
+                        if res_b:
+                            return res_b
+                    except Exception:
+                        pass
+            except Exception as hedge_err:
+                log.debug("[StreamPool] Hedged chunk 0 fetch note: %s", hedge_err)
+
         last_exc = None
         max_attempts = 2
 

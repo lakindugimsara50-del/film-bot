@@ -28,7 +28,7 @@ const GITHUB_ENDPOINT_JSON =
   'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json';
 
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk (moov atom + first video frames)
-const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
+const CANONICAL_CACHE_ORIGIN = 'https://filmsub.pages.dev';
 
 let cachedStreamBaseUrl = '';
 let cachedFallbackBaseUrl = '';

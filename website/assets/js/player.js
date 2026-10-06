@@ -336,8 +336,13 @@ function normalizeStreamUrl(u) {
 
         if (targetId) {
           const pfx = getStreamEndpointPrefix() || '';
-          // Fire backend RAM pre-warming without downloading redundant bytes to JS thread
+          // 1. Prime backend RAM and edge cache
           fetch(`${pfx}/stream/warmup/${wcId}/${targetId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+          // 2. Pre-probe first 1MB chunk into Cloudflare Edge Cache so video player has 0ms initial TTFB
+          fetch(`${pfx}/stream/channel/${wcId}/${targetId}`, {
+            headers: { 'Range': 'bytes=0-1048575' },
+            mode: 'cors'
+          }).catch(() => {});
         }
       }
     }
@@ -1233,8 +1238,9 @@ function detectNetworkSpeed() {
   if (saveData || downlink < 1.2 || effectiveType === '2g' || effectiveType === 'slow-2g') {
     return { speed: 'slow', downlink, effectiveType, recommendedQuality: '480p' };
   }
-  // Standard 4G / Wi-Fi handles 720p (~1.5 Mbps bitrate) smoothly
-  if (downlink < 10.0) {
+  // 720p is the golden default for instant startup, smooth buffering, and high clarity.
+  // Only start on 1080p if explicitly very high bandwidth (> 25 Mbps)
+  if (downlink < 25.0) {
     return { speed: 'medium', downlink, effectiveType, recommendedQuality: '720p' };
   }
   return { speed: 'fast', downlink, effectiveType, recommendedQuality: '1080p' };
@@ -1402,22 +1408,66 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     const shouldReloadSrc = newSrc && (!isAutoDowngrade || (newDriveId && prevDriveId && newDriveId !== prevDriveId) || (currentSrc && !currentSrc.includes(newSrc)));
 
     if (newSrc && shouldReloadSrc && currentSrc !== newSrc) {
+      const targetTime = (curTime && curTime > 0) ? curTime : (vjsPlayer.currentTime() || 0);
+      const shouldResumePlay = !wasPaused;
+
       vjsPlayer.src({ src: newSrc, type: 'video/mp4' });
-      let restored = false;
-      const restorePlayhead = () => {
-        if (restored) return;
-        restored = true;
-        try {
-          if (curTime > 0) vjsPlayer.currentTime(curTime);
-        } catch (e) {}
-        syncSubtitles();
-        if (!wasPaused) {
-          try { vjsPlayer.play().catch(() => {}); } catch (e) {}
+      vjsPlayer.load();
+
+      let isRestored = false;
+      const applySeek = () => {
+        if (isRestored) return;
+        const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : 0;
+        const duration = typeof vjsPlayer.duration === 'function' ? vjsPlayer.duration() : 0;
+
+        // Player must have metadata (readyState >= 1) or valid duration to accept currentTime seek
+        if (rState >= 1 || (duration > 0 && !isNaN(duration))) {
+          if (targetTime > 0.5) {
+            try {
+              vjsPlayer.currentTime(targetTime);
+              console.log(`[FilmSub] Quality switch: successfully restored playhead to ${targetTime.toFixed(1)}s (ready=${rState}, dur=${duration.toFixed(1)}s)`);
+            } catch (err) {
+              console.warn('[FilmSub] Seek failed, will retry on next tick:', err);
+              return;
+            }
+          }
+          isRestored = true;
+          syncSubtitles();
+          if (shouldResumePlay) {
+            try { vjsPlayer.play().catch(() => {}); } catch (e) {}
+          }
         }
       };
-      vjsPlayer.one('loadedmetadata', restorePlayhead);
-      vjsPlayer.one('canplay', restorePlayhead);
-      setTimeout(restorePlayhead, 1500);
+
+      vjsPlayer.one('loadedmetadata', applySeek);
+      vjsPlayer.one('canplay', applySeek);
+      vjsPlayer.one('loadeddata', applySeek);
+
+      // Active polling every 200ms up to 20 seconds to catch readyState transitions
+      let pollCount = 0;
+      const pollTimer = setInterval(() => {
+        pollCount++;
+        if (isRestored || pollCount > 100 || !vjsPlayer) {
+          clearInterval(pollTimer);
+          return;
+        }
+        applySeek();
+      }, 200);
+
+      // Extra safeguard: On timeupdate, if video starts playing from 0:00 instead of targetTime, immediately force seek!
+      const onGuardTimeUpdate = () => {
+        if (isRestored) {
+          vjsPlayer.off('timeupdate', onGuardTimeUpdate);
+          return;
+        }
+        if (targetTime > 1.0) {
+          const nowT = vjsPlayer.currentTime() || 0;
+          if (nowT < targetTime - 1.0) {
+            applySeek();
+          }
+        }
+      };
+      vjsPlayer.on('timeupdate', onGuardTimeUpdate);
     }
 
     if (isAutoDowngrade) {
@@ -2365,16 +2415,10 @@ function createVjsPlayer(playerEl, stream, movie) {
           const targetMsgId = String(vm['480p'].message_id);
           // Only switch if we are NOT already on 480p!
           if (!currentSrc.includes(`/${targetMsgId}`)) {
-            const cId = currentMovie.channel_chat_id || '-1004325759505';
-            const pfx = getStreamEndpointPrefix() || '';
-            const lowerUrl = `${pfx}/stream/channel/${cId}/${targetMsgId}`;
-            console.warn('[FilmSub Player] High-res initial connection timed out, trying 480p fallback:', lowerUrl);
-            currentEffectiveQuality = '480p';
+            console.warn('[FilmSub Player] Connection timed out, gracefully downgrading to 480p while preserving playhead');
             failoverTriggered = false;
-            vjsPlayer.src({ type: 'video/mp4', src: lowerUrl });
-            vjsPlayer.load();
-            vjsPlayer.play().catch(() => {});
             resetWatchdog(60000);
+            applyQualitySwitch('480p', { isAutoDowngrade: true });
             return;
           }
         }
@@ -2383,13 +2427,22 @@ function createVjsPlayer(playerEl, stream, movie) {
       // 2. Retry with direct live tunnel if edge stream failed or stalled
       if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
         vjsPlayer._retriedDirect = true;
+        const curT = (typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
+        const wasPaused = vjsPlayer.paused();
         const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
         const directUrl = directPrefix + (currentSrc.startsWith('http') ? currentSrc.replace(/^https?:\/\/[^/]+/, '') : (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc));
         console.warn('[FilmSub Player] Switching directly to live tunnel:', directUrl);
         failoverTriggered = false;
         vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
         vjsPlayer.load();
-        vjsPlayer.play().catch(() => {});
+        if (curT > 0) {
+          vjsPlayer.one('loadedmetadata', () => {
+            try { vjsPlayer.currentTime(curT); } catch (e) {}
+            if (!wasPaused) vjsPlayer.play().catch(() => {});
+          });
+        } else {
+          vjsPlayer.play().catch(() => {});
+        }
         resetWatchdog(60000);
         return;
       }

@@ -12,7 +12,7 @@ const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk
 const CANONICAL_CACHE_ORIGIN = 'https://edge-cache.filmsub.internal';
 
 const DEFAULT_FALLBACK_TUNNEL =
-  'https://seo-momentum-titanium-pendant.trycloudflare.com';
+  'https://continuously-mileage-high-province.trycloudflare.com';
 const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
 
 let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;

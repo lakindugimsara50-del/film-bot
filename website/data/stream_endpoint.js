@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://unions-sanyo-aquarium-pittsburgh.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-06T05:42:36.810107+00:00",
+  "updated_at": "2026-10-06T05:42:53.221946+00:00",
   "status": "online"
 };

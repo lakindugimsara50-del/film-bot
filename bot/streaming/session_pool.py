@@ -387,29 +387,29 @@ class TelegramStreamPool:
             self._media_info_cache = {}
         self._media_info_cache[cache_key] = (now, res)
 
-        # Share channel peer access_hash with all connected userbots so they resolve and stream at unthrottled wire speed
+        # Share channel peer access_hash with connected userbots in background without blocking response
         if chat_id_int < 0 and chat_id_int not in self._channel_primed:
-            try:
-                from pyrogram import utils as pyro_utils
-                source_cl = getattr(msg, "_client", None) or self._main_client
-                if source_cl and hasattr(source_cl, "storage") and hasattr(source_cl.storage, "get_peer_by_id"):
-                    peer_obj = await source_cl.storage.get_peer_by_id(chat_id_int)
-                    if peer_obj:
-                        acc_hash = getattr(peer_obj, "access_hash", 0)
-                        ch_id_num = getattr(peer_obj, "channel_id", pyro_utils.get_channel_id(chat_id_int))
-                        peers_to_sync = [
-                            (ch_id_num, acc_hash, "channel", None, None),
-                            (chat_id_int, acc_hash, "channel", None, None),
-                        ]
-                        for cl in self.clients:
-                            if cl is not source_cl and hasattr(cl, "storage") and hasattr(cl.storage, "update_peers"):
-                                try:
-                                    await cl.storage.update_peers(peers_to_sync)
-                                except Exception:
-                                    pass
-                        self._channel_primed.add(chat_id_int)
-            except Exception:
-                pass
+            self._channel_primed.add(chat_id_int)
+            async def _bg_sync_peers():
+                try:
+                    from pyrogram import utils as pyro_utils
+                    source_cl = getattr(msg, "_client", None) or self._main_client
+                    if source_cl and hasattr(source_cl, "storage") and hasattr(source_cl.storage, "get_peer_by_id"):
+                        peer_obj = await source_cl.storage.get_peer_by_id(chat_id_int)
+                        if peer_obj:
+                            acc_hash = getattr(peer_obj, "access_hash", 0)
+                            ch_id_num = getattr(peer_obj, "channel_id", pyro_utils.get_channel_id(chat_id_int))
+                            peers_to_sync = [
+                                (ch_id_num, acc_hash, "channel", None, None),
+                                (chat_id_int, acc_hash, "channel", None, None),
+                            ]
+                            target_clients = [c for c in self._admin_clients if c is not source_cl and hasattr(c, "storage")][:10]
+                            sync_coros = [c.storage.update_peers(peers_to_sync) for c in target_clients if hasattr(c.storage, "update_peers")]
+                            if sync_coros:
+                                await asyncio.gather(*sync_coros, return_exceptions=True)
+                except Exception:
+                    pass
+            asyncio.create_task(_bg_sync_peers())
 
         return res
 
@@ -499,7 +499,15 @@ class TelegramStreamPool:
         media_source: Union[types.Message, str],
         force_refresh: bool = False,
     ) -> Union[types.Message, str]:
-        """Ensure media_source is bound to the target client with a valid file_reference."""
+        """
+        Fast resolution of media object for client.
+        In MTProto, file_id is universal across userbots on the same DC.
+        Returns media_source directly in 0ms without redundant network calls,
+        only re-fetching message if force_refresh is explicitly requested (e.g. FileReferenceExpired).
+        """
+        if not force_refresh:
+            return media_source
+
         if not isinstance(media_source, types.Message):
             return media_source
 
@@ -509,56 +517,16 @@ class TelegramStreamPool:
             return media_source
 
         cache_key = f"{id(client)}:{chat_id}:{msg_id}"
-        if force_refresh:
-            self._msg_cache.pop(cache_key, None)
-        elif cache_key in self._msg_cache:
-            return self._msg_cache[cache_key]
-        elif getattr(media_source, "_client", None) is client:
-            return media_source
-        elif client is self._main_client and getattr(media_source, "_client", None) is self._main_client:
-            return media_source
+        self._msg_cache.pop(cache_key, None)
 
         try:
-            client_msg = await client.get_messages(chat_id, msg_id)
+            client_msg = await asyncio.wait_for(client.get_messages(chat_id, msg_id), timeout=2.5)
             if client_msg and not getattr(client_msg, "empty", False):
                 self._msg_cache[cache_key] = client_msg
-                if len(self._msg_cache) > 500:
-                    self._msg_cache.pop(next(iter(self._msg_cache)))
                 return client_msg
-        except PeerIdInvalid:
-            try:
-                # Share peer from media_source._client if missing
-                src_cl = getattr(media_source, "_client", None) or self._main_client
-                if src_cl and hasattr(src_cl, "storage") and hasattr(client, "storage"):
-                    p_obj = await src_cl.storage.get_peer_by_id(chat_id)
-                    if p_obj:
-                        acc_h = getattr(p_obj, "access_hash", 0)
-                        from pyrogram import utils as pyro_utils
-                        ch_num = getattr(p_obj, "channel_id", pyro_utils.get_channel_id(chat_id))
-                        await client.storage.update_peers([
-                            (ch_num, acc_h, "channel", None, None),
-                            (chat_id, acc_h, "channel", None, None),
-                        ])
-                        client_msg = await client.get_messages(chat_id, msg_id)
-                        if client_msg and not getattr(client_msg, "empty", False):
-                            self._msg_cache[cache_key] = client_msg
-                            return client_msg
-            except Exception:
-                pass
-            try:
-                await client.get_chat(chat_id)
-                client_msg = await client.get_messages(chat_id, msg_id)
-                if client_msg and not getattr(client_msg, "empty", False):
-                    self._msg_cache[cache_key] = client_msg
-                    return client_msg
-            except Exception:
-                pass
-        except Exception as ref_err:
-            log.debug("[StreamPool] Client %s cannot fetch message %s/%s for file_ref: %s", getattr(client, "name", ""), chat_id, msg_id, ref_err)
+        except Exception:
+            pass
 
-        if getattr(media_source, "_client", None) is client:
-            return media_source
-        # Fallback to media_source directly so userbot can decode file_id and fetch chunks
         return media_source
 
     async def _fetch_chunk_direct(
@@ -749,11 +717,20 @@ class TelegramStreamPool:
                     # Fast-path: persistent MTProto session (avoids TCP teardown per 1MB chunk)
                     direct_chunk = None
                     try:
-                        direct_chunk = await self._fetch_chunk_direct(client, target_media, chunk_idx)
+                        direct_chunk = await asyncio.wait_for(
+                            self._fetch_chunk_direct(client, target_media, chunk_idx),
+                            timeout=3.5,
+                        )
                     except FileReferenceExpired:
                         target_media = await self._get_client_media(client, media_source, force_refresh=True)
                         if target_media:
-                            direct_chunk = await self._fetch_chunk_direct(client, target_media, chunk_idx)
+                            try:
+                                direct_chunk = await asyncio.wait_for(
+                                    self._fetch_chunk_direct(client, target_media, chunk_idx),
+                                    timeout=3.5,
+                                )
+                            except Exception:
+                                direct_chunk = None
                     except (asyncio.CancelledError, ConnectionResetError):
                         raise
                     except FloodWait:

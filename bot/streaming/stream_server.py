@@ -640,10 +640,10 @@ async def stream_channel_message(
     cache_key = _get_cache_key(chat_id, message_id)
     is_partial = bool(range_header) or (not dl and end < file_size - 1)
 
-    # Proactively warm up full 16MB into RAM cache if not already cached
+    # Proactively warm up full 16MB into RAM cache if not already cached (only on seek requests to avoid socket contention with initial stream)
     async with _CACHE_LOCK:
         cached_len = len(_HEADER_CACHE[cache_key]) if cache_key in _HEADER_CACHE else 0
-    if cached_len < min(file_size, MAX_HEADER_CACHE_BYTES) and cache_key not in _WARMING_UP:
+    if start > 0 and cached_len < min(file_size, MAX_HEADER_CACHE_BYTES) and cache_key not in _WARMING_UP:
         asyncio.create_task(warmup_channel_message(chat_id, message_id))
 
     is_cached = False

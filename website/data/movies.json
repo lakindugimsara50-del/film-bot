@@ -15630,7 +15630,235 @@
       "added_date": "2026-10-06",
       "added_at": "2026-10-06T10:50:12Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "ice-age-the-meltdown-2006",
+      "slug": "ice-age-the-meltdown-2006",
+      "title": "Ice Age: The Meltdown",
+      "title_si": "",
+      "year": 2006,
+      "imdb": "6.7",
+      "rating": "6.7",
+      "imdb_id": "tt0438097",
+      "tmdb_id": "950",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/zDduhCHasKQ9YOTvlOreHem7Wbi.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/zDduhCHasKQ9YOTvlOreHem7Wbi.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/o1jr0UqVjxIZ1JnFzuVLN4ulWey.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/o1jr0UqVjxIZ1JnFzuVLN4ulWey.jpg",
+      "genres": [
+        "Animation",
+        "Family",
+        "Comedy",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "91 min",
+      "description": "Diego, Manny and Sid return in this sequel to the hit animated movie Ice Age. This time around, the deep freeze is over, and the ice-covered earth is starting to melt, which will destroy the trio's cherished valley. The impending disaster prompts them to reunite and warn all the other beasts about the desperate situation.",
+      "director": "Carlos Saldanha",
+      "cast": [
+        {
+          "name": "Ray Romano",
+          "character": "Manny (voice)"
+        },
+        {
+          "name": "John Leguizamo",
+          "character": "Sid (voice)"
+        },
+        {
+          "name": "Denis Leary",
+          "character": "Diego (voice)"
+        },
+        {
+          "name": "Queen Latifah",
+          "character": "Ellie (voice)"
+        },
+        {
+          "name": "Seann William Scott",
+          "character": "Crash (voice)"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACATBqxQqn25fvMhuNSdoaPIwBHErUEwAC8R4AAjr8KVZARzCtGc8IOR4E",
+      "message_id": 304,
+      "file_name": "ice-age-the-meltdown-2006.mp4",
+      "file_size": 1138408210,
+      "drive_file_id": "",
+      "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATBqxQqn25fvMhuNSdoaPIwBHErUEwAC8R4AAjr8KVZARzCtGc8IOR4E",
+          "message_id": 304,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/950"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt0438097"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt0438097"
+        }
+      ],
+      "qualities": {
+        "auto": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+        "1080p": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+        "720p": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+        "480p": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/306",
+        "360p": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1138408210,
+          "url": "https://t.me/c/4325759505/304",
+          "telegram_url": "https://t.me/c/4325759505/304",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATBqxQqn25fvMhuNSdoaPIwBHErUEwAC8R4AAjr8KVZARzCtGc8IOR4E",
+          "message_id": 304,
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "572.1 MB",
+          "size_bytes": 599914214,
+          "url": "https://t.me/c/4325759505/306",
+          "telegram_url": "https://t.me/c/4325759505/306",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATJqxQ-mgHFgsDBCUq-AiKUBWkvLZAACFh8AAjr8KVagp4M8QH5p7B4E",
+          "message_id": 306,
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/306",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1138408210,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ice-age-the-meltdown-2006_1080p",
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1138408210,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ice-age-the-meltdown-2006_720p",
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "572.1 MB",
+          "size_bytes": 599914214,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ice-age-the-meltdown-2006_480p",
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/306",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "195.4 MB",
+          "size_bytes": 204913477,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ice-age-the-meltdown-2006_360p",
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATBqxQqn25fvMhuNSdoaPIwBHErUEwAC8R4AAjr8KVZARzCtGc8IOR4E",
+          "message_id": 304,
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "size_bytes": 1138408210
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATJqxQ-mgHFgsDBCUq-AiKUBWkvLZAACFh8AAjr8KVagp4M8QH5p7B4E",
+          "message_id": 306,
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/306",
+          "size_bytes": 599914214
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://stay-promotional-nerve-cove.trycloudflare.com/stream/channel/-1004325759505/304",
+          "size_bytes": 204913477
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ice-age-the-meltdown-2006-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=ice-age-the-meltdown-2006",
+      "added_date": "2026-10-06",
+      "added_at": "2026-10-06T15:11:36Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-06T10:50:15Z"
+  "last_updated": "2026-10-06T15:11:38Z"
 }

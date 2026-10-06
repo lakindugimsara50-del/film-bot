@@ -15147,7 +15147,248 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T13:29:12Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "runner-2026",
+      "slug": "runner-2026",
+      "title": "Runner",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.3",
+      "rating": "8.3",
+      "imdb_id": "tt31349844",
+      "tmdb_id": "1377237",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/yBKMAIj7clP42UkFejhGDBBoTpb.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/yBKMAIj7clP42UkFejhGDBBoTpb.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg",
+      "genres": [
+        "Action",
+        "Comedy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "97 min",
+      "description": "A former soldier is thrown into a brutal race against time when a critical medical delivery makes him and his unlikely partner the targets of a ruthless cartel. As the mission spirals into a deadly manhunt, every detour, delay, and bullet pushes them closer to failure. With betrayal closing in from every side, they must survive the chase and deliver their cargo to save the life of a little girl.",
+      "director": "Scott Waugh",
+      "cast": [
+        {
+          "name": "Alan Ritchson",
+          "character": "Hank Malone"
+        },
+        {
+          "name": "Owen Wilson",
+          "character": "Ben Bishop"
+        },
+        {
+          "name": "Rodrigo Santoro",
+          "character": "Damian Zaldivar"
+        },
+        {
+          "name": "Leila George",
+          "character": "Kate Baker"
+        },
+        {
+          "name": "Kate Box",
+          "character": "Dr. Ainsley"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACASpqxLHmAouCdAi3_6GvHdExUF7c8QACXiAAAjr8IVYdFkMjfb1eyx4E",
+      "message_id": 298,
+      "file_name": "comp_runner-2026_1080p.mp4",
+      "file_size": 1894674529,
+      "drive_file_id": "",
+      "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASpqxLHmAouCdAi3_6GvHdExUF7c8QACXiAAAjr8IVYdFkMjfb1eyx4E",
+          "message_id": 298,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1377237"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt31349844"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt31349844"
+        }
+      ],
+      "qualities": {
+        "auto": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+        "1080p": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+        "720p": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/297",
+        "480p": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/296",
+        "360p": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1894674529,
+          "url": "https://t.me/c/4325759505/298",
+          "telegram_url": "https://t.me/c/4325759505/298",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASpqxLHmAouCdAi3_6GvHdExUF7c8QACXiAAAjr8IVYdFkMjfb1eyx4E",
+          "message_id": 298,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1278292668,
+          "url": "https://t.me/c/4325759505/297",
+          "telegram_url": "https://t.me/c/4325759505/297",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASlqxK9FeSnGb7C7ohL8OUZ2UEWDwwACXCAAAjr8IVZon3M7eQPaVB4E",
+          "message_id": 297,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/297",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "628.8 MB",
+          "size_bytes": 659369482,
+          "url": "https://t.me/c/4325759505/296",
+          "telegram_url": "https://t.me/c/4325759505/296",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAShqxK4elX35FB5Wv15KBgwVoiyIGwACWCAAAjr8IVbXC_hmMhvRch4E",
+          "message_id": 296,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/296",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1894674529,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_runner-2026_1080p",
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1278292668,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_runner-2026_720p",
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/297",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "628.8 MB",
+          "size_bytes": 659369482,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_runner-2026_480p",
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/296",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "325.2 MB",
+          "size_bytes": 341041415,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_runner-2026_360p",
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASpqxLHmAouCdAi3_6GvHdExUF7c8QACXiAAAjr8IVYdFkMjfb1eyx4E",
+          "message_id": 298,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+          "size_bytes": 1894674529
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACASlqxK9FeSnGb7C7ohL8OUZ2UEWDwwACXCAAAjr8IVZon3M7eQPaVB4E",
+          "message_id": 297,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/297",
+          "size_bytes": 1278292668
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAShqxK4elX35FB5Wv15KBgwVoiyIGwACWCAAAjr8IVbXC_hmMhvRch4E",
+          "message_id": 296,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/296",
+          "size_bytes": 659369482
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://seo-momentum-titanium-pendant.trycloudflare.com/stream/channel/-1004325759505/298",
+          "size_bytes": 341041415
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/runner-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=runner-2026",
+      "added_date": "2026-10-06",
+      "added_at": "2026-10-06T08:31:37Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-04T13:29:14Z"
+  "last_updated": "2026-10-06T08:31:39Z"
 };

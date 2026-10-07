@@ -10,12 +10,53 @@
  *  - Full CORS & Accept-Ranges headers for Video.js / HTML5 <video>
  */
 
+const CANONICAL_DRIVE_CACHE_ORIGIN = 'https://filmsub.pages.dev';
+const DRIVE_EDGE_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk cached at Cloudflare edge
+
+function getDriveCacheKey(fileId) {
+  return new Request(
+    `${CANONICAL_DRIVE_CACHE_ORIGIN}/__edge_drive_cache/v2/${encodeURIComponent(fileId)}/chunk_0_8m`,
+    { method: 'GET' }
+  );
+}
+
+async function readExactBytes(readableStream, skip, limit) {
+  const reader = readableStream.getReader();
+  const out = new Uint8Array(limit);
+  let bytesSkipped = 0;
+  let bytesWritten = 0;
+  try {
+    while (bytesWritten < limit) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+      let start = 0;
+      if (bytesSkipped < skip) {
+        const remainingToSkip = skip - bytesSkipped;
+        if (value.length <= remainingToSkip) {
+          bytesSkipped += value.length;
+          continue;
+        }
+        start = remainingToSkip;
+        bytesSkipped = skip;
+      }
+      const available = value.length - start;
+      const needed = limit - bytesWritten;
+      const toCopy = Math.min(available, needed);
+      out.set(value.subarray(start, start + toCopy), bytesWritten);
+      bytesWritten += toCopy;
+    }
+  } finally {
+    try { reader.releaseLock(); } catch (e) {}
+  }
+  return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
+}
+
 function buildCorsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     'Access-Control-Allow-Headers': 'Range, Content-Type, Accept, Origin',
-    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Type, X-Stream-Quality, X-Chunk-Size',
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Type, X-Stream-Quality, X-Chunk-Size, X-Edge-Cache',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -284,6 +325,66 @@ export async function onRequest(context) {
     ? { range: rawClientRange || '', isHeadProbe: false, chunkSize: 0 }
     : normalizeRangeHeader(rawClientRange, quality, method);
 
+  // ── Cloudflare Edge Cache Lookup (caches.default) ──
+  const edgeCache = (!isDownload && typeof caches !== 'undefined') ? caches.default : null;
+  const driveCacheKey = edgeCache ? getDriveCacheKey(fileId) : null;
+
+  let clientStart = null;
+  let clientEnd = null;
+  if (rawClientRange && rawClientRange.toLowerCase().startsWith('bytes=')) {
+    const val = rawClientRange.slice(6).trim();
+    const parts = val.split(',')[0].trim().split('-');
+    if (parts[0] !== '') {
+      const s = parseInt(parts[0], 10);
+      if (!isNaN(s) && s >= 0) clientStart = s;
+    }
+    if (parts[1] !== '') {
+      const e = parseInt(parts[1], 10);
+      if (!isNaN(e) && e >= (clientStart || 0)) clientEnd = e;
+    }
+  }
+
+  const isInitialRange = !isDownload && (clientStart === null || clientStart < DRIVE_EDGE_CHUNK_BYTES);
+
+  if (edgeCache && driveCacheKey && isInitialRange) {
+    try {
+      const cachedHit = await edgeCache.match(driveCacheKey);
+      if (cachedHit) {
+        const totalSize = cachedHit.headers.get('X-Total-Size') || '*';
+        const contentType = cachedHit.headers.get('Content-Type') || 'video/mp4';
+        const chunkLen = parseInt(cachedHit.headers.get('Content-Length') || String(DRIVE_EDGE_CHUNK_BYTES), 10);
+
+        const outHeaders = new Headers(cors);
+        outHeaders.set('Content-Type', contentType);
+        outHeaders.set('Accept-Ranges', 'bytes');
+        outHeaders.set('X-Edge-Cache', 'HIT');
+        outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+
+        if ((clientStart === null || clientStart === 0) && clientEnd === null) {
+          outHeaders.set('Content-Length', String(chunkLen));
+          outHeaders.set('Content-Range', `bytes 0-${chunkLen - 1}/${totalSize}`);
+          if (method === 'HEAD') return new Response(null, { status: 206, headers: outHeaders });
+          return new Response(cachedHit.body, { status: 206, headers: outHeaders });
+        }
+
+        const cachedBuffer = new Uint8Array(await cachedHit.arrayBuffer());
+        if (cachedBuffer && cachedBuffer.byteLength > 0) {
+          const effStart = clientStart !== null ? clientStart : 0;
+          if (effStart < cachedBuffer.byteLength) {
+            const effEnd = (clientEnd !== null)
+              ? Math.min(clientEnd, cachedBuffer.byteLength - 1)
+              : (cachedBuffer.byteLength - 1);
+            const slice = cachedBuffer.subarray(effStart, effEnd + 1);
+            outHeaders.set('Content-Length', String(slice.byteLength));
+            outHeaders.set('Content-Range', `bytes ${effStart}-${effStart + slice.byteLength - 1}/${totalSize}`);
+            if (method === 'HEAD') return new Response(null, { status: 206, headers: outHeaders });
+            return new Response(slice, { status: 206, headers: outHeaders });
+          }
+        }
+      }
+    } catch (cErr) {}
+  }
+
   try {
     let upstream = null;
     const qLower = String(quality).toLowerCase().trim();
@@ -345,6 +446,48 @@ export async function onRequest(context) {
         try { await upstream.body.cancel(); } catch (e) {}
       }
       return new Response(null, {
+        status: upstream.status === 206 || contentRange ? 206 : 200,
+        headers: respHeaders,
+      });
+    }
+
+    if (edgeCache && driveCacheKey && isInitialRange && (upstream.ok || upstream.status === 206)) {
+      const [clientStream, cacheStream] = upstream.body.tee();
+      const contentRangeStr = contentRange || '';
+      let totalSizeStr = '*';
+      if (contentRangeStr) {
+        const m = contentRangeStr.match(/bytes\s+\d+-\d+\/(\d+|\*)/);
+        if (m) totalSizeStr = m[1];
+      } else {
+        totalSizeStr = contentLength || '*';
+      }
+
+      const cacheTask = async () => {
+        try {
+          const buf = await readExactBytes(cacheStream, 0, DRIVE_EDGE_CHUNK_BYTES);
+          if (buf && buf.byteLength > 0) {
+            const cacheable = new Response(buf, {
+              status: 200,
+              headers: {
+                'Content-Type': 'video/mp4',
+                'Content-Length': String(buf.byteLength),
+                'X-Total-Size': String(totalSizeStr),
+                'Cache-Control': 'public, max-age=604800, s-maxage=604800',
+              },
+            });
+            await edgeCache.put(driveCacheKey, cacheable);
+          }
+        } catch (e) {}
+      };
+
+      if (context.waitUntil && typeof context.waitUntil === 'function') {
+        context.waitUntil(cacheTask());
+      } else {
+        cacheTask().catch(() => {});
+      }
+
+      respHeaders.set('X-Edge-Cache', 'MISS-STREAMING');
+      return new Response(clientStream, {
         status: upstream.status === 206 || contentRange ? 206 : 200,
         headers: respHeaders,
       });

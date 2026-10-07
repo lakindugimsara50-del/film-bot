@@ -325,7 +325,21 @@ function prewarmQualityTier(movie, quality) {
     if (v && v.message_id > 0) targetMsgId = v.message_id;
   }
   if (!targetMsgId && (qNorm === '720p' || qNorm === 'auto')) {
-    targetMsgId = movie.message_id || (Array.isArray(movie.downloads) && movie.downloads.find(d => d.message_id)?.message_id);
+    targetMsgId = (typeof movie.message_id === 'number' && movie.message_id > 0) ? movie.message_id : null;
+    if (!targetMsgId && Array.isArray(movie.downloads)) {
+      for (const d of movie.downloads) {
+        if (d.message_id && typeof d.message_id === 'number' && d.message_id > 0) {
+          targetMsgId = d.message_id;
+          break;
+        }
+        const dlU = String(d.url || d.telegram_url || '');
+        const m = dlU.match(/t\.me\/c\/\d+\/(\d+)/) || dlU.match(/t\.me\/[a-zA-Z0-9_]+\/(\d+)/);
+        if (m) {
+          targetMsgId = parseInt(m[1], 10);
+          break;
+        }
+      }
+    }
   }
 
   if (targetMsgId) {
@@ -334,9 +348,20 @@ function prewarmQualityTier(movie, quality) {
     _warmedTiers.add(key);
 
     const pfx = getStreamEndpointPrefix() || '';
-    // Single fast POST (100 bytes): Cloudflare Edge Worker primes Edge Cache and Colab RAM in the cloud
-    // with ZERO client download bandwidth impact, keeping 100% bandwidth free for video playback!
     fetch(`${pfx}/stream/warmup/${wcId}/${targetMsgId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+  } else {
+    // Proactively prime Google Drive initial 8MB into Cloudflare Edge Cache
+    const driveId = extractMovieDriveId(movie);
+    if (driveId) {
+      const driveKey = `gdrive:${driveId}`;
+      if (!_warmedTiers.has(driveKey)) {
+        _warmedTiers.add(driveKey);
+        fetch(`/api/stream?id=${encodeURIComponent(driveId)}&q=auto`, {
+          headers: { 'Range': 'bytes=0-1048575' },
+          mode: 'cors'
+        }).catch(() => {});
+      }
+    }
   }
 }
 
@@ -691,6 +716,30 @@ function getMovieStreams(movie) {
       if (d.message_id && typeof d.message_id === 'number' && d.message_id > 0) {
         tgMsgId = d.message_id;
         break;
+      }
+      const rawDlUrl = String(d.url || d.telegram_url || '');
+      const mMatch = rawDlUrl.match(/t\.me\/c\/\d+\/(\d+)/) || rawDlUrl.match(/t\.me\/[a-zA-Z0-9_]+\/(\d+)/);
+      if (mMatch) {
+        const pId = parseInt(mMatch[1], 10);
+        if (pId > 0) {
+          tgMsgId = pId;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!tgMsgId && Array.isArray(movie.streams)) {
+    for (const s of movie.streams) {
+      const u = String(s.stream_url || s.url || '');
+      const matchS = u.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+      if (matchS) {
+        if (!tgChatId) tgChatId = matchS[1];
+        const pId = parseInt(matchS[2], 10);
+        if (pId > 0) {
+          tgMsgId = pId;
+          break;
+        }
       }
     }
   }
@@ -2496,7 +2545,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       }, 50);
     };
 
-    const resetWatchdog = (timeoutMs = 6000) => {
+    const resetWatchdog = (timeoutMs = 18000) => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       slowHeaderWatchdog = setTimeout(() => {
         if (!vjsPlayer) return;
@@ -2505,10 +2554,10 @@ function createVjsPlayer(playerEl, stream, movie) {
 
         if (!vjsPlayer.paused() && rState === 0) {
           const timeSinceProgress = Date.now() - lastDataProgressEpoch;
-          // If browser is actively receiving data within the last 6s or networkState is active, extend watchdog!
-          if (timeSinceProgress < 6000 && (nState === 2 || nState === 1)) {
+          // If browser is actively receiving data within the last 12s or networkState is active (2=NETWORK_LOADING, 1=NETWORK_IDLE), extend watchdog!
+          if (timeSinceProgress < 12000 || nState === 2 || nState === 1) {
             console.log(`[FilmSub Player] Video data transfer active (${timeSinceProgress}ms since progress, nState=${nState}), extending watchdog`);
-            resetWatchdog(8000);
+            resetWatchdog(15000);
             return;
           }
           triggerFailover('stalled readyState 0 (stream server offline or unreachable)');
@@ -2516,13 +2565,13 @@ function createVjsPlayer(playerEl, stream, movie) {
       }, timeoutMs);
     };
 
-    resetWatchdog(6000);
+    resetWatchdog(18000);
 
-    vjsPlayer.on('play', () => resetWatchdog(8000));
+    vjsPlayer.on('play', () => resetWatchdog(20000));
     vjsPlayer.on('waiting', () => {
       const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : (vjsPlayer.tech_?.el_?.readyState || 0);
       if (rState === 0) {
-        resetWatchdog(7000);
+        resetWatchdog(15000);
       }
     });
     vjsPlayer.on('canplay', () => {

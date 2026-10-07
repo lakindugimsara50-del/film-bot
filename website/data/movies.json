@@ -6899,7 +6899,8 @@
         }
       ],
       "has_sinhala_sub": true,
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 117
     },
     {
       "id": "game-of-thrones-2011-s04e04",
@@ -7034,7 +7035,8 @@
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
-          "subtitle_merged": true
+          "subtitle_merged": true,
+          "message_id": 113
         }
       ],
       "telegram_status": "complete",
@@ -7053,7 +7055,8 @@
           "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e04-si.vtt",
           "default": true
         }
-      ]
+      ],
+      "message_id": 113
     },
     {
       "id": "game-of-thrones-2011-s04e06",
@@ -7259,7 +7262,8 @@
           "default": true,
           "srclang": "si"
         }
-      ]
+      ],
+      "message_id": 120
     },
     {
       "id": "game-of-thrones-2011-s04e07",
@@ -8147,7 +8151,8 @@
           "default": true,
           "srclang": "si"
         }
-      ]
+      ],
+      "message_id": 134
     },
     {
       "id": "game-of-thrones-2011-s05e03",
@@ -8311,7 +8316,8 @@
           "default": true,
           "srclang": "si"
         }
-      ]
+      ],
+      "message_id": 137
     },
     {
       "id": "game-of-thrones-2011-s05e04",
@@ -8475,7 +8481,8 @@
           "default": true,
           "srclang": "si"
         }
-      ]
+      ],
+      "message_id": 140
     },
     {
       "id": "game-of-thrones-2011-s05e05",
@@ -8639,7 +8646,8 @@
       "channel_post_id": 142,
       "channel_chat_id": -1004325759505,
       "added_date": "2026-09-29",
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 143
     },
     {
       "id": "game-of-thrones-2011-s05e06",
@@ -8803,7 +8811,8 @@
       "channel_post_id": 145,
       "channel_chat_id": -1004325759505,
       "added_date": "2026-09-29",
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 146
     },
     {
       "id": "game-of-thrones-2011-s05e07",
@@ -9254,7 +9263,8 @@
           "size_bytes": 308458416
         }
       },
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 155
     },
     {
       "id": "game-of-thrones-2011-s06e02",
@@ -9593,7 +9603,8 @@
           "size_bytes": 236282540
         }
       },
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 161
     },
     {
       "id": "game-of-thrones-2011-s06e04",
@@ -9785,7 +9796,8 @@
           "size_bytes": 294271795
         }
       },
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 165
     },
     {
       "id": "game-of-thrones-2011-s06e05",
@@ -9957,7 +9969,8 @@
           "size_bytes": 2096
         }
       },
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 168
     },
     {
       "id": "game-of-thrones-2011-s06e06",
@@ -11794,7 +11807,8 @@
           "size_bytes": 340261819
         }
       },
-      "sub_merged": true
+      "sub_merged": true,
+      "message_id": 213
     },
     {
       "id": "game-of-thrones-2011-s07e06",

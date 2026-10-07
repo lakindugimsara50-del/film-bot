@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://cottages-permitted-flush-phil.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-07T14:21:15.455251+00:00",
+  "updated_at": "2026-10-07T14:21:31.974325+00:00",
   "status": "online"
 };

@@ -106,7 +106,7 @@ function getCanonicalCacheKey(chatId, msgId) {
   );
 }
 
-async function readExactBytes(readableStream, skip, limit) {
+async function readExactBytes(readableStream, skip, limit, shouldCancel = true) {
   const reader = readableStream.getReader();
   const out = new Uint8Array(limit);
   let bytesSkipped = 0;
@@ -136,7 +136,11 @@ async function readExactBytes(readableStream, skip, limit) {
       bytesWritten += toCopy;
     }
   } finally {
-    try { await reader.cancel(); } catch (e) {}
+    if (shouldCancel) {
+      try { await reader.cancel(); } catch (e) {}
+    } else {
+      try { reader.releaseLock(); } catch (e) {}
+    }
   }
 
   return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
@@ -523,7 +527,7 @@ export async function onRequest(context) {
 
         const cacheTask = async () => {
           try {
-            const initialBuffer = await readExactBytes(cacheStream, 0, EDGE_INITIAL_CHUNK_BYTES);
+            const initialBuffer = await readExactBytes(cacheStream, 0, EDGE_INITIAL_CHUNK_BYTES, false);
             if (edgeCache && initialBuffer && initialBuffer.byteLength > 0) {
               const cacheableRes = new Response(initialBuffer, {
                 status: 200,

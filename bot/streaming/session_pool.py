@@ -407,7 +407,7 @@ class TelegramStreamPool:
             self._media_info_cache = {}
         self._media_info_cache[cache_key] = (now, res)
 
-        # Share channel peer access_hash with connected userbots in background without blocking response
+        # Share channel peer access_hash and pre-prime client media messages with connected userbots in background
         if chat_id_int < 0 and chat_id_int not in self._channel_primed:
             self._channel_primed.add(chat_id_int)
             async def _bg_sync_peers():
@@ -430,6 +430,25 @@ class TelegramStreamPool:
                 except Exception:
                     pass
             asyncio.create_task(_bg_sync_peers())
+
+        # Pre-prime client messages across top admin sessions so they have valid session-bound file_references in 0ms
+        target_admins = [c for c in self._admin_clients if getattr(c, "is_connected", False)][:6]
+        if target_admins:
+            async def _bg_preprime_admins():
+                try:
+                    async def _prime_one(adm_cl: Client):
+                        try:
+                            adm_ckey = f"{id(adm_cl)}:{chat_id_int}:{message_id}"
+                            if adm_ckey not in self._msg_cache:
+                                adm_msg = await asyncio.wait_for(adm_cl.get_messages(chat_id_int, message_id), timeout=2.0)
+                                if adm_msg and not getattr(adm_msg, "empty", False):
+                                    self._msg_cache[adm_ckey] = adm_msg
+                        except Exception:
+                            pass
+                    await asyncio.gather(*[_prime_one(adm_cl) for adm_cl in target_admins], return_exceptions=True)
+                except Exception:
+                    pass
+            asyncio.create_task(_bg_preprime_admins())
 
         return res
 
@@ -521,14 +540,15 @@ class TelegramStreamPool:
     ) -> Union[types.Message, str]:
         """
         Fast resolution of media object for client.
-        In MTProto, file_id is universal across userbots on the same DC.
-        Returns media_source directly in 0ms without redundant network calls,
-        only re-fetching message if force_refresh is explicitly requested (e.g. FileReferenceExpired).
+        In MTProto, file_reference is tied to the specific client session.
+        Returns cached client message if available (0ms), or fetches with timeout if needed.
         """
-        if not force_refresh:
+        if not isinstance(media_source, types.Message):
             return media_source
 
-        if not isinstance(media_source, types.Message):
+        # If client is already the client that fetched media_source, return immediately in 0ms!
+        source_client = getattr(media_source, "_client", None)
+        if client is source_client and not force_refresh:
             return media_source
 
         chat_id = getattr(getattr(media_source, "chat", None), "id", None)
@@ -537,6 +557,11 @@ class TelegramStreamPool:
             return media_source
 
         cache_key = f"{id(client)}:{chat_id}:{msg_id}"
+        if not force_refresh and cache_key in self._msg_cache:
+            cached_msg = self._msg_cache[cache_key]
+            if cached_msg and not getattr(cached_msg, "empty", False):
+                return cached_msg
+
         self._msg_cache.pop(cache_key, None)
 
         try:
@@ -544,6 +569,15 @@ class TelegramStreamPool:
             if client_msg and not getattr(client_msg, "empty", False):
                 self._msg_cache[cache_key] = client_msg
                 return client_msg
+        except PeerIdInvalid:
+            try:
+                await client.get_chat(chat_id)
+                client_msg = await asyncio.wait_for(client.get_messages(chat_id, msg_id), timeout=2.0)
+                if client_msg and not getattr(client_msg, "empty", False):
+                    self._msg_cache[cache_key] = client_msg
+                    return client_msg
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -744,7 +778,7 @@ class TelegramStreamPool:
                     tm = None
                     try:
                         tm = await self._get_client_media(cl, media_source)
-                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=1.8)
+                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=2.5)
                         if res_direct:
                             return res_direct
                     except Exception:

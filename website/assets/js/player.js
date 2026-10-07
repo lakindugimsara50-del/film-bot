@@ -343,7 +343,8 @@ function prewarmQualityTier(movie, quality) {
 function prewarmAllVariants(movie) {
   if (!movie) return;
   prewarmQualityTier(movie, '720p');
-  setTimeout(() => prewarmQualityTier(movie, '480p'), 100);
+  setTimeout(() => prewarmQualityTier(movie, '480p'), 80);
+  setTimeout(() => prewarmQualityTier(movie, '1080p'), 160);
 }
 
 // ── Immediate Early Stream Pre-Warming (fires synchronously on script parse) ──

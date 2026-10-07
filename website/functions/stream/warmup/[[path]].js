@@ -180,6 +180,12 @@ export async function onRequest(context) {
       if (isAlreadyCached) return;
 
       for (const activeBase of urlsToTry) {
+        // Trigger upstream RAM cache pre-warming (16MB) in parallel
+        fetch(`${activeBase}/stream/warmup/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`, {
+          method: 'POST',
+          headers: { 'User-Agent': 'FilmSub-Edge-Warmup/2.0' },
+        }).catch(() => {});
+
         const streamUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
         try {
           const resp = await fetch(streamUrl, {

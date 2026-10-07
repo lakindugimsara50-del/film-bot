@@ -2509,7 +2509,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           if (!currentSrc.includes(`/${targetMsgId}`)) {
             console.warn('[FilmSub Player] Connection timed out, gracefully downgrading to 480p while preserving playhead');
             failoverTriggered = false;
-            resetWatchdog(6000);
+            resetWatchdog(15000);
             applyQualitySwitch('480p', { isAutoDowngrade: true });
             return;
           }
@@ -2535,7 +2535,7 @@ function createVjsPlayer(playerEl, stream, movie) {
         } else {
           vjsPlayer.play().catch(() => {});
         }
-        resetWatchdog(6000);
+        resetWatchdog(15000);
         return;
       }
 

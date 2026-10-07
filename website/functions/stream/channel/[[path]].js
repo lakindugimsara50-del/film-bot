@@ -465,13 +465,22 @@ export async function onRequest(context) {
       upstreamHeaders['Range'] = rangeHeader;
     }
 
+    const abortCtrl = new AbortController();
+    const tId = setTimeout(() => {
+      try { abortCtrl.abort(); } catch (e) {}
+    }, 3500);
+    const combinedSignal = (request.signal && typeof AbortSignal.any === 'function')
+      ? AbortSignal.any([request.signal, abortCtrl.signal])
+      : abortCtrl.signal;
+
     try {
       const upstreamRes = await fetch(targetUrl, {
         method: request.method === 'HEAD' && !isInitialRange ? 'HEAD' : 'GET',
         headers: upstreamHeaders,
         redirect: 'follow',
-        signal: request.signal,
+        signal: combinedSignal,
       });
+      clearTimeout(tId);
 
       if (!upstreamRes.ok && upstreamRes.status !== 206) {
         if (activeBase === baseUrl) {
@@ -607,6 +616,7 @@ export async function onRequest(context) {
         headers: outHeaders,
       });
     } catch (err) {
+      clearTimeout(tId);
       if (activeBase === baseUrl) {
         cachedStreamBaseUrl = '';
         cachedAtEpoch = 0;

@@ -2460,7 +2460,7 @@ function createVjsPlayer(playerEl, stream, movie) {
           if (!currentSrc.includes(`/${targetMsgId}`)) {
             console.warn('[FilmSub Player] Connection timed out, gracefully downgrading to 480p while preserving playhead');
             failoverTriggered = false;
-            resetWatchdog(60000);
+            resetWatchdog(6000);
             applyQualitySwitch('480p', { isAutoDowngrade: true });
             return;
           }
@@ -2486,7 +2486,7 @@ function createVjsPlayer(playerEl, stream, movie) {
         } else {
           vjsPlayer.play().catch(() => {});
         }
-        resetWatchdog(60000);
+        resetWatchdog(6000);
         return;
       }
 
@@ -2496,7 +2496,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       }, 50);
     };
 
-    const resetWatchdog = (timeoutMs = 60000) => {
+    const resetWatchdog = (timeoutMs = 6000) => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       slowHeaderWatchdog = setTimeout(() => {
         if (!vjsPlayer) return;
@@ -2505,24 +2505,24 @@ function createVjsPlayer(playerEl, stream, movie) {
 
         if (!vjsPlayer.paused() && rState === 0) {
           const timeSinceProgress = Date.now() - lastDataProgressEpoch;
-          // If browser is actively receiving data within the last 20s or networkState is active, extend watchdog!
-          if (timeSinceProgress < 20000 || nState === 2 || nState === 1) {
+          // If browser is actively receiving data within the last 6s or networkState is active, extend watchdog!
+          if (timeSinceProgress < 6000 && (nState === 2 || nState === 1)) {
             console.log(`[FilmSub Player] Video data transfer active (${timeSinceProgress}ms since progress, nState=${nState}), extending watchdog`);
-            resetWatchdog(25000);
+            resetWatchdog(8000);
             return;
           }
-          triggerFailover('stalled readyState 0 (no data received)');
+          triggerFailover('stalled readyState 0 (stream server offline or unreachable)');
         }
       }, timeoutMs);
     };
 
-    resetWatchdog(60000);
+    resetWatchdog(6000);
 
-    vjsPlayer.on('play', () => resetWatchdog(60000));
+    vjsPlayer.on('play', () => resetWatchdog(8000));
     vjsPlayer.on('waiting', () => {
       const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : (vjsPlayer.tech_?.el_?.readyState || 0);
       if (rState === 0) {
-        resetWatchdog(45000);
+        resetWatchdog(7000);
       }
     });
     vjsPlayer.on('canplay', () => {

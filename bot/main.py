@@ -918,6 +918,60 @@ async def _on_start(client: Client) -> None:
                 log.info("[Main] Live stream endpoint published: %s", active_stream_url)
 
             asyncio.create_task(_verify_and_publish())
+
+            # Self-healing background tunnel supervisor for Google Colab / Linux
+            async def _bg_tunnel_supervisor():
+                if not os.path.exists("/usr/local/bin/cloudflared"):
+                    return
+                server_port = int(os.getenv("PORT", 7860))
+                await asyncio.sleep(60)  # initial grace period
+                while True:
+                    await asyncio.sleep(45)
+                    current_url = os.getenv("STREAM_SERVER_URL", "").strip() or os.getenv("STREAM_BASE_URL", "").strip()
+                    if not current_url or not current_url.startswith("http"):
+                        continue
+                    is_healthy = False
+                    try:
+                        import httpx
+                        async with httpx.AsyncClient(timeout=5.0) as ch:
+                            hr = await ch.get(f"{current_url}/health")
+                            if hr.status_code == 200:
+                                is_healthy = True
+                    except Exception:
+                        is_healthy = False
+
+                    if not is_healthy:
+                        log.warning("[TunnelSupervisor] Stream tunnel %s is unreachable! Auto-healing...", current_url)
+                        try:
+                            import subprocess, re
+                            subprocess.run(["pkill", "-9", "-f", "cloudflared"], capture_output=True)
+                            await asyncio.sleep(1)
+                            tunnel_log_file = open("/tmp/cloudflared.log", "w", buffering=1)
+                            subprocess.Popen(
+                                ["/usr/local/bin/cloudflared", "tunnel", "--protocol", "http2", "--url", f"http://127.0.0.1:{server_port}"],
+                                stdout=tunnel_log_file,
+                                stderr=subprocess.STDOUT,
+                                text=True
+                            )
+                            new_url = ""
+                            for _ in range(25):
+                                await asyncio.sleep(0.5)
+                                if os.path.exists("/tmp/cloudflared.log"):
+                                    with open("/tmp/cloudflared.log", "r", encoding="utf-8", errors="ignore") as lf:
+                                        content = lf.read()
+                                        match = re.search(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", content)
+                                        if match:
+                                            new_url = match.group(0)
+                                            break
+                            if new_url and new_url != current_url:
+                                os.environ["STREAM_BASE_URL"] = new_url
+                                os.environ["STREAM_SERVER_URL"] = new_url
+                                log.info("[TunnelSupervisor] Auto-healed tunnel: %s. Publishing to GitHub...", new_url)
+                                await github_service.publish_live_stream_endpoint(new_url)
+                        except Exception as th_err:
+                            log.warning("[TunnelSupervisor] Tunnel restart error: %s", th_err)
+
+            asyncio.create_task(_bg_tunnel_supervisor())
     except Exception as ep_err:
         log.debug("[Main] Stream endpoint publication note: %s", ep_err)
 

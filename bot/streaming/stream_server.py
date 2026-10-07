@@ -468,6 +468,7 @@ async def options_stream(path: str) -> Response:
 
 
 @stream_router.get("/stream/status")
+@stream_router.head("/stream/status")
 async def stream_status() -> dict:
     """Return streaming pool status and readiness."""
     status = stream_pool.get_status()

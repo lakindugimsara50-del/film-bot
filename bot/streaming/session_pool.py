@@ -72,24 +72,6 @@ class TelegramStreamPool:
         import config
         target_ch = getattr(config, "PRIVATE_CHANNEL_ID", -1004325759505)
 
-        # If upload_pool already has clients, reuse verified channel admin sessions directly to avoid SQLite 'database is locked' errors!
-        try:
-            from services.upload_pool import upload_pool
-            if upload_pool.clients:
-                admin_sessions = upload_pool.get_admin_sessions_cached(target_ch) if target_ch else []
-                source_clients = admin_sessions if admin_sessions else upload_pool.clients
-                for c in source_clients:
-                    if c not in self.clients:
-                        self.clients.append(c)
-                    if admin_sessions and c in admin_sessions and c not in self._admin_clients:
-                        self._admin_clients.append(c)
-                log.info("[StreamPool] Reused %d clients from upload_pool (%d verified admins).", len(self.clients), len(self._admin_clients))
-                return
-        except Exception:
-            pass
-
-        password = os.getenv("SESSION_2FA_PASSWORD", "2122138")
-
         # 1. Discover verified channel admin sessions quickly via Bot API & SQLite metadata
         admin_uids: set[int] = set()
         if target_ch:
@@ -97,6 +79,44 @@ class TelegramStreamPool:
                 admin_uids = await self.get_channel_admin_uids(target_ch)
             except Exception as uid_err:
                 log.debug("[StreamPool] Admin UIDs query note: %s", uid_err)
+
+        # If upload_pool already has clients, reuse them and immediately identify verified channel admins!
+        try:
+            from services.upload_pool import upload_pool
+            if upload_pool.clients:
+                for c in upload_pool.clients:
+                    if c not in self.clients:
+                        self.clients.append(c)
+                    c_uid = getattr(c, "_user_id", None) or getattr(getattr(c, "me", None), "id", None)
+                    if not c_uid and hasattr(c, "storage") and hasattr(c.storage, "user_id"):
+                        try:
+                            c_uid = await c.storage.user_id()
+                            c._user_id = c_uid
+                        except Exception:
+                            pass
+                    if c_uid and c_uid in admin_uids and c not in self._admin_clients:
+                        self._admin_clients.append(c)
+
+                admin_sessions = upload_pool.get_admin_sessions_cached(target_ch) if target_ch else []
+                for c in admin_sessions:
+                    if c not in self._admin_clients:
+                        self._admin_clients.append(c)
+
+                log.info("[StreamPool] Reused %d clients from upload_pool (%d verified admins).", len(self.clients), len(self._admin_clients))
+
+                if self._admin_clients and target_ch and target_ch not in self._channel_primed:
+                    async def _prime(cl: Client):
+                        try:
+                            await cl.get_chat(target_ch)
+                        except Exception:
+                            pass
+                    asyncio.create_task(asyncio.gather(*[_prime(cl) for cl in self._admin_clients], return_exceptions=True))
+                    self._channel_primed.add(target_ch)
+                return
+        except Exception:
+            pass
+
+        password = os.getenv("SESSION_2FA_PASSWORD", "2122138")
 
         if os.path.exists(sessions_dir):
             session_files = sorted(glob.glob(os.path.join(sessions_dir, "*.session")))
@@ -670,6 +690,20 @@ class TelegramStreamPool:
             except Exception:
                 pass
 
+            # Dynamic admin discovery if _admin_clients is empty
+            if not self._admin_clients and is_channel_msg and getattr(media_source, "chat", None):
+                ch_id = getattr(media_source.chat, "id", None)
+                if ch_id:
+                    try:
+                        adm_uids = await self.get_channel_admin_uids(ch_id)
+                        if adm_uids:
+                            for c in user_clients:
+                                c_uid = getattr(c, "_user_id", None) or getattr(getattr(c, "me", None), "id", None)
+                                if c_uid and c_uid in adm_uids and c not in self._admin_clients:
+                                    self._admin_clients.append(c)
+                    except Exception:
+                        pass
+
             # Partition into verified admins (top priority) vs regular userbot members
             admin_pool = [c for c in self._admin_clients if getattr(c, "is_connected", False) and c in user_clients]
             regular_pool = [c for c in user_clients if c not in admin_pool]
@@ -707,11 +741,23 @@ class TelegramStreamPool:
             try:
                 c1, c2 = active_admins[0], active_admins[1]
                 async def _try_hedged(cl: Client) -> Optional[bytes]:
+                    tm = None
                     try:
                         tm = await self._get_client_media(cl, media_source)
-                        return await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=2.5)
+                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=1.8)
+                        if res_direct:
+                            return res_direct
                     except Exception:
-                        return None
+                        pass
+                    try:
+                        buf0 = bytearray()
+                        async for p in cl.stream_media(tm or media_source, offset=0, limit=1):
+                            if p: buf0.extend(p)
+                        if buf0:
+                            return bytes(buf0)
+                    except Exception:
+                        pass
+                    return None
 
                 t1 = asyncio.create_task(_try_hedged(c1))
                 t2 = asyncio.create_task(_try_hedged(c2))

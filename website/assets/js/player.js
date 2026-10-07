@@ -1411,6 +1411,13 @@ function applyQualitySwitch(targetQuality, opts = {}) {
       const targetTime = (curTime && curTime > 0) ? curTime : (vjsPlayer.currentTime() || 0);
       const shouldResumePlay = !wasPaused;
 
+      // Temporarily pause and mute audio during quality switch to avoid 0:00 playback glitches
+      if (typeof vjsPlayer.pause === 'function') vjsPlayer.pause();
+      const prevMuted = (typeof vjsPlayer.muted === 'function') ? vjsPlayer.muted() : false;
+      if (targetTime > 0.5 && typeof vjsPlayer.muted === 'function') {
+        vjsPlayer.muted(true);
+      }
+
       // Immediately warm target stream ahead
       const targetMsgMatch = newSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
       if (targetMsgMatch) {
@@ -1436,7 +1443,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
           if (targetTime > 0.5) {
             try {
               vjsPlayer.currentTime(targetTime);
-              if (techEl && Math.abs((techEl.currentTime || 0) - targetTime) > 0.8) {
+              if (techEl && Math.abs((techEl.currentTime || 0) - targetTime) > 0.5) {
                 techEl.currentTime = targetTime;
               }
               console.log(`[FilmSub] Quality switch: successfully restored playhead to ${targetTime.toFixed(1)}s (ready=${rState}, dur=${duration.toFixed(1)}s)`);
@@ -1446,6 +1453,9 @@ function applyQualitySwitch(targetQuality, opts = {}) {
             }
           }
           isRestored = true;
+          if (targetTime > 0.5 && typeof vjsPlayer.muted === 'function') {
+            vjsPlayer.muted(prevMuted);
+          }
           syncSubtitles();
           if (shouldResumePlay) {
             try { vjsPlayer.play().catch(() => {}); } catch (e) {}

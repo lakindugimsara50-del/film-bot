@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://arabic-affiliation-compared-bands.trycloudflare.com",
+  "stream_base_url": "https://desire-dense-joseph-nick.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-07T11:19:07.348846+00:00",
+  "updated_at": "2026-10-07T12:27:44.037452+00:00",
   "status": "online"
 };

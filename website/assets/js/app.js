@@ -21,12 +21,14 @@ let siteData = {};
 document.addEventListener('DOMContentLoaded', async () => {
   initHeader();
   initSearchOverlay();
+  initMobileBottomNav();
   await loadMovies();
   if (document.getElementById('hero-section')) renderHero();
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
   if (document.getElementById('sinhala-dub-track')) renderCarousel('sinhala-dub-track', getSinhalaFilms(), { isTrending: false });
   setupCarouselArrows();
+  initHighlightPopup();
 });
 
 // ---- Load Movies ----
@@ -367,16 +369,19 @@ function generateMovieCard(movie, opts = {}) {
   const imdb = imdbVal ? `<span class="badge-top-right">★ ${imdbVal}</span>` : '';
   const rawQ = movie.quality || '1080p';
   const quality = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
+  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || Boolean(movie.season);
+  const typeBadge = isSeries ? `<span class="badge-card-type"><i class="fa-solid fa-tv"></i> TV</span>` : '';
   const url = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
   const cardClass = isTrending ? 'movie-card trending-card' : 'movie-card';
 
   return `
-    <a href="${url}" class="${cardClass}" title="${escHtml(movie.title || '')}">
+    <a href="${url}" class="${cardClass}" data-slug="${escHtml(movie.slug || movie.id || '')}" title="${escHtml(movie.title || '')}">
       <div class="card-poster">
-        <img src="${escHtml(poster)}" alt="${escHtml(movie.title || '')}" loading="lazy"
+        <img src="${escHtml(poster)}" alt="${escHtml(movie.title || '')}" loading="lazy" decoding="async"
              onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
         <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
         ${quality}
+        ${typeBadge}
         ${imdb}
         ${rank}
         <div class="card-bottom-bar">
@@ -551,9 +556,163 @@ function escHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function debounce(fn, delay) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+// ---- CineSubz-Style Advanced Highlight Popup on Card Hover ----
+function initHighlightPopup() {
+  if (window.matchMedia && window.matchMedia('(hover: none)').matches) {
+    // Touch screen device: skip hover popups so tap navigates instantly
+    return;
+  }
+
+  let popup = document.getElementById('cs-highlight-popup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'cs-highlight-popup';
+    popup.className = 'cs-highlight-popup';
+    document.body.appendChild(popup);
+  }
+
+  let showTimer = null;
+  let hideTimer = null;
+  let activeCard = null;
+
+  const hidePopup = () => {
+    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+    hideTimer = setTimeout(() => {
+      popup.classList.remove('active');
+      activeCard = null;
+    }, 180);
+  };
+
+  popup.addEventListener('mouseenter', () => {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  });
+  popup.addEventListener('mouseleave', hidePopup);
+
+  document.addEventListener('mouseover', (e) => {
+    const card = e.target.closest('.movie-card');
+    if (!card) return;
+    if (card === activeCard && popup.classList.contains('active')) return;
+
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    if (showTimer) clearTimeout(showTimer);
+
+    showTimer = setTimeout(() => {
+      const slug = card.dataset.slug;
+      if (!slug) return;
+      const movie = findMovieBySlug(slug) || allMovies.find(m => (m.slug || m.id) === slug);
+      if (!movie) return;
+
+      activeCard = card;
+      const rect = card.getBoundingClientRect();
+      const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+      const imdbVal = movie.imdb || movie.rating || '';
+      const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
+      const quality = movie.quality ? `<span class="badge badge-quality">${escHtml(movie.quality)}</span>` : '<span class="badge badge-quality">1080p FHD</span>';
+      const year = movie.year ? `<span class="badge badge-year">${escHtml(movie.year)}</span>` : '';
+      const durationVal = movie.duration ? (typeof movie.duration === 'number' ? `${movie.duration} min` : movie.duration) : '';
+      const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${escHtml(durationVal)}</span>` : '';
+      const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || Boolean(movie.season);
+      const typeBadge = isSeries ? `<span class="badge badge-lang" style="background:#8a2be2"><i class="fa-solid fa-tv"></i> TV Series</span>` : '';
+      const genres = Array.isArray(movie.genres) ? movie.genres.slice(0, 3) : [];
+      const genrePills = genres.map(g => `<span class="cs-popup-genre-pill">${escHtml(g)}</span>`).join('');
+      const desc = movie.description || movie.description_si || 'සිංහල උපසිරැසි සමඟ නරඹන්න සහ බාගත කරගන්න.';
+      const shortDesc = desc.length > 130 ? desc.substring(0, 130) + '...' : desc;
+      const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
+
+      popup.innerHTML = `
+        <div class="cs-popup-banner" style="background-image:url('${escHtml(backdrop)}')">
+          <div class="cs-popup-banner-badges">
+            <span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>
+            <div style="display:flex;gap:4px">
+              ${typeBadge}
+              ${quality}
+            </div>
+          </div>
+        </div>
+        <div class="cs-popup-body">
+          <h3 class="cs-popup-title">${escHtml(movie.title || 'Untitled')}</h3>
+          ${movie.title_si ? `<div class="cs-popup-title-si">${escHtml(movie.title_si)}</div>` : ''}
+          <div class="cs-popup-meta">
+            ${imdb}
+            ${year}
+            ${duration}
+          </div>
+          ${genrePills ? `<div class="cs-popup-genres">${genrePills}</div>` : ''}
+          <p class="cs-popup-desc">${escHtml(shortDesc)}</p>
+          <div class="cs-popup-actions">
+            <a href="${movieUrl}" class="cs-popup-btn-watch">
+              <i class="fa-solid fa-play"></i> Watch Now
+            </a>
+            <a href="${movieUrl}#downloads" class="cs-popup-btn-dl">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Download
+            </a>
+          </div>
+        </div>
+      `;
+
+      // Smart positioning:
+      const popupWidth = 320;
+      const popupHeight = 340;
+      let left = rect.left + rect.width / 2 - popupWidth / 2;
+      let top = rect.top - 8;
+
+      if (left + popupWidth > window.innerWidth - 12) {
+        left = window.innerWidth - popupWidth - 12;
+      }
+      if (left < 12) {
+        left = 12;
+      }
+
+      if (rect.top - popupHeight > 60) {
+        top = rect.top - popupHeight + 30;
+      } else if (rect.bottom + popupHeight < window.innerHeight - 20) {
+        top = rect.bottom - 30;
+      } else {
+        top = Math.max(70, Math.min(window.innerHeight - popupHeight - 20, rect.top));
+        if (rect.right + popupWidth + 15 < window.innerWidth) {
+          left = rect.right + 10;
+        } else if (rect.left - popupWidth - 15 > 0) {
+          left = rect.left - popupWidth - 10;
+        }
+      }
+
+      popup.style.left = `${Math.round(left)}px`;
+      popup.style.top = `${Math.round(top)}px`;
+      popup.classList.add('active');
+    }, 180);
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    const card = e.target.closest('.movie-card');
+    if (!card) return;
+    if (e.relatedTarget && (card.contains(e.relatedTarget) || popup.contains(e.relatedTarget))) {
+      return;
+    }
+    hidePopup();
+  });
+
+  window.addEventListener('scroll', () => {
+    if (popup.classList.contains('active')) {
+      popup.classList.remove('active');
+      activeCard = null;
+    }
+  }, { passive: true });
+}
+
+// ---- Mobile Bottom Navigation Bar Support ----
+function initMobileBottomNav() {
+  const mobSearchBtn = document.getElementById('mob-search-btn');
+  if (mobSearchBtn) {
+    mobSearchBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const overlay = document.getElementById('search-overlay');
+      const input = document.getElementById('search-input');
+      if (overlay) {
+        overlay.classList.add('active');
+        if (input) input.focus();
+      }
+    });
+  }
 }
 
 // ---- Expose globals ----

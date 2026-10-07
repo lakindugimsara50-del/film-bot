@@ -1993,23 +1993,88 @@ async function mountLiveSubtitleOverlay(playerEl, movie) {
   }, 200);
 }
 
-// ---- 4. Zero-White-Screen Loader HTML Builder ----
+// ---- 4. Zero-White-Screen Loader HTML Builder with Live Percentage Tracker ----
+let currentLoadPercent = 0;
+let loadPercentTimer = null;
+
+function updatePlayerLoadPercent(targetPct, statusMessage, details) {
+  const pctEl = document.getElementById('sp-progress-pct');
+  const barEl = document.getElementById('sp-progress-bar');
+  const statusEl = document.getElementById('sp-progress-status');
+  const detailsEl = document.getElementById('sp-progress-details');
+
+  if (statusMessage && statusEl) statusEl.textContent = statusMessage;
+  if (details && detailsEl) detailsEl.textContent = details;
+
+  targetPct = Math.min(100, Math.max(0, targetPct));
+  currentLoadPercent = targetPct;
+
+  if (pctEl) pctEl.textContent = `${Math.round(targetPct)}%`;
+  if (barEl) barEl.style.width = `${targetPct}%`;
+}
+
+function startProgressAnimation() {
+  currentLoadPercent = 12;
+  updatePlayerLoadPercent(12, '⚡ Connecting High-Speed Stream Server...', 'Colab MTProto Tunnel Initializing...');
+
+  if (loadPercentTimer) clearInterval(loadPercentTimer);
+
+  loadPercentTimer = setInterval(() => {
+    if (currentLoadPercent < 45) {
+      currentLoadPercent += Math.random() * 8 + 4;
+      updatePlayerLoadPercent(currentLoadPercent, '🔍 Resolving Telegram Media Peer...', 'Accessing 1080p Chunk Stream...');
+    } else if (currentLoadPercent < 80) {
+      currentLoadPercent += Math.random() * 4 + 2;
+      updatePlayerLoadPercent(currentLoadPercent, '📥 Buffering Stream Chunks & Sinhala Subtitles...', 'Synchronizing Video.js Engine...');
+    } else if (currentLoadPercent < 94) {
+      currentLoadPercent += 0.8;
+      updatePlayerLoadPercent(currentLoadPercent, '🎬 Starting Video Decoder...', 'Finalizing 1080p Playback Buffer...');
+    }
+    if (currentLoadPercent >= 95) {
+      clearInterval(loadPercentTimer);
+      loadPercentTimer = null;
+    }
+  }, 160);
+}
+
+function finishProgressAnimation() {
+  if (loadPercentTimer) { clearInterval(loadPercentTimer); loadPercentTimer = null; }
+  updatePlayerLoadPercent(100, '✅ 100% Ready • Starting Playback...', 'Playing with Sinhala Subtitles');
+  setTimeout(() => {
+    const loader = document.getElementById('super-player-loader');
+    if (loader) loader.classList.add('hidden');
+  }, 350);
+}
+
 function buildSuperLoaderHtml(movie, serverLabel) {
   const title = FilmSub.escHtml(movie.title || 'Movie');
   const bgImg = movie.backdrop || movie.poster || '';
   const bgStyle = bgImg
-    ? `background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.85)), url('${FilmSub.escHtml(bgImg)}') center/cover no-repeat;`
+    ? `background: linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${FilmSub.escHtml(bgImg)}') center/cover no-repeat;`
     : 'background:#000000;';
   return `
     <div class="super-player-loader" id="super-player-loader" style="${bgStyle}">
-      <div class="netflix-pulse-spinner">
-        <div class="netflix-pulse-ring"></div>
-        <div class="netflix-pulse-icon"><i class="fa-solid fa-play"></i></div>
-      </div>
-      <div class="sp-loader-title">${title}</div>
-      <div class="sp-loader-status-line">
-        <span class="sp-status-pulse-dot"></span>
-        <span>HD Stream Ready • සිංහල උපසිරැසි සමඟින්</span>
+      <div class="sp-loader-card">
+        <div class="netflix-pulse-spinner">
+          <div class="netflix-pulse-ring"></div>
+          <div class="netflix-pulse-icon"><i class="fa-solid fa-play"></i></div>
+        </div>
+        <div class="sp-loader-title">${title}</div>
+        
+        <!-- Live Loading Percentage Display (CineSubz / Netflix VIP) -->
+        <div class="sp-progress-container" id="sp-progress-container">
+          <div class="sp-progress-meta">
+            <span class="sp-progress-status" id="sp-progress-status">⚡ Connecting Stream Server...</span>
+            <span class="sp-progress-pct" id="sp-progress-pct">0%</span>
+          </div>
+          <div class="sp-progress-track">
+            <div class="sp-progress-bar" id="sp-progress-bar" style="width: 0%"></div>
+          </div>
+          <div class="sp-progress-sub">
+            <span class="sp-status-pulse-dot"></span>
+            <span id="sp-progress-details">High-Speed Telegram Cloud Stream • Auto Sinhala Sub</span>
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -2458,20 +2523,20 @@ function createVjsPlayer(playerEl, stream, movie) {
     });
 
     vjsPlayer.on('loadedmetadata', () => {
-      hideLoader();
+      finishProgressAnimation();
       syncSubtitles();
     });
 
-    vjsPlayer.on('loadeddata', hideLoader);
-    vjsPlayer.on('canplay', hideLoader);
-    vjsPlayer.on('canplaythrough', hideLoader);
+    vjsPlayer.on('loadeddata', finishProgressAnimation);
+    vjsPlayer.on('canplay', finishProgressAnimation);
+    vjsPlayer.on('canplaythrough', finishProgressAnimation);
     vjsPlayer.on('playing', () => {
-      hideLoader();
+      finishProgressAnimation();
       syncSubtitles();
     });
 
-    // Safety fallback: Ensure loader fades out after at most 2.2s so big play button is always visible
-    setTimeout(hideLoader, 2200);
+    // Safety fallback: Ensure loader fades out after at most 2.4s so big play button is always visible
+    setTimeout(finishProgressAnimation, 2400);
 
     // Auto-landscape orientation on mobile devices during fullscreen
     vjsPlayer.on('fullscreenchange', () => {
@@ -2806,6 +2871,7 @@ function syncSubtitles() {
 
 async function loadStream(movie, idx) {
   try {
+    startProgressAnimation();
     if (window.fallbackRetryInterval) {
       clearInterval(window.fallbackRetryInterval);
       window.fallbackRetryInterval = null;
@@ -2995,18 +3061,60 @@ function renderSeriesSection(movie) {
   const renderEpisodesForSeason = (seasonObj) => {
     const count = seasonObj.episode_count || 10;
     const sNum = seasonObj.season_number || 1;
+    const sPoster = seasonObj.poster_url || movie.poster || movie.poster_url || '';
+
+    // Gather all catalog entries belonging to this series
+    const catalogMovies = (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies))
+      ? window.FILMSUB_DATA.movies
+      : (window.FilmSub && typeof window.FilmSub.allMovies === 'function' ? window.FilmSub.allMovies() : []);
+
+    const seriesTitleNorm = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
     let epHtml = '';
     for (let ep = 1; ep <= count; ep++) {
       const isActive = (sNum === currentSeason && ep === currentEpisode);
+
+      // Look for a matching episode object in the catalog
+      let matchedEpMovie = null;
+      if (catalogMovies.length > 0) {
+        matchedEpMovie = catalogMovies.find(m => {
+          if (m.type !== 'series') return false;
+          const tNorm = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const matchTitle = (tNorm === seriesTitleNorm || (movie.tmdb_id && m.tmdb_id === movie.tmdb_id));
+          return matchTitle && (m.season === sNum && m.episode === ep);
+        });
+      }
+
+      const epTitle = (matchedEpMovie && matchedEpMovie.episode_title)
+        ? matchedEpMovie.episode_title
+        : `Episode ${ep}`;
+      const epThumb = (matchedEpMovie && (matchedEpMovie.backdrop || matchedEpMovie.poster)) || sPoster;
+      const epDuration = (matchedEpMovie && matchedEpMovie.duration) || '~50 min';
+      const epCode = `S${String(sNum).padStart(2, '0')} E${String(ep).padStart(2, '0')}`;
+
       epHtml += `
-        <div class="episode-card${isActive ? ' active' : ''}" data-season="${sNum}" data-episode="${ep}">
-          <div class="ep-info">
-            <span class="ep-num">S${String(sNum).padStart(2, '0')} E${String(ep).padStart(2, '0')}</span>
-            <span class="ep-title">Episode ${ep}</span>
-            <span class="ep-duration"><i class="fa-regular fa-clock"></i> ~50 min</span>
+        <div class="episode-card${isActive ? ' active' : ''}" data-season="${sNum}" data-episode="${ep}" ${matchedEpMovie ? `data-slug="${FilmSub.escHtml(matchedEpMovie.slug || matchedEpMovie.id)}"` : ''}>
+          <div class="ep-thumb-wrap">
+            <img src="${FilmSub.escHtml(epThumb)}" alt="${FilmSub.escHtml(epTitle)}" loading="lazy" decoding="async" class="ep-thumb-img" onerror="this.src='${FilmSub.SITE_CONFIG.defaultPoster}'">
+            <div class="ep-thumb-play"><i class="fa-solid fa-play"></i></div>
+            <span class="ep-thumb-badge">${epCode}</span>
           </div>
-          <button class="ep-play-btn" title="Watch S${sNum} E${ep}" type="button">
-            <i class="fa-solid fa-play"></i>
+          <div class="ep-info">
+            <div class="ep-header-row">
+              <span class="ep-num-pill">${epCode}</span>
+              ${isActive ? '<span class="ep-active-pill"><i class="fa-solid fa-circle-play"></i> Playing Now</span>' : ''}
+            </div>
+            <h4 class="ep-title">${FilmSub.escHtml(epTitle)}</h4>
+            <div class="ep-meta-row">
+              <span class="ep-duration"><i class="fa-regular fa-clock"></i> ${FilmSub.escHtml(epDuration)}</span>
+              <span class="ep-meta-dot">•</span>
+              <span class="ep-sub-tag"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>
+              <span class="ep-meta-dot">•</span>
+              <span class="ep-qual-tag">1080p FHD</span>
+            </div>
+          </div>
+          <button class="ep-play-btn" title="Watch ${epCode}" type="button">
+            <i class="fa-solid ${isActive ? 'fa-pause' : 'fa-play'}"></i>
           </button>
         </div>
       `;
@@ -3021,6 +3129,15 @@ function renderSeriesSection(movie) {
         const s = parseInt(card.dataset.season, 10);
         currentSeason = s;
         currentEpisode = ep;
+
+        const matchedSlug = card.dataset.slug;
+        if (matchedSlug && window.FilmSub && typeof window.FilmSub.findMovieBySlug === 'function') {
+          const found = window.FilmSub.findMovieBySlug(matchedSlug);
+          if (found) {
+            currentMovie = found;
+            movie = found;
+          }
+        }
 
         FilmSub.showToast(`Loading Season ${s} Episode ${ep}...`, 'info');
 

@@ -9,7 +9,6 @@
 
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -267,6 +266,9 @@
             <div class="network-speed-badge" id="net-speed-badge" title="Network Connection Speed">
               <i class="fa-solid fa-wifi"></i> <span id="net-speed-text">Auto (HD)</span>
             </div>
+            <div class="player-live-percent-badge" id="player-live-percent-badge" style="display:none">
+              <span class="sp-status-pulse-dot"></span> Loading: <span id="player-live-pct-text">0%</span>
+            </div>
           </div>
         </div>
 
@@ -505,12 +507,21 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<!-- ========== CINESUBZ-STYLE MOBILE BOTTOM NAVIGATION BAR ========== -->
+<nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
+  <a href="index.html"><i class="fa-solid fa-house"></i><span>මුල් පිටුව</span></a>
+  <a href="search.html?type=movie" class="active"><i class="fa-solid fa-film"></i><span>චිත්‍රපට</span></a>
+  <a href="search.html?type=series"><i class="fa-solid fa-tv"></i><span>කතාමාලා</span></a>
+  <button type="button" id="mob-search-btn"><i class="fa-solid fa-magnifying-glass"></i><span>සොයන්න</span></button>
+  <a href="https://t.me/Filmsinhala200Bot" target="_blank" rel="noopener"><i class="fa-brands fa-telegram"></i><span>Telegram</span></a>
+</nav>
+
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261007_v1"></script>
-<script src="data/stream_endpoint.js?v=20261007_v1"></script>
-<script src="assets/js/app.js?v=20261007_v1"></script>
-<script src="assets/js/download.js?v=20261007_v1"></script>
-<script src="assets/js/player.js?v=20261007_v1"></script>
+<script src="data/movies_data.js?v=20261007_v2"></script>
+<script src="data/stream_endpoint.js?v=20261007_v2"></script>
+<script src="assets/js/app.js?v=20261007_v2"></script>
+<script src="assets/js/download.js?v=20261007_v2"></script>
+<script src="assets/js/player.js?v=20261007_v2"></script>
 </body>
 </html>

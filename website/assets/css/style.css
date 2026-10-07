@@ -2820,3 +2820,532 @@ main > .section:first-of-type {
 
 /* -- Quality selector badge (plan -6.4) ----------------------- */
 .vjs-quality-selector .vjs-menu-button { min-width: 56px; }
+
+/* ============================================================
+   CineSubz-Style Advanced Highlight Popup on Card Hover
+   ============================================================ */
+.cs-highlight-popup {
+  position: fixed;
+  z-index: 99999;
+  width: 330px;
+  max-width: 90vw;
+  background: #111116;
+  border: 1px solid rgba(229, 9, 20, 0.45);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 30px rgba(229, 9, 20, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
+  transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.cs-highlight-popup.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+.cs-popup-banner {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+.cs-popup-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, #111116 0%, rgba(17, 17, 22, 0.4) 60%, rgba(0,0,0,0.7) 100%);
+}
+.cs-popup-banner-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+}
+.cs-popup-body {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cs-popup-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.25;
+  margin: 0;
+}
+.cs-popup-title-si {
+  font-size: 12.5px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-top: -2px;
+}
+.cs-popup-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11.5px;
+}
+.cs-popup-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cs-popup-genre-pill {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #bbb;
+}
+.cs-popup-desc {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 2px 0 6px;
+}
+.cs-popup-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.cs-popup-btn-watch {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.cs-popup-btn-watch:hover {
+  background: #f40612;
+  box-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
+  transform: translateY(-1px);
+}
+.cs-popup-btn-dl {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.cs-popup-btn-dl:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   Player Percentage Loading Bar & Progress Display
+   ============================================================ */
+.sp-loader-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+  background: rgba(10, 10, 15, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(229, 9, 20, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.sp-progress-container {
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sp-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sp-progress-status {
+  color: #ddd;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sp-progress-pct {
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(229, 9, 20, 0.6);
+}
+.sp-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.sp-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff416c, #e50914);
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.8);
+  transition: width 0.2s ease-out;
+}
+.sp-progress-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #888;
+  margin-top: 4px;
+}
+.player-live-percent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(229, 9, 20, 0.18);
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   TV Series Seasons & Episodes Grid (CineSubz / Netflix Style)
+   ============================================================ */
+.cs-series-section {
+  padding: 24px 0;
+}
+.cs-series-card {
+  background: #111116;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+.series-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.series-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.series-header-title h2 {
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+.season-badge-wrap {
+  display: flex;
+  gap: 8px;
+}
+.season-tabs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.season-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer;
+}
+.season-tab:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+.season-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 18px rgba(229, 9, 20, 0.5);
+}
+
+/* Episodes Grid */
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.episode-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+}
+.episode-card:hover {
+  background: #1e1e2c;
+  border-color: rgba(229, 9, 20, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+.episode-card.active {
+  background: #1c151c;
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.35);
+}
+.ep-thumb-wrap {
+  position: relative;
+  width: 110px;
+  height: 72px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #000;
+}
+.ep-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.episode-card:hover .ep-thumb-img {
+  transform: scale(1.08);
+}
+.ep-thumb-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.episode-card:hover .ep-thumb-play {
+  opacity: 1;
+}
+.ep-thumb-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+.ep-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ep-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ep-num-pill {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.ep-active-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #46d369;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ep-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+.ep-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #888;
+}
+.ep-meta-dot {
+  color: #555;
+}
+.ep-sub-tag {
+  color: var(--gold);
+  font-weight: 600;
+}
+.ep-qual-tag {
+  color: #aaa;
+}
+.ep-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+.episode-card:hover .ep-play-btn {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.6);
+}
+.episode-card.active .ep-play-btn {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ============================================================
+   CineSubz-Style Mobile Bottom Navigation Bar (Fixed Bottom)
+   ============================================================ */
+.mobile-bottom-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(12, 12, 16, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 9999;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 4px;
+}
+.mobile-bottom-bar a,
+.mobile-bottom-bar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #888;
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-bottom-bar i {
+  font-size: 17px;
+}
+.mobile-bottom-bar a.active,
+.mobile-bottom-bar a:hover,
+.mobile-bottom-bar button:hover {
+  color: var(--accent);
+}
+.mobile-bottom-bar a.active i {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* Show mobile bottom nav only on mobile screens */
+@media (max-width: 768px) {
+  .mobile-bottom-bar {
+    display: flex;
+  }
+  body {
+    padding-bottom: 64px;
+  }
+  .site-footer {
+    padding-bottom: 80px;
+  }
+}
+
+/* ============================================================
+   Low Data & High Performance Rendering (content-visibility)
+   ============================================================ */
+.section, .cs-movie-details-section, .cs-downloads-section, .site-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 400px;
+}
+

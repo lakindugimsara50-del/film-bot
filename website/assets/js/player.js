@@ -1066,12 +1066,36 @@ function getMovieDownloads(movie) {
   const seenQualities = new Set();
   const seenUrls = new Set();
 
+  const getDirectUrlForCard = (card, q) => {
+    if (card.direct_url) return card.direct_url;
+    if (card.url && card.url.includes('/stream/channel/')) {
+      return card.url.includes('?') ? `${card.url}&dl=1` : `${card.url}?dl=1`;
+    }
+    if (card.url && card.url.includes('t.me/c/')) {
+      const cm = card.url.match(/\/c\/(\d+)\/(\d+)/);
+      if (cm) return `/stream/channel/-100${cm[1]}/${cm[2]}?dl=1`;
+    }
+    if (movie.message_id) {
+      return `/stream/channel/-100${chClean}/${movie.message_id}?dl=1`;
+    }
+    if (movie.stream_url && !isDeadTunnel(movie.stream_url)) {
+      return movie.stream_url.includes('?') ? `${movie.stream_url}&dl=1` : `${movie.stream_url}?dl=1`;
+    }
+    return card.url || '';
+  };
+
   const addCard = (card) => {
     if (!card || !card.url || isDeadTunnel(card.url)) return;
     if (seenUrls.has(card.url)) return;
     seenUrls.add(card.url);
+
+    const directUrl = card.direct_url || getDirectUrlForCard(card, card.quality);
+    const tgUrl = card.tg_url || card.bot_url || card.channel_url || (card.url && card.url.includes('t.me') ? card.url : '');
+
     results.push({
       ...card,
+      direct_url: directUrl,
+      tg_url: tgUrl,
       format: card.format || 'MP4 (සිංහල Sub Merged)',
       sub_merged: true,
       subtitle_merged: true,
@@ -1100,18 +1124,21 @@ function getMovieDownloads(movie) {
         const sz = v.size_bytes ? formatBytesFromBytes(v.size_bytes) : '';
         const botUrl = `https://t.me/${botUsername}?start=dl_${movie.slug}_${q}`;
         const chanUrl = v.message_id ? `https://t.me/c/${chClean}/${v.message_id}` : '';
-        const primaryDlUrl = botUrl || chanUrl;
+        const directUrl = v.message_id ? `/stream/channel/-100${chClean}/${v.message_id}?dl=1` : '';
+        const primaryDlUrl = directUrl || botUrl || chanUrl;
         
         seenQualities.add(q.toLowerCase());
         addCard({
           quality: q,
-          label: `${qLabels[q] || q} (Telegram Bot / Cloud)`,
+          label: `${qLabels[q] || q}`,
           size: sz,
           url: primaryDlUrl,
+          direct_url: directUrl,
           channel_url: chanUrl,
           bot_url: botUrl,
+          tg_url: botUrl || chanUrl,
           format: 'MP4',
-          host: 'Telegram',
+          host: 'Telegram Cloud',
         });
       }
     });
@@ -1162,33 +1189,38 @@ function getMovieDownloads(movie) {
     const sz1080 = movie.file_size ? formatBytesFromBytes(movie.file_size) : '';
     const botUrl = `https://t.me/${botUsername}?start=dl_${movie.slug}_1080p`;
     const chanUrl = `https://t.me/c/${chClean}/${movie.message_id}`;
+    const directUrl = `/stream/channel/-100${chClean}/${movie.message_id}?dl=1`;
     seenQualities.add('1080p');
     addCard({
       quality: '1080p',
-      label: '1080p Full HD (Telegram Bot / Cloud)',
+      label: '1080p Full HD',
       size: sz1080,
-      url: botUrl,
+      url: directUrl || botUrl,
+      direct_url: directUrl,
       channel_url: chanUrl,
       bot_url: botUrl,
+      tg_url: botUrl || chanUrl,
       format: 'MP4',
-      host: 'Telegram',
+      host: 'Telegram Cloud',
     });
   }
 
   // 4. Fallback for direct MP4 stream if not already covered
-  if (movie.stream_url && movie.stream_url.endsWith('.mp4') && !isDeadTunnel(movie.stream_url)) {
+  if (movie.stream_url && !isDeadTunnel(movie.stream_url)) {
     const qStr = movie.quality || '1080p';
     const baseQ = qStr.toLowerCase();
     if (!seenQualities.has(baseQ)) {
       seenQualities.add(baseQ);
       const szStr = movie.file_size ? formatBytesFromBytes(movie.file_size) : (movie.size || '');
+      const directUrl = movie.stream_url.includes('?') ? `${movie.stream_url}&dl=1` : `${movie.stream_url}?dl=1`;
       addCard({
         quality: qStr,
-        label: `${qStr} Full HD (Direct High-Speed Stream)`,
+        label: `${qStr} Full HD`,
         size: szStr,
-        url: movie.stream_url,
+        url: directUrl,
+        direct_url: directUrl,
         format: 'MP4',
-        host: 'Direct',
+        host: 'Direct Server',
       });
     }
   }
@@ -2632,6 +2664,13 @@ function injectBottomControlBarItems(player, movie) {
     }
   }
 
+  // 4. Move Playback Rate (1x) button to the right side (after Quality, before Fullscreen)
+  const rateBtn = player.controlBar.playbackRateMenuButton ? player.controlBar.playbackRateMenuButton.el() : cbEl.querySelector('.vjs-playback-rate');
+  const fsToggle = player.controlBar.fullscreenToggle ? player.controlBar.fullscreenToggle.el() : cbEl.querySelector('.vjs-fullscreen-control');
+  if (rateBtn && fsToggle) {
+    cbEl.insertBefore(rateBtn, fsToggle);
+  }
+
   // Live time updater
   const curTimeEl = timeWrap.querySelector('#vjs-cur-time');
   const durTimeEl = timeWrap.querySelector('#vjs-dur-time');
@@ -3479,39 +3518,43 @@ function loadTrailer(movie) {
 function renderQuickDownloadStrip(movie) {
   const stripBtns = document.getElementById('quick-dl-buttons');
   if (!stripBtns) return;
-  let downloads = getMovieDownloads(movie).filter(d => !d.download_only && d.host !== 'Telegram');
+  const downloads = getMovieDownloads(movie);
   if (downloads.length === 0) {
-    downloads = getMovieDownloads(movie);
+    stripBtns.innerHTML = '';
+    return;
   }
-  const subs = getMovieSubtitles(movie);
 
   let html = downloads.slice(0, 4).map(dl => {
     const rawQ = dl.quality || '1080p';
     const qBadge = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : rawQ));
     const sz = dl.size || '';
-    const url = dl.url || '#';
+    const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+    const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
+
     return `
-      <button type="button" class="quick-dl-pill" data-url="${FilmSub.escHtml(url)}" data-quality="${FilmSub.escHtml(rawQ)}">
-        <i class="fa-solid fa-cloud-arrow-down"></i>
+      <button type="button" class="quick-dl-pill" data-direct-url="${FilmSub.escHtml(directUrl)}" data-tg-url="${FilmSub.escHtml(tgUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Direct Download ${FilmSub.escHtml(rawQ)} to Browser">
+        <i class="fa-solid fa-cloud-arrow-down" style="color:var(--accent)"></i>
         <strong>${FilmSub.escHtml(qBadge)}</strong>
         ${sz ? `<span class="quick-dl-size">${FilmSub.escHtml(sz)}</span>` : ''}
-        <span class="quick-dl-sub-tag">Sub Merged</span>
+        <span class="quick-dl-sub-tag">Direct</span>
       </button>`;
   }).join('');
 
   stripBtns.innerHTML = html;
   stripBtns.querySelectorAll('button.quick-dl-pill').forEach(btn => {
     btn.addEventListener('click', () => {
-      const url = btn.dataset.url;
+      const directUrl = btn.dataset.directUrl;
+      const tgUrl = btn.dataset.tgUrl;
       const quality = btn.dataset.quality;
-      if (url && url !== '#') {
-        if (url.includes('t.me')) {
-          window.open(url, '_blank', 'noopener');
-        } else if (window.FilmSubDownload && typeof window.FilmSubDownload.show === 'function') {
-          window.FilmSubDownload.show(url, quality, movie.title);
+
+      if (directUrl && directUrl !== '#') {
+        if (window.FilmSubDownload && typeof window.FilmSubDownload.show === 'function') {
+          window.FilmSubDownload.show(directUrl, quality, movie.title);
         } else {
-          window.open(url, '_blank', 'noopener');
+          window.open(directUrl, '_blank', 'noopener');
         }
+      } else if (tgUrl) {
+        window.open(tgUrl, '_blank', 'noopener');
       }
     });
   });
@@ -3790,38 +3833,33 @@ function renderDownloadSection(movie) {
       const qTitle = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : `${rawQ} HD`));
       const sz = dl.size || '';
       const fmt = dl.format || 'MP4';
-      const dlUrl = dl.url || '#';
-      const host = dl.host || 'Direct';
-      const isTelegram = dl.download_only === true || host === 'Telegram';
-      const isCloud = host === 'Cloud CDN' || (!isTelegram && dlUrl.includes('drive.google'));
+      const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+      const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
 
-      const hostColor = isCloud ? 'var(--accent)' : (isTelegram ? '#229ED9' : 'var(--text2)');
-      const hostIcon = isCloud
-        ? '<i class="fa-brands fa-google-drive"></i>'
-        : (isTelegram ? '<i class="fa-brands fa-telegram"></i>' : '<i class="fa-solid fa-server"></i>');
+      let actionBtns = '';
 
-      let actionBtn = '';
-      if (isTelegram) {
-        const isBot = dlUrl.includes('start=dl_');
-        const isChannel = dlUrl.includes('/c/');
-        const btnLabel = isChannel ? 'Telegram Channel' : (isBot ? 'Telegram Bot Download' : 'Telegram Download');
-        actionBtn = `
-          <a href="${FilmSub.escHtml(dlUrl)}" target="_blank" rel="noopener" class="btn-tg-dl"
-             style="display:inline-flex;align-items:center;gap:7px">
-            <i class="fa-brands fa-telegram"></i> ${btnLabel}
-          </a>`;
-        if (dl.channel_url && dl.channel_url !== dlUrl) {
-          actionBtn += `
-            <a href="${FilmSub.escHtml(dl.channel_url)}" target="_blank" rel="noopener" class="btn-tg-dl"
-               style="display:inline-flex;align-items:center;gap:7px;background:#229ed9">
-              <i class="fa-solid fa-bullhorn"></i> Channel Post
-            </a>`;
-        }
-      } else {
-        actionBtn = `
-          <button class="btn-direct-dl" data-url="${FilmSub.escHtml(dlUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" type="button">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
+      // 1. Direct Browser Download button (always prominent)
+      if (directUrl) {
+        actionBtns += `
+          <button type="button" class="btn-download-primary btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Direct Download to Browser (No Telegram required)">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download (Browser)
           </button>`;
+      }
+
+      // 2. Telegram Download button (Telegram app / bot)
+      if (tgUrl) {
+        const isBot = tgUrl.includes('start=dl_');
+        const isChannel = tgUrl.includes('/c/');
+        const tgLabel = isBot ? 'Telegram Bot' : (isChannel ? 'Telegram File' : 'Telegram Download');
+        actionBtns += `
+          <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-download-secondary btn-tg-dl" title="Open and save in Telegram App">
+            <i class="fa-brands fa-telegram"></i> ${tgLabel}
+          </a>`;
+      } else if (!directUrl && dl.url) {
+        actionBtns += `
+          <a href="${FilmSub.escHtml(dl.url)}" target="_blank" rel="noopener" class="btn-download-secondary btn-tg-dl">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Download
+          </a>`;
       }
 
       return `
@@ -3834,20 +3872,21 @@ function renderDownloadSection(movie) {
             ${sz ? `<div class="cs-dl-size-badge">${FilmSub.escHtml(sz)}</div>` : ''}
           </div>
           <div class="cs-dl-specs">
-            <span>${hostIcon} <span style="color:${hostColor}">${FilmSub.escHtml(host)}</span></span>
+            <span><i class="fa-solid fa-bolt" style="color:#00e676"></i> <span style="color:#e5e5e5">High-Speed Cloud</span></span>
             <span>•</span>
             <span><i class="fa-solid fa-video"></i> ${FilmSub.escHtml(fmt)}</span>
             <span>•</span>
-            <span style="color:var(--accent)"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
+            <span style="color:var(--accent)"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub Merged</span>
           </div>
-          <div class="cs-dl-actions" style="display:flex;gap:8px;flex-wrap:wrap">
-            ${actionBtn}
+          <div class="cs-dl-actions" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">
+            ${actionBtns}
           </div>
         </div>`;
     }).join('');
 
     grid.querySelectorAll('.btn-direct-dl').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const url = btn.dataset.url;
         const quality = btn.dataset.quality;
         if (url && url !== '#') {

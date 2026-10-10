@@ -239,30 +239,121 @@
       transform: scale(1.18) !important;
     }
 
+    /* Fix Playback Rate Button (1x) positioning & prevent overlap with time display */
+    .video-js .vjs-playback-rate {
+      position: static !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: auto !important;
+      min-width: 36px !important;
+      height: 100% !important;
+      padding: 0 4px !important;
+      margin: 0 4px !important;
+      flex-shrink: 0 !important;
+      order: 85 !important;
+    }
+    .video-js .vjs-playback-rate .vjs-playback-rate-value {
+      position: static !important;
+      display: inline-block !important;
+      font-size: 11.5px !important;
+      font-weight: 800 !important;
+      line-height: normal !important;
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.12) !important;
+      padding: 3px 7px !important;
+      border-radius: 4px !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      letter-spacing: 0.5px !important;
+      transition: all 0.15s ease !important;
+    }
+    .video-js .vjs-playback-rate:hover .vjs-playback-rate-value {
+      background: var(--accent, #e50914) !important;
+      border-color: var(--accent, #e50914) !important;
+      color: #ffffff !important;
+    }
+
+    /* Prevent volume panel from collapsing or overflowing */
+    .video-js .vjs-volume-panel {
+      position: static !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      width: auto !important;
+      margin: 0 !important;
+      flex-shrink: 0 !important;
+    }
+
     /* Custom Live Time Display (00:34 / 02:13:09) */
     .vjs-custom-time-display {
+      position: static !important;
       display: inline-flex !important;
-      align-items: center;
-      gap: 5px;
+      align-items: center !important;
+      gap: 4px !important;
       font-size: 13px !important;
       font-weight: 700 !important;
-      color: #e5e5e5;
+      color: #e5e5e5 !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace !important;
       padding: 0 8px !important;
-      letter-spacing: 0.3px;
-      user-select: none;
-      white-space: nowrap;
+      margin: 0 4px 0 2px !important;
+      letter-spacing: 0.3px !important;
+      user-select: none !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
     }
     .vjs-custom-time-display .vjs-cur-time {
-      color: #ffffff;
-      font-weight: 800;
+      color: #ffffff !important;
+      font-weight: 800 !important;
     }
     .vjs-custom-time-display .vjs-time-slash {
-      color: rgba(255, 255, 255, 0.4);
-      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45) !important;
+      font-weight: 400 !important;
+      margin: 0 3px !important;
     }
     .vjs-custom-time-display .vjs-dur-time {
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+
+    /* Dual Download Action Buttons (Direct Browser + Telegram) */
+    .btn-download-primary {
+      background: linear-gradient(135deg, #e50914 0%, #b20710 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 4px 15px rgba(229, 9, 20, 0.35) !important;
+      padding: 9px 16px !important;
+      border-radius: 6px !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      transition: all 0.18s ease !important;
+      text-decoration: none !important;
+    }
+    .btn-download-primary:hover {
+      background: #f40612 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 6px 20px rgba(229, 9, 20, 0.55) !important;
+    }
+    .btn-download-secondary {
+      background: rgba(34, 158, 217, 0.18) !important;
+      color: #229ed9 !important;
+      border: 1px solid rgba(34, 158, 217, 0.5) !important;
+      padding: 9px 16px !important;
+      border-radius: 6px !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      transition: all 0.18s ease !important;
+      text-decoration: none !important;
+    }
+    .btn-download-secondary:hover {
+      background: #229ed9 !important;
+      color: #ffffff !important;
+      transform: translateY(-1px) !important;
     }
 
     /* Control Bar Brand Watermark & Quality Badge */
@@ -444,6 +535,7 @@
       .cs-center-playpause { width: 56px; height: 56px; font-size: 20px; }
       .cs-player-center-overlay { gap: 16px; }
       .vjs-control-brand-wrap { display: none !important; }
+      .video-js .vjs-volume-panel { display: none !important; }
       .vjs-custom-time-display { font-size: 11px !important; padding: 0 4px !important; }
       .vjs-custom-seek-btn { width: 28px !important; }
     }
@@ -781,11 +873,11 @@
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261010_v7"></script>
-<script src="data/stream_endpoint.js?v=20261010_v7"></script>
-<script src="assets/js/app.js?v=20261010_v7"></script>
-<script src="assets/js/download.js?v=20261010_v7"></script>
-<script src="assets/js/player.js?v=20261010_v7"></script>
-<script src="assets/js/netflix-ui.js?v=20261010_v7"></script>
+<script src="data/movies_data.js?v=20261010_v8"></script>
+<script src="data/stream_endpoint.js?v=20261010_v8"></script>
+<script src="assets/js/app.js?v=20261010_v8"></script>
+<script src="assets/js/download.js?v=20261010_v8"></script>
+<script src="assets/js/player.js?v=20261010_v8"></script>
+<script src="assets/js/netflix-ui.js?v=20261010_v8"></script>
 </body>
 </html>

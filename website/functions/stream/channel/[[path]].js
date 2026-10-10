@@ -279,8 +279,11 @@ export async function onRequest(context) {
     }
   }
 
+  const isDownload = urlObj.searchParams.get('dl') === '1' || urlObj.searchParams.get('download') === '1';
+
   // Suffix ranges (bytes=-N) must not match the initial 0-8MB chunk
-  const isInitialRange = suffixBytes === null && (clientStart === null || clientStart < EDGE_INITIAL_CHUNK_BYTES);
+  // For file downloads (dl=1 without range), do NOT constrain to initial 8MB chunk
+  const isInitialRange = !isDownload && suffixBytes === null && (clientStart === null || clientStart < EDGE_INITIAL_CHUNK_BYTES);
   const isBoundedProbe = isInitialRange && clientStart === 0 && clientEnd !== null && (clientEnd - clientStart + 1) <= 2 * 1024 * 1024;
 
   // ── 1. Cloudflare Edge Cache Lookup (caches.default) ────────────────────────
@@ -288,7 +291,7 @@ export async function onRequest(context) {
   const edgeCache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheKey = getCanonicalCacheKey(chatId, msgId);
 
-  if (edgeCache && isInitialRange) {
+  if (edgeCache && isInitialRange && !isDownload) {
     try {
       const cachedHit = await edgeCache.match(cacheKey);
       if (cachedHit) {
@@ -424,6 +427,9 @@ export async function onRequest(context) {
       }
     } else if (rangeHeader) {
       upstreamHeaders['Range'] = rangeHeader;
+    } else if (isDownload) {
+      // Direct file download: request full stream from byte 0
+      upstreamHeaders['Range'] = 'bytes=0-';
     }
 
     const abortCtrl = new AbortController();
@@ -568,9 +574,17 @@ export async function onRequest(context) {
       if (contentLength) outHeaders.set('Content-Length', contentLength);
 
       const contentDisposition = upstreamRes.headers.get('Content-Disposition');
-      if (contentDisposition) outHeaders.set('Content-Disposition', contentDisposition);
+      if (contentDisposition) {
+        outHeaders.set('Content-Disposition', contentDisposition);
+      } else if (isDownload) {
+        outHeaders.set('Content-Disposition', `attachment; filename="video_${msgId}.mp4"`);
+      }
 
-      outHeaders.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+      if (isDownload) {
+        outHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      } else {
+        outHeaders.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+      }
 
       return new Response(request.method === 'HEAD' ? null : responseBody, {
         status: upstreamRes.status,

@@ -26,6 +26,14 @@
     const q = String(quality || '1080p').replace(/[^a-zA-Z0-9]/g, '') || '1080p';
     const t = String(movieTitle || 'Movie').trim() || 'Movie';
 
+    // Direct Telegram Cloud stream download endpoint
+    if (str.includes('/stream/')) {
+      if (!str.includes('dl=1')) {
+        return str + (str.includes('?') ? '&dl=1' : '?dl=1');
+      }
+      return str;
+    }
+
     // Already pointing to /api/download
     if (str.startsWith('/api/download') || str.includes('/api/download?')) {
       try {

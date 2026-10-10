@@ -15872,7 +15872,218 @@
       "added_date": "2026-10-06",
       "added_at": "2026-10-06T15:11:36Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "sardar-2-2026",
+      "slug": "sardar-2-2026",
+      "title": "Sardar 2",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "4.6",
+      "rating": "4.6",
+      "imdb_id": "tt28541577",
+      "tmdb_id": "1317872",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/muGsRtsNrG1gnlF2fPYrBa4TGlr.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/muGsRtsNrG1gnlF2fPYrBa4TGlr.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/i39M5xz57fEkPLtuiAXqWwMNMyN.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/i39M5xz57fEkPLtuiAXqWwMNMyN.jpg",
+      "genres": [
+        "Action",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "480p",
+      "duration": "180 min",
+      "description": "When the mysterious Black Dagger threatens national security, Inspector Vijay embarks on his most dangerous mission yet. As the battle unfolds, the extraordinary origin of legendary spy Sardar is finally revealed, uncovering the sacrifices that forged a legend and the secrets that could shape the future.",
+      "director": "P. S. Mithran",
+      "cast": [
+        {
+          "name": "Karthi",
+          "character": "Chandra Bose 'Agent Sardar' / Inspector Vijay Prakash"
+        },
+        {
+          "name": "S. J. Suryah",
+          "character": "Yoganandan 'Yogi'"
+        },
+        {
+          "name": "Malavika Mohanan",
+          "character": "Agent Zara"
+        },
+        {
+          "name": "Ashika Ranganath",
+          "character": "Faiza"
+        },
+        {
+          "name": "Rajisha Vijayan",
+          "character": "Indhrani"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACATxqynLznQiP_am9X50TAdPzN6y8CAAC_iEAAinXWVbjrA1noqrvIR4E",
+      "message_id": 316,
+      "file_name": "fs_sardar-2-2026_480p.mp4",
+      "file_size": 1198299965,
+      "drive_file_id": "",
+      "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATxqynLznQiP_am9X50TAdPzN6y8CAAC_iEAAinXWVbjrA1noqrvIR4E",
+          "message_id": 316,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1317872"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt28541577"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt28541577"
+        }
+      ],
+      "qualities": {
+        "auto": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+        "1080p": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+        "720p": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+        "480p": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+        "360p": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316"
+      },
+      "downloads": [
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1198299965,
+          "url": "https://t.me/c/4325759505/316",
+          "telegram_url": "https://t.me/c/4325759505/316",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATxqynLznQiP_am9X50TAdPzN6y8CAAC_iEAAinXWVbjrA1noqrvIR4E",
+          "message_id": 316,
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1198299965,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sardar-2-2026_1080p",
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "628.5 MB",
+          "size_bytes": 659064980,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sardar-2-2026_720p",
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1198299965,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sardar-2-2026_480p",
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "205.7 MB",
+          "size_bytes": 215693993,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sardar-2-2026_360p",
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "size_bytes": 659064980
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACATxqynLznQiP_am9X50TAdPzN6y8CAAC_iEAAinXWVbjrA1noqrvIR4E",
+          "message_id": 316,
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "size_bytes": 1198299965
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://mark-grammar-functionality-department.trycloudflare.com/stream/channel/-1004325759505/316",
+          "size_bytes": 215693993
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/sardar-2-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=sardar-2-2026",
+      "added_date": "2026-10-10",
+      "added_at": "2026-10-10T17:54:50Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-10T12:19:13Z"
+  "last_updated": "2026-10-10T17:54:51Z"
 }

@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://individuals-half-levels-comedy.trycloudflare.com",
+  "stream_base_url": "https://mark-grammar-functionality-department.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-10T11:20:05.632251+00:00",
+  "updated_at": "2026-10-10T16:53:40.657222+00:00",
   "status": "online"
 };

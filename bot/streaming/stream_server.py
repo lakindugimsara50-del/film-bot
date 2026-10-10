@@ -81,9 +81,10 @@ async def stream_server_lifespan(app_instance: FastAPI):
             stream_pool.register_chunk_cache_callback(_on_pool_chunk)
 
             async def _bg_warmup_catalog():
-                await asyncio.sleep(1.5)
+                # Allow userbot sessions to fully connect before starting background warmup
+                await asyncio.sleep(15.0)
                 try:
-                    await preload_catalog_headers(max_movies=10)
+                    await preload_catalog_headers(max_movies=3)
                 except Exception as w_err:
                     log.warning("[StreamServer] Proactive catalog pre-warming notice: %s", w_err)
             asyncio.create_task(_bg_warmup_catalog())
@@ -240,12 +241,13 @@ async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[byt
 
 
 _WARMING_UP: set[str] = set()
+_WARMUP_SEMAPHORE = asyncio.Semaphore(1)
 
 
-async def warmup_channel_message(chat_id: Union[int, str], message_id: int, target_bytes: int = 16 * 1024 * 1024) -> bool:
+async def warmup_channel_message(chat_id: Union[int, str], message_id: int, target_bytes: int = 2 * 1024 * 1024) -> bool:
     """
-    Pre-buffers initial video chunks (e.g. 16-32MB) into RAM cache in background.
-    Runs asynchronously and idempotently to give players instantaneous zero-buffering start.
+    Pre-buffers initial video chunks (e.g. 2MB moov header) into RAM cache in background.
+    Runs asynchronously, with a concurrency semaphore to prevent overwhelming Telegram MTProto workers.
     """
     cache_key = _get_cache_key(chat_id, message_id)
     async with _CACHE_LOCK:
@@ -257,34 +259,35 @@ async def warmup_channel_message(chat_id: Union[int, str], message_id: int, targ
     _WARMING_UP.add(cache_key)
 
     async def _do_warmup():
-        try:
-            info = await stream_pool.get_media_info(chat_id, message_id)
-            msg = info["message"]
-            file_size = info["file_size"]
-            warm_limit = min(target_bytes, file_size, MAX_HEADER_CACHE_BYTES) - 1
-            if warm_limit <= 0:
-                return
+        async with _WARMUP_SEMAPHORE:
+            try:
+                info = await stream_pool.get_media_info(chat_id, message_id)
+                msg = info["message"]
+                file_size = info["file_size"]
+                warm_limit = min(target_bytes, file_size, MAX_HEADER_CACHE_BYTES) - 1
+                if warm_limit <= 0:
+                    return
 
-            async with _CACHE_LOCK:
-                start_offset = len(_HEADER_CACHE[cache_key]) if cache_key in _HEADER_CACHE else 0
+                async with _CACHE_LOCK:
+                    start_offset = len(_HEADER_CACHE[cache_key]) if cache_key in _HEADER_CACHE else 0
 
-            if start_offset >= warm_limit:
-                return
+                if start_offset >= warm_limit:
+                    return
 
-            log.info("[StreamServer] Background warmup started for %s (%d-%d bytes)...", cache_key, start_offset, warm_limit)
-            cur = start_offset
-            async for chunk in stream_pool.stream_media_chunks(msg, start_offset, warm_limit):
-                if not chunk:
-                    break
-                await _save_to_header_cache(cache_key, chunk, offset=cur)
-                cur += len(chunk)
-                if cur > warm_limit:
-                    break
-            log.info("[StreamServer] Background warmup completed for %s (%d bytes cached).", cache_key, cur)
-        except Exception as err:
-            log.warning("[StreamServer] Background warmup error for %s: %s", cache_key, err)
-        finally:
-            _WARMING_UP.discard(cache_key)
+                log.info("[StreamServer] Background warmup started for %s (%d-%d bytes)...", cache_key, start_offset, warm_limit)
+                cur = start_offset
+                async for chunk in stream_pool.stream_media_chunks(msg, start_offset, warm_limit):
+                    if not chunk:
+                        break
+                    await _save_to_header_cache(cache_key, chunk, offset=cur)
+                    cur += len(chunk)
+                    if cur > warm_limit:
+                        break
+                log.info("[StreamServer] Background warmup completed for %s (%d bytes cached).", cache_key, cur)
+            except Exception as err:
+                log.warning("[StreamServer] Background warmup error for %s: %s", cache_key, err)
+            finally:
+                _WARMING_UP.discard(cache_key)
 
     asyncio.create_task(_do_warmup())
     return True
@@ -309,10 +312,10 @@ def _find_catalog_path() -> Optional[str]:
     return None
 
 
-async def preload_catalog_headers(max_movies: int = 10, bytes_per_stream: int = 8 * 1024 * 1024) -> int:
+async def preload_catalog_headers(max_movies: int = 3, bytes_per_stream: int = 2 * 1024 * 1024) -> int:
     """
-    Proactively warms up initial 8MB for catalog movies into RAM _HEADER_CACHE.
-    Ensures that when any user opens a movie, initial TTFB is <10ms from RAM.
+    Proactively warms up initial 2MB for the top 3 newest movies into RAM _HEADER_CACHE.
+    Runs gently and sequentially to ensure Telegram MTProto workers are never saturated.
     """
     cat_path = _find_catalog_path()
     if not cat_path:
@@ -362,7 +365,7 @@ async def preload_catalog_headers(max_movies: int = 10, bytes_per_stream: int = 
         started = await warmup_channel_message(c_id, m_id, target_bytes=bytes_per_stream)
         if started:
             warmed_count += 1
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(1.0)
 
     log.info("[StreamServer] Proactive catalog warmup initiated for %d streams (%d movies).", warmed_count, movie_count)
     return warmed_count

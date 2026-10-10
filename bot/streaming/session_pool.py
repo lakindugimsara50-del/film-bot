@@ -371,13 +371,13 @@ class TelegramStreamPool:
 
             for client in candidates[:3]:
                 try:
-                    msg = await asyncio.wait_for(client.get_messages(chat_id_int, message_id), timeout=2.0)
+                    msg = await asyncio.wait_for(client.get_messages(chat_id_int, message_id), timeout=3.5)
                     if msg and not getattr(msg, "empty", False):
                         break
                 except PeerIdInvalid:
                     try:
-                        await asyncio.wait_for(client.get_chat(chat_id_int), timeout=1.5)
-                        msg = await asyncio.wait_for(client.get_messages(chat_id_int, message_id), timeout=2.0)
+                        await asyncio.wait_for(client.get_chat(chat_id_int), timeout=3.0)
+                        msg = await asyncio.wait_for(client.get_messages(chat_id_int, message_id), timeout=3.5)
                         if msg and not getattr(msg, "empty", False):
                             break
                     except Exception:
@@ -449,7 +449,7 @@ class TelegramStreamPool:
                         try:
                             adm_ckey = f"{id(adm_cl)}:{chat_id_int}:{message_id}"
                             if adm_ckey not in self._msg_cache:
-                                adm_msg = await asyncio.wait_for(adm_cl.get_messages(chat_id_int, message_id), timeout=2.0)
+                                adm_msg = await asyncio.wait_for(adm_cl.get_messages(chat_id_int, message_id), timeout=4.0)
                                 if adm_msg and not getattr(adm_msg, "empty", False):
                                     self._msg_cache[adm_ckey] = adm_msg
                         except Exception:
@@ -574,14 +574,14 @@ class TelegramStreamPool:
         self._msg_cache.pop(cache_key, None)
 
         try:
-            client_msg = await asyncio.wait_for(client.get_messages(chat_id, msg_id), timeout=2.5)
+            client_msg = await asyncio.wait_for(client.get_messages(chat_id, msg_id), timeout=4.0)
             if client_msg and not getattr(client_msg, "empty", False):
                 self._msg_cache[cache_key] = client_msg
                 return client_msg
         except PeerIdInvalid:
             try:
-                await client.get_chat(chat_id)
-                client_msg = await asyncio.wait_for(client.get_messages(chat_id, msg_id), timeout=2.0)
+                await asyncio.wait_for(client.get_chat(chat_id), timeout=3.0)
+                client_msg = await asyncio.wait_for(client.get_messages(chat_id, msg_id), timeout=4.0)
                 if client_msg and not getattr(client_msg, "empty", False):
                     self._msg_cache[cache_key] = client_msg
                     return client_msg
@@ -757,7 +757,10 @@ class TelegramStreamPool:
                 except Exception:
                     pass
 
-            active_admins = [c for c in admin_pool if self._client_cooldowns.get(c, 0.0) <= now] or admin_pool
+            active_admins = [c for c in admin_pool if self._client_cooldowns.get(c, 0.0) <= now]
+            if not active_admins and admin_pool:
+                # If all admin sessions are temporarily cooling down, pick the one expiring soonest
+                active_admins = sorted(admin_pool, key=lambda c: self._client_cooldowns.get(c, 0.0))
 
             # CRITICAL: For private channels, STRICTLY use verified channel admin userbots!
             # Regular userbots lack access and looping through 70+ non-admins triggers 6s timeout cascades and crashes Colab.
@@ -765,10 +768,6 @@ class TelegramStreamPool:
                 rot_a = chunk_idx % len(active_admins)
                 rotated = active_admins[rot_a:] + active_admins[:rot_a]
                 candidates.extend(rotated[:3])
-            elif admin_pool:
-                rot_a = chunk_idx % len(admin_pool)
-                rotated = admin_pool[rot_a:] + admin_pool[:rot_a]
-                candidates.extend(rotated[:2])
 
             # 2. Main Bot Client as Fallback
             bot_fallbacks = []
@@ -795,15 +794,17 @@ class TelegramStreamPool:
                     tm = None
                     try:
                         tm = await self._get_client_media(cl, media_source)
-                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=2.5)
+                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=8.0)
                         if res_direct:
                             return res_direct
                     except Exception:
                         pass
                     try:
                         buf0 = bytearray()
-                        async for p in cl.stream_media(tm or media_source, offset=0, limit=1):
-                            if p: buf0.extend(p)
+                        async def _collect0():
+                            async for p in cl.stream_media(tm or media_source, offset=0, limit=1):
+                                if p: buf0.extend(p)
+                        await asyncio.wait_for(_collect0(), timeout=10.0)
                         if buf0:
                             return bytes(buf0)
                     except Exception:
@@ -856,7 +857,7 @@ class TelegramStreamPool:
                     try:
                         direct_chunk = await asyncio.wait_for(
                             self._fetch_chunk_direct(client, target_media, chunk_idx),
-                            timeout=2.5,
+                            timeout=10.0,
                         )
                     except FileReferenceExpired:
                         target_media = await self._get_client_media(client, media_source, force_refresh=True)
@@ -864,7 +865,7 @@ class TelegramStreamPool:
                             try:
                                 direct_chunk = await asyncio.wait_for(
                                     self._fetch_chunk_direct(client, target_media, chunk_idx),
-                                    timeout=2.0,
+                                    timeout=10.0,
                                 )
                             except Exception:
                                 direct_chunk = None
@@ -898,8 +899,8 @@ class TelegramStreamPool:
                             if piece:
                                 buf.extend(piece)
 
-                    # 3.0-second timeout prevents pipeline stalls without freezing the player
-                    await asyncio.wait_for(_collect(), timeout=3.0)
+                    # 12.0-second timeout allows multi-worker bandwidth sharing under real network conditions
+                    await asyncio.wait_for(_collect(), timeout=12.0)
                     if buf:
                         # Client succeeded: clear cooldown
                         self._client_cooldowns.pop(client, None)
@@ -918,7 +919,7 @@ class TelegramStreamPool:
                 except FloodWait as fw:
                     wait_sec = min(fw.value, 1.5)
                     log.warning("[StreamPool] FloodWait %ds on chunk %d with client %s, pausing %0.1fs", fw.value, chunk_idx, getattr(client, "name", ""), wait_sec)
-                    self._client_cooldowns[client] = time.time() + min(max(float(fw.value), 2.0), 60.0)
+                    self._client_cooldowns[client] = time.time() + min(max(float(fw.value), 2.0), 30.0)
                     last_exc = fw
                     await asyncio.sleep(wait_sec)
                     continue
@@ -926,18 +927,18 @@ class TelegramStreamPool:
                     # Clean cancellation during timeline seek / scrubbing
                     raise
                 except asyncio.TimeoutError:
-                    log.warning("[StreamPool] Timeout (3s) fetching chunk %d with client %s, placing on 60s cooldown", chunk_idx, getattr(client, "name", ""))
-                    self._client_cooldowns[client] = time.time() + 60.0
+                    log.warning("[StreamPool] Timeout (10s) fetching chunk %d with client %s, setting 5s cooldown", chunk_idx, getattr(client, "name", ""))
+                    self._client_cooldowns[client] = time.time() + 5.0
                     last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
                     continue
                 except (ConnectionError, BrokenPipeError) as net_err:
                     log.warning("[StreamPool] Network socket error on client %s: %s", getattr(client, "name", ""), net_err)
-                    self._client_cooldowns[client] = time.time() + 120.0
+                    self._client_cooldowns[client] = time.time() + 15.0
                     last_exc = net_err
                     continue
                 except Exception as exc:
                     last_exc = exc
-                    self._client_cooldowns[client] = time.time() + 15.0
+                    self._client_cooldowns[client] = time.time() + 5.0
                     log.debug("[StreamPool] Client %s cannot stream chunk %d: %s", getattr(client, "name", ""), chunk_idx, exc)
                     continue
                 finally:

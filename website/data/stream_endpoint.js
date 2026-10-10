@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://surveys-enable-wit-tonight.trycloudflare.com",
+  "stream_base_url": "https://tops-perfectly-chemical-stack.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-10T17:38:24.146008+00:00",
+  "updated_at": "2026-10-10T17:46:21.224055+00:00",
   "status": "online"
 };

@@ -805,7 +805,7 @@ function getMovieStreams(movie) {
 
   list.push({
     server: 'Server 1',
-    label: '⚡ Super Player (Telegram Cloud HD)',
+    label: 'Cinema Stream (HD)',
     mode: 'super_chunk',
     type: 'video/mp4',
     embed: false,
@@ -1261,41 +1261,49 @@ function renderServerTabs(movie) {
   const tabsEl = document.getElementById('server-tabs');
   if (!tabsEl) return;
   const streams = getMovieStreams(movie);
-  const icons = [
-    'fa-solid fa-play',
-    'fa-solid fa-bolt',
-    'fa-solid fa-film',
-    'fa-solid fa-rocket',
-    'fa-solid fa-server',
-    'fa-solid fa-circle-play'
-  ];
+  const hasTrailer = Boolean(movie && (movie.trailer_url || movie.trailer || movie.youtube_trailer || movie.trailer_id));
 
-  let tabsHtml = streams.map((s, i) => {
-    let cleanLabel = FilmSub.escHtml(s.label || s.server || `Server ${i + 1}`);
-    cleanLabel = cleanLabel.replace(/^[\s⚡🎬📺🔥🎥]+/, '').trim();
-    return `
-    <button class="server-tab${i === currentStreamIdx ? ' active' : ''}" data-type="stream" data-index="${i}" type="button">
-      <i class="${icons[i] || 'fa-solid fa-bolt'}" style="color:var(--accent)"></i>
-      <span>${cleanLabel}</span>
-    </button>`;
-  }).join('');
+  let tabsHtml = '';
 
+  // 1. Clean Cinema Stream indicator pill
   tabsHtml += `
-    <button class="server-tab${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button">
-      <i class="fa-solid fa-film" style="color:var(--accent)"></i>
-      <span>Trailer</span>
-    </button>`;
+    <span class="player-status-badge">
+      <span class="pulse-indicator"></span>
+      <span>${isTrailerActive ? 'Official Trailer' : 'Cinema Stream'}</span>
+    </span>`;
+
+  // 2. Extra alternative servers if more than 1
+  if (streams.length > 1) {
+    streams.forEach((s, i) => {
+      let cleanLabel = FilmSub.escHtml(s.server || `Server ${i + 1}`);
+      tabsHtml += `
+        <button class="server-tab${i === currentStreamIdx && !isTrailerActive ? ' active' : ''}" data-type="stream" data-index="${i}" type="button">
+          <i class="fa-solid fa-server"></i>
+          <span>${cleanLabel}</span>
+        </button>`;
+    });
+  }
+
+  // 3. Trailer toggle button
+  if (hasTrailer) {
+    tabsHtml += `
+      <button class="server-tab btn-trailer-pill${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button" title="${isTrailerActive ? 'Return to Movie Stream' : 'Watch Official Trailer'}">
+        <i class="fa-solid fa-film"></i>
+        <span>${isTrailerActive ? 'Back to Movie' : 'Watch Trailer'}</span>
+      </button>`;
+  }
 
   tabsEl.innerHTML = tabsHtml;
 
-  tabsEl.querySelectorAll('.server-tab').forEach(btn => {
+  tabsEl.querySelectorAll('button.server-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      tabsEl.querySelectorAll('.server-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
       const type = btn.dataset.type;
       if (type === 'trailer') {
-        loadTrailer(movie);
+        if (isTrailerActive) {
+          loadStream(movie, currentStreamIdx);
+        } else {
+          loadTrailer(movie);
+        }
       } else {
         const idx = parseInt(btn.dataset.index, 10);
         loadStream(movie, idx);
@@ -1341,8 +1349,18 @@ function mapQualityToDriveVq(q) {
 function updateQualitySpeedBadge(q) {
   const speedBadge = document.getElementById('net-speed-text');
   const inPlayerBadge = document.getElementById('vjs-sq-badge-text');
+  const qualNameEl = document.getElementById('current-quality-name');
   const norm = String(q || 'auto').toLowerCase();
   const activeTier = (norm === 'auto' ? currentEffectiveQuality : norm).toUpperCase();
+
+  if (qualNameEl) {
+    if (norm === 'auto') {
+      qualNameEl.innerHTML = `<span style="color:var(--accent)"><i class="fa-solid fa-bolt"></i> Auto</span> (${activeTier})`;
+    } else {
+      const qSuffix = activeTier.includes('1080') ? 'Full HD' : (activeTier.includes('720') ? 'HD' : (activeTier.includes('480') ? 'SD' : ''));
+      qualNameEl.textContent = `${activeTier} ${qSuffix}`.trim();
+    }
+  }
 
   if (speedBadge) {
     if (norm === 'auto') {
@@ -1364,9 +1382,9 @@ function updateQualitySpeedBadge(q) {
     inPlayerBadge.textContent = norm === 'auto' ? `AUTO (${activeTier})` : activeTier;
   }
 
-  // Sync active state on top toolbar pills & in-player menu items
-  document.querySelectorAll('.q-pill').forEach(pill => {
-    pill.classList.toggle('active', (pill.dataset.quality || '').toLowerCase() === norm);
+  // Sync active state on dropdown items, top toolbar pills & in-player menu items
+  document.querySelectorAll('.q-menu-item, .q-pill').forEach(item => {
+    item.classList.toggle('active', (item.dataset.quality || '').toLowerCase() === norm);
   });
   document.querySelectorAll('.vjs-sq-item').forEach(item => {
     item.classList.toggle('active', (item.dataset.quality || '').toLowerCase() === norm);
@@ -1606,8 +1624,48 @@ function applyQualitySwitch(targetQuality, opts = {}) {
 }
 
 function initAdaptiveQuality(movie) {
+  const pickerWrap = document.getElementById('player-quality-picker');
+  const triggerBtn = document.getElementById('btn-quality-trigger');
+  const menuItems = document.querySelectorAll('.q-menu-item');
   const pills = document.querySelectorAll('.q-pill');
+
   updateQualitySpeedBadge(selectedQuality);
+
+  // Toggle quality dropdown on button click
+  if (triggerBtn && pickerWrap) {
+    triggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = pickerWrap.classList.toggle('open');
+      triggerBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    // Close when clicking anywhere outside
+    document.addEventListener('click', (e) => {
+      if (!pickerWrap.contains(e.target)) {
+        pickerWrap.classList.remove('open');
+        triggerBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // Dropdown quality items
+  menuItems.forEach(item => {
+    const warmItemQuality = () => {
+      const q = item.dataset.quality;
+      if (q && q !== 'auto') {
+        prewarmQualityTier(currentMovie, q);
+      }
+    };
+    item.addEventListener('pointerenter', warmItemQuality, { passive: true });
+    item.addEventListener('touchstart', warmItemQuality, { passive: true });
+
+    item.addEventListener('click', () => {
+      const q = item.dataset.quality || 'auto';
+      applyQualitySwitch(q, { isAutoDowngrade: false });
+      if (pickerWrap) pickerWrap.classList.remove('open');
+      if (triggerBtn) triggerBtn.setAttribute('aria-expanded', 'false');
+    });
+  });
 
   pills.forEach(pill => {
     // Proactive Pre-Warming on hover/touch

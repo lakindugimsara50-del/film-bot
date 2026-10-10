@@ -17,6 +17,7 @@ import os
 from datetime import datetime, timezone
 
 import httpx
+from typing import Optional
 
 import config
 
@@ -185,6 +186,107 @@ async def add_movie(movie: dict) -> bool:
         else:
             return False
     return True
+
+
+async def search_movies(query: str, limit: int = 10) -> list[dict]:
+    """Search movies in movies.json by title, slug, year, or imdb_id."""
+    if not query:
+        return []
+    try:
+        content_dict, _ = await get_movies_json()
+    except Exception:
+        return []
+
+    q = query.strip().lower()
+    matches = []
+    for m in content_dict.get("movies", []):
+        slug = str(m.get("slug") or "").lower()
+        title = str(m.get("title") or "").lower()
+        year = str(m.get("year") or "").lower()
+        imdb_id = str(m.get("imdb_id") or "").lower()
+
+        if q in slug or q in title or q in imdb_id or (year and f"{title} {year}".startswith(q)):
+            matches.append(m)
+            if len(matches) >= limit:
+                break
+    return matches
+
+
+async def delete_movie(identifier: str) -> tuple[bool, Optional[dict]]:
+    """
+    Remove movie matching identifier (slug, id, or imdb_id) from movies.json and movies_data.js.
+    Commits changes to GitHub and updates local files.
+    Returns (success, deleted_movie_dict).
+    """
+    if not identifier:
+        return False, None
+
+    identifier_clean = identifier.strip().lower()
+    # Strip URL if full website link was passed (e.g. https://filmsub.pages.dev/movie?id=xyz)
+    if "movie?id=" in identifier_clean or "movie.html?id=" in identifier_clean:
+        import urllib.parse
+        parsed = urllib.parse.urlparse(identifier.strip())
+        qs = urllib.parse.parse_qs(parsed.query)
+        if "id" in qs and qs["id"]:
+            identifier_clean = qs["id"][0].strip().lower()
+
+    for attempt in range(1, 4):
+        try:
+            content_dict, sha = await get_movies_json()
+        except Exception as exc:
+            log.error("Could not fetch movies.json before deleting movie: %s", exc)
+            return False, None
+
+        movies: list = content_dict.get("movies", [])
+        matched_idx = None
+        matched_movie = None
+
+        for idx, m in enumerate(movies):
+            m_slug = str(m.get("slug") or "").lower()
+            m_id = str(m.get("id") or "").lower()
+            m_imdb = str(m.get("imdb_id") or "").lower()
+            m_title = str(m.get("title") or "").lower()
+
+            if (
+                m_slug == identifier_clean
+                or m_id == identifier_clean
+                or (m_imdb and m_imdb == identifier_clean)
+                or m_title == identifier_clean
+            ):
+                matched_idx = idx
+                matched_movie = m
+                break
+
+        if matched_idx is None:
+            # Try fuzzy/partial match on title
+            for idx, m in enumerate(movies):
+                m_title = str(m.get("title") or "").lower()
+                if identifier_clean in m_title:
+                    matched_idx = idx
+                    matched_movie = m
+                    break
+
+        if matched_idx is None:
+            log.warning("[GitHubService] Movie '%s' not found in movies.json for deletion", identifier)
+            return False, None
+
+        deleted_movie = movies.pop(matched_idx)
+        content_dict["movies"] = movies
+        content_dict["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        msg = f"Delete movie: {deleted_movie.get('title', 'Unknown')} ({deleted_movie.get('year', '')})"
+        ok = await _commit_movies_json(content_dict, sha, msg)
+        if ok:
+            log.info("[GitHubService] Successfully deleted movie '%s' (index %d). Remaining movies: %d",
+                     deleted_movie.get('title'), matched_idx, len(movies))
+            return True, deleted_movie
+        elif attempt < 3:
+            import asyncio
+            await asyncio.sleep(1.0 * attempt)
+        else:
+            return False, None
+
+    return False, None
 
 
 async def _commit_movies_json(content_dict: dict, sha: str, commit_message: str) -> bool:

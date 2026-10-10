@@ -521,6 +521,7 @@ async def help_handler(client: Client, message: Message) -> None:
         "  • <code>/pikpak login &lt;email&gt; &lt;pass&gt;</code> — Connect account\n"
         "  • <code>/pikpak clear</code> — Clean cloud storage\n\n"
         "⚡ <b>පරිපාලන සහ AI පාලනය (Admin & AI Control):</b>\n"
+        "  • <code>/delete &lt;Movie Name/Slug&gt;</code> — Site එකෙන් චිත්‍රපටයක් සම්පූර්ණයෙන්ම ඉවත් කරන්න\n"
         "  • <code>/1</code> (හෝ <code>/restart</code>) — GitHub නවතම code pull කර Bot restart කරන්න\n"
         "  • <code>/gr &lt;ප්‍රශ්නය&gt;</code> — Antigravity / Gemini AI සහයකගෙන් විමසන්න\n"
         "  • <code>/gr status</code> — CPU, RAM, Disk, GPU සජීවී තත්ත්වය\n"
@@ -816,6 +817,10 @@ def _register_handlers() -> None:
     from handlers import admin_control
     admin_control.register(app)
     log.info("Handler registered: admin_control (/1, /restart, /update, /gr, /setkey)")
+
+    from handlers import delete_handler
+    delete_handler.register(app)
+    log.info("Handler registered: delete_handler (/delete, /del, /remove)")
 
 
 

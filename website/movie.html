@@ -28,9 +28,9 @@
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261010_v6">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261010_v6">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261010_v6">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v1">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v1">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v1">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -531,6 +531,9 @@
     }
 
     @media (max-width: 600px) {
+      .player-toolbar { padding: 8px 10px !important; gap: 8px !important; }
+      .btn-quality-trigger { padding: 6px 12px !important; font-size: 12px !important; }
+      .player-status-badge { padding: 5px 10px !important; font-size: 11px !important; }
       .cs-center-rewind, .cs-center-forward { width: 44px; height: 44px; }
       .cs-center-playpause { width: 56px; height: 56px; font-size: 20px; }
       .cs-player-center-overlay { gap: 16px; }
@@ -647,26 +650,60 @@
   <section class="cs-player-section" id="player-section" aria-label="Online Streaming Player">
     <div class="cs-container">
       <div class="cs-player-card">
-        <!-- Player Controls Header: Servers + Quality Switcher -->
-        <div class="player-toolbar">
+        <!-- Player Controls Header: Clean Mode Bar + Sleek Quality Selector -->
+        <div class="player-toolbar" id="player-toolbar">
           <div class="server-tabs" id="server-tabs">
-            <!-- Injected by player.js -->
+            <!-- Injected dynamically by player.js -->
+            <span class="player-status-badge">
+              <span class="pulse-indicator"></span>
+              <span>Cinema Stream</span>
+            </span>
           </div>
-          <div class="quality-selector-wrap" id="quality-selector-wrap">
-            <span class="quality-label"><i class="fa-solid fa-gauge-high"></i> Quality:</span>
-            <div class="quality-pills" id="quality-pills">
-              <button type="button" class="q-pill active" data-quality="auto" title="Auto Speed Adaptive">
-                <i class="fa-solid fa-bolt"></i> Auto
+
+          <!-- Sleek Quality Dropdown Button -->
+          <div class="player-quality-picker" id="player-quality-picker">
+            <button type="button" class="btn-quality-trigger" id="btn-quality-trigger" aria-haspopup="true" aria-expanded="false" title="Change Video Quality">
+              <span class="quality-trigger-icon"><i class="fa-solid fa-sliders"></i></span>
+              <span class="quality-trigger-label" id="quality-trigger-label">Quality: <strong id="current-quality-name">Auto (HD)</strong></span>
+              <i class="fa-solid fa-chevron-down quality-trigger-arrow"></i>
+            </button>
+            <div class="quality-popup-menu" id="quality-popup-menu" role="menu">
+              <div class="quality-popup-title"><i class="fa-solid fa-video"></i> Video Quality</div>
+              <button type="button" class="q-menu-item active" data-quality="auto">
+                <div class="q-menu-meta">
+                  <span class="q-menu-name"><i class="fa-solid fa-bolt" style="color:var(--accent)"></i> Auto Adaptive</span>
+                  <span class="q-menu-desc">Matches your connection speed</span>
+                </div>
+                <i class="fa-solid fa-check q-check-icon"></i>
               </button>
-              <button type="button" class="q-pill" data-quality="1080p">1080p</button>
-              <button type="button" class="q-pill" data-quality="720p">720p</button>
-              <button type="button" class="q-pill" data-quality="480p">480p</button>
-            </div>
-            <div class="network-speed-badge" id="net-speed-badge" title="Network Connection Speed">
-              <i class="fa-solid fa-wifi"></i> <span id="net-speed-text">Auto (HD)</span>
-            </div>
-            <div class="player-live-percent-badge" id="player-live-percent-badge" style="display:none">
-              <span class="sp-status-pulse-dot"></span> Loading: <span id="player-live-pct-text">0%</span>
+              <button type="button" class="q-menu-item" data-quality="1080p">
+                <div class="q-menu-meta">
+                  <span class="q-menu-name">1080p Full HD</span>
+                  <span class="q-menu-desc">Crystal clear cinema quality</span>
+                </div>
+                <i class="fa-solid fa-check q-check-icon"></i>
+              </button>
+              <button type="button" class="q-menu-item" data-quality="720p">
+                <div class="q-menu-meta">
+                  <span class="q-menu-name">720p HD</span>
+                  <span class="q-menu-desc">Smooth playback • Recommended</span>
+                </div>
+                <i class="fa-solid fa-check q-check-icon"></i>
+              </button>
+              <button type="button" class="q-menu-item" data-quality="480p">
+                <div class="q-menu-meta">
+                  <span class="q-menu-name">480p SD</span>
+                  <span class="q-menu-desc">Standard speed data saver</span>
+                </div>
+                <i class="fa-solid fa-check q-check-icon"></i>
+              </button>
+              <button type="button" class="q-menu-item" data-quality="360p">
+                <div class="q-menu-meta">
+                  <span class="q-menu-name">360p Data Saver</span>
+                  <span class="q-menu-desc">Low data usage</span>
+                </div>
+                <i class="fa-solid fa-check q-check-icon"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -873,11 +910,11 @@
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261010_v8"></script>
-<script src="data/stream_endpoint.js?v=20261010_v8"></script>
-<script src="assets/js/app.js?v=20261010_v8"></script>
-<script src="assets/js/download.js?v=20261010_v8"></script>
-<script src="assets/js/player.js?v=20261010_v8"></script>
-<script src="assets/js/netflix-ui.js?v=20261010_v8"></script>
+<script src="data/movies_data.js?v=20261011_v1"></script>
+<script src="data/stream_endpoint.js?v=20261011_v1"></script>
+<script src="assets/js/app.js?v=20261011_v1"></script>
+<script src="assets/js/download.js?v=20261011_v1"></script>
+<script src="assets/js/player.js?v=20261011_v1"></script>
+<script src="assets/js/netflix-ui.js?v=20261011_v1"></script>
 </body>
 </html>

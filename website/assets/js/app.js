@@ -18,18 +18,34 @@ let allMovies = [];
 let siteData = {};
 
 // ---- Init ----
-document.addEventListener('DOMContentLoaded', async () => {
-  initHeader();
-  initSearchOverlay();
-  initMobileBottomNav();
-  await loadMovies();
+function renderAllSections() {
   if (document.getElementById('hero-section')) renderHero();
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
   if (document.getElementById('sinhala-dub-track')) renderCarousel('sinhala-dub-track', getSinhalaFilms(), { isTrending: false });
   setupCarouselArrows();
   initHighlightPopup();
-});
+}
+
+function initApp() {
+  initHeader();
+  initSearchOverlay();
+  initMobileBottomNav();
+  // 1. Instantly populate from local window.FILMSUB_DATA
+  loadBaselineMovies();
+  // 2. Render all sections immediately with zero blank screen
+  renderAllSections();
+  // 3. Fetch remote updates in background without blocking rendering
+  fetchRemoteMovies().then(updated => {
+    if (updated) renderAllSections();
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 // ---- Load Movies ----
 function _isValidMovieEntry(m) {
@@ -44,34 +60,34 @@ function _isValidMovieEntry(m) {
   return hasPoster || hasMedia;
 }
 
-async function loadMovies() {
-  // 1. Initial baseline from pre-loaded script tag
-  let baselineMovies = [];
+function loadBaselineMovies() {
   if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
     siteData = window.FILMSUB_DATA.site || {};
-    baselineMovies = window.FILMSUB_DATA.movies.filter(_isValidMovieEntry);
-    allMovies = baselineMovies.length > 0 ? baselineMovies : window.FILMSUB_DATA.movies;
+    const valid = window.FILMSUB_DATA.movies.filter(_isValidMovieEntry);
+    allMovies = valid.length > 0 ? valid : window.FILMSUB_DATA.movies;
   }
+}
 
+async function fetchRemoteMovies() {
   const cacheBuster = `?_t=${Date.now()}`;
-  // 2. Fetch live data: First try GitHub Raw (instant bot updates), then local data/movies.json
-  const remoteUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json${cacheBuster}`;
   const localUrl = `${SITE_CONFIG.moviesPath}${cacheBuster}`;
+  const remoteUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json${cacheBuster}`;
 
-  let fetched = false;
-  for (const url of [remoteUrl, localUrl]) {
+  for (const url of [localUrl, remoteUrl]) {
     try {
-      const res = await fetch(url, { cache: 'no-store' });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.movies) && data.movies.length > 0) {
           const validRemote = data.movies.filter(_isValidMovieEntry);
           if (validRemote.length > 0) {
             siteData = data.site || siteData;
-            // Merge any baseline movies not in validRemote so local catalog is never lost
             const seenSlugs = new Set(validRemote.map(m => String(m.slug || m.id || '').toLowerCase()));
             const merged = [...validRemote];
-            baselineMovies.forEach(bm => {
+            allMovies.forEach(bm => {
               const s = String(bm.slug || bm.id || '').toLowerCase();
               if (s && !seenSlugs.has(s)) {
                 seenSlugs.add(s);
@@ -79,8 +95,7 @@ async function loadMovies() {
               }
             });
             allMovies = merged;
-            fetched = true;
-            break;
+            return true;
           }
         }
       }
@@ -88,10 +103,12 @@ async function loadMovies() {
       // Continue to next source
     }
   }
+  return false;
+}
 
-  if (!fetched && allMovies.length === 0) {
-    console.info('Using local FILMSUB_DATA fallback.');
-  }
+async function loadMovies() {
+  loadBaselineMovies();
+  await fetchRemoteMovies();
 }
 
 // ---- Data Helpers ----

@@ -28,17 +28,23 @@ function renderAllSections() {
 }
 
 function initApp() {
-  initHeader();
-  initSearchOverlay();
-  initMobileBottomNav();
-  // 1. Instantly populate from local window.FILMSUB_DATA
-  loadBaselineMovies();
-  // 2. Render all sections immediately with zero blank screen
-  renderAllSections();
+  // 1. Instantly populate from local window.FILMSUB_DATA and render immediately
+  try {
+    loadBaselineMovies();
+    renderAllSections();
+  } catch (err) {
+    console.error('Error rendering baseline:', err);
+  }
+
+  // 2. Init header, search, nav with safe isolation
+  try { initHeader(); } catch (e) { console.error('initHeader error:', e); }
+  try { initSearchOverlay(); } catch (e) { console.error('initSearchOverlay error:', e); }
+  try { initMobileBottomNav(); } catch (e) { console.error('initMobileBottomNav error:', e); }
+
   // 3. Fetch remote updates in background without blocking rendering
   fetchRemoteMovies().then(updated => {
     if (updated) renderAllSections();
-  });
+  }).catch(() => {});
 }
 
 if (document.readyState === 'loading') {
@@ -330,8 +336,8 @@ function findMovieBySlug(slug) {
 }
 
 // ---- Hero ----
-function renderHero() {
-  const movie = getFeatured();
+function renderHero(targetMovie) {
+  const movie = targetMovie || getFeatured();
   const heroEl = document.getElementById('hero-section');
   if (!heroEl) return;
   if (!movie) {
@@ -568,6 +574,14 @@ function showToast(message, type = 'success') {
 }
 
 // ---- Utils ----
+function debounce(fn, delay = 250) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -735,6 +749,7 @@ function initMobileBottomNav() {
 // ---- Expose globals ----
 window.FilmSub = {
   loadMovies,
+  renderHero,
   allMovies: () => allMovies,
   siteData: () => siteData,
   getFeatured,

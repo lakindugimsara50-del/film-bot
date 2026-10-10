@@ -160,44 +160,11 @@
         d.classList.toggle('active', i === idx);
       });
 
-      // Update hero content
       const movie = movies[idx];
       if (!movie) return;
 
-      const backdrop = movie.backdrop || movie.backdrop_url || '';
-      const backdropEl = document.querySelector('.hero-backdrop');
-      if (backdropEl && backdrop) {
-        // Crossfade backdrop
-        backdropEl.style.opacity = '0';
-        backdropEl.style.transition = 'opacity 0.5s ease';
-        setTimeout(() => {
-          backdropEl.style.backgroundImage = `url('${backdrop}')`;
-          backdropEl.style.opacity = '1';
-        }, 300);
-      }
-
-      // Update title
-      const titleEl = document.getElementById('hero-title');
-      if (titleEl) {
-        titleEl.style.opacity = '0';
-        titleEl.style.transform = 'translateY(8px)';
-        titleEl.style.transition = 'all 0.4s ease';
-        setTimeout(() => {
-          titleEl.textContent = movie.title || '';
-          titleEl.style.opacity = '1';
-          titleEl.style.transform = 'translateY(0)';
-        }, 200);
-      }
-
-      const titleSiEl = document.getElementById('hero-title-si');
-      if (titleSiEl) titleSiEl.textContent = movie.title_si || '';
-
-      const descEl = document.getElementById('hero-description');
-      if (descEl) descEl.textContent = movie.description || '';
-
-      const watchBtn = document.getElementById('hero-watch-btn');
-      if (watchBtn && window.FilmSub) {
-        watchBtn.href = `${window.FilmSub.SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
+      if (window.FilmSub && typeof window.FilmSub.renderHero === 'function') {
+        window.FilmSub.renderHero(movie);
       }
     }
 

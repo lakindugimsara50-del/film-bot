@@ -2342,55 +2342,545 @@ function injectInPlayerQualityControl(player) {
 }
 
 /**
- * Displays a smooth Netflix/YouTube style ripple overlay during double-tap seek (+10s / -10s).
+ * Format video timestamp with leading zeros (e.g., 00:34 / 02:13:09).
  */
-function showSeekRipple(playerEl, direction) {
+function formatFilmTime(seconds, includeHoursIfZero = false) {
+  if (!seconds || isNaN(seconds) || seconds < 0) return includeHoursIfZero ? '00:00:00' : '00:00';
+  const s = Math.floor(seconds);
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  if (hrs > 0) {
+    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+  }
+  if (includeHoursIfZero) {
+    return `00:${pad(mins)}:${pad(secs)}`;
+  }
+  return `${pad(mins)}:${pad(secs)}`;
+}
+
+/**
+ * Returns the effective duration in seconds, falling back to movie metadata if stream duration is missing/infinite.
+ */
+function getEffectiveDuration(player, movie) {
+  let dur = 0;
+  if (player && typeof player.duration === 'function') {
+    dur = player.duration();
+  }
+  if (!dur || isNaN(dur) || !isFinite(dur) || dur <= 0) {
+    const m = movie || currentMovie;
+    if (typeof m?.duration === 'number') {
+      dur = m.duration * 60;
+    } else if (typeof m?.duration === 'string') {
+      const minMatch = m.duration.match(/(\d+)\s*min/i) || m.duration.match(/^(\d+)$/);
+      const hrMatch = m.duration.match(/(\d+)\s*h(?:r|ours?)?/i);
+      let totalMins = 0;
+      if (hrMatch) totalMins += parseInt(hrMatch[1], 10) * 60;
+      if (minMatch) totalMins += parseInt(minMatch[1], 10);
+      if (totalMins > 0) dur = totalMins * 60;
+    }
+  }
+  return (dur && dur > 0) ? dur : 0;
+}
+
+/**
+ * Displays a smooth Netflix/YouTube style ripple overlay during double-tap / keyboard seek (+10s / -10s).
+ */
+function showSeekRipple(playerEl, direction, seconds = 10) {
   if (!playerEl) return;
-  const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+  const wrap = playerEl.querySelector('.player-iframe-wrap') || (playerEl.classList && playerEl.classList.contains('player-iframe-wrap') ? playerEl : playerEl);
+
+  const old = wrap.querySelector('.seek-ripple-overlay');
+  if (old) old.remove();
+
   const ripple = document.createElement('div');
   ripple.className = `seek-ripple-overlay ${direction}`;
-  ripple.innerHTML = direction === 'forward'
-    ? '<div class="seek-ripple-bubble"><i class="fa-solid fa-rotate-right"></i><span>+10s</span></div>'
-    : '<div class="seek-ripple-bubble"><i class="fa-solid fa-rotate-left"></i><span>-10s</span></div>';
+  ripple.innerHTML = `
+    <div class="seek-ripple-bubble">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        ${direction === 'forward'
+          ? '<path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>'
+          : '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>'}
+        <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
+      </svg>
+      <span>${direction === 'forward' ? `+${seconds}s` : `-${seconds}s`}</span>
+    </div>`;
   wrap.appendChild(ripple);
   setTimeout(() => {
     if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
-  }, 650);
+  }, 700);
+}
+
+/**
+ * CineSubz-Style Center Overlay Controls:
+ * - Center Rewind 10s button
+ * - Center Play / Pause button
+ * - Center Forward 10s button
+ * - Auto-hide on playback with hover / touch reveal
+ */
+function mountCenterPlayerControls(playerEl, player, movie) {
+  if (!player || !player.el) return;
+  const playerDom = player.el();
+  if (!playerDom) return;
+
+  const old = playerDom.querySelector('.cs-player-center-overlay');
+  if (old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'cs-player-center-overlay';
+  overlay.id = 'cs-player-center-overlay';
+  overlay.innerHTML = `
+    <button type="button" class="cs-center-btn cs-center-rewind" id="cs-btn-center-rewind" title="Rewind 10s (Left Arrow)" aria-label="Rewind 10 seconds">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
+      </svg>
+    </button>
+    <button type="button" class="cs-center-btn cs-center-playpause" id="cs-btn-center-playpause" title="Play / Pause (Space)" aria-label="Play or Pause">
+      <i class="fa-solid fa-play" id="cs-center-play-icon"></i>
+    </button>
+    <button type="button" class="cs-center-btn cs-center-forward" id="cs-btn-center-forward" title="Forward 10s (Right Arrow)" aria-label="Forward 10 seconds">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
+      </svg>
+    </button>
+  `;
+
+  const cb = playerDom.querySelector('.vjs-control-bar');
+  if (cb) {
+    playerDom.insertBefore(overlay, cb);
+  } else {
+    playerDom.appendChild(overlay);
+  }
+
+  const playBtn = overlay.querySelector('#cs-btn-center-playpause');
+  const rewindBtn = overlay.querySelector('#cs-btn-center-rewind');
+  const forwardBtn = overlay.querySelector('#cs-btn-center-forward');
+  const playIcon = overlay.querySelector('#cs-center-play-icon');
+
+  const updatePlayState = () => {
+    if (!player || !playIcon) return;
+    if (player.paused()) {
+      playIcon.className = 'fa-solid fa-play';
+      overlay.classList.remove('hidden');
+    } else {
+      playIcon.className = 'fa-solid fa-pause';
+    }
+  };
+
+  playBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!player) return;
+    if (player.paused()) {
+      player.play().catch(() => {});
+    } else {
+      player.pause();
+    }
+    updatePlayState();
+  });
+
+  rewindBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!player) return;
+    const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
+    player.currentTime(Math.max(0, cur - 10));
+    showSeekRipple(playerEl, 'backward', 10);
+  });
+
+  forwardBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!player) return;
+    const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
+    const dur = getEffectiveDuration(player, movie);
+    player.currentTime(Math.min(dur || (cur + 10), cur + 10));
+    showSeekRipple(playerEl, 'forward', 10);
+  });
+
+  player.on('play', updatePlayState);
+  player.on('pause', updatePlayState);
+  player.on('ended', () => {
+    if (playIcon) playIcon.className = 'fa-solid fa-rotate-right';
+    overlay.classList.remove('hidden');
+  });
+
+  let hideTimer = null;
+  const showOverlay = () => {
+    overlay.classList.remove('hidden');
+    if (hideTimer) clearTimeout(hideTimer);
+    if (player && !player.paused()) {
+      hideTimer = setTimeout(() => {
+        if (player && !player.paused()) {
+          overlay.classList.add('hidden');
+        }
+      }, 2800);
+    }
+  };
+
+  playerDom.addEventListener('pointermove', showOverlay, { passive: true });
+  playerDom.addEventListener('touchstart', showOverlay, { passive: true });
+  playerDom.addEventListener('mouseleave', () => {
+    if (player && !player.paused()) {
+      overlay.classList.add('hidden');
+    }
+  });
+
+  updatePlayState();
+}
+
+/**
+ * Injects CineSubz-Style Control Bar components:
+ * - Rewind 10s & Forward 10s buttons next to Play/Pause
+ * - High-precision Time Display (00:34 / 02:13:09)
+ * - Brand Watermark (FilmSub HD)
+ */
+function injectBottomControlBarItems(player, movie) {
+  if (!player || !player.controlBar) return;
+  const cbEl = player.controlBar.el();
+  if (!cbEl) return;
+
+  // 1. Rewind 10s and Forward 10s buttons right next to playToggle
+  if (!cbEl.querySelector('.vjs-rewind-10')) {
+    const playToggleEl = player.controlBar.playToggle ? player.controlBar.playToggle.el() : cbEl.firstElementChild;
+
+    const rewindBtn = document.createElement('button');
+    rewindBtn.type = 'button';
+    rewindBtn.className = 'vjs-control vjs-button vjs-custom-seek-btn vjs-rewind-10';
+    rewindBtn.setAttribute('title', 'Rewind 10 seconds (Left Arrow)');
+    rewindBtn.setAttribute('aria-label', 'Rewind 10 seconds');
+    rewindBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
+      </svg>`;
+    rewindBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+      player.currentTime(Math.max(0, cur - 10));
+      showSeekRipple(player.el(), 'backward', 10);
+    });
+
+    const forwardBtn = document.createElement('button');
+    forwardBtn.type = 'button';
+    forwardBtn.className = 'vjs-control vjs-button vjs-custom-seek-btn vjs-forward-10';
+    forwardBtn.setAttribute('title', 'Forward 10 seconds (Right Arrow)');
+    forwardBtn.setAttribute('aria-label', 'Forward 10 seconds');
+    forwardBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
+      </svg>`;
+    forwardBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+      const dur = getEffectiveDuration(player, movie);
+      player.currentTime(Math.min(dur || (cur + 10), cur + 10));
+      showSeekRipple(player.el(), 'forward', 10);
+    });
+
+    if (playToggleEl && playToggleEl.nextSibling) {
+      cbEl.insertBefore(rewindBtn, playToggleEl.nextSibling);
+      cbEl.insertBefore(forwardBtn, rewindBtn.nextSibling);
+    } else {
+      cbEl.appendChild(rewindBtn);
+      cbEl.appendChild(forwardBtn);
+    }
+  }
+
+  // 2. Custom Time Display (00:34 / 02:13:09)
+  let timeWrap = cbEl.querySelector('.vjs-custom-time-display');
+  if (!timeWrap) {
+    timeWrap = document.createElement('div');
+    timeWrap.className = 'vjs-control vjs-custom-time-display';
+    timeWrap.innerHTML = `
+      <span class="vjs-cur-time" id="vjs-cur-time">00:00</span>
+      <span class="vjs-time-slash">/</span>
+      <span class="vjs-dur-time" id="vjs-dur-time">00:00</span>
+    `;
+
+    const volPanel = player.controlBar.volumePanel ? player.controlBar.volumePanel.el() : null;
+    if (volPanel && volPanel.nextSibling) {
+      cbEl.insertBefore(timeWrap, volPanel.nextSibling);
+    } else {
+      cbEl.appendChild(timeWrap);
+    }
+  }
+
+  // 3. Brand Watermark & Quality Badge on the right side
+  if (!cbEl.querySelector('.vjs-control-brand-wrap')) {
+    const brandWrap = document.createElement('div');
+    brandWrap.className = 'vjs-control-brand-wrap';
+    const initQuality = (selectedQuality === 'auto' ? (currentEffectiveQuality || '720p') : selectedQuality).toUpperCase();
+    brandWrap.innerHTML = `
+      <span class="vjs-brand-filmsub"><span class="brand-red">FILM</span><span class="brand-white">SUB</span></span>
+      <span class="vjs-brand-quality-badge" id="vjs-bar-quality-badge">HD ${initQuality}</span>
+    `;
+
+    const sqBtn = cbEl.querySelector('.vjs-super-quality-btn');
+    const fsBtn = player.controlBar.fullscreenToggle ? player.controlBar.fullscreenToggle.el() : null;
+    if (sqBtn) {
+      cbEl.insertBefore(brandWrap, sqBtn);
+    } else if (fsBtn) {
+      cbEl.insertBefore(brandWrap, fsBtn);
+    } else {
+      cbEl.appendChild(brandWrap);
+    }
+  }
+
+  // Live time updater
+  const curTimeEl = timeWrap.querySelector('#vjs-cur-time');
+  const durTimeEl = timeWrap.querySelector('#vjs-dur-time');
+
+  const updateTime = () => {
+    if (!player) return;
+    const cur = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+    const dur = getEffectiveDuration(player, movie);
+    if (curTimeEl) curTimeEl.textContent = formatFilmTime(cur, dur >= 3600);
+    if (durTimeEl) durTimeEl.textContent = dur > 0 ? formatFilmTime(dur, dur >= 3600) : '--:--';
+  };
+
+  player.on('timeupdate', updateTime);
+  player.on('loadedmetadata', updateTime);
+  player.on('durationchange', updateTime);
+  player.on('seeking', updateTime);
+  player.on('seeked', updateTime);
+  updateTime();
+}
+
+/**
+ * Keyboard shortcuts for Laptop / PC:
+ * - ArrowLeft / J: Rewind 10s
+ * - ArrowRight / L: Forward 10s
+ * - Space / K: Play/Pause
+ * - F: Fullscreen
+ * - M: Mute
+ * - ArrowUp / ArrowDown: Volume +/- 10%
+ */
+function attachPlayerKeyboardShortcuts(player, playerEl) {
+  if (window._fsPlayerKeyHandler) {
+    document.removeEventListener('keydown', window._fsPlayerKeyHandler);
+  }
+  window._fsPlayerKeyHandler = (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) return;
+    if (!player || typeof player.currentTime !== 'function') return;
+
+    const cur = player.currentTime() || 0;
+    const dur = getEffectiveDuration(player, currentMovie);
+    const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'j':
+      case 'J':
+        e.preventDefault();
+        player.currentTime(Math.max(0, cur - 10));
+        showSeekRipple(wrap, 'backward', 10);
+        break;
+      case 'ArrowRight':
+      case 'l':
+      case 'L':
+        e.preventDefault();
+        player.currentTime(Math.min(dur || (cur + 10), cur + 10));
+        showSeekRipple(wrap, 'forward', 10);
+        break;
+      case ' ':
+      case 'k':
+      case 'K':
+        e.preventDefault();
+        if (player.paused()) {
+          player.play().catch(() => {});
+        } else {
+          player.pause();
+        }
+        break;
+      case 'f':
+      case 'F':
+        e.preventDefault();
+        if (player.isFullscreen && player.isFullscreen()) {
+          player.exitFullscreen();
+        } else if (player.requestFullscreen) {
+          player.requestFullscreen();
+        }
+        break;
+      case 'm':
+      case 'M':
+        e.preventDefault();
+        player.muted(!player.muted());
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        player.volume(Math.min(1, (player.volume() || 0) + 0.1));
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        player.volume(Math.max(0, (player.volume() || 0) - 0.1));
+        break;
+    }
+  };
+  document.addEventListener('keydown', window._fsPlayerKeyHandler);
 }
 
 /**
  * Configures touch gestures on Mobile:
- * - Double-tap right: +10s forward seek
- * - Double-tap left: -10s backward seek
+ * - Double-tap left 42%: -10s backward seek (with rapid multi-tap support: -20s, -30s)
+ * - Double-tap right 42%: +10s forward seek (with rapid multi-tap support: +20s, +30s)
+ * - Single-tap: Toggle controls overlay
  */
 function attachMobileTouchControls(playerEl, player) {
   if (!playerEl || !player) return;
-  let lastTapTime = 0;
-  let lastTapX = 0;
+  const wrap = playerEl.querySelector('.player-iframe-wrap') || (player.el ? player.el() : playerEl);
 
-  const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+  let tapCount = 0;
+  let lastTapEpoch = 0;
+  let lastTapZone = null;
+  let singleTapTimeout = null;
+  let accumulatedSeek = 0;
+  let seekResetTimeout = null;
+
   wrap.addEventListener('touchend', (e) => {
-    if (e.target.closest('.vjs-control-bar, .vjs-menu, button, input, a, .sub-controls-toolbar')) return;
+    if (e.target.closest('.vjs-control-bar, .cs-player-center-overlay, .vjs-menu, button, a, input, select')) return;
     const touch = e.changedTouches && e.changedTouches[0];
     if (!touch) return;
+
     const now = Date.now();
     const rect = wrap.getBoundingClientRect();
     const touchX = touch.clientX - rect.left;
-    const isRightHalf = touchX > (rect.width / 2);
+    const pct = touchX / rect.width;
 
-    if (now - lastTapTime < 320 && Math.abs(touchX - lastTapX) < 100) {
-      const delta = isRightHalf ? 10 : -10;
-      try {
-        const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-        player.currentTime(Math.max(0, curT + delta));
-      } catch (err) {}
-      showSeekRipple(playerEl, isRightHalf ? 'forward' : 'backward');
-      lastTapTime = 0;
+    let zone = 'center';
+    if (pct < 0.42) zone = 'left';
+    else if (pct > 0.58) zone = 'right';
+
+    if (zone !== 'center' && zone === lastTapZone && (now - lastTapEpoch < 420)) {
+      // Double-tap or rapid multi-tap!
+      if (singleTapTimeout) {
+        clearTimeout(singleTapTimeout);
+        singleTapTimeout = null;
+      }
+      tapCount++;
+      accumulatedSeek += 10;
+
+      const cur = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+      const dur = getEffectiveDuration(player, currentMovie);
+
+      if (zone === 'left') {
+        player.currentTime(Math.max(0, cur - 10));
+        showSeekRipple(wrap, 'backward', accumulatedSeek);
+      } else {
+        player.currentTime(Math.min(dur || (cur + 10), cur + 10));
+        showSeekRipple(wrap, 'forward', accumulatedSeek);
+      }
+
+      if (seekResetTimeout) clearTimeout(seekResetTimeout);
+      seekResetTimeout = setTimeout(() => {
+        accumulatedSeek = 0;
+        tapCount = 0;
+        lastTapZone = null;
+      }, 750);
+
+      lastTapEpoch = now;
+      if (e.cancelable) e.preventDefault();
     } else {
-      lastTapTime = now;
-      lastTapX = touchX;
+      // First tap
+      lastTapEpoch = now;
+      lastTapZone = zone;
+      tapCount = 1;
+      accumulatedSeek = 10;
+
+      if (singleTapTimeout) clearTimeout(singleTapTimeout);
+      singleTapTimeout = setTimeout(() => {
+        const centerOverlay = wrap.querySelector('.cs-player-center-overlay');
+        if (centerOverlay) {
+          if (centerOverlay.classList.contains('hidden')) {
+            centerOverlay.classList.remove('hidden');
+            if (player && !player.paused()) {
+              setTimeout(() => {
+                if (player && !player.paused()) centerOverlay.classList.add('hidden');
+              }, 3000);
+            }
+          } else {
+            if (player && !player.paused()) {
+              centerOverlay.classList.add('hidden');
+            }
+          }
+        }
+        tapCount = 0;
+        lastTapZone = null;
+        accumulatedSeek = 0;
+      }, 260);
     }
-  }, { passive: true });
+  }, { passive: false });
+}
+
+/**
+ * Displays a Cinema-Style Auto-Reconnect Modal when network stream gets interrupted mid-playback.
+ */
+function showStreamReconnectModal(playerEl, player, stream, resumeTime, movie) {
+  const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+  if (!wrap) return;
+
+  const existing = wrap.querySelector('.cs-reconnect-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'cs-reconnect-modal';
+  modal.innerHTML = `
+    <div class="cs-reconnect-box">
+      <div class="cs-reconnect-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+      <h3 class="cs-reconnect-title">Connection Interrupted</h3>
+      <p class="cs-reconnect-desc">Network connection to the stream server was paused. Resuming video seamlessly from where you left off.</p>
+      <div class="cs-reconnect-actions">
+        <button type="button" class="btn-rec btn-rec-primary" id="btn-rec-retry"><i class="fa-solid fa-rotate-right"></i> Resume Playback</button>
+        <button type="button" class="btn-rec btn-rec-secondary" id="btn-rec-480"><i class="fa-solid fa-bolt"></i> 480p SD Smooth</button>
+      </div>
+      <span class="cs-rec-countdown" id="cs-rec-countdown">Auto-reconnecting in 3s...</span>
+    </div>
+  `;
+  wrap.appendChild(modal);
+
+  let countdown = 3;
+  let timer = null;
+
+  const doReconnect = (targetQuality = null) => {
+    if (timer) clearInterval(timer);
+    modal.remove();
+    if (targetQuality) {
+      applyQualitySwitch(targetQuality, { isAutoDowngrade: false });
+    } else {
+      try {
+        const curSrc = stream.stream_url;
+        player.src({ src: curSrc, type: stream.type || 'video/mp4' });
+        player.ready(() => {
+          player.currentTime(Math.max(0, resumeTime - 1));
+          player.play().catch(() => {});
+        });
+      } catch (e) {
+        console.error('Reconnect failed:', e);
+      }
+    }
+  };
+
+  const retryBtn = modal.querySelector('#btn-rec-retry');
+  if (retryBtn) retryBtn.addEventListener('click', () => doReconnect());
+
+  const btn480 = modal.querySelector('#btn-rec-480');
+  if (btn480) btn480.addEventListener('click', () => doReconnect('480p'));
+
+  const countSpan = modal.querySelector('#cs-rec-countdown');
+  timer = setInterval(() => {
+    countdown--;
+    if (countSpan) countSpan.textContent = `Auto-reconnecting in ${countdown}s...`;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      doReconnect();
+    }
+  }, 1000);
 }
 
 function createVjsPlayer(playerEl, stream, movie) {
@@ -2457,9 +2947,8 @@ function createVjsPlayer(playerEl, stream, movie) {
       liveui: false,
       controlBar: {
         children: [
-          'playToggle', 'volumePanel', 'currentTimeDisplay', 'timeDivider',
-          'durationDisplay', 'progressControl', 'playbackRateMenuButton',
-          'subsCapsButton', 'fullscreenToggle'
+          'playToggle', 'volumePanel', 'progressControl',
+          'playbackRateMenuButton', 'fullscreenToggle'
         ]
       }
     });
@@ -2475,6 +2964,10 @@ function createVjsPlayer(playerEl, stream, movie) {
       } catch (e) {}
 
       injectInPlayerQualityControl(vjsPlayer);
+      mountCenterPlayerControls(playerEl, vjsPlayer, movie);
+      injectBottomControlBarItems(vjsPlayer, movie);
+      attachPlayerKeyboardShortcuts(vjsPlayer, playerEl);
+      attachMobileTouchControls(playerEl, vjsPlayer);
 
       // Bug 2 fix: Ensure Sinhala subtitle track is injected via addRemoteTextTrack
       // if the HTML <track> hasn't surfaced in textTracks() yet (async VJS fetch).
@@ -2509,7 +3002,6 @@ function createVjsPlayer(playerEl, stream, movie) {
 
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
-      attachMobileTouchControls(playerEl, vjsPlayer);
       try {
         const p = vjsPlayer.play();
         if (p && typeof p.catch === 'function') {
@@ -2666,17 +3158,27 @@ function createVjsPlayer(playerEl, stream, movie) {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
     });
 
-    // Seamless failover on real player error
+    // Seamless failover on real player error or network interruption
     vjsPlayer.on('error', () => {
       const err = vjsPlayer ? vjsPlayer.error() : null;
       console.warn('[FilmSub Player] Video.js error event:', err);
-      const rState = (vjsPlayer && typeof vjsPlayer.readyState === 'function') ? vjsPlayer.readyState() : (vjsPlayer?.tech_?.el_?.readyState || 0);
-      if (rState >= 1) {
-        console.warn('[FilmSub Player] Video already has metadata/frames (readyState=' + rState + '), ignoring transient error event');
-        return;
-      }
       const errDisplay = playerEl.querySelector('.vjs-error-display');
       if (errDisplay) errDisplay.style.display = 'none';
+
+      const curT = (vjsPlayer && typeof vjsPlayer.currentTime === 'function') ? vjsPlayer.currentTime() : 0;
+      if (curT > 2) {
+        // Playback was active: show sleek Cinema Reconnect Modal preserving current playhead
+        showStreamReconnectModal(playerEl, vjsPlayer, stream, curT, movie);
+        return;
+      }
+
+      const rState = (vjsPlayer && typeof vjsPlayer.readyState === 'function') ? vjsPlayer.readyState() : (vjsPlayer?.tech_?.el_?.readyState || 0);
+      if (rState >= 1 && curT === 0) {
+        console.warn('[FilmSub Player] Video has metadata (readyState=' + rState + '), attempting soft retry');
+        vjsPlayer.play().catch(() => {});
+        return;
+      }
+
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       triggerFailover('player error event: ' + (err ? (err.message || err.code) : 'unknown'));
     });

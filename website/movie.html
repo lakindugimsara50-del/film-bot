@@ -142,6 +142,311 @@
       font-size: clamp(14px, 2.2vw, 22px) !important;
       line-height: 1.45 !important;
     }
+
+    /* Hide default big play button & raw error display */
+    .video-js .vjs-big-play-button {
+      display: none !important;
+    }
+    .video-js .vjs-error-display {
+      display: none !important;
+    }
+
+    /* CineSubz-Style Center Overlay Controls */
+    .cs-player-center-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      z-index: 18;
+      pointer-events: auto;
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), visibility 0.25s ease;
+    }
+    .cs-player-center-overlay.hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transform: translate(-50%, -50%) scale(0.92) !important;
+    }
+    .cs-center-btn {
+      background: rgba(18, 18, 24, 0.78);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      user-select: none;
+      transition: transform 0.18s cubic-bezier(0.25, 1, 0.5, 1), background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .cs-center-btn:hover {
+      transform: scale(1.12);
+      background: rgba(229, 9, 20, 0.92);
+      border-color: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 0 28px rgba(229, 9, 20, 0.85);
+    }
+    .cs-center-btn:active {
+      transform: scale(0.95);
+    }
+    .cs-center-rewind,
+    .cs-center-forward {
+      width: 52px;
+      height: 52px;
+    }
+    .cs-center-playpause {
+      width: 68px;
+      height: 68px;
+      font-size: 24px;
+      background: rgba(229, 9, 20, 0.9);
+      border-color: rgba(255, 255, 255, 0.45);
+      box-shadow: 0 0 30px rgba(229, 9, 20, 0.7);
+    }
+    .cs-center-playpause:hover {
+      background: #f40612;
+      box-shadow: 0 0 40px rgba(229, 9, 20, 1);
+    }
+    .cs-center-playpause i {
+      margin-left: 2px;
+    }
+    .cs-center-playpause i.fa-pause {
+      margin-left: 0;
+    }
+
+    /* Custom Seek Buttons on Video.js Control Bar */
+    .vjs-custom-seek-btn {
+      background: transparent !important;
+      border: none !important;
+      color: #ffffff !important;
+      cursor: pointer;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 36px !important;
+      height: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      transition: color 0.18s ease, transform 0.18s ease !important;
+    }
+    .vjs-custom-seek-btn:hover {
+      color: var(--accent, #e50914) !important;
+      transform: scale(1.18) !important;
+    }
+
+    /* Custom Live Time Display (00:34 / 02:13:09) */
+    .vjs-custom-time-display {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace !important;
+      padding: 0 8px !important;
+      letter-spacing: 0.3px;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .vjs-custom-time-display .vjs-cur-time {
+      color: #ffffff;
+      font-weight: 800;
+    }
+    .vjs-custom-time-display .vjs-time-slash {
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 400;
+    }
+    .vjs-custom-time-display .vjs-dur-time {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    /* Control Bar Brand Watermark & Quality Badge */
+    .vjs-control-brand-wrap {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      margin-right: 8px;
+      user-select: none;
+    }
+    .vjs-brand-filmsub {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .vjs-brand-filmsub .brand-red {
+      color: var(--accent, #e50914);
+    }
+    .vjs-brand-filmsub .brand-white {
+      color: #ffffff;
+    }
+    .vjs-brand-quality-badge {
+      background: rgba(229, 9, 20, 0.18);
+      border: 1px solid rgba(229, 9, 20, 0.6);
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Mobile Double-Tap Ripple Overlay (YouTube / Netflix style) */
+    .seek-ripple-overlay {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 44%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 25;
+      animation: fsRippleAnim 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+    }
+    .seek-ripple-overlay.forward {
+      right: 0;
+      border-radius: 50% 0 0 50% / 100% 0 0 100%;
+      background: radial-gradient(circle at 75% 50%, rgba(229, 9, 20, 0.45) 0%, rgba(229, 9, 20, 0.12) 55%, transparent 75%);
+    }
+    .seek-ripple-overlay.backward {
+      left: 0;
+      border-radius: 0 50% 50% 0 / 0 100% 100% 0;
+      background: radial-gradient(circle at 25% 50%, rgba(229, 9, 20, 0.45) 0%, rgba(229, 9, 20, 0.12) 55%, transparent 75%);
+    }
+    .seek-ripple-bubble {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: rgba(14, 14, 18, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 50px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(229, 9, 20, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .seek-ripple-bubble svg,
+    .seek-ripple-bubble i {
+      font-size: 24px;
+      color: #ffffff;
+    }
+    .seek-ripple-bubble span {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+    }
+    @keyframes fsRippleAnim {
+      0% { opacity: 0; transform: scale(0.85); }
+      30% { opacity: 1; transform: scale(1.04); }
+      70% { opacity: 0.95; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.08); }
+    }
+
+    /* Stream Reconnect Card (Network Error Recovery) */
+    .cs-reconnect-modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 35;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      animation: fsFadeIn 0.25s ease;
+    }
+    .cs-reconnect-box {
+      max-width: 440px;
+      width: 100%;
+      background: #111116;
+      border: 1px solid rgba(229, 9, 20, 0.45);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(229, 9, 20, 0.25);
+    }
+    .cs-reconnect-icon {
+      font-size: 34px;
+      color: var(--accent, #e50914);
+      margin-bottom: 12px;
+    }
+    .cs-reconnect-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 8px 0;
+    }
+    .cs-reconnect-desc {
+      font-size: 13px;
+      color: #b3b3b3;
+      margin: 0 0 18px 0;
+      line-height: 1.45;
+    }
+    .cs-reconnect-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-rec {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-rec-primary {
+      background: var(--accent, #e50914);
+      color: #ffffff;
+    }
+    .btn-rec-primary:hover {
+      background: #f40612;
+      transform: translateY(-1px);
+    }
+    .btn-rec-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn-rec-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .cs-rec-countdown {
+      display: block;
+      margin-top: 12px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    @keyframes fsFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 600px) {
+      .cs-center-rewind, .cs-center-forward { width: 44px; height: 44px; }
+      .cs-center-playpause { width: 56px; height: 56px; font-size: 20px; }
+      .cs-player-center-overlay { gap: 16px; }
+      .vjs-control-brand-wrap { display: none !important; }
+      .vjs-custom-time-display { font-size: 11px !important; padding: 0 4px !important; }
+      .vjs-custom-seek-btn { width: 28px !important; }
+    }
   </style>
 </head>
 <body>
@@ -476,11 +781,11 @@
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261010_v6"></script>
-<script src="data/stream_endpoint.js?v=20261010_v6"></script>
-<script src="assets/js/app.js?v=20261010_v6"></script>
-<script src="assets/js/download.js?v=20261010_v6"></script>
-<script src="assets/js/player.js?v=20261010_v6"></script>
-<script src="assets/js/netflix-ui.js?v=20261010_v6"></script>
+<script src="data/movies_data.js?v=20261010_v7"></script>
+<script src="data/stream_endpoint.js?v=20261010_v7"></script>
+<script src="assets/js/app.js?v=20261010_v7"></script>
+<script src="assets/js/download.js?v=20261010_v7"></script>
+<script src="assets/js/player.js?v=20261010_v7"></script>
+<script src="assets/js/netflix-ui.js?v=20261010_v7"></script>
 </body>
 </html>

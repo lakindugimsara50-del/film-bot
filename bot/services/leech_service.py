@@ -1266,7 +1266,7 @@ async def _execute_leech(
                                             )
                                         else:
                                             lines.append(
-                                                f"• <b>{q_name}:</b> ⚠️ <i>බාගත කිරීම අසාර්ථකයි (Auto Fallback)</i>"
+                                                f"• <b>{q_name}:</b> 🔄 <i>Link අක්‍රියයි ({primary_q} මඟින් Auto-Convert වේ)</i>"
                                             )
 
                                 lines.append(f"\n☁️ <i>{_env_name} High-Speed Bandwidth • Multi-Session Direct Streaming</i>")
@@ -1568,9 +1568,14 @@ async def _execute_leech(
                                 await _update_multi_dl_display(force=True)
                                 return None
 
+                        async def _run_staggered(idx: int, q_label: str, cand_o: LeechCandidate, is_pri: bool):
+                            if idx > 0:
+                                await asyncio.sleep(idx * 1.2)  # Gentle stagger to prevent CDN burst connection limits
+                            return await _run_single_quality_pipeline(q_label, cand_o, is_primary_flag=is_pri)
+
                         pipe_tasks = [
-                            _run_single_quality_pipeline(q, target_qualities[q], is_primary_flag=(q == primary_q))
-                            for q in ordered_qualities
+                            _run_staggered(i, q, target_qualities[q], (q == primary_q))
+                            for i, q in enumerate(ordered_qualities)
                         ]
                         pipe_results = await asyncio.gather(*pipe_tasks, return_exceptions=True)
                         await _update_multi_dl_display(force=True)

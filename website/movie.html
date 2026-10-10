@@ -28,9 +28,9 @@
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261010_v5">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261010_v5">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261010_v5">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261010_v6">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261010_v6">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261010_v6">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -224,9 +224,9 @@
   <nav class="cs-breadcrumb-wrap" aria-label="Breadcrumb">
     <div class="cs-container">
       <ol class="cs-breadcrumb-list">
-        <li><a href="index.html"><i class="fa-solid fa-house"></i> මුල් පිටුව</a></li>
+        <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
         <li class="cs-sep"><i class="fa-solid fa-chevron-right"></i></li>
-        <li><a href="search.html?type=movie">චිත්‍රපට</a></li>
+        <li><a href="search.html?type=movie" id="cs-breadcrumb-type">Movies</a></li>
         <li class="cs-sep"><i class="fa-solid fa-chevron-right"></i></li>
         <li class="active" id="cs-breadcrumb-current">Loading...</li>
       </ol>
@@ -238,7 +238,7 @@
     <div class="cs-container">
       <h1 class="cs-main-title" id="cs-main-title"><span id="movie-detail-title">Loading...</span></h1>
       <div class="cs-title-sub" id="cs-title-sub">
-        <span class="cs-sub-badge"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි සමඟ</span>
+        <span class="cs-sub-badge"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</span>
         <span class="cs-header-quality" id="cs-header-quality">HD</span>
         <span class="cs-header-year" id="cs-header-year"></span>
         <span class="badge badge-imdb" id="cs-header-imdb" style="display:none"></span>
@@ -282,41 +282,11 @@
           </div>
         </div>
 
-        <!-- Player Subtitle & Audio Notice + Live Sub Controls -->
-        <div class="player-notice" id="player-notice-bar">
-          <div class="player-notice-left">
-            <span class="netflix-sub-pill">
-              <i class="fa-solid fa-closed-captioning"></i>
-              <span>සිංහල උපසිරැසි සක්‍රියයි (Subtitles Active)</span>
-            </span>
-          </div>
-          <div class="player-sub-controls" id="player-sub-controls">
-            <button type="button" class="sub-ctrl-btn active" id="btn-toggle-live-sub" title="Toggle Sinhala Subtitles">
-              <i class="fa-solid fa-closed-captioning"></i> සිංහල Sub: <span id="live-sub-state">ON</span>
-            </button>
-            <button type="button" class="sub-ctrl-btn" id="btn-sub-sync-minus" title="Subtitle Delay -0.5s">-0.5s</button>
-            <button type="button" class="sub-ctrl-btn" id="btn-sub-sync-plus" title="Subtitle Advance +0.5s">+0.5s</button>
-            <button type="button" class="sub-ctrl-btn" id="btn-sub-size" title="Change Subtitle Font Size">
-              <i class="fa-solid fa-text-height"></i> <span id="sub-size-label">100%</span>
-            </button>
-            <button type="button" class="sub-ctrl-btn" id="btn-sub-color" title="Change Subtitle Color">
-              <i class="fa-solid fa-palette"></i>
-            </button>
-            <label class="sub-ctrl-btn" for="custom-sub-upload" title="Load Custom .SRT or .VTT Subtitle File" style="cursor:pointer;margin:0">
-              <i class="fa-solid fa-folder-open"></i> .SRT
-              <input type="file" id="custom-sub-upload" accept=".srt,.vtt" style="display:none">
-            </label>
-            <button type="button" class="sub-ctrl-btn" id="btn-player-fullscreen" title="Fullscreen with Sinhala Subtitles">
-              <i class="fa-solid fa-expand"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Quick Multi-Quality Download Strip (1080p / 720p / 480p / 360p + Sub Merged) -->
+        <!-- Quick Multi-Quality Download Strip -->
         <div class="quick-dl-strip" id="quick-dl-strip">
           <div class="quick-dl-label">
             <i class="fa-solid fa-cloud-arrow-down"></i>
-            <span>Quick Download (සිංහල Sub Merged MP4):</span>
+            <span>Download Video:</span>
           </div>
           <div class="quick-dl-buttons" id="quick-dl-buttons">
             <!-- Populated dynamically by player.js with 1080p, 720p, 480p, 360p -->
@@ -333,7 +303,7 @@
         <div class="series-header">
           <div class="series-header-title">
             <i class="fa-solid fa-tv" style="color:var(--accent)"></i>
-            <h2>Seasons & Episodes (කාලසීමා සහ කොටස්)</h2>
+            <h2>Seasons & Episodes</h2>
           </div>
           <div class="season-badge-wrap">
             <span class="badge badge-quality" id="total-seasons-badge">1 Season</span>
@@ -386,7 +356,7 @@
 
           <!-- Synopsis Box -->
           <div class="cs-synopsis-box">
-            <h3 class="cs-synopsis-heading"><i class="fa-solid fa-book-open"></i> කතාව සැකෙවින් (Synopsis)</h3>
+            <h3 class="cs-synopsis-heading"><i class="fa-solid fa-book-open"></i> Storyline (කතාව සැකෙවින්)</h3>
             <p class="cs-synopsis-si" id="movie-desc-si"></p>
             <div class="cs-synopsis-en-wrap">
               <h4 class="cs-synopsis-en-title">English Plot</h4>
@@ -402,27 +372,13 @@
   <section class="cs-downloads-section" id="downloads" aria-label="Direct and Telegram Download Links">
     <div class="cs-container">
       <div class="cs-section-header">
-        <h2 class="cs-section-title"><i class="fa-solid fa-cloud-arrow-down"></i> Direct & Telegram Download Links</h2>
-        <p class="cs-section-desc">Mega, Direct Server හෝ Telegram හරහා කිසිදු බාධාවකින් තොරව High Speed Download කරගන්න.</p>
+        <h2 class="cs-section-title"><i class="fa-solid fa-cloud-arrow-down"></i> Download Video</h2>
+        <p class="cs-section-desc">Download in high speed via Direct Server or Telegram with Sinhala subtitles.</p>
       </div>
 
       <!-- Download Grid -->
       <div class="cs-dl-grid" id="download-grid">
         <div style="padding:24px;color:var(--text2)"><div class="spinner"></div></div>
-      </div>
-
-      <!-- Subtitle Download Card -->
-      <div class="cs-sub-dl-card" id="cs-sub-dl-card">
-        <div class="cs-sub-dl-info">
-          <div class="cs-sub-dl-icon"><i class="fa-solid fa-closed-captioning"></i></div>
-          <div>
-            <h4>සිංහල උපසිරැසි ගොනුව පමණක් බාගත කරගන්න (Subtitle File Only)</h4>
-            <p id="cs-sub-dl-meta">Sinhala Subtitle File (.SRT / .VTT) • FilmSub / CineSubz Team</p>
-          </div>
-        </div>
-        <a id="btn-sub-dl" class="cs-sub-dl-btn" href="#" download target="_blank" rel="noopener">
-          <i class="fa-solid fa-download"></i> Subtitle Download
-        </a>
       </div>
     </div>
   </section>
@@ -434,8 +390,8 @@
         <div class="cs-tg-banner-content">
           <div class="cs-tg-icon"><i class="fa-brands fa-telegram"></i></div>
           <div class="cs-tg-text">
-            <h3>අපගේ නිල Telegram චැනලයට එක්වන්න!</h3>
-            <p>නවතම චිත්‍රපට, කතාමාලා සහ සිංහල උපසිරැසි නිකුත් වූ සැනින් ඔබගේ Telegram ගිණුමටම නොමිලේ ලබාගන්න.</p>
+            <h3>Join Our Official Telegram Channel</h3>
+            <p>Get the latest movies, TV series and Sinhala subtitles directly on Telegram for free.</p>
           </div>
         </div>
         <a href="https://t.me/Filmsinhala200Bot" target="_blank" rel="noopener" class="cs-tg-join-btn">
@@ -449,7 +405,7 @@
   <section class="cs-related-section" id="related-section" aria-label="Related Movies">
     <div class="cs-container">
       <div class="cs-section-header">
-        <h2 class="cs-section-title"><i class="fa-solid fa-film"></i> ඔබ කැමති විය හැකි තවත් චිත්‍රපට (Related Movies)</h2>
+        <h2 class="cs-section-title"><i class="fa-solid fa-film"></i> Related Movies</h2>
       </div>
       <div class="movie-grid" id="related-grid" style="padding:0">
         <!-- Injected by player.js -->
@@ -467,9 +423,9 @@
         <div class="logo-icon"><i class="fa-solid fa-film"></i></div>
         <div class="logo-text">Film<span>Sub</span></div>
       </a>
-      <p class="footer-tagline">ඔබේ ප්‍රියතම හොලිවුඩ් හා ජාත්‍යන්තර චිත්‍රපට සිංහල උපසිරැසි සමඟ නොමිලේ නරඹන්න.</p>
+      <p class="footer-tagline">Watch your favorite movies and TV series with Sinhala subtitles for free.</p>
       <div class="footer-social">
-        <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
+        <a href="https://t.me/Filmsinhala200Bot" target="_blank" rel="noopener" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
         <a href="#" class="social-btn"><i class="fa-brands fa-facebook-f"></i></a>
         <a href="#" class="social-btn"><i class="fa-brands fa-youtube"></i></a>
       </div>
@@ -511,20 +467,20 @@
 
 <!-- ========== CINESUBZ-STYLE MOBILE BOTTOM NAVIGATION BAR ========== -->
 <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
-  <a href="index.html"><i class="fa-solid fa-house"></i><span>මුල් පිටුව</span></a>
-  <a href="search.html?type=movie" class="active"><i class="fa-solid fa-film"></i><span>චිත්‍රපට</span></a>
-  <a href="search.html?type=series"><i class="fa-solid fa-tv"></i><span>කතාමාලා</span></a>
-  <button type="button" id="mob-search-btn"><i class="fa-solid fa-magnifying-glass"></i><span>සොයන්න</span></button>
+  <a href="index.html"><i class="fa-solid fa-house"></i><span>Home</span></a>
+  <a href="search.html?type=movie" class="active"><i class="fa-solid fa-film"></i><span>Movies</span></a>
+  <a href="search.html?type=series"><i class="fa-solid fa-tv"></i><span>TV Shows</span></a>
+  <button type="button" id="mob-search-btn"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></button>
   <a href="https://t.me/Filmsinhala200Bot" target="_blank" rel="noopener"><i class="fa-brands fa-telegram"></i><span>Telegram</span></a>
 </nav>
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261010_v5"></script>
-<script src="data/stream_endpoint.js?v=20261010_v5"></script>
-<script src="assets/js/app.js?v=20261010_v5"></script>
-<script src="assets/js/download.js?v=20261010_v5"></script>
-<script src="assets/js/player.js?v=20261010_v5"></script>
-<script src="assets/js/netflix-ui.js?v=20261010_v5"></script>
+<script src="data/movies_data.js?v=20261010_v6"></script>
+<script src="data/stream_endpoint.js?v=20261010_v6"></script>
+<script src="assets/js/app.js?v=20261010_v6"></script>
+<script src="assets/js/download.js?v=20261010_v6"></script>
+<script src="assets/js/player.js?v=20261010_v6"></script>
+<script src="assets/js/netflix-ui.js?v=20261010_v6"></script>
 </body>
 </html>

@@ -117,12 +117,42 @@ async function loadMovies() {
   await fetchRemoteMovies();
 }
 
+// ---- Group Series Catalog (Show only ONE card per TV Series on Catalog) ----
+function groupSeriesCatalog(movies) {
+  if (!Array.isArray(movies)) return [];
+  const seenSeries = new Map();
+  const result = [];
+
+  for (const m of movies) {
+    const isSeries = m.type === 'series' || m.season || m.episode || (m.slug && m.slug.match(/[-_.]s\d+[-_.]?e\d+/i));
+    if (!isSeries) {
+      result.push(m);
+      continue;
+    }
+
+    const baseTitle = (m.title || '').replace(/\s*[-:]?\s*Season\s*\d+.*$/i, '').trim().toLowerCase();
+    const key = (m.tmdb_id && String(m.tmdb_id)) ? `tmdb_${m.tmdb_id}` : baseTitle;
+
+    if (!seenSeries.has(key)) {
+      const master = { ...m };
+      master.title = (m.title || '').replace(/\s*[-:]?\s*Season\s*\d+.*$/i, '').trim();
+      master.type = 'series';
+      master.is_series_master = true;
+      seenSeries.set(key, master);
+      result.push(master);
+    }
+  }
+  return result;
+}
+
 // ---- Data Helpers ----
 function getFeatured() {
-  return allMovies.find(m => m.featured) || allMovies[0] || null;
+  const catalog = groupSeriesCatalog(allMovies);
+  return catalog.find(m => m.featured) || catalog[0] || null;
 }
 function getNewReleases() {
-  return [...allMovies].sort((a, b) => {
+  const catalog = groupSeriesCatalog(allMovies);
+  return [...catalog].sort((a, b) => {
     const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
     const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
     if (timeB !== timeA) return timeB - timeA;
@@ -130,8 +160,9 @@ function getNewReleases() {
   }).slice(0, 20);
 }
 function getTrending() {
-  const tr = allMovies.filter(m => m.trending);
-  const list = tr.length > 0 ? tr : allMovies;
+  const catalog = groupSeriesCatalog(allMovies);
+  const tr = catalog.filter(m => m.trending);
+  const list = tr.length > 0 ? tr : catalog;
   return [...list].sort((a, b) => {
     const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
     const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
@@ -140,8 +171,9 @@ function getTrending() {
   }).slice(0, 20);
 }
 function getSinhalaFilms() {
-  const sf = allMovies.filter(m => (Array.isArray(m.subtitles) && m.subtitles.length > 0) || m.subtitle_url || m.has_sinhala_sub);
-  const list = sf.length > 0 ? sf : allMovies;
+  const catalog = groupSeriesCatalog(allMovies);
+  const sf = catalog.filter(m => (Array.isArray(m.subtitles) && m.subtitles.length > 0) || m.subtitle_url || m.has_sinhala_sub);
+  const list = sf.length > 0 ? sf : catalog;
   return [...list].sort((a, b) => {
     const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
     const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
@@ -151,8 +183,9 @@ function getSinhalaFilms() {
 }
 function getRelated(movie) {
   if (!movie) return [];
+  const catalog = groupSeriesCatalog(allMovies);
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
-  return allMovies.filter(m => m.slug !== movie.slug && Array.isArray(m.genres) && m.genres.some(g => genres.includes(g))).slice(0, 12);
+  return catalog.filter(m => m.slug !== movie.slug && Array.isArray(m.genres) && m.genres.some(g => genres.includes(g))).slice(0, 12);
 }
 function findMovieBySlug(slug) {
   if (!slug) return null;
@@ -511,11 +544,12 @@ function initSearchOverlay() {
     input.addEventListener('input', debounce(() => {
       const q = input.value.trim().toLowerCase();
       if (!q) { liveResults.innerHTML = ''; return; }
-      const results = allMovies.filter(m =>
+      const matched = allMovies.filter(m =>
         (m.title || '').toLowerCase().includes(q) ||
         (m.title_si || '').toLowerCase().includes(q) ||
         (Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes(q)))
-      ).slice(0, 12);
+      );
+      const results = groupSeriesCatalog(matched).slice(0, 12);
       if (results.length === 0) {
         liveResults.innerHTML = `<div class="search-no-results"><i class="fa-solid fa-film"></i> No results for "<strong>${escHtml(q)}</strong>"</div>`;
       } else {
@@ -537,16 +571,17 @@ function initSearchOverlay() {
 function renderMovieGrid(containerId, movies) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  if (!movies || movies.length === 0) {
+  const grouped = groupSeriesCatalog(movies);
+  if (!grouped || grouped.length === 0) {
     el.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon"><i class="fa-solid fa-film-slash"></i></div>
-        <h3>No movies found</h3>
+        <div class="empty-state-icon"><i class="fa-solid fa-film"></i></div>
+        <h3>No titles found</h3>
         <p>Try different keywords or browse by genre.</p>
       </div>`;
     return;
   }
-  el.innerHTML = movies.map(m => generateMovieCard(m)).join('');
+  el.innerHTML = grouped.map(m => generateMovieCard(m)).join('');
 }
 
 // ---- View Counter ----
@@ -750,6 +785,7 @@ function initMobileBottomNav() {
 window.FilmSub = {
   loadMovies,
   renderHero,
+  groupSeriesCatalog,
   allMovies: () => allMovies,
   siteData: () => siteData,
   getFeatured,

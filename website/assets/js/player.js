@@ -2997,14 +2997,6 @@ function renderQuickDownloadStrip(movie) {
       </button>`;
   }).join('');
 
-  if (subs.length > 0 && subs[0].url) {
-    html += `
-      <a href="${FilmSub.escHtml(subs[0].url)}" download="${FilmSub.escHtml(movie.slug || 'movie')}-sinhala.vtt" class="quick-dl-pill sub-only-pill">
-        <i class="fa-solid fa-closed-captioning"></i>
-        <strong>සිංහල Sub (.SRT)</strong>
-      </a>`;
-  }
-
   stripBtns.innerHTML = html;
   stripBtns.querySelectorAll('button.quick-dl-pill').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3204,48 +3196,48 @@ function renderMovieDetails(movie) {
   if (metaGridEl) {
     metaGridEl.innerHTML = `
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-film"></i> චිත්‍රපටයේ නම:</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-film"></i> Title:</div>
         <div class="cs-meta-val"><strong>${esc(movie.title || 'Untitled')}</strong></div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-language"></i> සිංහල නම:</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-language"></i> Sinhala Title:</div>
         <div class="cs-meta-val" style="color:var(--gold);font-weight:600">${esc(movie.title_si || movie.title || '')}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-regular fa-calendar"></i> නිකුත් වූ වර්ෂය:</div>
+        <div class="cs-meta-label"><i class="fa-regular fa-calendar"></i> Release Year:</div>
         <div class="cs-meta-val">${esc(movie.year || 'N/A')}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-star"></i> IMDb අගය:</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-star"></i> IMDb Rating:</div>
         <div class="cs-meta-val"><span style="color:var(--gold);font-weight:700"><i class="fa-solid fa-star"></i> ${esc(movie.imdb || 'N/A')}</span> / 10</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-regular fa-clock"></i> ධාවන කාලය:</div>
+        <div class="cs-meta-label"><i class="fa-regular fa-clock"></i> Runtime:</div>
         <div class="cs-meta-val">${esc(typeof movie.duration === 'number' ? `${movie.duration} min` : (movie.duration || 'N/A'))}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-user-tie"></i> අධ්‍යක්ෂණය:</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-user-tie"></i> Director:</div>
         <div class="cs-meta-val">${esc(movie.director || 'N/A')}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-users"></i> ප්‍රධාන නළු නිළියන්:</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-users"></i> Cast:</div>
         <div class="cs-meta-val">${castStr}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-tags"></i> කාණ්ඩ (Genres):</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-tags"></i> Genres:</div>
         <div class="cs-meta-val">${genreChips || 'Action'}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-volume-high"></i> ශ්‍රව්‍ය භාෂාව:</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-volume-high"></i> Language:</div>
         <div class="cs-meta-val">${esc(movie.language || 'English')}</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-closed-captioning"></i> උපසිරැසි:</div>
-        <div class="cs-meta-val" style="color:var(--accent);font-weight:600">සිංහල (Sinhala Subtitles)</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-closed-captioning"></i> Subtitles:</div>
+        <div class="cs-meta-val" style="color:var(--accent);font-weight:600">Sinhala (සිංහල උපසිරැසි)</div>
       </div>
       <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-pen-nib"></i> උපසිරැසිකරු:</div>
-        <div class="cs-meta-val">FilmSub.lk Team</div>
+        <div class="cs-meta-label"><i class="fa-solid fa-pen-nib"></i> Subbed By:</div>
+        <div class="cs-meta-val">FilmSub Team</div>
       </div>`;
   }
 

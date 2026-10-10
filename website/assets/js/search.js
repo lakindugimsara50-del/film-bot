@@ -65,6 +65,11 @@ function computeResults(movies, { query, genre, sort, type, sub } = {}) {
     res = res.filter(m => m.trending);
   }
 
+  // Group TV series so each series appears as ONE master card
+  if (typeof FilmSub !== 'undefined' && typeof FilmSub.groupSeriesCatalog === 'function') {
+    res = FilmSub.groupSeriesCatalog(res);
+  }
+
   return res;
 }
 

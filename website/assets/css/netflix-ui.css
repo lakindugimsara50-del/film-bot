@@ -1,0 +1,862 @@
+/* ============================================================
+   FilmSub – Netflix Advanced UI v3.0
+   Glassmorphism · Smooth Animations · Highlights · Ribbons
+   Fully responsive: Mobile → Tablet → Laptop → TV
+   ============================================================ */
+
+/* =============================================
+   1. CSS CUSTOM PROPERTIES – ADVANCED TOKENS
+   ============================================= */
+:root {
+  /* Glassmorphism */
+  --glass-bg: rgba(17, 17, 22, 0.72);
+  --glass-border: rgba(255,255,255,0.10);
+  --glass-blur: blur(20px);
+
+  /* Category accent colors */
+  --cat-trending: #ff4500;
+  --cat-new: #46d369;
+  --cat-sinhala: #1e90ff;
+  --cat-action: #ff6b35;
+  --cat-drama: #9b59b6;
+  --cat-comedy: #f39c12;
+  --cat-horror: #c0392b;
+  --cat-scifi: #00b4d8;
+
+  /* Glow effects */
+  --glow-red: 0 0 20px rgba(229,9,20,0.6), 0 0 40px rgba(229,9,20,0.3);
+  --glow-green: 0 0 15px rgba(70,211,105,0.5);
+  --glow-gold: 0 0 15px rgba(245,197,24,0.45);
+
+  /* Animation easing */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =============================================
+   2. GLOBAL SMOOTH RENDERING
+   ============================================= */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* GPU acceleration for animated elements */
+.movie-card,
+.carousel-track,
+.cs-highlight-popup,
+.hero-backdrop,
+.mobile-bottom-bar {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* =============================================
+   3. HERO SECTION – CINEMATIC UPGRADE
+   ============================================= */
+
+/* Auto-rotating billboard indicator dots */
+.hero-dots {
+  position: absolute;
+  bottom: 90px;
+  right: 48px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+.hero-dot {
+  width: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.35);
+  transition: all 0.4s var(--ease-smooth);
+  cursor: pointer;
+}
+.hero-dot.active {
+  width: 24px;
+  background: var(--accent);
+  box-shadow: var(--glow-red);
+}
+
+/* Maturity rating badge */
+.hero-maturity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 3px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+/* Scroll hint arrow at bottom */
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  animation: bounce-down 2s ease infinite;
+  pointer-events: none;
+}
+.hero-scroll-hint i {
+  font-size: 16px;
+}
+@keyframes bounce-down {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+  50% { transform: translateX(-50%) translateY(6px); opacity: 0.8; }
+}
+
+/* Cinematic vignette on sides */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* =============================================
+   4. SECTION HEADERS – ENHANCED
+   ============================================= */
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Animated accent bar */
+.section-title::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 22px;
+  background: linear-gradient(180deg, var(--accent), #ff6b35);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(229,9,20,0.6);
+  animation: pulse-bar 2.5s ease infinite;
+}
+@keyframes pulse-bar {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Category-colored accent bars */
+.section.trending-section .section-title::before {
+  background: linear-gradient(180deg, #ff4500, #ff6b35);
+  box-shadow: 0 0 10px rgba(255,69,0,0.6);
+}
+.section.new-releases-section .section-title::before {
+  background: linear-gradient(180deg, #46d369, #00b4d8);
+  box-shadow: 0 0 10px rgba(70,211,105,0.5);
+}
+.section.sinhala-section .section-title::before {
+  background: linear-gradient(180deg, #1e90ff, #9b59b6);
+  box-shadow: 0 0 10px rgba(30,144,255,0.5);
+}
+
+/* Count badge next to section title */
+.section-count-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text3);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* =============================================
+   5. MOVIE CARDS – ADVANCED ENHANCEMENTS
+   ============================================= */
+
+/* Netflix "NEW" ribbon */
+.card-ribbon-new {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: linear-gradient(135deg, #46d369, #00b4d8);
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 4px 8px 4px 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 5;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  line-height: 1;
+}
+.card-ribbon-new span {
+  transform: rotate(45deg) translate(-1px, -8px);
+  display: block;
+}
+
+/* "HOT" fire badge for trending */
+.card-hot-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #ff4500, #ff6b35);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 3px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  z-index: 5;
+  box-shadow: 0 2px 10px rgba(255,69,0,0.6);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* "SINHALA SUB" highlight badge */
+.card-sub-highlight {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, rgba(30,144,255,0.9), rgba(30,144,255,0));
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.movie-card:hover .card-sub-highlight {
+  opacity: 1;
+}
+
+/* Smooth card entrance animation */
+@keyframes card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.movie-card.visible {
+  animation: card-fade-in 0.5s var(--ease-smooth) both;
+}
+
+/* Staggered animation delay for cards in view */
+.movie-card:nth-child(1) { animation-delay: 0ms; }
+.movie-card:nth-child(2) { animation-delay: 60ms; }
+.movie-card:nth-child(3) { animation-delay: 120ms; }
+.movie-card:nth-child(4) { animation-delay: 180ms; }
+.movie-card:nth-child(5) { animation-delay: 240ms; }
+.movie-card:nth-child(6) { animation-delay: 300ms; }
+
+/* Red glow ring on hover */
+.movie-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, rgba(229,9,20,0), rgba(229,9,20,0.7), rgba(229,9,20,0)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 6;
+}
+.movie-card:hover::after {
+  opacity: 1;
+}
+
+/* TV Series type badge */
+.badge-card-type {
+  position: absolute;
+  bottom: 40px;
+  right: 8px;
+  background: rgba(138,43,226,0.85);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  letter-spacing: 0.3px;
+}
+
+/* =============================================
+   6. ENHANCED HOVER POPUP – GLASSMORPHISM
+   ============================================= */
+.cs-highlight-popup {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow:
+    0 25px 60px rgba(0,0,0,0.95),
+    0 0 0 1px rgba(229,9,20,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* Popup banner play button overlay */
+.cs-popup-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.cs-popup-banner:hover .cs-popup-play-overlay {
+  opacity: 1;
+}
+.cs-popup-play-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(229,9,20,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  box-shadow: var(--glow-red);
+  transform: scale(0.8);
+  transition: transform 0.2s var(--ease-bounce);
+}
+.cs-popup-banner:hover .cs-popup-play-icon {
+  transform: scale(1);
+}
+
+/* Match score indicator */
+.cs-popup-match {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #46d369;
+}
+
+/* Add to list button */
+.cs-popup-btn-add {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cs-popup-btn-add:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: #fff;
+  transform: scale(1.1);
+}
+
+/* =============================================
+   7. SEARCH OVERLAY – GLASSMORPHISM UPGRADE
+   ============================================= */
+.search-overlay {
+  background: rgba(5,5,8,0.94) !important;
+  backdrop-filter: blur(30px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.5) !important;
+  border-bottom: 1px solid rgba(229,9,20,0.15) !important;
+}
+
+.search-input-group {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  transition: all 0.3s ease !important;
+}
+.search-input-group:focus-within {
+  background: rgba(255,255,255,0.09) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.15) !important;
+}
+
+/* Search suggestions categories */
+.search-category-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 12px 0 6px;
+  grid-column: 1 / -1;
+}
+
+/* =============================================
+   8. MOBILE BOTTOM BAR – iOS/ANDROID FEEL
+   ============================================= */
+.mobile-bottom-bar {
+  background: rgba(10,10,14,0.96) !important;
+  backdrop-filter: blur(30px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.8) !important;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.5);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Active indicator dot above icon */
+.mobile-bottom-bar a.active::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--glow-red);
+}
+.mobile-bottom-bar a {
+  position: relative;
+  border-radius: 12px;
+  transition: all 0.2s var(--ease-bounce) !important;
+}
+.mobile-bottom-bar a:active {
+  transform: scale(0.9);
+  background: rgba(229,9,20,0.1);
+}
+.mobile-bottom-bar a.active i {
+  transform: translateY(-2px) scale(1.1) !important;
+}
+
+/* =============================================
+   9. HEADER – ADVANCED GLASS EFFECT
+   ============================================= */
+.site-header {
+  background: linear-gradient(180deg,
+    rgba(0,0,0,0.9) 0%,
+    rgba(0,0,0,0.7) 60%,
+    rgba(0,0,0,0.2) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  transition: background 0.5s ease, box-shadow 0.5s ease !important;
+}
+.site-header.solid {
+  background: rgba(8,8,12,0.97) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 30px rgba(0,0,0,0.8) !important;
+}
+
+/* Logo glow on hover */
+.logo-icon {
+  transition: box-shadow 0.3s ease, transform 0.3s var(--ease-bounce) !important;
+}
+.logo:hover .logo-icon {
+  box-shadow: var(--glow-red);
+  transform: scale(1.08);
+}
+
+/* =============================================
+   10. SCROLL-TRIGGERED SECTION ANIMATIONS
+   ============================================= */
+.section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s var(--ease-smooth), transform 0.6s var(--ease-smooth);
+}
+.section.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Hero never fades in (always visible) */
+.hero {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* =============================================
+   11. CAROUSEL – NETFLIX EDGE FADE
+   ============================================= */
+.carousel-wrap {
+  position: relative;
+}
+/* Left edge fade */
+.carousel-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 20px;
+  width: 40px;
+  background: linear-gradient(90deg, var(--bg), transparent);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+/* Right edge fade */
+.carousel-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 20px;
+  width: 40px;
+  background: linear-gradient(270deg, var(--bg), transparent);
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.carousel-wrap.scrolled-left::before { opacity: 1; }
+.carousel-wrap.scrollable-right::after { opacity: 1; }
+
+/* =============================================
+   12. TOAST – ENHANCED
+   ============================================= */
+.toast {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  background: rgba(20,20,28,0.95) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7) !important;
+  border-radius: 12px !important;
+}
+.toast.success {
+  border-left: 3px solid var(--green) !important;
+}
+.toast.error {
+  border-left: 3px solid var(--accent) !important;
+}
+
+/* =============================================
+   13. GENRE FILTER CHIPS – ENHANCED
+   ============================================= */
+.filter-chip {
+  transition: all 0.25s var(--ease-bounce) !important;
+}
+.filter-chip:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(229,9,20,0.2) !important;
+}
+.filter-chip.active {
+  box-shadow: 0 0 0 2px rgba(229,9,20,0.4), 0 4px 16px rgba(229,9,20,0.25) !important;
+}
+
+/* =============================================
+   14. LOADING STATE – SHIMMER UPGRADE
+   ============================================= */
+.skeleton {
+  background: linear-gradient(
+    105deg,
+    var(--bg2) 0%,
+    var(--bg2) 30%,
+    rgba(255,255,255,0.04) 48%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.04) 52%,
+    var(--bg2) 70%,
+    var(--bg2) 100%
+  ) !important;
+  background-size: 300% 100% !important;
+  animation: shimmer-v2 2s infinite linear !important;
+}
+@keyframes shimmer-v2 {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =============================================
+   15. BADGE SUB – ANIMATED GLOW
+   ============================================= */
+.badge-sub,
+.cs-sub-badge {
+  position: relative;
+  overflow: hidden;
+}
+.badge-sub::before,
+.cs-sub-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shine-badge 3s infinite;
+}
+@keyframes shine-badge {
+  0% { left: -100%; }
+  30%, 100% { left: 100%; }
+}
+
+/* =============================================
+   16. BUTTONS – MICRO-INTERACTIONS
+   ============================================= */
+.btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+/* Ripple effect on click */
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.btn:active::before {
+  opacity: 1;
+}
+
+/* =============================================
+   17. COUNTDOWN OVERLAY – ENHANCED
+   ============================================= */
+.countdown-overlay {
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  background: rgba(0,0,0,0.85) !important;
+}
+.countdown-box {
+  background: rgba(16,16,22,0.96) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(229,9,20,0.2) !important;
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.8),
+    0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* =============================================
+   18. SCROLL PROGRESS BAR
+   ============================================= */
+#scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), #ff6b35);
+  box-shadow: var(--glow-red);
+  z-index: 10001;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+/* =============================================
+   19. FEATURED "SPOTLIGHT" BADGE ANIMATION
+   ============================================= */
+.hero-badge {
+  position: relative;
+  overflow: hidden;
+  animation: badge-glow-pulse 3s ease infinite;
+}
+@keyframes badge-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229,9,20,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(229,9,20,0); }
+}
+
+/* =============================================
+   20. CATEGORY SECTION DIVIDERS
+   ============================================= */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(229,9,20,0.3), transparent);
+  margin: 0 24px;
+}
+
+/* =============================================
+   21. CARD HOVER – SHIMMER ON POSTER
+   ============================================= */
+.card-poster::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255,255,255,0.06) 50%,
+    transparent 80%
+  );
+  z-index: 4;
+  pointer-events: none;
+  transition: left 0.8s ease;
+}
+.movie-card:hover .card-poster::before {
+  left: 150%;
+}
+
+/* =============================================
+   22. NETWORK QUALITY INDICATOR
+   ============================================= */
+.quality-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.quality-indicator .q-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: var(--glow-green);
+  animation: blink-dot 2s ease infinite;
+}
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* =============================================
+   23. DOWNLOAD CARD – HOVER UPGRADE
+   ============================================= */
+.cs-dl-card {
+  background: rgba(18,18,26,0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s var(--ease-smooth) !important;
+}
+.cs-dl-card:hover {
+  background: rgba(25,25,38,0.95) !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.6), 0 0 0 1px rgba(229,9,20,0.3) !important;
+}
+
+/* =============================================
+   24. FOOTER – SUBTLE GRADIENT
+   ============================================= */
+.site-footer {
+  background: linear-gradient(180deg, var(--bg2) 0%, #080810 100%) !important;
+  border-top: 1px solid rgba(229,9,20,0.1) !important;
+}
+
+/* =============================================
+   25. LOW-DATA OPTIMIZATIONS
+   ============================================= */
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .hero-backdrop {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Slow network / Save-data mode */
+@media (prefers-reduced-data: reduce) {
+  .hero-backdrop {
+    display: none;
+  }
+  .hero-gradient {
+    background: linear-gradient(180deg, rgba(20,20,20,0.98) 0%, #141414 100%);
+  }
+}
+
+/* =============================================
+   26. RESPONSIVE FINAL TOUCHES
+   ============================================= */
+
+/* Tablet & Small Laptop (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hero-dots { bottom: 60px; right: 32px; }
+  .hero-scroll-hint { display: none; }
+}
+
+/* Mobile (≤768px) */
+@media (max-width: 768px) {
+  .section {
+    /* Ensure sections animate in faster on mobile */
+    transition-duration: 0.4s !important;
+  }
+  .hero-dots { display: none; }
+  .hero-scroll-hint { display: none; }
+  .carousel-wrap::before,
+  .carousel-wrap::after {
+    width: 20px;
+  }
+  /* Glassmorphism search on mobile - full screen */
+  .search-overlay {
+    padding: 16px 14px !important;
+  }
+  /* Cards pop slightly less on mobile for performance */
+  .movie-card:hover {
+    transform: translateY(-3px) scale(1.03) !important;
+  }
+}
+
+/* TV / 4K (≥1800px) */
+@media (min-width: 1800px) {
+  .cs-highlight-popup {
+    width: 380px !important;
+  }
+  .hero-badge {
+    font-size: 13px !important;
+    padding: 7px 16px !important;
+  }
+  .hero-dots { bottom: 110px; right: 64px; }
+  .hero-dot { width: 10px; height: 5px; }
+  .hero-dot.active { width: 30px; }
+}
+
+/* =============================================
+   27. PRINT MEDIA – Hide unnecessary elements
+   ============================================= */
+@media print {
+  .site-header,
+  .mobile-bottom-bar,
+  .hero,
+  .cs-highlight-popup,
+  .search-overlay,
+  .toast-container {
+    display: none !important;
+  }
+}

@@ -40,10 +40,10 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9,si;q=0.8",
 }
 
-# Sri Lankan Subtitle & Matched Video Portals
+# Sri Lankan Subtitle & Matched Video Portals (CineSubz #1 Priority, SinhalaSub #2, etc.)
 PORTALS = [
-    {"name": "SinhalaSub",        "base": "https://sinhalasub.lk",        "wp_api": True},
     {"name": "CineSubz",          "base": "https://cinesubz.co",          "wp_api": True},
+    {"name": "SinhalaSub",        "base": "https://sinhalasub.lk",        "wp_api": True},
     {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": True},
     {"name": "Baiscope",          "base": "https://baiscope.lk",          "wp_api": True},
     {"name": "BaiscopeDownloads", "base": "https://baiscopedownloads.co", "wp_api": True},
@@ -55,7 +55,7 @@ PORTALS = [
 ]
 
 # Portals where video has pre-burned Sinhala subtitles (NEVER burn secondary sub)
-PRE_HARDSUBBED_PORTALS = {"SinhalaSub", "CineSubz"}
+PRE_HARDSUBBED_PORTALS = {"CineSubz", "SinhalaSub"}
 
 # Patterns for direct/cloud video hosts
 VIDEO_HOST_PATTERNS = {
@@ -834,8 +834,9 @@ async def search_matched_srilankan_releases(
                 log.debug("[MatchedScraper] Portal %s error or timeout: %s", portal.get("name"), e_s)
                 return []
 
-        # Tier 1: Pre-hardsubbed Portals (SinhalaSub, CineSubz) - User requirement: TOP PRIORITY
+        # Tier 1: Pre-hardsubbed Portals (CineSubz top priority, SinhalaSub secondary) - User requirement: TOP PRIORITY
         tier1_portals = [p for p in PORTALS if p["name"] in PRE_HARDSUBBED_PORTALS]
+        tier1_portals.sort(key=lambda p: 0 if p["name"] == "CineSubz" else 1)
         tier1_tasks = [_safe_search(portal) for portal in tier1_portals]
 
         # Tier 2: Separate Subtitle Portals (PirateLK, Baiscope, Subz, etc.)

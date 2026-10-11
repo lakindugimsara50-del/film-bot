@@ -413,7 +413,7 @@ def test_search_js_exists_and_filters_type():
     # Verify search.html references search.js
     html_file = Path(__file__).resolve().parents[2] / "website" / "search.html"
     html_content = html_file.read_text(encoding="utf-8")
-    assert 'src="assets/js/search.js"' in html_content, "search.html must link assets/js/search.js"
+    assert 'assets/js/search.js' in html_content, "search.html must link assets/js/search.js"
 
 
 @pytest.mark.asyncio

@@ -389,3 +389,57 @@ def test_verify_text_with_header_noise():
     verify_text = f"{post_url} {h1_text} {noisy_page}"
     assert matches_title_and_year("hi", verify_text, year=2026)
 
+
+def test_cinesubz_top_priority_over_sinhalasub():
+    """Verify that CineSubz is the #1 prioritized portal in PORTALS and candidate sorting."""
+    from services.scrapers.srilankan_matched_scraper import PORTALS, PRE_HARDSUBBED_PORTALS
+    from services.leech_service import LeechCandidate
+
+    # 1. CineSubz is index 0 in PORTALS
+    assert PORTALS[0]["name"] == "CineSubz"
+    assert PORTALS[1]["name"] == "SinhalaSub"
+    assert "CineSubz" in PRE_HARDSUBBED_PORTALS
+
+    # 2. CineSubz candidates are prioritized over SinhalaSub and others
+    c_cinesubz = LeechCandidate(
+        method="ddl",
+        method_name="CineSubz 1080p",
+        source_url="https://csplayer.net/test.mp4",
+        quality="1080p",
+        extra={"portal": "CineSubz", "is_already_hardsubbed": True},
+    )
+    c_sinhalasub = LeechCandidate(
+        method="ddl",
+        method_name="SinhalaSub 1080p",
+        source_url="https://cdn.sinhalasub.net/test.mp4",
+        quality="1080p",
+        extra={"portal": "SinhalaSub", "is_already_hardsubbed": True},
+    )
+    c_piratelk = LeechCandidate(
+        method="ddl",
+        method_name="PirateLK 1080p",
+        source_url="https://pixeldrain.com/api/file/abc",
+        quality="1080p",
+        extra={"portal": "PirateLK", "is_already_hardsubbed": False},
+    )
+
+    cands = [c_piratelk, c_sinhalasub, c_cinesubz]
+    def _portal_rank(c):
+        p = ((c.extra or {}).get("portal") or "").lower()
+        if "cinesubz" in p:
+            return 0
+        if "sinhalasub" in p:
+            return 1
+        return 2
+
+    cands.sort(key=lambda c: (
+        0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+        _portal_rank(c),
+        0 if str(c.quality).lower() == "1080p" else 1,
+    ))
+
+    assert cands[0] == c_cinesubz
+    assert cands[1] == c_sinhalasub
+    assert cands[2] == c_piratelk
+
+

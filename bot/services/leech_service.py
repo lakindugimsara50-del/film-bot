@@ -333,14 +333,24 @@ async def find_all_candidates(
                 )
 
             if matched_candidates:
+                def _portal_rank(c: LeechCandidate) -> int:
+                    p = ((c.extra or {}).get("portal") or "").lower()
+                    if "cinesubz" in p:
+                        return 0
+                    if "sinhalasub" in p:
+                        return 1
+                    return 2
+
                 if is_series_mode:
                     matched_candidates.sort(key=lambda c: (
                         0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                        _portal_rank(c),
                         0 if str(c.quality).lower() == "720p" else 1,
                     ))
                 else:
                     matched_candidates.sort(key=lambda c: (
                         0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                        _portal_rank(c),
                         0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2),
                     ))
                 log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
@@ -580,7 +590,7 @@ async def _execute_leech(
         step1_text = (
             f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
             f"📺 <b>TV Series:</b> {display_title}\n"
-            f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී (SinhalaSub, Cineru, SubzLK, Torrentio, EZTV)..."
+            f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී (CineSubz, SinhalaSub, PirateLK, Torrentio, EZTV)..."
             f"{auto_ep_note}\n\n"
             f"⚡ <i>Sri Lankan Matched Video & Subtitle Engine සක්‍රීයයි...</i>"
         )
@@ -589,7 +599,7 @@ async def _execute_leech(
             f"🚀 <b>Ultra Auto-Leech & Uploader (/boost)</b>\n\n"
             f"🎬 <b>චිත්‍රපටය:</b> {display_title}\n"
             f"🔍 <b>පියවර 1/4:</b> බාගත කිරීමේ මූලාශ්‍ර සොයමින් පවතී...\n\n"
-            f"• Priority 1: Sri Lankan Matched Portals (SinhalaSub/Cineru/SubzLK)\n"
+            f"• Priority 1: Sri Lankan Matched Portals (CineSubz / SinhalaSub / PirateLK)\n"
             f"• Priority 2: Telegram Cloud HD Channels\n"
             f"• Priority 3: DDL Scrapers (PixelDrain/Pahe)\n"
             f"• Priority 4: High-Seed Torrents (Torrentio/YTS/EZTV)"
@@ -777,8 +787,17 @@ async def _execute_leech(
                 candidates = series_preferred
             else:
                 candidates = [c for c in candidates if str(c.quality or "").lower() in ("1080p", "720p", "480p")]
+            def _portal_rank(c: LeechCandidate) -> int:
+                p = ((c.extra or {}).get("portal") or "").lower()
+                if "cinesubz" in p:
+                    return 0
+                if "sinhalasub" in p:
+                    return 1
+                return 2
+
             candidates.sort(key=lambda c: (
                 0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                _portal_rank(c),
                 0 if str(c.quality or "").lower() == "720p" else (1 if str(c.quality or "").lower() == "480p" else 2),
             ))
             log.info("[LeechService] TV Series mode: Filtered candidates (%d remaining).", len(candidates))
@@ -789,6 +808,7 @@ async def _execute_leech(
                 candidates = movie_allowed
             candidates.sort(key=lambda c: (
                 0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
+                _portal_rank(c),
                 0 if str(c.quality or "").lower() == "1080p" else (1 if str(c.quality or "").lower() == "720p" else 2),
             ))
 

@@ -16,9 +16,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v6">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v6">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v6">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v7">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v7">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v7">
 </head>
 <body>
 
@@ -128,7 +128,6 @@
     <div class="hero-info-main">
       <div class="hero-badge-row">
         <div class="hero-badge" id="hero-badge"><i class="fa-solid fa-bolt"></i> SPOTLIGHT</div>
-        <div class="hero-sinhala-pill"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</div>
       </div>
       <h1 class="hero-title" id="hero-title">Loading...</h1>
       <p class="hero-title-si" id="hero-title-si"></p>
@@ -139,14 +138,11 @@
         <a href="#" class="btn btn-primary btn-hero hero-btn-watch" id="hero-watch-btn">
           <i class="fa-solid fa-play"></i> Watch Now
         </a>
-        <button class="btn btn-secondary btn-hero hero-btn-trailer" id="hero-trailer-btn" type="button" title="Watch Trailer Preview">
+        <button class="btn btn-secondary btn-hero hero-btn-trailer" id="hero-trailer-btn" type="button" title="Watch Official Trailer">
           <i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>
         </button>
         <a href="#" class="btn btn-secondary btn-hero hero-btn-download" id="hero-download-btn">
           <i class="fa-solid fa-cloud-arrow-down"></i> Download
-        </a>
-        <a href="#" class="hero-info-btn" id="hero-info-btn" title="More Info" aria-label="More Information">
-          <i class="fa-solid fa-circle-info"></i>
         </a>
       </div>
     </div>
@@ -368,6 +364,29 @@
 <!-- Toast container -->
 <div class="toast-container" id="toast-container"></div>
 
+<!-- ========== CINEMA OFFICIAL TRAILER MODAL ========== -->
+<div class="trailer-modal-backdrop" id="trailer-modal" aria-hidden="true" style="display: none;">
+  <div class="trailer-modal-dialog">
+    <div class="trailer-modal-header">
+      <h3 class="trailer-modal-title" id="trailer-modal-title">
+        <i class="fa-solid fa-clapperboard" style="color:var(--accent)"></i> Official Trailer
+      </h3>
+      <button class="trailer-modal-close" id="trailer-modal-close" type="button" aria-label="Close Trailer">&times;</button>
+    </div>
+    <div class="trailer-modal-body">
+      <div class="trailer-video-responsive">
+        <iframe id="trailer-modal-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      </div>
+      <div class="trailer-modal-fallback" id="trailer-modal-fallback" style="display: none;">
+        <p><i class="fa-brands fa-youtube" style="color:#ff0000; font-size:24px;"></i> YouTube Embed Restricted</p>
+        <a href="#" id="trailer-fallback-link" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+          <i class="fa-brands fa-youtube"></i> Watch on YouTube Directly
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ========== CINESUBZ-STYLE MOBILE BOTTOM NAVIGATION BAR ========== -->
 <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
   <a href="index.html" class="active"><i class="fa-solid fa-house"></i><span>Home</span></a>
@@ -378,8 +397,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261011_v6"></script>
-<script src="assets/js/app.js?v=20261011_v6"></script>
-<script src="assets/js/netflix-ui.js?v=20261011_v6"></script>
+<script src="data/movies_data.js?v=20261011_v7"></script>
+<script src="assets/js/app.js?v=20261011_v7"></script>
+<script src="assets/js/netflix-ui.js?v=20261011_v7"></script>
 </body>
 </html>

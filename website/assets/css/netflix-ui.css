@@ -86,41 +86,8 @@ img {
   letter-spacing: 0.5px;
 }
 
-/* Scroll hint arrow at bottom */
-.hero-scroll-hint {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: rgba(255,255,255,0.4);
-  font-size: 11px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  animation: bounce-down 2s ease infinite;
-  pointer-events: none;
-}
-.hero-scroll-hint i {
-  font-size: 16px;
-}
-@keyframes bounce-down {
-  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
-  50% { transform: translateX(-50%) translateY(6px); opacity: 0.8; }
-}
+/* Hero Clean Apple TV+ Canvas (Scroll hint & dark vignette removed) */
 
-/* Cinematic vignette on sides */
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
-  z-index: 2;
-  pointer-events: none;
-}
 
 /* =============================================
    4. SECTION HEADERS – ENHANCED
@@ -779,15 +746,6 @@ img {
   }
 }
 
-/* Slow network / Save-data mode */
-@media (prefers-reduced-data: reduce) {
-  .hero-backdrop {
-    display: none;
-  }
-  .hero-gradient {
-    background: linear-gradient(180deg, rgba(20,20,20,0.98) 0%, #141414 100%);
-  }
-}
 
 /* =============================================
    26. RESPONSIVE FINAL TOUCHES

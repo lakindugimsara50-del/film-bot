@@ -34,6 +34,7 @@ function renderAllSections() {
   if (document.getElementById('sinhala-dub-track')) renderCarousel('sinhala-dub-track', getSinhalaFilms(), { isTrending: false });
   setupCarouselArrows();
   initHighlightPopup();
+  initTrailerModalListeners();
 }
 
 function initApp() {
@@ -427,106 +428,99 @@ function getMovieTrailerEmbedUrl(movie, autoplay = true, muted = true) {
   return '';
 }
 
-let heroTrailerRevealTimer = null;
+// ---- Official Cinema Trailer Modal ----
+function openTrailerModal(movie) {
+  if (!movie) return;
+  const modal = document.getElementById('trailer-modal');
+  const iframe = document.getElementById('trailer-modal-iframe');
+  const titleEl = document.getElementById('trailer-modal-title');
+  const fallbackBox = document.getElementById('trailer-modal-fallback');
+  const fallbackLink = document.getElementById('trailer-fallback-link');
+
+  if (!modal) return;
+
+  const title = movie.title || 'Movie';
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fa-solid fa-clapperboard" style="color:var(--accent)"></i> ${title} - Official Trailer`;
+  }
+
+  let trailerId = movie.trailer_id;
+  if (!trailerId && movie.trailer_url) {
+    const match = movie.trailer_url.match(/(?:embed\/|v=|\/)([a-zA-Z0-9_-]{11})/);
+    if (match) trailerId = match[1];
+  }
+
+  if (trailerId) {
+    if (iframe) {
+      iframe.src = `https://www.youtube-nocookie.com/embed/${trailerId}?autoplay=1&controls=1&rel=0&modestbranding=1&enablejsapi=1`;
+      iframe.style.display = 'block';
+    }
+    if (fallbackBox) {
+      fallbackBox.style.display = 'none';
+      if (fallbackLink) {
+        fallbackLink.href = `https://www.youtube.com/watch?v=${trailerId}`;
+      }
+    }
+  } else {
+    if (iframe) {
+      iframe.style.display = 'none';
+      iframe.src = 'about:blank';
+    }
+    if (fallbackBox) {
+      fallbackBox.style.display = 'block';
+      if (fallbackLink) {
+        fallbackLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' ' + (movie.year || '') + ' official trailer')}`;
+      }
+    }
+  }
+
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTrailerModal() {
+  const modal = document.getElementById('trailer-modal');
+  const iframe = document.getElementById('trailer-modal-iframe');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  if (iframe) {
+    iframe.src = 'about:blank';
+  }
+  document.body.style.overflow = '';
+}
+
+function initTrailerModalListeners() {
+  const modal = document.getElementById('trailer-modal');
+  const closeBtn = document.getElementById('trailer-modal-close');
+  if (closeBtn) {
+    closeBtn.onclick = (e) => {
+      e.preventDefault();
+      closeTrailerModal();
+    };
+  }
+  if (modal) {
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        closeTrailerModal();
+      }
+    };
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeTrailerModal();
+    }
+  });
+}
 
 function stopHeroTrailer() {
-  if (heroTrailerTimer) {
-    clearTimeout(heroTrailerTimer);
-    heroTrailerTimer = null;
-  }
-  if (heroTrailerRevealTimer) {
-    clearTimeout(heroTrailerRevealTimer);
-    heroTrailerRevealTimer = null;
-  }
+  // Kept for backward compatibility
   const videoWrap = document.getElementById('hero-video-wrap');
-  const videoIframe = document.getElementById('hero-video-iframe');
-  const soundBtn = document.getElementById('hero-sound-btn');
-  const trailerBtn = document.getElementById('hero-trailer-btn');
   const backdrop = document.getElementById('hero-backdrop');
-
   if (videoWrap) videoWrap.classList.remove('active');
   if (backdrop) backdrop.style.opacity = '1';
-  if (videoIframe) {
-    try {
-      videoIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
-    } catch (e) {}
-    videoIframe.src = 'about:blank';
-  }
-  if (soundBtn) soundBtn.style.display = 'none';
-  if (trailerBtn) {
-    trailerBtn.classList.remove('playing');
-    trailerBtn.innerHTML = `<i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>`;
-  }
-  heroTrailerActive = false;
-}
-
-function startHeroTrailer(movie, muted = true) {
-  const videoWrap = document.getElementById('hero-video-wrap');
-  const videoIframe = document.getElementById('hero-video-iframe');
-  const soundBtn = document.getElementById('hero-sound-btn');
-  const trailerBtn = document.getElementById('hero-trailer-btn');
-  const backdrop = document.getElementById('hero-backdrop');
-  if (!videoWrap || !videoIframe || !movie) return;
-
-  const src = getMovieTrailerEmbedUrl(movie, true, muted);
-  if (!src) {
-    stopHeroTrailer();
-    return;
-  }
-
-  // Keep hidden while buffering so user NEVER sees YouTube play button or loading spinner
-  videoWrap.classList.remove('active');
-  heroTrailerMuted = muted;
-  videoIframe.src = src;
-
-  if (heroTrailerRevealTimer) clearTimeout(heroTrailerRevealTimer);
-
-  // Crossfade in ONLY after buffer (1.8s) when video frames are streaming
-  heroTrailerRevealTimer = setTimeout(() => {
-    if (videoIframe.src === src) {
-      if (videoWrap) videoWrap.classList.add('active');
-      if (backdrop) backdrop.style.opacity = '0.08';
-      if (soundBtn) {
-        soundBtn.style.display = 'flex';
-        soundBtn.innerHTML = muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
-        soundBtn.title = muted ? 'Unmute Audio' : 'Mute Audio';
-      }
-      if (trailerBtn) {
-        trailerBtn.classList.add('playing');
-        trailerBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span>Trailer</span>`;
-      }
-      heroTrailerActive = true;
-    }
-  }, 1800);
-}
-
-function toggleHeroSound() {
-  const videoIframe = document.getElementById('hero-video-iframe');
-  const soundBtn = document.getElementById('hero-sound-btn');
-  if (!videoIframe || !heroTrailerActive) return;
-
-  heroTrailerMuted = !heroTrailerMuted;
-  const func = heroTrailerMuted ? 'mute' : 'unMute';
-  try {
-    videoIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), '*');
-  } catch (e) {}
-
-  if (soundBtn) {
-    soundBtn.innerHTML = heroTrailerMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
-    soundBtn.title = heroTrailerMuted ? 'Unmute Audio' : 'Mute Audio';
-  }
-}
-
-// Global safety listener: if YouTube fires embed error (101, 150), fallback gracefully
-if (typeof window !== 'undefined') {
-  window.addEventListener('message', (event) => {
-    try {
-      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (data && (data.event === 'onError' || data.info === 101 || data.info === 150 || data.info === 100 || data.info === 2)) {
-        stopHeroTrailer();
-      }
-    } catch (e) {}
-  });
 }
 
 function getHeroSpotlightList() {
@@ -573,9 +567,6 @@ function renderHero(targetMovie, forcedIdx) {
     return;
   }
 
-  // Stop any playing trailer on slide switch
-  stopHeroTrailer();
-
   // Smooth Backdrop Crossfade
   const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
   const backdropEl = document.getElementById('hero-backdrop');
@@ -586,10 +577,12 @@ function renderHero(targetMovie, forcedIdx) {
     bufferEl.style.opacity = '1';
     setTimeout(() => {
       backdropEl.style.backgroundImage = `url('${backdrop}')`;
+      backdropEl.style.opacity = '1';
       bufferEl.style.opacity = '0';
     }, 450);
   } else if (backdropEl) {
     backdropEl.style.backgroundImage = `url('${backdrop}')`;
+    backdropEl.style.opacity = '1';
   }
 
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
@@ -603,7 +596,7 @@ function renderHero(targetMovie, forcedIdx) {
   const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${g}</a>`).join('');
 
   const badgeEl = document.getElementById('hero-badge');
-  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> SPOTLIGHT • සිංහල උපසිරැසි`;
+  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> SPOTLIGHT`;
 
   const titleEl = document.getElementById('hero-title');
   if (titleEl) titleEl.textContent = movie.title || '';
@@ -631,42 +624,14 @@ function renderHero(targetMovie, forcedIdx) {
     dlBtn.href = `${movieUrl}#downloads`;
     dlBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Download`;
   }
-  const infoBtn = document.getElementById('hero-info-btn');
-  if (infoBtn) {
-    infoBtn.href = movieUrl;
-  }
 
-  // Setup Trailer Button
+  // Setup Trailer Button to open dedicated Cinema Modal
   const trailerBtn = document.getElementById('hero-trailer-btn');
   if (trailerBtn) {
     trailerBtn.onclick = (e) => {
       e.preventDefault();
-      if (!movie.trailer_id && !movie.trailer_url) {
-        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent((movie.title || '') + ' ' + (movie.year || '') + ' official trailer')}`, '_blank');
-        return;
-      }
-      if (heroTrailerActive) {
-        stopHeroTrailer();
-      } else {
-        startHeroTrailer(movie, false); // unmuted on direct click
-      }
+      openTrailerModal(movie);
     };
-  }
-
-  // Setup Sound Toggle Button
-  const soundBtn = document.getElementById('hero-sound-btn');
-  if (soundBtn) {
-    soundBtn.onclick = (e) => {
-      e.preventDefault();
-      toggleHeroSound();
-    };
-  }
-
-  // Apple TV+ Autoplay background trailer ONLY if user has sufficient data
-  if (!isLowDataMode() && (movie.trailer_id || movie.trailer_url)) {
-    heroTrailerTimer = setTimeout(() => {
-      startHeroTrailer(movie, true); // muted by default for elegant background playback
-    }, 2200);
   }
 
   // Update Apple TV+ indicator dots

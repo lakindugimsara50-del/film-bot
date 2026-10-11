@@ -92,22 +92,8 @@
      4. HERO – AUTO-ROTATE BILLBOARD & DOTS
      ============================================= */
   function initHeroBillboard() {
-    const heroSection = document.getElementById('hero-section');
-    if (!heroSection) return;
-
-    // Add scroll hint arrow
-    if (!heroSection.querySelector('.hero-scroll-hint')) {
-      const scrollHint = document.createElement('div');
-      scrollHint.className = 'hero-scroll-hint';
-      scrollHint.innerHTML = '<i class="fa-solid fa-chevron-down"></i><span>Scroll</span>';
-      heroSection.appendChild(scrollHint);
-
-      window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-          scrollHint.style.opacity = '0';
-        }
-      }, { passive: true, once: true });
-    }
+    // Hero billboard indicators handled natively by app.js (Apple TV+ clean layout)
+    return;
   }
 
   /* =============================================
@@ -386,16 +372,7 @@
      13. HERO MATURITY RATING BADGE
      ============================================= */
   function addHeroMaturityRating() {
-    function setup() {
-      const heroMeta = document.getElementById('hero-meta');
-      if (!heroMeta || heroMeta.querySelector('.hero-maturity')) return;
-
-      const maturity = document.createElement('span');
-      maturity.className = 'hero-maturity';
-      maturity.textContent = '15+';
-      heroMeta.appendChild(maturity);
-    }
-    setTimeout(setup, 700);
+    return;
   }
 
   /* =============================================

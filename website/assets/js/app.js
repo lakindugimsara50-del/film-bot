@@ -16,6 +16,14 @@ const SITE_CONFIG = {
 // ---- State ----
 let allMovies = [];
 let siteData = {};
+let heroSpotlightMovies = [];
+let heroCurrentIdx = 0;
+let heroRotateTimer = null;
+let heroTrailerTimer = null;
+let heroTrailerActive = false;
+let heroTrailerMuted = true;
+let heroHoverListenersBound = false;
+const HERO_ROTATE_INTERVAL = 6000;
 
 // ---- Init ----
 function renderAllSections() {
@@ -392,13 +400,6 @@ function findMovieBySlug(slug) {
   return fallbackCatalog[normS] || null;
 }
 
-// ---- Hero Spotlight & Apple TV+ Trailer State ----
-let heroSpotlightMovies = [];
-let heroCurrentIdx = 0;
-let heroRotateTimer = null;
-let heroTrailerTimer = null;
-let heroTrailerActive = false;
-let heroTrailerMuted = true;
 
 function isLowDataMode() {
   if (typeof navigator === 'undefined') return false;
@@ -692,23 +693,62 @@ function updateHeroAppleIndicators(currentIdx) {
 }
 
 function restartHeroTimer() {
-  if (heroRotateTimer) clearInterval(heroRotateTimer);
+  if (heroRotateTimer) {
+    clearInterval(heroRotateTimer);
+    heroRotateTimer = null;
+  }
   const heroEl = document.getElementById('hero-section');
   if (!heroEl) return;
 
+  const spotlight = (heroSpotlightMovies && heroSpotlightMovies.length > 0) ? heroSpotlightMovies : getHeroSpotlightList();
+  heroSpotlightMovies = spotlight;
+  if (!spotlight || spotlight.length < 2) return;
+
   heroRotateTimer = setInterval(() => {
+    // If trailer modal is open, pause auto-rotation
+    const modal = document.getElementById('trailer-modal');
+    if (modal && modal.style.display === 'flex') return;
+
     if (!heroSpotlightMovies || heroSpotlightMovies.length < 2) return;
     heroCurrentIdx = (heroCurrentIdx + 1) % heroSpotlightMovies.length;
     renderHero(heroSpotlightMovies[heroCurrentIdx], heroCurrentIdx);
-  }, 9000);
+  }, HERO_ROTATE_INTERVAL);
 
-  // Pause on hover
-  heroEl.onmouseenter = () => {
-    if (heroRotateTimer) clearInterval(heroRotateTimer);
-  };
-  heroEl.onmouseleave = () => {
-    restartHeroTimer();
-  };
+  initHeroHoverControls();
+}
+
+function initHeroHoverControls() {
+  if (heroHoverListenersBound) return;
+  heroHoverListenersBound = true;
+
+  const heroActions = document.querySelector('.hero-actions');
+  const pagination = document.getElementById('hero-apple-pagination');
+  const edgePrev = document.getElementById('hero-edge-prev') || document.getElementById('hero-prev-btn');
+  const edgeNext = document.getElementById('hero-edge-next') || document.getElementById('hero-next-btn');
+
+  // Pause rotation only when interacting with buttons/controls
+  [heroActions, pagination, edgePrev, edgeNext].forEach(el => {
+    if (!el) return;
+    el.addEventListener('mouseenter', () => {
+      if (heroRotateTimer) {
+        clearInterval(heroRotateTimer);
+        heroRotateTimer = null;
+      }
+    });
+    el.addEventListener('mouseleave', () => {
+      restartHeroTimer();
+    });
+  });
+
+  // Resume rotation when tab becomes visible
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      restartHeroTimer();
+    } else if (heroRotateTimer) {
+      clearInterval(heroRotateTimer);
+      heroRotateTimer = null;
+    }
+  });
 }
 
 // ---- Generate Movie Card (Netflix Cinema Style) ----

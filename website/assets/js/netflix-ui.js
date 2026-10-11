@@ -95,81 +95,19 @@
     const heroSection = document.getElementById('hero-section');
     if (!heroSection) return;
 
-    // Add dots container
-    const dotsContainer = document.createElement('div');
-    dotsContainer.className = 'hero-dots';
-    heroSection.appendChild(dotsContainer);
+    // Add scroll hint arrow
+    if (!heroSection.querySelector('.hero-scroll-hint')) {
+      const scrollHint = document.createElement('div');
+      scrollHint.className = 'hero-scroll-hint';
+      scrollHint.innerHTML = '<i class="fa-solid fa-chevron-down"></i><span>Scroll</span>';
+      heroSection.appendChild(scrollHint);
 
-    // Add scroll hint
-    const scrollHint = document.createElement('div');
-    scrollHint.className = 'hero-scroll-hint';
-    scrollHint.innerHTML = '<i class="fa-solid fa-chevron-down"></i><span>Scroll</span>';
-    heroSection.appendChild(scrollHint);
-
-    // Hide scroll hint after first scroll
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) {
-        scrollHint.style.opacity = '0';
-      }
-    }, { passive: true, once: true });
-
-    // Auto-rotate if multiple featured movies (dots UI)
-    let movies = [];
-    let currentIdx = 0;
-    let rotateTimer = null;
-
-    // Wait for FilmSub data to load then setup dots
-    function setupDots() {
-      if (!window.FilmSub) return;
-      const allM = window.FilmSub.allMovies();
-      if (!allM || allM.length < 2) return;
-
-      // Pick top 5 featured/trending for carousel
-      const featured = allM.filter(m => m.featured || m.trending).slice(0, 5);
-      movies = featured.length >= 2 ? featured : allM.slice(0, 5);
-
-      if (movies.length < 2) return;
-
-      // Render dots
-      dotsContainer.innerHTML = movies.map((_, i) =>
-        `<div class="hero-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></div>`
-      ).join('');
-
-      dotsContainer.querySelectorAll('.hero-dot').forEach(dot => {
-        dot.addEventListener('click', () => {
-          const idx = parseInt(dot.dataset.idx);
-          rotateTo(idx);
-        });
-      });
-
-      // Auto rotate every 8 seconds
-      rotateTimer = setInterval(() => {
-        rotateTo((currentIdx + 1) % movies.length);
-      }, 8000);
-
-      // Pause on hover
-      heroSection.addEventListener('mouseenter', () => clearInterval(rotateTimer));
-      heroSection.addEventListener('mouseleave', () => {
-        rotateTimer = setInterval(() => rotateTo((currentIdx + 1) % movies.length), 8000);
-      });
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+          scrollHint.style.opacity = '0';
+        }
+      }, { passive: true, once: true });
     }
-
-    function rotateTo(idx) {
-      currentIdx = idx;
-      dotsContainer.querySelectorAll('.hero-dot').forEach((d, i) => {
-        d.classList.toggle('active', i === idx);
-      });
-
-      const movie = movies[idx];
-      if (!movie) return;
-
-      if (window.FilmSub && typeof window.FilmSub.renderHero === 'function') {
-        window.FilmSub.renderHero(movie);
-      }
-    }
-
-    // Delay setup to allow data to load
-    setTimeout(setupDots, 600);
   }
 
   /* =============================================

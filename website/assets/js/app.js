@@ -19,7 +19,10 @@ let siteData = {};
 
 // ---- Init ----
 function renderAllSections() {
-  if (document.getElementById('hero-section')) renderHero();
+  if (document.getElementById('hero-section')) {
+    renderHero();
+    renderHeroTrendingRail();
+  }
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
   if (document.getElementById('sinhala-dub-track')) renderCarousel('sinhala-dub-track', getSinhalaFilms(), { isTrending: false });
@@ -368,16 +371,61 @@ function findMovieBySlug(slug) {
   return fallbackCatalog[normS] || null;
 }
 
+// ---- Hero Spotlight State ----
+let heroSpotlightMovies = [];
+let heroCurrentIdx = 0;
+let heroRotateTimer = null;
+
+function getHeroSpotlightList() {
+  const catalog = groupSeriesCatalog(allMovies);
+  if (!catalog || catalog.length === 0) return [];
+  const tr = catalog.filter(m => m.trending);
+  const feat = catalog.filter(m => m.featured);
+  const merged = [];
+  const seen = new Set();
+  [...feat, ...tr, ...catalog].forEach(m => {
+    const s = String(m.slug || m.id || '').toLowerCase();
+    if (s && !seen.has(s)) {
+      seen.add(s);
+      merged.push(m);
+    }
+  });
+  return merged.slice(0, 5);
+}
+
 // ---- Hero ----
-function renderHero(targetMovie) {
-  const movie = targetMovie || getFeatured();
+function renderHero(targetMovie, forcedIdx) {
+  const spotlight = getHeroSpotlightList();
+  heroSpotlightMovies = spotlight;
+
+  if (typeof forcedIdx === 'number') {
+    heroCurrentIdx = forcedIdx;
+  }
+
+  const movie = targetMovie || spotlight[heroCurrentIdx] || getFeatured();
   const heroEl = document.getElementById('hero-section');
   if (!heroEl) return;
   if (!movie) {
     heroEl.innerHTML = `<div class="hero-gradient"></div><div class="hero-content"><p class="text-muted">No featured movies yet.</p></div>`;
     return;
   }
-  const backdrop = movie.backdrop || movie.backdrop_url || SITE_CONFIG.defaultBackdrop;
+
+  // Smooth Backdrop Crossfade
+  const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+  const backdropEl = document.getElementById('hero-backdrop');
+  const bufferEl = document.getElementById('hero-backdrop-buffer');
+
+  if (backdropEl && bufferEl) {
+    bufferEl.style.backgroundImage = `url('${backdrop}')`;
+    bufferEl.style.opacity = '1';
+    setTimeout(() => {
+      backdropEl.style.backgroundImage = `url('${backdrop}')`;
+      bufferEl.style.opacity = '0';
+    }, 450);
+  } else if (backdropEl) {
+    backdropEl.style.backgroundImage = `url('${backdrop}')`;
+  }
+
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
   const imdbVal = movie.imdb || movie.rating || '';
   const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
@@ -388,32 +436,174 @@ function renderHero(targetMovie) {
   const subBadge = `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
   const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${g}</a>`).join('');
 
-  const posterEl = document.getElementById('hero-poster-mini');
-  if (posterEl) {
-    posterEl.src = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
-    posterEl.alt = movie.title || 'Featured Movie';
-    posterEl.onerror = () => { posterEl.src = SITE_CONFIG.defaultPoster; };
-  }
-  const backdropEl = document.querySelector('.hero-backdrop');
-  if (backdropEl) backdropEl.style.backgroundImage = `url('${backdrop}')`;
   const badgeEl = document.getElementById('hero-badge');
   if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> NETFLIX SPOTLIGHT • සිංහල උපසිරැසි`;
-  document.getElementById('hero-title').textContent = movie.title || '';
-  document.getElementById('hero-title-si').textContent = movie.title_si || '';
-  document.getElementById('hero-meta').innerHTML = `${imdb}${quality}${year}${duration}${subBadge}`;
-  document.getElementById('hero-genres').innerHTML = genreChips;
-  document.getElementById('hero-description').textContent = movie.description || '';
-  
+
+  const titleEl = document.getElementById('hero-title');
+  if (titleEl) titleEl.textContent = movie.title || '';
+
+  const titleSiEl = document.getElementById('hero-title-si');
+  if (titleSiEl) titleSiEl.textContent = movie.title_si || '';
+
+  const metaEl = document.getElementById('hero-meta');
+  if (metaEl) metaEl.innerHTML = `${imdb}${quality}${year}${duration}${subBadge}`;
+
+  const genresEl = document.getElementById('hero-genres');
+  if (genresEl) genresEl.innerHTML = genreChips;
+
+  const descEl = document.getElementById('hero-description');
+  if (descEl) descEl.textContent = movie.description || '';
+
+  const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
   const watchBtn = document.getElementById('hero-watch-btn');
   if (watchBtn) {
-    watchBtn.href = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug)}`;
+    watchBtn.href = movieUrl;
     watchBtn.innerHTML = `<i class="fa-solid fa-play"></i> Watch Now`;
   }
   const dlBtn = document.getElementById('hero-download-btn');
   if (dlBtn) {
-    dlBtn.href = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug)}#downloads`;
+    dlBtn.href = `${movieUrl}#downloads`;
     dlBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Download`;
   }
+  const infoBtn = document.getElementById('hero-info-btn');
+  if (infoBtn) {
+    infoBtn.href = movieUrl;
+  }
+
+  // Update Rail active card & counter
+  updateHeroRailActive(movie);
+  triggerHeroProgress();
+}
+
+// ---- Render Hero Trending Spotlight Rail ----
+function renderHeroTrendingRail() {
+  const railContainer = document.getElementById('hero-rail-cards');
+  if (!railContainer) return;
+  const list = getHeroSpotlightList();
+  if (!list || list.length === 0) return;
+
+  railContainer.innerHTML = list.map((m, idx) => {
+    const poster = m.poster || m.poster_url || SITE_CONFIG.defaultPoster;
+    const imdbVal = m.imdb || m.rating || '';
+    const imdb = imdbVal ? `<span class="hero-rail-imdb"><i class="fa-solid fa-star"></i> ${escHtml(imdbVal)}</span>` : '';
+    const year = m.year ? `<span>${escHtml(m.year)}</span>` : '';
+    const isSeries = m.type === 'series' || Boolean(m.season);
+    const tag = isSeries ? `<span class="hero-rail-tag">TV</span>` : `<span class="hero-rail-tag">FILM</span>`;
+    const isActive = idx === heroCurrentIdx;
+
+    return `
+      <div class="hero-rail-card${isActive ? ' active' : ''}" data-idx="${idx}" data-slug="${escHtml(m.slug || m.id || '')}" role="button" tabindex="0" title="${escHtml(m.title || '')}">
+        <div class="hero-rail-rank">#${idx + 1}</div>
+        <div class="hero-rail-poster-wrap">
+          <img src="${escHtml(poster)}" alt="${escHtml(m.title || '')}" class="hero-rail-poster" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${SITE_CONFIG.defaultPoster}';">
+        </div>
+        <div class="hero-rail-info">
+          <div class="hero-rail-movie-title">${escHtml(m.title || 'Untitled')}</div>
+          <div class="hero-rail-meta">
+            ${imdb}
+            ${year}
+            ${tag}
+          </div>
+        </div>
+        <div class="hero-rail-play">
+          <i class="fa-solid fa-play"></i>
+        </div>
+        <div class="hero-rail-card-bar"></div>
+      </div>
+    `;
+  }).join('');
+
+  // Setup click & keyboard events for rail cards
+  railContainer.querySelectorAll('.hero-rail-card').forEach(card => {
+    const handleSelect = () => {
+      const idx = parseInt(card.dataset.idx, 10);
+      if (!isNaN(idx) && list[idx]) {
+        heroCurrentIdx = idx;
+        renderHero(list[idx], idx);
+        restartHeroTimer();
+      }
+    };
+    card.addEventListener('click', handleSelect);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSelect();
+      }
+    });
+  });
+
+  // Setup Next / Prev arrow buttons
+  const prevBtn = document.getElementById('hero-rail-prev');
+  const nextBtn = document.getElementById('hero-rail-next');
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      const total = list.length;
+      heroCurrentIdx = (heroCurrentIdx - 1 + total) % total;
+      renderHero(list[heroCurrentIdx], heroCurrentIdx);
+      restartHeroTimer();
+    };
+  }
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      const total = list.length;
+      heroCurrentIdx = (heroCurrentIdx + 1) % total;
+      renderHero(list[heroCurrentIdx], heroCurrentIdx);
+      restartHeroTimer();
+    };
+  }
+
+  // Auto-rotation timer setup
+  restartHeroTimer();
+}
+
+function updateHeroRailActive(movie) {
+  const targetSlug = String(movie.slug || movie.id || '').toLowerCase();
+  const railContainer = document.getElementById('hero-rail-cards');
+  if (railContainer) {
+    const cards = railContainer.querySelectorAll('.hero-rail-card');
+    cards.forEach((c, idx) => {
+      const cardSlug = String(c.dataset.slug || '').toLowerCase();
+      const isActive = cardSlug === targetSlug || idx === heroCurrentIdx;
+      c.classList.toggle('active', isActive);
+    });
+  }
+
+  // Update counter
+  const counterEl = document.getElementById('hero-rail-counter');
+  if (counterEl) {
+    const total = heroSpotlightMovies.length || 5;
+    counterEl.textContent = `${heroCurrentIdx + 1} / ${total}`;
+  }
+}
+
+function triggerHeroProgress() {
+  const bar = document.getElementById('hero-progress-fill');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  void bar.offsetWidth; // Force CSS reflow
+  bar.style.transition = 'width 8s linear';
+  bar.style.width = '100%';
+}
+
+function restartHeroTimer() {
+  if (heroRotateTimer) clearInterval(heroRotateTimer);
+  const heroEl = document.getElementById('hero-section');
+  if (!heroEl) return;
+
+  heroRotateTimer = setInterval(() => {
+    if (!heroSpotlightMovies || heroSpotlightMovies.length < 2) return;
+    heroCurrentIdx = (heroCurrentIdx + 1) % heroSpotlightMovies.length;
+    renderHero(heroSpotlightMovies[heroCurrentIdx], heroCurrentIdx);
+  }, 8000);
+
+  // Pause on hover
+  heroEl.onmouseenter = () => {
+    if (heroRotateTimer) clearInterval(heroRotateTimer);
+  };
+  heroEl.onmouseleave = () => {
+    restartHeroTimer();
+  };
 }
 
 // ---- Generate Movie Card (Netflix Cinema Style) ----

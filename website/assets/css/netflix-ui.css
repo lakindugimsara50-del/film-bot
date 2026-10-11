@@ -61,27 +61,47 @@ img {
    3. HERO SECTION – CINEMATIC UPGRADE
    ============================================= */
 
-/* Auto-rotating billboard indicator dots */
-.hero-dots {
+/* Trending Spotlight Rail Advanced Polish */
+.hero-rail-cards .hero-rail-card {
+  animation: rail-card-pop 0.5s var(--ease-bounce) both;
+}
+.hero-rail-cards .hero-rail-card:nth-child(1) { animation-delay: 0.08s; }
+.hero-rail-cards .hero-rail-card:nth-child(2) { animation-delay: 0.16s; }
+.hero-rail-cards .hero-rail-card:nth-child(3) { animation-delay: 0.24s; }
+.hero-rail-cards .hero-rail-card:nth-child(4) { animation-delay: 0.32s; }
+.hero-rail-cards .hero-rail-card:nth-child(5) { animation-delay: 0.40s; }
+
+@keyframes rail-card-pop {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.hero-rail-card.active {
+  position: relative;
+}
+.hero-rail-card.active::before {
+  content: '';
   position: absolute;
-  bottom: 90px;
-  right: 48px;
-  display: flex;
-  gap: 6px;
-  z-index: 10;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(229,9,20,0.8), rgba(255,107,53,0.4), rgba(229,9,20,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: border-glow-pulse 2.5s ease infinite;
 }
-.hero-dot {
-  width: 8px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.35);
-  transition: all 0.4s var(--ease-smooth);
-  cursor: pointer;
-}
-.hero-dot.active {
-  width: 24px;
-  background: var(--accent);
-  box-shadow: var(--glow-red);
+@keyframes border-glow-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; filter: drop-shadow(0 0 4px rgba(229,9,20,0.8)); }
 }
 
 /* Maturity rating badge */

@@ -16,9 +16,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v1">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v1">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v1">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v3">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v3">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v3">
 </head>
 <body>
 
@@ -112,29 +112,64 @@
 </nav>
 
 <!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
+<!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
 <section class="hero" id="hero-section" aria-label="Featured Movie">
-  <div class="hero-backdrop"></div>
+  <div class="hero-backdrop active" id="hero-backdrop"></div>
+  <div class="hero-backdrop-buffer" id="hero-backdrop-buffer"></div>
   <div class="hero-gradient"></div>
+  <div class="hero-noise"></div>
+
   <div class="hero-content">
-    <div class="hero-poster-mini-wrap">
-      <img id="hero-poster-mini" class="hero-poster-mini" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='180' viewBox='0 0 120 180'%3E%3Crect width='120' height='180' fill='%231f1f1f'/%3E%3C/svg%3E" alt="Featured Poster">
-    </div>
+    <!-- Left Column: Featured Details & Actions -->
     <div class="hero-info-main">
-      <div class="hero-badge" id="hero-badge"><i class="fa-solid fa-bolt"></i> Featured</div>
+      <div class="hero-badge-row">
+        <div class="hero-badge" id="hero-badge"><i class="fa-solid fa-bolt"></i> SPOTLIGHT</div>
+        <div class="hero-sinhala-pill"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</div>
+      </div>
       <h1 class="hero-title" id="hero-title">Loading...</h1>
       <p class="hero-title-si" id="hero-title-si"></p>
       <div class="hero-meta" id="hero-meta"></div>
       <div class="hero-genres" id="hero-genres"></div>
       <p class="hero-description" id="hero-description"></p>
       <div class="hero-actions">
-        <a href="#" class="btn btn-primary btn-hero" id="hero-watch-btn">
-          <i class="fa-solid fa-circle-play"></i> Watch Now
+        <a href="#" class="btn btn-primary btn-hero hero-btn-watch" id="hero-watch-btn">
+          <i class="fa-solid fa-play"></i> Watch Now
         </a>
-        <a href="#" class="btn btn-secondary btn-hero" id="hero-download-btn">
+        <a href="#" class="btn btn-secondary btn-hero hero-btn-download" id="hero-download-btn">
           <i class="fa-solid fa-cloud-arrow-down"></i> Download
+        </a>
+        <a href="#" class="hero-info-btn" id="hero-info-btn" title="More Info" aria-label="More Information">
+          <i class="fa-solid fa-circle-info"></i>
         </a>
       </div>
     </div>
+
+    <!-- Right Column: Trending Spotlight Cards Rail -->
+    <div class="hero-trending-rail-wrap" id="hero-trending-rail-wrap">
+      <div class="hero-rail-header">
+        <div class="hero-rail-title">
+          <i class="fa-solid fa-fire text-accent"></i>
+          <span>TRENDING SPOTLIGHT</span>
+        </div>
+        <div class="hero-rail-nav">
+          <button class="hero-rail-arrow prev" id="hero-rail-prev" type="button" aria-label="Previous Spotlight">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span class="hero-rail-counter" id="hero-rail-counter">1 / 5</span>
+          <button class="hero-rail-arrow next" id="hero-rail-next" type="button" aria-label="Next Spotlight">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div class="hero-rail-cards" id="hero-rail-cards" role="list">
+        <!-- Injected dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Auto-rotate Timeline Bar -->
+  <div class="hero-progress-bar">
+    <div class="hero-progress-fill" id="hero-progress-fill"></div>
   </div>
 </section>
 
@@ -255,8 +290,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261010_v6"></script>
-<script src="assets/js/app.js?v=20261010_v6"></script>
-<script src="assets/js/netflix-ui.js?v=20261010_v6"></script>
+<script src="data/movies_data.js?v=20261011_v3"></script>
+<script src="assets/js/app.js?v=20261011_v3"></script>
+<script src="assets/js/netflix-ui.js?v=20261011_v3"></script>
 </body>
 </html>

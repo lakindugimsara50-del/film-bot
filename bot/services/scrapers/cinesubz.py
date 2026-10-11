@@ -19,7 +19,8 @@ from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
 
-BASE_URL = "https://cinesubz.co"
+BASE_URL = "https://cinesubz.lk"
+BASE_URLS = ["https://cinesubz.lk", "https://cinesubz.co"]
 
 HEADERS = {
     "User-Agent": (
@@ -52,13 +53,14 @@ async def _extract_cinesubz_zetaplayer_streams(
     Direct streams from supercloud2.space / setwenna.one / player endpoints contain
     genuine .mp4 files with pre-hardsubbed Sinhala subtitles.
     """
+    domain_base = "https://cinesubz.lk" if "cinesubz.lk" in current_url else "https://cinesubz.co"
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/124.0.0.0 Safari/537.36"
         ),
-        "Referer": "https://cinesubz.co/",
+        "Referer": f"{domain_base}/",
         "X-Requested-With": "XMLHttpRequest",
     }
     options = soup.select("#playeroptionsul li.zetaflix_player_option, #playeroptionsul li.dooplay_player_option")
@@ -72,7 +74,7 @@ async def _extract_cinesubz_zetaplayer_streams(
         if not (post_id and p_type and nume) or nume == "trailer":
             continue
 
-        api_url = f"https://cinesubz.co/wp-json/zetaplayer/v2/{post_id}/{p_type}/{nume}"
+        api_url = f"{domain_base}/wp-json/zetaplayer/v2/{post_id}/{p_type}/{nume}"
         try:
             r_api = await client.get(api_url, headers=headers, timeout=8.0)
             if r_api.status_code == 200:
@@ -114,51 +116,57 @@ async def search(
 ) -> list[dict]:
     """Search CineSubz for direct pre-hardsubbed downloads."""
     clean_t = re.sub(r"[^a-zA-Z0-9\s]", " ", clean_title).strip() or clean_title.strip()
+    # Strip year from base title so year is not duplicated in slug (e.g. khalifa-2026-2026)
+    clean_t_no_year = re.sub(rf"\b{year}\b", "", clean_t).strip() if year else clean_t
+    clean_t_no_year = re.sub(r"\s+", " ", clean_t_no_year).strip() or clean_t
+
     search_queries = []
     if season and episode:
-        search_queries.append(f"{clean_t} S{season:02d}E{episode:02d}")
-        search_queries.append(f"{clean_t} E{episode:02d}")
-        search_queries.append(clean_t)
+        search_queries.append(f"{clean_t_no_year} S{season:02d}E{episode:02d}")
+        search_queries.append(f"{clean_t_no_year} E{episode:02d}")
+        search_queries.append(clean_t_no_year)
     elif year:
-        search_queries.append(f"{clean_t} {year}")
-        search_queries.append(clean_t)
-        search_queries.append(f"{clean_t} ({year})")
+        search_queries.append(f"{clean_t_no_year} {year}")
+        search_queries.append(clean_t_no_year)
+        search_queries.append(f"{clean_t_no_year} ({year})")
     else:
         search_queries.append(clean_t)
 
-    slug_title = re.sub(r"[^a-z0-9]+", "-", clean_t.lower()).strip("-")
+    slug_title = re.sub(r"[^a-z0-9]+", "-", clean_t_no_year.lower()).strip("-")
     direct_candidates = []
-    if season and episode:
-        direct_candidates.extend([
-            f"{BASE_URL}/episodes/{slug_title}-{season}x{episode}/",
-            f"{BASE_URL}/episodes/{slug_title}-{season}x{episode:02d}/",
-            f"{BASE_URL}/episodes/{slug_title}-season-{season}-episode-{episode}/",
-            f"{BASE_URL}/tvshows/{slug_title}/",
-            f"{BASE_URL}/series/{slug_title}/",
-            f"{BASE_URL}/{slug_title}/",
-        ])
-    elif season:
-        direct_candidates.extend([
-            f"{BASE_URL}/episodes/{slug_title}-{season}x1/",
-            f"{BASE_URL}/tvshows/{slug_title}/",
-            f"{BASE_URL}/series/{slug_title}/",
-            f"{BASE_URL}/{slug_title}/",
-        ])
-    elif year:
-        direct_candidates.extend([
-            f"{BASE_URL}/movies/{slug_title}-{year}/",
-            f"{BASE_URL}/movies/{slug_title}-{year}-sinhala-subtitles/",
-            f"{BASE_URL}/{slug_title}-{year}/",
-            f"{BASE_URL}/{slug_title}/",
-            f"{BASE_URL}/tvshows/{slug_title}/",
-        ])
-    else:
-        direct_candidates.extend([
-            f"{BASE_URL}/movies/{slug_title}/",
-            f"{BASE_URL}/tvshows/{slug_title}/",
-            f"{BASE_URL}/series/{slug_title}/",
-            f"{BASE_URL}/{slug_title}/",
-        ])
+    for b_url in BASE_URLS:
+        if season and episode:
+            direct_candidates.extend([
+                f"{b_url}/episodes/{slug_title}-{season}x{episode}/",
+                f"{b_url}/episodes/{slug_title}-{season}x{episode:02d}/",
+                f"{b_url}/episodes/{slug_title}-season-{season}-episode-{episode}/",
+                f"{b_url}/tvshows/{slug_title}/",
+                f"{b_url}/series/{slug_title}/",
+                f"{b_url}/{slug_title}/",
+            ])
+        elif season:
+            direct_candidates.extend([
+                f"{b_url}/episodes/{slug_title}-{season}x1/",
+                f"{b_url}/tvshows/{slug_title}/",
+                f"{b_url}/series/{slug_title}/",
+                f"{b_url}/{slug_title}/",
+            ])
+        elif year:
+            direct_candidates.extend([
+                f"{b_url}/movies/{slug_title}-{year}-sinhala-subtitles/",
+                f"{b_url}/movies/{slug_title}-{year}/",
+                f"{b_url}/{slug_title}-{year}/",
+                f"{b_url}/{slug_title}/",
+                f"{b_url}/movies/{slug_title}/",
+                f"{b_url}/tvshows/{slug_title}/",
+            ])
+        else:
+            direct_candidates.extend([
+                f"{b_url}/movies/{slug_title}/",
+                f"{b_url}/tvshows/{slug_title}/",
+                f"{b_url}/series/{slug_title}/",
+                f"{b_url}/{slug_title}/",
+            ])
 
     candidate_posts: list[tuple[str, int]] = []
     seen_posts = set()
@@ -166,27 +174,28 @@ async def search(
     for q in search_queries:
         if any(sc >= 40 for _, sc in candidate_posts):
             break
-        # 1. HTML Search
-        try:
-            s_url = f"{BASE_URL}/?s={urllib.parse.quote_plus(q)}"
-            resp = await client.get(s_url, headers=HEADERS, timeout=6.0)
-            if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, "html.parser")
-                selectors = ".display-item a, .item-box a, .result-item a, article a, h2 a, h3 a, .entry-title a, .search-item a"
-                for a in soup.select(selectors):
-                    raw_href = a.get("href", "").strip()
-                    if not raw_href or raw_href.startswith("#"):
-                        continue
-                    full_href = urllib.parse.urljoin(BASE_URL, raw_href)
-                    if "cinesubz" in full_href and not any(x in full_href for x in ("/category/", "/tag/", "/author/", "/page/", "#")):
-                        if full_href not in seen_posts:
-                            seen_posts.add(full_href)
-                            txt = a.get_text(" ", strip=True) or a.get("title", "")
-                            score = score_candidate_post(clean_t, full_href, txt, year=year, season=season, episode=episode)
-                            if score > 0:
-                                candidate_posts.append((full_href, score))
-        except Exception as e_html:
-            log.debug("[CineSubz] HTML search note: %s", e_html)
+        # 1. HTML Search across primary domain and fallback
+        for b_url in BASE_URLS:
+            try:
+                s_url = f"{b_url}/?s={urllib.parse.quote_plus(q)}"
+                resp = await client.get(s_url, headers=HEADERS, timeout=6.0)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    selectors = ".display-item a, .item-box a, .result-item a, article a, h2 a, h3 a, .entry-title a, .search-item a"
+                    for a in soup.select(selectors):
+                        raw_href = a.get("href", "").strip()
+                        if not raw_href or raw_href.startswith("#"):
+                            continue
+                        full_href = urllib.parse.urljoin(b_url, raw_href)
+                        if "cinesubz" in full_href and not any(x in full_href for x in ("/category/", "/tag/", "/author/", "/page/", "#")):
+                            if full_href not in seen_posts:
+                                seen_posts.add(full_href)
+                                txt = a.get_text(" ", strip=True) or a.get("title", "")
+                                score = score_candidate_post(clean_t_no_year, full_href, txt, year=year, season=season, episode=episode)
+                                if score > 0:
+                                    candidate_posts.append((full_href, score))
+            except Exception as e_html:
+                log.debug("[CineSubz] HTML search note (%s): %s", b_url, e_html)
 
         # 2. WP API search
         if not candidate_posts:

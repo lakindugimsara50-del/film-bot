@@ -42,7 +42,7 @@ HEADERS = {
 
 # Sri Lankan Subtitle & Matched Video Portals (CineSubz #1 Priority, SinhalaSub #2, etc.)
 PORTALS = [
-    {"name": "CineSubz",          "base": "https://cinesubz.co",          "wp_api": True},
+    {"name": "CineSubz",          "base": "https://cinesubz.lk",          "wp_api": True},
     {"name": "SinhalaSub",        "base": "https://sinhalasub.lk",        "wp_api": True},
     {"name": "PirateLK",          "base": "https://piratelk.com",         "wp_api": True},
     {"name": "Baiscope",          "base": "https://baiscope.lk",          "wp_api": True},
@@ -294,6 +294,13 @@ def score_candidate_post(
         score += 30
     if post_url and re.search(rf"(?:\b|[-_/]){re.escape(t_clean)}(?:\b|[-_/])", post_url.lower()):
         score += 20
+    if "cinesubz" in post_url.lower():
+        score += 15
+
+    slug_tokens = [w for w in re.findall(r"[a-z0-9]+", url_slug) if w not in STOP_WORDS and (not year or w != str(year))]
+    target_tokens = [w for w in re.findall(r"[a-z0-9]+", t_clean) if w not in STOP_WORDS and (not year or w != str(year))]
+    if slug_tokens and slug_tokens == target_tokens:
+        score += 25  # Exact title slug match
 
     if year and str(year) in combined:
         score += 40
@@ -402,7 +409,8 @@ async def _search_portal(
                     if not raw_href or raw_href.startswith("#"):
                         continue
                     full_href = urllib.parse.urljoin(base_url, raw_href)
-                    if domain_part in full_href.lower():
+                    is_domain_match = ("cinesubz" in full_href.lower()) if "cinesubz" in domain_part else (domain_part in full_href.lower())
+                    if is_domain_match:
                         if not any(ign in full_href for ign in ("/category/", "/tag/", "/author/", "/page/", "#", "wp-login")):
                             if full_href not in seen_posts:
                                 seen_posts.add(full_href)

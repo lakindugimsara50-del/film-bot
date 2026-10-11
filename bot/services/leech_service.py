@@ -85,9 +85,11 @@ class LeechCandidate:
 def get_candidate_portal_rank(c: LeechCandidate) -> int:
     """Prioritize CineSubz as #1 (rank 0), SinhalaSub as #2 (rank 1), and other Sri Lankan sites as #3 (rank 2)."""
     p = ((c.extra or {}).get("portal") or "").lower()
-    if "cinesubz" in p:
+    u = str(c.source_url).lower()
+    post_u = str((c.extra or {}).get("post_url") or "").lower()
+    if "cinesubz" in p or "cinesubz" in u or "cinesubz" in post_u or "csplayer" in u or "supercloud" in u or "setwenna" in u:
         return 0
-    if "sinhalasub" in p:
+    if "sinhalasub" in p or "sinhalasub" in u or "sinhalasub" in post_u:
         return 1
     return 2
 
@@ -1353,6 +1355,28 @@ async def _execute_leech(
                                     c_dl = trim_out
                                     log.info("[LeechService] Successfully trimmed first 10s from %s [%s]", slug, q_name)
 
+                                # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge
+                                cand_portal_name = str((cand_obj.extra or {}).get("portal", "")).lower()
+                                is_cinesubz_wm = bool(
+                                    "cinesubz" in cand_portal_name
+                                    or "cinesubz" in str(cand_obj.source_url).lower()
+                                    or "cinesubz" in str((cand_obj.extra or {}).get("post_url", "")).lower()
+                                    or "csplayer" in str(cand_obj.source_url).lower()
+                                    or "supercloud" in str(cand_obj.source_url).lower()
+                                    or "setwenna" in str(cand_obj.source_url).lower()
+                                )
+                                if is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
+                                    wm_badge_out = os.path.join(temp_dir, f"badge_{slug}_{q_name}.mp4")
+                                    log.info("[LeechService] CineSubz release detected. Applying FilmSub logo badge on %s [%s]...", slug, q_name)
+                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out):
+                                        try:
+                                            if os.path.abspath(c_dl) != os.path.abspath(wm_badge_out):
+                                                os.remove(c_dl)
+                                        except Exception:
+                                            pass
+                                        c_dl = wm_badge_out
+                                        log.info("[LeechService] Successfully covered CineSubz watermark with FilmSub badge on %s [%s]", slug, q_name)
+
                                 # Download finished for this quality! It proceeds immediately to faststart, subtitle muxing, and Telegram upload
                                 # while all other qualities continue downloading in parallel!
                                 # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
@@ -1990,11 +2014,22 @@ async def _execute_leech(
                 if not cand_portal and chosen_candidate and getattr(chosen_candidate, 'extra', None):
                     cand_portal = chosen_candidate.extra.get('portal', '')
 
+                cand_source_u = str(getattr(chosen_candidate, 'source_url', '')).lower()
+                cand_post_u = str(((chosen_candidate and chosen_candidate.extra) or {}).get("post_url", "")).lower()
+                is_cinesubz_cand = (
+                    "cinesubz" in str(cand_portal).lower()
+                    or "cinesubz" in cand_source_u
+                    or "cinesubz" in cand_post_u
+                    or "csplayer" in cand_source_u
+                    or "supercloud" in cand_source_u
+                    or "setwenna" in cand_source_u
+                )
+
                 if sub_to_burn_video and not is_already_hardsubbed and os.path.exists(sub_to_burn_video):
                     sub_processed = await video_service.burn_subtitles_to_video(local_file, sub_to_burn_video, remuxed)
                     if not sub_processed:
                         sub_processed = await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remuxed, disposition="default")
-                elif is_already_hardsubbed and str(cand_portal).lower() == 'cinesubz' and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
+                elif is_already_hardsubbed and is_cinesubz_cand and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                     log.info("[LeechService] CineSubz pre-hardsubbed release detected. Covering bottom-left watermark on %s...", local_file)
                     sub_processed = await video_service.cover_cinesubz_watermark(local_file, remuxed)
                     if not sub_processed:
@@ -2660,6 +2695,27 @@ async def _execute_leech(
                                         pass
                                     dl_out = trim_var_out
                                     log.info("[LeechService] Successfully trimmed first 10s from direct variant %s [%s]", slug, vq)
+
+                                # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge
+                                v_cand_p = str((vcand.extra or {}).get("portal", "")).lower()
+                                v_is_cinesubz_wm = bool(
+                                    "cinesubz" in v_cand_p
+                                    or "cinesubz" in str(vcand.source_url).lower()
+                                    or "cinesubz" in str((vcand.extra or {}).get("post_url", "")).lower()
+                                    or "csplayer" in str(vcand.source_url).lower()
+                                    or "supercloud" in str(vcand.source_url).lower()
+                                    or "setwenna" in str(vcand.source_url).lower()
+                                )
+                                if v_is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
+                                    wm_var_out = os.path.join(temp_dir, f"badge_{slug}_{vq}.mp4")
+                                    if await video_service.cover_cinesubz_watermark(dl_out, wm_var_out):
+                                        try:
+                                            if os.path.abspath(dl_out) != os.path.abspath(wm_var_out):
+                                                os.remove(dl_out)
+                                        except Exception:
+                                            pass
+                                        dl_out = wm_var_out
+                                        log.info("[LeechService] Covered CineSubz watermark on variant %s [%s]", slug, vq)
 
                                 fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")
                                 if await video_service.apply_faststart(dl_out, fs_out):

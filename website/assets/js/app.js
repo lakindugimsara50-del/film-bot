@@ -635,8 +635,17 @@ function renderHero(targetMovie, forcedIdx) {
     };
   }
 
+  // Re-trigger text slide-in animation smoothly on each slide transition
+  const infoMain = document.querySelector('.hero-info-main');
+  if (infoMain) {
+    infoMain.style.animation = 'none';
+    void infoMain.offsetWidth; // Force CSS reflow
+    infoMain.style.animation = '';
+  }
+
   // Update Apple TV+ indicator dots
   updateHeroAppleIndicators(heroCurrentIdx);
+  initHeroTouchSwipe();
 }
 
 // ---- Apple TV+ Style Hero Carousel & Indicator Dots ----
@@ -715,6 +724,7 @@ function restartHeroTimer() {
   }, HERO_ROTATE_INTERVAL);
 
   initHeroHoverControls();
+  initHeroTouchSwipe();
 }
 
 function initHeroHoverControls() {
@@ -748,6 +758,165 @@ function initHeroHoverControls() {
       clearInterval(heroRotateTimer);
       heroRotateTimer = null;
     }
+  });
+}
+
+let heroSwipeListenersBound = false;
+
+/**
+ * Initializes buttery-smooth horizontal touch/swipe gestures on mobile screens
+ * for the Hero Billboard (Swipe left -> Next movie, Swipe right -> Previous movie).
+ * Also supports desktop mouse drag & click suppression during swipe.
+ */
+function initHeroTouchSwipe() {
+  if (heroSwipeListenersBound) return;
+  const heroEl = document.getElementById('hero-section');
+  if (!heroEl) return;
+  heroSwipeListenersBound = true;
+
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  let isTouching = false;
+  let isHorizontal = false;
+  let blockClickUntil = 0;
+
+  // Intercept any click during/right after swipe gesture so it doesn't trigger links accidentally
+  heroEl.addEventListener('click', (e) => {
+    if (Date.now() < blockClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  const handleStart = (clientX, clientY) => {
+    startX = clientX;
+    startY = clientY;
+    startTime = Date.now();
+    isTouching = true;
+    isHorizontal = false;
+
+    // Pause auto-rotation while user is touching/dragging
+    if (heroRotateTimer) {
+      clearInterval(heroRotateTimer);
+      heroRotateTimer = null;
+    }
+  };
+
+  const handleMove = (clientX, clientY, e) => {
+    if (!isTouching) return;
+    const diffX = clientX - startX;
+    const diffY = clientY - startY;
+
+    // Detect gesture angle once finger moves beyond 8px
+    if (!isHorizontal && (Math.abs(diffX) > 8 || Math.abs(diffY) > 8)) {
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        isHorizontal = true;
+      } else {
+        // Mostly vertical scrolling; release swipe so user can scroll page down smoothly
+        isTouching = false;
+        return;
+      }
+    }
+
+    if (isHorizontal) {
+      // Prevent browser default vertical scroll bounce while swiping horizontally
+      if (e && e.cancelable) {
+        e.preventDefault();
+      }
+
+      // Elastic tactile feedback on the hero content
+      const heroContent = heroEl.querySelector('.hero-content');
+      if (heroContent) {
+        const damp = Math.sign(diffX) * Math.min(Math.abs(diffX) * 0.35, 45);
+        heroContent.style.transform = `translateX(${damp}px)`;
+        heroContent.style.transition = 'none';
+      }
+    }
+  };
+
+  const handleEnd = (clientX, clientY) => {
+    if (!isTouching) {
+      restartHeroTimer();
+      return;
+    }
+
+    // Smoothly restore visual transform
+    const heroContent = heroEl.querySelector('.hero-content');
+    if (heroContent) {
+      heroContent.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      heroContent.style.transform = '';
+    }
+
+    const deltaX = clientX - startX;
+    const deltaTime = Date.now() - startTime;
+
+    isTouching = false;
+
+    if (isHorizontal) {
+      const minDistance = 35; // minimum px swipe threshold
+      const isQuickFlick = Math.abs(deltaX) > 20 && deltaTime < 320;
+
+      if (Math.abs(deltaX) >= minDistance || isQuickFlick) {
+        blockClickUntil = Date.now() + 350; // prevent accidental button click
+
+        const list = getHeroSpotlightList();
+        const total = list.length || 1;
+
+        if (deltaX < 0) {
+          // SWIPE LEFT -> NEXT MOVIE POSTER
+          heroCurrentIdx = (heroCurrentIdx + 1) % total;
+          renderHero(list[heroCurrentIdx], heroCurrentIdx);
+        } else {
+          // SWIPE RIGHT -> PREVIOUS MOVIE POSTER
+          heroCurrentIdx = (heroCurrentIdx - 1 + total) % total;
+          renderHero(list[heroCurrentIdx], heroCurrentIdx);
+        }
+      }
+    }
+
+    isHorizontal = false;
+    restartHeroTimer();
+  };
+
+  // 1. Mobile Touch Events (iOS Safari, Android Chrome, Telegram Webview)
+  heroEl.addEventListener('touchstart', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    handleStart(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  heroEl.addEventListener('touchmove', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    handleMove(e.touches[0].clientX, e.touches[0].clientY, e);
+  }, { passive: false });
+
+  heroEl.addEventListener('touchend', (e) => {
+    const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+    handleEnd(t ? t.clientX : startX, t ? t.clientY : startY);
+  }, { passive: true });
+
+  heroEl.addEventListener('touchcancel', (e) => {
+    handleEnd(startX, startY);
+  }, { passive: true });
+
+  // 2. Desktop Mouse Dragging (Bonus: Users can also drag with mouse left/right)
+  let isMouseDown = false;
+  heroEl.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return; // left click only
+    if (e.target.closest('a, button')) return; // don't drag if clicking buttons directly
+    isMouseDown = true;
+    handleStart(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isMouseDown) return;
+    handleMove(e.clientX, e.clientY, e);
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (!isMouseDown) return;
+    isMouseDown = false;
+    handleEnd(e.clientX, e.clientY);
   });
 }
 

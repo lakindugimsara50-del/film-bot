@@ -2717,6 +2717,13 @@ main > .section:first-of-type {
     margin-top: var(--header-h) !important;
     align-items: flex-end !important;
     justify-content: flex-start !important;
+    touch-action: pan-y !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    cursor: grab;
+  }
+  .hero:active {
+    cursor: grabbing;
   }
   .hero .hero-backdrop,
   .hero.compact-hero .hero-backdrop {
@@ -2819,6 +2826,23 @@ main > .section:first-of-type {
     justify-content: center !important;
     gap: 8px !important;
     box-shadow: 0 4px 20px rgba(229, 9, 20, 0.5) !important;
+  }
+  .hero-apple-pagination {
+    left: 50% !important;
+    bottom: 12px !important;
+    transform: translateX(-50%) !important;
+    gap: 7px !important;
+    z-index: 10 !important;
+  }
+  .hero-apple-dot {
+    width: 7px !important;
+    height: 7px !important;
+    background: rgba(255, 255, 255, 0.35) !important;
+  }
+  .hero-apple-dot.active {
+    width: 20px !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
   }
 
   /* 2. Proportionate Carousel Cards on Mobile (comfortable Netflix width) */

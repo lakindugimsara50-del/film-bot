@@ -280,6 +280,81 @@ ul { list-style: none; }
 }
 .hero-info-btn:hover { background: rgba(255,255,255,0.2); border-color: #fff; transform: scale(1.1); }
 
+/* === APPLE TV+ STYLE BACKGROUND TRAILER VIDEO === */
+.hero-video-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  background: #000;
+}
+.hero-video-wrap.active {
+  opacity: 1;
+}
+.hero-video-iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 56.25vw;
+  min-height: 100vh;
+  min-width: 177.77vh;
+  transform: translate(-50%, -50%) scale(1.12);
+  border: none;
+  filter: brightness(0.62) saturate(1.1);
+  pointer-events: none;
+}
+
+/* Trailer Button */
+.hero-btn-trailer {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.hero-btn-trailer:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+}
+.hero-btn-trailer.playing {
+  background: rgba(229, 9, 20, 0.25);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Sound Toggle Button */
+.hero-sound-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(14, 14, 20, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all var(--transition);
+  z-index: 4;
+}
+.hero-sound-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.1);
+  box-shadow: 0 0 16px rgba(229, 9, 20, 0.6);
+}
+
 /* === RIGHT-SIDE TRENDING SPOTLIGHT RAIL === */
 .hero-trending-rail-wrap {
   flex: 0 0 380px;

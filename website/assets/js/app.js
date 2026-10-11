@@ -371,10 +371,84 @@ function findMovieBySlug(slug) {
   return fallbackCatalog[normS] || null;
 }
 
-// ---- Hero Spotlight State ----
+// ---- Hero Spotlight & Apple TV+ Trailer State ----
 let heroSpotlightMovies = [];
 let heroCurrentIdx = 0;
 let heroRotateTimer = null;
+let heroTrailerTimer = null;
+let heroTrailerActive = false;
+let heroTrailerMuted = true;
+
+function isLowDataMode() {
+  if (typeof navigator === 'undefined') return false;
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn && (conn.saveData === true || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g')) {
+    return true;
+  }
+  if (typeof window !== 'undefined' && window.innerWidth <= 768) return true;
+  return false;
+}
+
+function getMovieTrailerEmbedUrl(movie, autoplay = true, muted = true) {
+  if (!movie) return '';
+  const ap = autoplay ? 1 : 0;
+  const m = muted ? 1 : 0;
+  if (movie.trailer_id) {
+    return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(movie.trailer_id)}?autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+  }
+  if (movie.trailer_url) {
+    const sep = movie.trailer_url.includes('?') ? '&' : '?';
+    return `${movie.trailer_url}${sep}autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+  }
+  const q = encodeURIComponent(`${movie.title} ${movie.year || ''} official trailer`);
+  return `https://www.youtube-nocookie.com/embed?listType=search&list=${q}&autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+}
+
+function stopHeroTrailer() {
+  if (heroTrailerTimer) {
+    clearTimeout(heroTrailerTimer);
+    heroTrailerTimer = null;
+  }
+  const videoWrap = document.getElementById('hero-video-wrap');
+  const videoIframe = document.getElementById('hero-video-iframe');
+  const soundBtn = document.getElementById('hero-sound-btn');
+  const trailerBtn = document.getElementById('hero-trailer-btn');
+
+  if (videoWrap) videoWrap.classList.remove('active');
+  if (videoIframe) videoIframe.src = 'about:blank';
+  if (soundBtn) soundBtn.style.display = 'none';
+  if (trailerBtn) {
+    trailerBtn.classList.remove('playing');
+    trailerBtn.innerHTML = `<i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>`;
+  }
+  heroTrailerActive = false;
+}
+
+function startHeroTrailer(movie, muted = true) {
+  const videoWrap = document.getElementById('hero-video-wrap');
+  const videoIframe = document.getElementById('hero-video-iframe');
+  const soundBtn = document.getElementById('hero-sound-btn');
+  const trailerBtn = document.getElementById('hero-trailer-btn');
+  if (!videoWrap || !videoIframe || !movie) return;
+
+  heroTrailerMuted = muted;
+  const src = getMovieTrailerEmbedUrl(movie, true, muted);
+  videoIframe.src = src;
+
+  setTimeout(() => {
+    if (videoWrap) videoWrap.classList.add('active');
+    if (soundBtn) {
+      soundBtn.style.display = 'flex';
+      soundBtn.innerHTML = muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+      soundBtn.title = muted ? 'Unmute Audio' : 'Mute Audio';
+    }
+    if (trailerBtn) {
+      trailerBtn.classList.add('playing');
+      trailerBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span>Trailer</span>`;
+    }
+    heroTrailerActive = true;
+  }, 750);
+}
 
 function getHeroSpotlightList() {
   const catalog = groupSeriesCatalog(allMovies);
@@ -409,6 +483,9 @@ function renderHero(targetMovie, forcedIdx) {
     heroEl.innerHTML = `<div class="hero-gradient"></div><div class="hero-content"><p class="text-muted">No featured movies yet.</p></div>`;
     return;
   }
+
+  // Stop any playing trailer on slide switch
+  stopHeroTrailer();
 
   // Smooth Backdrop Crossfade
   const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
@@ -468,6 +545,36 @@ function renderHero(targetMovie, forcedIdx) {
   const infoBtn = document.getElementById('hero-info-btn');
   if (infoBtn) {
     infoBtn.href = movieUrl;
+  }
+
+  // Setup Trailer Button
+  const trailerBtn = document.getElementById('hero-trailer-btn');
+  if (trailerBtn) {
+    trailerBtn.onclick = (e) => {
+      e.preventDefault();
+      if (heroTrailerActive) {
+        stopHeroTrailer();
+      } else {
+        startHeroTrailer(movie, false); // unmuted on direct click
+      }
+    };
+  }
+
+  // Setup Sound Toggle Button
+  const soundBtn = document.getElementById('hero-sound-btn');
+  if (soundBtn) {
+    soundBtn.onclick = (e) => {
+      e.preventDefault();
+      heroTrailerMuted = !heroTrailerMuted;
+      startHeroTrailer(movie, heroTrailerMuted);
+    };
+  }
+
+  // Apple TV+ Autoplay background trailer if user has sufficient data
+  if (!isLowDataMode()) {
+    heroTrailerTimer = setTimeout(() => {
+      startHeroTrailer(movie, true); // muted by default for elegant background playback
+    }, 2500);
   }
 
   // Update Rail active card & counter

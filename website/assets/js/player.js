@@ -1261,7 +1261,6 @@ function renderServerTabs(movie) {
   const tabsEl = document.getElementById('server-tabs');
   if (!tabsEl) return;
   const streams = getMovieStreams(movie);
-  const hasTrailer = Boolean(movie && (movie.trailer_url || movie.trailer || movie.youtube_trailer || movie.trailer_id));
 
   let tabsHtml = '';
 
@@ -1269,29 +1268,27 @@ function renderServerTabs(movie) {
   tabsHtml += `
     <span class="player-status-badge">
       <span class="pulse-indicator"></span>
-      <span>${isTrailerActive ? 'Official Trailer' : 'Cinema Stream'}</span>
+      <span>${isTrailerActive ? '🎬 Official Trailer' : 'Cinema Stream'}</span>
     </span>`;
 
-  // 2. Extra alternative servers if more than 1
-  if (streams.length > 1) {
+  // 2. Movie Stream Servers (Telegram Cloud / VIP Players)
+  if (streams.length > 0) {
     streams.forEach((s, i) => {
-      let cleanLabel = FilmSub.escHtml(s.server || `Server ${i + 1}`);
+      let cleanLabel = s.server || (streams.length === 1 ? '⚡ Super Player (Telegram HD)' : `Server ${i + 1}`);
       tabsHtml += `
-        <button class="server-tab${i === currentStreamIdx && !isTrailerActive ? ' active' : ''}" data-type="stream" data-index="${i}" type="button">
-          <i class="fa-solid fa-server"></i>
-          <span>${cleanLabel}</span>
+        <button class="server-tab${i === currentStreamIdx && !isTrailerActive ? ' active' : ''}" data-type="stream" data-index="${i}" type="button" title="Watch Movie Stream">
+          <i class="fa-solid fa-play"></i>
+          <span>${FilmSub.escHtml(cleanLabel)}</span>
         </button>`;
     });
   }
 
-  // 3. Trailer toggle button
-  if (hasTrailer) {
-    tabsHtml += `
-      <button class="server-tab btn-trailer-pill${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button" title="${isTrailerActive ? 'Return to Movie Stream' : 'Watch Official Trailer'}">
-        <i class="fa-solid fa-film"></i>
-        <span>${isTrailerActive ? 'Back to Movie' : 'Watch Trailer'}</span>
-      </button>`;
-  }
+  // 3. Official Trailer Tab (Always present right beside the stream player!)
+  tabsHtml += `
+    <button class="server-tab btn-trailer-pill${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button" title="${isTrailerActive ? 'Playing Official Trailer' : 'Watch Official Trailer'}">
+      <i class="fa-solid fa-clapperboard"></i>
+      <span>🎬 Official Trailer</span>
+    </button>`;
 
   tabsEl.innerHTML = tabsHtml;
 
@@ -1299,13 +1296,12 @@ function renderServerTabs(movie) {
     btn.addEventListener('click', () => {
       const type = btn.dataset.type;
       if (type === 'trailer') {
-        if (isTrailerActive) {
-          loadStream(movie, currentStreamIdx);
-        } else {
+        if (!isTrailerActive) {
           loadTrailer(movie);
         }
       } else {
         const idx = parseInt(btn.dataset.index, 10);
+        isTrailerActive = false;
         loadStream(movie, idx);
       }
     });
@@ -3541,8 +3537,17 @@ function loadTrailer(movie) {
   }
 
   isTrailerActive = true;
-  const query = encodeURIComponent(`${movie.title} ${movie.year || ''} official trailer`);
-  const trailerSrc = movie.trailer_url || `https://www.youtube-nocookie.com/embed?listType=search&list=${query}&autoplay=1`;
+  renderServerTabs(movie);
+
+  let trailerSrc = '';
+  if (movie.trailer_id) {
+    trailerSrc = `https://www.youtube-nocookie.com/embed/${movie.trailer_id}?autoplay=1&rel=0&modestbranding=1`;
+  } else if (movie.trailer_url) {
+    trailerSrc = movie.trailer_url.includes('autoplay') ? movie.trailer_url : `${movie.trailer_url}${movie.trailer_url.includes('?') ? '&' : '?'}autoplay=1&rel=0`;
+  } else {
+    const query = encodeURIComponent(`${movie.title} ${movie.year || ''} official trailer`);
+    trailerSrc = `https://www.youtube-nocookie.com/embed?listType=search&list=${query}&autoplay=1&rel=0`;
+  }
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;aspect-ratio:16/9;width:100%;background:#000000 !important;border-radius:8px;overflow:hidden">

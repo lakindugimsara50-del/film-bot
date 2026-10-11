@@ -21,6 +21,28 @@ _IMG_ORIG = "https://image.tmdb.org/t/p/original"
 # ─────────────────────────────────────────────────────────────────────────────
 import re
 
+def _extract_trailer_info(videos: list) -> tuple[str, str]:
+    """
+    Extract best YouTube trailer from TMDB videos array.
+    Returns (trailer_url, trailer_id).
+    """
+    if not isinstance(videos, list) or not videos:
+        return "", ""
+    yt_trailers = [
+        v for v in videos
+        if (v.get("site") or "").lower() == "youtube" and (v.get("type") or "").lower() == "trailer"
+    ]
+    official = [v for v in yt_trailers if v.get("official")]
+    target = official[0] if official else (yt_trailers[0] if yt_trailers else None)
+    if not target:
+        yt_any = [v for v in videos if (v.get("site") or "").lower() == "youtube"]
+        target = yt_any[0] if yt_any else None
+
+    if target and target.get("key"):
+        k = target["key"]
+        return f"https://www.youtube-nocookie.com/embed/{k}", k
+    return "", ""
+
 # ─────────────────────────────────────────────────────────────────────────────
 async def fetch_metadata(
     query: str,
@@ -241,6 +263,20 @@ async def fetch_metadata(
         ext_resp.raise_for_status()
         external = ext_resp.json()
 
+        # ── Step 5: Fetch official trailer video ───────────────────────────
+        trailer_url = ""
+        trailer_id = ""
+        try:
+            vid_resp = await client.get(
+                f"{_BASE}/movie/{tmdb_id}/videos",
+                params={"api_key": TMDB_API_KEY, "language": "en-US"},
+            )
+            if vid_resp.status_code == 200:
+                videos = vid_resp.json().get("results", [])
+                trailer_url, trailer_id = _extract_trailer_info(videos)
+        except Exception as vid_err:
+            log.debug("TMDB: Could not fetch trailer videos for %s: %s", tmdb_id, vid_err)
+
     # ── Parse genres ─────────────────────────────────────────────────────────
     genres = [g["name"] for g in details.get("genres", [])]
 
@@ -282,6 +318,8 @@ async def fetch_metadata(
         "tmdb_id": str(tmdb_id),
         "poster_url": poster_url,
         "backdrop_url": backdrop_url,
+        "trailer_url": trailer_url,
+        "trailer_id": trailer_id,
         "genres": genres,
         "duration": details.get("runtime", 0),  # minutes
         "description": details.get("overview", ""),
@@ -331,6 +369,19 @@ async def _fetch_tv_metadata(client: httpx.AsyncClient, tv_item: dict) -> dict:
     except Exception as e:
         log.warning("Could not fetch external_ids for TV %s: %s", tmdb_id, e)
 
+    # 4. Videos (Official Trailer)
+    trailer_url = ""
+    trailer_id = ""
+    try:
+        vid_resp = await client.get(
+            f"{_BASE}/tv/{tmdb_id}/videos",
+            params={"api_key": TMDB_API_KEY, "language": "en-US"},
+        )
+        if vid_resp.status_code == 200:
+            trailer_url, trailer_id = _extract_trailer_info(vid_resp.json().get("results", []))
+    except Exception as e:
+        log.debug("Could not fetch videos for TV %s: %s", tmdb_id, e)
+
     genres = [g["name"] for g in details.get("genres", [])]
     cast = [
         {"name": m["name"], "character": m.get("character", "")}
@@ -373,6 +424,8 @@ async def _fetch_tv_metadata(client: httpx.AsyncClient, tv_item: dict) -> dict:
         "tmdb_id": str(tmdb_id),
         "poster_url": poster_url,
         "backdrop_url": backdrop_url,
+        "trailer_url": trailer_url,
+        "trailer_id": trailer_id,
         "genres": genres,
         "duration": ep_dur,
         "description": details.get("overview", ""),
@@ -448,6 +501,16 @@ async def _build_movie_dict_from_tmdb(item: dict, imdb_id: str) -> dict:
         
         cred_resp = await client.get(f"{_BASE}/movie/{tmdb_id}/credits", params={"api_key": TMDB_API_KEY})
         credits = cred_resp.json() if cred_resp.status_code == 200 else {}
+
+        # Videos (Trailer)
+        trailer_url = ""
+        trailer_id = ""
+        try:
+            vid_resp = await client.get(f"{_BASE}/movie/{tmdb_id}/videos", params={"api_key": TMDB_API_KEY, "language": "en-US"})
+            if vid_resp.status_code == 200:
+                trailer_url, trailer_id = _extract_trailer_info(vid_resp.json().get("results", []))
+        except Exception:
+            pass
         
     title = details.get("title", item.get("title", ""))
     year = int(details.get("release_date", "0000")[:4]) if details.get("release_date") else 0
@@ -501,6 +564,8 @@ async def _build_movie_dict_from_tmdb(item: dict, imdb_id: str) -> dict:
         "episode_title": "",
         "poster_url": poster_url,
         "backdrop_url": backdrop_url,
+        "trailer_url": trailer_url,
+        "trailer_id": trailer_id,
         "genres": genres,
         "language": details.get("original_language", "en"),
         "description": details.get("overview", ""),
@@ -527,6 +592,16 @@ async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = N
         
         cred_resp = await client.get(f"{_BASE}/tv/{tmdb_id}/credits", params={"api_key": TMDB_API_KEY})
         credits = cred_resp.json() if cred_resp.status_code == 200 else {}
+
+        # Videos (Trailer)
+        trailer_url = ""
+        trailer_id = ""
+        try:
+            vid_resp = await client.get(f"{_BASE}/tv/{tmdb_id}/videos", params={"api_key": TMDB_API_KEY, "language": "en-US"})
+            if vid_resp.status_code == 200:
+                trailer_url, trailer_id = _extract_trailer_info(vid_resp.json().get("results", []))
+        except Exception:
+            pass
         
         episode_title = ""
         if season and episode:
@@ -606,6 +681,8 @@ async def _build_series_dict_from_tmdb(item: dict, imdb_id: str, season: int = N
         "episode_title": episode_title,
         "poster_url": poster_url,
         "backdrop_url": backdrop_url,
+        "trailer_url": trailer_url,
+        "trailer_id": trailer_id,
         "genres": genres,
         "language": details.get("original_language", "en"),
         "description": details.get("overview", ""),

@@ -16,9 +16,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v3">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v3">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v3">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v4">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v4">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v4">
 </head>
 <body>
 
@@ -116,6 +116,10 @@
 <section class="hero" id="hero-section" aria-label="Featured Movie">
   <div class="hero-backdrop active" id="hero-backdrop"></div>
   <div class="hero-backdrop-buffer" id="hero-backdrop-buffer"></div>
+  <!-- Apple TV+ Style Background Trailer Player (Data-Aware) -->
+  <div class="hero-video-wrap" id="hero-video-wrap" aria-hidden="true">
+    <iframe id="hero-video-iframe" class="hero-video-iframe" frameborder="0" allow="autoplay; encrypted-media; gyroscope" playsinline></iframe>
+  </div>
   <div class="hero-gradient"></div>
   <div class="hero-noise"></div>
 
@@ -135,9 +139,15 @@
         <a href="#" class="btn btn-primary btn-hero hero-btn-watch" id="hero-watch-btn">
           <i class="fa-solid fa-play"></i> Watch Now
         </a>
+        <button class="btn btn-secondary btn-hero hero-btn-trailer" id="hero-trailer-btn" type="button" title="Watch Trailer Preview">
+          <i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>
+        </button>
         <a href="#" class="btn btn-secondary btn-hero hero-btn-download" id="hero-download-btn">
           <i class="fa-solid fa-cloud-arrow-down"></i> Download
         </a>
+        <button class="hero-sound-btn" id="hero-sound-btn" type="button" aria-label="Toggle Sound" title="Sound On / Off" style="display:none">
+          <i class="fa-solid fa-volume-xmark"></i>
+        </button>
         <a href="#" class="hero-info-btn" id="hero-info-btn" title="More Info" aria-label="More Information">
           <i class="fa-solid fa-circle-info"></i>
         </a>
@@ -290,8 +300,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261011_v3"></script>
-<script src="assets/js/app.js?v=20261011_v3"></script>
-<script src="assets/js/netflix-ui.js?v=20261011_v3"></script>
+<script src="data/movies_data.js?v=20261011_v4"></script>
+<script src="assets/js/app.js?v=20261011_v4"></script>
+<script src="assets/js/netflix-ui.js?v=20261011_v4"></script>
 </body>
 </html>

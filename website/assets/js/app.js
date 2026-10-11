@@ -21,7 +21,7 @@ let siteData = {};
 function renderAllSections() {
   if (document.getElementById('hero-section')) {
     renderHero();
-    renderHeroTrendingRail();
+    renderHeroAppleIndicators();
   }
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
@@ -393,15 +393,19 @@ function getMovieTrailerEmbedUrl(movie, autoplay = true, muted = true) {
   if (!movie) return '';
   const ap = autoplay ? 1 : 0;
   const m = muted ? 1 : 0;
+  const origin = typeof window !== 'undefined' && window.location && window.location.origin ? encodeURIComponent(window.location.origin) : '';
+  const originParam = origin ? `&origin=${origin}` : '';
+
   if (movie.trailer_id) {
-    return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(movie.trailer_id)}?autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+    const tid = encodeURIComponent(movie.trailer_id);
+    return `https://www.youtube-nocookie.com/embed/${tid}?autoplay=${ap}&mute=${m}&controls=0&loop=1&playlist=${tid}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&iv_load_policy=3${originParam}`;
   }
   if (movie.trailer_url) {
     const sep = movie.trailer_url.includes('?') ? '&' : '?';
-    return `${movie.trailer_url}${sep}autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+    return `${movie.trailer_url}${sep}autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&iv_load_policy=3${originParam}`;
   }
-  const q = encodeURIComponent(`${movie.title} ${movie.year || ''} official trailer`);
-  return `https://www.youtube-nocookie.com/embed?listType=search&list=${q}&autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+  // NEVER return listType=search ! YouTube deprecated listType=search and errors with "This video is unavailable"
+  return '';
 }
 
 function stopHeroTrailer() {
@@ -413,9 +417,16 @@ function stopHeroTrailer() {
   const videoIframe = document.getElementById('hero-video-iframe');
   const soundBtn = document.getElementById('hero-sound-btn');
   const trailerBtn = document.getElementById('hero-trailer-btn');
+  const backdrop = document.getElementById('hero-backdrop');
 
   if (videoWrap) videoWrap.classList.remove('active');
-  if (videoIframe) videoIframe.src = 'about:blank';
+  if (backdrop) backdrop.style.opacity = '1';
+  if (videoIframe) {
+    try {
+      videoIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+    } catch (e) {}
+    videoIframe.src = 'about:blank';
+  }
   if (soundBtn) soundBtn.style.display = 'none';
   if (trailerBtn) {
     trailerBtn.classList.remove('playing');
@@ -429,14 +440,23 @@ function startHeroTrailer(movie, muted = true) {
   const videoIframe = document.getElementById('hero-video-iframe');
   const soundBtn = document.getElementById('hero-sound-btn');
   const trailerBtn = document.getElementById('hero-trailer-btn');
+  const backdrop = document.getElementById('hero-backdrop');
   if (!videoWrap || !videoIframe || !movie) return;
 
-  heroTrailerMuted = muted;
   const src = getMovieTrailerEmbedUrl(movie, true, muted);
+  // If no trailer exists for this movie, do NOT show a blank/error iframe!
+  if (!src) {
+    stopHeroTrailer();
+    return;
+  }
+
+  heroTrailerMuted = muted;
   videoIframe.src = src;
 
   setTimeout(() => {
+    if (!heroTrailerActive && videoIframe.src !== src) return;
     if (videoWrap) videoWrap.classList.add('active');
+    if (backdrop) backdrop.style.opacity = '0.15';
     if (soundBtn) {
       soundBtn.style.display = 'flex';
       soundBtn.innerHTML = muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
@@ -447,7 +467,36 @@ function startHeroTrailer(movie, muted = true) {
       trailerBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span>Trailer</span>`;
     }
     heroTrailerActive = true;
-  }, 750);
+  }, 1000);
+}
+
+function toggleHeroSound() {
+  const videoIframe = document.getElementById('hero-video-iframe');
+  const soundBtn = document.getElementById('hero-sound-btn');
+  if (!videoIframe || !heroTrailerActive) return;
+
+  heroTrailerMuted = !heroTrailerMuted;
+  const func = heroTrailerMuted ? 'mute' : 'unMute';
+  try {
+    videoIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), '*');
+  } catch (e) {}
+
+  if (soundBtn) {
+    soundBtn.innerHTML = heroTrailerMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+    soundBtn.title = heroTrailerMuted ? 'Unmute Audio' : 'Mute Audio';
+  }
+}
+
+// Global safety listener: if YouTube fires embed error (101, 150), fallback gracefully
+if (typeof window !== 'undefined') {
+  window.addEventListener('message', (event) => {
+    try {
+      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (data && (data.event === 'onError' || data.info === 101 || data.info === 150)) {
+        stopHeroTrailer();
+      }
+    } catch (e) {}
+  });
 }
 
 function getHeroSpotlightList() {
@@ -514,7 +563,7 @@ function renderHero(targetMovie, forcedIdx) {
   const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${g}</a>`).join('');
 
   const badgeEl = document.getElementById('hero-badge');
-  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> NETFLIX SPOTLIGHT • සිංහල උපසිරැසි`;
+  if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> SPOTLIGHT • සිංහල උපසිරැසි`;
 
   const titleEl = document.getElementById('hero-title');
   if (titleEl) titleEl.textContent = movie.title || '';
@@ -552,6 +601,10 @@ function renderHero(targetMovie, forcedIdx) {
   if (trailerBtn) {
     trailerBtn.onclick = (e) => {
       e.preventDefault();
+      if (!movie.trailer_id && !movie.trailer_url) {
+        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent((movie.title || '') + ' ' + (movie.year || '') + ' official trailer')}`, '_blank');
+        return;
+      }
       if (heroTrailerActive) {
         stopHeroTrailer();
       } else {
@@ -565,86 +618,50 @@ function renderHero(targetMovie, forcedIdx) {
   if (soundBtn) {
     soundBtn.onclick = (e) => {
       e.preventDefault();
-      heroTrailerMuted = !heroTrailerMuted;
-      startHeroTrailer(movie, heroTrailerMuted);
+      toggleHeroSound();
     };
   }
 
   // Apple TV+ Autoplay background trailer if user has sufficient data
-  if (!isLowDataMode()) {
+  if (!isLowDataMode() && (movie.trailer_id || movie.trailer_url)) {
     heroTrailerTimer = setTimeout(() => {
       startHeroTrailer(movie, true); // muted by default for elegant background playback
-    }, 2500);
+    }, 2200);
   }
 
-  // Update Rail active card & counter
-  updateHeroRailActive(movie);
-  triggerHeroProgress();
+  // Update Apple TV+ indicator pills
+  updateHeroAppleIndicators(heroCurrentIdx);
 }
 
-// ---- Render Hero Trending Spotlight Rail ----
-function renderHeroTrendingRail() {
-  const railContainer = document.getElementById('hero-rail-cards');
-  if (!railContainer) return;
+// ---- Apple TV+ Style Hero Carousel & Indicators ----
+function renderHeroAppleIndicators() {
+  const container = document.getElementById('hero-apple-pagination');
   const list = getHeroSpotlightList();
-  if (!list || list.length === 0) return;
+  if (container && list && list.length > 0) {
+    container.innerHTML = list.map((_, idx) => `
+      <button class="hero-apple-pill${idx === heroCurrentIdx ? ' active' : ''}" data-idx="${idx}" type="button" aria-label="Slide ${idx + 1}">
+        <span class="hero-apple-pill-fill"></span>
+      </button>
+    `).join('');
 
-  railContainer.innerHTML = list.map((m, idx) => {
-    const poster = m.poster || m.poster_url || SITE_CONFIG.defaultPoster;
-    const imdbVal = m.imdb || m.rating || '';
-    const imdb = imdbVal ? `<span class="hero-rail-imdb"><i class="fa-solid fa-star"></i> ${escHtml(imdbVal)}</span>` : '';
-    const year = m.year ? `<span>${escHtml(m.year)}</span>` : '';
-    const isSeries = m.type === 'series' || Boolean(m.season);
-    const tag = isSeries ? `<span class="hero-rail-tag">TV</span>` : `<span class="hero-rail-tag">FILM</span>`;
-    const isActive = idx === heroCurrentIdx;
-
-    return `
-      <div class="hero-rail-card${isActive ? ' active' : ''}" data-idx="${idx}" data-slug="${escHtml(m.slug || m.id || '')}" role="button" tabindex="0" title="${escHtml(m.title || '')}">
-        <div class="hero-rail-rank">#${idx + 1}</div>
-        <div class="hero-rail-poster-wrap">
-          <img src="${escHtml(poster)}" alt="${escHtml(m.title || '')}" class="hero-rail-poster" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${SITE_CONFIG.defaultPoster}';">
-        </div>
-        <div class="hero-rail-info">
-          <div class="hero-rail-movie-title">${escHtml(m.title || 'Untitled')}</div>
-          <div class="hero-rail-meta">
-            ${imdb}
-            ${year}
-            ${tag}
-          </div>
-        </div>
-        <div class="hero-rail-play">
-          <i class="fa-solid fa-play"></i>
-        </div>
-        <div class="hero-rail-card-bar"></div>
-      </div>
-    `;
-  }).join('');
-
-  // Setup click & keyboard events for rail cards
-  railContainer.querySelectorAll('.hero-rail-card').forEach(card => {
-    const handleSelect = () => {
-      const idx = parseInt(card.dataset.idx, 10);
-      if (!isNaN(idx) && list[idx]) {
-        heroCurrentIdx = idx;
-        renderHero(list[idx], idx);
-        restartHeroTimer();
-      }
-    };
-    card.addEventListener('click', handleSelect);
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleSelect();
-      }
+    container.querySelectorAll('.hero-apple-pill').forEach(pill => {
+      pill.onclick = () => {
+        const idx = parseInt(pill.dataset.idx, 10);
+        if (!isNaN(idx) && list[idx]) {
+          heroCurrentIdx = idx;
+          renderHero(list[idx], idx);
+          restartHeroTimer();
+        }
+      };
     });
-  });
+  }
 
-  // Setup Next / Prev arrow buttons
-  const prevBtn = document.getElementById('hero-rail-prev');
-  const nextBtn = document.getElementById('hero-rail-next');
+  // Setup edge navigation chevrons (< and >)
+  const prevBtn = document.getElementById('hero-prev-btn');
+  const nextBtn = document.getElementById('hero-next-btn');
   if (prevBtn) {
     prevBtn.onclick = () => {
-      const total = list.length;
+      const total = list.length || 1;
       heroCurrentIdx = (heroCurrentIdx - 1 + total) % total;
       renderHero(list[heroCurrentIdx], heroCurrentIdx);
       restartHeroTimer();
@@ -652,45 +669,32 @@ function renderHeroTrendingRail() {
   }
   if (nextBtn) {
     nextBtn.onclick = () => {
-      const total = list.length;
+      const total = list.length || 1;
       heroCurrentIdx = (heroCurrentIdx + 1) % total;
       renderHero(list[heroCurrentIdx], heroCurrentIdx);
       restartHeroTimer();
     };
   }
 
-  // Auto-rotation timer setup
   restartHeroTimer();
 }
 
-function updateHeroRailActive(movie) {
-  const targetSlug = String(movie.slug || movie.id || '').toLowerCase();
-  const railContainer = document.getElementById('hero-rail-cards');
-  if (railContainer) {
-    const cards = railContainer.querySelectorAll('.hero-rail-card');
-    cards.forEach((c, idx) => {
-      const cardSlug = String(c.dataset.slug || '').toLowerCase();
-      const isActive = cardSlug === targetSlug || idx === heroCurrentIdx;
-      c.classList.toggle('active', isActive);
-    });
-  }
-
-  // Update counter
-  const counterEl = document.getElementById('hero-rail-counter');
-  if (counterEl) {
-    const total = heroSpotlightMovies.length || 5;
-    counterEl.textContent = `${heroCurrentIdx + 1} / ${total}`;
-  }
-}
-
-function triggerHeroProgress() {
-  const bar = document.getElementById('hero-progress-fill');
-  if (!bar) return;
-  bar.style.transition = 'none';
-  bar.style.width = '0%';
-  void bar.offsetWidth; // Force CSS reflow
-  bar.style.transition = 'width 8s linear';
-  bar.style.width = '100%';
+function updateHeroAppleIndicators(currentIdx) {
+  const container = document.getElementById('hero-apple-pagination');
+  if (!container) return;
+  const pills = container.querySelectorAll('.hero-apple-pill');
+  pills.forEach((p, idx) => {
+    const isActive = idx === currentIdx;
+    p.classList.toggle('active', isActive);
+    const fill = p.querySelector('.hero-apple-pill-fill');
+    if (fill) {
+      fill.style.animation = 'none';
+      if (isActive) {
+        void fill.offsetWidth; // Trigger reflow to restart animation
+        fill.style.animation = 'apple-pill-fill 8s linear forwards';
+      }
+    }
+  });
 }
 
 function restartHeroTimer() {

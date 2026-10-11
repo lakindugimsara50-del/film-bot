@@ -16,9 +16,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v4">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v4">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v4">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v5">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v5">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v5">
 </head>
 <body>
 
@@ -145,41 +145,29 @@
         <a href="#" class="btn btn-secondary btn-hero hero-btn-download" id="hero-download-btn">
           <i class="fa-solid fa-cloud-arrow-down"></i> Download
         </a>
-        <button class="hero-sound-btn" id="hero-sound-btn" type="button" aria-label="Toggle Sound" title="Sound On / Off" style="display:none">
-          <i class="fa-solid fa-volume-xmark"></i>
-        </button>
         <a href="#" class="hero-info-btn" id="hero-info-btn" title="More Info" aria-label="More Information">
           <i class="fa-solid fa-circle-info"></i>
         </a>
       </div>
     </div>
-
-    <!-- Right Column: Trending Spotlight Cards Rail -->
-    <div class="hero-trending-rail-wrap" id="hero-trending-rail-wrap">
-      <div class="hero-rail-header">
-        <div class="hero-rail-title">
-          <i class="fa-solid fa-fire text-accent"></i>
-          <span>TRENDING SPOTLIGHT</span>
-        </div>
-        <div class="hero-rail-nav">
-          <button class="hero-rail-arrow prev" id="hero-rail-prev" type="button" aria-label="Previous Spotlight">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <span class="hero-rail-counter" id="hero-rail-counter">1 / 5</span>
-          <button class="hero-rail-arrow next" id="hero-rail-next" type="button" aria-label="Next Spotlight">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-      <div class="hero-rail-cards" id="hero-rail-cards" role="list">
-        <!-- Injected dynamically by JS -->
-      </div>
-    </div>
   </div>
 
-  <!-- Hero Auto-rotate Timeline Bar -->
-  <div class="hero-progress-bar">
-    <div class="hero-progress-fill" id="hero-progress-fill"></div>
+  <!-- Apple TV+ Edge Navigation Chevrons -->
+  <button class="hero-edge-nav prev" id="hero-edge-prev" type="button" aria-label="Previous Slide">
+    <i class="fa-solid fa-chevron-left"></i>
+  </button>
+  <button class="hero-edge-nav next" id="hero-edge-next" type="button" aria-label="Next Slide">
+    <i class="fa-solid fa-chevron-right"></i>
+  </button>
+
+  <!-- Apple TV+ Floating Sound Button (Bottom Right) -->
+  <button class="hero-sound-btn" id="hero-sound-btn" type="button" aria-label="Toggle Sound" title="Sound On / Off" style="display:none">
+    <i class="fa-solid fa-volume-xmark"></i>
+  </button>
+
+  <!-- Apple TV+ Carousel Progress Pills (Bottom Left) -->
+  <div class="hero-apple-pagination" id="hero-apple-pagination" role="tablist" aria-label="Featured Spotlight">
+    <!-- Injected dynamically by JS -->
   </div>
 </section>
 
@@ -300,8 +288,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261011_v4"></script>
-<script src="assets/js/app.js?v=20261011_v4"></script>
-<script src="assets/js/netflix-ui.js?v=20261011_v4"></script>
+<script src="data/movies_data.js?v=20261011_v5"></script>
+<script src="assets/js/app.js?v=20261011_v5"></script>
+<script src="assets/js/netflix-ui.js?v=20261011_v5"></script>
 </body>
 </html>

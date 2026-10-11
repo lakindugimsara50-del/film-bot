@@ -212,7 +212,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         "360p": "/api/stream?id=1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ&q=360p"
       },
       "drive_file_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
-      "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ"
+      "drive_id": "1Fj42S8JgsPo2S7OMazQN12unmeoVaUQQ",
+      "trailer_id": "aDrsItJ_HU4",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/aDrsItJ_HU4"
     },
     {
       "id": "one-last-shot-2026",
@@ -377,7 +379,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         "360p": "/api/stream?id=1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz&q=360p"
       },
       "drive_file_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
-      "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz"
+      "drive_id": "1hYF0YAOSo6l0TRLxPxH_kViOn79DQGQz",
+      "trailer_id": "8PAy3i9uU0A",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/8PAy3i9uU0A"
     },
     {
       "id": "dc-2026",
@@ -688,7 +692,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         "360p": "/api/stream?id=1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C&q=360p"
       },
       "drive_file_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
-      "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C"
+      "drive_id": "1nJ4r-9GHVIuqx0_X7nsUc2qUnanj_B4C",
+      "trailer_id": "1aNywiElPSY",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/1aNywiElPSY"
     },
     {
       "id": "the-beekeeper-2024",
@@ -854,7 +860,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         "360p": "/api/stream?id=1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI&q=360p"
       },
       "drive_file_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
-      "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI"
+      "drive_id": "1gQA45eqR_IUxfZ9EDr29MT0W5djoxXNI",
+      "trailer_id": "CHKn-yDCE2w",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/CHKn-yDCE2w"
     },
     {
       "id": "premalu-2024",
@@ -1019,7 +1027,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         "360p": "/api/stream?id=1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88&q=360p"
       },
       "drive_file_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
-      "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88"
+      "drive_id": "1-OvMy5_lzp94Xz53vX2YsXQizgQyvL88",
+      "trailer_id": "OnxChVgg6N8",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/OnxChVgg6N8"
     },
     {
       "id": "game-of-thrones-2011-s01e01",
@@ -1253,7 +1263,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_at": "2026-09-24T13:44:53Z",
       "added_by": "bot_auto_leech",
       "drive_file_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
-      "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7"
+      "drive_id": "1pLf4fkTt4oJZgID5H4iQkKHZxnmJwk_7",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s01e02",
@@ -1487,7 +1499,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_at": "2026-09-24T17:37:56Z",
       "added_by": "bot_auto_leech",
       "drive_file_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
-      "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n"
+      "drive_id": "192FAwPgWUzoATLVChoJ9ekEPhDBh029n",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "the-100-2014-s01e02",
@@ -1715,7 +1729,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_at": "2026-09-24T18:14:47Z",
       "added_by": "bot_auto_leech",
       "drive_file_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
-      "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S"
+      "drive_id": "1cZlVhwkP-Z5LASckoGQ5qWHOHfiQUT5S",
+      "trailer_id": "aDrsItJ_HU4",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/aDrsItJ_HU4"
     },
     {
       "id": "feed-2026",
@@ -1890,7 +1906,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_at": "2026-09-24T18:47:30Z",
       "added_by": "bot_auto_leech",
       "drive_file_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
-      "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry"
+      "drive_id": "167IKl-kbZIXgP91eO4Ftq97Chqtzusry",
+      "trailer_id": "ORFG_EWDkCY",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/ORFG_EWDkCY"
     },
     {
       "id": "kgf-chapter-1-2018",
@@ -2051,7 +2069,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=kgf-chapter-1-2018",
       "added_date": "2026-09-26",
       "added_at": "2026-09-26T08:23:27Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "3oxo-wacE50",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/3oxo-wacE50"
     },
     {
       "id": "ice-age-01",
@@ -2235,7 +2255,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=ice-age-01",
       "added_date": "2026-09-26",
       "added_at": "2026-09-26T08:31:40Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "i4noiCRJRoE",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/i4noiCRJRoE"
     },
     {
       "id": "game-of-thrones-2011-s01e05",
@@ -2490,7 +2512,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s01e05",
       "added_date": "2026-09-26",
       "added_at": "2026-09-26T17:15:16Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s02e01",
@@ -2783,7 +2807,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s02e01",
       "added_date": "2026-09-26",
       "added_at": "2026-09-26T19:47:52Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s02e02",
@@ -3076,7 +3102,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s02e02",
       "added_date": "2026-09-26",
       "added_at": "2026-09-26T21:08:15Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s02e03",
@@ -3211,7 +3239,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s02e06",
@@ -3504,7 +3534,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s02e06",
       "added_date": "2026-09-27",
       "added_at": "2026-09-27T09:34:26Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e01",
@@ -3639,7 +3671,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e02",
@@ -3774,7 +3808,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "photographer-2026",
@@ -3852,7 +3888,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "0c78E4Fr-OI",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/0c78E4Fr-OI"
     },
     {
       "id": "unmadham-2026",
@@ -3929,7 +3967,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "rGEw9hP0jlA",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/rGEw9hP0jlA"
     },
     {
       "id": "cars-on-the-road-2022",
@@ -4005,7 +4045,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "-Vui-DhwIAg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/-Vui-DhwIAg"
     },
     {
       "id": "see-2019-s01e01",
@@ -4105,7 +4147,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "03RAKJipMeM",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/03RAKJipMeM"
     },
     {
       "id": "resident-evil-2026",
@@ -4183,7 +4227,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "downloads": [],
       "telegram_status": "queued",
       "subtitle_url": "",
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "mNd1gb19A-c",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/mNd1gb19A-c"
     },
     {
       "id": "game-of-thrones-2011-s03e03",
@@ -4321,7 +4367,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e03",
       "channel_post_id": 81,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e04",
@@ -4459,7 +4507,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e04",
       "channel_post_id": 84,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e05",
@@ -4597,7 +4647,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e05",
       "channel_post_id": 85,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e06",
@@ -4893,7 +4945,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-27",
       "added_at": "2026-09-27T13:09:05Z",
       "added_by": "bot_auto_leech",
-      "telegram_status": "complete"
+      "telegram_status": "complete",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e07",
@@ -5031,7 +5085,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s03e07",
       "channel_post_id": 94,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-27"
+      "added_date": "2026-09-27",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e08",
@@ -5334,7 +5390,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-27",
       "added_at": "2026-09-27T20:34:30Z",
       "added_by": "bot_auto_leech",
-      "telegram_status": "complete"
+      "telegram_status": "complete",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e09",
@@ -5637,7 +5695,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-27",
       "added_at": "2026-09-27T20:48:39Z",
       "added_by": "bot_auto_leech",
-      "telegram_status": "complete"
+      "telegram_status": "complete",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s03e10",
@@ -5940,7 +6000,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-28",
       "added_at": "2026-09-28T06:53:21Z",
       "added_by": "bot_auto_leech",
-      "telegram_status": "complete"
+      "telegram_status": "complete",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e01",
@@ -6243,7 +6305,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-28",
       "added_at": "2026-09-28T07:23:25Z",
       "added_by": "bot_auto_leech",
-      "telegram_status": "complete"
+      "telegram_status": "complete",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e02",
@@ -6546,7 +6610,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-09-28",
       "added_at": "2026-09-28T08:45:31Z",
       "added_by": "bot_auto_leech",
-      "telegram_status": "complete"
+      "telegram_status": "complete",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e03",
@@ -6693,7 +6759,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "default": true
         }
       ],
-      "has_sinhala_sub": true
+      "has_sinhala_sub": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e05",
@@ -6900,7 +6968,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       ],
       "has_sinhala_sub": true,
       "sub_merged": true,
-      "message_id": 117
+      "message_id": 117,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e04",
@@ -7056,7 +7126,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "default": true
         }
       ],
-      "message_id": 113
+      "message_id": 113,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e06",
@@ -7263,7 +7335,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "srclang": "si"
         }
       ],
-      "message_id": 120
+      "message_id": 120,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e07",
@@ -7527,7 +7601,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s04e07",
       "added_date": "2026-09-28",
       "added_at": "2026-09-28T20:38:10Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s04e08",
@@ -7849,7 +7925,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_at": "2026-09-28T21:18:39Z",
       "added_by": "bot_auto_leech",
       "telegram_status": "complete",
-      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e08-si.vtt"
+      "subtitle_url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/game-of-thrones-2011-s04e08-si.vtt",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e01",
@@ -7987,7 +8065,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s05e01",
       "channel_post_id": 132,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-28"
+      "added_date": "2026-09-28",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e02",
@@ -8152,7 +8232,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "srclang": "si"
         }
       ],
-      "message_id": 134
+      "message_id": 134,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e03",
@@ -8317,7 +8399,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "srclang": "si"
         }
       ],
-      "message_id": 137
+      "message_id": 137,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e04",
@@ -8482,7 +8566,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
           "srclang": "si"
         }
       ],
-      "message_id": 140
+      "message_id": 140,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e05",
@@ -8647,7 +8733,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "channel_chat_id": -1004325759505,
       "added_date": "2026-09-29",
       "sub_merged": true,
-      "message_id": 143
+      "message_id": 143,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e06",
@@ -8812,7 +8900,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "channel_chat_id": -1004325759505,
       "added_date": "2026-09-29",
       "sub_merged": true,
-      "message_id": 146
+      "message_id": 146,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s05e07",
@@ -9071,7 +9161,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s05e07",
       "added_date": "2026-09-29",
       "added_at": "2026-09-29T16:18:13Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e01",
@@ -9264,7 +9356,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       },
       "sub_merged": true,
-      "message_id": 155
+      "message_id": 155,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e02",
@@ -9411,7 +9505,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s06e02",
       "channel_post_id": 158,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-30"
+      "added_date": "2026-09-30",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e03",
@@ -9604,7 +9700,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       },
       "sub_merged": true,
-      "message_id": 161
+      "message_id": 161,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e04",
@@ -9797,7 +9895,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       },
       "sub_merged": true,
-      "message_id": 165
+      "message_id": 165,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e05",
@@ -9970,7 +10070,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       },
       "sub_merged": true,
-      "message_id": 168
+      "message_id": 168,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e06",
@@ -10117,7 +10219,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s06e06",
       "channel_post_id": 170,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-09-30"
+      "added_date": "2026-09-30",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011",
@@ -10331,7 +10435,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADzGq-CRIhHTDtlhKM5XphIzmSEPIaAAJRHwACUXfxVWKMm4ScoXifHgQ",
       "message_id": 204,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e07",
@@ -10545,7 +10651,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADs2q9EEVbStExtIfRO-sSfULPPATGAAJMJwACU8XpVS8gHHIee_8LHgQ",
       "message_id": 179,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s06e08",
@@ -10759,7 +10867,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADuGq9LKy68lTl2-R58Q38i2NrtHyfAAKOKAACU8XxVQXdeYb2wp-VHgQ",
       "message_id": 184,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e01",
@@ -10973,7 +11083,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADvWq9bmKtUxjh3oCYSJUM3C6uO41iAAK9KAACU8XxVUOMQgYP71-fHgQ",
       "message_id": 189,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e02",
@@ -11187,7 +11299,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADwmq9hXJ53aW6mEB5PjLg2BGW2PwhAALWKAACU8XxVfHGHauiXHJ4HgQ",
       "message_id": 194,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e03",
@@ -11401,7 +11515,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQADx2q9iqZB99zcaXdN1CMgksou2Gt0AALeKAACU8XxVcLrAAE4PoCWGx4E",
       "message_id": 199,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e04",
@@ -11615,7 +11731,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       },
       "file_id": "BAACAgUAAyEGAAMBAdXaEQAD0Wq-EEJ3XRypyEcoE7_dy6Eq1wF4AAJtHwACUXfxVS4c5WNu64PuHgQ",
       "message_id": 209,
-      "sub_merged": true
+      "sub_merged": true,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e05",
@@ -11808,7 +11926,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
         }
       },
       "sub_merged": true,
-      "message_id": 213
+      "message_id": 213,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e06",
@@ -12099,7 +12219,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e06",
       "added_date": "2026-10-01",
       "added_at": "2026-10-01T11:00:27Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e07",
@@ -12398,7 +12520,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e07",
       "added_date": "2026-10-01",
       "added_at": "2026-10-01T11:25:23Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s07e08",
@@ -12534,7 +12658,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s07e08",
-      "added_date": "2026-10-01"
+      "added_date": "2026-10-01",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s08e01",
@@ -12672,7 +12798,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e01",
       "added_date": "2026-10-01",
       "channel_post_id": 234,
-      "channel_chat_id": -1004325759505
+      "channel_chat_id": -1004325759505,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s08e02",
@@ -12808,7 +12936,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e02",
-      "added_date": "2026-10-01"
+      "added_date": "2026-10-01",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s08e03",
@@ -12946,7 +13076,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e03",
       "added_date": "2026-10-01",
       "channel_post_id": 241,
-      "channel_chat_id": -1004325759505
+      "channel_chat_id": -1004325759505,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s08e04",
@@ -13084,7 +13216,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e04",
       "added_date": "2026-10-01",
       "channel_post_id": 245,
-      "channel_chat_id": -1004325759505
+      "channel_chat_id": -1004325759505,
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s08e05",
@@ -13220,7 +13354,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e05",
-      "added_date": "2026-10-01"
+      "added_date": "2026-10-01",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "irumadi-2026",
@@ -13555,7 +13691,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e06",
       "channel_post_id": 263,
       "channel_chat_id": -1004325759505,
-      "added_date": "2026-10-03"
+      "added_date": "2026-10-03",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "game-of-thrones-2011-s08e07",
@@ -13691,7 +13829,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "telegram_status": "queued",
       "subtitle_url": "",
       "site_url": "https://filmsub.pages.dev/movie.html?id=game-of-thrones-2011-s08e07",
-      "added_date": "2026-10-02"
+      "added_date": "2026-10-02",
+      "trailer_id": "KPLWWIOCOOQ",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KPLWWIOCOOQ"
     },
     {
       "id": "squid-game-2021-s01e01",
@@ -13940,7 +14080,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e01",
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T09:40:32Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "oqxAJKy0ii4",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/oqxAJKy0ii4"
     },
     {
       "id": "squid-game-2021-s01e02",
@@ -14181,7 +14323,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e02",
       "added_date": "2026-10-03",
       "added_at": "2026-10-03T12:04:30Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "oqxAJKy0ii4",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/oqxAJKy0ii4"
     },
     {
       "id": "the-uprising-2026",
@@ -14422,7 +14566,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=the-uprising-2026",
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T12:22:58Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "lyhCxZN4Ro8",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/lyhCxZN4Ro8"
     },
     {
       "id": "squid-game-2021-s01e03",
@@ -14671,7 +14817,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=squid-game-2021-s01e03",
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T08:35:28Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "oqxAJKy0ii4",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/oqxAJKy0ii4"
     },
     {
       "id": "hi-2026",
@@ -14912,7 +15060,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=hi-2026",
       "added_date": "2026-10-04",
       "added_at": "2026-10-04T11:50:45Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "LVmH0rgWZb8",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/LVmH0rgWZb8"
     },
     {
       "id": "money-heist-2017-s01e01",
@@ -15160,7 +15310,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=money-heist-2017-s01e01",
       "added_date": "2026-10-10",
       "added_at": "2026-10-10T12:19:12Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "_InqQJRqGW4",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/_InqQJRqGW4"
     },
     {
       "id": "runner-2026",
@@ -15401,7 +15553,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=runner-2026",
       "added_date": "2026-10-06",
       "added_at": "2026-10-06T08:31:37Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "B6Z9MM1LhEA",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/B6Z9MM1LhEA"
     },
     {
       "id": "coyote-vs-acme-2026",
@@ -15643,7 +15797,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=coyote-vs-acme-2026",
       "added_date": "2026-10-06",
       "added_at": "2026-10-06T10:50:12Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "kMsiD1Nky5I",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/kMsiD1Nky5I"
     },
     {
       "id": "ice-age-the-meltdown-2006",
@@ -15871,7 +16027,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=ice-age-the-meltdown-2006",
       "added_date": "2026-10-06",
       "added_at": "2026-10-06T15:11:36Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "SNMXO74bw9M",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/SNMXO74bw9M"
     },
     {
       "id": "spider-man-brand-new-day-2026",
@@ -16113,7 +16271,9 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "site_url": "https://filmsub.pages.dev/movie.html?id=spider-man-brand-new-day-2026",
       "added_date": "2026-10-11",
       "added_at": "2026-10-11T08:02:59Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "trailer_id": "P3uI5sLosKU",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/P3uI5sLosKU"
     }
   ],
   "last_updated": "2026-10-11T08:03:01Z"

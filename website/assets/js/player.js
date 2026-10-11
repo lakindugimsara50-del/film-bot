@@ -3541,12 +3541,26 @@ function loadTrailer(movie) {
 
   let trailerSrc = '';
   if (movie.trailer_id) {
-    trailerSrc = `https://www.youtube-nocookie.com/embed/${movie.trailer_id}?autoplay=1&rel=0&modestbranding=1`;
+    const tid = encodeURIComponent(movie.trailer_id);
+    trailerSrc = `https://www.youtube-nocookie.com/embed/${tid}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
   } else if (movie.trailer_url) {
-    trailerSrc = movie.trailer_url.includes('autoplay') ? movie.trailer_url : `${movie.trailer_url}${movie.trailer_url.includes('?') ? '&' : '?'}autoplay=1&rel=0`;
-  } else {
-    const query = encodeURIComponent(`${movie.title} ${movie.year || ''} official trailer`);
-    trailerSrc = `https://www.youtube-nocookie.com/embed?listType=search&list=${query}&autoplay=1&rel=0`;
+    trailerSrc = movie.trailer_url.includes('autoplay') ? movie.trailer_url : `${movie.trailer_url}${movie.trailer_url.includes('?') ? '&' : '?'}autoplay=1&rel=0&playsinline=1`;
+  }
+
+  if (!trailerSrc) {
+    const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent((movie.title || '') + ' ' + (movie.year || '') + ' official trailer')}`;
+    playerEl.innerHTML = `
+      <div style="aspect-ratio:16/9;width:100%;background:#080a0e;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;border:1px solid rgba(255,255,255,0.08)">
+        <div style="width:58px;height:58px;border-radius:50%;background:rgba(229,9,20,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--accent);font-size:24px">
+          <i class="fa-solid fa-clapperboard"></i>
+        </div>
+        <h3 style="font-size:17px;color:#fff;margin-bottom:6px">Official Trailer Not Available</h3>
+        <p style="font-size:12.5px;color:var(--text2);max-width:380px;margin-bottom:18px">An embedded official trailer is not available yet for this title. You can search directly on YouTube.</p>
+        <a href="${ytSearchUrl}" target="_blank" rel="noopener" class="btn btn-primary" style="border-radius:9999px;font-size:12.5px;padding:9px 20px">
+          <i class="fa-brands fa-youtube"></i> Search on YouTube
+        </a>
+      </div>`;
+    return;
   }
 
   playerEl.innerHTML = `

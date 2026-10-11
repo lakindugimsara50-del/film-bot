@@ -25,6 +25,12 @@ function renderAllSections() {
   }
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
+  if (document.getElementById('tv-series-track')) renderCarousel('tv-series-track', getAllTVSeries(), { isTrending: false });
+  if (document.getElementById('action-track')) renderCarousel('action-track', getMoviesByGenre('action'), { isTrending: false });
+  if (document.getElementById('comedy-track')) renderCarousel('comedy-track', getMoviesByGenre('comedy'), { isTrending: false });
+  if (document.getElementById('drama-track')) renderCarousel('drama-track', getMoviesByGenre('drama'), { isTrending: false });
+  if (document.getElementById('scifi-track')) renderCarousel('scifi-track', getMoviesByGenre('sci-fi'), { isTrending: false });
+  if (document.getElementById('animation-track')) renderCarousel('animation-track', getMoviesByGenre('animation'), { isTrending: false });
   if (document.getElementById('sinhala-dub-track')) renderCarousel('sinhala-dub-track', getSinhalaFilms(), { isTrending: false });
   setupCarouselArrows();
   initHighlightPopup();
@@ -146,6 +152,20 @@ function groupSeriesCatalog(movies) {
     }
   }
   return result;
+}
+
+// ---- Extra Catalog Helpers ----
+function getAllTVSeries() {
+  const catalog = groupSeriesCatalog(allMovies);
+  return catalog.filter(m => m.type === 'series' || m.is_series_master || Boolean(m.season)).slice(0, 20);
+}
+function getMoviesByGenre(keyword) {
+  const catalog = groupSeriesCatalog(allMovies);
+  const kw = String(keyword).toLowerCase();
+  return catalog.filter(m => {
+    const list = Array.isArray(m.genres) ? m.genres : [];
+    return list.some(g => String(g).toLowerCase().includes(kw));
+  }).slice(0, 20);
 }
 
 // ---- Data Helpers ----
@@ -404,14 +424,19 @@ function getMovieTrailerEmbedUrl(movie, autoplay = true, muted = true) {
     const sep = movie.trailer_url.includes('?') ? '&' : '?';
     return `${movie.trailer_url}${sep}autoplay=${ap}&mute=${m}&controls=0&loop=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&iv_load_policy=3${originParam}`;
   }
-  // NEVER return listType=search ! YouTube deprecated listType=search and errors with "This video is unavailable"
   return '';
 }
+
+let heroTrailerRevealTimer = null;
 
 function stopHeroTrailer() {
   if (heroTrailerTimer) {
     clearTimeout(heroTrailerTimer);
     heroTrailerTimer = null;
+  }
+  if (heroTrailerRevealTimer) {
+    clearTimeout(heroTrailerRevealTimer);
+    heroTrailerRevealTimer = null;
   }
   const videoWrap = document.getElementById('hero-video-wrap');
   const videoIframe = document.getElementById('hero-video-iframe');
@@ -444,30 +469,35 @@ function startHeroTrailer(movie, muted = true) {
   if (!videoWrap || !videoIframe || !movie) return;
 
   const src = getMovieTrailerEmbedUrl(movie, true, muted);
-  // If no trailer exists for this movie, do NOT show a blank/error iframe!
   if (!src) {
     stopHeroTrailer();
     return;
   }
 
+  // Keep hidden while buffering so user NEVER sees YouTube play button or loading spinner
+  videoWrap.classList.remove('active');
   heroTrailerMuted = muted;
   videoIframe.src = src;
 
-  setTimeout(() => {
-    if (!heroTrailerActive && videoIframe.src !== src) return;
-    if (videoWrap) videoWrap.classList.add('active');
-    if (backdrop) backdrop.style.opacity = '0.15';
-    if (soundBtn) {
-      soundBtn.style.display = 'flex';
-      soundBtn.innerHTML = muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
-      soundBtn.title = muted ? 'Unmute Audio' : 'Mute Audio';
+  if (heroTrailerRevealTimer) clearTimeout(heroTrailerRevealTimer);
+
+  // Crossfade in ONLY after buffer (1.8s) when video frames are streaming
+  heroTrailerRevealTimer = setTimeout(() => {
+    if (videoIframe.src === src) {
+      if (videoWrap) videoWrap.classList.add('active');
+      if (backdrop) backdrop.style.opacity = '0.08';
+      if (soundBtn) {
+        soundBtn.style.display = 'flex';
+        soundBtn.innerHTML = muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+        soundBtn.title = muted ? 'Unmute Audio' : 'Mute Audio';
+      }
+      if (trailerBtn) {
+        trailerBtn.classList.add('playing');
+        trailerBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span>Trailer</span>`;
+      }
+      heroTrailerActive = true;
     }
-    if (trailerBtn) {
-      trailerBtn.classList.add('playing');
-      trailerBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span>Trailer</span>`;
-    }
-    heroTrailerActive = true;
-  }, 1000);
+  }, 1800);
 }
 
 function toggleHeroSound() {
@@ -492,7 +522,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('message', (event) => {
     try {
       const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (data && (data.event === 'onError' || data.info === 101 || data.info === 150)) {
+      if (data && (data.event === 'onError' || data.info === 101 || data.info === 150 || data.info === 100 || data.info === 2)) {
         stopHeroTrailer();
       }
     } catch (e) {}
@@ -502,18 +532,28 @@ if (typeof window !== 'undefined') {
 function getHeroSpotlightList() {
   const catalog = groupSeriesCatalog(allMovies);
   if (!catalog || catalog.length === 0) return [];
-  const tr = catalog.filter(m => m.trending);
-  const feat = catalog.filter(m => m.featured);
+
+  // Filter only movies with a valid trailer_id and backdrop image
+  const valid = catalog.filter(m => Boolean(m.trailer_id) && Boolean(m.backdrop || m.backdrop_url));
+
   const merged = [];
-  const seen = new Set();
-  [...feat, ...tr, ...catalog].forEach(m => {
-    const s = String(m.slug || m.id || '').toLowerCase();
-    if (s && !seen.has(s)) {
-      seen.add(s);
+  const seenTitles = new Set();
+
+  const priority = [
+    ...valid.filter(m => m.featured),
+    ...valid.filter(m => m.trending),
+    ...valid
+  ];
+
+  priority.forEach(m => {
+    const rawTitle = (m.title || '').split(' - Season')[0].trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (rawTitle && !seenTitles.has(rawTitle)) {
+      seenTitles.add(rawTitle);
       merged.push(m);
     }
   });
-  return merged.slice(0, 5);
+
+  return merged.slice(0, 6);
 }
 
 // ---- Hero ----
@@ -622,31 +662,29 @@ function renderHero(targetMovie, forcedIdx) {
     };
   }
 
-  // Apple TV+ Autoplay background trailer if user has sufficient data
+  // Apple TV+ Autoplay background trailer ONLY if user has sufficient data
   if (!isLowDataMode() && (movie.trailer_id || movie.trailer_url)) {
     heroTrailerTimer = setTimeout(() => {
       startHeroTrailer(movie, true); // muted by default for elegant background playback
     }, 2200);
   }
 
-  // Update Apple TV+ indicator pills
+  // Update Apple TV+ indicator dots
   updateHeroAppleIndicators(heroCurrentIdx);
 }
 
-// ---- Apple TV+ Style Hero Carousel & Indicators ----
+// ---- Apple TV+ Style Hero Carousel & Indicator Dots ----
 function renderHeroAppleIndicators() {
   const container = document.getElementById('hero-apple-pagination');
   const list = getHeroSpotlightList();
   if (container && list && list.length > 0) {
     container.innerHTML = list.map((_, idx) => `
-      <button class="hero-apple-pill${idx === heroCurrentIdx ? ' active' : ''}" data-idx="${idx}" type="button" aria-label="Slide ${idx + 1}">
-        <span class="hero-apple-pill-fill"></span>
-      </button>
+      <button class="hero-apple-dot${idx === heroCurrentIdx ? ' active' : ''}" data-idx="${idx}" type="button" aria-label="Slide ${idx + 1}"></button>
     `).join('');
 
-    container.querySelectorAll('.hero-apple-pill').forEach(pill => {
-      pill.onclick = () => {
-        const idx = parseInt(pill.dataset.idx, 10);
+    container.querySelectorAll('.hero-apple-dot').forEach(dot => {
+      dot.onclick = () => {
+        const idx = parseInt(dot.dataset.idx, 10);
         if (!isNaN(idx) && list[idx]) {
           heroCurrentIdx = idx;
           renderHero(list[idx], idx);
@@ -657,8 +695,8 @@ function renderHeroAppleIndicators() {
   }
 
   // Setup edge navigation chevrons (< and >)
-  const prevBtn = document.getElementById('hero-prev-btn');
-  const nextBtn = document.getElementById('hero-next-btn');
+  const prevBtn = document.getElementById('hero-edge-prev') || document.getElementById('hero-prev-btn');
+  const nextBtn = document.getElementById('hero-edge-next') || document.getElementById('hero-next-btn');
   if (prevBtn) {
     prevBtn.onclick = () => {
       const total = list.length || 1;
@@ -682,18 +720,9 @@ function renderHeroAppleIndicators() {
 function updateHeroAppleIndicators(currentIdx) {
   const container = document.getElementById('hero-apple-pagination');
   if (!container) return;
-  const pills = container.querySelectorAll('.hero-apple-pill');
-  pills.forEach((p, idx) => {
-    const isActive = idx === currentIdx;
-    p.classList.toggle('active', isActive);
-    const fill = p.querySelector('.hero-apple-pill-fill');
-    if (fill) {
-      fill.style.animation = 'none';
-      if (isActive) {
-        void fill.offsetWidth; // Trigger reflow to restart animation
-        fill.style.animation = 'apple-pill-fill 8s linear forwards';
-      }
-    }
+  const dots = container.querySelectorAll('.hero-apple-dot');
+  dots.forEach((d, idx) => {
+    d.classList.toggle('active', idx === currentIdx);
   });
 }
 
@@ -706,7 +735,7 @@ function restartHeroTimer() {
     if (!heroSpotlightMovies || heroSpotlightMovies.length < 2) return;
     heroCurrentIdx = (heroCurrentIdx + 1) % heroSpotlightMovies.length;
     renderHero(heroSpotlightMovies[heroCurrentIdx], heroCurrentIdx);
-  }, 8000);
+  }, 9000);
 
   // Pause on hover
   heroEl.onmouseenter = () => {

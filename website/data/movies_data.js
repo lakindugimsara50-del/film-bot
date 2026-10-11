@@ -15872,7 +15872,249 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-06",
       "added_at": "2026-10-06T15:11:36Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "spider-man-brand-new-day-2026",
+      "slug": "spider-man-brand-new-day-2026",
+      "title": "Spider-Man: Brand New Day",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.4",
+      "rating": "8.4",
+      "imdb_id": "tt22084616",
+      "tmdb_id": "969681",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/bjiS5ipwxb9JFy3XRRN4OAilSeX.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/bjiS5ipwxb9JFy3XRRN4OAilSeX.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4tjxYg2AbOzzG9G1YuiT2NzYhlH.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4tjxYg2AbOzzG9G1YuiT2NzYhlH.jpg",
+      "genres": [
+        "Science Fiction",
+        "Action",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "145 min",
+      "description": "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation might also be the only thing that can stop a shocking new threat to the city and those he loves - a powerful villain no one can even see.",
+      "director": "Destin Daniel Cretton",
+      "cast": [
+        {
+          "name": "Tom Holland",
+          "character": "Peter Parker / Spider-Man"
+        },
+        {
+          "name": "Sadie Sink",
+          "character": "Jean Grey"
+        },
+        {
+          "name": "Tramell Tillman",
+          "character": "William 'Bill' Metzger"
+        },
+        {
+          "name": "Zendaya",
+          "character": "MJ"
+        },
+        {
+          "name": "Jacob Batalon",
+          "character": "Ned Leeds"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUBqy0Kvo3A-bHyYPqdXINoZfi1lVQAClyIAAinXWVbHDxGILiVaYx4E",
+      "message_id": 320,
+      "file_name": "comp_spider-man-brand-new-day-2026_1080p.mp4",
+      "file_size": 1973049663,
+      "drive_file_id": "",
+      "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUBqy0Kvo3A-bHyYPqdXINoZfi1lVQAClyIAAinXWVbHDxGILiVaYx4E",
+          "message_id": 320,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/969681"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt22084616"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt22084616"
+        }
+      ],
+      "qualities": {
+        "auto": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+        "1080p": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+        "720p": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/319",
+        "480p": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/318",
+        "360p": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1973049663,
+          "url": "https://t.me/c/4325759505/320",
+          "telegram_url": "https://t.me/c/4325759505/320",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUBqy0Kvo3A-bHyYPqdXINoZfi1lVQAClyIAAinXWVbHDxGILiVaYx4E",
+          "message_id": 320,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1645186348,
+          "url": "https://t.me/c/4325759505/319",
+          "telegram_url": "https://t.me/c/4325759505/319",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAT9qyz-RLQhxlI_av7jc1keBvvBXPAACliIAAinXWVbJ_HBIz1icwx4E",
+          "message_id": 319,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/319",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "757.8 MB",
+          "size_bytes": 794575040,
+          "url": "https://t.me/c/4325759505/318",
+          "telegram_url": "https://t.me/c/4325759505/318",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAT5qyz5KbLqAa2jC7ukRsJxG08S3eAAClSIAAinXWVbqVSPvZx59KB4E",
+          "message_id": 318,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/318",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1973049663,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_1080p",
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1645186348,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_720p",
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/319",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "757.8 MB",
+          "size_bytes": 794575040,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_480p",
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/318",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "338.7 MB",
+          "size_bytes": 355148939,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_360p",
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUBqy0Kvo3A-bHyYPqdXINoZfi1lVQAClyIAAinXWVbHDxGILiVaYx4E",
+          "message_id": 320,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+          "size_bytes": 1973049663
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAT9qyz-RLQhxlI_av7jc1keBvvBXPAACliIAAinXWVbJ_HBIz1icwx4E",
+          "message_id": 319,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/319",
+          "size_bytes": 1645186348
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAT5qyz5KbLqAa2jC7ukRsJxG08S3eAAClSIAAinXWVbqVSPvZx59KB4E",
+          "message_id": 318,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/318",
+          "size_bytes": 794575040
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://probe-costumes-savannah-shopping.trycloudflare.com/stream/channel/-1004325759505/320",
+          "size_bytes": 355148939
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/spider-man-brand-new-day-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=spider-man-brand-new-day-2026",
+      "added_date": "2026-10-11",
+      "added_at": "2026-10-11T08:02:59Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-11T07:35:32Z"
+  "last_updated": "2026-10-11T08:03:01Z"
 };

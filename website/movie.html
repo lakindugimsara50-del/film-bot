@@ -28,9 +28,9 @@
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v6">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v6">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v6">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v9">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v9">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v9">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -531,16 +531,68 @@
     }
 
     @media (max-width: 600px) {
-      .player-toolbar { padding: 8px 10px !important; gap: 8px !important; }
-      .btn-quality-trigger { padding: 6px 12px !important; font-size: 12px !important; }
-      .player-status-badge { padding: 5px 10px !important; font-size: 11px !important; }
+      .cs-breadcrumb-wrap,
+      .cs-breadcrumb {
+        display: none !important;
+      }
+      .player-toolbar {
+        padding: 4px 0 6px !important;
+        gap: 6px !important;
+        background: transparent !important;
+        border: none !important;
+      }
+      .player-quality-picker,
+      .player-status-badge {
+        display: none !important;
+      }
+      .server-tabs {
+        width: 100% !important;
+        gap: 6px !important;
+      }
+      .server-tab {
+        padding: 6px 14px !important;
+        font-size: 12px !important;
+        border-radius: 6px !important;
+      }
       .cs-center-rewind, .cs-center-forward { width: 44px; height: 44px; }
       .cs-center-playpause { width: 56px; height: 56px; font-size: 20px; }
       .cs-player-center-overlay { gap: 16px; }
       .vjs-control-brand-wrap { display: none !important; }
       .video-js .vjs-volume-panel { display: none !important; }
-      .vjs-custom-time-display { font-size: 11px !important; padding: 0 4px !important; }
-      .vjs-custom-seek-btn { width: 28px !important; }
+      .video-js .vjs-playback-rate { display: none !important; }
+      .vjs-custom-seek-btn { display: none !important; }
+      .vjs-custom-time-display {
+        display: inline-flex !important;
+        align-items: center !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.3px !important;
+        padding: 0 4px !important;
+        white-space: nowrap !important;
+        min-width: 76px !important;
+        flex-shrink: 0 !important;
+        margin-right: auto !important;
+      }
+      .vjs-custom-time-display .vjs-cur-time,
+      .vjs-custom-time-display .vjs-dur-time {
+        font-variant-numeric: tabular-nums !important;
+        color: #ffffff !important;
+        font-size: 11px !important;
+      }
+      .vjs-custom-time-display .vjs-time-slash {
+        margin: 0 2px !important;
+        color: rgba(255, 255, 255, 0.45) !important;
+      }
+      .vjs-super-quality-btn {
+        padding: 0 3px !important;
+        min-width: 38px !important;
+        flex-shrink: 0 !important;
+      }
+      .vjs-super-quality-badge {
+        padding: 2px 5px !important;
+        font-size: 9.5px !important;
+        border-radius: 4px !important;
+      }
     }
   </style>
 </head>
@@ -914,7 +966,7 @@
 <script src="data/stream_endpoint.js?v=20261011_v9"></script>
 <script src="assets/js/app.js?v=20261011_v9"></script>
 <script src="assets/js/download.js?v=20261011_v9"></script>
-<script src="assets/js/player.js?v=20261011_v9"></script>
+<script src="assets/js/player.js?v=20261011_v10"></script>
 <script src="assets/js/netflix-ui.js?v=20261011_v9"></script>
 </body>
 </html>

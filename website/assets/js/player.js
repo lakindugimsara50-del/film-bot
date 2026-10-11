@@ -1365,7 +1365,8 @@ function updateQualitySpeedBadge(q) {
     }
   }
   if (inPlayerBadge) {
-    inPlayerBadge.textContent = norm === 'auto' ? `AUTO (${activeTier})` : activeTier;
+    const isSmall = typeof window !== 'undefined' && window.innerWidth <= 640;
+    inPlayerBadge.textContent = isSmall ? activeTier : (norm === 'auto' ? `AUTO (${activeTier})` : activeTier);
   }
 
   // Sync active state on dropdown items, top toolbar pills & in-player menu items
@@ -2565,9 +2566,12 @@ function injectInPlayerQualityControl(player) {
   qWrap.className = 'vjs-control vjs-button vjs-super-quality-btn';
   qWrap.setAttribute('title', 'Stream Quality (Auto / 1080p / 720p / 480p / 360p)');
 
-  const activeLabel = selectedQuality === 'auto'
-    ? `AUTO (${currentEffectiveQuality.toUpperCase()})`
-    : selectedQuality.toUpperCase();
+  const isSmall = typeof window !== 'undefined' && window.innerWidth <= 640;
+  const activeLabel = isSmall
+    ? (selectedQuality === 'auto' ? currentEffectiveQuality.toUpperCase() : selectedQuality.toUpperCase())
+    : (selectedQuality === 'auto'
+      ? `AUTO (${currentEffectiveQuality.toUpperCase()})`
+      : selectedQuality.toUpperCase());
 
   qWrap.innerHTML = `
     <span class="vjs-super-quality-badge">

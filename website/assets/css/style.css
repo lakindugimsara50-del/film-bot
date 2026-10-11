@@ -2711,24 +2711,31 @@ main > .section:first-of-type {
   .hero,
   .hero.compact-hero {
     display: flex !important;
-    min-height: 52vh !important;
-    max-height: none !important;
-    padding: 0 16px 28px !important;
+    min-height: 64vh !important;
+    max-height: 72vh !important;
+    padding: 0 16px 26px !important;
     margin-top: var(--header-h) !important;
     align-items: flex-end !important;
+    justify-content: flex-start !important;
   }
   .hero .hero-backdrop,
   .hero.compact-hero .hero-backdrop {
-    background-position: center top !important;
+    background-position: center 15% !important;
+    background-size: cover !important;
   }
   .hero .hero-gradient,
   .hero.compact-hero .hero-gradient {
-    background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 45%, #000000 100%) !important;
+    background: linear-gradient(180deg,
+      rgba(0,0,0,0) 0%,
+      rgba(0,0,0,0.1) 25%,
+      rgba(0,0,0,0.65) 60%,
+      #000000 100%
+    ) !important;
   }
   .hero .hero-content,
   .hero.compact-hero .hero-content,
   .hero-content-row {
-    gap: 10px !important;
+    gap: 8px !important;
     padding: 0 !important;
     max-width: 100% !important;
   }
@@ -2737,13 +2744,15 @@ main > .section:first-of-type {
   }
   .hero-badge,
   .hero.compact-hero .hero-badge {
-    font-size: 10px !important;
+    font-size: 9.5px !important;
     padding: 3px 8px !important;
+    letter-spacing: 0.6px !important;
   }
   .hero-title,
   .hero.compact-hero .hero-title {
-    font-size: clamp(22px, 6.5vw, 32px) !important;
+    font-size: clamp(22px, 6.5vw, 30px) !important;
     line-height: 1.15 !important;
+    margin-bottom: 2px !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
@@ -2770,27 +2779,46 @@ main > .section:first-of-type {
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
-    font-size: 12.5px !important;
-    line-height: 1.4 !important;
-    color: rgba(255,255,255,0.8) !important;
-    margin-bottom: 6px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    color: rgba(255,255,255,0.75) !important;
+    margin-bottom: 8px !important;
   }
   .hero-meta,
   .hero.compact-hero .hero-meta {
-    gap: 6px !important;
-    margin-bottom: 4px !important;
+    gap: 5px !important;
+    margin-bottom: 2px !important;
   }
   .hero-meta .badge,
   .hero.compact-hero .hero-meta .badge {
-    font-size: 10px !important;
+    font-size: 9.5px !important;
     padding: 2px 6px !important;
   }
-  .btn-hero,
-  .btn-compact {
-    padding: 10px 18px !important;
-    font-size: 13.5px !important;
-    flex: 1 1 auto !important;
+
+  /* User requested: trailer and download buttons are way too big on mobile;
+     hide them on mobile hero banner for clean, spacious Apple TV / Netflix look! */
+  .hero-btn-trailer,
+  .hero-btn-download {
+    display: none !important;
+  }
+  .hero-actions {
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+  .hero-btn-watch {
+    display: inline-flex !important;
+    width: 100% !important;
+    max-width: 290px !important;
+    padding: 12px 22px !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    background: #e50914 !important;
+    color: #ffffff !important;
+    align-items: center !important;
     justify-content: center !important;
+    gap: 8px !important;
+    box-shadow: 0 4px 20px rgba(229, 9, 20, 0.5) !important;
   }
 
   /* 2. Proportionate Carousel Cards on Mobile (comfortable Netflix width) */
@@ -2857,58 +2885,128 @@ main > .section:first-of-type {
     font-size: 12px !important;
   }
 
-  /* 5. Mobile Movie Player & Quality Bar Optimization */
+  /* 5. Mobile Movie Player & UX Psychology Optimization */
+  .cs-breadcrumb-wrap,
+  .cs-breadcrumb {
+    display: none !important; /* Hide breadcrumbs on mobile to bring player closer to top */
+  }
   .cs-movie-header {
-    padding: 8px 0 10px !important;
+    padding: 6px 0 8px !important;
   }
   .cs-main-title {
-    font-size: 17px !important;
-    line-height: 1.25 !important;
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 4px !important;
+  }
+  .cs-title-sub {
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+  }
+  .cs-title-sub .cs-sub-badge,
+  .cs-title-sub .cs-header-quality,
+  .cs-title-sub .cs-header-year,
+  .cs-title-sub .badge {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
   }
   .player-toolbar {
-    padding: 8px 10px !important;
-    gap: 8px !important;
+    padding: 4px 0 6px !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    background: transparent !important;
+    border: none !important;
+  }
+  .player-quality-picker {
+    display: none !important; /* Hide redundant top quality bar above the video */
   }
   .server-tabs {
     width: 100%;
     overflow-x: auto;
     flex-wrap: nowrap !important;
     padding-bottom: 2px;
+    gap: 6px !important;
+  }
+  .player-status-badge {
+    display: none !important; /* Hide redundant "Cinema Stream" tag on mobile */
   }
   .server-tab {
-    padding: 5px 10px !important;
-    font-size: 11.5px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
     white-space: nowrap;
   }
-  .quality-selector-wrap {
-    width: 100%;
-    justify-content: space-between;
-    gap: 6px;
+  .server-tab.active {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
   }
-  .quality-label {
-    display: none;
+
+  /* INSIDE VIDEO.JS CONTROL BAR ON MOBILE: GUARANTEE TIME IS 100% VISIBLE & NEVER COVERED */
+  .vjs-control-brand-wrap {
+    display: none !important; /* Hide bulky watermark on mobile */
   }
-  .quality-pills {
-    flex: 1;
-    justify-content: space-between;
-    overflow-x: auto;
+  .vjs-custom-seek-btn {
+    display: none !important; /* Center screen tap handles seeking */
   }
-  .q-pill {
-    padding: 4px 8px !important;
+  .video-js .vjs-playback-rate {
+    display: none !important;
+  }
+  .vjs-custom-time-display {
+    display: inline-flex !important;
+    align-items: center !important;
     font-size: 11px !important;
-    flex: 1;
-    text-align: center;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    padding: 0 4px !important;
+    white-space: nowrap !important;
+    min-width: 76px !important;
+    flex-shrink: 0 !important;
+    margin-right: auto !important;
   }
-  .network-speed-badge {
-    font-size: 10px !important;
-    padding: 3px 6px !important;
+  .vjs-custom-time-display .vjs-cur-time,
+  .vjs-custom-time-display .vjs-dur-time {
+    font-variant-numeric: tabular-nums !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
   }
+  .vjs-custom-time-display .vjs-time-slash {
+    margin: 0 2px !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+  .vjs-super-quality-btn {
+    padding: 0 3px !important;
+    min-width: 38px !important;
+    flex-shrink: 0 !important;
+  }
+  .vjs-super-quality-badge {
+    padding: 2px 5px !important;
+    font-size: 9.5px !important;
+    border-radius: 4px !important;
+    gap: 2px !important;
+    letter-spacing: 0px !important;
+  }
+  .vjs-super-quality-badge i {
+    font-size: 9px !important;
+  }
+  .vjs-super-quality-menu {
+    bottom: 38px !important;
+    right: 2px !important;
+  }
+
+  /* Streamlined Download Strip below player */
   .quick-dl-strip {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 8px !important;
+    margin-top: 8px !important;
     padding: 8px 10px !important;
     gap: 6px !important;
   }
   .quick-dl-label {
-    font-size: 11.5px !important;
+    font-size: 10.5px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.5) !important;
     width: 100%;
   }
   .quick-dl-buttons {
@@ -2916,10 +3014,14 @@ main > .section:first-of-type {
     overflow-x: auto;
     flex-wrap: nowrap !important;
     padding-bottom: 2px;
+    gap: 6px !important;
   }
   .quick-dl-pill {
-    padding: 5px 9px !important;
+    padding: 5px 10px !important;
     font-size: 11px !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     white-space: nowrap;
     flex-shrink: 0;
   }

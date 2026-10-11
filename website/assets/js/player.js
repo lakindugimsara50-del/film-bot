@@ -49,8 +49,11 @@ const SUB_COLORS = ['#ffeb3b', '#ffffff', '#00e5ff', '#46d369'];
 let stallTimestamps = [];
 let activeStallTimer = null;
 let lastAutoSwitchEpoch = 0;
+let lastDowngradeEpoch = 0;
 let fallbackAutoRetryCount = 0;
 let lastFallbackRetryEpoch = 0;
+let _isPreloadingUpgrade = false;
+let _activePreloadCleanup = null;
 
 let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) || '';
 let streamServerHealthy = false;
@@ -316,51 +319,38 @@ const _warmedTiers = new Set();
 function prewarmQualityTier(movie, quality) {
   if (!movie) return;
   const qNorm = String(quality || '').toLowerCase();
-  const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
-  let targetMsgId = null;
-  const wcId = movie.channel_chat_id || '-1004325759505';
+  const resolved = resolveStreamUrlForQuality(movie, qNorm);
 
-  if (vm && typeof vm === 'object') {
-    const v = vm[qNorm];
-    if (v && v.message_id > 0) targetMsgId = v.message_id;
-  }
-  if (!targetMsgId && (qNorm === '720p' || qNorm === 'auto')) {
-    targetMsgId = (typeof movie.message_id === 'number' && movie.message_id > 0) ? movie.message_id : null;
-    if (!targetMsgId && Array.isArray(movie.downloads)) {
-      for (const d of movie.downloads) {
-        if (d.message_id && typeof d.message_id === 'number' && d.message_id > 0) {
-          targetMsgId = d.message_id;
-          break;
-        }
-        const dlU = String(d.url || d.telegram_url || '');
-        const m = dlU.match(/t\.me\/c\/\d+\/(\d+)/) || dlU.match(/t\.me\/[a-zA-Z0-9_]+\/(\d+)/);
-        if (m) {
-          targetMsgId = parseInt(m[1], 10);
-          break;
-        }
-      }
-    }
-  }
-
-  if (targetMsgId) {
-    const key = `${wcId}:${targetMsgId}`;
+  if (resolved.chatId && resolved.messageId) {
+    const key = `${resolved.chatId}:${resolved.messageId}`;
     if (_warmedTiers.has(key)) return;
     _warmedTiers.add(key);
 
     const pfx = getStreamEndpointPrefix() || '';
-    fetch(`${pfx}/stream/warmup/${wcId}/${targetMsgId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
-  } else {
-    // Proactively prime Google Drive initial 8MB into Cloudflare Edge Cache
-    const driveId = extractMovieDriveId(movie);
-    if (driveId) {
-      const driveKey = `gdrive:${driveId}`;
-      if (!_warmedTiers.has(driveKey)) {
-        _warmedTiers.add(driveKey);
-        fetch(`/api/stream?id=${encodeURIComponent(driveId)}&q=auto`, {
-          headers: { 'Range': 'bytes=0-1048575' },
-          mode: 'cors'
-        }).catch(() => {});
-      }
+    fetch(`${pfx}/stream/warmup/${resolved.chatId}/${resolved.messageId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+    return;
+  }
+
+  if (resolved.driveId) {
+    const driveKey = `gdrive:${resolved.driveId}:${qNorm}`;
+    if (!_warmedTiers.has(driveKey)) {
+      _warmedTiers.add(driveKey);
+      fetch(`/api/stream?id=${encodeURIComponent(resolved.driveId)}&q=${encodeURIComponent(qNorm)}`, {
+        headers: { 'Range': 'bytes=0-1048575' },
+        mode: 'cors'
+      }).catch(() => {});
+    }
+    return;
+  }
+
+  if (resolved.src && resolved.src.startsWith('http') && !resolved.src.includes('t.me')) {
+    const srcKey = `src:${resolved.src}`;
+    if (!_warmedTiers.has(srcKey)) {
+      _warmedTiers.add(srcKey);
+      fetch(resolved.src, {
+        headers: { 'Range': 'bytes=0-1048575' },
+        mode: 'cors'
+      }).catch(() => {});
     }
   }
 }
@@ -1387,8 +1377,266 @@ function updateQualitySpeedBadge(q) {
   });
 }
 
+/**
+ * Resolves the precise stream source, Telegram message details, or Google Drive ID
+ * for a specific requested quality tier (1080p, 720p, 480p, 360p).
+ * Returns { src, chatId, messageId, driveId, quality }.
+ */
+function resolveStreamUrlForQuality(movie, quality) {
+  if (!movie) return { src: '', chatId: '', messageId: null, driveId: null, quality: '' };
+  const qNorm = String(quality || 'auto').toLowerCase();
+  const effectiveQ = qNorm === 'auto' ? (detectNetworkSpeed().recommendedQuality || '720p') : qNorm;
+  const defaultTgChatId = movie.channel_chat_id || '-1004325759505';
+
+  // 1. Check if movie has multi-quality variant_media (Telegram Cloud)
+  const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
+  if (vm && typeof vm === 'object') {
+    let vEntry = vm[effectiveQ] || vm[quality];
+    if (!vEntry && qNorm === 'auto') {
+      vEntry = vm['720p'] || vm['480p'] || vm['1080p'];
+    }
+    if (vEntry) {
+      let tgChatId = movie.channel_chat_id || '';
+      if (!tgChatId) {
+        const mUrl = movie.stream_url || (vEntry.stream_url || '');
+        const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
+        tgChatId = mMatch ? mMatch[1] : defaultTgChatId;
+      }
+      if (vEntry.message_id && Number(vEntry.message_id) > 0) {
+        return {
+          src: `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${vEntry.message_id}`,
+          chatId: tgChatId,
+          messageId: Number(vEntry.message_id),
+          driveId: null,
+          quality: effectiveQ
+        };
+      } else if (vEntry.stream_url && !vEntry.stream_url.includes('/0')) {
+        return {
+          src: normalizeStreamUrl(vEntry.stream_url),
+          chatId: tgChatId,
+          messageId: null,
+          driveId: null,
+          quality: effectiveQ
+        };
+      }
+    }
+  }
+
+  // 2. Check Drive ID for quality
+  const driveId = extractDriveIdForQuality(movie, effectiveQ);
+  if (driveId) {
+    return {
+      src: buildChunkStreamUrl(driveId, effectiveQ),
+      chatId: '',
+      messageId: null,
+      driveId: driveId,
+      quality: effectiveQ
+    };
+  }
+
+  // 3. Check qualities map
+  if (movie.qualities && typeof movie.qualities === 'object') {
+    const qVal = movie.qualities[effectiveQ] || movie.qualities[quality];
+    if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
+      return {
+        src: normalizeStreamUrl(qVal),
+        chatId: '',
+        messageId: null,
+        driveId: null,
+        quality: effectiveQ
+      };
+    } else if (qVal && typeof qVal === 'object' && qVal.stream_url && !qVal.stream_url.includes('t.me')) {
+      return {
+        src: normalizeStreamUrl(qVal.stream_url),
+        chatId: '',
+        messageId: null,
+        driveId: null,
+        quality: effectiveQ
+      };
+    }
+  }
+
+  // 4. Check movie downloads
+  const downloads = typeof getMovieDownloads === 'function' ? getMovieDownloads(movie) : (movie.downloads || []);
+  const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(effectiveQ) && !d.download_only);
+  if (matched) {
+    if (matched.stream_url && !matched.stream_url.includes('t.me')) {
+      return {
+        src: normalizeStreamUrl(matched.stream_url),
+        chatId: defaultTgChatId,
+        messageId: matched.message_id || null,
+        driveId: null,
+        quality: effectiveQ
+      };
+    } else if (matched.message_id) {
+      return {
+        src: `${getStreamEndpointPrefix()}/stream/channel/${defaultTgChatId}/${matched.message_id}`,
+        chatId: defaultTgChatId,
+        messageId: Number(matched.message_id),
+        driveId: null,
+        quality: effectiveQ
+      };
+    } else if (matched.file_id) {
+      return {
+        src: `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(matched.file_id)}`,
+        chatId: '',
+        messageId: null,
+        driveId: null,
+        quality: effectiveQ
+      };
+    } else if (matched.url && matched.url.includes('/c/')) {
+      const mMatch = matched.url.match(/t\.me\/c\/(\d+)\/(\d+)/);
+      if (mMatch) {
+        return {
+          src: `${getStreamEndpointPrefix()}/stream/channel/-100${mMatch[1]}/${mMatch[2]}`,
+          chatId: `-100${mMatch[1]}`,
+          messageId: Number(mMatch[2]),
+          driveId: null,
+          quality: effectiveQ
+        };
+      }
+    } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
+      return {
+        src: normalizeStreamUrl(matched.url),
+        chatId: '',
+        messageId: null,
+        driveId: null,
+        quality: effectiveQ
+      };
+    }
+  }
+
+  return {
+    src: '',
+    chatId: defaultTgChatId,
+    messageId: null,
+    driveId: null,
+    quality: effectiveQ
+  };
+}
+
+/**
+ * Pre-buffers higher quality (e.g. 1080p) in the background while current quality (720p)
+ * plays with 100% uninterrupted audio and video.
+ * Handover to higher quality only occurs once initial frames and byte ranges are verified ready.
+ */
+function seamlessPreloadAndStepUp(targetQuality, candidate) {
+  if (_isPreloadingUpgrade || !candidate || !candidate.src || !vjsPlayer) return;
+  if (selectedQuality !== 'auto') return;
+  if (vjsPlayer.paused() || (vjsPlayer.seeking && vjsPlayer.seeking())) return;
+
+  _isPreloadingUpgrade = true;
+  console.log(`[ABR] Starting proactive pre-buffering for ${targetQuality.toUpperCase()} while current quality plays smoothly...`);
+
+  // 1. Proactive backend server warmup
+  if (candidate.chatId && candidate.messageId) {
+    const pfx = getStreamEndpointPrefix() || '';
+    fetch(`${pfx}/stream/warmup/${candidate.chatId}/${candidate.messageId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+  } else if (candidate.driveId) {
+    fetch(`/api/stream?id=${encodeURIComponent(candidate.driveId)}&q=${encodeURIComponent(targetQuality)}`, {
+      headers: { 'Range': 'bytes=0-1048575' },
+      mode: 'cors'
+    }).catch(() => {});
+  }
+
+  // 2. Offscreen preloader video element
+  const bgPreloader = document.createElement('video');
+  bgPreloader.preload = 'auto';
+  bgPreloader.muted = true;
+  bgPreloader.playsInline = true;
+  bgPreloader.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  document.body.appendChild(bgPreloader);
+
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    _isPreloadingUpgrade = false;
+    _activePreloadCleanup = null;
+    try {
+      bgPreloader.pause();
+      bgPreloader.removeAttribute('src');
+      bgPreloader.load();
+    } catch (e) {}
+    if (bgPreloader.parentNode) {
+      bgPreloader.parentNode.removeChild(bgPreloader);
+    }
+  };
+  _activePreloadCleanup = cleanup;
+
+  // 3. Safety timeout: if 1080p takes > 7s to buffer, connection is not fast enough for 1080p.
+  // Stay on current quality without interrupting playback!
+  const preloadTimeout = setTimeout(() => {
+    if (cleanedUp) return;
+    console.warn(`[ABR] Upgrade pre-buffering for ${targetQuality} timed out (>7s). Staying on ${currentEffectiveQuality} without interruption.`);
+    cleanup();
+    lastAutoSwitchEpoch = Date.now() + 45000;
+  }, 7000);
+
+  // 4. Once metadata is loaded, seek ahead to upcoming playhead
+  let hasSeeked = false;
+  const onMetadata = () => {
+    if (cleanedUp || hasSeeked) return;
+    hasSeeked = true;
+    const curT = (vjsPlayer && typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
+    const targetSeek = curT + 2.5;
+    try {
+      bgPreloader.currentTime = targetSeek;
+      console.log(`[ABR] Preloader metadata ready. Proactively buffering byte range at ${targetSeek.toFixed(1)}s for ${targetQuality.toUpperCase()}...`);
+    } catch (e) {
+      console.warn('[ABR] Preloader seek failed:', e);
+    }
+  };
+  bgPreloader.addEventListener('loadedmetadata', onMetadata, { once: true });
+
+  // 5. When future data or canplay is reached on the preloader
+  let handoverDone = false;
+  const executeHandover = () => {
+    if (cleanedUp || handoverDone) return;
+    handoverDone = true;
+    clearTimeout(preloadTimeout);
+
+    // If user changed quality, paused, or closed player during preload, abort switch
+    if (selectedQuality !== 'auto' || !vjsPlayer || vjsPlayer.paused()) {
+      cleanup();
+      return;
+    }
+
+    const curT = (typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
+    console.log(`[ABR] ${targetQuality.toUpperCase()} pre-buffered successfully! Seamless handover at ${curT.toFixed(1)}s`);
+
+    cleanup();
+
+    applyQualitySwitch(targetQuality, {
+      isAutoDowngrade: false,
+      isAutoStepUp: true,
+      preloadedTime: curT,
+      targetSrc: candidate.src
+    });
+  };
+
+  bgPreloader.addEventListener('canplay', executeHandover);
+  bgPreloader.addEventListener('canplaythrough', executeHandover);
+
+  const checkInterval = setInterval(() => {
+    if (cleanedUp || handoverDone) {
+      clearInterval(checkInterval);
+      return;
+    }
+    if (bgPreloader.readyState >= 3) {
+      clearInterval(checkInterval);
+      executeHandover();
+    }
+  }, 100);
+
+  bgPreloader.src = candidate.src;
+  bgPreloader.load();
+}
+
 function applyQualitySwitch(targetQuality, opts = {}) {
   const isAutoDowngrade = Boolean(opts.isAutoDowngrade);
+  const isAutoStepUp = Boolean(opts.isAutoStepUp);
+
   // CRITICAL: Block auto-downgrade during initial startup or first 30s of playback
   if (isAutoDowngrade) {
     if (selectedQuality !== 'auto') return;
@@ -1399,11 +1647,15 @@ function applyQualitySwitch(targetQuality, opts = {}) {
         return;
       }
     }
-  }
-  const prevEffectiveQuality = currentEffectiveQuality;
-  const prevDriveId = extractDriveIdForQuality(currentMovie, prevEffectiveQuality);
-
-  if (!isAutoDowngrade) {
+    currentEffectiveQuality = targetQuality;
+    lastAutoSwitchEpoch = Date.now();
+    lastDowngradeEpoch = Date.now();
+  } else if (isAutoStepUp) {
+    // Keep selectedQuality as 'auto' — do not override user preference!
+    currentEffectiveQuality = targetQuality;
+    lastAutoSwitchEpoch = Date.now();
+  } else {
+    // User explicitly changed quality
     selectedQuality = targetQuality;
     try { sessionStorage.setItem('filmsub_pref_quality', targetQuality); } catch(e) {}
     if (targetQuality === 'auto') {
@@ -1411,9 +1663,6 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     } else {
       currentEffectiveQuality = targetQuality;
     }
-  } else {
-    currentEffectiveQuality = targetQuality;
-    lastAutoSwitchEpoch = Date.now();
   }
 
   updateQualitySpeedBadge(selectedQuality);
@@ -1423,92 +1672,28 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     headerQual.textContent = `${currentEffectiveQuality.toUpperCase()} WEB-DL`;
   }
 
-  const newDriveId = extractDriveIdForQuality(currentMovie, currentEffectiveQuality);
-
   // 1. If Video.js Super Player is active, switch chunk stream quality and preserve exact currentTime
   if (vjsPlayer && typeof vjsPlayer.currentTime === 'function') {
-    const curTime = vjsPlayer.currentTime() || 0;
+    const curTime = (opts.preloadedTime && opts.preloadedTime > 0)
+      ? opts.preloadedTime
+      : ((vjsPlayer.currentTime() || 0));
     const wasPaused = vjsPlayer.paused();
-    let newSrc = '';
-    const qNorm = String(currentEffectiveQuality || '').toLowerCase();
-    let defaultTgChatId = (currentMovie && currentMovie.channel_chat_id) || '-1004325759505';
 
-    // 1. Check if movie has multi-quality variant_media (Telegram Cloud)
-    const vm = currentMovie && (currentMovie.variant_media || (currentMovie.movie_entry && currentMovie.movie_entry.variant_media));
-    if (vm && typeof vm === 'object') {
-      let vEntry = vm[qNorm] || vm[currentEffectiveQuality];
-      if (!vEntry || (!vEntry.message_id && !vEntry.stream_url)) {
-        // Fallback to highest available quality that actually exists
-        const order = ['720p', '480p', '1080p'];
-        for (const q of order) {
-          if (vm[q] && (vm[q].message_id > 0 || (vm[q].stream_url && !vm[q].stream_url.includes('/0')))) {
-            vEntry = vm[q];
-            break;
-          }
-        }
-      }
-      if (vEntry) {
-        let tgChatId = currentMovie.channel_chat_id || '';
-        if (!tgChatId) {
-          const mUrl = currentMovie.stream_url || (vEntry.stream_url || '');
-          const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
-          tgChatId = mMatch ? mMatch[1] : defaultTgChatId;
-        }
-        if (vEntry.message_id && Number(vEntry.message_id) > 0) {
-          newSrc = `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${vEntry.message_id}`;
-        } else if (vEntry.stream_url && !vEntry.stream_url.includes('/0')) {
-          newSrc = normalizeStreamUrl(vEntry.stream_url);
-        }
-      }
-    }
-
-    // 2. Check Drive ID for quality
-    if (!newSrc && newDriveId) {
-      newSrc = buildChunkStreamUrl(newDriveId, currentEffectiveQuality);
-    }
-
-    // 3. Check qualities map
-    if (!newSrc && currentMovie && currentMovie.qualities && typeof currentMovie.qualities === 'object') {
-      const qVal = currentMovie.qualities[qNorm] || currentMovie.qualities[currentEffectiveQuality];
-      if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
-        newSrc = normalizeStreamUrl(qVal);
-      } else if (qVal && typeof qVal === 'object' && qVal.stream_url && !qVal.stream_url.includes('t.me')) {
-        newSrc = normalizeStreamUrl(qVal.stream_url);
-      }
-    }
-
-    // 4. Check movie downloads
+    let newSrc = opts.targetSrc || '';
     if (!newSrc) {
-      const downloads = getMovieDownloads(currentMovie);
-      const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(qNorm) && !d.download_only);
-      if (matched) {
-        if (matched.stream_url && !matched.stream_url.includes('t.me')) {
-          newSrc = normalizeStreamUrl(matched.stream_url);
-        } else if (matched.message_id) {
-          const cId = defaultTgChatId;
-          newSrc = `${getStreamEndpointPrefix()}/stream/channel/${cId}/${matched.message_id}`;
-        } else if (matched.file_id) {
-          newSrc = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(matched.file_id)}`;
-        } else if (matched.url && matched.url.includes('/c/')) {
-          const mMatch = matched.url.match(/t\.me\/c\/(\d+)\/(\d+)/);
-          if (mMatch) {
-            newSrc = `${getStreamEndpointPrefix()}/stream/channel/-100${mMatch[1]}/${mMatch[2]}`;
-          }
-        } else if (matched.url && !matched.url.includes('drive.google.com/uc') && !matched.url.includes('t.me') && !matched.url.startsWith('/api/download')) {
-          newSrc = normalizeStreamUrl(matched.url);
-        }
-      }
+      const targetObj = resolveStreamUrlForQuality(currentMovie, currentEffectiveQuality);
+      newSrc = targetObj.src;
     }
 
     const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || '';
-    const shouldReloadSrc = newSrc && (!isAutoDowngrade || (newDriveId && prevDriveId && newDriveId !== prevDriveId) || (currentSrc && !currentSrc.includes(newSrc)));
+    const shouldReloadSrc = newSrc && (!isAutoDowngrade || (currentSrc && !currentSrc.includes(newSrc)));
 
     if (newSrc && shouldReloadSrc && currentSrc !== newSrc) {
-      const targetTime = (curTime && curTime > 0) ? curTime : (vjsPlayer.currentTime() || 0);
+      const targetTime = (curTime && curTime > 0) ? curTime : 0;
       const shouldResumePlay = !wasPaused;
 
       // Temporarily pause and mute audio during quality switch to avoid 0:00 playback glitches
-      if (typeof vjsPlayer.pause === 'function') vjsPlayer.pause();
+      if (!isAutoStepUp && typeof vjsPlayer.pause === 'function') vjsPlayer.pause();
       const prevMuted = (typeof vjsPlayer.muted === 'function') ? vjsPlayer.muted() : false;
       if (targetTime > 0.5 && typeof vjsPlayer.muted === 'function') {
         vjsPlayer.muted(true);
@@ -1593,6 +1778,11 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     if (isAutoDowngrade) {
       FilmSub.showToast(
         `⚡ අන්තර්ජාල වේගය අනුව හිරවීමකින් තොරව නැරඹීම සඳහා ${currentEffectiveQuality.toUpperCase()} වෙත ස්වයංක්‍රීයව මාරු විය!`,
+        'info'
+      );
+    } else if (isAutoStepUp) {
+      FilmSub.showToast(
+        `🚀 Full HD ${currentEffectiveQuality.toUpperCase()} වෙත බාධාවකින් තොරව උසස් විය! (Instant ABR)`,
         'info'
       );
     } else {
@@ -1738,14 +1928,21 @@ function attachAdaptiveStallMonitor(player) {
 
   const triggerStepUpIfNeeded = () => {
     if (selectedQuality !== 'auto') return;
+    if (_isPreloadingUpgrade) return;
     if (Date.now() - lastAutoSwitchEpoch < 30000) return;
+    if (Date.now() - lastDowngradeEpoch < 90000) return;
     const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
     if (curT < 60.0) return; // Only step up after 1 minute of stable playback
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx > 0) {
       const nextHigher = QUALITY_LADDER[idx - 1];
-      console.log(`[ABR] Buffer healthy. Stepping up: ${currentEffectiveQuality} -> ${nextHigher}`);
-      applyQualitySwitch(nextHigher, { isAutoDowngrade: false });
+      const candidate = resolveStreamUrlForQuality(currentMovie, nextHigher);
+      const currentSrc = (typeof player.currentSrc === 'function' ? player.currentSrc() : '') || '';
+      if (!candidate || !candidate.src || candidate.src === currentSrc) {
+        return;
+      }
+      console.log(`[ABR] Buffer healthy. Pre-buffering ${nextHigher.toUpperCase()} ahead in background before handover...`);
+      seamlessPreloadAndStepUp(nextHigher, candidate);
     }
   };
 
@@ -1753,6 +1950,9 @@ function attachAdaptiveStallMonitor(player) {
     if (activeStallTimer) {
       clearTimeout(activeStallTimer);
       activeStallTimer = null;
+    }
+    if (_activePreloadCleanup) {
+      _activePreloadCleanup();
     }
   });
 
@@ -1821,7 +2021,7 @@ function attachAdaptiveStallMonitor(player) {
     // Only step up if buffer ahead is extraordinarily healthy (> 30s) and playback has been running for > 60s
     if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking())) {
       const ahead = getBufferAhead(player);
-      if (ahead > 30.0 && (now - lastAutoSwitchEpoch > 30000)) {
+      if (ahead > 30.0 && (now - lastAutoSwitchEpoch > 30000) && (now - lastDowngradeEpoch > 90000)) {
         triggerStepUpIfNeeded();
       }
     }
@@ -2251,6 +2451,7 @@ function initVideoPlayer(movie) {
 
 
 function renderStreamEmbed(playerEl, stream, movie) {
+  if (_activePreloadCleanup) _activePreloadCleanup();
   if (vjsPlayer) {
     try { vjsPlayer.dispose(); } catch (e) {}
     vjsPlayer = null;
@@ -3492,6 +3693,8 @@ async function loadStream(movie, idx) {
     const playerEl = document.getElementById('video-player-container');
     if (!playerEl) return;
 
+    if (_activePreloadCleanup) _activePreloadCleanup();
+
     if (stream.embed) {
       if (vjsPlayer) {
         try { vjsPlayer.dispose(); } catch (e) {}
@@ -3530,6 +3733,8 @@ async function loadStream(movie, idx) {
 function loadTrailer(movie) {
   const playerEl = document.getElementById('video-player-container');
   if (!playerEl) return;
+
+  if (_activePreloadCleanup) _activePreloadCleanup();
 
   if (vjsPlayer) {
     try { vjsPlayer.dispose(); } catch (e) {}

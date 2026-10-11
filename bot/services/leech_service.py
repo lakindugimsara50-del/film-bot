@@ -82,6 +82,16 @@ class LeechCandidate:
         )
 
 
+def get_candidate_portal_rank(c: LeechCandidate) -> int:
+    """Prioritize CineSubz as #1 (rank 0), SinhalaSub as #2 (rank 1), and other Sri Lankan sites as #3 (rank 2)."""
+    p = ((c.extra or {}).get("portal") or "").lower()
+    if "cinesubz" in p:
+        return 0
+    if "sinhalasub" in p:
+        return 1
+    return 2
+
+
 class ParsedQuery(tuple):
     """Subclass of 4-tuple (title, year, imdb_id, direct_url) that preserves backward compatibility while exposing series fields."""
     def __new__(cls, title, year, imdb_id, direct_url, season=None, episode=None, is_series=False):
@@ -333,24 +343,16 @@ async def find_all_candidates(
                 )
 
             if matched_candidates:
-                def _portal_rank(c: LeechCandidate) -> int:
-                    p = ((c.extra or {}).get("portal") or "").lower()
-                    if "cinesubz" in p:
-                        return 0
-                    if "sinhalasub" in p:
-                        return 1
-                    return 2
-
                 if is_series_mode:
                     matched_candidates.sort(key=lambda c: (
                         0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                        _portal_rank(c),
+                        get_candidate_portal_rank(c),
                         0 if str(c.quality).lower() == "720p" else 1,
                     ))
                 else:
                     matched_candidates.sort(key=lambda c: (
                         0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                        _portal_rank(c),
+                        get_candidate_portal_rank(c),
                         0 if str(c.quality).lower() == "1080p" else (1 if str(c.quality).lower() == "720p" else 2),
                     ))
                 log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
@@ -787,17 +789,9 @@ async def _execute_leech(
                 candidates = series_preferred
             else:
                 candidates = [c for c in candidates if str(c.quality or "").lower() in ("1080p", "720p", "480p")]
-            def _portal_rank(c: LeechCandidate) -> int:
-                p = ((c.extra or {}).get("portal") or "").lower()
-                if "cinesubz" in p:
-                    return 0
-                if "sinhalasub" in p:
-                    return 1
-                return 2
-
             candidates.sort(key=lambda c: (
                 0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                _portal_rank(c),
+                get_candidate_portal_rank(c),
                 0 if str(c.quality or "").lower() == "720p" else (1 if str(c.quality or "").lower() == "480p" else 2),
             ))
             log.info("[LeechService] TV Series mode: Filtered candidates (%d remaining).", len(candidates))
@@ -808,7 +802,7 @@ async def _execute_leech(
                 candidates = movie_allowed
             candidates.sort(key=lambda c: (
                 0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-                _portal_rank(c),
+                get_candidate_portal_rank(c),
                 0 if str(c.quality or "").lower() == "1080p" else (1 if str(c.quality or "").lower() == "720p" else 2),
             ))
 

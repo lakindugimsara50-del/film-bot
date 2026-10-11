@@ -393,7 +393,7 @@ def test_verify_text_with_header_noise():
 def test_cinesubz_top_priority_over_sinhalasub():
     """Verify that CineSubz is the #1 prioritized portal in PORTALS and candidate sorting."""
     from services.scrapers.srilankan_matched_scraper import PORTALS, PRE_HARDSUBBED_PORTALS
-    from services.leech_service import LeechCandidate
+    from services.leech_service import LeechCandidate, get_candidate_portal_rank
 
     # 1. CineSubz is index 0 in PORTALS
     assert PORTALS[0]["name"] == "CineSubz"
@@ -423,18 +423,14 @@ def test_cinesubz_top_priority_over_sinhalasub():
         extra={"portal": "PirateLK", "is_already_hardsubbed": False},
     )
 
-    cands = [c_piratelk, c_sinhalasub, c_cinesubz]
-    def _portal_rank(c):
-        p = ((c.extra or {}).get("portal") or "").lower()
-        if "cinesubz" in p:
-            return 0
-        if "sinhalasub" in p:
-            return 1
-        return 2
+    assert get_candidate_portal_rank(c_cinesubz) == 0
+    assert get_candidate_portal_rank(c_sinhalasub) == 1
+    assert get_candidate_portal_rank(c_piratelk) == 2
 
+    cands = [c_piratelk, c_sinhalasub, c_cinesubz]
     cands.sort(key=lambda c: (
         0 if (c.extra and c.extra.get("is_already_hardsubbed")) else 1,
-        _portal_rank(c),
+        get_candidate_portal_rank(c),
         0 if str(c.quality).lower() == "1080p" else 1,
     ))
 

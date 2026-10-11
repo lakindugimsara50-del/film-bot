@@ -1986,10 +1986,19 @@ async def _execute_leech(
                 task_tracker.tracker.set_step(user_id, "Video Remux & Subtitle Prep (FFmpeg)...")
                 log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_burn_video)
 
+                cand_portal = getattr(chosen_candidate, 'portal', '') or ''
+                if not cand_portal and chosen_candidate and getattr(chosen_candidate, 'extra', None):
+                    cand_portal = chosen_candidate.extra.get('portal', '')
+
                 if sub_to_burn_video and not is_already_hardsubbed and os.path.exists(sub_to_burn_video):
                     sub_processed = await video_service.burn_subtitles_to_video(local_file, sub_to_burn_video, remuxed)
                     if not sub_processed:
                         sub_processed = await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remuxed, disposition="default")
+                elif is_already_hardsubbed and str(cand_portal).lower() == 'cinesubz' and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
+                    log.info("[LeechService] CineSubz pre-hardsubbed release detected. Covering bottom-left watermark on %s...", local_file)
+                    sub_processed = await video_service.cover_cinesubz_watermark(local_file, remuxed)
+                    if not sub_processed:
+                        sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
                 else:
                     sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
 

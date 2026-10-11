@@ -2299,6 +2299,94 @@ async def burn_subtitles_to_video(
     return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
 
 
+async def cover_cinesubz_watermark(
+    video_path: str,
+    output_path: str,
+    badge_path: Optional[str] = None,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+) -> bool:
+    """
+    Cover the bottom-left CineSubz watermark on pre-hardsubbed releases
+    with a sleek, branded FilmSub badge using hardware accelerated NVENC or fast CPU encoding.
+    Preserves exact audio track with -c:a copy and applies +faststart.
+    Falls back gracefully to stream_copy_subtitles if processing encounters an error.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        log.warning("[VideoService] FFmpeg binary not found. Falling back to stream_copy_subtitles.")
+        return await stream_copy_subtitles(video_path, None, output_path, disposition="default")
+
+    if not badge_path:
+        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+        if os.path.exists(default_badge):
+            badge_path = default_badge
+
+    # Determine encoder
+    hw_enc = detect_hw_encoder(ffmpeg_bin)
+    if hw_enc == "h264_nvenc":
+        enc_opts = ["-c:v", "h264_nvenc", "-preset", "p4", "-cq", "23", "-b:v", "0"]
+    else:
+        enc_opts = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-threads", "0"]
+
+    try:
+        if badge_path and os.path.exists(badge_path):
+            filter_complex = (
+                "[1:v]scale=w='min(190,0.11*main_w)':h=-1[badge];"
+                "[0:v][badge]overlay=x='0.015*main_w':y='main_h-overlay_h-(0.02*main_h)'"
+            )
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-i", video_path,
+                "-i", badge_path,
+                "-filter_complex", filter_complex,
+                *enc_opts,
+                "-c:a", "copy",
+                "-movflags", "+faststart",
+                output_path,
+            ]
+        else:
+            filter_str = (
+                "drawbox=x='0.015*iw':y='ih-(0.055*ih)':w='0.11*iw':h='0.04*ih':color=black@0.92:t=fill"
+            )
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-i", video_path,
+                "-vf", filter_str,
+                *enc_opts,
+                "-c:a", "copy",
+                "-movflags", "+faststart",
+                output_path,
+            ]
+
+        log.info("[VideoService] Executing watermark cover (%s -> %s)...", video_path, output_path)
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        try:
+            _, stderr_bytes = await proc.communicate()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+            raise
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Watermark cover succeeded: %s (%d bytes)", output_path, os.path.getsize(output_path))
+            return True
+        else:
+            err_msg = stderr_bytes.decode("utf-8", errors="replace")[-300:] if stderr_bytes else ""
+            log.warning("[VideoService] Watermark cover failed (exit=%s, stderr=%s). Falling back to stream copy.", proc.returncode, err_msg)
+    except Exception as exc:
+        log.warning("[VideoService] cover_cinesubz_watermark exception: %s. Falling back to stream copy.", exc)
+
+    return await stream_copy_subtitles(video_path, None, output_path, disposition="default")
+
+
 async def generate_multi_quality_variants_ram(
     input_path: str,
     output_dir: str,

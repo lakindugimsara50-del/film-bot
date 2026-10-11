@@ -188,3 +188,43 @@ async def test_queue_service_preserves_queue_instance_and_worker_task():
     assert remaining_item.title == "T2"
 
 
+@pytest.mark.asyncio
+async def test_cinesubz_watermark_cover_and_badge():
+    """Verify that CineSubz watermark cover function and FilmSub badge asset are fully operational."""
+    import config
+    from services import video_service
+
+    assert getattr(config, "ENABLE_CINESUBZ_WATERMARK_COVER", False) is True
+
+    badge_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+    assert os.path.exists(badge_path)
+
+    # Test badge dimensions and format
+    from PIL import Image
+    with Image.open(badge_path) as img:
+        assert img.format == "PNG"
+        assert img.mode == "RGBA"
+        w, h = img.size
+        assert w > 100
+        assert h > 20
+
+    # Test mock execution of cover_cinesubz_watermark
+    with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+         patch("services.video_service.detect_hw_encoder", return_value="cpu"), \
+         patch("asyncio.create_subprocess_exec") as mock_exec, \
+         patch("os.path.exists", return_value=True), \
+         patch("os.path.getsize", return_value=2048):
+
+        mock_proc = AsyncMock()
+        mock_proc.returncode = 0
+        mock_proc.communicate.return_value = (b"", b"")
+        mock_exec.return_value = mock_proc
+
+        res = await video_service.cover_cinesubz_watermark("dummy_in.mp4", "dummy_out.mp4")
+        assert res is True
+        assert mock_exec.called
+        call_args = mock_exec.call_args[0]
+        # Command should contain overlay or filter_complex
+        assert any("overlay" in str(arg) for arg in call_args)
+
+

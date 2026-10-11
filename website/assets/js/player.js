@@ -2930,6 +2930,19 @@ function injectBottomControlBarItems(player, movie) {
     cbEl.insertBefore(rateBtn, fsToggle);
   }
 
+  // 5. In-Video Bottom-Left Watermark Cover Badge (FilmSub Brand)
+  const playerDom = player.el ? player.el() : null;
+  if (playerDom && !playerDom.querySelector('.vjs-corner-filmsub-badge')) {
+    const cornerBadge = document.createElement('div');
+    cornerBadge.className = 'vjs-corner-filmsub-badge';
+    cornerBadge.setAttribute('aria-hidden', 'true');
+    cornerBadge.innerHTML = `
+      <span class="fs-badge-dot"></span>
+      <span class="fs-badge-text"><span class="fs-b-white">FILM</span><span class="fs-b-red">SUB</span></span>
+    `;
+    playerDom.appendChild(cornerBadge);
+  }
+
   // Live time updater
   const curTimeEl = timeWrap.querySelector('#vjs-cur-time');
   const durTimeEl = timeWrap.querySelector('#vjs-dur-time');

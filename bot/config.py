@@ -121,6 +121,8 @@ ENABLE_TELEGRAM_PRIMARY: bool = True
 ENABLE_MULTI_QUALITY_RAM: bool = os.getenv("ENABLE_MULTI_QUALITY_RAM", "true").strip().lower() in ("1", "true", "yes")
 # Enable torrent racing (direct aria2c vs cloud debrid)
 ENABLE_TORRENT_RACING: bool = os.getenv("ENABLE_TORRENT_RACING", "true").strip().lower() in ("1", "true", "yes")
+# Automatic CineSubz Watermark replacement (Covers bottom-left cinesubz watermark with sleek FilmSub badge)
+ENABLE_CINESUBZ_WATERMARK_COVER: bool = os.getenv("ENABLE_CINESUBZ_WATERMARK_COVER", "true").strip().lower() in ("1", "true", "yes")
 
 
 

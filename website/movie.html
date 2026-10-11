@@ -28,9 +28,9 @@
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261011_v9">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261011_v9">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261011_v9">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261012_v1">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261012_v1">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261012_v1">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -43,6 +43,61 @@
     .player-iframe-wrap iframe {
       background-color: #000000 !important;
       color-scheme: dark !important;
+    }
+    /* In-Video Corner Watermark Badge (Replaces CineSubz/third-party bottom-left watermarks) */
+    .vjs-corner-filmsub-badge {
+      position: absolute;
+      bottom: 22px;
+      left: 20px;
+      z-index: 4;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(10, 10, 10, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+      user-select: none;
+      transition: bottom 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+    }
+    .vjs-corner-filmsub-badge .fs-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #e50914;
+      box-shadow: 0 0 6px rgba(229, 9, 20, 0.8);
+    }
+    .vjs-corner-filmsub-badge .fs-badge-text {
+      font-family: var(--font-main, system-ui, -apple-system, sans-serif);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      line-height: 1;
+    }
+    .vjs-corner-filmsub-badge .fs-b-white {
+      color: #ffffff;
+    }
+    .vjs-corner-filmsub-badge .fs-b-red {
+      color: #e50914;
+    }
+    .video-js:not(.vjs-user-inactive) .vjs-corner-filmsub-badge {
+      bottom: 62px;
+    }
+    @media (max-width: 640px) {
+      .vjs-corner-filmsub-badge {
+        bottom: 16px;
+        left: 14px;
+        padding: 2.5px 7px;
+        border-radius: 4px;
+      }
+      .vjs-corner-filmsub-badge .fs-badge-text {
+        font-size: 9.5px;
+      }
+      .video-js:not(.vjs-user-inactive) .vjs-corner-filmsub-badge {
+        bottom: 56px;
+      }
     }
     .video-js {
       font-size: 14px;
@@ -966,7 +1021,7 @@
 <script src="data/stream_endpoint.js?v=20261011_v9"></script>
 <script src="assets/js/app.js?v=20261011_v9"></script>
 <script src="assets/js/download.js?v=20261011_v9"></script>
-<script src="assets/js/player.js?v=20261011_v10"></script>
+<script src="assets/js/player.js?v=20261012_v1"></script>
 <script src="assets/js/netflix-ui.js?v=20261011_v9"></script>
 </body>
 </html>

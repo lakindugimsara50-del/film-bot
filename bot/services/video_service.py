@@ -1770,6 +1770,97 @@ async def embed_subtitles_soft(
                 pass
 
 
+async def trim_video_start(
+    input_path: str,
+    output_path: str,
+    start_seconds: float = 10.0,
+) -> bool:
+    """
+    Trim leading seconds (e.g. 10.0s website intro/watermark) from a video using ultra-fast stream-copy:
+    ffmpeg -y -hide_banner -threads 0 -i input.mp4 -ss 10 -c copy -avoid_negative_ts make_zero -movflags +faststart output.mp4
+    Executes in <1-3 seconds without quality loss.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(input_path):
+        return False
+
+    # Check input duration first: do NOT trim if the video is too short (< 30 seconds)
+    try:
+        dur = get_video_duration(input_path, ffmpeg_bin)
+        if dur > 0 and dur <= (start_seconds + 5.0):
+            log.warning("[VideoService] Video duration (%.1fs) too short to trim %.1fs. Skipping trim.", dur, start_seconds)
+            return False
+    except Exception:
+        pass
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(input_path),
+        "-ss", str(start_seconds),
+        "-c", "copy",
+        "-avoid_negative_ts", "make_zero",
+        "-max_muxing_queue_size", "9999",
+        "-movflags", "+faststart",
+        os.path.abspath(output_path),
+    ]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Successfully trimmed first %.1fs: %s (%s)",
+                     start_seconds, output_path, downloader.format_bytes(os.path.getsize(output_path)))
+            return True
+    except Exception as e:
+        log.warning("[VideoService] Stream-copy trim note: %s", e)
+
+    # Fallback if pure -c copy failed on rare codecs: copy video/audio streams
+    try:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        cmd_fb = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(input_path),
+            "-ss", str(start_seconds),
+            "-map", "0:v:0?",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-avoid_negative_ts", "make_zero",
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            os.path.abspath(output_path),
+        ]
+        proc_fb = await asyncio.create_subprocess_exec(
+            *cmd_fb,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc_fb.wait(), timeout=180.0)
+        if proc_fb.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Stream-copy fallback trim success: %s", output_path)
+            return True
+    except Exception as fb_err:
+        log.error("[VideoService] Stream-copy trim fallback failed: %s", fb_err)
+
+    return False
+
+
 async def apply_faststart(input_path: str, output_path: str) -> bool:
     """
     Execute an ultra-fast stream-copy remux relocating the MP4 moov atom to byte 0:

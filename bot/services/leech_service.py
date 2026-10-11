@@ -1348,6 +1348,17 @@ async def _execute_leech(
                                     log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
                                     return None
 
+                                # User requirement: Cut first 10 seconds (remove intro / watermark) from every downloaded video
+                                trim_out = os.path.join(temp_dir, f"trimmed_{slug}_{q_name}.mp4")
+                                if await video_service.trim_video_start(c_dl, trim_out, start_seconds=10.0):
+                                    try:
+                                        if os.path.abspath(c_dl) != os.path.abspath(trim_out):
+                                            os.remove(c_dl)
+                                    except Exception:
+                                        pass
+                                    c_dl = trim_out
+                                    log.info("[LeechService] Successfully trimmed first 10s from %s [%s]", slug, q_name)
+
                                 # Download finished for this quality! It proceeds immediately to faststart, subtitle muxing, and Telegram upload
                                 # while all other qualities continue downloading in parallel!
                                 # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
@@ -1363,7 +1374,7 @@ async def _execute_leech(
                                 if not q_cand_is_hardsub:
                                     cand_sub = (cand_obj.extra and cand_obj.extra.get("sub_srt_path")) or (candidate.extra and candidate.extra.get("sub_srt_path"))
                                     if cand_sub and os.path.exists(cand_sub):
-                                        active_sub_to_mux = cand_sub
+                                        active_sub_to_mux = subtitle_service.shift_srt_file(cand_sub, offset_seconds=-10.0)
                                     elif not active_sub_to_mux:
                                         async with sub_acquire_lock:
                                             if not active_sub_to_mux:
@@ -1379,7 +1390,7 @@ async def _execute_leech(
                                                         episode=episode,
                                                     )
                                                     if auto_srt and os.path.exists(auto_srt):
-                                                        active_sub_to_mux = auto_srt
+                                                        active_sub_to_mux = subtitle_service.shift_srt_file(auto_srt, offset_seconds=-10.0)
                                                         log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
                                                 except Exception as s_err:
                                                     log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
@@ -1711,11 +1722,28 @@ async def _execute_leech(
             return
 
         # ── Step 2.5 & 2.6: Auto-Acquire Sinhala Subtitles + 12GB RAM MKV->MP4 & Sub Merge ──
-        curr_size = os.path.getsize(local_file)
-        _on_colab = os.path.exists('/content') or os.path.isdir('/dev/shm')
-
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
         slug = f"{_slugify(title, year)}{ep_suffix}"
+
+        # If not already trimmed in pipelined Step 2, trim the first 10 seconds now
+        is_already_pipelined_and_uploaded = bool(
+            file_id and message_id and (
+                "variant_tg_info" in locals() and any(v.get("message_id") == message_id for v in variant_tg_info.values())
+            )
+        )
+        if not is_already_pipelined_and_uploaded and local_file and os.path.exists(local_file):
+            seq_trim_out = os.path.join(temp_dir, f"trimmed_primary_{slug}.mp4")
+            if await video_service.trim_video_start(local_file, seq_trim_out, start_seconds=10.0):
+                try:
+                    if os.path.abspath(local_file) != os.path.abspath(seq_trim_out):
+                        os.remove(local_file)
+                except Exception:
+                    pass
+                local_file = seq_trim_out
+                log.info("[LeechService] Successfully trimmed first 10s from primary video %s", slug)
+
+        curr_size = os.path.getsize(local_file)
+        _on_colab = os.path.exists('/content') or os.path.isdir('/dev/shm')
 
         # Check if the source video has Sinhala subtitles pre-burned by the portal (SinhalaSub, CineSubz, etc.)
         is_already_hardsubbed = bool(
@@ -1837,6 +1865,10 @@ async def _execute_leech(
                                 break
                 except Exception as e_p:
                     log.debug("[LeechService] Portal sub retry note: %s", e_p)
+
+        if sub_srt_path and os.path.exists(sub_srt_path) and not is_already_pipelined_and_uploaded:
+            sub_srt_path = subtitle_service.shift_srt_file(sub_srt_path, offset_seconds=-10.0)
+            sub_vtt_path = subtitle_service.srt_to_vtt(sub_srt_path)
 
         # 2. Intelligent Video Processing & Subtitle Muxing
         # If file exceeds Telegram limit (1.95 GB), compress directly targeting 1.90 GB
@@ -2615,6 +2647,17 @@ async def _execute_leech(
                                 referer=(vcand.extra.get("post_url") or None) if vcand.extra else None,
                             )
                             if dl_out and downloader.is_valid_downloaded_video(dl_out):
+                                # User requirement: Cut first 10 seconds (remove intro / watermark)
+                                trim_var_out = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
+                                if await video_service.trim_video_start(dl_out, trim_var_out, start_seconds=10.0):
+                                    try:
+                                        if os.path.abspath(dl_out) != os.path.abspath(trim_var_out):
+                                            os.remove(dl_out)
+                                    except Exception:
+                                        pass
+                                    dl_out = trim_var_out
+                                    log.info("[LeechService] Successfully trimmed first 10s from direct variant %s [%s]", slug, vq)
+
                                 fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")
                                 if await video_service.apply_faststart(dl_out, fs_out):
                                     try:

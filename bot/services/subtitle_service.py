@@ -116,6 +116,83 @@ async def download_subtitle(url: str, save_path: str = "/tmp/sub.srt") -> str:
         return save_path
 
 
+def shift_srt_file(srt_path: str, offset_seconds: float = -10.0, output_path: Optional[str] = None) -> str:
+    """
+    Shift all timestamps in an SRT file by offset_seconds (e.g. -10.0s when trimming first 10 seconds).
+    Cues ending before 0s are discarded. Cues starting before 0s are clamped to 0s.
+    """
+    if not srt_path or not os.path.exists(srt_path):
+        return srt_path
+    out_path = output_path or srt_path
+
+    try:
+        with open(srt_path, "r", encoding="utf-8-sig", errors="replace") as f:
+            content = f.read()
+
+        time_pat = re.compile(r"(\d{2}):(\d{2}):(\d{2})[,.](\d{3})")
+
+        def _parse_ms(h, m, s, ms):
+            return int(h) * 3600000 + int(m) * 60000 + int(s) * 1000 + int(ms)
+
+        def _fmt_ts(total_ms):
+            total_ms = max(0, int(total_ms))
+            h = total_ms // 3600000
+            total_ms %= 3600000
+            m = total_ms // 60000
+            total_ms %= 60000
+            s = total_ms // 1000
+            ms = total_ms % 1000
+            return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+
+        offset_ms = int(offset_seconds * 1000)
+        blocks = re.split(r"\n\s*\n", content.strip())
+        new_blocks = []
+        new_idx = 1
+
+        for b in blocks:
+            lines = b.strip().splitlines()
+            if not lines:
+                continue
+            ts_line_idx = -1
+            for idx, l in enumerate(lines):
+                if "-->" in l:
+                    ts_line_idx = idx
+                    break
+            if ts_line_idx == -1:
+                continue
+
+            ts_line = lines[ts_line_idx]
+            parts = ts_line.split("-->")
+            if len(parts) != 2:
+                continue
+
+            m_start = time_pat.search(parts[0])
+            m_end = time_pat.search(parts[1])
+            if not m_start or not m_end:
+                continue
+
+            start_ms = _parse_ms(*m_start.groups()) + offset_ms
+            end_ms = _parse_ms(*m_end.groups()) + offset_ms
+
+            if end_ms <= 0:
+                continue  # Subtitle ends before 0s, discard
+            start_ms = max(0, start_ms)
+
+            new_ts_line = f"{_fmt_ts(start_ms)} --> {_fmt_ts(end_ms)}"
+            text_lines = lines[ts_line_idx + 1:]
+            new_blocks.append(f"{new_idx}\n{new_ts_line}\n" + "\n".join(text_lines))
+            new_idx += 1
+
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write("\n\n".join(new_blocks) + "\n")
+
+        log.info("[SubtitleService] Shifted SRT %s by %.1fs (%d cues retained)", srt_path, offset_seconds, len(new_blocks))
+        return out_path
+    except Exception as e:
+        log.warning("[SubtitleService] shift_srt_file note: %s", e)
+        return srt_path
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 def srt_to_vtt(srt_path: str) -> str:
     """

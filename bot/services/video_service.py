@@ -1120,9 +1120,13 @@ async def compress_video(
         next_input_idx += 1
 
     if has_badge_img:
+        in_w, _ = get_video_resolution(input_path, ffmpeg_bin)
+        if in_w <= 0:
+            in_w = 1280
+        badge_w = min(190, max(80, int(in_w * 0.11)))
         filter_complex = (
-            f"[{badge_input_idx}:v]scale=w='min(190,0.11*main_w)':h=-1[badge];"
-            f"[0:v][badge]overlay=x='0.015*main_w':y='main_h-overlay_h-(0.02*main_h)'"
+            f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
+            f"[0:v][badge]overlay=x=0.015*main_w:y=main_h-overlay_h-(0.02*main_h)"
         )
         if burn_vf:
             filter_complex += f",{burn_vf}"
@@ -2358,15 +2362,21 @@ async def cover_cinesubz_watermark(
     # Determine encoder
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
-        enc_opts = ["-c:v", "h264_nvenc", "-preset", "p4", "-cq", "23", "-b:v", "0"]
+        nvenc_preset = "hp" if _on_colab else "fast"
+        enc_opts = ["-c:v", "h264_nvenc", "-preset", nvenc_preset, "-tune", "ll", "-rc", "vbr", "-cq", "23", "-b:v", "0"]
     else:
-        enc_opts = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-threads", "0"]
+        cpu_preset = "ultrafast" if _on_colab else "veryfast"
+        enc_opts = ["-c:v", "libx264", "-preset", cpu_preset, "-crf", "22", "-threads", "0"]
 
     try:
         if badge_path and os.path.exists(badge_path):
+            in_w, _ = get_video_resolution(video_path, ffmpeg_bin)
+            if in_w <= 0:
+                in_w = 1280
+            badge_w = min(190, max(80, int(in_w * 0.11)))
             filter_complex = (
-                "[1:v]scale=w='min(190,0.11*main_w)':h=-1[badge];"
-                "[0:v][badge]overlay=x='0.015*main_w':y='main_h-overlay_h-(0.02*main_h)'"
+                f"[1:v]scale={badge_w}:-1[badge];"
+                f"[0:v][badge]overlay=x=0.015*main_w:y=main_h-overlay_h-(0.02*main_h)"
             )
             cmd = [
                 ffmpeg_bin, "-y",
@@ -2486,7 +2496,36 @@ async def cover_cinesubz_watermark(
             return True
         else:
             err_msg = stderr_bytes.decode("utf-8", errors="replace")[-300:] if stderr_bytes else ""
-            log.warning("[VideoService] Watermark cover failed (exit=%s, stderr=%s). Falling back to stream copy.", proc.returncode, err_msg)
+            log.warning("[VideoService] Watermark cover primary attempt failed (exit=%s, stderr=%s).", proc.returncode, err_msg)
+            if hw_enc == "h264_nvenc":
+                log.info("[VideoService] Retrying watermark cover with CPU libx264 fallback...")
+                cpu_enc_opts = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "22", "-threads", "0"]
+                if badge_path and os.path.exists(badge_path):
+                    cpu_cmd = [
+                        ffmpeg_bin, "-y",
+                        "-i", video_path,
+                        "-i", badge_path,
+                        "-filter_complex", filter_complex,
+                        *cpu_enc_opts,
+                        "-c:a", "copy",
+                        "-movflags", "+faststart",
+                        output_path,
+                    ]
+                else:
+                    cpu_cmd = [
+                        ffmpeg_bin, "-y",
+                        "-i", video_path,
+                        "-vf", filter_str,
+                        *cpu_enc_opts,
+                        "-c:a", "copy",
+                        "-movflags", "+faststart",
+                        output_path,
+                    ]
+                cpu_proc = await asyncio.create_subprocess_exec(*cpu_cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                await cpu_proc.wait()
+                if cpu_proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+                    log.info("[VideoService] Watermark cover succeeded via CPU retry: %s", output_path)
+                    return True
     except Exception as exc:
         log.warning("[VideoService] cover_cinesubz_watermark exception: %s. Falling back to stream copy.", exc)
 

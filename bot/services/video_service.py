@@ -985,6 +985,8 @@ async def compress_video(
     progress_callback: Optional[Callable[[float, str], None]] = None,
     sub_path: Optional[str] = None,
     is_hardsub: bool = False,
+    cover_watermark: bool = False,
+    badge_path: Optional[str] = None,
 ) -> bool:
     """
     Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
@@ -1083,6 +1085,14 @@ async def compress_video(
         except Exception as b_err:
             log.debug("[VideoService] compress_video hard-burn prep note: %s", b_err)
 
+    if cover_watermark and not badge_path:
+        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+        if os.path.exists(default_badge):
+            badge_path = default_badge
+
+    has_badge_img = bool(cover_watermark and badge_path and os.path.exists(badge_path))
+    has_fallback_box = bool(cover_watermark and not has_badge_img)
+
     cmd = [
         ffmpeg_bin,
         "-y",
@@ -1090,31 +1100,55 @@ async def compress_video(
         "-threads", "0",
     ]
     if hw_enc == "h264_nvenc":
-        if not burn_vf:
+        if not burn_vf and not cover_watermark:
             cmd.extend(["-hwaccel", "cuda"])
         else:
             cmd.extend(["-hwaccel", "auto"])
     cmd.extend(["-i", os.path.abspath(input_path)])
 
+    next_input_idx = 1
+    sub_input_idx = -1
     if has_sub:
+        cmd.extend(["-i", os.path.abspath(sub_path)])
+        sub_input_idx = next_input_idx
+        next_input_idx += 1
+
+    badge_input_idx = -1
+    if has_badge_img:
+        cmd.extend(["-i", os.path.abspath(badge_path)])
+        badge_input_idx = next_input_idx
+        next_input_idx += 1
+
+    if has_badge_img:
+        filter_complex = (
+            f"[{badge_input_idx}:v]scale=w='min(190,0.11*main_w)':h=-1[badge];"
+            f"[0:v][badge]overlay=x='0.015*main_w':y='main_h-overlay_h-(0.02*main_h)'"
+        )
+        if burn_vf:
+            filter_complex += f",{burn_vf}"
+        filter_complex += "[v_out]"
+        cmd.extend(["-filter_complex", filter_complex, "-map", "[v_out]"])
+    elif has_fallback_box:
+        box_str = "drawbox=x='0.015*iw':y='ih-(0.055*ih)':w='0.11*iw':h='0.04*ih':color=black@0.92:t=fill"
+        full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
+        cmd.extend(["-map", "0:v:0", "-vf", full_vf])
+    elif burn_vf:
+        cmd.extend(["-map", "0:v:0", "-vf", burn_vf])
+    else:
+        cmd.extend(["-map", "0:v:0"])
+
+    cmd.extend(["-map", "0:a:0?"])
+
+    if has_sub and sub_input_idx != -1:
         cmd.extend([
-            "-i", os.path.abspath(sub_path),
-            "-map", "0:v:0",
-            "-map", "0:a:0?",
-            "-map", "1:0",
+            "-map", f"{sub_input_idx}:0",
             "-c:s", sub_codec,
             "-metadata:s:s:0", "language=sin",
             "-metadata:s:s:0", "title=Sinhala (සිංහල)",
             "-disposition:s:0", "default",
         ])
-        if burn_vf:
-            cmd.extend(["-vf", burn_vf])
     else:
-        cmd.extend([
-            "-map", "0:v:0",
-            "-map", "0:a:0?",
-            "-sn",
-        ])
+        cmd.extend(["-sn"])
 
     if hw_enc == "h264_nvenc":
         # Ultra-fast NVENC hardware encoding:
@@ -2365,17 +2399,89 @@ async def cover_cinesubz_watermark(
             stderr=asyncio.subprocess.PIPE,
         )
 
-        try:
-            _, stderr_bytes = await proc.communicate()
-        except asyncio.CancelledError:
-            if proc and proc.returncode is None:
-                try:
-                    proc.kill()
-                except Exception:
-                    pass
-            raise
+        if progress_callback:
+            duration = get_video_duration(video_path, ffmpeg_bin)
+            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+            speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+            fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+            last_pct = 0.0
+
+            async def _read_stderr():
+                nonlocal last_pct
+                while True:
+                    if hasattr(proc.stderr, "read"):
+                        chunk = await proc.stderr.read(4096)
+                    elif hasattr(proc.stderr, "readline"):
+                        chunk = await proc.stderr.readline()
+                    else:
+                        break
+                    if not chunk:
+                        break
+                    decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                    matches = time_pattern.findall(decoded)
+                    if matches and duration > 0:
+                        h, mm, ss = matches[-1]
+                        cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                        pct = min(99.0, (cur_secs / duration) * 100.0)
+                        if pct - last_pct >= 2.0:
+                            last_pct = pct
+                            speed_match = speed_pattern.search(decoded)
+                            fps_match = fps_pattern.search(decoded)
+                            speed_val = float(speed_match.group(1)) if speed_match else 0.0
+                            fps_val = float(fps_match.group(1)) if fps_match else 0.0
+
+                            detail_parts = [f"{pct:.1f}%"]
+                            if speed_val > 0:
+                                if fps_val > 0:
+                                    detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
+                                else:
+                                    detail_parts.append(f"⚡ {speed_val:.1f}x")
+                                if duration > cur_secs:
+                                    rem_s = int((duration - cur_secs) / speed_val)
+                                    m_rem, s_rem = divmod(rem_s, 60)
+                                    h_rem, m_rem = divmod(m_rem, 60)
+                                    eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
+                                    detail_parts.append(f"| ⏱ {eta_str}")
+
+                            p_str = " ".join(detail_parts)
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    await progress_callback(pct, p_str)
+                                else:
+                                    progress_callback(pct, p_str)
+                            except Exception:
+                                pass
+
+            try:
+                await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
+                stderr_bytes = b""
+            except asyncio.CancelledError:
+                if proc and proc.returncode is None:
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
+                raise
+        else:
+            try:
+                _, stderr_bytes = await proc.communicate()
+            except asyncio.CancelledError:
+                if proc and proc.returncode is None:
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
+                raise
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            if progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(100.0, "100.0%")
+                    else:
+                        progress_callback(100.0, "100.0%")
+                except Exception:
+                    pass
             log.info("[VideoService] Watermark cover succeeded: %s (%d bytes)", output_path, os.path.getsize(output_path))
             return True
         else:

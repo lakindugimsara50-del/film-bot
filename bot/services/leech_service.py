@@ -1246,6 +1246,13 @@ async def _execute_leech(
                                             f"• <b>{q_name}:</b> {pbar} {pct:.1f}% ({q_data.get('dl_done', '0B')}/{q_data.get('dl_total', '0B')}) "
                                             f"⚡ {q_data.get('dl_speed', '0B/s')} | ⏱ {q_data.get('dl_eta', 'N/A')} 📥 <i>(Full Speed බාගත වෙමින්)</i>"
                                         )
+                                    elif st == "processing":
+                                        p_pct = q_data.get("dl_pct", 100.0)
+                                        pbar = downloader.format_progress_bar(p_pct)
+                                        p_detail = q_data.get("detail", "FilmSub Logo & Intro Trim...")
+                                        lines.append(
+                                            f"• <b>{q_name}:</b> {pbar} {p_pct:.1f}% 🎬 <i>({p_detail})</i>"
+                                        )
                                     elif st == "muxing":
                                         lines.append(
                                             f"• <b>{q_name}:</b> [██████████] 100% 🇱🇰 <i>(සිංහල උපසිරැසි Fast-Mux...)</i>"
@@ -1344,6 +1351,14 @@ async def _execute_leech(
                                     log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
                                     return None
 
+                                # Download finished for this quality! Transition status from 'downloading' immediately
+                                companion_progress[q_name].update({
+                                    "stage": "processing",
+                                    "dl_pct": 100.0,
+                                    "detail": "10s Intro Trim...",
+                                })
+                                await _update_multi_dl_display(force=True)
+
                                 # User requirement: Cut first 10 seconds (remove intro / watermark) from every downloaded video
                                 trim_out = os.path.join(temp_dir, f"trimmed_{slug}_{q_name}.mp4")
                                 if await video_service.trim_video_start(c_dl, trim_out, start_seconds=10.0):
@@ -1365,16 +1380,38 @@ async def _execute_leech(
                                     or "supercloud" in str(cand_obj.source_url).lower()
                                     or "setwenna" in str(cand_obj.source_url).lower()
                                 )
-                                if is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
+
+                                c_size_bytes = os.path.getsize(c_dl)
+                                needs_compression = (c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE)
+
+                                # If file <= 1.95GB (e.g. 720p, 480p), cover CineSubz watermark directly with live progress feedback
+                                if not needs_compression and is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                                     wm_badge_out = os.path.join(temp_dir, f"badge_{slug}_{q_name}.mp4")
-                                    log.info("[LeechService] CineSubz release detected. Applying FilmSub logo badge on %s [%s]...", slug, q_name)
-                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out):
+                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmSub logo badge on %s [%s]...", slug, q_name)
+
+                                    async def _badge_cb(pct: float, p_str: str):
+                                        companion_progress[q_name].update({
+                                            "stage": "processing",
+                                            "dl_pct": pct,
+                                            "detail": f"FilmSub Logo {p_str}",
+                                        })
+                                        await _update_multi_dl_display()
+
+                                    companion_progress[q_name].update({
+                                        "stage": "processing",
+                                        "dl_pct": 0.0,
+                                        "detail": "FilmSub Logo Overlay...",
+                                    })
+                                    await _update_multi_dl_display(force=True)
+
+                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out, progress_callback=_badge_cb):
                                         try:
                                             if os.path.abspath(c_dl) != os.path.abspath(wm_badge_out):
                                                 os.remove(c_dl)
                                         except Exception:
                                             pass
                                         c_dl = wm_badge_out
+                                        c_size_bytes = os.path.getsize(c_dl)
                                         log.info("[LeechService] Successfully covered CineSubz watermark with FilmSub badge on %s [%s]", slug, q_name)
 
                                 # Download finished for this quality! It proceeds immediately to faststart, subtitle muxing, and Telegram upload
@@ -1419,10 +1456,14 @@ async def _execute_leech(
                                 # 3. Video Processing & Compression (Guarantee <= 1.95GB / 1.90GB target)
                                 if c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE:
                                     log.info(
-                                        "[LeechService] File %s (%s) exceeds Telegram 1.95GB limit. Running fast FFmpeg compression to fit...",
+                                        "[LeechService] File %s (%s) exceeds Telegram 1.95GB limit. Running unified single-pass FFmpeg compression & watermark cover...",
                                         q_name, downloader.format_bytes(c_size_bytes)
                                     )
-                                    companion_progress[q_name]["stage"] = "compressing"
+                                    companion_progress[q_name].update({
+                                        "stage": "compressing",
+                                        "dl_pct": 0.0,
+                                        "dl_done": "Starting safe compression...",
+                                    })
                                     await _update_multi_dl_display(force=True)
 
                                     async def _comp_cb(pct: float, p_str: str):
@@ -1441,6 +1482,7 @@ async def _execute_leech(
                                         progress_callback=_comp_cb,
                                         sub_path=q_sub_to_mux,
                                         is_hardsub=q_cand_is_hardsub,
+                                        cover_watermark=is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
                                     )
                                     actual_comp = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else comp_out
                                     if comp_res and os.path.exists(actual_comp) and 0 < os.path.getsize(actual_comp) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
@@ -1939,6 +1981,21 @@ async def _execute_leech(
                 except Exception:
                     pass
 
+            cand_portal = getattr(chosen_candidate, 'portal', '') or ''
+            if not cand_portal and chosen_candidate and getattr(chosen_candidate, 'extra', None):
+                cand_portal = chosen_candidate.extra.get('portal', '')
+
+            cand_source_u = str(getattr(chosen_candidate, 'source_url', '')).lower()
+            cand_post_u = str(((chosen_candidate and chosen_candidate.extra) or {}).get("post_url", "")).lower()
+            is_cinesubz_cand = (
+                "cinesubz" in str(cand_portal).lower()
+                or "cinesubz" in cand_source_u
+                or "cinesubz" in cand_post_u
+                or "csplayer" in cand_source_u
+                or "supercloud" in cand_source_u
+                or "setwenna" in cand_source_u
+            )
+
             if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
                 log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression to <= 1.90GB...", downloader.format_bytes(curr_size))
                 task_tracker.tracker.set_step(user_id, "Fast 1080p Compression (FFmpeg)...")
@@ -1963,6 +2020,7 @@ async def _execute_leech(
                     progress_callback=_compress_progress,
                     sub_path=sub_to_burn_video,
                     is_hardsub=is_already_hardsubbed,
+                    cover_watermark=is_cinesubz_cand and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
                 )
                 actual_remuxed = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else remuxed
                 if comp_res and os.path.exists(actual_remuxed) and 0 < os.path.getsize(actual_remuxed) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
@@ -2009,21 +2067,6 @@ async def _execute_leech(
 
                 task_tracker.tracker.set_step(user_id, "Video Remux & Subtitle Prep (FFmpeg)...")
                 log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_burn_video)
-
-                cand_portal = getattr(chosen_candidate, 'portal', '') or ''
-                if not cand_portal and chosen_candidate and getattr(chosen_candidate, 'extra', None):
-                    cand_portal = chosen_candidate.extra.get('portal', '')
-
-                cand_source_u = str(getattr(chosen_candidate, 'source_url', '')).lower()
-                cand_post_u = str(((chosen_candidate and chosen_candidate.extra) or {}).get("post_url", "")).lower()
-                is_cinesubz_cand = (
-                    "cinesubz" in str(cand_portal).lower()
-                    or "cinesubz" in cand_source_u
-                    or "cinesubz" in cand_post_u
-                    or "csplayer" in cand_source_u
-                    or "supercloud" in cand_source_u
-                    or "setwenna" in cand_source_u
-                )
 
                 if sub_to_burn_video and not is_already_hardsubbed and os.path.exists(sub_to_burn_video):
                     sub_processed = await video_service.burn_subtitles_to_video(local_file, sub_to_burn_video, remuxed)

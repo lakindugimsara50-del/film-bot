@@ -1619,6 +1619,54 @@ class TestLeechService(unittest.TestCase):
             work_dir = video_service.get_optimal_work_dir(prefix="leech_")
             self.assertTrue(work_dir.startswith("/content/"), f"Expected /content workspace on Colab, got: {work_dir}")
 
+    def test_compress_video_cover_watermark_unified_filter(self):
+        """Verify compress_video supports cover_watermark=True and constructs unified filter graph with badge overlay."""
+        import asyncio
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from services import video_service
+
+        recorded_cmd = []
+
+        async def fake_subprocess_exec(*cmd, **kwargs):
+            nonlocal recorded_cmd
+            recorded_cmd = list(cmd)
+            mock_proc = AsyncMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = AsyncMock(return_value=0)
+            mock_proc.stderr.readline = AsyncMock(return_value=b"")
+            mock_proc.stderr.read = AsyncMock(return_value=b"")
+            return mock_proc
+
+        with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1000), \
+             patch("services.video_service.get_video_duration", return_value=7200.0), \
+             patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess_exec), \
+             patch("shutil.disk_usage", return_value=MagicMock(free=10 * 1024 * 1024 * 1024)):
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                res = loop.run_until_complete(video_service.compress_video(
+                    input_path="fake_in.mp4",
+                    output_path="fake_out.mp4",
+                    cover_watermark=True,
+                    badge_path="fake_badge.png",
+                ))
+            finally:
+                loop.close()
+
+            self.assertTrue(res)
+            # Verify badge input is included in the command
+            self.assertIn("-filter_complex", recorded_cmd)
+            fc_idx = recorded_cmd.index("-filter_complex")
+            fc_val = recorded_cmd[fc_idx + 1]
+            self.assertIn("overlay=", fc_val)
+            self.assertIn("[v_out]", fc_val)
+            self.assertIn("-map", recorded_cmd)
+            self.assertIn("[v_out]", recorded_cmd)
+            self.assertIn("-b:v", recorded_cmd)
+
 
 if __name__ == "__main__":
     unittest.main()

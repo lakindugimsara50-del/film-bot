@@ -16274,7 +16274,248 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_by": "bot_auto_leech",
       "trailer_id": "P3uI5sLosKU",
       "trailer_url": "https://www.youtube-nocookie.com/embed/P3uI5sLosKU"
+    },
+    {
+      "id": "khalifa-the-ruler-2026",
+      "slug": "khalifa-the-ruler-2026",
+      "title": "Khalifa: The Ruler",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.0",
+      "rating": "5.0",
+      "imdb_id": "tt22797990",
+      "tmdb_id": "1036081",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/ejoiE86NLKpDMnCz2YiCMJ3YGJh.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/ejoiE86NLKpDMnCz2YiCMJ3YGJh.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/6Jz7rnnZrSkgs9ySWUxewpcxr7Q.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/6Jz7rnnZrSkgs9ySWUxewpcxr7Q.jpg",
+      "genres": [
+        "Crime",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "157 min",
+      "description": "Aamir Ali, a notorious gold smuggling kingpin who inherited his multi-million dollar criminal enterprise from a lineage of gangsters, is drawn into a web of vengeance, legacy and power.",
+      "director": "Vysakh",
+      "cast": [
+        {
+          "name": "Prithviraj Sukumaran",
+          "character": "Aamir Ali"
+        },
+        {
+          "name": "Mohanlal",
+          "character": "Mambarakkal Ahmed Ali"
+        },
+        {
+          "name": "Neil Nitin Mukesh",
+          "character": "Harris Basheer"
+        },
+        {
+          "name": "Indrans",
+          "character": "Hamsa"
+        },
+        {
+          "name": "Shammi Thilakan",
+          "character": "Raghavan"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUVqzOMRdAvU0lcJY6PLkA6P8FgVfQACmSYAAlX0aFZlxk7pa2IvGR4E",
+      "message_id": 325,
+      "file_name": "comp_khalifa-the-ruler-2026_1080p.mp4",
+      "file_size": 1995854114,
+      "drive_file_id": "",
+      "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUVqzOMRdAvU0lcJY6PLkA6P8FgVfQACmSYAAlX0aFZlxk7pa2IvGR4E",
+          "message_id": 325,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1036081"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt22797990"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt22797990"
+        }
+      ],
+      "qualities": {
+        "auto": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+        "1080p": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+        "720p": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/324",
+        "480p": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/323",
+        "360p": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1995854114,
+          "url": "https://t.me/c/4325759505/325",
+          "telegram_url": "https://t.me/c/4325759505/325",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUVqzOMRdAvU0lcJY6PLkA6P8FgVfQACmSYAAlX0aFZlxk7pa2IvGR4E",
+          "message_id": 325,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1815365474,
+          "url": "https://t.me/c/4325759505/324",
+          "telegram_url": "https://t.me/c/4325759505/324",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAURqzOBB6vpyMEtk-AvLuyUDCc8v3wACkyYAAlX0aFZfetlR_uvicR4E",
+          "message_id": 324,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/324",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "830.0 MB",
+          "size_bytes": 870355117,
+          "url": "https://t.me/c/4325759505/323",
+          "telegram_url": "https://t.me/c/4325759505/323",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUNqzN5pjljbaxdro0ssrRzmFvhNzQACiiYAAlX0aFa-UhkVtsLNZB4E",
+          "message_id": 323,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/323",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1995854114,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_1080p",
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1815365474,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_720p",
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/324",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "830.0 MB",
+          "size_bytes": 870355117,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_480p",
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/323",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "342.6 MB",
+          "size_bytes": 359253740,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_360p",
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUVqzOMRdAvU0lcJY6PLkA6P8FgVfQACmSYAAlX0aFZlxk7pa2IvGR4E",
+          "message_id": 325,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+          "size_bytes": 1995854114
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAURqzOBB6vpyMEtk-AvLuyUDCc8v3wACkyYAAlX0aFZfetlR_uvicR4E",
+          "message_id": 324,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/324",
+          "size_bytes": 1815365474
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUNqzN5pjljbaxdro0ssrRzmFvhNzQACiiYAAlX0aFa-UhkVtsLNZB4E",
+          "message_id": 323,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/323",
+          "size_bytes": 870355117
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com/stream/channel/-1004325759505/325",
+          "size_bytes": 359253740
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/khalifa-the-ruler-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=khalifa-the-ruler-2026",
+      "added_date": "2026-10-12",
+      "added_at": "2026-10-12T13:39:32Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-11T08:03:01Z"
+  "last_updated": "2026-10-12T13:39:35Z"
 };

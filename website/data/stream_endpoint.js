@@ -1,6 +1,6 @@
 window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://fog-ampland-analyzed-sunset.trycloudflare.com",
+  "stream_base_url": "https://chrome-biotechnology-yorkshire-harry.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-11T20:22:12.203759+00:00",
+  "updated_at": "2026-10-12T13:10:58.627530+00:00",
   "status": "online"
 };

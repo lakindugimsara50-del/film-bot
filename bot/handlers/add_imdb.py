@@ -100,7 +100,7 @@ def register(app: Client) -> None:
                             "year": m.get("year", ""),
                             "slug": slug,
                             "meta": m,
-                            "site_url": m.get("site_url", f"https://filmsub.pages.dev/movie.html?id={slug}"),
+                            "site_url": m.get("site_url", f"{(getattr(config, 'SITE_BASE_URL', 'https://filmzilla.lk')).rstrip('/')}/movie.html?id={slug}"),
                             "vtt_github_url": m.get("subtitle_url", ""),
                             "waiting_sub": False,
                         }
@@ -216,7 +216,7 @@ def register(app: Client) -> None:
                             "year": m.get("year", ""),
                             "slug": m.get("slug", ""),
                             "meta": m,
-                            "site_url": m.get("site_url", f"https://filmsub.pages.dev/movie.html?id={m.get('slug', '')}"),
+                            "site_url": m.get("site_url", f"{(getattr(config, 'SITE_BASE_URL', 'https://filmzilla.lk')).rstrip('/')}/movie.html?id={m.get('slug', '')}"),
                             "vtt_github_url": m.get("subtitle_url", ""),
                             "waiting_sub": True,
                         }
@@ -488,7 +488,7 @@ async def _handle_add_imdb(client: Client, message: Message, args: dict) -> None
                     encoded = urllib.parse.quote(vtt_github_url, safe='')
                     stream["stream_url"] += f"?sub_file={encoded}&sub_label=Sinhala&sub=true"
 
-        site_url = f"{(getattr(config, 'SITE_BASE_URL', 'https://filmsub.pages.dev')).rstrip('/')}/movie.html?id={slug}"
+        site_url = f"{(getattr(config, 'SITE_BASE_URL', 'https://filmzilla.lk')).rstrip('/')}/movie.html?id={slug}"
         meta["site_url"] = site_url
         ep_info = f"- S{season:02d}E{episode:02d}" if season and episode else ""
 

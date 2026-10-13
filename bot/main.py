@@ -293,7 +293,7 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
     if not movie:
         await client.send_message(
             chat_id,
-            f"❌ <b>'{slug}'</b> චිත්‍රපටය සොයාගත නොහැකි විය.\n\n🌐 වෙබ් අඩවිය: https://filmsub.pages.dev",
+            f"❌ <b>'{slug}'</b> චිත්‍රපටය සොයාගත නොහැකි විය.\n\n🌐 වෙබ් අඩවිය: {config.SITE_BASE_URL}",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -316,7 +316,7 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
                 from services.downloader import format_bytes
                 sz = f" ({format_bytes(q_info['size_bytes'])})"
             buttons.append([InlineKeyboardButton(f"📥 {q_tag} HD Download{sz}", callback_data=f"dl_q:{movie.get('slug', slug)}:{q_tag}")])
-        buttons.append([InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=f"https://filmsub.pages.dev/movie.html?id={movie.get('slug', slug)}")])
+        buttons.append([InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=f"{config.SITE_BASE_URL}/movie.html?id={movie.get('slug', slug)}")])
         kb = InlineKeyboardMarkup(buttons)
         await client.send_message(
             chat_id,
@@ -363,11 +363,12 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
                     target_msg_id = int(m_tg.group(2))
                 break
 
+    site_base = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
     caption = (
         f"🎬 <b>{display_title} [{target_q}]</b>\n\n"
         f"⚡ <b>Quality:</b> {target_q} (High-Speed Telegram Cloud)\n"
         f"💬 <b>සිංහල උපසිරැසි:</b> Video එකටම Soft-Mux කර ඇත\n"
-        f"🌐 <b>Watch Online:</b> https://filmsub.pages.dev/movie.html?id={movie.get('slug', slug)}"
+        f"🌐 <b>Watch Online:</b> {site_base}/movie.html?id={movie.get('slug', slug)}"
     )
 
     if target_msg_id and ch_id:
@@ -401,7 +402,7 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
             chat_id,
             f"🎬 <b>{display_title} [{target_q}]</b>\n\n"
             f"⚡ <b>Direct Stream/Download URL:</b>\n{s_url}\n\n"
-            f"🌐 <b>Website:</b> https://filmsub.pages.dev/movie.html?id={movie.get('slug', slug)}",
+            f"🌐 <b>Website:</b> {site_base}/movie.html?id={movie.get('slug', slug)}",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -425,6 +426,8 @@ async def start_handler(client: Client, message: Message) -> None:
         return
 
     user_name = message.from_user.first_name if message.from_user else "යාලුවා"
+    site_base = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
+    site_display = site_base.replace("https://", "").replace("http://", "")
     kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🎬 Movies Leech කරන්න (/leech)", switch_inline_query_current_chat="/leech "),
@@ -435,12 +438,12 @@ async def start_handler(client: Client, message: Message) -> None:
             InlineKeyboardButton("📖 සියලු විධාන (Help)", callback_data="btn:help"),
         ],
         [
-            InlineKeyboardButton("🌐 Film Website එකට යන්න", url="https://filmsub.pages.dev"),
+            InlineKeyboardButton("🌐 Film Website එකට යන්න", url=site_base),
         ]
     ])
     await message.reply_text(
-        f"👋 <b>ආයුබෝවන් {user_name}! FilmSub Official Bot වෙත සාදරයෙන් පිළිගනිමු!</b> 🎬\n\n"
-        f"මම ඔබගේ චිත්‍රපට වෙබ් අඩවිය (<a href=\"https://filmsub.pages.dev\">filmsub.pages.dev</a>) කළමනාකරණය කරන ස්වයංක්‍රීය සහායකයා වෙමි.\n\n"
+        f"👋 <b>ආයුබෝවන් {user_name}! FilmZilla Official Bot වෙත සාදරයෙන් පිළිගනිමු!</b> 🎬\n\n"
+        f"මම ඔබගේ චිත්‍රපට වෙබ් අඩවිය (<a href=\"{site_base}\">{site_display}</a>) කළමනාකරණය කරන ස්වයංක්‍රීය සහායකයා වෙමි.\n\n"
         f"<b>ප්‍රධාන පහසුකම්:</b>\n"
         f"• ⚡ <b>Ultra Auto-Leech:</b> ඕනෑම චිත්‍රපටයක් 1080p වලින් Google Drive සහ Telegram වෙත Upload කිරීම\n"
         f"• 💬 <b>Subtitle System:</b> සිංහල උපසිරැසි (.srt/.vtt) ස්වයංක්‍රීයව එක් කිරීම\n"

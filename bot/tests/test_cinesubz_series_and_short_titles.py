@@ -196,7 +196,9 @@ async def test_cinesubz_watermark_cover_and_badge():
 
     assert getattr(config, "ENABLE_CINESUBZ_WATERMARK_COVER", False) is True
 
-    badge_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+    badge_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_badge.png")
+    if not os.path.exists(badge_path):
+        badge_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
     assert os.path.exists(badge_path)
 
     # Test badge dimensions and format
@@ -250,6 +252,6 @@ async def test_cinesubz_watermark_cover_and_badge():
             # Verify corner-flush overlay positioning
             fc_idx = call_args_nv.index("-filter_complex")
             fc_str = call_args_nv[fc_idx + 1]
-            assert "overlay=x=2" in fc_str or "overlay=x=3" in fc_str or "overlay=x=max" in fc_str
+            assert "overlay=x=" in fc_str and "y=main_h-overlay_h" in fc_str
 
 

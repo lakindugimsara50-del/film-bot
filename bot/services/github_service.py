@@ -302,7 +302,7 @@ async def _commit_movies_json(content_dict: dict, sha: str, commit_message: str)
             f.write(updated_json)
         js_path = os.path.join(os.path.dirname(_LOCAL_MOVIES_PATH), "movies_data.js")
         with open(js_path, "w", encoding="utf-8") as f:
-            f.write("window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = " + updated_json + ";\n")
+            f.write("window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = " + updated_json + ";\n")
         log.info("movies.json & movies_data.js updated LOCALLY.")
     except Exception as exc:
         log.warning("Could not write movies locally: %s", exc)
@@ -362,7 +362,7 @@ async def _commit_movies_json(content_dict: dict, sha: str, commit_message: str)
 
     # Also sync movies_data.js
     try:
-        js_content = f"window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {updated_json};\n"
+        js_content = f"window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {updated_json};\n"
         await upload_file(
             content=js_content.encode("utf-8"),
             path=_MOVIES_DATA_JS_PATH,
@@ -467,7 +467,7 @@ async def publish_live_stream_endpoint(stream_base_url: str, fallback_stream_url
         "status": "online",
     }
     json_bytes = json.dumps(payload, indent=2).encode("utf-8")
-    js_bytes = f"window.FILMSUB_STREAM_CONFIG = {json.dumps(payload, indent=2)};\n".encode("utf-8")
+    js_bytes = f"window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {json.dumps(payload, indent=2)};\n".encode("utf-8")
 
     # Always write locally first
     try:

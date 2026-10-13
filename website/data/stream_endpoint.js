@@ -1,4 +1,4 @@
-window.FILMSUB_STREAM_CONFIG = {
+window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://office-verified-analysis-envelope.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
   "updated_at": "2026-10-13T17:22:14.553499+00:00",

@@ -414,7 +414,7 @@ export async function onRequest(context) {
     if (isDownload) {
       const safeTitle = String(titleParam).replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim() || 'Movie';
       const safeQ = String(quality === 'auto' ? '1080p' : quality).replace(/[^a-zA-Z0-9]/g, '') || '1080p';
-      const dlName = `${safeTitle} [${safeQ}] - FilmSub.mp4`;
+      const dlName = `${safeTitle} [${safeQ}] - FilmZilla.mp4`;
       respHeaders.set('Content-Disposition', `attachment; filename="${dlName.replace(/[^\x20-\x7E]/g, '')}"; filename*=UTF-8''${encodeURIComponent(dlName)}`);
     } else {
       respHeaders.set('X-Chunk-Size', String(chunkSize));

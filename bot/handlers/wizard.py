@@ -437,9 +437,9 @@ def register(app: Client) -> None:
                 title = meta.get("title") or session.get("movie_name", "Untitled")
                 year = meta.get("year", 2025)
                 slug = _slugify(title, year)
-                base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+                base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
                 if "yoursite.lk" in base_site:
-                    base_site = "https://filmsub.pages.dev"
+                    base_site = "https://filmzilla.lk"
                 site_url = f"{base_site}/movie.html?id={slug}"
                 file_id = session.get("file_id", "")
                 stream_url = session.get("stream_url") or telegram_upload.get_file_stream_url(file_id)
@@ -629,9 +629,9 @@ def register(app: Client) -> None:
                 draft_service.delete_draft(draft_id)
                 USER_SESSIONS.pop(user_id, None)
 
-                base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+                base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
                 if "yoursite.lk" in base_site:
-                    base_site = "https://filmsub.pages.dev"
+                    base_site = "https://filmzilla.lk"
                 site_url = movie_entry.get("site_url") or f"{base_site}/movie.html?id={movie_entry.get('slug')}"
                 kb_done = InlineKeyboardMarkup([
                     [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
@@ -939,9 +939,9 @@ async def _publish_draft_with_sub(client: Client, status_msg: Message, session: 
         draft_service.delete_draft(draft_id)
     USER_SESSIONS.pop(user_id, None)
 
-    base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+    base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
     if "yoursite.lk" in base_site:
-        base_site = "https://filmsub.pages.dev"
+        base_site = "https://filmzilla.lk"
     site_url = movie_entry.get("site_url") or f"{base_site}/movie.html?id={movie_entry.get('slug')}"
     kb_done = InlineKeyboardMarkup([
         [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],
@@ -1004,9 +1004,9 @@ async def _update_published_movie_sub(client: Client, status_msg: Message, slug:
 
     USER_SESSIONS.pop(user_id, None)
 
-    base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+    base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
     if "yoursite.lk" in base_site:
-        base_site = "https://filmsub.pages.dev"
+        base_site = "https://filmzilla.lk"
     watch_link = target.get("site_url") or f"{base_site}/movie.html?id={target.get('slug')}"
     kb_done = InlineKeyboardMarkup([
         [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=watch_link)],
@@ -1107,7 +1107,7 @@ async def _finalize_and_publish(client: Client, status_msg: Message, session: di
         task_tracker.tracker.set_step(uid, "2/4 - සිංහල උපසිරැසි සකස් කරමින් පවතී...")
         await status_msg.edit_text("⏳ <b>Step 2/4:</b> සිංහල උපසිරැසි සකස් කරමින් පවතී...", parse_mode=ParseMode.HTML)
         if sub_url == "default":
-            sub_text = f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:06.000\nFilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n2\n00:00:07.000 --> 00:00:15.000\n{title} ({year}) නැරඹීමට ස්තූතියි!"
+            sub_text = f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:06.000\nFilmZilla.lk වෙතින් සිංහල උපසිරැසි සමඟ\n\n2\n00:00:07.000 --> 00:00:15.000\n{title} ({year}) නැරඹීමට ස්තූතියි!"
             sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
         elif not sub_url.startswith("data:text/vtt"):
             try:
@@ -1116,16 +1116,16 @@ async def _finalize_and_publish(client: Client, status_msg: Message, session: di
                 with open(vtt_path, "r", encoding="utf-8", errors="replace") as f:
                     sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(f.read())}"
             except Exception:
-                sub_text = f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:06.000\nFilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ"
+                sub_text = f"WEBVTT\n\n1\n00:00:01.000 --> 00:00:06.000\nFilmZilla.lk වෙතින් සිංහල උපසිරැසි සමඟ"
                 sub_url = f"data:text/vtt;charset=utf-8,{urllib.parse.quote(sub_text)}"
 
         # Build movie schema dict
         task_tracker.tracker.set_step(uid, "3/4 - Cloudflare Pages යාවත්කාලීන කරමින් පවතී...")
         await status_msg.edit_text("⏳ <b>Step 3/4:</b> වෙබ් අඩවිය යාවත්කාලීන කරමින් පවතී (Cloudflare Pages)...", parse_mode=ParseMode.HTML)
         slug = _slugify(title, year)
-        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
         if "yoursite.lk" in base_site:
-            base_site = "https://filmsub.pages.dev"
+            base_site = "https://filmzilla.lk"
         site_url = f"{base_site}/movie.html?id={slug}"
 
         display_quality = "1080p" if quality == "auto_all" else quality

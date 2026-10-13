@@ -261,13 +261,15 @@ def register(app: Client) -> None:
             d_year = deleted.get("year", "")
             d_slug = deleted.get("slug") or slug
 
+            site_base = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
+            site_display = site_base.replace("https://", "").replace("http://", "")
             success_banner = (
                 f"✅ <b>චිත්‍රපටය සාර්ථකව වෙබ් අඩවියෙන් ඉවත් කරන ලදී!</b>\n\n"
                 f"🎬 <b>Title:</b> {d_title} ({d_year})\n"
                 f"🆔 <b>Slug:</b> <code>{d_slug}</code>\n"
                 f"📊 <b>දැනට Site එකේ ඇති මුළු චිත්‍රපට ගණන:</b> <b>{remaining_count}</b>"
                 f"{ch_deleted_note}\n\n"
-                f"🌐 <b>Website:</b> <a href=\"https://filmsub.pages.dev\">filmsub.pages.dev</a>\n"
+                f"🌐 <b>Website:</b> <a href=\"{site_base}\">{site_display}</a>\n"
                 f"⚡ Cloudflare Pages auto-update ක්‍රියාත්මකයි."
             )
 

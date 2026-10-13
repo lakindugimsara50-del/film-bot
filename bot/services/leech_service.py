@@ -844,7 +844,7 @@ async def _execute_leech(
         target_channel = config.PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0)
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
         slug = f"{_slugify(title, year)}{ep_suffix}"
-        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
         site_url = f"{base_site}/movie.html?id={slug}"
 
         if not temp_dir:
@@ -1238,7 +1238,7 @@ async def _execute_leech(
                                 lines = [
                                     f"⚡ <b>Parallel Multi-Quality Direct Download ➔ Pipelined Telegram Upload ({cand_portal or cand_host})</b>\n",
                                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",
-                                    f"🌐 <b>Website:</b> <a href='{site_url}'>filmsub.pages.dev</a>\n",
+                                    f"🌐 <b>Website:</b> <a href='{site_url}'>{site_url.replace('https://', '').replace('http://', '')}</a>\n",
                                 ]
                                 for q_name, q_data in companion_progress.items():
                                     st = q_data.get("stage", "downloading")
@@ -1256,7 +1256,7 @@ async def _execute_leech(
                                     elif st == "processing":
                                         p_pct = q_data.get("dl_pct", 100.0)
                                         pbar = downloader.format_progress_bar(p_pct)
-                                        p_detail = q_data.get("detail", "FilmSub Logo & Intro Trim...")
+                                        p_detail = q_data.get("detail", "FilmZilla Logo & Intro Trim...")
                                         lines.append(
                                             f"• <b>{q_name}:</b> {pbar} {p_pct:.1f}% 🎬 <i>({p_detail})</i>"
                                         )
@@ -1366,7 +1366,7 @@ async def _execute_leech(
                                 })
                                 await _update_multi_dl_display(force=True)
 
-                                # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge
+                                # User requirement: Cover CineSubz bottom-left watermark with FilmZilla badge
                                 cand_portal_name = str((cand_obj.extra or {}).get("portal", "")).lower()
                                 is_cinesubz_wm = bool(
                                     "cinesubz" in cand_portal_name
@@ -1382,27 +1382,27 @@ async def _execute_leech(
 
                                 # Unified single-pass processing:
                                 # 1) If file <= 1.95GB (e.g. 720p, 480p) AND CineSubz:
-                                #    Skip 10s intro + overlay FilmSub badge in a SINGLE NVENC hardware-accelerated pass (300-500 fps)!
+                                #    Skip 10s intro + overlay FilmZilla badge in a SINGLE NVENC hardware-accelerated pass (300-500 fps)!
                                 # 2) If file > 1.95GB (e.g. bloated 1080p):
                                 #    compress_video handles 10s trim + logo watermark + compression all in a single pass below!
                                 # 3) If file <= 1.95GB AND not CineSubz:
                                 #    Ultra-fast stream-copy 10s trim (1-2s) with zero re-encoding!
                                 if not needs_compression and is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                                     wm_badge_out = os.path.join(temp_dir, f"badge_{slug}_{q_name}.mp4")
-                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmSub logo badge + 10s intro skip on %s [%s]...", slug, q_name)
+                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmZilla logo badge + 10s intro skip on %s [%s]...", slug, q_name)
 
                                     async def _badge_cb(pct: float, p_str: str):
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
-                                            "detail": f"FilmSub Logo {p_str}",
+                                            "detail": f"FilmZilla Logo {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
                                     companion_progress[q_name].update({
                                         "stage": "processing",
                                         "dl_pct": 0.0,
-                                        "detail": "FilmSub Logo Overlay...",
+                                        "detail": "FilmZilla Logo Overlay...",
                                     })
                                     await _update_multi_dl_display(force=True)
 
@@ -2254,9 +2254,9 @@ async def _execute_leech(
         file_name = os.path.basename(local_file)
         size_str = downloader.format_bytes(file_size)
 
-        base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+        base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
         if "yoursite.lk" in base_site:
-            base_site = "https://filmsub.pages.dev"
+            base_site = "https://filmzilla.lk"
         site_url = f"{base_site}/movie.html?id={slug}"
 
         # Detect source resolution upfront to cleanly route primary and variant pipelines (mutually exclusive)
@@ -2756,7 +2756,7 @@ async def _execute_leech(
                                 referer=(vcand.extra.get("post_url") or None) if vcand.extra else None,
                             )
                             if dl_out and downloader.is_valid_downloaded_video(dl_out):
-                                # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge + cut first 10s
+                                # User requirement: Cover CineSubz bottom-left watermark with FilmZilla badge + cut first 10s
                                 v_cand_p = str((vcand.extra or {}).get("portal", "")).lower()
                                 v_is_cinesubz_wm = bool(
                                     "cinesubz" in v_cand_p

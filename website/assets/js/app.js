@@ -8,7 +8,7 @@
 const SITE_CONFIG = {
   moviesPath: 'data/movies.json',
   defaultPoster: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450' viewBox='0 0 300 450'%3E%3Crect width='300' height='450' fill='%231f1f1f'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23666' font-family='sans-serif' font-size='16'%3ENo Poster%3C/text%3E%3C/svg%3E",
-  defaultBackdrop: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='720' viewBox='0 0 1280 720'%3E%3Crect width='1280' height='720' fill='%23141414'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23333' font-family='sans-serif' font-size='24'%3EFilmSub%3C/text%3E%3C/svg%3E",
+  defaultBackdrop: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='720' viewBox='0 0 1280 720'%3E%3Crect width='1280' height='720' fill='%23141414'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23333' font-family='sans-serif' font-size='24'%3EFilmZilla%3C/text%3E%3C/svg%3E",
   moviePage: 'movie.html',
   searchPage: 'search.html',
 };
@@ -85,10 +85,11 @@ function _isValidMovieEntry(m) {
 }
 
 function loadBaselineMovies() {
-  if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
-    siteData = window.FILMSUB_DATA.site || {};
-    const valid = window.FILMSUB_DATA.movies.filter(_isValidMovieEntry);
-    allMovies = valid.length > 0 ? valid : window.FILMSUB_DATA.movies;
+  const data = window.FILMZILLA_DATA || window.FILMSUB_DATA;
+  if (data && Array.isArray(data.movies)) {
+    siteData = data.site || {};
+    const valid = data.movies.filter(_isValidMovieEntry);
+    allMovies = valid.length > 0 ? valid : data.movies;
   }
 }
 
@@ -1286,7 +1287,7 @@ function initMobileBottomNav() {
 }
 
 // ---- Expose globals ----
-window.FilmSub = {
+window.FilmZilla = window.FilmSub = {
   loadMovies,
   renderHero,
   groupSeriesCatalog,

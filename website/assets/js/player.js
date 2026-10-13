@@ -2902,13 +2902,12 @@ function injectBottomControlBarItems(player, movie) {
     }
   }
 
-  // 3. Brand Watermark & Quality Badge on the right side
+  // 3. Quality Badge on the right side of control bar
   if (!cbEl.querySelector('.vjs-control-brand-wrap')) {
     const brandWrap = document.createElement('div');
     brandWrap.className = 'vjs-control-brand-wrap';
     const initQuality = (selectedQuality === 'auto' ? (currentEffectiveQuality || '720p') : selectedQuality).toUpperCase();
     brandWrap.innerHTML = `
-      <span class="vjs-brand-filmsub"><span class="brand-red">FILM</span><span class="brand-white">SUB</span></span>
       <span class="vjs-brand-quality-badge" id="vjs-bar-quality-badge">HD ${initQuality}</span>
     `;
 
@@ -2928,19 +2927,6 @@ function injectBottomControlBarItems(player, movie) {
   const fsToggle = player.controlBar.fullscreenToggle ? player.controlBar.fullscreenToggle.el() : cbEl.querySelector('.vjs-fullscreen-control');
   if (rateBtn && fsToggle) {
     cbEl.insertBefore(rateBtn, fsToggle);
-  }
-
-  // 5. In-Video Bottom-Left Watermark Cover Badge (FilmSub Brand)
-  const playerDom = player.el ? player.el() : null;
-  if (playerDom && !playerDom.querySelector('.vjs-corner-filmsub-badge')) {
-    const cornerBadge = document.createElement('div');
-    cornerBadge.className = 'vjs-corner-filmsub-badge';
-    cornerBadge.setAttribute('aria-hidden', 'true');
-    cornerBadge.innerHTML = `
-      <span class="fs-badge-dot"></span>
-      <span class="fs-badge-text"><span class="fs-b-white">FILM</span><span class="fs-b-red">SUB</span></span>
-    `;
-    playerDom.appendChild(cornerBadge);
   }
 
   // Live time updater
@@ -4081,7 +4067,7 @@ function renderMovieDetails(movie) {
       </div>
       <div class="cs-meta-row">
         <div class="cs-meta-label"><i class="fa-solid fa-pen-nib"></i> Subbed By:</div>
-        <div class="cs-meta-val">FilmSub Team</div>
+        <div class="cs-meta-val">FilmZilla Team</div>
       </div>`;
   }
 
@@ -4233,7 +4219,7 @@ function initShareButton(movie) {
       if (navigator.share) {
         navigator.share({
           title: `${movie.title} Sinhala Subtitles`,
-          text: `Watch and download ${movie.title} with Sinhala subtitles on FilmSub!`,
+          text: `Watch and download ${movie.title} with Sinhala subtitles on FilmZilla!`,
           url: window.location.href,
         }).catch(() => {});
       } else {

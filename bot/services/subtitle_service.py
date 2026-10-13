@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 _DEFAULT_SRT = """1
 00:00:01,000 --> 00:00:06,000
-FilmSub.lk වෙතින් සිංහල උපසිරැසි සමඟ
+FilmZilla.lk වෙතින් සිංහල උපසිරැසි සමඟ
 
 2
 00:00:07,000 --> 00:00:12,000
@@ -65,7 +65,7 @@ def is_genuine_sinhala_subtitle(content_or_path: Optional[str]) -> bool:
     if len(sinhala_words) < 10:
         return False
 
-    clean_no_placeholders = re.sub(r"FilmSub(\.lk)?|සිංහල උපසිරැසි|නැරඹීමට|බාගත කිරීමට|ස්තූතියි", "", text)
+    clean_no_placeholders = re.sub(r"Film(Sub|Zilla)(\.lk)?|සිංහල උපසිරැසි|නැරඹීමට|බාගත කිරීමට|ස්තූතියි", "", text)
     remaining_sinhala = re.findall(r"[\u0D80-\u0DFF]+", clean_no_placeholders)
     return len(remaining_sinhala) >= 5
 
@@ -456,9 +456,9 @@ async def translate_srt_to_sinhala(srt_path: str, output_srt_path: str, max_cues
                 for r in res_list:
                     translated_cues.extend(r)
 
-        # Prepend FilmSub Sinhala branding cue
+        # Prepend FilmZilla Sinhala branding cue
         out_blocks = [
-            "1\n00:00:01,000 --> 00:00:06,000\nFilmSub.lk — සිංහල උපසිරැසි සමඟ (Auto Sinhala Subtitles)"
+            "1\n00:00:01,000 --> 00:00:06,000\nFilmZilla.lk — සිංහල උපසිරැසි සමඟ (Auto Sinhala Subtitles)"
         ]
         for idx, (tc, txt) in enumerate(translated_cues, 2):
             out_blocks.append(f"{idx}\n{tc}\n{txt}")
@@ -1233,7 +1233,7 @@ def generate_fallback_sinhala_srt(title: str, year: int = None) -> str:
     """Generate a valid Sinhala .srt string for any movie or episode."""
     year_str = f" ({year})" if year else ""
     cues = [
-        ("00:00:01,000", "00:00:08,000", f"🎬 {title}{year_str} — FilmSub.lk සිංහල උපසිරැසි සමඟ"),
+        ("00:00:01,000", "00:00:08,000", f"🎬 {title}{year_str} — FilmZilla.lk සිංහල උපසිරැසි සමඟ"),
         ("00:00:08,500", "00:00:18,000", "සිංහල උපසිරැසි ස්වයංක්‍රීයව ක්‍රියාත්මකයි (Auto Sinhala Subtitles Enabled)"),
         ("00:00:18,500", "00:00:30,000", "1080p / 720p / 480p / 360p High-Speed Cloud Streaming & Download"),
         ("00:00:30,500", "00:00:45,000", f"{title}{year_str} — සිංහල උපසිරැසි වීඩියෝවටම Merge කර ඇත"),
@@ -1256,7 +1256,7 @@ def generate_placeholder_vtt(title: str, year: int = None) -> str:
         "WEBVTT\n\n"
         "1\n"
         "00:00:01.000 --> 00:00:06.000\n"
-        f"FilmSub.lk - {title}{year_str} (සිංහල උපසිරැසි)\n\n"
+        f"FilmZilla.lk - {title}{year_str} (සිංහල උපසිරැසි)\n\n"
         "2\n"
         "00:00:07.000 --> 00:00:15.000\n"
         "සිංහල උපසිරැසි සමඟ නැරඹීමට සහ බාගත කිරීමට ස්තූතියි!\n"

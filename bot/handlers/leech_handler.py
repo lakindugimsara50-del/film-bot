@@ -627,9 +627,9 @@ def register(app: Client) -> None:
             draft_service.delete_draft(draft_id)
             USER_SESSIONS.pop(user_id, None)
 
-            base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+            base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
             if "yoursite.lk" in base_site:
-                base_site = "https://filmsub.pages.dev"
+                base_site = "https://filmzilla.lk"
             site_url = movie_entry.get("site_url") or f"{base_site}/movie.html?id={movie_entry.get('slug')}"
             kb_done = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🌐 Web එකෙන් බලන්න (Watch Online)", url=site_url)],

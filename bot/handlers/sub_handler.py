@@ -37,9 +37,9 @@ PENDING_SUB_DOCS: dict[int, str] = {}
 
 
 def _clean_site_url(slug: str) -> str:
-    base_site = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+    base_site = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
     if "yoursite.lk" in base_site:
-        base_site = "https://filmsub.pages.dev"
+        base_site = "https://filmzilla.lk"
     return f"{base_site}/movie.html?id={slug}"
 
 

@@ -96,10 +96,10 @@ else:
 SESSION_NAME: str = os.getenv("SESSION_NAME", "session")
 
 # ── Site URL ─────────────────────────────────────────────────────────────────
-# Always default to actual Cloudflare Pages URL; never use dummy domain yoursite.lk
+# Always default to FilmZilla domain; never use dummy domain yoursite.lk
 _raw_site_url = os.getenv("SITE_BASE_URL", "").strip()
-if not _raw_site_url or "yoursite.lk" in _raw_site_url:
-    SITE_BASE_URL: str = "https://filmsub.pages.dev"
+if not _raw_site_url or "yoursite.lk" in _raw_site_url or "filmsub.pages.dev" in _raw_site_url:
+    SITE_BASE_URL: str = "https://filmzilla.lk"
 else:
     SITE_BASE_URL: str = _raw_site_url.rstrip("/")
 
@@ -121,7 +121,7 @@ ENABLE_TELEGRAM_PRIMARY: bool = True
 ENABLE_MULTI_QUALITY_RAM: bool = os.getenv("ENABLE_MULTI_QUALITY_RAM", "true").strip().lower() in ("1", "true", "yes")
 # Enable torrent racing (direct aria2c vs cloud debrid)
 ENABLE_TORRENT_RACING: bool = os.getenv("ENABLE_TORRENT_RACING", "true").strip().lower() in ("1", "true", "yes")
-# Automatic CineSubz Watermark replacement (Covers bottom-left cinesubz watermark with sleek FilmSub badge)
+# Automatic CineSubz Watermark replacement (Covers bottom-left cinesubz watermark with sleek FilmZilla badge)
 ENABLE_CINESUBZ_WATERMARK_COVER: bool = os.getenv("ENABLE_CINESUBZ_WATERMARK_COVER", "true").strip().lower() in ("1", "true", "yes")
 
 

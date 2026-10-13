@@ -1088,7 +1088,9 @@ async def compress_video(
             log.debug("[VideoService] compress_video hard-burn prep note: %s", b_err)
 
     if cover_watermark and not badge_path:
-        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_badge.png")
+        if not os.path.exists(default_badge):
+            default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
         if os.path.exists(default_badge):
             badge_path = default_badge
 
@@ -1129,9 +1131,10 @@ async def compress_video(
         in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
         if in_w <= 0:
             in_w = 1280
-        badge_w = min(220, max(115, int(in_w * 0.135)))
-        ox = max(2, int(in_w * 0.003))
-        oy_offset = max(2, int(in_h * 0.004)) if in_h > 0 else 3
+        # Scaled to CineSubz exact compact footprint without blocking movie scene
+        badge_w = max(50, min(120, int(in_w * 0.062)))
+        ox = max(3, int(in_w * 0.0055))
+        oy_offset = max(3, int(in_h * 0.009)) if in_h > 0 else 4
         filter_complex = (
             f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
             f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
@@ -1144,10 +1147,10 @@ async def compress_video(
         in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
         if in_w <= 0:
             in_w = 1280
-        bw = max(130, int(in_w * 0.15))
-        bh = max(24, int(in_h * 0.07)) if in_h > 0 else 24
-        by = f"ih-{bh}"
-        box_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+        bw = max(60, min(120, int(in_w * 0.062)))
+        bh = max(12, min(24, int(in_h * 0.02))) if in_h > 0 else 16
+        by = f"ih-{bh}-4"
+        box_str = f"drawbox=x=4:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
         full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
         cmd.extend(["-map", "0:v:0", "-vf", full_vf])
     elif burn_vf:
@@ -2136,7 +2139,7 @@ def srt_to_ass_sinhala_shaped(src_srt_path: str, dest_ass_path: Optional[str] = 
 
         ass_header = (
             "[Script Info]\n"
-            "Title: FilmSub Sinhala Subtitle\n"
+            "Title: FilmZilla Sinhala Subtitle\n"
             "ScriptType: v4.00+\n"
             "WrapStyle: 0\n"
             "ScaledBorderAndShadow: yes\n"
@@ -2371,7 +2374,9 @@ async def cover_cinesubz_watermark(
         return await stream_copy_subtitles(video_path, None, output_path, disposition="default")
 
     if not badge_path:
-        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_badge.png")
+        if not os.path.exists(default_badge):
+            default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
         if os.path.exists(default_badge):
             badge_path = default_badge
 
@@ -2434,9 +2439,10 @@ async def cover_cinesubz_watermark(
 
     try:
         if badge_path and os.path.exists(badge_path):
-            badge_w = min(220, max(115, int(in_w * 0.135)))
-            ox = max(2, int(in_w * 0.003))
-            oy_offset = max(2, int(in_h * 0.004)) if in_h > 0 else 3
+            # Scaled to CineSubz exact compact footprint without blocking movie scene
+            badge_w = max(50, min(120, int(in_w * 0.062)))
+            ox = max(3, int(in_w * 0.0055))
+            oy_offset = max(3, int(in_h * 0.009)) if in_h > 0 else 4
             filter_complex = (
                 f"[1:v]scale={badge_w}:-1[badge];"
                 f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
@@ -2459,10 +2465,10 @@ async def cover_cinesubz_watermark(
                 os.path.abspath(output_path),
             ]
         else:
-            bw = max(130, int(in_w * 0.15))
-            bh = max(24, int(in_h * 0.07)) if in_h > 0 else 24
-            by = f"ih-{bh}"
-            filter_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+            bw = max(60, min(120, int(in_w * 0.062)))
+            bh = max(12, min(24, int(in_h * 0.02))) if in_h > 0 else 16
+            by = f"ih-{bh}-4"
+            filter_str = f"drawbox=x=4:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",

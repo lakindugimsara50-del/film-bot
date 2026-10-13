@@ -987,6 +987,7 @@ async def compress_video(
     is_hardsub: bool = False,
     cover_watermark: bool = False,
     badge_path: Optional[str] = None,
+    trim_start: float = 0.0,
 ) -> bool:
     """
     Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
@@ -1037,10 +1038,11 @@ async def compress_video(
                 pass
 
     requested_output_path = output_path
-    duration = get_video_duration(input_path, ffmpeg_bin)
+    raw_duration = get_video_duration(input_path, ffmpeg_bin)
+    duration = max(1.0, raw_duration - trim_start) if trim_start > 0 else raw_duration
     in_bytes = os.path.getsize(input_path)
-    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
-             input_path, duration, in_bytes, output_path, target_size_bytes, is_hardsub)
+    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, raw=%.1fs, trim_start=%.1fs, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
+             input_path, duration, raw_duration, trim_start, in_bytes, output_path, target_size_bytes, is_hardsub)
 
     # Calculate optimal target bitrate with ~4% margin reserved for container/muxing overhead
     audio_bps = 128_000
@@ -1104,6 +1106,8 @@ async def compress_video(
             cmd.extend(["-hwaccel", "cuda"])
         else:
             cmd.extend(["-hwaccel", "auto"])
+    if trim_start > 0:
+        cmd.extend(["-ss", str(trim_start)])
     cmd.extend(["-i", os.path.abspath(input_path)])
 
     next_input_idx = 1
@@ -2342,10 +2346,12 @@ async def cover_cinesubz_watermark(
     output_path: str,
     badge_path: Optional[str] = None,
     progress_callback: Optional[Callable[[float, str], None]] = None,
+    trim_start: float = 0.0,
 ) -> bool:
     """
     Cover the bottom-left CineSubz watermark on pre-hardsubbed releases
-    with a sleek, branded FilmSub badge using hardware accelerated NVENC or fast CPU encoding.
+    with a sleek, branded FilmSub badge using hardware accelerated NVENC (NVDEC+NVENC) or fast CPU encoding.
+    Optionally skips leading seconds (e.g. 10.0s intro trim) in a single pass without extra disk I/O.
     Preserves exact audio track with -c:a copy and applies +faststart.
     Falls back gracefully to stream_copy_subtitles if processing encounters an error.
     """
@@ -2363,10 +2369,22 @@ async def cover_cinesubz_watermark(
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
         nvenc_preset = "hp" if _on_colab else "fast"
-        enc_opts = ["-c:v", "h264_nvenc", "-preset", nvenc_preset, "-tune", "ll", "-rc", "vbr", "-cq", "23", "-b:v", "0"]
+        enc_opts = [
+            "-c:v", "h264_nvenc",
+            "-preset", nvenc_preset,
+            "-tune", "ll",
+            "-rc", "vbr",
+            "-cq", "23",
+            "-b:v", "0",
+            "-spatial-aq", "0",
+            "-temporal-aq", "0",
+        ]
     else:
         cpu_preset = "ultrafast" if _on_colab else "veryfast"
         enc_opts = ["-c:v", "libx264", "-preset", cpu_preset, "-crf", "22", "-threads", "0"]
+
+    hw_opts = ["-hwaccel", "auto"] if hw_enc == "h264_nvenc" else []
+    trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
 
     try:
         if badge_path and os.path.exists(badge_path):
@@ -2380,13 +2398,18 @@ async def cover_cinesubz_watermark(
             )
             cmd = [
                 ffmpeg_bin, "-y",
-                "-i", video_path,
-                "-i", badge_path,
+                "-hide_banner",
+                "-threads", "0",
+                *hw_opts,
+                *trim_opts,
+                "-i", os.path.abspath(video_path),
+                "-i", os.path.abspath(badge_path),
                 "-filter_complex", filter_complex,
                 *enc_opts,
                 "-c:a", "copy",
+                "-max_muxing_queue_size", "9999",
                 "-movflags", "+faststart",
-                output_path,
+                os.path.abspath(output_path),
             ]
         else:
             filter_str = (
@@ -2394,15 +2417,21 @@ async def cover_cinesubz_watermark(
             )
             cmd = [
                 ffmpeg_bin, "-y",
-                "-i", video_path,
+                "-hide_banner",
+                "-threads", "0",
+                *hw_opts,
+                *trim_opts,
+                "-i", os.path.abspath(video_path),
                 "-vf", filter_str,
                 *enc_opts,
                 "-c:a", "copy",
+                "-max_muxing_queue_size", "9999",
                 "-movflags", "+faststart",
-                output_path,
+                os.path.abspath(output_path),
             ]
 
-        log.info("[VideoService] Executing watermark cover (%s -> %s)...", video_path, output_path)
+        log.info("[VideoService] Executing watermark cover (%s -> %s, trim_start=%.1fs, hwaccel=%s)...",
+                 video_path, output_path, trim_start, bool(hw_opts))
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -2410,7 +2439,8 @@ async def cover_cinesubz_watermark(
         )
 
         if progress_callback:
-            duration = get_video_duration(video_path, ffmpeg_bin)
+            raw_dur = get_video_duration(video_path, ffmpeg_bin)
+            duration = max(1.0, raw_dur - trim_start) if trim_start > 0 else raw_dur
             time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
             speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
             fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
@@ -2503,23 +2533,31 @@ async def cover_cinesubz_watermark(
                 if badge_path and os.path.exists(badge_path):
                     cpu_cmd = [
                         ffmpeg_bin, "-y",
-                        "-i", video_path,
-                        "-i", badge_path,
+                        "-hide_banner",
+                        "-threads", "0",
+                        *trim_opts,
+                        "-i", os.path.abspath(video_path),
+                        "-i", os.path.abspath(badge_path),
                         "-filter_complex", filter_complex,
                         *cpu_enc_opts,
                         "-c:a", "copy",
+                        "-max_muxing_queue_size", "9999",
                         "-movflags", "+faststart",
-                        output_path,
+                        os.path.abspath(output_path),
                     ]
                 else:
                     cpu_cmd = [
                         ffmpeg_bin, "-y",
-                        "-i", video_path,
+                        "-hide_banner",
+                        "-threads", "0",
+                        *trim_opts,
+                        "-i", os.path.abspath(video_path),
                         "-vf", filter_str,
                         *cpu_enc_opts,
                         "-c:a", "copy",
+                        "-max_muxing_queue_size", "9999",
                         "-movflags", "+faststart",
-                        output_path,
+                        os.path.abspath(output_path),
                     ]
                 cpu_proc = await asyncio.create_subprocess_exec(*cpu_cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
                 await cpu_proc.wait()

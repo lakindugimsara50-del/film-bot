@@ -1355,20 +1355,9 @@ async def _execute_leech(
                                 companion_progress[q_name].update({
                                     "stage": "processing",
                                     "dl_pct": 100.0,
-                                    "detail": "10s Intro Trim...",
+                                    "detail": "Processing video...",
                                 })
                                 await _update_multi_dl_display(force=True)
-
-                                # User requirement: Cut first 10 seconds (remove intro / watermark) from every downloaded video
-                                trim_out = os.path.join(temp_dir, f"trimmed_{slug}_{q_name}.mp4")
-                                if await video_service.trim_video_start(c_dl, trim_out, start_seconds=10.0):
-                                    try:
-                                        if os.path.abspath(c_dl) != os.path.abspath(trim_out):
-                                            os.remove(c_dl)
-                                    except Exception:
-                                        pass
-                                    c_dl = trim_out
-                                    log.info("[LeechService] Successfully trimmed first 10s from %s [%s]", slug, q_name)
 
                                 # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge
                                 cand_portal_name = str((cand_obj.extra or {}).get("portal", "")).lower()
@@ -1384,10 +1373,16 @@ async def _execute_leech(
                                 c_size_bytes = os.path.getsize(c_dl)
                                 needs_compression = (c_size_bytes > video_service.MAX_TELEGRAM_BOT_SIZE)
 
-                                # If file <= 1.95GB (e.g. 720p, 480p), cover CineSubz watermark directly with live progress feedback
+                                # Unified single-pass processing:
+                                # 1) If file <= 1.95GB (e.g. 720p, 480p) AND CineSubz:
+                                #    Skip 10s intro + overlay FilmSub badge in a SINGLE NVENC hardware-accelerated pass (300-500 fps)!
+                                # 2) If file > 1.95GB (e.g. bloated 1080p):
+                                #    compress_video handles 10s trim + logo watermark + compression all in a single pass below!
+                                # 3) If file <= 1.95GB AND not CineSubz:
+                                #    Ultra-fast stream-copy 10s trim (1-2s) with zero re-encoding!
                                 if not needs_compression and is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                                     wm_badge_out = os.path.join(temp_dir, f"badge_{slug}_{q_name}.mp4")
-                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmSub logo badge on %s [%s]...", slug, q_name)
+                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmSub logo badge + 10s intro skip on %s [%s]...", slug, q_name)
 
                                     async def _badge_cb(pct: float, p_str: str):
                                         companion_progress[q_name].update({
@@ -1404,7 +1399,7 @@ async def _execute_leech(
                                     })
                                     await _update_multi_dl_display(force=True)
 
-                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out, progress_callback=_badge_cb):
+                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out, progress_callback=_badge_cb, trim_start=10.0):
                                         try:
                                             if os.path.abspath(c_dl) != os.path.abspath(wm_badge_out):
                                                 os.remove(c_dl)
@@ -1412,7 +1407,25 @@ async def _execute_leech(
                                             pass
                                         c_dl = wm_badge_out
                                         c_size_bytes = os.path.getsize(c_dl)
-                                        log.info("[LeechService] Successfully covered CineSubz watermark with FilmSub badge on %s [%s]", slug, q_name)
+                                        log.info("[LeechService] Successfully covered CineSubz watermark and trimmed 10s on %s [%s]", slug, q_name)
+                                elif not needs_compression:
+                                    # Non-CineSubz release <= 1.95GB: trim 10s intro via instant stream copy
+                                    companion_progress[q_name].update({
+                                        "stage": "processing",
+                                        "dl_pct": 100.0,
+                                        "detail": "10s Intro Trim...",
+                                    })
+                                    await _update_multi_dl_display(force=True)
+                                    trim_out = os.path.join(temp_dir, f"trimmed_{slug}_{q_name}.mp4")
+                                    if await video_service.trim_video_start(c_dl, trim_out, start_seconds=10.0):
+                                        try:
+                                            if os.path.abspath(c_dl) != os.path.abspath(trim_out):
+                                                os.remove(c_dl)
+                                        except Exception:
+                                            pass
+                                        c_dl = trim_out
+                                        c_size_bytes = os.path.getsize(c_dl)
+                                        log.info("[LeechService] Successfully trimmed first 10s from %s [%s]", slug, q_name)
 
                                 # Download finished for this quality! It proceeds immediately to faststart, subtitle muxing, and Telegram upload
                                 # while all other qualities continue downloading in parallel!
@@ -1483,6 +1496,7 @@ async def _execute_leech(
                                         sub_path=q_sub_to_mux,
                                         is_hardsub=q_cand_is_hardsub,
                                         cover_watermark=is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
+                                        trim_start=10.0,
                                     )
                                     actual_comp = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else comp_out
                                     if comp_res and os.path.exists(actual_comp) and 0 < os.path.getsize(actual_comp) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
@@ -2728,18 +2742,7 @@ async def _execute_leech(
                                 referer=(vcand.extra.get("post_url") or None) if vcand.extra else None,
                             )
                             if dl_out and downloader.is_valid_downloaded_video(dl_out):
-                                # User requirement: Cut first 10 seconds (remove intro / watermark)
-                                trim_var_out = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
-                                if await video_service.trim_video_start(dl_out, trim_var_out, start_seconds=10.0):
-                                    try:
-                                        if os.path.abspath(dl_out) != os.path.abspath(trim_var_out):
-                                            os.remove(dl_out)
-                                    except Exception:
-                                        pass
-                                    dl_out = trim_var_out
-                                    log.info("[LeechService] Successfully trimmed first 10s from direct variant %s [%s]", slug, vq)
-
-                                # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge
+                                # User requirement: Cover CineSubz bottom-left watermark with FilmSub badge + cut first 10s
                                 v_cand_p = str((vcand.extra or {}).get("portal", "")).lower()
                                 v_is_cinesubz_wm = bool(
                                     "cinesubz" in v_cand_p
@@ -2751,14 +2754,25 @@ async def _execute_leech(
                                 )
                                 if v_is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                                     wm_var_out = os.path.join(temp_dir, f"badge_{slug}_{vq}.mp4")
-                                    if await video_service.cover_cinesubz_watermark(dl_out, wm_var_out):
+                                    if await video_service.cover_cinesubz_watermark(dl_out, wm_var_out, trim_start=10.0):
                                         try:
                                             if os.path.abspath(dl_out) != os.path.abspath(wm_var_out):
                                                 os.remove(dl_out)
                                         except Exception:
                                             pass
                                         dl_out = wm_var_out
-                                        log.info("[LeechService] Covered CineSubz watermark on variant %s [%s]", slug, vq)
+                                        log.info("[LeechService] Covered CineSubz watermark and trimmed 10s on variant %s [%s]", slug, vq)
+                                else:
+                                    # User requirement: Cut first 10 seconds (remove intro / watermark)
+                                    trim_var_out = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
+                                    if await video_service.trim_video_start(dl_out, trim_var_out, start_seconds=10.0):
+                                        try:
+                                            if os.path.abspath(dl_out) != os.path.abspath(trim_var_out):
+                                                os.remove(dl_out)
+                                        except Exception:
+                                            pass
+                                        dl_out = trim_var_out
+                                        log.info("[LeechService] Successfully trimmed first 10s from direct variant %s [%s]", slug, vq)
 
                                 fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")
                                 if await video_service.apply_faststart(dl_out, fs_out):

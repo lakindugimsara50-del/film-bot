@@ -1652,6 +1652,7 @@ class TestLeechService(unittest.TestCase):
                     output_path="fake_out.mp4",
                     cover_watermark=True,
                     badge_path="fake_badge.png",
+                    trim_start=10.0,
                 ))
             finally:
                 loop.close()
@@ -1666,6 +1667,12 @@ class TestLeechService(unittest.TestCase):
             self.assertIn("-map", recorded_cmd)
             self.assertIn("[v_out]", recorded_cmd)
             self.assertIn("-b:v", recorded_cmd)
+            # Verify 10s intro trim is applied before input
+            self.assertIn("-ss", recorded_cmd)
+            ss_idx = recorded_cmd.index("-ss")
+            self.assertEqual(recorded_cmd[ss_idx + 1], "10.0")
+            i_idx = recorded_cmd.index("-i")
+            self.assertLess(ss_idx, i_idx)
 
 
 if __name__ == "__main__":

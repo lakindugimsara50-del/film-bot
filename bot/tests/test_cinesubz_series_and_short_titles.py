@@ -227,4 +227,16 @@ async def test_cinesubz_watermark_cover_and_badge():
         # Command should contain overlay or filter_complex
         assert any("overlay" in str(arg) for arg in call_args)
 
+        # Test with trim_start=10.0 and h264_nvenc hardware acceleration
+        with patch("services.video_service.detect_hw_encoder", return_value="h264_nvenc"):
+            res_nv = await video_service.cover_cinesubz_watermark("dummy_in.mp4", "dummy_out.mp4", trim_start=10.0)
+            assert res_nv is True
+            call_args_nv = mock_exec.call_args[0]
+            assert "-hwaccel" in call_args_nv
+            assert "-ss" in call_args_nv
+            ss_idx = call_args_nv.index("-ss")
+            assert call_args_nv[ss_idx + 1] == "10.0"
+            assert "-spatial-aq" in call_args_nv
+            assert "-temporal-aq" in call_args_nv
+
 

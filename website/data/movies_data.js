@@ -16515,7 +16515,248 @@ window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVIES_DATA__ = {
       "added_date": "2026-10-12",
       "added_at": "2026-10-12T13:39:32Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "maremma-2026",
+      "slug": "maremma-2026",
+      "title": "Maremma",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt37537243",
+      "tmdb_id": "1604274",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/gMN8kkciIx3abnABV3KJy6DnDgN.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/gMN8kkciIx3abnABV3KJy6DnDgN.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/qsnsKf59pYN3GzfQRqvNjE8tcdz.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/qsnsKf59pYN3GzfQRqvNjE8tcdz.jpg",
+      "genres": [
+        "Action",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "135 min",
+      "description": "In a village bound by ancient traditions, the Maremma Goddess festival is a time of both reverence and fear. Every 12 years, a male bull is sacrificed to the deity, yet with each ceremony, calamity befalls the villagers. Despite their efforts, the elders fail to prevent disaster. Determined to break the cycle, they enact a new decree: any household whose bull bears a male calf in the next 100 days must offer it to the goddess. As the deadline approaches, the fate of the village hangs in the balance, and the true test of their resolve begins.",
+      "director": "Manchala Nagaraj",
+      "cast": [
+        {
+          "name": "Maadhav Bhupathiraju",
+          "character": ""
+        },
+        {
+          "name": "Deepa Balu",
+          "character": ""
+        },
+        {
+          "name": "Vikas Vasistha",
+          "character": ""
+        },
+        {
+          "name": "V. S. Roopa Lakshmi",
+          "character": ""
+        },
+        {
+          "name": "Dayanand Reddy",
+          "character": ""
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUhqzcsGJytniQzuJKW-fYFS6zLJyAACaiAAAlX0cFacjF0w9djAcB4E",
+      "message_id": 328,
+      "file_name": "comp_maremma-2026_1080p.mp4",
+      "file_size": 1998551429,
+      "drive_file_id": "",
+      "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUhqzcsGJytniQzuJKW-fYFS6zLJyAACaiAAAlX0cFacjF0w9djAcB4E",
+          "message_id": 328,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1604274"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt37537243"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt37537243"
+        }
+      ],
+      "qualities": {
+        "auto": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+        "1080p": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+        "720p": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/329",
+        "480p": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/327",
+        "360p": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1998551429,
+          "url": "https://t.me/c/4325759505/328",
+          "telegram_url": "https://t.me/c/4325759505/328",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUhqzcsGJytniQzuJKW-fYFS6zLJyAACaiAAAlX0cFacjF0w9djAcB4E",
+          "message_id": 328,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1987953406,
+          "url": "https://t.me/c/4325759505/329",
+          "telegram_url": "https://t.me/c/4325759505/329",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUlqzcu5YPz3JMMkO0Cs8REYO1zMIQACbCAAAlX0cFapgH2HYBK2Ix4E",
+          "message_id": 329,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/329",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1571773507,
+          "url": "https://t.me/c/4325759505/327",
+          "telegram_url": "https://t.me/c/4325759505/327",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUdqzciSPUooS_GcRqZKmnhsJxgrAwACaCAAAlX0cFYCdB56WJnxox4E",
+          "message_id": 327,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/327",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1998551429,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_1080p",
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1987953406,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_720p",
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/329",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1571773507,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_480p",
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/327",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "343.1 MB",
+          "size_bytes": 359739257,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_360p",
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUhqzcsGJytniQzuJKW-fYFS6zLJyAACaiAAAlX0cFacjF0w9djAcB4E",
+          "message_id": 328,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+          "size_bytes": 1998551429
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUlqzcu5YPz3JMMkO0Cs8REYO1zMIQACbCAAAlX0cFapgH2HYBK2Ix4E",
+          "message_id": 329,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/329",
+          "size_bytes": 1987953406
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUdqzciSPUooS_GcRqZKmnhsJxgrAwACaCAAAlX0cFYCdB56WJnxox4E",
+          "message_id": 327,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/327",
+          "size_bytes": 1571773507
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://blvd-designation-mortgage-ever.trycloudflare.com/stream/channel/-1004325759505/328",
+          "size_bytes": 359739257
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/maremma-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=maremma-2026",
+      "added_date": "2026-10-13",
+      "added_at": "2026-10-13T06:12:12Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-12T13:39:35Z"
+  "last_updated": "2026-10-13T06:12:15Z"
 };

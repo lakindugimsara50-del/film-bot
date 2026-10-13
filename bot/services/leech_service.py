@@ -890,6 +890,13 @@ async def _execute_leech(
                         continue
                     if not is_series and o_q not in ("1080p", "720p", "480p"):
                         continue
+                    cand_url_str = str(other_c.source_url).lower()
+                    if "-1080p" in cand_url_str and o_q != "1080p":
+                        continue
+                    if "-720p" in cand_url_str and o_q != "720p":
+                        continue
+                    if "-480p" in cand_url_str and o_q != "480p":
+                        continue
                     if o_q != primary_q and o_q not in companion_candidates:
                         o_portal = (other_c.extra or {}).get("portal", "")
                         o_host = urllib.parse.urlparse(str(other_c.source_url)).netloc
@@ -2717,6 +2724,13 @@ async def _execute_leech(
                         if c == chosen_candidate:
                             continue
                         c_q = (c.quality or "").lower()
+                        c_url_str = str(c.source_url).lower()
+                        if "-1080p" in c_url_str and c_q != "1080p":
+                            continue
+                        if "-720p" in c_url_str and c_q != "720p":
+                            continue
+                        if "-480p" in c_url_str and c_q != "480p":
+                            continue
                         if c_q in needed_qualities and c_q not in matched_variants:
                             c_portal = (c.extra or {}).get("portal", "")
                             c_host = urllib.parse.urlparse(str(c.source_url)).netloc

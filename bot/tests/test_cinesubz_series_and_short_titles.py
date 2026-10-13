@@ -228,7 +228,9 @@ async def test_cinesubz_watermark_cover_and_badge():
         assert any("overlay" in str(arg) for arg in call_args)
 
         # Test with trim_start=10.0 and h264_nvenc hardware acceleration
-        with patch("services.video_service.detect_hw_encoder", return_value="h264_nvenc"):
+        with patch("services.video_service.detect_hw_encoder", return_value="h264_nvenc"), \
+             patch("services.video_service.get_video_duration", return_value=8100.0), \
+             patch("os.path.getsize", return_value=732559081):
             res_nv = await video_service.cover_cinesubz_watermark("dummy_in.mp4", "dummy_out.mp4", trim_start=10.0)
             assert res_nv is True
             call_args_nv = mock_exec.call_args[0]
@@ -238,5 +240,16 @@ async def test_cinesubz_watermark_cover_and_badge():
             assert call_args_nv[ss_idx + 1] == "10.0"
             assert "-spatial-aq" in call_args_nv
             assert "-temporal-aq" in call_args_nv
+            assert "-filter_threads" in call_args_nv
+            assert "-filter_complex_threads" in call_args_nv
+            # Verify bitrate preservation: 732MB / 8100s ~ 723kbps
+            assert "-b:v" in call_args_nv
+            bv_idx = call_args_nv.index("-b:v")
+            target_kbps_val = int(call_args_nv[bv_idx + 1].rstrip("k"))
+            assert 650 <= target_kbps_val <= 800  # Strictly preserves 480p ~700MB size without bloating
+            # Verify corner-flush overlay positioning
+            fc_idx = call_args_nv.index("-filter_complex")
+            fc_str = call_args_nv[fc_idx + 1]
+            assert "overlay=x=2" in fc_str or "overlay=x=3" in fc_str or "overlay=x=max" in fc_str
 
 

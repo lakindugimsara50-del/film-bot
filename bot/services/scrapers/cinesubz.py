@@ -90,7 +90,16 @@ async def _extract_cinesubz_zetaplayer_streams(
                             if "drive.csplayer2.space" not in fu and any(k in fu for k in ["supercloud", "setwenna", "play=true", "csplayer", "cdn"]) and fu not in seen_urls:
                                 seen_urls.add(fu)
                                 fu_lower = fu.lower()
-                                q = "1080p" if "1080p" in fu_lower else ("720p" if "720p" in fu_lower else ("480p" if "480p" in fu_lower else "720p"))
+                                if re.search(r"\b1080p?\b|1080", fu_lower):
+                                    q = "1080p"
+                                elif re.search(r"\b720p?\b|720", fu_lower):
+                                    q = "720p"
+                                elif re.search(r"\b480p?\b|480", fu_lower):
+                                    q = "480p"
+                                elif re.search(r"\b360p?\b|360", fu_lower):
+                                    q = "360p"
+                                else:
+                                    q = "720p"
                                 stream_links.append({
                                     "portal": "CineSubz",
                                     "post_url": current_url,

@@ -1100,6 +1100,8 @@ async def compress_video(
         "-y",
         "-hide_banner",
         "-threads", "0",
+        "-filter_threads", "0",
+        "-filter_complex_threads", "0",
     ]
     if hw_enc == "h264_nvenc":
         if not burn_vf and not cover_watermark:
@@ -1124,20 +1126,28 @@ async def compress_video(
         next_input_idx += 1
 
     if has_badge_img:
-        in_w, _ = get_video_resolution(input_path, ffmpeg_bin)
+        in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
         if in_w <= 0:
             in_w = 1280
-        badge_w = min(190, max(80, int(in_w * 0.11)))
+        badge_w = min(220, max(115, int(in_w * 0.135)))
+        ox = max(2, int(in_w * 0.003))
+        oy_offset = max(2, int(in_h * 0.004)) if in_h > 0 else 3
         filter_complex = (
             f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
-            f"[0:v][badge]overlay=x=0.015*main_w:y=main_h-overlay_h-(0.02*main_h)"
+            f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
         )
         if burn_vf:
             filter_complex += f",{burn_vf}"
         filter_complex += "[v_out]"
         cmd.extend(["-filter_complex", filter_complex, "-map", "[v_out]"])
     elif has_fallback_box:
-        box_str = "drawbox=x='0.015*iw':y='ih-(0.055*ih)':w='0.11*iw':h='0.04*ih':color=black@0.92:t=fill"
+        in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
+        if in_w <= 0:
+            in_w = 1280
+        bw = max(130, int(in_w * 0.15))
+        bh = max(24, int(in_h * 0.07)) if in_h > 0 else 24
+        by = f"ih-{bh}"
+        box_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
         full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
         cmd.extend(["-map", "0:v:0", "-vf", full_vf])
     elif burn_vf:
@@ -2365,6 +2375,31 @@ async def cover_cinesubz_watermark(
         if os.path.exists(default_badge):
             badge_path = default_badge
 
+    # Calculate source bitrate to preserve original file sizes (e.g. 480p ~700MB, 720p ~1.4GB)
+    # and strictly prevent bloating while maximizing encoding throughput
+    in_size = os.path.getsize(video_path) if os.path.exists(video_path) else 0
+    duration = get_video_duration(video_path, ffmpeg_bin)
+    in_w, in_h = get_video_resolution(video_path, ffmpeg_bin)
+    if in_w <= 0:
+        in_w = 1280
+    if in_h <= 0:
+        in_h = 720
+
+    if duration > 0 and in_size > 0:
+        target_kbps = max(350, int((in_size * 8) / (duration * 1000)))
+    else:
+        if in_w >= 1600:
+            target_kbps = 2400
+        elif in_w >= 1000:
+            target_kbps = 1350
+        elif in_w >= 600:
+            target_kbps = 700
+        else:
+            target_kbps = 450
+
+    max_kbps = int(target_kbps * 1.15)
+    buf_kbps = int(target_kbps * 2.0)
+
     # Determine encoder
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
@@ -2374,32 +2409,44 @@ async def cover_cinesubz_watermark(
             "-preset", nvenc_preset,
             "-tune", "ll",
             "-rc", "vbr",
-            "-cq", "23",
-            "-b:v", "0",
+            "-cq", "24",
+            "-b:v", f"{target_kbps}k",
+            "-maxrate", f"{max_kbps}k",
+            "-bufsize", f"{buf_kbps}k",
             "-spatial-aq", "0",
             "-temporal-aq", "0",
+            "-pix_fmt", "yuv420p",
         ]
     else:
         cpu_preset = "ultrafast" if _on_colab else "veryfast"
-        enc_opts = ["-c:v", "libx264", "-preset", cpu_preset, "-crf", "22", "-threads", "0"]
+        enc_opts = [
+            "-c:v", "libx264",
+            "-preset", cpu_preset,
+            "-crf", "24",
+            "-maxrate", f"{max_kbps}k",
+            "-bufsize", f"{buf_kbps}k",
+            "-threads", "0",
+            "-pix_fmt", "yuv420p",
+        ]
 
     hw_opts = ["-hwaccel", "auto"] if hw_enc == "h264_nvenc" else []
     trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
 
     try:
         if badge_path and os.path.exists(badge_path):
-            in_w, _ = get_video_resolution(video_path, ffmpeg_bin)
-            if in_w <= 0:
-                in_w = 1280
-            badge_w = min(190, max(80, int(in_w * 0.11)))
+            badge_w = min(220, max(115, int(in_w * 0.135)))
+            ox = max(2, int(in_w * 0.003))
+            oy_offset = max(2, int(in_h * 0.004)) if in_h > 0 else 3
             filter_complex = (
                 f"[1:v]scale={badge_w}:-1[badge];"
-                f"[0:v][badge]overlay=x=0.015*main_w:y=main_h-overlay_h-(0.02*main_h)"
+                f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
             )
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",
                 "-threads", "0",
+                "-filter_threads", "0",
+                "-filter_complex_threads", "0",
                 *hw_opts,
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
@@ -2412,13 +2459,16 @@ async def cover_cinesubz_watermark(
                 os.path.abspath(output_path),
             ]
         else:
-            filter_str = (
-                "drawbox=x='0.015*iw':y='ih-(0.055*ih)':w='0.11*iw':h='0.04*ih':color=black@0.92:t=fill"
-            )
+            bw = max(130, int(in_w * 0.15))
+            bh = max(24, int(in_h * 0.07)) if in_h > 0 else 24
+            by = f"ih-{bh}"
+            filter_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",
                 "-threads", "0",
+                "-filter_threads", "0",
+                "-filter_complex_threads", "0",
                 *hw_opts,
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
@@ -2529,12 +2579,22 @@ async def cover_cinesubz_watermark(
             log.warning("[VideoService] Watermark cover primary attempt failed (exit=%s, stderr=%s).", proc.returncode, err_msg)
             if hw_enc == "h264_nvenc":
                 log.info("[VideoService] Retrying watermark cover with CPU libx264 fallback...")
-                cpu_enc_opts = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "22", "-threads", "0"]
+                cpu_enc_opts = [
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-crf", "24",
+                    "-maxrate", f"{max_kbps}k",
+                    "-bufsize", f"{buf_kbps}k",
+                    "-threads", "0",
+                    "-pix_fmt", "yuv420p",
+                ]
                 if badge_path and os.path.exists(badge_path):
                     cpu_cmd = [
                         ffmpeg_bin, "-y",
                         "-hide_banner",
                         "-threads", "0",
+                        "-filter_threads", "0",
+                        "-filter_complex_threads", "0",
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-i", os.path.abspath(badge_path),
@@ -2550,6 +2610,8 @@ async def cover_cinesubz_watermark(
                         ffmpeg_bin, "-y",
                         "-hide_banner",
                         "-threads", "0",
+                        "-filter_threads", "0",
+                        "-filter_complex_threads", "0",
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-vf", filter_str,

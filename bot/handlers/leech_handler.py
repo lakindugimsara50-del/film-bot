@@ -290,52 +290,92 @@ def register(app: Client) -> None:
         # Check if batch TV series download requested
         parsed_batch = leech_service.parse_query(query_arg)
         is_batch_cmd = cmd_name in ("batch", "series", "leechseries")
+        has_all_flag = "--all" in text.lower() or "-all" in text.lower()
         has_explicit_ep = _has_explicit_episode(query_arg)
         is_season_without_ep = parsed_batch.is_series and parsed_batch.season is not None and not has_explicit_ep
+        is_series_batch = (is_batch_cmd or has_all_flag or is_season_without_ep) and not has_explicit_ep and not reply_media and not (parsed_batch.direct_url or "").startswith("magnet:?")
 
-        if (is_batch_cmd or is_season_without_ep) and not reply_media and not (parsed_batch.direct_url or "").startswith("magnet:?") and not has_explicit_ep:
-            ep_count = 0
+        if is_series_batch:
             clean_s_name = parsed_batch.title or query_arg
-            t_season = parsed_batch.season or 1
-            s_title = clean_s_name
+            clean_s_name = re.sub(r"--all|-all|--auto|-a\b", "", clean_s_name, flags=re.IGNORECASE).strip()
+            # If target season was explicitly requested (e.g. S01, S02), respect it; otherwise None -> all seasons!
+            t_season = parsed_batch.season if (parsed_batch.is_series and parsed_batch.season) else None
+
+            await status_msg.edit_text(
+                f"🔍 <b>TV Series විස්තර සහ Episodes සොයමින් පවතී...</b>\n\n"
+                f"📺 <b>කතා මාලාව:</b> {clean_s_name}\n"
+                f"⏳ TMDb සහ CineSubz හරහා සියලුම කොටස් පරීක්ෂා කරමින් පවතී...",
+                parse_mode=ParseMode.HTML,
+            )
+
             try:
-                from services import tmdb_service
-                tmdb_meta = await tmdb_service.fetch_metadata(
-                    clean_s_name,
-                    parsed_batch.year,
-                    is_series=True,
-                    season=t_season,
-                    episode=1,
+                from services.cinesubz_crawler import resolve_series_episodes, is_item_in_catalog
+                from services.catalog_audit_service import load_website_catalog
+
+                resolved = await resolve_series_episodes(
+                    series_name=clean_s_name,
+                    year=parsed_batch.year,
+                    target_season=t_season,
                 )
-                if tmdb_meta and tmdb_meta.get("type") == "series":
-                    seasons_list = tmdb_meta.get("seasons", [])
-                    matched_season = next((s for s in seasons_list if s.get("season_number") == t_season), None)
-                    ep_count = matched_season.get("episode_count", 0) if matched_season else 0
-                    if ep_count <= 0:
-                        ep_count = tmdb_meta.get("number_of_episodes", 0) or 8
-                    s_title = tmdb_meta.get("title") or clean_s_name
-            except Exception as batch_err:
-                log.warning("[LeechHandler] Batch series resolution error: %s", batch_err)
 
-            if is_batch_cmd and ep_count <= 0:
-                ep_count = 8
+                s_title = resolved["title"]
+                s_year = resolved["year"]
+                s_imdb = resolved["imdb_id"]
+                all_eps = resolved["episodes"]
 
-            if ep_count > 0:
-                ep_count = min(ep_count, 35)
+                # Catalog Deduplication check
+                fresh_catalog = load_website_catalog()
+                unseen_eps = []
+                skipped_eps = []
+
+                for ep_cand in all_eps:
+                    s_num, e_num = ep_cand["season"], ep_cand["episode"]
+                    chk_item = {
+                        "clean_title": s_title,
+                        "year": s_year,
+                        "imdb_id": s_imdb,
+                        "is_series": True,
+                    }
+                    if is_item_in_catalog(chk_item, fresh_catalog, season=s_num, episode=e_num):
+                        skipped_eps.append(ep_cand)
+                    else:
+                        unseen_eps.append(ep_cand)
+
+                if not unseen_eps:
+                    await status_msg.edit_text(
+                        f"🎉 <b>සියලුම Episodes දැනටමත් වෙබ් අඩවියේ පළ කර ඇත!</b>\n\n"
+                        f"🎬 <b>කතා මාලාව:</b> {s_title} ({s_year or 'N/A'})\n"
+                        f"🔢 <b>මුළු Episodes ගණන:</b> {len(all_eps)} (All {len(all_eps)} Already on Site)\n\n"
+                        f"💡 <i>බාගත කිරීමට අලුත් කොටස් කිසිවක් නොමැත.</i>",
+                        parse_mode=ParseMode.HTML,
+                    )
+                    return
+
+                seasons_found = resolved["seasons_list"]
+                if len(seasons_found) > 1:
+                    s_desc = f"S{min(seasons_found):02d} - S{max(seasons_found):02d} ({len(seasons_found)} Seasons)"
+                elif seasons_found:
+                    s_desc = f"Season {seasons_found[0]}"
+                else:
+                    s_desc = f"Season {t_season or 1}"
+
                 await status_msg.edit_text(
-                    f"📺 <b>TV Series Batch Enqueued (Season {t_season})!</b>\n\n"
-                    f"🎬 <b>කතා මාලාව:</b> {s_title} Season {t_season}\n"
-                    f"🔢 <b>මුළු Episodes ගණන:</b> {ep_count} (S{t_season:02d}E01 - S{t_season:02d}E{ep_count:02d})\n"
-                    f"⚡ <b>TV Series Rule:</b> strictly 720p & 480p High-Speed DDL\n\n"
-                    f"💡 <i>සියලුම Episodes එකිනෙක පිළිවෙලින් ස්වයංක්‍රීයව බාගත වී Channel එකට Upload වේ.</i>\n"
+                    f"📺 <b>TV Series Batch Enqueued!</b>\n\n"
+                    f"🎬 <b>කතා මාලාව:</b> {s_title} ({s_year or ''})\n"
+                    f"⚡ <b>Seasons:</b> {s_desc}\n"
+                    f"🔢 <b>සොයාගත් මුළු Episodes:</b> {len(all_eps)}\n"
+                    f"⏭ <b>වෙබ් අඩවියේ ඇති බැවින් මඟහැරි:</b> {len(skipped_eps)}\n"
+                    f"📥 <b>පෝලිමට එක්කළ නව Episodes:</b> {len(unseen_eps)}\n\n"
+                    f"💡 <i>සියලුම නව Episodes එකිනෙක පිළිවෙලින් ස්වයංක්‍රීයව බාගත වී Channel එකට Upload වේ.</i>\n"
                     f"📋 <i>පෝලිම බැලීමට: <code>/queue</code></i>",
                     parse_mode=ParseMode.HTML,
                     reply_markup=cancel_kb,
                 )
 
-                for ep_i in range(1, ep_count + 1):
-                    ep_query_str = f"{s_title} S{t_season:02d}E{ep_i:02d}"
-                    ep_hint = f"{s_title} S{t_season:02d}E{ep_i:02d}"
+                for ep_obj in unseen_eps:
+                    s_i, e_i = ep_obj["season"], ep_obj["episode"]
+                    ep_query_str = f"{s_title} S{s_i:02d}E{e_i:02d} --auto"
+                    ep_hint = f"{s_title} S{s_i:02d}E{e_i:02d}"
                     await queue_service.add_to_queue(
                         client=client,
                         status_msg=status_msg,
@@ -343,8 +383,16 @@ def register(app: Client) -> None:
                         query_text=ep_query_str,
                         reply_media=None,
                         title_hint=ep_hint,
-                        auto_publish=is_auto,
+                        auto_publish=True,
                     )
+                return
+
+            except Exception as batch_err:
+                log.exception("[LeechHandler] Batch series full expansion error: %s", batch_err)
+                await status_msg.edit_text(
+                    f"⚠️ <b>TV Series batch සැකසීමේදී ගැටළුවක් මතු විය:</b>\n<code>{batch_err}</code>",
+                    parse_mode=ParseMode.HTML,
+                )
                 return
 
         pos = await queue_service.add_to_queue(
@@ -765,4 +813,174 @@ def register(app: Client) -> None:
             )
         except Exception:
             pass
+
+    @app.on_message(filters.private & filters.command(["crawl", "harvest"]))
+    async def crawl_command(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            await message.reply_text("⛔ මෙම විධානය ක්‍රියාත්මක කිරීමට අවසර ඇත්තේ Bot Admin හට පමණි.")
+            return
+
+        text = (message.text or "").strip()
+        tokens = text.split()
+        subcmd = tokens[1].lower() if len(tokens) > 1 else "status"
+
+        from services.cinesubz_crawler import cinesubz_crawler
+
+        crawl_kb = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🎬 Crawl Movies", callback_data="crawl:movies"),
+                InlineKeyboardButton("📺 Crawl TV Series", callback_data="crawl:series"),
+            ],
+            [
+                InlineKeyboardButton("🌐 Crawl All", callback_data="crawl:all"),
+                InlineKeyboardButton("📊 Status", callback_data="crawl:status"),
+            ],
+            [
+                InlineKeyboardButton("🔄 Resume", callback_data="crawl:resume"),
+                InlineKeyboardButton("🛑 Stop", callback_data="crawl:stop"),
+            ],
+        ])
+
+        if subcmd in ("status", "info"):
+            await message.reply_text(
+                cinesubz_crawler.get_status_text(),
+                parse_mode=ParseMode.HTML,
+                reply_markup=crawl_kb,
+            )
+            return
+
+        if subcmd in ("stop", "pause", "cancel"):
+            if cinesubz_crawler.is_running():
+                cinesubz_crawler.stop()
+                await message.reply_text("🛑 <b>CineSubz Harvester නවත්වන ලදී (Stopped).</b>", parse_mode=ParseMode.HTML)
+            else:
+                await message.reply_text("ℹ️ Harvester එක දැනටමත් ක්‍රියාත්මක නොවේ (Not running).")
+            return
+
+        if subcmd in ("reset", "clear"):
+            cinesubz_crawler.stop()
+            cinesubz_crawler.current_movie_page = 0
+            cinesubz_crawler.max_movie_pages = 0
+            cinesubz_crawler.current_tv_page = 0
+            cinesubz_crawler.max_tv_pages = 0
+            cinesubz_crawler.total_scraped = 0
+            cinesubz_crawler.total_skipped = 0
+            cinesubz_crawler.total_queued = 0
+            cinesubz_crawler.save_state()
+            await message.reply_text("🔄 <b>Harvester state එක reset කරන ලදී.</b>", parse_mode=ParseMode.HTML)
+            return
+
+        start_page = None
+        mode = "movies"
+        if subcmd in ("movies", "movie"):
+            mode = "movies"
+        elif subcmd in ("tvshows", "series", "tv"):
+            mode = "tvshows"
+        elif subcmd in ("all", "both"):
+            mode = "all"
+        elif subcmd == "page":
+            mode = "movies"
+            if len(tokens) > 2 and tokens[2].isdigit():
+                start_page = int(tokens[2])
+        elif subcmd in ("resume", "continue"):
+            mode = cinesubz_crawler.mode or "movies"
+
+        st_msg = await message.reply_text(
+            f"⏳ <b>CineSubz Harvester ({mode.upper()}) ආරම්භ කරමින් පවතී...</b>",
+            parse_mode=ParseMode.HTML,
+            reply_markup=crawl_kb,
+        )
+
+        ok, msg_txt = await cinesubz_crawler.start(
+            client=client,
+            admin_chat_id=user_id,
+            mode=mode,
+            start_page=start_page,
+            status_msg=st_msg,
+        )
+        await st_msg.edit_text(
+            f"{msg_txt}\n\n{cinesubz_crawler.get_status_text()}",
+            parse_mode=ParseMode.HTML,
+            reply_markup=crawl_kb,
+        )
+
+    @app.on_callback_query(filters.regex(r"^crawl:"))
+    async def crawl_callback(client: Client, query: CallbackQuery) -> None:
+        user_id = query.from_user.id if query.from_user else 0
+        if not _is_admin(user_id):
+            await query.answer("⛔ Admin only!", show_alert=True)
+            return
+
+        from services.cinesubz_crawler import cinesubz_crawler
+
+        crawl_kb = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🎬 Crawl Movies", callback_data="crawl:movies"),
+                InlineKeyboardButton("📺 Crawl TV Series", callback_data="crawl:series"),
+            ],
+            [
+                InlineKeyboardButton("🌐 Crawl All", callback_data="crawl:all"),
+                InlineKeyboardButton("📊 Status", callback_data="crawl:status"),
+            ],
+            [
+                InlineKeyboardButton("🔄 Resume", callback_data="crawl:resume"),
+                InlineKeyboardButton("🛑 Stop", callback_data="crawl:stop"),
+            ],
+        ])
+
+        action = query.data.split(":", 1)[1]
+
+        if action == "status":
+            await query.answer("📊 Status updated")
+            try:
+                await query.message.edit_text(
+                    cinesubz_crawler.get_status_text(),
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=crawl_kb,
+                )
+            except Exception:
+                pass
+            return
+
+        if action == "stop":
+            if cinesubz_crawler.is_running():
+                cinesubz_crawler.stop()
+                await query.answer("🛑 Crawler Stopped", show_alert=True)
+            else:
+                await query.answer("ℹ️ Not running")
+            try:
+                await query.message.edit_text(
+                    cinesubz_crawler.get_status_text(),
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=crawl_kb,
+                )
+            except Exception:
+                pass
+            return
+
+        mode = "movies"
+        if action == "series":
+            mode = "tvshows"
+        elif action == "all":
+            mode = "all"
+        elif action == "resume":
+            mode = cinesubz_crawler.mode or "movies"
+
+        ok, msg_txt = await cinesubz_crawler.start(
+            client=client,
+            admin_chat_id=user_id,
+            mode=mode,
+            status_msg=query.message,
+        )
+        await query.answer(msg_txt[:50], show_alert=False)
+        try:
+            await query.message.edit_text(
+                f"{msg_txt}\n\n{cinesubz_crawler.get_status_text()}",
+                parse_mode=ParseMode.HTML,
+                reply_markup=crawl_kb,
+            )
+        except Exception:
+            pass
+
 

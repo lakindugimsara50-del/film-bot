@@ -16756,7 +16756,247 @@
       "added_date": "2026-10-13",
       "added_at": "2026-10-13T06:12:12Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "fall-2-deadpoint-2026",
+      "slug": "fall-2-deadpoint-2026",
+      "title": "Fall 2: Deadpoint",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.3",
+      "rating": "7.3",
+      "imdb_id": "tt31192372",
+      "tmdb_id": "1101412",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/fgSm5ylwiXbIHn8UbUXDjk9RRu4.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/fgSm5ylwiXbIHn8UbUXDjk9RRu4.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/yBDxqDB29kpH9VojTytjGWBgmdJ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/yBDxqDB29kpH9VojTytjGWBgmdJ.jpg",
+      "genres": [
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "98 min",
+      "description": "On a perilous climb across Thailand's Mount Kwan, two climbers become trapped thousands of feet above the ground, where vertigo-inducing heights, sheer exposure, and impossible odds turn every moment into a fight for survival.",
+      "director": "Michael Spierig, Peter Spierig",
+      "cast": [
+        {
+          "name": "Harriet Slater",
+          "character": "Jax Hunter"
+        },
+        {
+          "name": "Arsema Thomas",
+          "character": "Luce"
+        },
+        {
+          "name": "Tom Brittney",
+          "character": "Jon Platt"
+        },
+        {
+          "name": "Virginia Gardner",
+          "character": "Shiloh Hunter"
+        },
+        {
+          "name": "Sahajak Boonthanakit",
+          "character": "Thai Barman"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAU1qzm5PMmcSRBAlYDtk4kasezWFlgACeiIAAmCXcFZUAXJ2TDHleh4E",
+      "message_id": 333,
+      "file_name": "comp_fall-2-deadpoint-2026_1080p.mp4",
+      "file_size": 1954568399,
+      "drive_file_id": "",
+      "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAU1qzm5PMmcSRBAlYDtk4kasezWFlgACeiIAAmCXcFZUAXJ2TDHleh4E",
+          "message_id": 333,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1101412"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt31192372"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt31192372"
+        }
+      ],
+      "qualities": {
+        "auto": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+        "1080p": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+        "720p": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/332",
+        "480p": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/331",
+        "360p": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1954568399,
+          "url": "https://t.me/c/4325759505/333",
+          "telegram_url": "https://t.me/c/4325759505/333",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAU1qzm5PMmcSRBAlYDtk4kasezWFlgACeiIAAmCXcFZUAXJ2TDHleh4E",
+          "message_id": 333,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1274597748,
+          "url": "https://t.me/c/4325759505/332",
+          "telegram_url": "https://t.me/c/4325759505/332",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUxqzm2ZrIfK5s2AEBJxmSiiQmKsdAACeSIAAmCXcFY7mm1CGacZGB4E",
+          "message_id": 332,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/332",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "629.0 MB",
+          "size_bytes": 659542175,
+          "url": "https://t.me/c/4325759505/331",
+          "telegram_url": "https://t.me/c/4325759505/331",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUtqzmv4H6iVVzzH9jILAeTTHpM-mwACdSIAAmCXcFZfw-1UM6bPOB4E",
+          "message_id": 331,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/331",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1954568399,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_1080p",
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1274597748,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_720p",
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/332",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "629.0 MB",
+          "size_bytes": 659542175,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_480p",
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/331",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "335.5 MB",
+          "size_bytes": 351822311,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_360p",
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAU1qzm5PMmcSRBAlYDtk4kasezWFlgACeiIAAmCXcFZUAXJ2TDHleh4E",
+          "message_id": 333,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+          "size_bytes": 1954568399
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUxqzm2ZrIfK5s2AEBJxmSiiQmKsdAACeSIAAmCXcFY7mm1CGacZGB4E",
+          "message_id": 332,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/332",
+          "size_bytes": 1274597748
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAUtqzmv4H6iVVzzH9jILAeTTHpM-mwACdSIAAmCXcFZfw-1UM6bPOB4E",
+          "message_id": 331,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/331",
+          "size_bytes": 659542175
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://office-verified-analysis-envelope.trycloudflare.com/stream/channel/-1004325759505/333",
+          "size_bytes": 351822311
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/fall-2-deadpoint-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=fall-2-deadpoint-2026",
+      "added_date": "2026-10-13",
+      "added_at": "2026-10-13T17:45:54Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-13T06:12:15Z"
+  "last_updated": "2026-10-13T17:45:57Z"
 }

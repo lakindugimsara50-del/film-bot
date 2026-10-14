@@ -1131,10 +1131,10 @@ async def compress_video(
         in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
         if in_w <= 0:
             in_w = 1280
-        # Scaled to CineSubz exact compact footprint without blocking movie scene
-        badge_w = max(50, min(120, int(in_w * 0.062)))
-        ox = max(3, int(in_w * 0.0055))
-        oy_offset = max(3, int(in_h * 0.009)) if in_h > 0 else 4
+        # Scaled to CineSubz exact footprint and moved tightly to the bottom-left corner
+        badge_w = max(100, min(220, int(in_w * 0.115)))
+        ox = max(6, min(16, int(in_w * 0.009)))
+        oy_offset = max(6, min(16, int(in_h * 0.016)))
         filter_complex = (
             f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
             f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
@@ -1147,10 +1147,10 @@ async def compress_video(
         in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
         if in_w <= 0:
             in_w = 1280
-        bw = max(60, min(120, int(in_w * 0.062)))
-        bh = max(12, min(24, int(in_h * 0.02))) if in_h > 0 else 16
-        by = f"ih-{bh}-4"
-        box_str = f"drawbox=x=4:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+        bw = max(100, min(220, int(in_w * 0.115)))
+        bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+        by = f"ih-{bh}-6"
+        box_str = f"drawbox=x=6:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
         full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
         cmd.extend(["-map", "0:v:0", "-vf", full_vf])
     elif burn_vf:
@@ -2394,16 +2394,16 @@ async def cover_cinesubz_watermark(
         target_kbps = max(350, int((in_size * 8) / (duration * 1000)))
     else:
         if in_w >= 1600:
-            target_kbps = 2400
+            target_kbps = 2200
         elif in_w >= 1000:
-            target_kbps = 1350
+            target_kbps = 1250
         elif in_w >= 600:
-            target_kbps = 700
+            target_kbps = 650
         else:
-            target_kbps = 450
+            target_kbps = 420
 
-    max_kbps = int(target_kbps * 1.15)
-    buf_kbps = int(target_kbps * 2.0)
+    max_kbps = int(target_kbps * 1.04)
+    buf_kbps = int(target_kbps * 1.2)
 
     # Determine encoder
     hw_enc = detect_hw_encoder(ffmpeg_bin)
@@ -2414,7 +2414,7 @@ async def cover_cinesubz_watermark(
             "-preset", nvenc_preset,
             "-tune", "ll",
             "-rc", "vbr",
-            "-cq", "24",
+            "-cq", "26",
             "-b:v", f"{target_kbps}k",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
@@ -2423,11 +2423,11 @@ async def cover_cinesubz_watermark(
             "-pix_fmt", "yuv420p",
         ]
     else:
-        cpu_preset = "ultrafast" if _on_colab else "veryfast"
+        cpu_preset = "veryfast" if _on_colab else "faster"
         enc_opts = [
             "-c:v", "libx264",
             "-preset", cpu_preset,
-            "-crf", "24",
+            "-crf", "25",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
             "-threads", "0",
@@ -2437,16 +2437,34 @@ async def cover_cinesubz_watermark(
     hw_opts = ["-hwaccel", "auto"] if hw_enc == "h264_nvenc" else []
     trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
 
+    # Check for intro card (shown when trimming >= 5s, e.g. after removing CineSubz 10s intro)
+    intro_card_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_intro_card.png")
+    has_intro_card = bool(os.path.exists(intro_card_path) and trim_start >= 5.0)
+
     try:
         if badge_path and os.path.exists(badge_path):
-            # Scaled to CineSubz exact compact footprint without blocking movie scene
-            badge_w = max(50, min(120, int(in_w * 0.062)))
-            ox = max(3, int(in_w * 0.0055))
-            oy_offset = max(3, int(in_h * 0.009)) if in_h > 0 else 4
-            filter_complex = (
-                f"[1:v]scale={badge_w}:-1[badge];"
-                f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
-            )
+            # Scaled to CineSubz exact footprint and moved tightly to the bottom-left corner
+            badge_w = max(100, min(220, int(in_w * 0.115)))
+            ox = max(6, min(16, int(in_w * 0.009)))
+            oy_offset = max(6, min(16, int(in_h * 0.016)))
+
+            extra_inputs = []
+            if has_intro_card:
+                intro_w = max(340, min(720, int(in_w * 0.55)))
+                intro_y = in_h - int(intro_w * (130 / 820)) - max(20, int(in_h * 0.05))
+                filter_complex = (
+                    f"[2:v]scale={intro_w}:-1,format=rgba,fade=t=in:st=1.0:d=0.7:alpha=1,fade=t=out:st=6.8:d=0.7:alpha=1[intro];"
+                    f"[0:v][intro]overlay=x=(main_w-overlay_w)/2:y={intro_y}:enable='between(t,1.0,7.5)'[v_intro];"
+                    f"[1:v]scale={badge_w}:-1[badge];"
+                    f"[v_intro][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}[outv]"
+                )
+                extra_inputs = ["-i", os.path.abspath(intro_card_path)]
+            else:
+                filter_complex = (
+                    f"[1:v]scale={badge_w}:-1[badge];"
+                    f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}[outv]"
+                )
+
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",
@@ -2457,7 +2475,9 @@ async def cover_cinesubz_watermark(
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
                 "-i", os.path.abspath(badge_path),
+                *extra_inputs,
                 "-filter_complex", filter_complex,
+                "-map", "[outv]", "-map", "0:a?",
                 *enc_opts,
                 "-c:a", "copy",
                 "-max_muxing_queue_size", "9999",
@@ -2465,10 +2485,10 @@ async def cover_cinesubz_watermark(
                 os.path.abspath(output_path),
             ]
         else:
-            bw = max(60, min(120, int(in_w * 0.062)))
-            bh = max(12, min(24, int(in_h * 0.02))) if in_h > 0 else 16
-            by = f"ih-{bh}-4"
-            filter_str = f"drawbox=x=4:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+            bw = max(100, min(220, int(in_w * 0.115)))
+            bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+            by = f"ih-{bh}-6"
+            filter_str = f"drawbox=x=6:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",
@@ -2479,6 +2499,7 @@ async def cover_cinesubz_watermark(
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
                 "-vf", filter_str,
+                "-map", "0:v", "-map", "0:a?",
                 *enc_opts,
                 "-c:a", "copy",
                 "-max_muxing_queue_size", "9999",
@@ -2587,8 +2608,8 @@ async def cover_cinesubz_watermark(
                 log.info("[VideoService] Retrying watermark cover with CPU libx264 fallback...")
                 cpu_enc_opts = [
                     "-c:v", "libx264",
-                    "-preset", "ultrafast",
-                    "-crf", "24",
+                    "-preset", "veryfast",
+                    "-crf", "25",
                     "-maxrate", f"{max_kbps}k",
                     "-bufsize", f"{buf_kbps}k",
                     "-threads", "0",
@@ -2604,7 +2625,9 @@ async def cover_cinesubz_watermark(
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-i", os.path.abspath(badge_path),
+                        *extra_inputs,
                         "-filter_complex", filter_complex,
+                        "-map", "[outv]", "-map", "0:a?",
                         *cpu_enc_opts,
                         "-c:a", "copy",
                         "-max_muxing_queue_size", "9999",
@@ -2621,6 +2644,7 @@ async def cover_cinesubz_watermark(
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-vf", filter_str,
+                        "-map", "0:v", "-map", "0:a?",
                         *cpu_enc_opts,
                         "-c:a", "copy",
                         "-max_muxing_queue_size", "9999",

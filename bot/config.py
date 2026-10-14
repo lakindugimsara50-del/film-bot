@@ -96,10 +96,10 @@ else:
 SESSION_NAME: str = os.getenv("SESSION_NAME", "session")
 
 # ── Site URL ─────────────────────────────────────────────────────────────────
-# Always default to FilmZilla domain; never use dummy domain yoursite.lk
+# Defaults to active live host https://filmsub.pages.dev (or https://filmzilla.lk if custom domain DNS mapped)
 _raw_site_url = os.getenv("SITE_BASE_URL", "").strip()
-if not _raw_site_url or "yoursite.lk" in _raw_site_url or "filmsub.pages.dev" in _raw_site_url:
-    SITE_BASE_URL: str = "https://filmzilla.lk"
+if not _raw_site_url or "yoursite.lk" in _raw_site_url:
+    SITE_BASE_URL: str = "https://filmsub.pages.dev"
 else:
     SITE_BASE_URL: str = _raw_site_url.rstrip("/")
 

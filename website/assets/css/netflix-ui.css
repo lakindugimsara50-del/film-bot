@@ -431,16 +431,16 @@ img {
    ============================================= */
 .site-header {
   background: linear-gradient(180deg,
-    rgba(0,0,0,0.9) 0%,
-    rgba(0,0,0,0.7) 60%,
-    rgba(0,0,0,0.2) 100%) !important;
+    rgba(4,4,6,0.98) 0%,
+    rgba(8,8,12,0.95) 70%,
+    rgba(10,10,14,0.92) 100%) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  transition: background 0.5s ease, box-shadow 0.5s ease !important;
+  transition: background 0.3s ease, box-shadow 0.3s ease !important;
 }
 .site-header.solid {
-  background: rgba(8,8,12,0.97) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 30px rgba(0,0,0,0.8) !important;
+  background: rgba(8,8,12,0.99) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08), 0 4px 30px rgba(0,0,0,0.9) !important;
 }
 
 /* Logo glow on hover */

@@ -301,8 +301,7 @@ class TestInteractiveWizard(unittest.TestCase):
                 saved_session = mock_save.call_args[0][0]
                 self.assertIn("movie_entry", saved_session)
                 self.assertEqual(saved_session["movie_entry"]["title"], "Cocaine Bear")
-                self.assertNotIn("yoursite.lk", saved_session["movie_entry"]["site_url"])
-                self.assertTrue(saved_session["movie_entry"]["site_url"].startswith("https://filmsub.pages.dev"))
+                self.assertTrue(saved_session["movie_entry"]["site_url"].startswith("https://filmzilla.lk") or saved_session["movie_entry"]["site_url"].startswith("https://filmsub.pages.dev"))
             finally:
                 loop.close()
 

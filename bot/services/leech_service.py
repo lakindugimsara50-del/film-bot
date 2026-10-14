@@ -1434,6 +1434,18 @@ async def _execute_leech(
                                         c_size_bytes = os.path.getsize(c_dl)
                                         log.info("[LeechService] Successfully trimmed first 10s from %s [%s]", slug, q_name)
 
+                                if not needs_compression:
+                                    intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
+                                    if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0):
+                                        try:
+                                            if os.path.abspath(c_dl) != os.path.abspath(intro_out):
+                                                os.remove(c_dl)
+                                        except Exception:
+                                            pass
+                                        c_dl = intro_out
+                                        c_size_bytes = os.path.getsize(c_dl)
+                                        log.info("[LeechService] Successfully prepended 5s FilmZilla intro to %s [%s]", slug, q_name)
+
                                 # Download finished for this quality! It proceeds immediately to faststart, subtitle muxing, and Telegram upload
                                 # while all other qualities continue downloading in parallel!
                                 # Meanwhile, THIS quality proceeds to Faststart, Subtitle Muxing, and Telegram Upload!
@@ -1449,7 +1461,7 @@ async def _execute_leech(
                                 if not q_cand_is_hardsub:
                                     cand_sub = (cand_obj.extra and cand_obj.extra.get("sub_srt_path")) or (candidate.extra and candidate.extra.get("sub_srt_path"))
                                     if cand_sub and os.path.exists(cand_sub):
-                                        active_sub_to_mux = subtitle_service.shift_srt_file(cand_sub, offset_seconds=-10.0)
+                                        active_sub_to_mux = subtitle_service.shift_srt_file(cand_sub, offset_seconds=-5.0)
                                     elif not active_sub_to_mux:
                                         async with sub_acquire_lock:
                                             if not active_sub_to_mux:
@@ -1465,7 +1477,7 @@ async def _execute_leech(
                                                         episode=episode,
                                                     )
                                                     if auto_srt and os.path.exists(auto_srt):
-                                                        active_sub_to_mux = subtitle_service.shift_srt_file(auto_srt, offset_seconds=-10.0)
+                                                        active_sub_to_mux = subtitle_service.shift_srt_file(auto_srt, offset_seconds=-5.0)
                                                         log.info("[LeechService] Auto-acquired Sinhala subtitle in pipeline: %s", auto_srt)
                                                 except Exception as s_err:
                                                     log.debug("[LeechService] Pipeline sub discovery note: %s", s_err)
@@ -1515,6 +1527,16 @@ async def _execute_leech(
                                         c_dl = actual_comp
                                         c_size_bytes = os.path.getsize(c_dl)
                                         log.info("[LeechService] Compression complete for %s: %s (path=%s)", q_name, downloader.format_bytes(c_size_bytes), c_dl)
+                                        intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
+                                        if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0):
+                                            try:
+                                                if os.path.abspath(c_dl) != os.path.abspath(intro_out):
+                                                    os.remove(c_dl)
+                                            except Exception:
+                                                pass
+                                            c_dl = intro_out
+                                            c_size_bytes = os.path.getsize(c_dl)
+                                            log.info("[LeechService] Successfully prepended 5s FilmZilla intro to compressed %s [%s]", slug, q_name)
                                     else:
                                         log.error("[LeechService] Compression failed or output exceeds MTProto limit for %s. Skipping doomed upload.", q_name)
                                         companion_progress[q_name].update({
@@ -1812,6 +1834,7 @@ async def _execute_leech(
                 "variant_tg_info" in locals() and any(v.get("message_id") == message_id for v in variant_tg_info.values())
             )
         )
+        was_trimmed_10s = False
         if not is_already_pipelined_and_uploaded and local_file and os.path.exists(local_file):
             seq_trim_out = os.path.join(temp_dir, f"trimmed_primary_{slug}.mp4")
             if await video_service.trim_video_start(local_file, seq_trim_out, start_seconds=10.0):
@@ -1821,7 +1844,19 @@ async def _execute_leech(
                 except Exception:
                     pass
                 local_file = seq_trim_out
+                was_trimmed_10s = True
                 log.info("[LeechService] Successfully trimmed first 10s from primary video %s", slug)
+
+            # Prepend 5s FilmZilla branded intro
+            intro_primary_out = os.path.join(temp_dir, f"intro_primary_{slug}.mp4")
+            if await video_service.prepend_filmzilla_intro(local_file, intro_primary_out, intro_duration=5.0):
+                try:
+                    if os.path.abspath(local_file) != os.path.abspath(intro_primary_out):
+                        os.remove(local_file)
+                except Exception:
+                    pass
+                local_file = intro_primary_out
+                log.info("[LeechService] Successfully prepended 5s FilmZilla intro to primary video %s", slug)
 
         curr_size = os.path.getsize(local_file)
         _on_colab = os.path.exists('/content') or os.path.isdir('/dev/shm')
@@ -1948,7 +1983,8 @@ async def _execute_leech(
                     log.debug("[LeechService] Portal sub retry note: %s", e_p)
 
         if sub_srt_path and os.path.exists(sub_srt_path) and not is_already_pipelined_and_uploaded:
-            sub_srt_path = subtitle_service.shift_srt_file(sub_srt_path, offset_seconds=-10.0)
+            net_sub_offset = -5.0 if was_trimmed_10s else 5.0
+            sub_srt_path = subtitle_service.shift_srt_file(sub_srt_path, offset_seconds=net_sub_offset)
             sub_vtt_path = subtitle_service.srt_to_vtt(sub_srt_path)
 
         # 2. Intelligent Video Processing & Subtitle Muxing
@@ -2787,6 +2823,17 @@ async def _execute_leech(
                                             pass
                                         dl_out = trim_var_out
                                         log.info("[LeechService] Successfully trimmed first 10s from direct variant %s [%s]", slug, vq)
+
+                                # Prepend 5s FilmZilla branded intro to direct variant
+                                intro_var_out = os.path.join(temp_dir, f"intro_{slug}_{vq}.mp4")
+                                if await video_service.prepend_filmzilla_intro(dl_out, intro_var_out, intro_duration=5.0):
+                                    try:
+                                        if os.path.abspath(dl_out) != os.path.abspath(intro_var_out):
+                                            os.remove(dl_out)
+                                    except Exception:
+                                        pass
+                                    dl_out = intro_var_out
+                                    log.info("[LeechService] Successfully prepended 5s FilmZilla intro to direct variant %s [%s]", slug, vq)
 
                                 fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")
                                 if await video_service.apply_faststart(dl_out, fs_out):

@@ -362,6 +362,35 @@ function prewarmAllVariants(movie) {
   setTimeout(() => prewarmQualityTier(movie, '1080p'), 160);
 }
 
+// ── Helper: Locate exact episode catalog entry for a TV Series ──
+function findEpisodeEntry(movieOrTitle, season, episode) {
+  if (!movieOrTitle || !season || !episode) return null;
+  const sNum = parseInt(season, 10);
+  const eNum = parseInt(episode, 10);
+  const tmdbId = typeof movieOrTitle === 'object' ? String(movieOrTitle.tmdb_id || '') : '';
+  const title = typeof movieOrTitle === 'object' ? (movieOrTitle.title || '') : String(movieOrTitle);
+  const normTitle = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const slug = typeof movieOrTitle === 'object' ? (movieOrTitle.slug || '') : String(movieOrTitle);
+  const baseSlug = slug.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+
+  const catalog = (window.FilmSub && typeof window.FilmSub.getAllMovies === 'function' && window.FilmSub.getAllMovies().length)
+    ? window.FilmSub.getAllMovies()
+    : ((window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies))
+      ? window.FILMSUB_DATA.movies
+      : (window.FilmSub && typeof window.FilmSub.allMovies === 'function' ? window.FilmSub.allMovies() : []));
+
+  return catalog.find(m => {
+    if (parseInt(m.season, 10) !== sNum || parseInt(m.episode, 10) !== eNum) return false;
+    if (tmdbId && m.tmdb_id && String(m.tmdb_id) === tmdbId) return true;
+    if (baseSlug) {
+      const mBase = (m.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+      if (mBase && (mBase === baseSlug || mBase.startsWith(baseSlug) || baseSlug.startsWith(mBase))) return true;
+    }
+    const mNorm = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return mNorm && (mNorm === normTitle || mNorm.startsWith(normTitle) || normTitle.startsWith(mNorm));
+  }) || null;
+}
+
 // ── Immediate Early Stream Pre-Warming (fires synchronously on script parse) ──
 (function primeEarlyStream() {
   try {
@@ -369,7 +398,20 @@ function prewarmAllVariants(movie) {
     if (!slug) return;
     const list = (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) ? window.FILMSUB_DATA.movies : null;
     if (list) {
-      const m = list.find(x => x.slug === slug || x.id === slug);
+      let m = list.find(x => x.slug === slug || x.id === slug);
+      if (!m) {
+        const epMatch = slug.match(/[-_.]s(\d+)[-_.]?e(\d+)/i) || slug.match(/[-_.](\d+)x(\d+)/i);
+        if (epMatch) {
+          const s = parseInt(epMatch[1], 10);
+          const e = parseInt(epMatch[2], 10);
+          const bSlug = slug.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+          m = list.find(x => {
+            if (parseInt(x.season, 10) !== s || parseInt(x.episode, 10) !== e) return false;
+            const xb = (x.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+            return xb === bSlug || xb.startsWith(bSlug) || bSlug.startsWith(xb);
+          });
+        }
+      }
       if (m) {
         prewarmAllVariants(m);
       }
@@ -386,35 +428,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Robust season & episode extraction from URL slug (e.g. s01e05, 1x05) or query params (?s=1&e=5)
+  const slugEpMatch = slug.match(/[-_.]s(\d+)[-_.]?e(\d+)/i) || slug.match(/[-_.](\d+)x(\d+)/i);
+  const urlParams = new URLSearchParams(window.location.search);
+  const qSeason = urlParams.get('s') || urlParams.get('season');
+  const qEpisode = urlParams.get('e') || urlParams.get('ep') || urlParams.get('episode');
+
+  if (slugEpMatch) {
+    currentSeason = parseInt(slugEpMatch[1], 10);
+    currentEpisode = parseInt(slugEpMatch[2], 10);
+  } else if (qSeason && qEpisode) {
+    currentSeason = parseInt(qSeason, 10);
+    currentEpisode = parseInt(qEpisode, 10);
+  }
+
   // 1. Instant Synchronous Catalog Lookup (<1ms)
   // window.FILMSUB_DATA is already loaded synchronously by <script src="data/movies_data.js">
   if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
     currentMovie = window.FILMSUB_DATA.movies.find(m => m.slug === slug || m.id === slug);
+    if (!currentMovie && currentSeason && currentEpisode) {
+      currentMovie = findEpisodeEntry(slug, currentSeason, currentEpisode);
+    }
   }
 
   // Background non-blocking stream config refresh
   loadLiveStreamConfig().catch(() => {});
 
-  // 2. Fallback: If movie is not in bundled data, wait for FilmSub.loadMovies()
-  if (!currentMovie) {
+  // 2. Fallback: If movie is not in bundled data or requested specific episode is missing, fetch
+  const needsEpisodeFetch = Boolean(
+    currentMovie && currentSeason && currentEpisode &&
+    (parseInt(currentMovie.season, 10) !== currentSeason || parseInt(currentMovie.episode, 10) !== currentEpisode)
+  );
+
+  if (!currentMovie || needsEpisodeFetch) {
     await waitForFilmSub();
     await FilmSub.loadMovies();
-    currentMovie = FilmSub.findMovieBySlug(slug);
     if (!currentMovie) {
+      currentMovie = FilmSub.findMovieBySlug(slug);
+    }
+    if (currentSeason && currentEpisode) {
+      const epEntry = findEpisodeEntry(currentMovie || slug, currentSeason, currentEpisode);
+      if (epEntry) {
+        currentMovie = epEntry;
+      }
+    }
+    if (!currentMovie || (currentSeason && currentEpisode && (parseInt(currentMovie.season, 10) !== currentSeason || parseInt(currentMovie.episode, 10) !== currentEpisode))) {
       try {
         const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
         const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 3000);
+        const tId = setTimeout(() => ctrl.abort(), 3500);
         const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
         clearTimeout(tId);
         if (rGh.ok) {
           const d = await rGh.json();
           const moviesList = Array.isArray(d) ? d : (d.movies || []);
-          const found = moviesList.find(m => m.slug === slug || m.id === slug);
+          let found = moviesList.find(m => m.slug === slug || m.id === slug);
+          if (!found && currentSeason && currentEpisode) {
+            const baseSlug = slug.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+            found = moviesList.find(m => {
+              if (parseInt(m.season, 10) !== currentSeason || parseInt(m.episode, 10) !== currentEpisode) return false;
+              const mBase = (m.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+              return mBase && (mBase === baseSlug || mBase.startsWith(baseSlug) || baseSlug.startsWith(mBase));
+            });
+          }
           if (found) {
             currentMovie = found;
             if (window.FilmSub && Array.isArray(FilmSub.movies)) {
               FilmSub.movies.unshift(found);
+            }
+            if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
+              window.FILMSUB_DATA.movies.unshift(found);
             }
           }
         }
@@ -434,18 +517,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Robust season & episode extraction from URL slug (e.g. s01e05, 1x05) or query params (?s=1&e=5)
-  const slugEpMatch = slug.match(/[-_.]s(\d+)[-_.]?e(\d+)/i) || slug.match(/[-_.](\d+)x(\d+)/i);
-  if (slugEpMatch) {
-    currentSeason = parseInt(slugEpMatch[1], 10);
-    currentEpisode = parseInt(slugEpMatch[2], 10);
-  } else {
+  // Update currentSeason/currentEpisode if not yet set from URL
+  if (!currentSeason || !currentEpisode) {
     currentSeason = currentMovie.season || 1;
     currentEpisode = currentMovie.episode || 1;
   }
-  const urlParams = new URLSearchParams(window.location.search);
-  const qSeason = urlParams.get('s') || urlParams.get('season');
-  const qEpisode = urlParams.get('e') || urlParams.get('ep') || urlParams.get('episode');
   if (qSeason) currentSeason = parseInt(qSeason, 10);
   if (qEpisode) currentEpisode = parseInt(qEpisode, 10);
 
@@ -607,32 +683,42 @@ function buildChunkStreamUrl(driveId, quality) {
  */
 function getMovieStreams(movie) {
   if (!movie) return [];
+  const sNum = currentSeason || (movie && movie.season) || 1;
+  const eNum = currentEpisode || (movie && movie.episode) || 1;
+  const isSeries = movie && (movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || currentSeason > 1 || currentEpisode > 1 || Boolean(movie.season));
+
+  // TV Series episode resolution: resolve exact episode movie object
+  let effectiveMovie = movie;
+  if (isSeries && (parseInt(movie.season, 10) !== sNum || parseInt(movie.episode, 10) !== eNum)) {
+    const epEntry = findEpisodeEntry(movie, sNum, eNum);
+    if (epEntry) {
+      effectiveMovie = epEntry;
+    }
+  }
+
   const list = [];
-  const driveId = extractMovieDriveId(movie);
-  const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || currentSeason > 1 || currentEpisode > 1;
-  const sNum = currentSeason || movie.season || 1;
-  const eNum = currentEpisode || movie.episode || 1;
-  const primaryUrl = movie.stream_url || (Array.isArray(movie.streams) && movie.streams[0] && movie.streams[0].stream_url) || '';
+  const driveId = extractMovieDriveId(effectiveMovie);
+  const primaryUrl = effectiveMovie.stream_url || (Array.isArray(effectiveMovie.streams) && effectiveMovie.streams[0] && effectiveMovie.streams[0].stream_url) || '';
 
   // Does the local stream match this specific episode?
-  const isMatchingEpisode = !isSeries || (sNum === (movie.season || 1) && eNum === (movie.episode || 1));
+  const isMatchingEpisode = !isSeries || (sNum === (effectiveMovie.season || 1) && eNum === (effectiveMovie.episode || 1));
 
-  let imdbId = (movie.imdb_id || movie.imdbId || '').trim();
-  let tmdbId = String(movie.tmdb_id || movie.tmdbId || '').trim();
+  let imdbId = (effectiveMovie.imdb_id || effectiveMovie.imdbId || movie.imdb_id || movie.imdbId || '').trim();
+  let tmdbId = String(effectiveMovie.tmdb_id || effectiveMovie.tmdbId || movie.tmdb_id || movie.tmdbId || '').trim();
 
   // If imdb field contains tt ID (e.g. "tt0944947")
-  if (!imdbId && movie.imdb && /^tt\d+/i.test(movie.imdb.trim())) {
-    imdbId = movie.imdb.trim();
+  if (!imdbId && effectiveMovie.imdb && /^tt\d+/i.test(effectiveMovie.imdb.trim())) {
+    imdbId = effectiveMovie.imdb.trim();
   }
 
   // Extract from existing streams/downloads/slug/id if missing
   if (!imdbId || !tmdbId) {
     const urlsToCheck = [
-      movie.stream_url || '',
-      ...(Array.isArray(movie.streams) ? movie.streams.map(s => s.stream_url || s.url || '') : []),
-      ...(Array.isArray(movie.downloads) ? movie.downloads.map(d => d.url || '') : []),
-      movie.slug || '',
-      movie.id || ''
+      effectiveMovie.stream_url || '',
+      ...(Array.isArray(effectiveMovie.streams) ? effectiveMovie.streams.map(s => s.stream_url || s.url || '') : []),
+      ...(Array.isArray(effectiveMovie.downloads) ? effectiveMovie.downloads.map(d => d.url || '') : []),
+      effectiveMovie.slug || '',
+      effectiveMovie.id || ''
     ];
     for (const u of urlsToCheck) {
       if (!imdbId) {
@@ -649,7 +735,7 @@ function getMovieStreams(movie) {
 
   // Resolve extId from other movies in catalog with same title if missing
   if ((!imdbId && !tmdbId) && window.FilmSub && typeof FilmSub.getAllMovies === 'function') {
-    const normT = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normT = (effectiveMovie.title || movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const matchedOther = FilmSub.getAllMovies().find(m => {
       const otherT = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       return otherT && (otherT === normT || normT.startsWith(otherT) || otherT.startsWith(normT)) && (m.imdb_id || m.tmdb_id);
@@ -662,7 +748,7 @@ function getMovieStreams(movie) {
 
   // Fallback catalog for common popular titles
   if (!imdbId || !tmdbId) {
-    const titleKey = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const titleKey = (effectiveMovie.title || movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const FALLBACK_EXT_IDS = {
       'gameofthrones': { imdb: 'tt0944947', tmdb: '1399' },
       'the100': { imdb: 'tt2661044', tmdb: '48866' },
@@ -696,13 +782,13 @@ function getMovieStreams(movie) {
   let nativeStreamUrl = '';
   
   // 1. Resolve real Telegram Cloud stream via channel chat ID and message ID
-  let tgChatId = movie.channel_chat_id || '';
+  let tgChatId = effectiveMovie.channel_chat_id || movie.channel_chat_id || '';
   // IMPORTANT: NEVER use channel_post_id as video message_id!
   // channel_post_id is the announcement poster/text message in the public channel, NOT the video stream!
-  let tgMsgId = (typeof movie.message_id === 'number' && movie.message_id > 0) ? movie.message_id : 0;
+  let tgMsgId = (typeof effectiveMovie.message_id === 'number' && effectiveMovie.message_id > 0) ? effectiveMovie.message_id : 0;
 
-  if (!tgMsgId && Array.isArray(movie.downloads)) {
-    for (const d of movie.downloads) {
+  if (!tgMsgId && Array.isArray(effectiveMovie.downloads)) {
+    for (const d of effectiveMovie.downloads) {
       if (d.message_id && typeof d.message_id === 'number' && d.message_id > 0) {
         tgMsgId = d.message_id;
         break;
@@ -719,8 +805,8 @@ function getMovieStreams(movie) {
     }
   }
 
-  if (!tgMsgId && Array.isArray(movie.streams)) {
-    for (const s of movie.streams) {
+  if (!tgMsgId && Array.isArray(effectiveMovie.streams)) {
+    for (const s of effectiveMovie.streams) {
       const u = String(s.stream_url || s.url || '');
       const matchS = u.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
       if (matchS) {
@@ -734,14 +820,27 @@ function getMovieStreams(movie) {
     }
   }
 
-  const existingTgStream = Array.isArray(movie.streams)
-    ? movie.streams.find(s => s.mode === 'super_chunk' || (s.stream_url && !s.embed && !s.stream_url.includes('vidlink') && !s.stream_url.includes('autoembed') && !s.stream_url.includes('multiembed')))
+  const existingTgStream = Array.isArray(effectiveMovie.streams)
+    ? effectiveMovie.streams.find(s => s.mode === 'super_chunk' || (s.stream_url && !s.embed && !s.stream_url.includes('vidlink') && !s.stream_url.includes('autoembed') && !s.stream_url.includes('multiembed')))
     : null;
 
-  const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
+  const vm = effectiveMovie.variant_media || (effectiveMovie.movie_entry && effectiveMovie.movie_entry.variant_media);
   if (vm && typeof vm === 'object') {
+    const isValidV = v => Boolean(v && ((typeof v.message_id === 'number' && v.message_id > 0) || (v.stream_url && !v.stream_url.includes('/0')) || v.file_id));
     const qKey = (currentEffectiveQuality || '720p').toLowerCase();
-    const vOpt = vm[qKey] || vm['720p'] || vm['480p'] || vm['1080p'] || Object.values(vm).find(v => v && (v.message_id > 0 || (v.stream_url && !v.stream_url.includes('/0'))));
+    let vOpt = null;
+    if (isValidV(vm[qKey])) {
+      vOpt = vm[qKey];
+    } else {
+      const candidates = ['720p', '480p', '1080p', '360p'];
+      for (const q of candidates) {
+        if (isValidV(vm[q])) {
+          vOpt = vm[q];
+          break;
+        }
+      }
+      if (!vOpt) vOpt = Object.values(vm).find(isValidV);
+    }
     if (vOpt) {
       if (vOpt.stream_url && !vOpt.stream_url.includes('/0')) {
         const norm = normalizeStreamUrl(vOpt.stream_url);
@@ -756,8 +855,8 @@ function getMovieStreams(movie) {
   if (!nativeStreamUrl && tgMsgId > 0) {
     if (!tgChatId) tgChatId = '-1004325759505';
     nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/channel/${tgChatId}/${tgMsgId}`;
-  } else if (!nativeStreamUrl && movie.file_id) {
-    nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(movie.file_id)}`;
+  } else if (!nativeStreamUrl && effectiveMovie.file_id) {
+    nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(effectiveMovie.file_id)}`;
   } else if (!nativeStreamUrl && existingTgStream && existingTgStream.stream_url && !existingTgStream.stream_url.includes('vidlink') && !existingTgStream.stream_url.includes('autoembed') && !existingTgStream.stream_url.includes('multiembed')) {
     nativeStreamUrl = normalizeStreamUrl(existingTgStream.stream_url);
   } else if (!nativeStreamUrl && driveId) {
@@ -767,13 +866,8 @@ function getMovieStreams(movie) {
   }
 
   // Fallback for TV series episode switching if current movie doesn't have this episode's stream
-  if (!nativeStreamUrl && isSeries && window.FilmSub && typeof FilmSub.getAllMovies === 'function') {
-    const normT = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const matchedEp = FilmSub.getAllMovies().find(m => {
-      const otherT = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      return (otherT === normT || otherT.startsWith(normT) || normT.startsWith(otherT)) &&
-             (m.season === sNum && m.episode === eNum);
-    });
+  if (!nativeStreamUrl && isSeries) {
+    const matchedEp = findEpisodeEntry(movie, sNum, eNum);
     if (matchedEp) {
       const epMsgId = (typeof matchedEp.message_id === 'number' && matchedEp.message_id > 0) ? matchedEp.message_id : 0;
       const epChatId = matchedEp.channel_chat_id || tgChatId || '-1004325759505';
@@ -782,12 +876,14 @@ function getMovieStreams(movie) {
         nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/channel/${epChatId}/${epMsgId}`;
       } else if (matchedEp.file_id) {
         nativeStreamUrl = `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(matchedEp.file_id)}`;
+      } else if (matchedEp.stream_url) {
+        nativeStreamUrl = normalizeStreamUrl(matchedEp.stream_url);
       }
     }
   }
 
   const isRealStreamReady = Boolean(
-    (tgMsgId > 0 || movie.file_id || driveId) &&
+    (tgMsgId > 0 || effectiveMovie.file_id || driveId) &&
     nativeStreamUrl &&
     !nativeStreamUrl.endsWith('/0') &&
     !nativeStreamUrl.includes('/channel/-1004325759505/0')
@@ -844,10 +940,20 @@ function _isValidSubUrl(u) {
 
 function getMovieSubtitles(movie) {
   if (!movie) return [];
-  const isHardcoded = Boolean(movie && (movie.sub_hardcoded || movie.is_already_hardsubbed));
-  const defaultUri = buildDefaultSinhalaVttDataUri(movie);
-  if (Array.isArray(movie.subtitles) && movie.subtitles.length > 0) {
-    return movie.subtitles.map((sub, idx) => ({
+  const sNum = currentSeason || (movie && movie.season) || 1;
+  const eNum = currentEpisode || (movie && movie.episode) || 1;
+  const isSeries = movie && (movie.type === 'series' || currentSeason > 1 || currentEpisode > 1 || Boolean(movie.season));
+
+  let effectiveMovie = movie;
+  if (isSeries && (parseInt(movie.season, 10) !== sNum || parseInt(movie.episode, 10) !== eNum)) {
+    const epEntry = findEpisodeEntry(movie, sNum, eNum);
+    if (epEntry) effectiveMovie = epEntry;
+  }
+
+  const isHardcoded = Boolean(effectiveMovie && (effectiveMovie.sub_hardcoded || effectiveMovie.is_already_hardsubbed));
+  const defaultUri = buildDefaultSinhalaVttDataUri(effectiveMovie);
+  if (Array.isArray(effectiveMovie.subtitles) && effectiveMovie.subtitles.length > 0) {
+    return effectiveMovie.subtitles.map((sub, idx) => ({
       ...sub,
       language: sub.language || 'Sinhala',
       srclang: sub.srclang || 'si',
@@ -858,19 +964,17 @@ function getMovieSubtitles(movie) {
   }
 
   let ghSubUrl = '';
-  if (movie.slug) {
-    const isSeries = movie.type === 'series' || currentSeason > 1 || currentEpisode > 1;
-    const sNum = currentSeason || movie.season || 1;
-    const eNum = currentEpisode || movie.episode || 1;
+  if (effectiveMovie.slug) {
+    const baseSlug = (effectiveMovie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '');
     const epSfx = isSeries ? `-s${String(sNum).padStart(2, '0')}e${String(eNum).padStart(2, '0')}` : '';
-    ghSubUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${movie.slug}${epSfx}-si.vtt`;
+    ghSubUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${baseSlug}${epSfx}-si.vtt`;
   }
 
-  const effectiveSubUrl = _isValidSubUrl(movie.subtitle_url) ? movie.subtitle_url : ghSubUrl;
+  const effectiveSubUrl = _isValidSubUrl(effectiveMovie.subtitle_url) ? effectiveMovie.subtitle_url : ghSubUrl;
   if (effectiveSubUrl) {
     return [
       {
-        language: movie.lang || 'Sinhala',
+        language: effectiveMovie.lang || 'Sinhala',
         srclang: 'si',
         label: 'සිංහල උපසිරැසි (Sinhala)',
         url: effectiveSubUrl,
@@ -1039,13 +1143,23 @@ function formatBytesFromBytes(bytes) {
 
 function getMovieDownloads(movie) {
   if (!movie) return [];
-  const rawDls = Array.isArray(movie.downloads) ? [...movie.downloads] : [];
+  const sNum = currentSeason || (movie && movie.season) || 1;
+  const eNum = currentEpisode || (movie && movie.episode) || 1;
+  const isSeries = movie && (movie.type === 'series' || currentSeason > 1 || currentEpisode > 1 || Boolean(movie.season));
+
+  let effectiveMovie = movie;
+  if (isSeries && (parseInt(movie.season, 10) !== sNum || parseInt(movie.episode, 10) !== eNum)) {
+    const epEntry = findEpisodeEntry(movie, sNum, eNum);
+    if (epEntry) effectiveMovie = epEntry;
+  }
+
+  const rawDls = Array.isArray(effectiveMovie.downloads) ? [...effectiveMovie.downloads] : [];
   const botUsername = 'Filmsinhala200Bot';
-  const vm = movie.variant_media;
+  const vm = effectiveMovie.variant_media;
 
   // Channel ID extraction helper
   let chClean = '4325759505';
-  const mUrl = movie.stream_url || (rawDls.find(d => d.url && d.url.includes('/stream/channel/')) || {}).url || '';
+  const mUrl = effectiveMovie.stream_url || (rawDls.find(d => d.url && d.url.includes('/stream/channel/')) || {}).url || '';
   const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
   if (mMatch) {
     const rawId = mMatch[1].replace(/^-?100/, '').replace(/^-/, '');
@@ -1065,11 +1179,11 @@ function getMovieDownloads(movie) {
       const cm = card.url.match(/\/c\/(\d+)\/(\d+)/);
       if (cm) return `/stream/channel/-100${cm[1]}/${cm[2]}?dl=1`;
     }
-    if (movie.message_id) {
-      return `/stream/channel/-100${chClean}/${movie.message_id}?dl=1`;
+    if (effectiveMovie.message_id) {
+      return `/stream/channel/-100${chClean}/${effectiveMovie.message_id}?dl=1`;
     }
-    if (movie.stream_url && !isDeadTunnel(movie.stream_url)) {
-      return movie.stream_url.includes('?') ? `${movie.stream_url}&dl=1` : `${movie.stream_url}?dl=1`;
+    if (effectiveMovie.stream_url && !isDeadTunnel(effectiveMovie.stream_url)) {
+      return effectiveMovie.stream_url.includes('?') ? `${effectiveMovie.stream_url}&dl=1` : `${effectiveMovie.stream_url}?dl=1`;
     }
     return card.url || '';
   };
@@ -1094,8 +1208,8 @@ function getMovieDownloads(movie) {
 
   const hasTelegramMedia = Boolean(
     (vm && typeof vm === 'object' && Object.keys(vm).length > 0) ||
-    movie.message_id ||
-    movie.file_id ||
+    effectiveMovie.message_id ||
+    effectiveMovie.file_id ||
     rawDls.some(d => d.host === 'Telegram' || (d.url && d.url.includes('t.me')))
   );
 
@@ -1112,7 +1226,7 @@ function getMovieDownloads(movie) {
       const v = vm[q];
       if (v && typeof v === 'object' && (v.file_id || v.message_id)) {
         const sz = v.size_bytes ? formatBytesFromBytes(v.size_bytes) : '';
-        const botUrl = `https://t.me/${botUsername}?start=dl_${movie.slug}_${q}`;
+        const botUrl = `https://t.me/${botUsername}?start=dl_${effectiveMovie.slug || movie.slug}_${q}`;
         const chanUrl = v.message_id ? `https://t.me/c/${chClean}/${v.message_id}` : '';
         const directUrl = v.message_id ? `/stream/channel/-100${chClean}/${v.message_id}?dl=1` : '';
         const primaryDlUrl = directUrl || botUrl || chanUrl;
@@ -1147,8 +1261,8 @@ function getMovieDownloads(movie) {
       // If movie is Telegram-based, skip GDrive links entirely to avoid confusion/404s
       if (hasTelegramMedia) return;
       if (qNorm.includes('720p') || qNorm.includes('480p') || qNorm.includes('360p')) {
-        const mainDriveId = extractMovieDriveId(movie);
-        const qDriveId = extractDriveIdForQuality(movie, qNorm);
+        const mainDriveId = extractMovieDriveId(effectiveMovie);
+        const qDriveId = extractDriveIdForQuality(effectiveMovie, qNorm);
         if (!qDriveId || qDriveId === mainDriveId) {
           return; // Skip fake cloned GDrive card
         }
@@ -1175,11 +1289,11 @@ function getMovieDownloads(movie) {
   });
 
   // 3. Fallback for single Telegram message_id movie if variant_media was absent
-  if (movie.message_id && !seenQualities.has('1080p')) {
-    const sz1080 = movie.file_size ? formatBytesFromBytes(movie.file_size) : '';
-    const botUrl = `https://t.me/${botUsername}?start=dl_${movie.slug}_1080p`;
-    const chanUrl = `https://t.me/c/${chClean}/${movie.message_id}`;
-    const directUrl = `/stream/channel/-100${chClean}/${movie.message_id}?dl=1`;
+  if (effectiveMovie.message_id && !seenQualities.has('1080p')) {
+    const sz1080 = effectiveMovie.file_size ? formatBytesFromBytes(effectiveMovie.file_size) : '';
+    const botUrl = `https://t.me/${botUsername}?start=dl_${effectiveMovie.slug || movie.slug}_1080p`;
+    const chanUrl = `https://t.me/c/${chClean}/${effectiveMovie.message_id}`;
+    const directUrl = `/stream/channel/-100${chClean}/${effectiveMovie.message_id}?dl=1`;
     seenQualities.add('1080p');
     addCard({
       quality: '1080p',
@@ -1196,13 +1310,13 @@ function getMovieDownloads(movie) {
   }
 
   // 4. Fallback for direct MP4 stream if not already covered
-  if (movie.stream_url && !isDeadTunnel(movie.stream_url)) {
-    const qStr = movie.quality || '1080p';
+  if (effectiveMovie.stream_url && !isDeadTunnel(effectiveMovie.stream_url)) {
+    const qStr = effectiveMovie.quality || '1080p';
     const baseQ = qStr.toLowerCase();
     if (!seenQualities.has(baseQ)) {
       seenQualities.add(baseQ);
-      const szStr = movie.file_size ? formatBytesFromBytes(movie.file_size) : (movie.size || '');
-      const directUrl = movie.stream_url.includes('?') ? `${movie.stream_url}&dl=1` : `${movie.stream_url}?dl=1`;
+      const szStr = effectiveMovie.file_size ? formatBytesFromBytes(effectiveMovie.file_size) : (effectiveMovie.size || '');
+      const directUrl = effectiveMovie.stream_url.includes('?') ? `${effectiveMovie.stream_url}&dl=1` : `${effectiveMovie.stream_url}?dl=1`;
       addCard({
         quality: qStr,
         label: `${qStr} Full HD`,
@@ -1385,21 +1499,43 @@ function updateQualitySpeedBadge(q) {
  */
 function resolveStreamUrlForQuality(movie, quality) {
   if (!movie) return { src: '', chatId: '', messageId: null, driveId: null, quality: '' };
+  const sNum = currentSeason || (movie && movie.season) || 1;
+  const eNum = currentEpisode || (movie && movie.episode) || 1;
+  const isSeries = movie && (movie.type === 'series' || currentSeason > 1 || currentEpisode > 1 || Boolean(movie.season));
+
+  let effectiveMovie = movie;
+  if (isSeries && (parseInt(movie.season, 10) !== sNum || parseInt(movie.episode, 10) !== eNum)) {
+    const epEntry = findEpisodeEntry(movie, sNum, eNum);
+    if (epEntry) effectiveMovie = epEntry;
+  }
+
   const qNorm = String(quality || 'auto').toLowerCase();
   const effectiveQ = qNorm === 'auto' ? (detectNetworkSpeed().recommendedQuality || '720p') : qNorm;
-  const defaultTgChatId = movie.channel_chat_id || '-1004325759505';
+  const defaultTgChatId = effectiveMovie.channel_chat_id || movie.channel_chat_id || '-1004325759505';
 
   // 1. Check if movie has multi-quality variant_media (Telegram Cloud)
-  const vm = movie.variant_media || (movie.movie_entry && movie.movie_entry.variant_media);
+  const vm = effectiveMovie.variant_media || (effectiveMovie.movie_entry && effectiveMovie.movie_entry.variant_media);
   if (vm && typeof vm === 'object') {
-    let vEntry = vm[effectiveQ] || vm[quality];
-    if (!vEntry && qNorm === 'auto') {
-      vEntry = vm['720p'] || vm['480p'] || vm['1080p'];
+    const isValidV = v => Boolean(v && ((typeof v.message_id === 'number' && v.message_id > 0) || (v.stream_url && !v.stream_url.includes('/0')) || v.file_id));
+    let vEntry = null;
+    if (isValidV(vm[effectiveQ])) {
+      vEntry = vm[effectiveQ];
+    } else if (isValidV(vm[quality])) {
+      vEntry = vm[quality];
+    } else {
+      const candidates = ['720p', '480p', '1080p', '360p'];
+      for (const q of candidates) {
+        if (isValidV(vm[q])) {
+          vEntry = vm[q];
+          break;
+        }
+      }
+      if (!vEntry) vEntry = Object.values(vm).find(isValidV);
     }
     if (vEntry) {
-      let tgChatId = movie.channel_chat_id || '';
+      let tgChatId = effectiveMovie.channel_chat_id || movie.channel_chat_id || '';
       if (!tgChatId) {
-        const mUrl = movie.stream_url || (vEntry.stream_url || '');
+        const mUrl = effectiveMovie.stream_url || (vEntry.stream_url || '');
         const mMatch = mUrl.match(/\/stream\/channel\/(-?\d+)\//);
         tgChatId = mMatch ? mMatch[1] : defaultTgChatId;
       }
@@ -1419,12 +1555,20 @@ function resolveStreamUrlForQuality(movie, quality) {
           driveId: null,
           quality: effectiveQ
         };
+      } else if (vEntry.file_id) {
+        return {
+          src: `${getStreamEndpointPrefix()}/stream/file/${encodeURIComponent(vEntry.file_id)}`,
+          chatId: '',
+          messageId: null,
+          driveId: null,
+          quality: effectiveQ
+        };
       }
     }
   }
 
   // 2. Check Drive ID for quality
-  const driveId = extractDriveIdForQuality(movie, effectiveQ);
+  const driveId = extractDriveIdForQuality(effectiveMovie, effectiveQ);
   if (driveId) {
     return {
       src: buildChunkStreamUrl(driveId, effectiveQ),
@@ -1436,8 +1580,8 @@ function resolveStreamUrlForQuality(movie, quality) {
   }
 
   // 3. Check qualities map
-  if (movie.qualities && typeof movie.qualities === 'object') {
-    const qVal = movie.qualities[effectiveQ] || movie.qualities[quality];
+  if (effectiveMovie.qualities && typeof effectiveMovie.qualities === 'object') {
+    const qVal = effectiveMovie.qualities[effectiveQ] || effectiveMovie.qualities[quality];
     if (typeof qVal === 'string' && qVal.startsWith('http') && !qVal.includes('t.me')) {
       return {
         src: normalizeStreamUrl(qVal),
@@ -1458,7 +1602,7 @@ function resolveStreamUrlForQuality(movie, quality) {
   }
 
   // 4. Check movie downloads
-  const downloads = typeof getMovieDownloads === 'function' ? getMovieDownloads(movie) : (movie.downloads || []);
+  const downloads = typeof getMovieDownloads === 'function' ? getMovieDownloads(effectiveMovie) : (effectiveMovie.downloads || []);
   const matched = downloads.find(d => String(d.quality || '').toLowerCase().includes(effectiveQ) && !d.download_only);
   if (matched) {
     if (matched.stream_url && !matched.stream_url.includes('t.me')) {
@@ -3886,9 +4030,11 @@ function renderSeriesSection(movie) {
     const sPoster = seasonObj.poster_url || movie.poster || movie.poster_url || '';
 
     // Gather all catalog entries belonging to this series
-    const catalogMovies = (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies))
-      ? window.FILMSUB_DATA.movies
-      : (window.FilmSub && typeof window.FilmSub.allMovies === 'function' ? window.FilmSub.allMovies() : []);
+    const catalogMovies = (window.FilmSub && typeof window.FilmSub.getAllMovies === 'function' && window.FilmSub.getAllMovies().length)
+      ? window.FilmSub.getAllMovies()
+      : ((window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies))
+        ? window.FILMSUB_DATA.movies
+        : (window.FilmSub && typeof window.FilmSub.allMovies === 'function' ? window.FilmSub.allMovies() : []));
 
     const seriesTitleNorm = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -3897,13 +4043,13 @@ function renderSeriesSection(movie) {
       const isActive = (sNum === currentSeason && ep === currentEpisode);
 
       // Look for a matching episode object in the catalog
-      let matchedEpMovie = null;
-      if (catalogMovies.length > 0) {
+      let matchedEpMovie = findEpisodeEntry(movie, sNum, ep);
+      if (!matchedEpMovie && catalogMovies.length > 0) {
         matchedEpMovie = catalogMovies.find(m => {
           if (m.type !== 'series') return false;
           const tNorm = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
           const matchTitle = (tNorm === seriesTitleNorm || (movie.tmdb_id && m.tmdb_id === movie.tmdb_id));
-          return matchTitle && (m.season === sNum && m.episode === ep);
+          return matchTitle && (parseInt(m.season, 10) === sNum && parseInt(m.episode, 10) === ep);
         });
       }
 
@@ -3953,13 +4099,28 @@ function renderSeriesSection(movie) {
         currentEpisode = ep;
 
         const matchedSlug = card.dataset.slug;
+        let found = null;
         if (matchedSlug && window.FilmSub && typeof window.FilmSub.findMovieBySlug === 'function') {
-          const found = window.FilmSub.findMovieBySlug(matchedSlug);
-          if (found) {
-            currentMovie = found;
-            movie = found;
-          }
+          found = window.FilmSub.findMovieBySlug(matchedSlug);
         }
+        if (!found) {
+          found = findEpisodeEntry(movie, s, ep);
+        }
+        if (found) {
+          currentMovie = found;
+          movie = found;
+        }
+
+        const targetSlug = (found && (found.slug || found.id)) || `${(movie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '')}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`;
+        try {
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('id', targetSlug);
+          newUrl.searchParams.set('s', s);
+          newUrl.searchParams.set('e', ep);
+          window.history.replaceState({ slug: targetSlug, season: s, episode: ep }, '', newUrl.toString());
+        } catch (e) {}
+
+        document.title = `${movie.title || 'Series'} S${String(s).padStart(2, '0')}E${String(ep).padStart(2, '0')} Sinhala Subtitles – FilmSub`;
 
         FilmSub.showToast(`Loading Season ${s} Episode ${ep}...`, 'info');
 
@@ -3968,8 +4129,15 @@ function renderSeriesSection(movie) {
           qualEl.textContent = `S${String(s).padStart(2, '0')} E${String(ep).padStart(2, '0')} HD`;
         }
 
+        renderPageHeader(movie);
+        renderMovieDetails(movie);
+        renderQuickDownloadStrip(movie);
+        renderDownloadSection(movie);
         renderServerTabs(movie);
         loadStream(movie, 0);
+        loadParsedSubtitles(movie).then(() => {
+          try { syncSubtitles(); } catch (e) {}
+        }).catch(() => {});
 
         const playerSec = document.getElementById('player-section');
         if (playerSec) {
@@ -3979,9 +4147,12 @@ function renderSeriesSection(movie) {
     });
   };
 
-  renderEpisodesForSeason(seasons[0]);
+  const initialSeasonIdx = seasons.findIndex(s => s.season_number === currentSeason);
+  const activeSeasonIdx = initialSeasonIdx >= 0 ? initialSeasonIdx : 0;
+  renderEpisodesForSeason(seasons[activeSeasonIdx]);
 
   tabsEl.querySelectorAll('.season-tab').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.index, 10) === activeSeasonIdx);
     btn.addEventListener('click', () => {
       tabsEl.querySelectorAll('.season-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');

@@ -234,8 +234,33 @@ function findMovieBySlug(slug) {
   });
   if (found) return found;
 
-  // 1b. Series base slug match: e.g. "game-of-thrones-2011-s02e03" -> base "game-of-thrones-2011" or "game-of-thrones"
+  // Extract requested season and episode if specified in slug
+  const epMatch = clean.match(/[-_.]s(\d+)[-_.]?e(\d+)/i) || clean.match(/[-_.](\d+)x(\d+)/i);
+  const reqSeason = epMatch ? parseInt(epMatch[1], 10) : null;
+  const reqEpisode = epMatch ? parseInt(epMatch[2], 10) : null;
+
+  // 1b. Series episode specific match: match series base slug + exact season/episode
   const baseEpSlug = clean.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '');
+  if (baseEpSlug && baseEpSlug !== clean) {
+    const normBase = baseEpSlug.replace(/[^a-z0-9]/g, '');
+    if (reqSeason !== null && reqEpisode !== null) {
+      found = allMovies.find(m => {
+        if (parseInt(m.season, 10) !== reqSeason || parseInt(m.episode, 10) !== reqEpisode) return false;
+        const mSlug = (m.slug || '').toLowerCase().replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+        const mId = String(m.id || '').toLowerCase().replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+        return mSlug === normBase || mId === normBase || (normBase && (mSlug.startsWith(normBase) || normBase.startsWith(mSlug)));
+      });
+      if (found) return found;
+    }
+  }
+
+  // If a specific episode was explicitly requested (e.g. s01e02) and not found in local catalog,
+  // do NOT match a conflicting episode (e.g. s01e01) via loose rules. Return null so caller can fetch remote movies.json.
+  if (reqSeason !== null && reqEpisode !== null) {
+    return null;
+  }
+
+  // 1c. Series base slug match for non-episode queries (e.g. "game-of-thrones" matching first episode or master)
   if (baseEpSlug && baseEpSlug !== clean) {
     const normBase = baseEpSlug.replace(/[^a-z0-9]/g, '');
     found = allMovies.find(m => {
@@ -1292,6 +1317,8 @@ window.FilmZilla = window.FilmSub = {
   renderHero,
   groupSeriesCatalog,
   allMovies: () => allMovies,
+  getAllMovies: () => allMovies,
+  get movies() { return allMovies; },
   siteData: () => siteData,
   getFeatured,
   getNewReleases,

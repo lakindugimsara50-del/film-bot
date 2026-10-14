@@ -2024,6 +2024,328 @@ async def apply_faststart(input_path: str, output_path: str) -> bool:
                 pass
 
 
+def get_or_create_filmzilla_intro(
+    target_width: int,
+    target_height: int,
+    fps: int = 30,
+    duration: float = 5.0,
+    ffmpeg_bin: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Generate or retrieve a cached 5-second FilmZilla branded video intro with stereo silence audio.
+    Used to prepend before films and TV series.
+    Guarantees:
+    - Exactly `duration` seconds (default 5.0s).
+    - Audio stream: stereo silent AAC at 48000Hz (so concat with film audio is clean and has 0 bleed).
+    - Video stream: H.264 widescreen matching target dimensions, centered FilmZilla branding with fade in/out.
+    - Cached in tempfile.gettempdir()/filmzilla_intro_cache for instant reuse.
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe:
+        return None
+
+    w = int(target_width) if int(target_width) % 2 == 0 else int(target_width) + 1
+    h = int(target_height) if int(target_height) % 2 == 0 else int(target_height) + 1
+    w = max(320, w)
+    h = max(180, h)
+
+    cache_dir = os.path.join(tempfile.gettempdir(), "filmzilla_intro_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    cached_path = os.path.join(cache_dir, f"intro_{w}x{h}_{fps}fps_{int(round(duration))}s.mp4")
+
+    if os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
+        cached_dur = get_video_duration(cached_path, exe)
+        if abs(cached_dur - duration) <= 0.5:
+            return cached_path
+
+    # Locate visual asset
+    base_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+    web_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "assets", "img")
+
+    candidates = [
+        os.path.join(base_assets_dir, "filmzilla_intro_card.png"),
+        os.path.join(web_assets_dir, "filmzilla_intro_card.png"),
+        os.path.join(base_assets_dir, "filmzilla_brand_horizontal.png"),
+        os.path.join(base_assets_dir, "filmzilla_logo.png"),
+        os.path.join(web_assets_dir, "filmzilla_brand_horizontal.png"),
+    ]
+    card_asset = next((p for p in candidates if os.path.exists(p)), None)
+
+    fade_out_st = max(0.5, duration - 0.7)
+
+    if card_asset:
+        intro_w = max(280, min(int(w * 0.75), 900))
+        filter_complex = (
+            f"[1:v]scale={intro_w}:-1,format=rgba,fade=t=in:st=0.2:d=0.6:alpha=1,fade=t=out:st={fade_out_st:.2f}:d=0.6:alpha=1[card];"
+            f"[0:v][card]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2[outv]"
+        )
+        cmd = [
+            exe, "-y",
+            "-hide_banner",
+            "-f", "lavfi", "-i", f"color=c=black:s={w}x{h}:r={fps}:d={duration}",
+            "-i", os.path.abspath(card_asset),
+            "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=48000:d={duration}",
+            "-filter_complex", filter_complex,
+            "-map", "[outv]", "-map", "2:a",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+            "-t", str(duration),
+            "-movflags", "+faststart",
+            cached_path,
+        ]
+    else:
+        # Fallback card if image asset not present
+        cmd = [
+            exe, "-y",
+            "-hide_banner",
+            "-f", "lavfi", "-i", f"color=c=black:s={w}x{h}:r={fps}:d={duration}",
+            "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=48000:d={duration}",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+            "-t", str(duration),
+            "-movflags", "+faststart",
+            cached_path,
+        ]
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=30,
+        )
+        if proc.returncode == 0 and os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
+            log.info("[VideoService] Successfully created FilmZilla intro card video: %s", cached_path)
+            return cached_path
+    except Exception as exc:
+        log.warning("[VideoService] Failed to create FilmZilla intro video: %s", exc)
+
+    return None
+
+
+async def prepend_filmzilla_intro(
+    input_path: str,
+    output_path: str,
+    intro_duration: float = 5.0,
+    progress_callback: Optional[Callable] = None,
+    ffmpeg_bin: Optional[str] = None,
+) -> bool:
+    """
+    Prepend a 5.0-second FilmZilla branded intro to any movie or TV series episode.
+    Guarantees:
+    - Video concat is smooth and uniform with proper scaling/padding.
+    - Zero audio overlap or bleed: Audio of the main video starts strictly after the intro (at t = 5.0s).
+    - Works for both videos with audio and audio-less videos.
+    - Uses hardware acceleration (NVENC) when available, falling back to libx264.
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(input_path):
+        return False
+
+    raw_dur = get_video_duration(input_path, exe)
+    if raw_dur <= 0:
+        log.warning("[VideoService] Input video has invalid duration (%.1fs). Skipping intro prepend.", raw_dur)
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    in_w, in_h = get_video_resolution(input_path, exe)
+    if in_w <= 0 or in_h <= 0:
+        in_w, in_h = 1280, 720
+    if in_w % 2 != 0:
+        in_w += 1
+    if in_h % 2 != 0:
+        in_h += 1
+
+    intro_video = get_or_create_filmzilla_intro(in_w, in_h, fps=30, duration=intro_duration, ffmpeg_bin=exe)
+    if not intro_video or not os.path.exists(intro_video):
+        log.warning("[VideoService] Could not obtain FilmZilla intro video. Skipping prepend.")
+        return False
+
+    has_audio = bool(get_audio_codec(input_path, exe))
+    hw_enc = detect_hw_encoder(exe)
+
+    if hw_enc == "h264_nvenc":
+        nvenc_preset = "p4" if _on_colab else "fast"
+        hw_opts = ["-hwaccel", "auto"]
+        enc_opts = [
+            "-c:v", "h264_nvenc",
+            "-preset", nvenc_preset,
+            "-tune", "ll",
+            "-rc", "vbr",
+            "-cq", "24",
+            "-pix_fmt", "yuv420p",
+        ]
+    else:
+        hw_opts = []
+        enc_opts = [
+            "-c:v", "libx264",
+            "-preset", "ultrafast" if _on_colab else "veryfast",
+            "-crf", "23",
+            "-threads", "0",
+            "-pix_fmt", "yuv420p",
+        ]
+
+    total_duration = raw_dur + intro_duration
+
+    if has_audio:
+        filter_complex = (
+            f"[0:v]setpts=PTS-STARTPTS[v0];"
+            f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[mv];"
+            f"[0:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a0];"
+            f"[1:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a1];"
+            f"[v0][a0][mv][a1]concat=n=2:v=1:a=1[outv][outa]"
+        )
+        maps = ["-map", "[outv]", "-map", "[outa]"]
+        audio_opts = ["-c:a", "aac", "-b:a", "128k"]
+    else:
+        filter_complex = (
+            f"[0:v]setpts=PTS-STARTPTS[v0];"
+            f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[mv];"
+            f"[v0][mv]concat=n=2:v=1:a=0[outv]"
+        )
+        maps = ["-map", "[outv]"]
+        audio_opts = []
+
+    is_inplace = (os.path.abspath(input_path) == os.path.abspath(output_path))
+    temp_target = os.path.join(out_dir, f"tmp_intro_{os.path.basename(output_path)}") if is_inplace else output_path
+
+    cmd = [
+        exe, "-y",
+        "-hide_banner",
+        *hw_opts,
+        "-i", os.path.abspath(intro_video),
+        "-i", os.path.abspath(input_path),
+        "-filter_complex", filter_complex,
+        *maps,
+        *enc_opts,
+        *audio_opts,
+        "-max_muxing_queue_size", "9999",
+        "-movflags", "+faststart",
+        os.path.abspath(temp_target),
+    ]
+
+    log.info("[VideoService] Prepending FilmZilla intro (%s -> %s, duration=%.1fs -> %.1fs, hwaccel=%s)...",
+             input_path, output_path, raw_dur, total_duration, bool(hw_opts))
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+        last_logged_pct = 0.0
+
+        while True:
+            line = await proc.stderr.readline()
+            if not line:
+                break
+            line_str = line.decode("utf-8", errors="replace")
+            m_time = time_pattern.search(line_str)
+            if m_time and total_duration > 0:
+                hours, minutes, seconds = m_time.groups()
+                cur_sec = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+                pct = min(100.0, max(0.0, (cur_sec / total_duration) * 100.0))
+                if pct - last_logged_pct >= 15.0 or pct >= 99.0:
+                    last_logged_pct = pct
+                    spd = ""
+                    m_spd = speed_pattern.search(line_str)
+                    if m_spd:
+                        spd = f" ({m_spd.group(1)}x)"
+                    log.info("[VideoService] Prepend Intro Progress: %.1f%%%s", pct, spd)
+                    if progress_callback:
+                        try:
+                            await progress_callback(pct, f"{pct:.1f}%")
+                        except Exception:
+                            pass
+
+        await proc.wait()
+
+        if proc.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
+            if is_inplace:
+                shutil.move(temp_target, output_path)
+            log.info("[VideoService] Prepend FilmZilla intro success: %s (size=%d bytes)", output_path, os.path.getsize(output_path))
+            return True
+
+        # Fallback to CPU libx264 if hardware encoder failed
+        if hw_opts:
+            log.info("[VideoService] Retrying prepend intro with CPU libx264...")
+            cpu_enc_opts = [
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-crf", "23",
+                "-threads", "0",
+                "-pix_fmt", "yuv420p",
+            ]
+            cpu_cmd = [
+                exe, "-y",
+                "-hide_banner",
+                "-i", os.path.abspath(intro_video),
+                "-i", os.path.abspath(input_path),
+                "-filter_complex", filter_complex,
+                *maps,
+                *cpu_enc_opts,
+                *audio_opts,
+                "-max_muxing_queue_size", "9999",
+                "-movflags", "+faststart",
+                os.path.abspath(temp_target),
+            ]
+            proc_cpu = await asyncio.create_subprocess_exec(
+                *cpu_cmd,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await proc_cpu.wait()
+            if proc_cpu.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
+                if is_inplace:
+                    shutil.move(temp_target, output_path)
+                log.info("[VideoService] Prepend FilmZilla intro CPU fallback success: %s", output_path)
+                return True
+
+        if is_inplace and os.path.exists(temp_target):
+            try:
+                os.remove(temp_target)
+            except Exception:
+                pass
+        return False
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        for t_p in (temp_target, output_path if not is_inplace else None):
+            if t_p and os.path.exists(t_p):
+                try:
+                    os.remove(t_p)
+                except Exception:
+                    pass
+        raise
+    except Exception as exc:
+        log.warning("[VideoService] Prepend FilmZilla intro error: %s", exc)
+        if is_inplace and os.path.exists(temp_target):
+            try:
+                os.remove(temp_target)
+            except Exception:
+                pass
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
 def ensure_sinhala_font_dir() -> Optional[str]:
     """
     Ensure 'Noto Sans Sinhala' TrueType font (.ttf) is available for FFmpeg libass subtitle burning.

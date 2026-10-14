@@ -280,15 +280,19 @@ def is_item_in_catalog(
             return True
 
     # Movie Check
-    if year and (nt, year) in catalog.get("title_years", set()):
-        return True
-    if nt in catalog.get("movie_titles", set()):
-        return True
+    if year:
+        if (nt, year) in catalog.get("title_years", set()):
+            return True
+    else:
+        if nt in catalog.get("movie_titles", set()):
+            return True
 
     # Slugs Check
     t_slug = nt.replace(" ", "-")
     for sl in catalog.get("slugs", set()):
-        if sl == t_slug or (year and sl == f"{t_slug}-{year}"):
+        if year and sl == f"{t_slug}-{year}":
+            return True
+        elif not year and (sl == t_slug or sl.startswith(f"{t_slug}-")):
             return True
 
     return False
@@ -390,8 +394,7 @@ class CineSubzCrawler:
             else:
                 self.current_movie_page = start_page
 
-        loop = asyncio.get_event_loop()
-        self._worker_task = loop.create_task(self._crawler_worker())
+        self._worker_task = asyncio.create_task(self._crawler_worker())
         log.info("[CineSubzCrawler] Started crawler in mode '%s'", self.mode)
         return True, f"🚀 <b>CineSubz Auto-Harvester ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b> (Oldest ➔ Newest)"
 
@@ -445,17 +448,19 @@ class CineSubzCrawler:
         async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as http_client:
             try:
                 # 1. Detect max pages if not known
-                if self.mode in ("movies", "all") and self.max_movie_pages <= 0:
-                    self.status_detail = "Detecting movie pages..."
-                    await self._update_status_msg()
-                    self.max_movie_pages = await get_cinesubz_max_pages(http_client, "movies")
+                if self.mode in ("movies", "all"):
+                    if self.max_movie_pages <= 0:
+                        self.status_detail = "Detecting movie pages..."
+                        await self._update_status_msg()
+                        self.max_movie_pages = await get_cinesubz_max_pages(http_client, "movies")
                     if self.current_movie_page <= 0:
                         self.current_movie_page = self.max_movie_pages
 
-                if self.mode in ("tvshows", "all") and self.max_tv_pages <= 0:
-                    self.status_detail = "Detecting TV show pages..."
-                    await self._update_status_msg()
-                    self.max_tv_pages = await get_cinesubz_max_pages(http_client, "tvshows")
+                if self.mode in ("tvshows", "all"):
+                    if self.max_tv_pages <= 0:
+                        self.status_detail = "Detecting TV show pages..."
+                        await self._update_status_msg()
+                        self.max_tv_pages = await get_cinesubz_max_pages(http_client, "tvshows")
                     if self.current_tv_page <= 0:
                         self.current_tv_page = self.max_tv_pages
 
@@ -493,8 +498,12 @@ class CineSubzCrawler:
                             self.status_detail = f"Enqueuing {item_label} for Auto-Leech..."
                             await self._update_status_msg()
 
-                            # Prepare query: title + year with --auto for full auto publish
-                            q_text = f"{item['clean_title']} {item['year']} --auto" if item["year"] else f"{item['clean_title']} --auto"
+                            # Prepare query: direct URL + title + year with --auto for full auto publish
+                            item_url = item.get("url") or ""
+                            if item_url:
+                                q_text = f"{item_url} {item['clean_title']} {item['year']} --auto" if item["year"] else f"{item_url} {item['clean_title']} --auto"
+                            else:
+                                q_text = f"{item['clean_title']} {item['year']} --auto" if item["year"] else f"{item['clean_title']} --auto"
                             log.info("[CineSubzCrawler] 🎯 Enqueuing missing movie: %s (Page %d)", q_text, p)
 
                             # Send dedicated leech notification in admin chat
@@ -575,7 +584,11 @@ class CineSubzCrawler:
                                 self.status_detail = f"Enqueuing {ep_tag}..."
                                 await self._update_status_msg()
 
-                                ep_query = f"{show_title} S{s_num:02d}E{e_num:02d} --auto"
+                                ep_url = ep.get("url") or ""
+                                if ep_url:
+                                    ep_query = f"{ep_url} {show_title} S{s_num:02d}E{e_num:02d} --auto"
+                                else:
+                                    ep_query = f"{show_title} S{s_num:02d}E{e_num:02d} --auto"
                                 log.info("[CineSubzCrawler] 🎯 Enqueuing missing episode: %s", ep_query)
 
                                 leech_status_msg = None
@@ -692,9 +705,18 @@ async def resolve_series_episodes(
         test_slugs = [slug]
         if release_year:
             test_slugs.append(f"{slug}-{release_year}")
+            test_slugs.append(f"{slug}-{release_year}-tv-series")
+            test_slugs.append(f"{slug}-{release_year}-sinhala-sub")
+        test_slugs.append(f"{slug}-tv-series")
+        test_slugs.append(f"{slug}-sinhala-sub")
+        test_slugs.append(f"{slug}-season-1")
         raw_slug = re.sub(r"[^a-z0-9]+", "-", clean_series.lower()).strip("-")
         if raw_slug not in test_slugs:
             test_slugs.append(raw_slug)
+            if release_year:
+                test_slugs.append(f"{raw_slug}-{release_year}")
+                test_slugs.append(f"{raw_slug}-{release_year}-tv-series")
+            test_slugs.append(f"{raw_slug}-tv-series")
 
         for base in CINESUBZ_BASE_URLS:
             for s_cand in test_slugs:
@@ -706,6 +728,37 @@ async def resolve_series_episodes(
                     break
             if cinesubz_eps:
                 break
+
+        # Fallback: Search CineSubz catalog directly if direct slug probe didn't resolve episodes
+        if not cinesubz_eps:
+            import urllib.parse
+            for base in CINESUBZ_BASE_URLS:
+                search_queries = [canonical_title]
+                if release_year:
+                    search_queries.insert(0, f"{canonical_title} {release_year}")
+                for sq in search_queries:
+                    try:
+                        s_url = f"{base}/?s={urllib.parse.quote(sq)}"
+                        resp = await client.get(s_url, timeout=12.0)
+                        if resp.status_code == 200:
+                            s_soup = BeautifulSoup(resp.text, "html.parser")
+                            tv_links: List[str] = []
+                            for a in s_soup.find_all("a", href=True):
+                                href = a["href"].strip()
+                                if "/tvshows/" in href and href not in tv_links:
+                                    tv_links.append(href)
+                            for tv_link in tv_links:
+                                found = await scrape_cinesubz_tvshow_episodes(client, tv_link)
+                                if found:
+                                    cinesubz_eps = found
+                                    log.info("[CineSubzCrawler] Found %d episode(s) on CineSubz via search at %s", len(found), tv_link)
+                                    break
+                            if cinesubz_eps:
+                                break
+                    except Exception as s_exc:
+                        log.debug("[CineSubzCrawler] Search probe error for %s: %s", sq, s_exc)
+                if cinesubz_eps:
+                    break
     except Exception as cs_err:
         log.debug("[CineSubzCrawler] CineSubz direct series probe note: %s", cs_err)
     finally:

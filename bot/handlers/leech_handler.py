@@ -374,7 +374,11 @@ def register(app: Client) -> None:
 
                 for ep_obj in unseen_eps:
                     s_i, e_i = ep_obj["season"], ep_obj["episode"]
-                    ep_query_str = f"{s_title} S{s_i:02d}E{e_i:02d} --auto"
+                    ep_url = ep_obj.get("url") or ""
+                    if ep_url:
+                        ep_query_str = f"{ep_url} {s_title} S{s_i:02d}E{e_i:02d} --auto"
+                    else:
+                        ep_query_str = f"{s_title} S{s_i:02d}E{e_i:02d} --auto"
                     ep_hint = f"{s_title} S{s_i:02d}E{e_i:02d}"
                     await queue_service.add_to_queue(
                         client=client,
@@ -872,19 +876,31 @@ def register(app: Client) -> None:
             return
 
         start_page = None
-        mode = "movies"
-        if subcmd in ("movies", "movie"):
-            mode = "movies"
-        elif subcmd in ("tvshows", "series", "tv"):
-            mode = "tvshows"
-        elif subcmd in ("all", "both"):
-            mode = "all"
-        elif subcmd == "page":
-            mode = "movies"
-            if len(tokens) > 2 and tokens[2].isdigit():
-                start_page = int(tokens[2])
-        elif subcmd in ("resume", "continue"):
-            mode = cinesubz_crawler.mode or "movies"
+        mode = cinesubz_crawler.mode or "movies"
+
+        args = tokens[1:]
+        for a in args:
+            if a.isdigit():
+                start_page = int(a)
+                break
+
+        for a in args:
+            al = a.lower()
+            if al in ("movies", "movie", "film", "films"):
+                mode = "movies"
+                break
+            elif al in ("tvshows", "tvshow", "series", "tv", "shows", "episodes"):
+                mode = "tvshows"
+                break
+            elif al in ("all", "both"):
+                mode = "all"
+                break
+            elif al in ("resume", "continue"):
+                mode = cinesubz_crawler.mode or "movies"
+                break
+
+        if subcmd == "page" and len(tokens) > 2 and tokens[2].isdigit():
+            start_page = int(tokens[2])
 
         st_msg = await message.reply_text(
             f"⏳ <b>CineSubz Harvester ({mode.upper()}) ආරම්භ කරමින් පවතී...</b>",

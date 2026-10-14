@@ -1131,13 +1131,12 @@ async def compress_video(
         in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
         if in_w <= 0:
             in_w = 1280
-        # Scaled to CineSubz exact footprint and moved tightly to the bottom-left corner
+        # Scaled to CineSubz exact footprint and placed flush at the bottom-left corner
         badge_w = max(100, min(220, int(in_w * 0.115)))
-        ox = max(6, min(16, int(in_w * 0.009)))
-        oy_offset = max(6, min(16, int(in_h * 0.016)))
+        ox = 0
         filter_complex = (
             f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
-            f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}"
+            f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h"
         )
         if burn_vf:
             filter_complex += f",{burn_vf}"
@@ -1149,8 +1148,8 @@ async def compress_video(
             in_w = 1280
         bw = max(100, min(220, int(in_w * 0.115)))
         bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
-        by = f"ih-{bh}-6"
-        box_str = f"drawbox=x=6:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+        by = f"ih-{bh}"
+        box_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
         full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
         cmd.extend(["-map", "0:v:0", "-vf", full_vf])
     elif burn_vf:
@@ -2443,10 +2442,9 @@ async def cover_cinesubz_watermark(
 
     try:
         if badge_path and os.path.exists(badge_path):
-            # Scaled to CineSubz exact footprint and moved tightly to the bottom-left corner
+            # Scaled to CineSubz exact footprint and placed flush at the bottom-left corner
             badge_w = max(100, min(220, int(in_w * 0.115)))
-            ox = max(6, min(16, int(in_w * 0.009)))
-            oy_offset = max(6, min(16, int(in_h * 0.016)))
+            ox = 0
 
             extra_inputs = []
             if has_intro_card:
@@ -2456,13 +2454,13 @@ async def cover_cinesubz_watermark(
                     f"[2:v]scale={intro_w}:-1,format=rgba,fade=t=in:st=1.0:d=0.7:alpha=1,fade=t=out:st=6.8:d=0.7:alpha=1[intro];"
                     f"[0:v][intro]overlay=x=(main_w-overlay_w)/2:y={intro_y}:enable='between(t,1.0,7.5)'[v_intro];"
                     f"[1:v]scale={badge_w}:-1[badge];"
-                    f"[v_intro][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}[outv]"
+                    f"[v_intro][badge]overlay=x={ox}:y=main_h-overlay_h[outv]"
                 )
                 extra_inputs = ["-i", os.path.abspath(intro_card_path)]
             else:
                 filter_complex = (
                     f"[1:v]scale={badge_w}:-1[badge];"
-                    f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h-{oy_offset}[outv]"
+                    f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h[outv]"
                 )
 
             cmd = [
@@ -2487,8 +2485,8 @@ async def cover_cinesubz_watermark(
         else:
             bw = max(100, min(220, int(in_w * 0.115)))
             bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
-            by = f"ih-{bh}-6"
-            filter_str = f"drawbox=x=6:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+            by = f"ih-{bh}"
+            filter_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",

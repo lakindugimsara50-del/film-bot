@@ -16996,7 +16996,233 @@
       "added_date": "2026-10-13",
       "added_at": "2026-10-13T17:45:54Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "ohh-my-dog-2026",
+      "slug": "ohh-my-dog-2026",
+      "title": "Ohh My Dog",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.2",
+      "rating": "8.2",
+      "imdb_id": "tt36626888",
+      "tmdb_id": "1727563",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/3zVHaUphvyc3O5dDEkzJe9Faf3P.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/3zVHaUphvyc3O5dDEkzJe9Faf3P.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/nOQYly08Rv5fepk67i4wy43Oyyf.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/nOQYly08Rv5fepk67i4wy43Oyyf.jpg",
+      "genres": [
+        "Drama",
+        "Family"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "150 min",
+      "description": "In Assam, 14-year-old Apu embarks on a desperate quest to rescue his beloved dog, Momo, after he is kidnapped. Elsewhere, in Bihar, a devoted dog named Oscar sets out on a perilous journey to find his kidnapped owner, a 15-year-old child labourer. As their journeys unfold, it becomes clear that the two kidnappings may be connected to a larger, sinister plan.",
+      "director": "Amit Rai",
+      "cast": [
+        {
+          "name": "Maahi Rai",
+          "character": "Apu"
+        },
+        {
+          "name": "Pankaj Tripathi",
+          "character": "Masterji"
+        },
+        {
+          "name": "Pavan Malhotra",
+          "character": "Akaljeet Sodhi"
+        },
+        {
+          "name": "Geeta Agrawal Sharma",
+          "character": "Apu's Mother"
+        },
+        {
+          "name": "Rajesh Kumar",
+          "character": "Daroga"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAVBqz23kP-VXDmexe4KRA6QaIIht6gACMiUAAmCXeFaRlrxFBHxy-R4E",
+      "message_id": 336,
+      "file_name": "fs_ohh-my-dog-2026_720p.mp4",
+      "file_size": 2032504347,
+      "drive_file_id": "",
+      "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAVBqz23kP-VXDmexe4KRA6QaIIht6gACMiUAAmCXeFaRlrxFBHxy-R4E",
+          "message_id": 336,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1727563"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36626888"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36626888"
+        }
+      ],
+      "qualities": {
+        "auto": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+        "1080p": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+        "720p": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+        "480p": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/335",
+        "360p": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2032504347,
+          "url": "https://t.me/c/4325759505/336",
+          "telegram_url": "https://t.me/c/4325759505/336",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAVBqz23kP-VXDmexe4KRA6QaIIht6gACMiUAAmCXeFaRlrxFBHxy-R4E",
+          "message_id": 336,
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1087186660,
+          "url": "https://t.me/c/4325759505/335",
+          "telegram_url": "https://t.me/c/4325759505/335",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAU9qz2zy8_disya5pSoAARtaMXk5FsoAAiklAAJgl3hW53LZczhluUEeBA",
+          "message_id": 335,
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/335",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2032504347,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ohh-my-dog-2026_1080p",
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2032504347,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ohh-my-dog-2026_720p",
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1087186660,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ohh-my-dog-2026_480p",
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/335",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "348.9 MB",
+          "size_bytes": 365850782,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ohh-my-dog-2026_360p",
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAVBqz23kP-VXDmexe4KRA6QaIIht6gACMiUAAmCXeFaRlrxFBHxy-R4E",
+          "message_id": 336,
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "size_bytes": 2032504347
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAU9qz2zy8_disya5pSoAARtaMXk5FsoAAiklAAJgl3hW53LZczhluUEeBA",
+          "message_id": 335,
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/335",
+          "size_bytes": 1087186660
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://artist-hrs-howard-schemes.trycloudflare.com/stream/channel/-1004325759505/336",
+          "size_bytes": 365850782
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ohh-my-dog-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmzilla.lk/movie.html?id=ohh-my-dog-2026",
+      "added_date": "2026-10-14",
+      "added_at": "2026-10-14T11:56:23Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-13T17:45:57Z"
+  "last_updated": "2026-10-14T11:56:26Z"
 }

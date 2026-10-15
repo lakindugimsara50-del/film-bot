@@ -12,7 +12,9 @@
 
 
 # ── Clean movie URLs ─────────────────────────────────────────────────────────
-# /movie/the-dark-knight  →  movie.html?id=the-dark-knight  (stays in URL bar)
+# /movie?id=... or /movie/the-dark-knight → movie.html
+/movie          /movie.html                     200
+/movie/         /movie.html                     200
 /movie/*        /movie.html?id=:splat           200
 
 # ── Clean search URLs ────────────────────────────────────────────────────────

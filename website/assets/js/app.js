@@ -101,7 +101,7 @@ async function fetchRemoteMovies() {
   for (const url of [localUrl, remoteUrl]) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
+      const timer = setTimeout(() => controller.abort(), 12000);
       const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
       clearTimeout(timer);
       if (res.ok) {

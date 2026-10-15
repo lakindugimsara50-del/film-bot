@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
         const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 3500);
+        const tId = setTimeout(() => ctrl.abort(), 12000);
         const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
         clearTimeout(tId);
         if (rGh.ok) {
@@ -510,6 +510,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         FilmSub.loadMovies().catch(() => {});
       }
     });
+  }
+
+  // Resilient series fallback: If a specific episode was just released and not yet synced to static catalog,
+  // resolve via series master so user never sees a broken "Movie not found" screen!
+  if (!currentMovie && (slugEpMatch || (currentSeason && currentEpisode))) {
+    const baseSlug = slug.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+    const catalog = (window.FilmSub && typeof FilmSub.getAllMovies === 'function' && FilmSub.getAllMovies().length)
+      ? FilmSub.getAllMovies()
+      : ((window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) ? window.FILMSUB_DATA.movies : []);
+    const seriesMaster = catalog.find(m => {
+      const mBase = (m.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+      return mBase && (mBase === baseSlug || mBase.startsWith(baseSlug) || baseSlug.startsWith(mBase));
+    });
+    if (seriesMaster) {
+      currentMovie = {
+        ...seriesMaster,
+        id: slug,
+        slug: slug,
+        season: currentSeason || seriesMaster.season || 1,
+        episode: currentEpisode || 1,
+        episode_title: `Episode ${currentEpisode || 1}`,
+      };
+      if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
+        window.FILMSUB_DATA.movies.unshift(currentMovie);
+      }
+    }
   }
 
   if (!currentMovie) {

@@ -363,6 +363,27 @@ function prewarmAllVariants(movie) {
 }
 
 // ── Helper: Locate exact episode catalog entry for a TV Series ──
+function getFullCatalogList() {
+  const seen = new Set();
+  const list = [];
+  const add = (arr) => {
+    if (!Array.isArray(arr)) return;
+    for (const m of arr) {
+      if (!m) continue;
+      const k = String(m.slug || m.id || '').toLowerCase();
+      if (k && !seen.has(k)) {
+        seen.add(k);
+        list.push(m);
+      }
+    }
+  };
+  if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) add(window.FILMSUB_DATA.movies);
+  if (window.FILMZILLA_DATA && Array.isArray(window.FILMZILLA_DATA.movies)) add(window.FILMZILLA_DATA.movies);
+  if (window.FilmSub && typeof window.FilmSub.getAllMovies === 'function') add(window.FilmSub.getAllMovies());
+  if (window.FilmSub && Array.isArray(window.FilmSub.movies)) add(window.FilmSub.movies);
+  return list;
+}
+
 function findEpisodeEntry(movieOrTitle, season, episode) {
   if (!movieOrTitle || !season || !episode) return null;
   const sNum = parseInt(season, 10);
@@ -373,11 +394,7 @@ function findEpisodeEntry(movieOrTitle, season, episode) {
   const slug = typeof movieOrTitle === 'object' ? (movieOrTitle.slug || '') : String(movieOrTitle);
   const baseSlug = slug.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
 
-  const catalog = (window.FilmSub && typeof window.FilmSub.getAllMovies === 'function' && window.FilmSub.getAllMovies().length)
-    ? window.FilmSub.getAllMovies()
-    : ((window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies))
-      ? window.FILMSUB_DATA.movies
-      : (window.FilmSub && typeof window.FilmSub.allMovies === 'function' ? window.FilmSub.allMovies() : []));
+  const catalog = getFullCatalogList();
 
   return catalog.find(m => {
     if (parseInt(m.season, 10) !== sNum || parseInt(m.episode, 10) !== eNum) return false;
@@ -482,6 +499,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (rGh.ok) {
           const d = await rGh.json();
           const moviesList = Array.isArray(d) ? d : (d.movies || []);
+          if (Array.isArray(moviesList) && moviesList.length > 0) {
+            const seen = new Set();
+            const curr = (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) ? window.FILMSUB_DATA.movies : [];
+            const merged = [];
+            for (const m of [...moviesList, ...curr]) {
+              const k = String(m.slug || m.id || '').toLowerCase();
+              if (k && !seen.has(k)) {
+                seen.add(k);
+                merged.push(m);
+              }
+            }
+            if (window.FILMSUB_DATA) window.FILMSUB_DATA.movies = merged;
+            if (window.FILMZILLA_DATA) window.FILMZILLA_DATA.movies = merged;
+            if (window.FilmSub && Array.isArray(FilmSub.movies)) FilmSub.movies = merged;
+          }
           let found = moviesList.find(m => m.slug === slug || m.id === slug);
           if (!found && currentSeason && currentEpisode) {
             const baseSlug = slug.replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
@@ -493,12 +525,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           if (found) {
             currentMovie = found;
-            if (window.FilmSub && Array.isArray(FilmSub.movies)) {
-              FilmSub.movies.unshift(found);
-            }
-            if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
-              window.FILMSUB_DATA.movies.unshift(found);
-            }
           }
         }
       } catch (e) {}
@@ -1368,13 +1394,27 @@ function renderBreadcrumb(movie) {
 
 function renderPageHeader(movie) {
   const esc = FilmSub.escHtml;
+  const isSeries = movie.type === 'series' || currentSeason > 1 || currentEpisode > 1 || Boolean(movie.season);
+  const sNum = currentSeason || movie.season || 1;
+  const eNum = currentEpisode || movie.episode || 1;
+
   const titleEl = document.getElementById('movie-detail-title') || document.getElementById('cs-main-title');
   if (titleEl) {
-    titleEl.textContent = `${movie.title || 'Untitled'} (${movie.year || ''}) Sinhala Subtitles`;
+    if (isSeries) {
+      titleEl.textContent = `${movie.title || 'Series'} S${String(sNum).padStart(2, '0')}E${String(eNum).padStart(2, '0')}: ${movie.episode_title || 'Episode ' + eNum} Sinhala Subtitles`;
+    } else {
+      titleEl.textContent = `${movie.title || 'Untitled'} (${movie.year || ''}) Sinhala Subtitles`;
+    }
   }
 
   const qualEl = document.getElementById('cs-header-quality');
-  if (qualEl) qualEl.textContent = movie.quality ? `${movie.quality} WEB-DL` : 'HD WEB-DL';
+  if (qualEl) {
+    if (isSeries) {
+      qualEl.textContent = `S${String(sNum).padStart(2, '0')} E${String(eNum).padStart(2, '0')} HD`;
+    } else {
+      qualEl.textContent = movie.quality ? `${movie.quality} WEB-DL` : 'HD WEB-DL';
+    }
+  }
 
   const yearEl = document.getElementById('cs-header-year');
   if (yearEl) yearEl.textContent = movie.year || '';
@@ -3350,7 +3390,7 @@ function showStreamReconnectModal(playerEl, player, stream, resumeTime, movie) {
   }, 1000);
 }
 
-function createVjsPlayer(playerEl, stream, movie) {
+function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
   if (!stream || !stream.hasLocalFile || !stream.stream_url || stream.stream_url.endsWith('/0')) {
     renderPlayerFallback(playerEl, movie);
     return;
@@ -3390,7 +3430,7 @@ function createVjsPlayer(playerEl, stream, movie) {
       responsive: true,
       poster: posterUrl,
       preload: 'auto',
-      autoplay: false,
+      autoplay: autoPlay ? 'any' : false,
       playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
       techOrder: ['html5'],
       html5: {
@@ -3838,7 +3878,7 @@ function syncSubtitles() {
   } catch (e) {}
 }
 
-async function loadStream(movie, idx) {
+async function loadStream(movie, idx, autoPlay = false) {
   try {
     startProgressAnimation();
     if (window.fallbackRetryInterval) {
@@ -3880,7 +3920,7 @@ async function loadStream(movie, idx) {
 
     if (!stream.hasLocalFile || !stream.stream_url || stream.stream_url.endsWith('/0')) {
       if (streams.length > 1 && idx === 0) {
-        loadStream(movie, 1);
+        loadStream(movie, 1, autoPlay);
         return;
       }
       if (vjsPlayer) {
@@ -3897,7 +3937,7 @@ async function loadStream(movie, idx) {
       vjsPlayer = null;
     }
     isTrailerActive = false;
-    createVjsPlayer(playerEl, stream, movie);
+    createVjsPlayer(playerEl, stream, movie, autoPlay);
   } catch (err) {
     console.error('loadStream error:', err);
   }
@@ -4056,11 +4096,7 @@ function renderSeriesSection(movie) {
     const sPoster = seasonObj.poster_url || movie.poster || movie.poster_url || '';
 
     // Gather all catalog entries belonging to this series
-    const catalogMovies = (window.FilmSub && typeof window.FilmSub.getAllMovies === 'function' && window.FilmSub.getAllMovies().length)
-      ? window.FilmSub.getAllMovies()
-      : ((window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies))
-        ? window.FILMSUB_DATA.movies
-        : (window.FilmSub && typeof window.FilmSub.allMovies === 'function' ? window.FilmSub.allMovies() : []));
+    const catalogMovies = getFullCatalogList();
 
     const seriesTitleNorm = (movie.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -4116,9 +4152,7 @@ function renderSeriesSection(movie) {
     gridEl.innerHTML = epHtml;
 
     gridEl.querySelectorAll('.episode-card').forEach(card => {
-      card.addEventListener('click', () => {
-        gridEl.querySelectorAll('.episode-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
+      card.addEventListener('click', async () => {
         const ep = parseInt(card.dataset.episode, 10);
         const s = parseInt(card.dataset.season, 10);
         currentSeason = s;
@@ -4126,18 +4160,64 @@ function renderSeriesSection(movie) {
 
         const matchedSlug = card.dataset.slug;
         let found = null;
-        if (matchedSlug && window.FilmSub && typeof window.FilmSub.findMovieBySlug === 'function') {
-          found = window.FilmSub.findMovieBySlug(matchedSlug);
+        if (matchedSlug) {
+          const cat = getFullCatalogList();
+          found = cat.find(m => m.slug === matchedSlug || m.id === matchedSlug);
+          if (!found && window.FilmSub && typeof window.FilmSub.findMovieBySlug === 'function') {
+            found = window.FilmSub.findMovieBySlug(matchedSlug);
+          }
         }
         if (!found) {
           found = findEpisodeEntry(movie, s, ep);
         }
-        if (found) {
-          currentMovie = found;
-          movie = found;
+        if (!found) {
+          try {
+            const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
+            const rGh = await fetch(ghUrl, { cache: 'no-store' });
+            if (rGh.ok) {
+              const d = await rGh.json();
+              const moviesList = Array.isArray(d) ? d : (d.movies || []);
+              if (Array.isArray(moviesList) && moviesList.length > 0) {
+                const seen = new Set();
+                const curr = (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) ? window.FILMSUB_DATA.movies : [];
+                const merged = [];
+                for (const m of [...moviesList, ...curr]) {
+                  const k = String(m.slug || m.id || '').toLowerCase();
+                  if (k && !seen.has(k)) {
+                    seen.add(k);
+                    merged.push(m);
+                  }
+                }
+                if (window.FILMSUB_DATA) window.FILMSUB_DATA.movies = merged;
+                if (window.FILMZILLA_DATA) window.FILMZILLA_DATA.movies = merged;
+                if (window.FilmSub && Array.isArray(FilmSub.movies)) FilmSub.movies = merged;
+                found = findEpisodeEntry(movie, s, ep);
+                if (!found && matchedSlug) {
+                  found = moviesList.find(m => m.slug === matchedSlug || m.id === matchedSlug);
+                }
+              }
+            }
+          } catch (e) {}
+        }
+        if (!found) {
+          const baseSlug = (movie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+          found = {
+            ...movie,
+            id: `${baseSlug}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`,
+            slug: `${baseSlug}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`,
+            season: s,
+            episode: ep,
+            episode_title: `Episode ${ep}`,
+          };
+          if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
+            window.FILMSUB_DATA.movies.unshift(found);
+          }
         }
 
-        const targetSlug = (found && (found.slug || found.id)) || `${(movie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '')}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`;
+        currentMovie = found;
+        movie = found;
+
+        const targetSlug = found.slug || found.id;
         try {
           const newUrl = new URL(window.location.href);
           newUrl.searchParams.set('id', targetSlug);
@@ -4147,8 +4227,7 @@ function renderSeriesSection(movie) {
         } catch (e) {}
 
         document.title = `${movie.title || 'Series'} S${String(s).padStart(2, '0')}E${String(ep).padStart(2, '0')} Sinhala Subtitles – FilmSub`;
-
-        FilmSub.showToast(`Loading Season ${s} Episode ${ep}...`, 'info');
+        FilmSub.showToast(`Playing S${String(s).padStart(2, '0')}E${String(ep).padStart(2, '0')}: ${movie.episode_title || 'Episode ' + ep}`, 'success');
 
         const qualEl = document.getElementById('cs-header-quality');
         if (qualEl) {
@@ -4160,7 +4239,8 @@ function renderSeriesSection(movie) {
         renderQuickDownloadStrip(movie);
         renderDownloadSection(movie);
         renderServerTabs(movie);
-        loadStream(movie, 0);
+        renderEpisodesForSeason(seasonObj);
+        loadStream(movie, 0, true);
         loadParsedSubtitles(movie).then(() => {
           try { syncSubtitles(); } catch (e) {}
         }).catch(() => {});

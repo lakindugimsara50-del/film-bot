@@ -115,27 +115,31 @@ async def test_prepend_filmzilla_intro_with_audio_and_zero_bleed(ffmpeg_bin):
         total_dur = video_service.get_video_duration(out_film, ffmpeg_bin)
         assert 7.8 <= total_dur <= 8.2, f"Expected ~8.0s, got {total_dur}"
 
-        # CRITICAL AUDIO CHECK 1: Intro window t=0.0s to 4.8s MUST be pure silence
-        probe_intro = subprocess.run([
-            ffmpeg_bin, "-ss", "0.0", "-t", "4.8", "-i", out_film,
+        # CRITICAL AUDIO CHECK 1: Intro chime active at t=0.5s to 3.0s
+        probe_chime = subprocess.run([
+            ffmpeg_bin, "-ss", "0.5", "-t", "2.5", "-i", out_film,
             "-af", "volumedetect", "-f", "null", "-"
         ], stderr=subprocess.PIPE, text=True, errors="replace")
-        
-        intro_stderr = probe_intro.stderr
-        mean_vol = None
-        max_vol = None
-        for line in intro_stderr.splitlines():
-            if "mean_volume:" in line:
-                m = re.search(r"mean_volume:\s*(-?[\d\.]+)\s*dB", line)
-                if m:
-                    mean_vol = float(m.group(1))
+        chime_max_vol = None
+        for line in probe_chime.stderr.splitlines():
             if "max_volume:" in line:
                 m = re.search(r"max_volume:\s*(-?[\d\.]+)\s*dB", line)
                 if m:
-                    max_vol = float(m.group(1))
+                    chime_max_vol = float(m.group(1))
+        assert chime_max_vol is not None and chime_max_vol > -30.0, f"Intro chime audio missing! max_vol={chime_max_vol}"
 
-        assert max_vol is not None and max_vol <= -70.0, f"Audio bled into intro! max_volume={max_vol} dB"
-        assert mean_vol is not None and mean_vol <= -80.0, f"Intro mean volume not silent: {mean_vol} dB"
+        # CRITICAL AUDIO CHECK 2: Transition buffer t=4.0s to 4.9s MUST be pure digital silence (zero film bleed)
+        probe_silence = subprocess.run([
+            ffmpeg_bin, "-ss", "4.0", "-t", "0.9", "-i", out_film,
+            "-af", "volumedetect", "-f", "null", "-"
+        ], stderr=subprocess.PIPE, text=True, errors="replace")
+        silence_max_vol = None
+        for line in probe_silence.stderr.splitlines():
+            if "max_volume:" in line:
+                m = re.search(r"max_volume:\s*(-?[\d\.]+)\s*dB", line)
+                if m:
+                    silence_max_vol = float(m.group(1))
+        assert silence_max_vol is not None and silence_max_vol <= -70.0, f"Film audio bled into intro transition buffer! max_vol={silence_max_vol} dB"
 
         # CRITICAL AUDIO CHECK 2: Film window t=5.2s to 7.8s MUST have film audio
         probe_film = subprocess.run([

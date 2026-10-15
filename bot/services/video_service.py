@@ -2053,40 +2053,52 @@ def get_or_create_filmzilla_intro(
     os.makedirs(cache_dir, exist_ok=True)
     cached_path = os.path.join(cache_dir, f"intro_{w}x{h}_{fps}fps_{int(round(duration))}s.mp4")
 
-    if os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
+    if os.path.exists(cached_path) and os.path.getsize(cached_path) > 50000:
         cached_dur = get_video_duration(cached_path, exe)
         if abs(cached_dur - duration) <= 0.5:
             return cached_path
+    elif os.path.exists(cached_path):
+        try:
+            os.remove(cached_path)
+        except Exception:
+            pass
 
-    # Locate visual asset
+    # Locate visual and audio assets
     base_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
     web_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "assets", "img")
 
     candidates = [
+        os.path.join(base_assets_dir, "filmzilla_intro_fullscreen.png"),
+        os.path.join(web_assets_dir, "filmzilla_intro_fullscreen.png"),
         os.path.join(base_assets_dir, "filmzilla_intro_card.png"),
         os.path.join(web_assets_dir, "filmzilla_intro_card.png"),
         os.path.join(base_assets_dir, "filmzilla_brand_horizontal.png"),
-        os.path.join(base_assets_dir, "filmzilla_logo.png"),
-        os.path.join(web_assets_dir, "filmzilla_brand_horizontal.png"),
     ]
     card_asset = next((p for p in candidates if os.path.exists(p)), None)
 
-    fade_out_st = max(0.5, duration - 0.7)
+    sound_candidates = [
+        os.path.join(base_assets_dir, "filmzilla_intro_sound.wav"),
+        os.path.join(web_assets_dir, "filmzilla_intro_sound.wav"),
+    ]
+    sound_asset = next((p for p in sound_candidates if os.path.exists(p)), None)
+
+    fade_out_st = max(0.5, duration - 0.8)
 
     if card_asset:
-        intro_w = max(280, min(int(w * 0.75), 900))
         filter_complex = (
-            f"[1:v]scale={intro_w}:-1,format=rgba,fade=t=in:st=0.2:d=0.6:alpha=1,fade=t=out:st={fade_out_st:.2f}:d=0.6:alpha=1[card];"
-            f"[0:v][card]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2[outv]"
+            f"[0:v]scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,"
+            f"fade=t=in:st=0.0:d=0.7,fade=t=out:st={fade_out_st:.2f}:d=0.8[outv]"
         )
+        audio_in = ["-i", os.path.abspath(sound_asset)] if sound_asset else [
+            "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=48000:d={duration}"
+        ]
         cmd = [
             exe, "-y",
             "-hide_banner",
-            "-f", "lavfi", "-i", f"color=c=black:s={w}x{h}:r={fps}:d={duration}",
-            "-i", os.path.abspath(card_asset),
-            "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=48000:d={duration}",
+            "-loop", "1", "-t", str(duration), "-i", os.path.abspath(card_asset),
+            *audio_in,
             "-filter_complex", filter_complex,
-            "-map", "[outv]", "-map", "2:a",
+            "-map", "[outv]", "-map", "1:a",
             "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
             "-t", str(duration),
@@ -2115,7 +2127,7 @@ def get_or_create_filmzilla_intro(
             timeout=30,
         )
         if proc.returncode == 0 and os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
-            log.info("[VideoService] Successfully created FilmZilla intro card video: %s", cached_path)
+            log.info("[VideoService] Successfully created FilmZilla intro card video: %s (size=%d bytes)", cached_path, os.path.getsize(cached_path))
             return cached_path
     except Exception as exc:
         log.warning("[VideoService] Failed to create FilmZilla intro video: %s", exc)
@@ -2681,13 +2693,14 @@ async def cover_cinesubz_watermark(
     badge_path: Optional[str] = None,
     progress_callback: Optional[Callable[[float, str], None]] = None,
     trim_start: float = 0.0,
+    prepend_intro: bool = True,
 ) -> bool:
     """
     Cover the bottom-left CineSubz watermark on pre-hardsubbed releases
     with a sleek, branded FilmSub badge using hardware accelerated NVENC (NVDEC+NVENC) or fast CPU encoding.
-    Optionally skips leading seconds (e.g. 10.0s intro trim) in a single pass without extra disk I/O.
-    Preserves exact audio track with -c:a copy and applies +faststart.
-    Falls back gracefully to stream_copy_subtitles if processing encounters an error.
+    Optionally skips leading seconds (e.g. 10.0s intro trim) AND prepends 5.0s FilmZilla intro video in a
+    SINGLE encoding pass without duplicate re-encoding or freezes.
+    Synchronizes audio strictly so the film audio starts at t = 5.0s with zero audio bleed.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
@@ -2701,8 +2714,6 @@ async def cover_cinesubz_watermark(
         if os.path.exists(default_badge):
             badge_path = default_badge
 
-    # Calculate source bitrate to preserve original file sizes (e.g. 480p ~700MB, 720p ~1.4GB)
-    # and strictly prevent bloating while maximizing encoding throughput
     in_size = os.path.getsize(video_path) if os.path.exists(video_path) else 0
     duration = get_video_duration(video_path, ffmpeg_bin)
     in_w, in_h = get_video_resolution(video_path, ffmpeg_bin)
@@ -2726,7 +2737,6 @@ async def cover_cinesubz_watermark(
     max_kbps = int(target_kbps * 1.04)
     buf_kbps = int(target_kbps * 1.2)
 
-    # Determine encoder
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
         nvenc_preset = "hp" if _on_colab else "fast"
@@ -2758,33 +2768,69 @@ async def cover_cinesubz_watermark(
     hw_opts = ["-hwaccel", "auto"] if hw_enc == "h264_nvenc" else []
     trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
 
-    # Check for intro card (shown when trimming >= 5s, e.g. after removing CineSubz 10s intro)
-    intro_card_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_intro_card.png")
-    has_intro_card = bool(os.path.exists(intro_card_path) and trim_start >= 5.0)
+    intro_video = None
+    if prepend_intro:
+        intro_video = get_or_create_filmzilla_intro(in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
+        if intro_video and not os.path.exists(intro_video):
+            intro_video = None
+
+    has_audio = bool(get_audio_codec(video_path, ffmpeg_bin))
+    badge_w = max(100, min(220, int(in_w * 0.115)))
+    ox = 0
 
     try:
-        if badge_path and os.path.exists(badge_path):
-            # Scaled to CineSubz exact footprint and placed flush at the bottom-left corner
-            badge_w = max(100, min(220, int(in_w * 0.115)))
-            ox = 0
-
-            extra_inputs = []
-            if has_intro_card:
-                intro_w = max(340, min(720, int(in_w * 0.55)))
-                intro_y = in_h - int(intro_w * (130 / 820)) - max(20, int(in_h * 0.05))
+        if intro_video and badge_path and os.path.exists(badge_path):
+            # Single-pass concat 5s intro + trimmed movie + corner badge
+            if has_audio:
                 filter_complex = (
-                    f"[2:v]scale={intro_w}:-1,format=rgba,fade=t=in:st=1.0:d=0.7:alpha=1,fade=t=out:st=6.8:d=0.7:alpha=1[intro];"
-                    f"[0:v][intro]overlay=x=(main_w-overlay_w)/2:y={intro_y}:enable='between(t,1.0,7.5)'[v_intro];"
-                    f"[1:v]scale={badge_w}:-1[badge];"
-                    f"[v_intro][badge]overlay=x={ox}:y=main_h-overlay_h[outv]"
+                    f"[1:v]setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
+                    f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
+                    f"[2:v]scale={badge_w}:-1[badge];"
+                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)'[outv];"
+                    f"[1:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a_intro];"
+                    f"[0:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a_main];"
+                    f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]"
                 )
-                extra_inputs = ["-i", os.path.abspath(intro_card_path)]
+                maps = ["-map", "[outv]", "-map", "[outa]"]
+                audio_opts = ["-c:a", "aac", "-b:a", "128k"]
             else:
                 filter_complex = (
-                    f"[1:v]scale={badge_w}:-1[badge];"
-                    f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h[outv]"
+                    f"[1:v]setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
+                    f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
+                    f"[2:v]scale={badge_w}:-1[badge];"
+                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)'[outv]"
                 )
+                maps = ["-map", "[outv]"]
+                audio_opts = []
 
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-hide_banner",
+                "-threads", "0",
+                "-filter_threads", "0",
+                "-filter_complex_threads", "0",
+                *hw_opts,
+                *trim_opts,
+                "-i", os.path.abspath(video_path),
+                "-i", os.path.abspath(intro_video),
+                "-i", os.path.abspath(badge_path),
+                "-filter_complex", filter_complex,
+                *maps,
+                *enc_opts,
+                *audio_opts,
+                "-max_muxing_queue_size", "9999",
+                "-movflags", "+faststart",
+                os.path.abspath(output_path),
+            ]
+        elif badge_path and os.path.exists(badge_path):
+            filter_complex = (
+                f"[1:v]scale={badge_w}:-1[badge];"
+                f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h[outv]"
+            )
+            maps = ["-map", "[outv]", "-map", "0:a?"]
+            audio_opts = ["-c:a", "copy"]
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",
@@ -2795,11 +2841,10 @@ async def cover_cinesubz_watermark(
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
                 "-i", os.path.abspath(badge_path),
-                *extra_inputs,
                 "-filter_complex", filter_complex,
-                "-map", "[outv]", "-map", "0:a?",
+                *maps,
                 *enc_opts,
-                "-c:a", "copy",
+                *audio_opts,
                 "-max_muxing_queue_size", "9999",
                 "-movflags", "+faststart",
                 os.path.abspath(output_path),
@@ -2809,6 +2854,8 @@ async def cover_cinesubz_watermark(
             bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
             by = f"ih-{bh}"
             filter_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+            maps = ["-map", "0:v", "-map", "0:a?"]
+            audio_opts = ["-c:a", "copy"]
             cmd = [
                 ffmpeg_bin, "-y",
                 "-hide_banner",
@@ -2819,16 +2866,17 @@ async def cover_cinesubz_watermark(
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
                 "-vf", filter_str,
-                "-map", "0:v", "-map", "0:a?",
+                *maps,
                 *enc_opts,
-                "-c:a", "copy",
+                *audio_opts,
                 "-max_muxing_queue_size", "9999",
                 "-movflags", "+faststart",
                 os.path.abspath(output_path),
             ]
 
-        log.info("[VideoService] Executing watermark cover (%s -> %s, trim_start=%.1fs, hwaccel=%s)...",
-                 video_path, output_path, trim_start, bool(hw_opts))
+        total_target_duration = max(1.0, (duration - trim_start) + (5.0 if intro_video else 0.0))
+        log.info("[VideoService] Executing single-pass watermark cover + intro (%s -> %s, trim_start=%.1fs, intro=%s, hwaccel=%s)...",
+                 video_path, output_path, trim_start, bool(intro_video), bool(hw_opts))
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -2836,8 +2884,6 @@ async def cover_cinesubz_watermark(
         )
 
         if progress_callback:
-            raw_dur = get_video_duration(video_path, ffmpeg_bin)
-            duration = max(1.0, raw_dur - trim_start) if trim_start > 0 else raw_dur
             time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
             speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
             fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
@@ -2856,10 +2902,10 @@ async def cover_cinesubz_watermark(
                         break
                     decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
                     matches = time_pattern.findall(decoded)
-                    if matches and duration > 0:
+                    if matches and total_target_duration > 0:
                         h, mm, ss = matches[-1]
                         cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                        pct = min(99.0, (cur_secs / duration) * 100.0)
+                        pct = min(99.0, (cur_secs / total_target_duration) * 100.0)
                         if pct - last_pct >= 2.0:
                             last_pct = pct
                             speed_match = speed_pattern.search(decoded)
@@ -2873,8 +2919,8 @@ async def cover_cinesubz_watermark(
                                     detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
                                 else:
                                     detail_parts.append(f"⚡ {speed_val:.1f}x")
-                                if duration > cur_secs:
-                                    rem_s = int((duration - cur_secs) / speed_val)
+                                if total_target_duration > cur_secs:
+                                    rem_s = int((total_target_duration - cur_secs) / speed_val)
                                     m_rem, s_rem = divmod(rem_s, 60)
                                     h_rem, m_rem = divmod(m_rem, 60)
                                     eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
@@ -2935,7 +2981,26 @@ async def cover_cinesubz_watermark(
                     "-threads", "0",
                     "-pix_fmt", "yuv420p",
                 ]
-                if badge_path and os.path.exists(badge_path):
+                if intro_video and badge_path and os.path.exists(badge_path):
+                    cpu_cmd = [
+                        ffmpeg_bin, "-y",
+                        "-hide_banner",
+                        "-threads", "0",
+                        "-filter_threads", "0",
+                        "-filter_complex_threads", "0",
+                        *trim_opts,
+                        "-i", os.path.abspath(video_path),
+                        "-i", os.path.abspath(intro_video),
+                        "-i", os.path.abspath(badge_path),
+                        "-filter_complex", filter_complex,
+                        *maps,
+                        *cpu_enc_opts,
+                        *audio_opts,
+                        "-max_muxing_queue_size", "9999",
+                        "-movflags", "+faststart",
+                        os.path.abspath(output_path),
+                    ]
+                elif badge_path and os.path.exists(badge_path):
                     cpu_cmd = [
                         ffmpeg_bin, "-y",
                         "-hide_banner",
@@ -2945,11 +3010,10 @@ async def cover_cinesubz_watermark(
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-i", os.path.abspath(badge_path),
-                        *extra_inputs,
                         "-filter_complex", filter_complex,
-                        "-map", "[outv]", "-map", "0:a?",
+                        *maps,
                         *cpu_enc_opts,
-                        "-c:a", "copy",
+                        *audio_opts,
                         "-max_muxing_queue_size", "9999",
                         "-movflags", "+faststart",
                         os.path.abspath(output_path),

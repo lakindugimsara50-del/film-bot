@@ -1387,26 +1387,27 @@ async def _execute_leech(
                                 #    compress_video handles 10s trim + logo watermark + compression all in a single pass below!
                                 # 3) If file <= 1.95GB AND not CineSubz:
                                 #    Ultra-fast stream-copy 10s trim (1-2s) with zero re-encoding!
+                                intro_already_prepended = False
                                 if not needs_compression and is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                                     wm_badge_out = os.path.join(temp_dir, f"badge_{slug}_{q_name}.mp4")
-                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmZilla logo badge + 10s intro skip on %s [%s]...", slug, q_name)
+                                    log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmZilla logo badge + intro + 10s skip on %s [%s]...", slug, q_name)
 
                                     async def _badge_cb(pct: float, p_str: str):
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
-                                            "detail": f"FilmZilla Logo {p_str}",
+                                            "detail": f"FilmZilla Processing {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
                                     companion_progress[q_name].update({
                                         "stage": "processing",
                                         "dl_pct": 0.0,
-                                        "detail": "FilmZilla Logo Overlay...",
+                                        "detail": "FilmZilla Logo & Intro...",
                                     })
                                     await _update_multi_dl_display(force=True)
 
-                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out, progress_callback=_badge_cb, trim_start=10.0):
+                                    if await video_service.cover_cinesubz_watermark(c_dl, wm_badge_out, progress_callback=_badge_cb, trim_start=10.0, prepend_intro=True):
                                         try:
                                             if os.path.abspath(c_dl) != os.path.abspath(wm_badge_out):
                                                 os.remove(c_dl)
@@ -1414,7 +1415,8 @@ async def _execute_leech(
                                             pass
                                         c_dl = wm_badge_out
                                         c_size_bytes = os.path.getsize(c_dl)
-                                        log.info("[LeechService] Successfully covered CineSubz watermark and trimmed 10s on %s [%s]", slug, q_name)
+                                        intro_already_prepended = True
+                                        log.info("[LeechService] Successfully covered CineSubz watermark, prepended intro, and trimmed 10s on %s [%s]", slug, q_name)
                                 elif not needs_compression:
                                     # Non-CineSubz release <= 1.95GB: trim 10s intro via instant stream copy
                                     companion_progress[q_name].update({
@@ -1434,9 +1436,24 @@ async def _execute_leech(
                                         c_size_bytes = os.path.getsize(c_dl)
                                         log.info("[LeechService] Successfully trimmed first 10s from %s [%s]", slug, q_name)
 
-                                if not needs_compression:
+                                if not needs_compression and not intro_already_prepended:
+                                    async def _intro_cb(pct: float, p_str: str):
+                                        companion_progress[q_name].update({
+                                            "stage": "processing",
+                                            "dl_pct": pct,
+                                            "detail": f"FilmZilla Intro {p_str}",
+                                        })
+                                        await _update_multi_dl_display()
+
+                                    companion_progress[q_name].update({
+                                        "stage": "processing",
+                                        "dl_pct": 0.0,
+                                        "detail": "FilmZilla Intro...",
+                                    })
+                                    await _update_multi_dl_display(force=True)
+
                                     intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
-                                    if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0):
+                                    if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0, progress_callback=_intro_cb):
                                         try:
                                             if os.path.abspath(c_dl) != os.path.abspath(intro_out):
                                                 os.remove(c_dl)
@@ -1528,7 +1545,16 @@ async def _execute_leech(
                                         c_size_bytes = os.path.getsize(c_dl)
                                         log.info("[LeechService] Compression complete for %s: %s (path=%s)", q_name, downloader.format_bytes(c_size_bytes), c_dl)
                                         intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
-                                        if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0):
+
+                                        async def _intro_comp_cb(pct: float, p_str: str):
+                                            companion_progress[q_name].update({
+                                                "stage": "processing",
+                                                "dl_pct": pct,
+                                                "detail": f"FilmZilla Intro {p_str}",
+                                            })
+                                            await _update_multi_dl_display()
+
+                                        if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0, progress_callback=_intro_comp_cb):
                                             try:
                                                 if os.path.abspath(c_dl) != os.path.abspath(intro_out):
                                                     os.remove(c_dl)
@@ -2131,7 +2157,12 @@ async def _execute_leech(
                         sub_processed = await video_service.stream_copy_subtitles(local_file, sub_to_burn_video, remuxed, disposition="default")
                 elif is_already_hardsubbed and is_cinesubz_cand and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                     log.info("[LeechService] CineSubz pre-hardsubbed release detected. Covering bottom-left watermark on %s...", local_file)
-                    sub_processed = await video_service.cover_cinesubz_watermark(local_file, remuxed)
+                    sub_processed = await video_service.cover_cinesubz_watermark(
+                        local_file,
+                        remuxed,
+                        trim_start=0.0 if was_trimmed_10s else 10.0,
+                        prepend_intro=not intro_already_prepended,
+                    )
                     if not sub_processed:
                         sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
                 else:
@@ -2802,16 +2833,18 @@ async def _execute_leech(
                                     or "supercloud" in str(vcand.source_url).lower()
                                     or "setwenna" in str(vcand.source_url).lower()
                                 )
+                                v_intro_already_prepended = False
                                 if v_is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True):
                                     wm_var_out = os.path.join(temp_dir, f"badge_{slug}_{vq}.mp4")
-                                    if await video_service.cover_cinesubz_watermark(dl_out, wm_var_out, trim_start=10.0):
+                                    if await video_service.cover_cinesubz_watermark(dl_out, wm_var_out, trim_start=10.0, prepend_intro=True):
                                         try:
                                             if os.path.abspath(dl_out) != os.path.abspath(wm_var_out):
                                                 os.remove(dl_out)
                                         except Exception:
                                             pass
                                         dl_out = wm_var_out
-                                        log.info("[LeechService] Covered CineSubz watermark and trimmed 10s on variant %s [%s]", slug, vq)
+                                        v_intro_already_prepended = True
+                                        log.info("[LeechService] Covered CineSubz watermark, prepended intro, and trimmed 10s on variant %s [%s]", slug, vq)
                                 else:
                                     # User requirement: Cut first 10 seconds (remove intro / watermark)
                                     trim_var_out = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
@@ -2824,16 +2857,17 @@ async def _execute_leech(
                                         dl_out = trim_var_out
                                         log.info("[LeechService] Successfully trimmed first 10s from direct variant %s [%s]", slug, vq)
 
-                                # Prepend 5s FilmZilla branded intro to direct variant
-                                intro_var_out = os.path.join(temp_dir, f"intro_{slug}_{vq}.mp4")
-                                if await video_service.prepend_filmzilla_intro(dl_out, intro_var_out, intro_duration=5.0):
-                                    try:
-                                        if os.path.abspath(dl_out) != os.path.abspath(intro_var_out):
-                                            os.remove(dl_out)
-                                    except Exception:
-                                        pass
-                                    dl_out = intro_var_out
-                                    log.info("[LeechService] Successfully prepended 5s FilmZilla intro to direct variant %s [%s]", slug, vq)
+                                if not v_intro_already_prepended:
+                                    # Prepend 5s FilmZilla branded intro to direct variant
+                                    intro_var_out = os.path.join(temp_dir, f"intro_{slug}_{vq}.mp4")
+                                    if await video_service.prepend_filmzilla_intro(dl_out, intro_var_out, intro_duration=5.0):
+                                        try:
+                                            if os.path.abspath(dl_out) != os.path.abspath(intro_var_out):
+                                                os.remove(dl_out)
+                                        except Exception:
+                                            pass
+                                        dl_out = intro_var_out
+                                        log.info("[LeechService] Successfully prepended 5s FilmZilla intro to direct variant %s [%s]", slug, vq)
 
                                 fs_out = os.path.join(temp_dir, f"fs_{slug}_{vq}.mp4")
                                 if await video_service.apply_faststart(dl_out, fs_out):

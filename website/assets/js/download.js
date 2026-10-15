@@ -95,12 +95,19 @@
           <div class="countdown-number" id="cd-number">${COUNTDOWN_SECONDS}</div>
         </div>
 
-        <a id="cd-get-link" class="countdown-get-link btn" href="#" download>
-          <i class="fa-solid fa-download"></i>
-          Click Here if Download Didn't Start
-        </a>
+        <div class="countdown-actions" style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:14px">
+          <a id="cd-get-link" class="countdown-get-link btn" href="#" download>
+            <i class="fa-solid fa-download"></i>
+            Click Here if Download Didn't Start
+          </a>
 
-        <button class="countdown-close" id="cd-close-btn" type="button">
+          <button id="cd-copy-link" type="button" class="btn" style="background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.15);padding:10px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s ease;">
+            <i class="fa-solid fa-copy"></i>
+            <span>Copy Link (IDM / 1DM / ADM)</span>
+          </button>
+        </div>
+
+        <button class="countdown-close" id="cd-close-btn" type="button" style="margin-top:12px">
           <i class="fa-solid fa-xmark"></i> Close
         </button>
       </div>`;
@@ -114,6 +121,28 @@
 
     // Close button
     document.getElementById('cd-close-btn').addEventListener('click', closeCountdown);
+
+    // Copy direct link button for download managers (IDM, 1DM, ADM)
+    const copyBtn = document.getElementById('cd-copy-link');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        if (!pendingURL) return;
+        const fullUrl = new URL(pendingURL, window.location.href).href;
+        const span = copyBtn.querySelector('span');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(fullUrl).then(() => {
+            if (span) span.textContent = 'Link Copied! IDM / 1DM සඳහා Open කරන්න ✅';
+            setTimeout(() => {
+              if (span) span.textContent = 'Copy Link (IDM / 1DM / ADM)';
+            }, 3000);
+          }).catch(() => {
+            prompt('Download link (IDM / 1DM / ADM):', fullUrl);
+          });
+        } else {
+          prompt('Download link (IDM / 1DM / ADM):', fullUrl);
+        }
+      });
+    }
 
     // Trap focus
     overlay.addEventListener('keydown', e => {
@@ -179,6 +208,8 @@
         if (ringWrap) ringWrap.style.display = 'none';
         if (getLinkEl) {
           getLinkEl.href = pendingURL;
+          const cleanT = String(pendingTitle || 'Movie').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim() || 'Movie';
+          getLinkEl.setAttribute('download', `${cleanT} [${pendingQuality}] - FilmSub.mp4`);
           getLinkEl.classList.add('visible');
         }
         if (mainTitleEl) mainTitleEl.textContent = 'Download Started! ✅';

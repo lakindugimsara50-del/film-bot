@@ -353,3 +353,105 @@ async def test_stream_media_chunks_invalid_range_guard():
         chunks.append(c)
     assert chunks == []
 
+
+# ── 5. Direct Download Full File & RFC 7233 Compliance Tests ────────────────
+
+@pytest.mark.asyncio
+async def test_stream_channel_message_download_returns_200_without_range():
+    """Non-range download must return HTTP 200 OK, full Content-Length, and NO Content-Range (RFC 7233)."""
+    file_size = 561202527  # ~535 MB
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "Furious_S01E06.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {}
+        req.query_params = {"dl": "1"}
+        req.url = MagicMock()
+        req.url.path = "/stream/channel/-1004325759505/354"
+        req.method = "GET"
+
+        resp = await stream_server.stream_channel_message("-1004325759505", 354, req, dl=1)
+
+        assert resp.status_code == 200
+        assert resp.headers.get("Content-Length") == str(file_size)
+        assert resp.headers.get("Accept-Ranges") == "bytes"
+        assert "Content-Range" not in resp.headers
+        assert 'attachment; filename="Furious_S01E06.mp4"' in resp.headers.get("Content-Disposition", "")
+
+
+@pytest.mark.asyncio
+async def test_stream_channel_message_download_with_open_range_never_capped_at_8mb():
+    """Download requests with open-ended Range (bytes=0-) must serve full file size, not 8MB cap."""
+    file_size = 561202527
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "Furious_S01E06.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {"range": "bytes=0-"}
+        req.query_params = {"dl": "1"}
+        req.url = MagicMock()
+        req.url.path = "/stream/channel/-1004325759505/354"
+        req.method = "GET"
+
+        resp = await stream_server.stream_channel_message("-1004325759505", 354, req, dl=1)
+
+        assert resp.status_code == 206
+        assert resp.headers.get("Content-Length") == str(file_size)
+        assert resp.headers.get("Content-Range") == f"bytes 0-{file_size - 1}/{file_size}"
+        assert 'attachment; filename="Furious_S01E06.mp4"' in resp.headers.get("Content-Disposition", "")
+
+
+@pytest.mark.asyncio
+async def test_stream_channel_message_download_resuming_from_offset():
+    """Resuming download from byte 50,000,000 must serve to the end of the file."""
+    file_size = 561202527
+    start_offset = 50000000
+    expected_len = file_size - start_offset
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "Furious_S01E06.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {"range": f"bytes={start_offset}-"}
+        req.query_params = {"dl": "1"}
+        req.url = MagicMock()
+        req.url.path = "/stream/channel/-1004325759505/354"
+        req.method = "GET"
+
+        resp = await stream_server.stream_channel_message("-1004325759505", 354, req, dl=1)
+
+        assert resp.status_code == 206
+        assert resp.headers.get("Content-Length") == str(expected_len)
+        assert resp.headers.get("Content-Range") == f"bytes {start_offset}-{file_size - 1}/{file_size}"
+
+
+@pytest.mark.asyncio
+async def test_stream_by_file_id_download_returns_200_and_full_size():
+    """stream_by_file_id with dl=1 must return 200 OK and Content-Disposition."""
+    file_size = 300 * 1024 * 1024
+    req = MagicMock(spec=Request)
+    req.headers = {}
+    req.query_params = {"dl": "1"}
+    req.url = MagicMock()
+    req.url.path = "/stream/file/AgACAgIAAxkBAAICam..."
+    req.method = "GET"
+
+    resp = await stream_server.stream_by_file_id("AgACAgIAAxkBAAICam", req, size=file_size)
+
+    assert resp.status_code == 200
+    assert resp.headers.get("Content-Length") == str(file_size)
+    assert "Content-Range" not in resp.headers
+    assert "attachment;" in resp.headers.get("Content-Disposition", "")
+
+

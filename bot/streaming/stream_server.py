@@ -628,11 +628,19 @@ async def stream_channel_message(
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response for unconstrained initial requests
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
-    if dl == 1:
-        # Full file one-click download: serve entire remaining file unless client gave an explicit range
+    is_download = bool(
+        dl == 1
+        or str(request.query_params.get("dl", "")).lower() in ("1", "true", "yes")
+        or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
+        or "/download/" in request.url.path
+    )
+
+    if is_download:
+        # Full file one-click download: serve entire remaining file unless client specified an explicit closed range
+        if not range_header or not explicit_end:
+            end = max(file_size - 1, 0)
         if not range_header:
             start = 0
-            end = max(file_size - 1, 0)
     elif not range_header:
         # Initial request without range -> serve first 8 MiB
         end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
@@ -642,7 +650,7 @@ async def stream_channel_message(
 
     content_length = max(0, end - start + 1)
     cache_key = _get_cache_key(chat_id, message_id)
-    is_partial = bool(range_header) or (not dl and end < file_size - 1)
+    is_partial = bool(range_header) or (not is_download and end < file_size - 1)
 
     # Proactively warm up full 16MB into RAM cache if not already cached (only on seek requests to avoid socket contention with initial stream)
     async with _CACHE_LOCK:
@@ -672,7 +680,7 @@ async def stream_channel_message(
     if is_partial:
         headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
 
-    if dl == 1:
+    if is_download:
         clean_name = re.sub(r'[^\w\s\-\.\(\)]', '', file_name).strip() or f"movie_{message_id}.mp4"
         headers["Content-Disposition"] = f'attachment; filename="{clean_name}"'
 
@@ -722,14 +730,26 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
-    if not range_header:
+    dl = request.query_params.get("dl")
+    is_download = bool(
+        str(dl or "").lower() in ("1", "true", "yes")
+        or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
+        or "/download/" in request.url.path
+    )
+
+    if is_download:
+        if not range_header or not explicit_end:
+            end = max(file_size - 1, 0)
+        if not range_header:
+            start = 0
+    elif not range_header:
         end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
     elif not is_probe_range and (end - start + 1) < MIN_SERVE and end < file_size - 1:
         end = min(start + MIN_SERVE - 1, file_size - 1)
 
     content_length = max(0, end - start + 1)
     cache_key = f"file:{file_id}"
-    is_partial = bool(range_header) or (end < file_size - 1)
+    is_partial = bool(range_header) or (not is_download and end < file_size - 1)
 
     is_cached = False
     async with _CACHE_LOCK:
@@ -743,13 +763,16 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
-        "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, X-Stream-Cached",
+        "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Disposition, X-Stream-Cached",
         "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
         "X-Stream-Cached": "HIT" if is_cached else "MISS",
     }
 
     if is_partial:
         headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+
+    if is_download:
+        headers["Content-Disposition"] = f'attachment; filename="video_{file_id[:10]}.mp4"'
 
     if request.method == "HEAD":
         return Response(status_code=206 if is_partial else 200, headers=headers)

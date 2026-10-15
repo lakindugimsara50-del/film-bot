@@ -841,7 +841,7 @@ class TelegramStreamPool:
                 log.debug("[StreamPool] Hedged chunk 0 fetch note: %s", hedge_err)
 
         last_exc = None
-        max_attempts = 2
+        max_attempts = 4
 
         for attempt in range(max_attempts):
             for client in candidates:
@@ -857,7 +857,7 @@ class TelegramStreamPool:
                     try:
                         direct_chunk = await asyncio.wait_for(
                             self._fetch_chunk_direct(client, target_media, chunk_idx),
-                            timeout=10.0,
+                            timeout=12.0,
                         )
                     except FileReferenceExpired:
                         target_media = await self._get_client_media(client, media_source, force_refresh=True)
@@ -865,7 +865,7 @@ class TelegramStreamPool:
                             try:
                                 direct_chunk = await asyncio.wait_for(
                                     self._fetch_chunk_direct(client, target_media, chunk_idx),
-                                    timeout=10.0,
+                                    timeout=12.0,
                                 )
                             except Exception:
                                 direct_chunk = None
@@ -927,18 +927,18 @@ class TelegramStreamPool:
                     # Clean cancellation during timeline seek / scrubbing
                     raise
                 except asyncio.TimeoutError:
-                    log.warning("[StreamPool] Timeout (10s) fetching chunk %d with client %s, setting 5s cooldown", chunk_idx, getattr(client, "name", ""))
-                    self._client_cooldowns[client] = time.time() + 5.0
+                    log.warning("[StreamPool] Timeout (12s) fetching chunk %d with client %s, setting 3s cooldown", chunk_idx, getattr(client, "name", ""))
+                    self._client_cooldowns[client] = time.time() + 3.0
                     last_exc = TimeoutError(f"Timeout fetching chunk {chunk_idx}")
                     continue
                 except (ConnectionError, BrokenPipeError) as net_err:
                     log.warning("[StreamPool] Network socket error on client %s: %s", getattr(client, "name", ""), net_err)
-                    self._client_cooldowns[client] = time.time() + 15.0
+                    self._client_cooldowns[client] = time.time() + 10.0
                     last_exc = net_err
                     continue
                 except Exception as exc:
                     last_exc = exc
-                    self._client_cooldowns[client] = time.time() + 5.0
+                    self._client_cooldowns[client] = time.time() + 3.0
                     log.debug("[StreamPool] Client %s cannot stream chunk %d: %s", getattr(client, "name", ""), chunk_idx, exc)
                     continue
                 finally:
@@ -949,7 +949,14 @@ class TelegramStreamPool:
                             pass
 
             if attempt < max_attempts - 1:
-                await asyncio.sleep(0.2)
+                now = time.time()
+                for c in list(self._client_cooldowns.keys()):
+                    if self._client_cooldowns[c] <= now:
+                        self._client_cooldowns.pop(c, None)
+                if candidates and all(c in self._client_cooldowns for c in candidates):
+                    for c in candidates:
+                        self._client_cooldowns.pop(c, None)
+                await asyncio.sleep(0.3 * (attempt + 1))
 
         if last_exc:
             log.warning("[StreamPool] All candidate clients failed for chunk %d: %s", chunk_idx, last_exc)
@@ -1037,9 +1044,30 @@ class TelegramStreamPool:
                     )
                     next_to_schedule += 1
 
-                chunk = await task
+                try:
+                    chunk = await task
+                except (asyncio.CancelledError, ConnectionResetError):
+                    raise
+                except Exception as task_err:
+                    log.warning("[StreamPool] Chunk %d task failed: %s", curr_chunk, task_err)
+                    chunk = None
+
                 # Pop after await completes so that cancellation during await task will cleanly cancel task in finally:
                 pending_tasks.pop(curr_chunk, None)
+
+                # Resilient in-pipeline retry: if chunk returned empty or errored, retry directly up to 3 times before giving up
+                if (not chunk or len(chunk) == 0) and remaining > 0 and curr_chunk <= end_chunk:
+                    for retry_idx in range(3):
+                        await asyncio.sleep(0.3 * (retry_idx + 1))
+                        try:
+                            chunk = await self._fetch_chunk(media_source, curr_chunk)
+                            if chunk and len(chunk) > 0:
+                                log.info("[StreamPool] Successfully recovered chunk %d on retry %d", curr_chunk, retry_idx + 1)
+                                break
+                        except (asyncio.CancelledError, ConnectionResetError):
+                            raise
+                        except Exception as rec_err:
+                            log.debug("[StreamPool] In-pipeline retry %d for chunk %d failed: %s", retry_idx + 1, curr_chunk, rec_err)
 
                 if not chunk or remaining <= 0:
                     break

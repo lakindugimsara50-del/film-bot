@@ -427,9 +427,6 @@ export async function onRequest(context) {
       }
     } else if (rangeHeader) {
       upstreamHeaders['Range'] = rangeHeader;
-    } else if (isDownload) {
-      // Direct file download: request full stream from byte 0
-      upstreamHeaders['Range'] = 'bytes=0-';
     }
 
     const abortCtrl = new AbortController();
@@ -569,7 +566,9 @@ export async function onRequest(context) {
         }
       }
 
-      if (contentRange) outHeaders.set('Content-Range', contentRange);
+      if (contentRange && rangeHeader) {
+        outHeaders.set('Content-Range', contentRange);
+      }
       const contentLength = upstreamRes.headers.get('Content-Length');
       if (contentLength) outHeaders.set('Content-Length', contentLength);
 
@@ -586,8 +585,15 @@ export async function onRequest(context) {
         outHeaders.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
       }
 
+      // RFC 7233 Section 3.1: A server MUST NOT send a 206 response to a request that does not contain a Range header.
+      let finalStatus = upstreamRes.status;
+      if (!rangeHeader && finalStatus === 206) {
+        finalStatus = 200;
+        outHeaders.delete('Content-Range');
+      }
+
       return new Response(request.method === 'HEAD' ? null : responseBody, {
-        status: upstreamRes.status,
+        status: finalStatus,
         headers: outHeaders,
       });
     } catch (err) {

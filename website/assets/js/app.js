@@ -94,11 +94,11 @@ function loadBaselineMovies() {
 }
 
 async function fetchRemoteMovies() {
-  const cacheBuster = `?_t=${Date.now()}`;
+  const cacheBuster = `?_t=${Date.now()}&_r=${Math.random()}`;
   const localUrl = `${SITE_CONFIG.moviesPath}${cacheBuster}`;
   const remoteUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json${cacheBuster}`;
 
-  for (const url of [localUrl, remoteUrl]) {
+  for (const url of [remoteUrl, localUrl]) {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 12000);
@@ -106,20 +106,30 @@ async function fetchRemoteMovies() {
       clearTimeout(timer);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.movies) && data.movies.length > 0) {
-          const validRemote = data.movies.filter(_isValidMovieEntry);
+        const moviesList = Array.isArray(data) ? data : (data.movies || []);
+        if (Array.isArray(moviesList) && moviesList.length > 0) {
+          const validRemote = moviesList.filter(_isValidMovieEntry);
           if (validRemote.length > 0) {
             siteData = data.site || siteData;
-            const seenSlugs = new Set(validRemote.map(m => String(m.slug || m.id || '').toLowerCase()));
-            const merged = [...validRemote];
-            allMovies.forEach(bm => {
-              const s = String(bm.slug || bm.id || '').toLowerCase();
-              if (s && !seenSlugs.has(s)) {
-                seenSlugs.add(s);
-                merged.push(bm);
+            const seenSlugs = new Set();
+            const merged = [];
+            const addMovies = (arr) => {
+              if (!Array.isArray(arr)) return;
+              for (const m of arr) {
+                if (!m) continue;
+                const s = String(m.slug || m.id || '').toLowerCase();
+                if (s && !seenSlugs.has(s)) {
+                  seenSlugs.add(s);
+                  merged.push(m);
+                }
               }
-            });
+            };
+            addMovies(validRemote);
+            addMovies(allMovies);
+            if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) addMovies(window.FILMSUB_DATA.movies);
             allMovies = merged;
+            if (window.FILMSUB_DATA) window.FILMSUB_DATA.movies = merged;
+            if (window.FILMZILLA_DATA) window.FILMZILLA_DATA.movies = merged;
             return true;
           }
         }
@@ -344,7 +354,7 @@ function findMovieBySlug(slug) {
       description: 'The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel.',
       stream_url: 'assets/sample_stream.mp4',
       streams: [
-        { server: 'Server 1', label: '⚡ Super Player (1080p Chunk Stream)', type: 'video/mp4', stream_url: 'assets/sample_stream.mp4' }
+        { server: 'Server 1', label: '🎬 Super Player (1080p Full HD • Auto Sub)', type: 'video/mp4', stream_url: 'assets/sample_stream.mp4' }
       ],
       downloads: [
         { quality: '1080p', size: '1.45 GB', url: 'assets/sample_stream.mp4', format: 'MP4', host: 'Direct', subtitle_merged: true }
@@ -368,7 +378,7 @@ function findMovieBySlug(slug) {
       description: 'The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel.',
       stream_url: 'assets/sample_stream.mp4',
       streams: [
-        { server: 'Server 1', label: '⚡ Super Player (1080p Chunk Stream)', type: 'video/mp4', stream_url: 'assets/sample_stream.mp4' }
+        { server: 'Server 1', label: '🎬 Super Player (1080p Full HD • Auto Sub)', type: 'video/mp4', stream_url: 'assets/sample_stream.mp4' }
       ],
       downloads: [
         { quality: '1080p', size: '1.45 GB', url: 'assets/sample_stream.mp4', format: 'MP4', host: 'Direct', subtitle_merged: true }
@@ -392,7 +402,7 @@ function findMovieBySlug(slug) {
       description: 'An action-packed thriller with Sinhala subtitles.',
       stream_url: 'assets/sample_stream.mp4',
       streams: [
-        { server: 'Server 1', label: '⚡ Super Player (1080p Chunk Stream)', type: 'video/mp4', stream_url: 'assets/sample_stream.mp4' }
+        { server: 'Server 1', label: '🎬 Super Player (1080p Full HD • Auto Sub)', type: 'video/mp4', stream_url: 'assets/sample_stream.mp4' }
       ],
       downloads: [
         { quality: '1080p', size: '1.35 GB', url: 'assets/sample_stream.mp4', format: 'MP4', host: 'Direct', subtitle_merged: true }
@@ -1319,6 +1329,8 @@ window.FilmZilla = window.FilmSub = {
   allMovies: () => allMovies,
   getAllMovies: () => allMovies,
   get movies() { return allMovies; },
+  set movies(val) { if (Array.isArray(val)) allMovies = val; },
+  setMovies: (val) => { if (Array.isArray(val)) allMovies = val; },
   siteData: () => siteData,
   getFeatured,
   getNewReleases,

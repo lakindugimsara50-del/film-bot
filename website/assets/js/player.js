@@ -473,11 +473,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Fallback: If movie is not in bundled data or requested specific episode is missing, fetch
   const needsEpisodeFetch = Boolean(
-    currentMovie && currentSeason && currentEpisode &&
-    (parseInt(currentMovie.season, 10) !== currentSeason || parseInt(currentMovie.episode, 10) !== currentEpisode)
+    !currentMovie || (currentSeason && currentEpisode && (parseInt(currentMovie.season, 10) !== currentSeason || parseInt(currentMovie.episode, 10) !== currentEpisode))
   );
 
-  if (!currentMovie || needsEpisodeFetch) {
+  if (needsEpisodeFetch) {
     await waitForFilmSub();
     await FilmSub.loadMovies();
     if (!currentMovie) {
@@ -491,7 +490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (!currentMovie || (currentSeason && currentEpisode && (parseInt(currentMovie.season, 10) !== currentSeason || parseInt(currentMovie.episode, 10) !== currentEpisode))) {
       try {
-        const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
+        const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?_t=' + Date.now() + '&_r=' + Math.random();
         const ctrl = new AbortController();
         const tId = setTimeout(() => ctrl.abort(), 12000);
         const rGh = await fetch(ghUrl, { signal: ctrl.signal, cache: 'no-store' });
@@ -512,7 +511,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (window.FILMSUB_DATA) window.FILMSUB_DATA.movies = merged;
             if (window.FILMZILLA_DATA) window.FILMZILLA_DATA.movies = merged;
-            if (window.FilmSub && Array.isArray(FilmSub.movies)) FilmSub.movies = merged;
+            if (window.FilmSub) {
+              if (typeof FilmSub.setMovies === 'function') FilmSub.setMovies(merged);
+              else FilmSub.movies = merged;
+            }
           }
           let found = moviesList.find(m => m.slug === slug || m.id === slug);
           if (!found && currentSeason && currentEpisode) {
@@ -533,7 +535,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // If found synchronously, schedule FilmSub.loadMovies() in background without delaying playback start
     waitForFilmSub().then(() => {
       if (window.FilmSub && typeof FilmSub.loadMovies === 'function') {
-        FilmSub.loadMovies().catch(() => {});
+        FilmSub.loadMovies().then(() => {
+          if (currentMovie && (currentMovie.type === 'series' || currentSeason)) {
+            renderSeriesSection(currentMovie);
+          }
+        }).catch(() => {});
       }
     });
   }
@@ -550,13 +556,49 @@ document.addEventListener('DOMContentLoaded', async () => {
       return mBase && (mBase === baseSlug || mBase.startsWith(baseSlug) || baseSlug.startsWith(mBase));
     });
     if (seriesMaster) {
+      const s = currentSeason || seriesMaster.season || 1;
+      const ep = currentEpisode || 1;
+      const tmdbId = seriesMaster.tmdb_id || '';
+      const imdbId = seriesMaster.imdb_id || '';
+      const epSlug = `${baseSlug}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`;
       currentMovie = {
         ...seriesMaster,
-        id: slug,
-        slug: slug,
-        season: currentSeason || seriesMaster.season || 1,
-        episode: currentEpisode || 1,
-        episode_title: `Episode ${currentEpisode || 1}`,
+        id: slug || epSlug,
+        slug: slug || epSlug,
+        season: s,
+        episode: ep,
+        episode_title: `Episode ${ep}`,
+        message_id: 0,
+        file_id: '',
+        file_name: '',
+        stream_url: '',
+        variant_media: null,
+        streams: [
+          ...(tmdbId ? [{
+            server: 'Server 2',
+            label: '🎬 VIP Player 1 (VidLink Ultra HD)',
+            type: 'embed',
+            embed: true,
+            stream_url: `https://vidlink.pro/tv/${tmdbId}/${s}/${ep}`
+          }] : []),
+          ...(imdbId ? [{
+            server: 'Server 3',
+            label: '⚡ VIP Player 2 (AutoEmbed HD)',
+            type: 'embed',
+            embed: true,
+            stream_url: `https://autoembed.co/tv/imdb/${imdbId}-${s}-${ep}`
+          }] : [])
+        ],
+        downloads: [],
+        subtitles: [
+          {
+            language: 'Sinhala',
+            srclang: 'si',
+            label: 'සිංහල උපසිරැසි (Sinhala)',
+            url: `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${slug || epSlug}-si.vtt`,
+            default: false
+          }
+        ]
       };
       if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
         window.FILMSUB_DATA.movies.unshift(currentMovie);
@@ -741,7 +783,7 @@ function getMovieStreams(movie) {
 
   // TV Series episode resolution: resolve exact episode movie object
   let effectiveMovie = movie;
-  if (isSeries && (parseInt(movie.season, 10) !== sNum || parseInt(movie.episode, 10) !== eNum)) {
+  if (isSeries) {
     const epEntry = findEpisodeEntry(movie, sNum, eNum);
     if (epEntry) {
       effectiveMovie = epEntry;
@@ -1444,7 +1486,7 @@ function renderServerTabs(movie) {
   // 2. Movie Stream Servers (Telegram Cloud / VIP Players)
   if (streams.length > 0) {
     streams.forEach((s, i) => {
-      let cleanLabel = s.server || (streams.length === 1 ? '⚡ Super Player (Telegram HD)' : `Server ${i + 1}`);
+      let cleanLabel = s.server || (streams.length === 1 ? '⚡ Super Player (HD • Auto Sinhala Sub)' : `Server ${i + 1}`);
       tabsHtml += `
         <button class="server-tab${i === currentStreamIdx && !isTrailerActive ? ' active' : ''}" data-type="stream" data-index="${i}" type="button" title="Watch Movie Stream">
           <i class="fa-solid fa-play"></i>
@@ -2512,20 +2554,20 @@ function updatePlayerLoadPercent(targetPct, statusMessage, details) {
 
 function startProgressAnimation() {
   currentLoadPercent = 12;
-  updatePlayerLoadPercent(12, '⚡ Connecting High-Speed Stream Server...', 'Colab MTProto Tunnel Initializing...');
+  updatePlayerLoadPercent(12, '⚡ Loading Video Stream...', 'Connecting High-Speed Stream Server...');
 
   if (loadPercentTimer) clearInterval(loadPercentTimer);
 
   loadPercentTimer = setInterval(() => {
     if (currentLoadPercent < 45) {
       currentLoadPercent += Math.random() * 8 + 4;
-      updatePlayerLoadPercent(currentLoadPercent, '🔍 Resolving Telegram Media Peer...', 'Accessing 1080p Chunk Stream...');
+      updatePlayerLoadPercent(currentLoadPercent, '🎬 Preparing High-Quality Video...', 'Optimizing Playback Server...');
     } else if (currentLoadPercent < 80) {
       currentLoadPercent += Math.random() * 4 + 2;
-      updatePlayerLoadPercent(currentLoadPercent, '📥 Buffering Stream Chunks & Sinhala Subtitles...', 'Synchronizing Video.js Engine...');
+      updatePlayerLoadPercent(currentLoadPercent, '📥 Buffering Stream & Sinhala Subtitles...', 'Preparing Video Player...');
     } else if (currentLoadPercent < 94) {
       currentLoadPercent += 0.8;
-      updatePlayerLoadPercent(currentLoadPercent, '🎬 Starting Video Decoder...', 'Finalizing 1080p Playback Buffer...');
+      updatePlayerLoadPercent(currentLoadPercent, '✨ Finalizing Playback Buffer...', 'Starting Video Playback...');
     }
     if (currentLoadPercent >= 95) {
       clearInterval(loadPercentTimer);
@@ -2536,7 +2578,7 @@ function startProgressAnimation() {
 
 function finishProgressAnimation() {
   if (loadPercentTimer) { clearInterval(loadPercentTimer); loadPercentTimer = null; }
-  updatePlayerLoadPercent(100, '✅ 100% Ready • Starting Playback...', 'Playing with Sinhala Subtitles');
+  updatePlayerLoadPercent(100, '✅ Ready • Starting Playback...', 'Playing with Sinhala Subtitles');
   setTimeout(() => {
     const loader = document.getElementById('super-player-loader');
     if (loader) loader.classList.add('hidden');
@@ -2561,7 +2603,7 @@ function buildSuperLoaderHtml(movie, serverLabel) {
         <!-- Live Loading Percentage Display (CineSubz / Netflix VIP) -->
         <div class="sp-progress-container" id="sp-progress-container">
           <div class="sp-progress-meta">
-            <span class="sp-progress-status" id="sp-progress-status">⚡ Connecting Stream Server...</span>
+            <span class="sp-progress-status" id="sp-progress-status">⚡ Loading Video Stream...</span>
             <span class="sp-progress-pct" id="sp-progress-pct">0%</span>
           </div>
           <div class="sp-progress-track">
@@ -2569,7 +2611,7 @@ function buildSuperLoaderHtml(movie, serverLabel) {
           </div>
           <div class="sp-progress-sub">
             <span class="sp-status-pulse-dot"></span>
-            <span id="sp-progress-details">High-Speed Telegram Cloud Stream • Auto Sinhala Sub</span>
+            <span id="sp-progress-details">FilmZilla HD • Auto Sinhala Sub</span>
           </div>
         </div>
       </div>
@@ -3719,8 +3761,8 @@ function renderPlayerFallback(playerEl, movie) {
     ? 'වීඩියෝව සූදානම් වෙමින් පවතී...'
     : 'Stream Server එක සම්බන්ධ වෙමින් පවතී...';
   const descText = isVideoPending
-    ? 'මෙම වීඩියෝව Telegram Cloud වෙත Upload වෙමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ.'
-    : 'Telegram High-Speed Stream Server එක (Google Colab) සම්බන්ධ කර ගනිමින් පවතී. Colab සක්‍රීය වූ සැනින් ස්වයංක්‍රීයව Playback ආරම්භ වේ (ස්වයංක්‍රීයව Live සම්බන්ධ වේ)...';
+    ? 'මෙම වීඩියෝව සූදානම් වෙමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ.'
+    : 'High-Speed Stream Server එක සම්බන්ධ කර ගනිමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ...';
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap cinema-standby-screen">
@@ -4122,8 +4164,10 @@ function renderSeriesSection(movie) {
       const epDuration = (matchedEpMovie && matchedEpMovie.duration) || '~50 min';
       const epCode = `S${String(sNum).padStart(2, '0')} E${String(ep).padStart(2, '0')}`;
 
+      const epSlugFallback = `${(movie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '')}-s${String(sNum).padStart(2, '0')}e${String(ep).padStart(2, '0')}`;
+      const cardSlug = matchedEpMovie ? (matchedEpMovie.slug || matchedEpMovie.id) : epSlugFallback;
       epHtml += `
-        <div class="episode-card${isActive ? ' active' : ''}" data-season="${sNum}" data-episode="${ep}" ${matchedEpMovie ? `data-slug="${FilmSub.escHtml(matchedEpMovie.slug || matchedEpMovie.id)}"` : ''}>
+        <div class="episode-card${isActive ? ' active' : ''}" data-season="${sNum}" data-episode="${ep}" data-slug="${FilmSub.escHtml(cardSlug)}">
           <div class="ep-thumb-wrap">
             <img src="${FilmSub.escHtml(epThumb)}" alt="${FilmSub.escHtml(epTitle)}" loading="lazy" decoding="async" class="ep-thumb-img" onerror="this.src='${FilmSub.SITE_CONFIG.defaultPoster}'">
             <div class="ep-thumb-play"><i class="fa-solid fa-play"></i></div>
@@ -4172,7 +4216,7 @@ function renderSeriesSection(movie) {
         }
         if (!found) {
           try {
-            const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?t=' + Date.now();
+            const ghUrl = 'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json?_t=' + Date.now() + '&_r=' + Math.random();
             const rGh = await fetch(ghUrl, { cache: 'no-store' });
             if (rGh.ok) {
               const d = await rGh.json();
@@ -4190,8 +4234,19 @@ function renderSeriesSection(movie) {
                 }
                 if (window.FILMSUB_DATA) window.FILMSUB_DATA.movies = merged;
                 if (window.FILMZILLA_DATA) window.FILMZILLA_DATA.movies = merged;
-                if (window.FilmSub && Array.isArray(FilmSub.movies)) FilmSub.movies = merged;
+                if (window.FilmSub) {
+                  if (typeof FilmSub.setMovies === 'function') FilmSub.setMovies(merged);
+                  else FilmSub.movies = merged;
+                }
                 found = findEpisodeEntry(movie, s, ep);
+                if (!found) {
+                  const baseSlug = (movie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+                  found = moviesList.find(m => {
+                    if (parseInt(m.season, 10) !== s || parseInt(m.episode, 10) !== ep) return false;
+                    const mBase = (m.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+                    return mBase && (mBase === baseSlug || mBase.startsWith(baseSlug) || baseSlug.startsWith(mBase));
+                  });
+                }
                 if (!found && matchedSlug) {
                   found = moviesList.find(m => m.slug === matchedSlug || m.id === matchedSlug);
                 }
@@ -4201,13 +4256,47 @@ function renderSeriesSection(movie) {
         }
         if (!found) {
           const baseSlug = (movie.slug || '').replace(/[-_.]s\d+[-_.]?e\d+.*$/i, '').replace(/[-_.]\d+x\d+.*$/i, '').replace(/[^a-z0-9]/g, '');
+          const tmdbId = movie.tmdb_id || '';
+          const imdbId = movie.imdb_id || '';
+          const epSlug = `${baseSlug}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`;
           found = {
             ...movie,
-            id: `${baseSlug}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`,
-            slug: `${baseSlug}-s${String(s).padStart(2, '0')}e${String(ep).padStart(2, '0')}`,
+            id: epSlug,
+            slug: epSlug,
             season: s,
             episode: ep,
             episode_title: `Episode ${ep}`,
+            message_id: 0,
+            file_id: '',
+            file_name: '',
+            stream_url: '',
+            variant_media: null,
+            streams: [
+              ...(tmdbId ? [{
+                server: 'Server 2',
+                label: '🎬 VIP Player 1 (VidLink Ultra HD)',
+                type: 'embed',
+                embed: true,
+                stream_url: `https://vidlink.pro/tv/${tmdbId}/${s}/${ep}`
+              }] : []),
+              ...(imdbId ? [{
+                server: 'Server 3',
+                label: '⚡ VIP Player 2 (AutoEmbed HD)',
+                type: 'embed',
+                embed: true,
+                stream_url: `https://autoembed.co/tv/imdb/${imdbId}-${s}-${ep}`
+              }] : [])
+            ],
+            downloads: [],
+            subtitles: [
+              {
+                language: 'Sinhala',
+                srclang: 'si',
+                label: 'සිංහල උපසිරැසි (Sinhala)',
+                url: `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/${epSlug}-si.vtt`,
+                default: false
+              }
+            ]
           };
           if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
             window.FILMSUB_DATA.movies.unshift(found);

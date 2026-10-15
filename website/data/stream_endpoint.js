@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://thru-discounts-lie-butterfly.trycloudflare.com",
+  "stream_base_url": "https://colors-spending-professional-symptoms.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-15T12:10:02.189852+00:00",
+  "updated_at": "2026-10-15T13:40:06.193353+00:00",
   "status": "online"
 };

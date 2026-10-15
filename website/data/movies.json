@@ -18142,7 +18142,237 @@
       "added_date": "2026-10-15",
       "added_at": "2026-10-15T12:19:17Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "furious-2026-s01e05",
+      "slug": "furious-2026-s01e05",
+      "title": "Furious",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt36303968",
+      "tmdb_id": "287238",
+      "type": "series",
+      "season": 1,
+      "episode": 5,
+      "episode_title": "Pick a Sticker",
+      "number_of_seasons": 1,
+      "number_of_episodes": 8,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+          "air_date": "2026-07-27"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/iAOPgUlh7inOebFrUFHAjnFRCGS.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/iAOPgUlh7inOebFrUFHAjnFRCGS.jpg",
+      "genres": [
+        "Drama",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "56 min",
+      "description": "FBI agent Alice Black is on the hunt for a mysterious and calculating female serial killer. Both walk their own paths toward justice, and as their lives start to intertwine, the line between right and wrong begins to blur.",
+      "director": "Elizabeth Meriwether",
+      "cast": [
+        {
+          "name": "Emmy Rossum",
+          "character": "Alice Black"
+        },
+        {
+          "name": "Lola Petticrew",
+          "character": "Catherine"
+        },
+        {
+          "name": "Scoot McNairy",
+          "character": "Danny Kelly"
+        },
+        {
+          "name": "Quincy Tyler Bernstine",
+          "character": "Nora Washington"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAV9q0NndBDahGd6EJBxTukXVeVwVTwACpiMAAsWzgVaL_guRbc3YCh4E",
+      "message_id": 351,
+      "file_name": "fs_furious-2026-s01e05_720p.mp4",
+      "file_size": 519801620,
+      "drive_file_id": "",
+      "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAV9q0NndBDahGd6EJBxTukXVeVwVTwACpiMAAsWzgVaL_guRbc3YCh4E",
+          "message_id": 351,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/287238/1/5"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt36303968-1-5"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt36303968&s=1&e=5"
+        }
+      ],
+      "qualities": {
+        "auto": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+        "1080p": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+        "720p": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+        "480p": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/350",
+        "360p": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "495.7 MB",
+          "size_bytes": 519801620,
+          "url": "https://t.me/c/4325759505/351",
+          "telegram_url": "https://t.me/c/4325759505/351",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAV9q0NndBDahGd6EJBxTukXVeVwVTwACpiMAAsWzgVaL_guRbc3YCh4E",
+          "message_id": 351,
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "268.1 MB",
+          "size_bytes": 281108632,
+          "url": "https://t.me/c/4325759505/350",
+          "telegram_url": "https://t.me/c/4325759505/350",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAV5q0NlfrMcnI_G0vRCIIKqX1VfziAACoyMAAsWzgVZG4qOJL3TkAx4E",
+          "message_id": 350,
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/350",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "495.7 MB",
+          "size_bytes": 519801620,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e05_1080p",
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "495.7 MB",
+          "size_bytes": 519801620,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e05_720p",
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "268.1 MB",
+          "size_bytes": 281108632,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e05_480p",
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/350",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "89.2 MB",
+          "size_bytes": 93564291,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e05_360p",
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAV9q0NndBDahGd6EJBxTukXVeVwVTwACpiMAAsWzgVaL_guRbc3YCh4E",
+          "message_id": 351,
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "size_bytes": 519801620
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAV5q0NlfrMcnI_G0vRCIIKqX1VfziAACoyMAAsWzgVZG4qOJL3TkAx4E",
+          "message_id": 350,
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/350",
+          "size_bytes": 281108632
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://colors-spending-professional-symptoms.trycloudflare.com/stream/channel/-1004325759505/351",
+          "size_bytes": 93564291
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/furious-2026-s01e05-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=furious-2026-s01e05",
+      "added_date": "2026-10-15",
+      "added_at": "2026-10-15T13:49:20Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-15T12:19:19Z"
+  "last_updated": "2026-10-15T13:49:22Z"
 }

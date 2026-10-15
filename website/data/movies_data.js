@@ -18372,7 +18372,237 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-10-15",
       "added_at": "2026-10-15T13:49:20Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "furious-2026-s01e06",
+      "slug": "furious-2026-s01e06",
+      "title": "Furious",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt36303968",
+      "tmdb_id": "287238",
+      "type": "series",
+      "season": 1,
+      "episode": 6,
+      "episode_title": "They Make a Noise Like Feathers",
+      "number_of_seasons": 1,
+      "number_of_episodes": 8,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+          "air_date": "2026-07-27"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/iAOPgUlh7inOebFrUFHAjnFRCGS.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/iAOPgUlh7inOebFrUFHAjnFRCGS.jpg",
+      "genres": [
+        "Drama",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "55 min",
+      "description": "FBI agent Alice Black is on the hunt for a mysterious and calculating female serial killer. Both walk their own paths toward justice, and as their lives start to intertwine, the line between right and wrong begins to blur.",
+      "director": "Elizabeth Meriwether",
+      "cast": [
+        {
+          "name": "Emmy Rossum",
+          "character": "Alice Black"
+        },
+        {
+          "name": "Lola Petticrew",
+          "character": "Catherine"
+        },
+        {
+          "name": "Scoot McNairy",
+          "character": "Danny Kelly"
+        },
+        {
+          "name": "Quincy Tyler Bernstine",
+          "character": "Nora Washington"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWJq0SZxaSeOmA-V-cPbhH35xiCVFgACYCEAAsWziVaS1Ul-QOc_Tx4E",
+      "message_id": 354,
+      "file_name": "fs_furious-2026-s01e06_720p.mp4",
+      "file_size": 561202527,
+      "drive_file_id": "",
+      "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWJq0SZxaSeOmA-V-cPbhH35xiCVFgACYCEAAsWziVaS1Ul-QOc_Tx4E",
+          "message_id": 354,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/287238/1/6"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt36303968-1-6"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt36303968&s=1&e=6"
+        }
+      ],
+      "qualities": {
+        "auto": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+        "1080p": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+        "720p": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+        "480p": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/353",
+        "360p": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "535.2 MB",
+          "size_bytes": 561202527,
+          "url": "https://t.me/c/4325759505/354",
+          "telegram_url": "https://t.me/c/4325759505/354",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWJq0SZxaSeOmA-V-cPbhH35xiCVFgACYCEAAsWziVaS1Ul-QOc_Tx4E",
+          "message_id": 354,
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "286.6 MB",
+          "size_bytes": 300478597,
+          "url": "https://t.me/c/4325759505/353",
+          "telegram_url": "https://t.me/c/4325759505/353",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWFq0SYaR3M3cDmSg4DlfhZaZgyXawACXyEAAsWziVbz8Fl1oQYTuh4E",
+          "message_id": 353,
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/353",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "535.2 MB",
+          "size_bytes": 561202527,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e06_1080p",
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "535.2 MB",
+          "size_bytes": 561202527,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e06_720p",
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "286.6 MB",
+          "size_bytes": 300478597,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e06_480p",
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/353",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "96.3 MB",
+          "size_bytes": 101016454,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e06_360p",
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWJq0SZxaSeOmA-V-cPbhH35xiCVFgACYCEAAsWziVaS1Ul-QOc_Tx4E",
+          "message_id": 354,
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "size_bytes": 561202527
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWFq0SYaR3M3cDmSg4DlfhZaZgyXawACXyEAAsWziVbz8Fl1oQYTuh4E",
+          "message_id": 353,
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/353",
+          "size_bytes": 300478597
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://package-modifications-versus-suggest.trycloudflare.com/stream/channel/-1004325759505/354",
+          "size_bytes": 101016454
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/furious-2026-s01e06-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=furious-2026-s01e06",
+      "added_date": "2026-10-15",
+      "added_at": "2026-10-15T19:16:04Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-15T13:49:22Z"
+  "last_updated": "2026-10-15T19:16:06Z"
 };

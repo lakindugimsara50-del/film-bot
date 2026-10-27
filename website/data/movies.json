@@ -18602,7 +18602,237 @@
       "added_date": "2026-10-15",
       "added_at": "2026-10-15T19:16:04Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "furious-2026-s01e07",
+      "slug": "furious-2026-s01e07",
+      "title": "Furious",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt36303968",
+      "tmdb_id": "287238",
+      "type": "series",
+      "season": 1,
+      "episode": 7,
+      "episode_title": "Some Days It Don't Come Easy",
+      "number_of_seasons": 1,
+      "number_of_episodes": 8,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+          "air_date": "2026-07-27"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/xnxxrEKtBaIcI1ewq50pLkOMU6u.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/iAOPgUlh7inOebFrUFHAjnFRCGS.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/iAOPgUlh7inOebFrUFHAjnFRCGS.jpg",
+      "genres": [
+        "Drama",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "52 min",
+      "description": "FBI agent Alice Black is on the hunt for a mysterious and calculating female serial killer. Both walk their own paths toward justice, and as their lives start to intertwine, the line between right and wrong begins to blur.",
+      "director": "Elizabeth Meriwether",
+      "cast": [
+        {
+          "name": "Emmy Rossum",
+          "character": "Alice Black"
+        },
+        {
+          "name": "Lola Petticrew",
+          "character": "Catherine"
+        },
+        {
+          "name": "Scoot McNairy",
+          "character": "Danny Kelly"
+        },
+        {
+          "name": "Quincy Tyler Bernstine",
+          "character": "Nora Washington"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWZq4LasS3_hfBxCvFeQ-fwow0hi6QACPiAAAmG8AAFXfQa75UojjzgeBA",
+      "message_id": 358,
+      "file_name": "fs_furious-2026-s01e07_720p.mp4",
+      "file_size": 624498258,
+      "drive_file_id": "",
+      "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWZq4LasS3_hfBxCvFeQ-fwow0hi6QACPiAAAmG8AAFXfQa75UojjzgeBA",
+          "message_id": 358,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/287238/1/7"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt36303968-1-7"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt36303968&s=1&e=7"
+        }
+      ],
+      "qualities": {
+        "auto": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+        "1080p": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+        "720p": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+        "480p": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/357",
+        "360p": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "595.6 MB",
+          "size_bytes": 624498258,
+          "url": "https://t.me/c/4325759505/358",
+          "telegram_url": "https://t.me/c/4325759505/358",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWZq4LasS3_hfBxCvFeQ-fwow0hi6QACPiAAAmG8AAFXfQa75UojjzgeBA",
+          "message_id": 358,
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "304.7 MB",
+          "size_bytes": 319504119,
+          "url": "https://t.me/c/4325759505/357",
+          "telegram_url": "https://t.me/c/4325759505/357",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWVq4LZQAAGertA97jiUiyGNBxL8mq4AAj0gAAJhvAABV-SvaXj1Nr0XHgQ",
+          "message_id": 357,
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/357",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "595.6 MB",
+          "size_bytes": 624498258,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e07_1080p",
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "595.6 MB",
+          "size_bytes": 624498258,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e07_720p",
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "304.7 MB",
+          "size_bytes": 319504119,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e07_480p",
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/357",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "107.2 MB",
+          "size_bytes": 112409686,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_furious-2026-s01e07_360p",
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWZq4LasS3_hfBxCvFeQ-fwow0hi6QACPiAAAmG8AAFXfQa75UojjzgeBA",
+          "message_id": 358,
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "size_bytes": 624498258
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWVq4LZQAAGertA97jiUiyGNBxL8mq4AAj0gAAJhvAABV-SvaXj1Nr0XHgQ",
+          "message_id": 357,
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/357",
+          "size_bytes": 319504119
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://rec-guardian-democrat-pgp.trycloudflare.com/stream/channel/-1004325759505/358",
+          "size_bytes": 112409686
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/furious-2026-s01e07-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=furious-2026-s01e07",
+      "added_date": "2026-10-27",
+      "added_at": "2026-10-27T14:35:28Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-15T19:16:06Z"
+  "last_updated": "2026-10-27T14:35:30Z"
 }

@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://birds-constantly-fixtures-altered.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-27T12:23:46.412790+00:00",
+  "updated_at": "2026-10-27T12:24:03.289731+00:00",
   "status": "online"
 };

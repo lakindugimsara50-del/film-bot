@@ -45,6 +45,11 @@ HEADERS = {
 STATE_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "cinesubz_crawler_state.json"
 )
+WEBSITE_STATE_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "data", "cinesubz_crawler_state.json"
+)
+COLAB_GDRIVE_STATE_DIR = "/content/drive/MyDrive/film_bot"
+COLAB_GDRIVE_STATE_FILE = os.path.join(COLAB_GDRIVE_STATE_DIR, "cinesubz_crawler_state.json")
 
 
 def clean_cinesubz_title(raw_text: str) -> Dict[str, Any]:
@@ -92,33 +97,45 @@ def clean_cinesubz_title(raw_text: str) -> Dict[str, Any]:
 
 
 async def get_cinesubz_max_pages(client: httpx.AsyncClient, section: str = "movies") -> int:
-    """Detect total pages for a section (e.g. 'movies' or 'tvshows') on CineSubz."""
+    """Detect total pages for a section (e.g. 'movies' or 'tvshows') on CineSubz with multi-retries and robust regex."""
     for base in CINESUBZ_BASE_URLS:
-        try:
-            url = f"{base}/{section}/"
-            resp = await client.get(url, headers=HEADERS, timeout=12.0)
-            if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, "html.parser")
-                pag = soup.find(class_="pagination")
-                if pag:
-                    # Look for '<span class="total">Page 1 of 226</span>'
-                    total_elem = pag.find(class_="total")
-                    if total_elem:
-                        m = re.search(r"of\s+(\d+)", total_elem.get_text())
-                        if m:
-                            return int(m.group(1))
-                    # Fallback: scan page links
-                    page_nums = []
-                    for a in pag.find_all("a", href=True):
-                        pm = re.search(r"/page/(\d+)/?", a["href"])
-                        if pm:
-                            page_nums.append(int(pm.group(1)))
-                    if page_nums:
-                        return max(page_nums)
-        except Exception as exc:
-            log.debug("[CineSubzCrawler] Max page detection error for %s on %s: %s", section, base, exc)
+        for attempt in range(3):
+            try:
+                url = f"{base}/{section}/"
+                resp = await client.get(url, headers=HEADERS, timeout=15.0)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    pag = soup.find(class_=re.compile(r"pagination|pages|page-nav", re.I))
+                    if pag:
+                        # 1. Look for 'Page 1 of 480'
+                        for elem in pag.find_all(["span", "div"], class_=re.compile(r"total|pages|current", re.I)):
+                            m = re.search(r"of\s+(\d+)", elem.get_text(), re.I)
+                            if m:
+                                return int(m.group(1))
+                        # 2. Fallback: scan page links in pagination
+                        page_nums = []
+                        for a in pag.find_all("a", href=True):
+                            pm = re.search(r"/page/(\d+)/?", a["href"])
+                            if pm:
+                                page_nums.append(int(pm.group(1)))
+                        if page_nums:
+                            return max(page_nums)
 
-    return 226 if section == "movies" else 20
+                    # 3. Scan whole document for pagination links
+                    doc_page_nums = []
+                    for a in soup.find_all("a", href=re.compile(rf"/{section}/page/(\d+)")):
+                        pm = re.search(rf"/{section}/page/(\d+)", a["href"])
+                        if pm:
+                            doc_page_nums.append(int(pm.group(1)))
+                    if doc_page_nums:
+                        return max(doc_page_nums)
+                    break
+            except Exception as exc:
+                log.debug("[CineSubzCrawler] Max page detection attempt %d for %s on %s: %s", attempt + 1, section, base, exc)
+                await asyncio.sleep(1.0)
+
+    # Robust default: CineSubz has 480+ movie pages and 45+ TV show pages
+    return 480 if section == "movies" else 45
 
 
 async def scrape_cinesubz_page(
@@ -327,43 +344,49 @@ class CineSubzCrawler:
         self.load_state()
 
     def load_state(self) -> None:
-        """Load persistent crawler state from disk."""
-        if os.path.exists(STATE_FILE):
-            try:
-                with open(STATE_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                self.mode = data.get("mode", "movies")
-                self.current_movie_page = data.get("current_movie_page", 0)
-                self.max_movie_pages = data.get("max_movie_pages", 0)
-                self.current_tv_page = data.get("current_tv_page", 0)
-                self.max_tv_pages = data.get("max_tv_pages", 0)
-                self.total_scraped = data.get("total_scraped", 0)
-                self.total_skipped = data.get("total_skipped", 0)
-                self.total_queued = data.get("total_queued", 0)
-                log.info("[CineSubzCrawler] Loaded state: Movie page %d/%d, TV page %d/%d",
-                         self.current_movie_page, self.max_movie_pages, self.current_tv_page, self.max_tv_pages)
-            except Exception as e:
-                log.debug("[CineSubzCrawler] Could not load state: %s", e)
+        """Load persistent crawler state from disk, checking local, Google Drive, or website backup."""
+        self.last_completed_item: str = "None"
+        for p in (STATE_FILE, COLAB_GDRIVE_STATE_FILE, WEBSITE_STATE_FILE):
+            if os.path.exists(p):
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    self.mode = data.get("mode", "all")
+                    self.current_movie_page = data.get("current_movie_page", 0)
+                    self.max_movie_pages = data.get("max_movie_pages", 0)
+                    self.current_tv_page = data.get("current_tv_page", 0)
+                    self.max_tv_pages = data.get("max_tv_pages", 0)
+                    self.total_scraped = data.get("total_scraped", 0)
+                    self.total_skipped = data.get("total_skipped", 0)
+                    self.total_queued = data.get("total_queued", 0)
+                    self.last_completed_item = data.get("last_completed_item", "None")
+                    log.info("[CineSubzCrawler] Loaded state from %s: Movie page %d/%d, TV page %d/%d (Last: %s)",
+                             p, self.current_movie_page, self.max_movie_pages, self.current_tv_page, self.max_tv_pages, self.last_completed_item)
+                    return
+                except Exception as e:
+                    log.debug("[CineSubzCrawler] Could not load state from %s: %s", p, e)
 
     def save_state(self) -> None:
-        """Save persistent crawler state to disk."""
-        try:
-            os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-            data = {
-                "mode": self.mode,
-                "current_movie_page": self.current_movie_page,
-                "max_movie_pages": self.max_movie_pages,
-                "current_tv_page": self.current_tv_page,
-                "max_tv_pages": self.max_tv_pages,
-                "total_scraped": self.total_scraped,
-                "total_skipped": self.total_skipped,
-                "total_queued": self.total_queued,
-                "updated_at": time.time(),
-            }
-            with open(STATE_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            log.debug("[CineSubzCrawler] Could not save state: %s", e)
+        """Save persistent crawler state to disk and all cloud backups."""
+        data = {
+            "mode": self.mode,
+            "current_movie_page": self.current_movie_page,
+            "max_movie_pages": self.max_movie_pages,
+            "current_tv_page": self.current_tv_page,
+            "max_tv_pages": self.max_tv_pages,
+            "total_scraped": self.total_scraped,
+            "total_skipped": self.total_skipped,
+            "total_queued": self.total_queued,
+            "last_completed_item": getattr(self, "last_completed_item", "None"),
+            "updated_at": time.time(),
+        }
+        for p in (STATE_FILE, WEBSITE_STATE_FILE, COLAB_GDRIVE_STATE_FILE):
+            try:
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+            except Exception:
+                pass
 
     def is_running(self) -> bool:
         return self._is_running
@@ -428,6 +451,7 @@ class CineSubzCrawler:
             f"{page_info}"
             f"🎬 <b>වත්මන් ගොනුව:</b> {self.current_item_name}\n"
             f"📝 <b>විස්තරය:</b> <i>{self.status_detail}</i>\n\n"
+            f"📌 <b>අවසන් වූ ගොනුව (Last Finished):</b> <code>{getattr(self, 'last_completed_item', 'None')}</code>\n\n"
             f"📈 <b>සංඛ්‍යාලේඛන (Stats):</b>\n"
             f"  • Scraped: <b>{self.total_scraped}</b>\n"
             f"  • Skipped (Already on Site): <b>{self.total_skipped}</b>\n"
@@ -538,6 +562,8 @@ class CineSubzCrawler:
                                 self.status_detail = f"Processing '{item_label}' (Leech + Uploading)..."
                                 await asyncio.sleep(5.0)
 
+                            self.last_completed_item = item_label
+                            self.save_state()
                             await asyncio.sleep(2.0)
 
                         self.current_movie_page -= 1
@@ -618,6 +644,8 @@ class CineSubzCrawler:
                                     self.status_detail = f"Processing '{ep_tag}' (Leech + Uploading)..."
                                     await asyncio.sleep(5.0)
 
+                                self.last_completed_item = ep_tag
+                                self.save_state()
                                 await asyncio.sleep(2.0)
 
                         self.current_tv_page -= 1

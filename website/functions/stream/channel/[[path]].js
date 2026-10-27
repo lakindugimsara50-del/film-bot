@@ -279,7 +279,16 @@ export async function onRequest(context) {
     }
   }
 
-  const isDownload = urlObj.searchParams.get('dl') === '1' || urlObj.searchParams.get('download') === '1';
+  const userAgent = (request.headers.get('User-Agent') || '').toLowerCase();
+  const secFetchDest = (request.headers.get('Sec-Fetch-Dest') || '').toLowerCase();
+  const isDownloaderUA = /idm|1dm|adm|fdm|aria2|wget|curl|download/i.test(userAgent);
+
+  const isDownload = urlObj.searchParams.get('dl') === '1' ||
+                     urlObj.searchParams.get('download') === '1' ||
+                     urlObj.pathname.includes('/download/') ||
+                     secFetchDest === 'document' ||
+                     secFetchDest === 'download' ||
+                     isDownloaderUA;
 
   // Suffix ranges (bytes=-N) must not match the initial 0-8MB chunk
   // For file downloads (dl=1 without range), do NOT constrain to initial 8MB chunk
@@ -308,7 +317,7 @@ export async function onRequest(context) {
         // Fast-path: Open-ended requests (bytes=0- or no range):
         // Deliver initial 8MB chunk directly from Cloudflare Edge Cache in <20ms
         // Browser reads moov atom and GOPs immediately, then sends subsequent byte-range requests
-        if ((clientStart === null || clientStart === 0) && clientEnd === null) {
+        if (!isDownload && (clientStart === null || clientStart === 0) && clientEnd === null) {
           const chunkLenNum = parseInt(cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES), 10);
           outHeaders.set('Content-Length', String(chunkLenNum));
           outHeaders.set('Content-Range', `bytes 0-${chunkLenNum - 1}/${totalSize}`);

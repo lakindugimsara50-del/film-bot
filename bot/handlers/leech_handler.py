@@ -833,16 +833,19 @@ def register(app: Client) -> None:
 
         crawl_kb = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🎬 Crawl Movies", callback_data="crawl:movies"),
-                InlineKeyboardButton("📺 Crawl TV Series", callback_data="crawl:series"),
+                InlineKeyboardButton("🌐 Crawl All (All Movies ➔ Series)", callback_data="crawl:all"),
             ],
             [
-                InlineKeyboardButton("🌐 Crawl All", callback_data="crawl:all"),
-                InlineKeyboardButton("📊 Status", callback_data="crawl:status"),
+                InlineKeyboardButton("🎬 All Movies (Oldest ➔ New)", callback_data="crawl:movies"),
+                InlineKeyboardButton("📺 All TV Series (Oldest ➔ New)", callback_data="crawl:series"),
             ],
             [
-                InlineKeyboardButton("🔄 Resume", callback_data="crawl:resume"),
-                InlineKeyboardButton("🛑 Stop", callback_data="crawl:stop"),
+                InlineKeyboardButton("🔄 Resume (නැවතුණු තැන සිට)", callback_data="crawl:resume"),
+                InlineKeyboardButton("🛑 Stop (නවත්වන්න)", callback_data="crawl:stop"),
+            ],
+            [
+                InlineKeyboardButton("📊 Status (තත්ත්වය)", callback_data="crawl:status"),
+                InlineKeyboardButton("🧹 Reset State", callback_data="crawl:reset"),
             ],
         ])
 

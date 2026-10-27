@@ -628,11 +628,18 @@ async def stream_channel_message(
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response for unconstrained initial requests
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
+    sec_dest = (request.headers.get("sec-fetch-dest") or "").lower()
+    user_agent = (request.headers.get("user-agent") or "").lower()
+    is_downloader_ua = any(x in user_agent for x in ("idm", "1dm", "adm", "fdm", "aria2", "wget", "curl", "download"))
+
     is_download = bool(
         dl == 1
+        or str(dl or "").lower() in ("1", "true", "yes")
         or str(request.query_params.get("dl", "")).lower() in ("1", "true", "yes")
         or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
         or "/download/" in request.url.path
+        or sec_dest in ("document", "download")
+        or is_downloader_ua
     )
 
     if is_download:

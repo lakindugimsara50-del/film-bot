@@ -1265,21 +1265,25 @@ function getMovieDownloads(movie) {
   const seenUrls = new Set();
 
   const getDirectUrlForCard = (card, q) => {
-    if (card.direct_url) return card.direct_url;
-    if (card.url && card.url.includes('/stream/channel/')) {
-      return card.url.includes('?') ? `${card.url}&dl=1` : `${card.url}?dl=1`;
-    }
-    if (card.url && card.url.includes('t.me/c/')) {
+    let target = '';
+    if (card.direct_url) {
+      target = card.direct_url;
+    } else if (card.url && card.url.includes('/stream/channel/')) {
+      target = card.url;
+    } else if (card.url && card.url.includes('t.me/c/')) {
       const cm = card.url.match(/\/c\/(\d+)\/(\d+)/);
-      if (cm) return `/stream/channel/-100${cm[1]}/${cm[2]}?dl=1`;
+      if (cm) target = `/stream/channel/-100${cm[1]}/${cm[2]}`;
+    } else if (effectiveMovie.message_id) {
+      target = `/stream/channel/-100${chClean}/${effectiveMovie.message_id}`;
+    } else if (effectiveMovie.stream_url && !isDeadTunnel(effectiveMovie.stream_url)) {
+      target = effectiveMovie.stream_url;
+    } else {
+      target = card.url || '';
     }
-    if (effectiveMovie.message_id) {
-      return `/stream/channel/-100${chClean}/${effectiveMovie.message_id}?dl=1`;
+    if (target && target.includes('/stream/') && !target.includes('dl=1') && !target.includes('download=1')) {
+      target = target.includes('?') ? `${target}&dl=1` : `${target}?dl=1`;
     }
-    if (effectiveMovie.stream_url && !isDeadTunnel(effectiveMovie.stream_url)) {
-      return effectiveMovie.stream_url.includes('?') ? `${effectiveMovie.stream_url}&dl=1` : `${effectiveMovie.stream_url}?dl=1`;
-    }
-    return card.url || '';
+    return target;
   };
 
   const addCard = (card) => {
@@ -4065,7 +4069,10 @@ function renderQuickDownloadStrip(movie) {
     const rawQ = dl.quality || '1080p';
     const qBadge = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : rawQ));
     const sz = dl.size || '';
-    const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+    let directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+    if (directUrl && directUrl.includes('/stream/') && !directUrl.includes('dl=1') && !directUrl.includes('download=1')) {
+      directUrl = directUrl.includes('?') ? `${directUrl}&dl=1` : `${directUrl}?dl=1`;
+    }
     const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
 
     return `
@@ -4484,7 +4491,10 @@ function renderDownloadSection(movie) {
       const qTitle = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : `${rawQ} HD`));
       const sz = dl.size || '';
       const fmt = dl.format || 'MP4';
-      const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+      let directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+    if (directUrl && directUrl.includes('/stream/') && !directUrl.includes('dl=1') && !directUrl.includes('download=1')) {
+      directUrl = directUrl.includes('?') ? `${directUrl}&dl=1` : `${directUrl}?dl=1`;
+    }
       const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
 
       let actionBtns = '';

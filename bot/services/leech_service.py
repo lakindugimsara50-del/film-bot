@@ -1396,7 +1396,7 @@ async def _execute_leech(
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
-                                            "detail": f"FilmZilla Processing {p_str}",
+                                            "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Processing {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
@@ -1441,7 +1441,7 @@ async def _execute_leech(
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
-                                            "detail": f"FilmZilla Intro {p_str}",
+                                            "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Intro {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
@@ -1519,7 +1519,7 @@ async def _execute_leech(
                                         companion_progress[q_name].update({
                                             "stage": "compressing",
                                             "dl_pct": pct,
-                                            "dl_done": f"Compressing {p_str}",
+                                            "dl_done": p_str if str(p_str).startswith("GPU Queued") else f"Compressing {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
@@ -1550,7 +1550,7 @@ async def _execute_leech(
                                             companion_progress[q_name].update({
                                                 "stage": "processing",
                                                 "dl_pct": pct,
-                                                "detail": f"FilmZilla Intro {p_str}",
+                                                "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Intro {p_str}",
                                             })
                                             await _update_multi_dl_display()
 

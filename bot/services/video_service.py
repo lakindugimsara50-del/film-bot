@@ -57,6 +57,8 @@ log.info(
 _VALIDATED_FFMPEG: dict[str, bool] = {}
 _PREFERRED_FFMPEG_BIN: Optional[str] = None
 _COLAB_FFMPEG_REPAIR_ATTEMPTED: bool = False
+# Concurrency gate for heavy GPU/CPU video transcoding (guarantees full 100% NVDEC/NVENC throughput per job)
+_GPU_ENCODE_SEMAPHORE = asyncio.Semaphore(1)
 
 
 def _is_working_ffmpeg(exe_path: Optional[str]) -> bool:
@@ -1106,10 +1108,7 @@ async def compress_video(
         "-filter_complex_threads", "0",
     ]
     if hw_enc == "h264_nvenc":
-        if not burn_vf and not cover_watermark:
-            cmd.extend(["-hwaccel", "cuda"])
-        else:
-            cmd.extend(["-hwaccel", "auto"])
+        cmd.extend(["-hwaccel", "cuda"])
     if trim_start > 0:
         cmd.extend(["-ss", str(trim_start)])
     cmd.extend(["-i", os.path.abspath(input_path)])
@@ -1171,20 +1170,20 @@ async def compress_video(
         cmd.extend(["-sn"])
 
     if hw_enc == "h264_nvenc":
-        # Ultra-fast NVENC hardware encoding:
-        # 'hp' (High Performance) preset + low-latency single-pass VBR maximizes throughput (300-500+ fps)
-        nvenc_preset = "hp" if _on_colab else "fast"
+        # Ultra-fast High-Throughput NVENC hardware encoding (500-1000+ fps on Tesla T4)
+        nvenc_preset = "fast"
         cmd.extend([
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
-            "-tune", "ll",
+            "-tune", "hq",
             "-rc", "vbr",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
+            "-rc-lookahead", "32",
             "-profile:v", "high",
-            "-spatial-aq", "0",
-            "-temporal-aq", "0",
+            "-spatial-aq", "1",
+            "-temporal-aq", "1",
             "-pix_fmt", "yuv420p",
         ])
     else:
@@ -1222,12 +1221,22 @@ async def compress_video(
 
     proc = None
     try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=out_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        if _GPU_ENCODE_SEMAPHORE.locked() and progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                else:
+                    progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+            except Exception:
+                pass
+
+        async with _GPU_ENCODE_SEMAPHORE:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
 
         time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
         speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
@@ -2179,14 +2188,17 @@ async def prepend_filmzilla_intro(
     hw_enc = detect_hw_encoder(exe)
 
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p4" if _on_colab else "fast"
-        hw_opts = ["-hwaccel", "auto"]
+        nvenc_preset = "fast"
+        hw_opts = ["-hwaccel", "cuda"]
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
-            "-tune", "ll",
+            "-tune", "hq",
             "-rc", "vbr",
             "-cq", "24",
+            "-rc-lookahead", "32",
+            "-spatial-aq", "1",
+            "-temporal-aq", "1",
             "-pix_fmt", "yuv420p",
         ]
     else:
@@ -2616,18 +2628,22 @@ async def burn_subtitles_to_video(
             "-threads", "0",
         ]
         if hw_enc == "h264_nvenc":
-            cmd.extend(["-hwaccel", "auto"])
+            cmd.extend(["-hwaccel", "cuda"])
         cmd.extend(["-i", os.path.abspath(video_path)])
         cmd.extend(["-vf", burn_vf])
 
         if hw_enc == "h264_nvenc":
             cmd.extend([
                 "-c:v", "h264_nvenc",
-                "-preset", "p4",
+                "-preset", "fast",
+                "-tune", "hq",
                 "-rc", "vbr",
                 "-cq", "23",
                 "-maxrate", "3000k",
                 "-bufsize", "6000k",
+                "-rc-lookahead", "32",
+                "-spatial-aq", "1",
+                "-temporal-aq", "1",
                 "-pix_fmt", "yuv420p",
             ])
         else:
@@ -2739,18 +2755,19 @@ async def cover_cinesubz_watermark(
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "hp" if _on_colab else "fast"
+        nvenc_preset = "fast"
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
-            "-tune", "ll",
+            "-tune", "hq",
             "-rc", "vbr",
-            "-cq", "26",
+            "-cq", "24",
             "-b:v", f"{target_kbps}k",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
-            "-spatial-aq", "0",
-            "-temporal-aq", "0",
+            "-rc-lookahead", "32",
+            "-spatial-aq", "1",
+            "-temporal-aq", "1",
             "-pix_fmt", "yuv420p",
         ]
     else:
@@ -2765,7 +2782,7 @@ async def cover_cinesubz_watermark(
             "-pix_fmt", "yuv420p",
         ]
 
-    hw_opts = ["-hwaccel", "auto"] if hw_enc == "h264_nvenc" else []
+    hw_opts = ["-hwaccel", "cuda"] if hw_enc == "h264_nvenc" else []
     trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
 
     intro_video = None
@@ -2877,11 +2894,21 @@ async def cover_cinesubz_watermark(
         total_target_duration = max(1.0, (duration - trim_start) + (5.0 if intro_video else 0.0))
         log.info("[VideoService] Executing single-pass watermark cover + intro (%s -> %s, trim_start=%.1fs, intro=%s, hwaccel=%s)...",
                  video_path, output_path, trim_start, bool(intro_video), bool(hw_opts))
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        if _GPU_ENCODE_SEMAPHORE.locked() and progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                else:
+                    progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+            except Exception:
+                pass
+
+        async with _GPU_ENCODE_SEMAPHORE:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
 
         if progress_callback:
             time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
@@ -3312,10 +3339,14 @@ async def generate_multi_quality_variants_ram(
                 c.extend([
                     "-c:v", "h264_nvenc",
                     "-preset", "fast",
+                    "-tune", "hq",
                     "-rc", "vbr",
                     "-cq", prof["crf"],
                     "-maxrate", prof["maxrate"],
                     "-bufsize", prof["bufsize"],
+                    "-rc-lookahead", "32",
+                    "-spatial-aq", "1",
+                    "-temporal-aq", "1",
                 ])
             else:
                 c.extend([

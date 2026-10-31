@@ -1238,58 +1238,58 @@ async def compress_video(
                 stderr=asyncio.subprocess.PIPE,
             )
 
-        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
-        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
-        fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
-        last_pct = 0.0
+            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+            speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+            fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+            last_pct = 0.0
 
-        async def _read_stderr():
-            nonlocal last_pct
-            while True:
-                if hasattr(proc.stderr, "read"):
-                    chunk = await proc.stderr.read(4096)
-                else:
-                    chunk = await proc.stderr.readline()
-                if not chunk:
-                    break
-                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
-                matches = time_pattern.findall(decoded)
-                if matches and duration > 0:
-                    h, mm, ss = matches[-1]
-                    cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                    pct = min(99.0, (cur_secs / duration) * 100.0)
-                    if pct - last_pct >= 1.5:
-                        last_pct = pct
-                        speed_match = speed_pattern.search(decoded)
-                        fps_match = fps_pattern.search(decoded)
-                        speed_val = float(speed_match.group(1)) if speed_match else 0.0
-                        fps_val = float(fps_match.group(1)) if fps_match else 0.0
+            async def _read_stderr():
+                nonlocal last_pct
+                while True:
+                    if hasattr(proc.stderr, "read"):
+                        chunk = await proc.stderr.read(4096)
+                    else:
+                        chunk = await proc.stderr.readline()
+                    if not chunk:
+                        break
+                    decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                    matches = time_pattern.findall(decoded)
+                    if matches and duration > 0:
+                        h, mm, ss = matches[-1]
+                        cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                        pct = min(99.0, (cur_secs / duration) * 100.0)
+                        if pct - last_pct >= 1.5:
+                            last_pct = pct
+                            speed_match = speed_pattern.search(decoded)
+                            fps_match = fps_pattern.search(decoded)
+                            speed_val = float(speed_match.group(1)) if speed_match else 0.0
+                            fps_val = float(fps_match.group(1)) if fps_match else 0.0
 
-                        detail_parts = [f"{pct:.1f}%"]
-                        if speed_val > 0:
-                            if fps_val > 0:
-                                detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
-                            else:
-                                detail_parts.append(f"⚡ {speed_val:.1f}x")
-                            if duration > cur_secs:
-                                rem_s = int((duration - cur_secs) / speed_val)
-                                m_rem, s_rem = divmod(rem_s, 60)
-                                h_rem, m_rem = divmod(m_rem, 60)
-                                eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
-                                detail_parts.append(f"| ⏱ {eta_str}")
-
-                        p_str = " ".join(detail_parts)
-                        if progress_callback:
-                            try:
-                                if asyncio.iscoroutinefunction(progress_callback):
-                                    await progress_callback(pct, p_str)
+                            detail_parts = [f"{pct:.1f}%"]
+                            if speed_val > 0:
+                                if fps_val > 0:
+                                    detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
                                 else:
-                                    progress_callback(pct, p_str)
-                            except Exception:
-                                pass
+                                    detail_parts.append(f"⚡ {speed_val:.1f}x")
+                                if duration > cur_secs:
+                                    rem_s = int((duration - cur_secs) / speed_val)
+                                    m_rem, s_rem = divmod(rem_s, 60)
+                                    h_rem, m_rem = divmod(m_rem, 60)
+                                    eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
+                                    detail_parts.append(f"| ⏱ {eta_str}")
 
-        # Generous 1800s (30 minute) timeout to ensure long 3-hour movie compression finishes
-        await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
+                            p_str = " ".join(detail_parts)
+                            if progress_callback:
+                                try:
+                                    if asyncio.iscoroutinefunction(progress_callback):
+                                        await progress_callback(pct, p_str)
+                                    else:
+                                        progress_callback(pct, p_str)
+                                except Exception:
+                                    pass
+
+            # Generous 1800s (30 minute) timeout to ensure long 3-hour movie compression finishes
+            await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             out_sz = os.path.getsize(output_path)
@@ -2215,18 +2215,18 @@ async def prepend_filmzilla_intro(
 
     if has_audio:
         filter_complex = (
-            f"[0:v]setpts=PTS-STARTPTS[v0];"
-            f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[mv];"
-            f"[0:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a0];"
-            f"[1:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a1];"
+            f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v0];"
+            f"[1:v]setpts=PTS-STARTPTS[mv];"
+            f"[0:a]asetpts=PTS-STARTPTS,aresample=async=1[a0];"
+            f"[1:a]asetpts=PTS-STARTPTS[a1];"
             f"[v0][a0][mv][a1]concat=n=2:v=1:a=1[outv][outa]"
         )
         maps = ["-map", "[outv]", "-map", "[outa]"]
-        audio_opts = ["-c:a", "aac", "-b:a", "128k"]
+        audio_opts = ["-c:a", "aac", "-b:a", "192k", "-threads", "0"]
     else:
         filter_complex = (
-            f"[0:v]setpts=PTS-STARTPTS[v0];"
-            f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[mv];"
+            f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v0];"
+            f"[1:v]setpts=PTS-STARTPTS[mv];"
             f"[v0][mv]concat=n=2:v=1:a=0[outv]"
         )
         maps = ["-map", "[outv]"]
@@ -2255,41 +2255,51 @@ async def prepend_filmzilla_intro(
 
     proc = None
     try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=out_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        if _GPU_ENCODE_SEMAPHORE.locked() and progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                else:
+                    progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+            except Exception:
+                pass
 
-        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
-        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
-        last_logged_pct = 0.0
+        async with _GPU_ENCODE_SEMAPHORE:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
 
-        while True:
-            line = await proc.stderr.readline()
-            if not line:
-                break
-            line_str = line.decode("utf-8", errors="replace")
-            m_time = time_pattern.search(line_str)
-            if m_time and total_duration > 0:
-                hours, minutes, seconds = m_time.groups()
-                cur_sec = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
-                pct = min(100.0, max(0.0, (cur_sec / total_duration) * 100.0))
-                if pct - last_logged_pct >= 15.0 or pct >= 99.0:
-                    last_logged_pct = pct
-                    spd = ""
-                    m_spd = speed_pattern.search(line_str)
-                    if m_spd:
-                        spd = f" ({m_spd.group(1)}x)"
-                    log.info("[VideoService] Prepend Intro Progress: %.1f%%%s", pct, spd)
-                    if progress_callback:
-                        try:
-                            await progress_callback(pct, f"{pct:.1f}%")
-                        except Exception:
-                            pass
+            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+            speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+            last_logged_pct = 0.0
 
-        await proc.wait()
+            while True:
+                line = await proc.stderr.readline()
+                if not line:
+                    break
+                line_str = line.decode("utf-8", errors="replace")
+                m_time = time_pattern.search(line_str)
+                if m_time and total_duration > 0:
+                    hours, minutes, seconds = m_time.groups()
+                    cur_sec = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+                    pct = min(100.0, max(0.0, (cur_sec / total_duration) * 100.0))
+                    if pct - last_logged_pct >= 15.0 or pct >= 99.0:
+                        last_logged_pct = pct
+                        spd = ""
+                        m_spd = speed_pattern.search(line_str)
+                        if m_spd:
+                            spd = f" ({m_spd.group(1)}x)"
+                        log.info("[VideoService] Prepend Intro Progress: %.1f%%%s", pct, spd)
+                        if progress_callback:
+                            try:
+                                await progress_callback(pct, f"{pct:.1f}%")
+                            except Exception:
+                                pass
+
+            await proc.wait()
 
         if proc.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
             if is_inplace:
@@ -2656,11 +2666,16 @@ async def burn_subtitles_to_video(
                 "-pix_fmt", "yuv420p",
             ])
 
+        in_acodec = get_audio_codec(video_path, ffmpeg_bin)
+        if in_acodec and is_web_compatible_audio(in_acodec):
+            cmd.extend(["-c:a", "copy"])
+        else:
+            cmd.extend([
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-threads", "0",
+            ])
         cmd.extend([
-            "-c:a", "aac",
-            "-b:a", "128k",
-            "-ac", "2",
-            "-af", "aresample=async=1",
             "-sn",
             "-max_muxing_queue_size", "9999",
             "-movflags", "+faststart",
@@ -2798,26 +2813,27 @@ async def cover_cinesubz_watermark(
     try:
         if intro_video and badge_path and os.path.exists(badge_path):
             # Single-pass concat 5s intro + trimmed movie + corner badge
+            # Method 2 & 3: Never run scale/pad on the 2-hour movie [0:v]! Only scale 5s intro [1:v] (150 frames)
             if has_audio:
                 filter_complex = (
-                    f"[1:v]setpts=PTS-STARTPTS[v_intro];"
-                    f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
+                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
                     f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
-                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)'[outv];"
-                    f"[1:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a_intro];"
-                    f"[0:a]asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo[a_main];"
+                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv];"
+                    f"[1:a]asetpts=PTS-STARTPTS,aresample=async=1[a_intro];"
+                    f"[0:a]asetpts=PTS-STARTPTS[a_main];"
                     f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]"
                 )
                 maps = ["-map", "[outv]", "-map", "[outa]"]
-                audio_opts = ["-c:a", "aac", "-b:a", "128k"]
+                audio_opts = ["-c:a", "aac", "-b:a", "192k", "-threads", "0"]
             else:
                 filter_complex = (
-                    f"[1:v]setpts=PTS-STARTPTS[v_intro];"
-                    f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
+                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
                     f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
-                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)'[outv]"
+                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv]"
                 )
                 maps = ["-map", "[outv]"]
                 audio_opts = []
@@ -2910,78 +2926,78 @@ async def cover_cinesubz_watermark(
                 stderr=asyncio.subprocess.PIPE,
             )
 
-        if progress_callback:
-            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
-            speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
-            fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
-            last_pct = 0.0
+            if progress_callback:
+                time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+                speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+                fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+                last_pct = 0.0
 
-            async def _read_stderr():
-                nonlocal last_pct
-                while True:
-                    if hasattr(proc.stderr, "read"):
-                        chunk = await proc.stderr.read(4096)
-                    elif hasattr(proc.stderr, "readline"):
-                        chunk = await proc.stderr.readline()
-                    else:
-                        break
-                    if not chunk:
-                        break
-                    decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
-                    matches = time_pattern.findall(decoded)
-                    if matches and total_target_duration > 0:
-                        h, mm, ss = matches[-1]
-                        cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                        pct = min(99.0, (cur_secs / total_target_duration) * 100.0)
-                        if pct - last_pct >= 2.0:
-                            last_pct = pct
-                            speed_match = speed_pattern.search(decoded)
-                            fps_match = fps_pattern.search(decoded)
-                            speed_val = float(speed_match.group(1)) if speed_match else 0.0
-                            fps_val = float(fps_match.group(1)) if fps_match else 0.0
+                async def _read_stderr():
+                    nonlocal last_pct
+                    while True:
+                        if hasattr(proc.stderr, "read"):
+                            chunk = await proc.stderr.read(4096)
+                        elif hasattr(proc.stderr, "readline"):
+                            chunk = await proc.stderr.readline()
+                        else:
+                            break
+                        if not chunk:
+                            break
+                        decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                        matches = time_pattern.findall(decoded)
+                        if matches and total_target_duration > 0:
+                            h, mm, ss = matches[-1]
+                            cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                            pct = min(99.0, (cur_secs / total_target_duration) * 100.0)
+                            if pct - last_pct >= 2.0:
+                                last_pct = pct
+                                speed_match = speed_pattern.search(decoded)
+                                fps_match = fps_pattern.search(decoded)
+                                speed_val = float(speed_match.group(1)) if speed_match else 0.0
+                                fps_val = float(fps_match.group(1)) if fps_match else 0.0
 
-                            detail_parts = [f"{pct:.1f}%"]
-                            if speed_val > 0:
-                                if fps_val > 0:
-                                    detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
-                                else:
-                                    detail_parts.append(f"⚡ {speed_val:.1f}x")
-                                if total_target_duration > cur_secs:
-                                    rem_s = int((total_target_duration - cur_secs) / speed_val)
-                                    m_rem, s_rem = divmod(rem_s, 60)
-                                    h_rem, m_rem = divmod(m_rem, 60)
-                                    eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
-                                    detail_parts.append(f"| ⏱ {eta_str}")
+                                detail_parts = [f"{pct:.1f}%"]
+                                if speed_val > 0:
+                                    if fps_val > 0:
+                                        detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
+                                    else:
+                                        detail_parts.append(f"⚡ {speed_val:.1f}x")
+                                    if total_target_duration > cur_secs:
+                                        rem_s = int((total_target_duration - cur_secs) / speed_val)
+                                        m_rem, s_rem = divmod(rem_s, 60)
+                                        h_rem, m_rem = divmod(m_rem, 60)
+                                        eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
+                                        detail_parts.append(f"| ⏱ {eta_str}")
 
-                            p_str = " ".join(detail_parts)
-                            try:
-                                if asyncio.iscoroutinefunction(progress_callback):
-                                    await progress_callback(pct, p_str)
-                                else:
-                                    progress_callback(pct, p_str)
-                            except Exception:
-                                pass
+                                p_str = " ".join(detail_parts)
+                                try:
+                                    if asyncio.iscoroutinefunction(progress_callback):
+                                        await progress_callback(pct, p_str)
+                                    else:
+                                        progress_callback(pct, p_str)
+                                except Exception:
+                                    pass
 
-            try:
-                await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
-                stderr_bytes = b""
-            except asyncio.CancelledError:
-                if proc and proc.returncode is None:
-                    try:
-                        proc.kill()
-                    except Exception:
-                        pass
-                raise
-        else:
-            try:
-                _, stderr_bytes = await proc.communicate()
-            except asyncio.CancelledError:
-                if proc and proc.returncode is None:
-                    try:
-                        proc.kill()
-                    except Exception:
-                        pass
-                raise
+                try:
+                    await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
+                    stderr_bytes = b""
+                except asyncio.CancelledError:
+                    if proc and proc.returncode is None:
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
+                    raise
+            else:
+                try:
+                    _, stderr_bytes = await proc.communicate()
+                except asyncio.CancelledError:
+                    if proc and proc.returncode is None:
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
+                    raise
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
             if progress_callback:

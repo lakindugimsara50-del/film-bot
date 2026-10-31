@@ -19309,7 +19309,188 @@
       "added_date": "2026-10-31",
       "added_at": "2026-10-31T08:47:16Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "chaos-walking-2021-auto-strict-cinesubz",
+      "slug": "chaos-walking-2021-auto-strict-cinesubz",
+      "title": "Chaos Walking 2021 --auto --strict-cinesubz",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
+      "message_id": 368,
+      "file_name": "fs_chaos-walking-2021-auto-strict-cinesubz_720p.mp4",
+      "file_size": 1088924467,
+      "drive_file_id": "",
+      "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
+          "message_id": 368,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+        "1080p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+        "720p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+        "480p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
+        "360p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1088924467,
+          "url": "https://t.me/c/4325759505/368",
+          "telegram_url": "https://t.me/c/4325759505/368",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
+          "message_id": 368,
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "546.3 MB",
+          "size_bytes": 572841324,
+          "url": "https://t.me/c/4325759505/367",
+          "telegram_url": "https://t.me/c/4325759505/367",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAW9q5mTtaFpcAVaijm81BkQiYBU5FgACeTAAAnN2MVfuNHz3xc-o5x4E",
+          "message_id": 367,
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1088924467,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_1080p",
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1088924467,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_720p",
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "546.3 MB",
+          "size_bytes": 572841324,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_480p",
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "186.9 MB",
+          "size_bytes": 196006404,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_360p",
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
+          "message_id": 368,
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "size_bytes": 1088924467
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAW9q5mTtaFpcAVaijm81BkQiYBU5FgACeTAAAnN2MVfuNHz3xc-o5x4E",
+          "message_id": 367,
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
+          "size_bytes": 572841324
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "size_bytes": 196006404
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/chaos-walking-2021-auto-strict-cinesubz-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=chaos-walking-2021-auto-strict-cinesubz",
+      "added_date": "2026-10-31",
+      "added_at": "2026-10-31T22:02:41Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-31T08:47:18Z"
+  "last_updated": "2026-10-31T22:02:43Z"
 }

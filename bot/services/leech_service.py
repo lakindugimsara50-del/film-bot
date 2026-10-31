@@ -456,7 +456,22 @@ _find_candidates = find_all_candidates
 # immediately terminating aria2c subprocesses, FFmpeg, and purging storage.
 # ─────────────────────────────────────────────────────────────────────────────
 
-_leech_lock: Optional[asyncio.Lock] = None
+_download_lock: Optional[asyncio.Lock] = None
+_encode_upload_lock: Optional[asyncio.Lock] = None
+
+
+def _get_download_lock() -> asyncio.Lock:
+    global _download_lock
+    if _download_lock is None:
+        _download_lock = asyncio.Lock()
+    return _download_lock
+
+
+def _get_encode_upload_lock() -> asyncio.Lock:
+    global _encode_upload_lock
+    if _encode_upload_lock is None:
+        _encode_upload_lock = asyncio.Lock()
+    return _encode_upload_lock
 
 
 async def run_auto_leech(
@@ -468,23 +483,18 @@ async def run_auto_leech(
     auto_publish: bool = False,
 ) -> None:
     """
-    Public entry point: runs auto-leech with direct cancellation propagation.
-    Directly awaits _execute_leech under _leech_lock so that task_tracker and callers
-    stay synchronized, and task cancellation immediately aborts the active operation.
+    Public entry point: runs auto-leech with pipelined execution.
+    Phase 1 (Download) and Phase 2 (GPU Encode & Upload) are each synchronized with dedicated locks,
+    enabling candidate N+1 to download concurrently while candidate N is encoding on GPU and uploading!
     """
-    global _leech_lock
-    if _leech_lock is None:
-        _leech_lock = asyncio.Lock()
-
-    async with _leech_lock:
-        await _execute_leech(
-            client=client,
-            status_msg=status_msg,
-            user_id=user_id,
-            query_text=query_text,
-            reply_media=reply_media,
-            auto_publish=auto_publish,
-        )
+    await _execute_leech(
+        client=client,
+        status_msg=status_msg,
+        user_id=user_id,
+        query_text=query_text,
+        reply_media=reply_media,
+        auto_publish=auto_publish,
+    )
 
 
 async def _execute_leech(
@@ -505,6 +515,11 @@ async def _execute_leech(
     is_auto_mode = True  # Always publish by default
     clean_query = (query_text or "").strip()
     lower_q = clean_query.lower()
+    is_strict_cinesubz = False
+    if "--strict-cinesubz" in lower_q or "--strict-portal" in lower_q or "--cinesubz-only" in lower_q:
+        is_strict_cinesubz = True
+        clean_query = re.sub(r"\b(--strict-cinesubz|--strict-portal|--cinesubz-only)\b", "", clean_query, flags=re.IGNORECASE).strip()
+        lower_q = clean_query.lower()
     if "--draft" in lower_q or "-d" in clean_query.split():
         is_auto_mode = False  # Manual choice buttons shown only with --draft
         clean_query = re.sub(r"\b(--draft|-d)\b", "", clean_query).strip()
@@ -771,6 +786,20 @@ async def _execute_leech(
                 log.debug("[LeechService] Pre-discovery subtitle note: %s", pre_sub_err)
 
         if not candidates:
+            if is_strict_cinesubz:
+                log.info("[LeechService] Strict CineSubz mode active: No direct CineSubz streaming links found for '%s'. Skipping external torrents as requested.", display_title)
+                task_tracker.tracker.complete_task(user_id)
+                try:
+                    await status_msg.edit_text(
+                        f"⏭️ <b>CineSubz සෘජු Link හමු නොවූ බැවින් skip කරන ලදී.</b>\n\n"
+                        f"🎬 <b>{display_title}</b>\n"
+                        f"<i>(Strict CineSubz Mode: බාහිර Torrent වලින් ලබා නොගෙන මඟහරින ලදී)</i>",
+                        parse_mode=ParseMode.HTML,
+                    )
+                except Exception:
+                    pass
+                return
+
             candidates = await find_all_candidates(
                 title=title,
                 year=year,
@@ -855,6 +884,8 @@ async def _execute_leech(
         attempted_idx = 0
         tried_fallback = False
 
+        # Phase 1: Pipelined Download — acquire dedicated download slot
+        await _get_download_lock().acquire()
         while candidate_queue:
             candidate = candidate_queue.pop(0)
             attempted_idx += 1
@@ -1840,6 +1871,12 @@ async def _execute_leech(
                         log.info("[LeechService] Acquired %d fallback candidate(s). Adding to download queue.", len(fallback_cands))
                         candidate_queue.extend(fallback_cands)
 
+        if _get_download_lock().locked():
+            try:
+                _get_download_lock().release()
+            except RuntimeError:
+                pass
+
         if not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file):
             task_tracker.tracker.fail_task(user_id, "All download candidates failed.")
             await status_msg.edit_text(
@@ -1849,6 +1886,10 @@ async def _execute_leech(
                 parse_mode=ParseMode.HTML,
             )
             return
+
+        # Phase 2: Pipelined GPU Encode & Upload — acquire dedicated encode slot
+        # Allows candidate N+1 to download in parallel while candidate N encodes & uploads!
+        await _get_encode_upload_lock().acquire()
 
         # ── Step 2.5 & 2.6: Auto-Acquire Sinhala Subtitles + 12GB RAM MKV->MP4 & Sub Merge ──
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
@@ -3564,8 +3605,24 @@ async def _execute_leech(
                 disable_web_page_preview=True,
             )
 
+        if _get_encode_upload_lock().locked():
+            try:
+                _get_encode_upload_lock().release()
+            except RuntimeError:
+                pass
+
     except asyncio.CancelledError:
         log.info("[LeechService] Auto-leech task cancelled for user %s (%s)", user_id, display_title)
+        if _get_download_lock().locked():
+            try:
+                _get_download_lock().release()
+            except RuntimeError:
+                pass
+        if _get_encode_upload_lock().locked():
+            try:
+                _get_encode_upload_lock().release()
+            except RuntimeError:
+                pass
         async def _do_cancel_cleanup():
             try:
                 await downloader.cancel_active_download(task_key)
@@ -3605,6 +3662,16 @@ async def _execute_leech(
 
     except Exception as exc:
         log.exception("[LeechService] Unhandled error during auto-leech for user %s: %s", user_id, exc)
+        if _get_download_lock().locked():
+            try:
+                _get_download_lock().release()
+            except RuntimeError:
+                pass
+        if _get_encode_upload_lock().locked():
+            try:
+                _get_encode_upload_lock().release()
+            except RuntimeError:
+                pass
         task_tracker.tracker.fail_task(user_id, str(exc))
 
         try:

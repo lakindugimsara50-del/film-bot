@@ -1,14 +1,17 @@
 """
-queue_service.py — Async FIFO Movie Download & Upload Queue.
+queue_service.py — Async FIFO Movie Download & Upload Queue with Pipelined Pre-Download.
 
-Ensures that multiple movie requests are executed strictly one by one (sequentially).
-Prevents Render container out-of-memory errors, VPS disk overflow, and Seedr storage collisions.
+Ensures that:
+1. Max 2 items in-flight at any time (1 item in GPU Encode/Upload + 1 item in Pre-Download).
+2. Prevents Render container OOM, VPS disk overflow, and Seedr storage collisions.
+3. Completely eliminates idle time: Movie N+1 downloads concurrently while Movie N is
+   encoding (with Tesla T4 NVENC GPU) and uploading to Telegram/Cloud!
 """
 
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
@@ -40,6 +43,7 @@ class QueueService:
         self._pending_items: List[QueueItem] = []
         self._is_worker_running = False
         self._active_item: Optional[QueueItem] = None
+        self._active_tasks: Dict[asyncio.Task, QueueItem] = {}
         self._current_task: Optional[asyncio.Task] = None
         self._worker_task: Optional[asyncio.Task] = None
 
@@ -106,12 +110,19 @@ class QueueService:
         return position
 
     def cancel_user(self, user_id: Optional[int] = None) -> bool:
-        """Cancel current active task and remove all matching pending items from queue."""
+        """Cancel active task(s) and remove all matching pending items from queue."""
         cancelled = False
+        for task, it in list(self._active_tasks.items()):
+            if user_id is None or it.user_id == user_id:
+                it.is_cancelled = True
+                if not task.done():
+                    log.info("[QueueService] Cancelling active task for user %s (%s)", it.user_id, it.title)
+                    task.cancel()
+                    cancelled = True
+
         if self._active_item and (user_id is None or self._active_item.user_id == user_id):
             self._active_item.is_cancelled = True
             if self._current_task and not self._current_task.done():
-                log.info("[QueueService] Cancelling active task for user %s (%s)", self._active_item.user_id, self._active_item.title)
                 self._current_task.cancel()
                 cancelled = True
             self._active_item = None
@@ -154,14 +165,15 @@ class QueueService:
     def get_queue_status(self) -> List[dict]:
         """Return list of queued items."""
         result = []
-        if self._active_item and not self._active_item.is_cancelled:
-            result.append({
-                "title": self._active_item.title,
-                "status": "ක්‍රියාත්මක වෙමින් පවතී (Active)",
-                "user_id": self._active_item.user_id,
-            })
+        for task, it in self._active_tasks.items():
+            if not it.is_cancelled:
+                result.append({
+                    "title": it.title,
+                    "status": "ක්‍රියාත්මක වෙමින් පවතී (Active/Pipelined)",
+                    "user_id": it.user_id,
+                })
         for i, item in enumerate(self._pending_items, 1):
-            if item != self._active_item and not item.is_cancelled:
+            if item not in self._active_tasks.values() and not item.is_cancelled:
                 result.append({
                     "title": item.title,
                     "status": f"පෝලිමේ #{i} (Waiting)",
@@ -170,68 +182,118 @@ class QueueService:
         return result
 
     def is_idle(self) -> bool:
-        """Check if queue is currently processing anything."""
-        return (self._active_item is None or self._active_item.is_cancelled) and len(self._pending_items) == 0
+        """Check if queue is completely idle (0 active tasks and 0 pending items)."""
+        return len(self._pending_items) == 0 and len(self._active_tasks) == 0
+
+    def can_accept_next(self) -> bool:
+        """
+        Check if pipeline has capacity to accept another item for pre-downloading.
+        Allows up to 2 items in-flight (1 in encode/upload + 1 downloading in background).
+        """
+        return len(self._pending_items) < 2
+
+    async def _run_item_wrapper(self, item: QueueItem, leech_service) -> None:
+        try:
+            await leech_service.run_auto_leech(
+                client=item.client,
+                status_msg=item.status_msg,
+                user_id=item.user_id,
+                query_text=item.query_text,
+                reply_media=item.reply_media,
+                auto_publish=item.auto_publish,
+            )
+            if item.movie_slug:
+                try:
+                    from services.stage2_patcher import patch_movie_downloads
+                    upload_results = task_tracker.tracker.get_upload_results(item.user_id)
+                    sub_url = task_tracker.tracker.get_subtitle_url(item.user_id) or ""
+                    if upload_results:
+                        await patch_movie_downloads(item.movie_slug, upload_results, subtitle_url=sub_url, client=item.client)
+                except Exception as patch_err:
+                    log.error("[QueueService] Stage2 patch error: %s", patch_err)
+        except asyncio.CancelledError:
+            log.info("[QueueService] Task cancelled for user %s: %s", item.user_id, item.title)
+        except Exception as exc:
+            log.error("[QueueService] Error executing queued item '%s': %s", item.title, exc)
+        finally:
+            if item in self._pending_items:
+                self._pending_items.remove(item)
+            if self._active_item == item:
+                self._active_item = None
 
     async def _worker_loop(self) -> None:
-        """Sequential FIFO queue consumer."""
-        log.info("[QueueService] Queue loop running.")
+        """Pipelined FIFO queue consumer (max 2 in-flight: 1 encode/upload + 1 pre-download)."""
+        log.info("[QueueService] Pipelined queue loop running.")
+        self._active_tasks.clear()
+
         while self._is_worker_running:
             try:
-                item: QueueItem = await self._ensure_queue().get()
+                # 1. Prune finished tasks
+                for t in list(self._active_tasks.keys()):
+                    if t.done():
+                        item = self._active_tasks.pop(t, None)
+                        if item and item in self._pending_items:
+                            self._pending_items.remove(item)
+                        try:
+                            self._ensure_queue().task_done()
+                        except ValueError:
+                            pass
+
+                # 2. If pipeline has 2 active tasks running, wait until at least one finishes
+                if len(self._active_tasks) >= 2:
+                    done, _ = await asyncio.wait(
+                        list(self._active_tasks.keys()),
+                        return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for t in done:
+                        item = self._active_tasks.pop(t, None)
+                        if item and item in self._pending_items:
+                            self._pending_items.remove(item)
+                        try:
+                            self._ensure_queue().task_done()
+                        except ValueError:
+                            pass
+                    continue
+
+                # 3. Pull next item from queue with a short timeout
+                try:
+                    item: QueueItem = await asyncio.wait_for(self._ensure_queue().get(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    continue
+
                 if item.is_cancelled or item not in self._pending_items:
                     log.info("[QueueService] Discarding cancelled queue item: %s", item.title)
-                    self._ensure_queue().task_done()
+                    try:
+                        self._ensure_queue().task_done()
+                    except ValueError:
+                        pass
                     continue
 
                 self._active_item = item
-                log.info("[QueueService] Processing queue item: %s for user %s", item.title, item.user_id)
+                log.info(
+                    "[QueueService] Launching pipelined queue item: %s for user %s (in-flight: %d)",
+                    item.title, item.user_id, len(self._active_tasks) + 1
+                )
 
                 from services import leech_service
                 leech_task = asyncio.create_task(
-                    leech_service.run_auto_leech(
-                        client=item.client,
-                        status_msg=item.status_msg,
-                        user_id=item.user_id,
-                        query_text=item.query_text,
-                        reply_media=item.reply_media,
-                        auto_publish=item.auto_publish,
-                    )
+                    self._run_item_wrapper(item, leech_service)
                 )
+                self._active_tasks[leech_task] = item
                 self._current_task = leech_task
                 task_tracker.tracker.set_task_handle(item.user_id, leech_task)
-
-                try:
-                    await leech_task
-                    if item.movie_slug:
-                        try:
-                            from services.stage2_patcher import patch_movie_downloads
-                            upload_results = task_tracker.tracker.get_upload_results(item.user_id)
-                            sub_url = task_tracker.tracker.get_subtitle_url(item.user_id) or ""
-                            if upload_results:
-                                await patch_movie_downloads(item.movie_slug, upload_results, subtitle_url=sub_url, client=item.client)
-                        except Exception as patch_err:
-                            log.error("[QueueService] Stage2 patch error: %s", patch_err)
-                except asyncio.CancelledError:
-                    log.info("[QueueService] Task cancelled for user %s: %s", item.user_id, item.title)
-                except Exception as exc:
-                    log.error("[QueueService] Error executing queued item '%s': %s", item.title, exc)
-                finally:
-                    self._current_task = None
-                    if item in self._pending_items:
-                        self._pending_items.remove(item)
-                    if self._active_item == item:
-                        self._active_item = None
-                    self._ensure_queue().task_done()
-
-                    # Pause 1 second between jobs to allow system memory GC
-                    await asyncio.sleep(1)
 
             except asyncio.CancelledError:
                 break
             except Exception as loop_err:
                 log.error("[QueueService] Worker loop error: %s", loop_err)
-                await asyncio.sleep(3)
+                await asyncio.sleep(2)
+
+        # Cancel remaining active tasks on termination
+        for t in list(self._active_tasks.keys()):
+            if not t.done():
+                t.cancel()
+        self._active_tasks.clear()
         self._is_worker_running = False
         log.info("[QueueService] Queue loop terminated.")
 
@@ -243,6 +305,7 @@ queue_service = QueueService()
 # Module-level alias exports
 add_to_queue = queue_service.add_to_queue
 is_idle = queue_service.is_idle
+can_accept_next = queue_service.can_accept_next
 cancel_user = queue_service.cancel_user
 get_queue_status = queue_service.get_queue_status
 start_worker = queue_service.start_worker

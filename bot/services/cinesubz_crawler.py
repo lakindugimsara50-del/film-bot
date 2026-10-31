@@ -535,12 +535,12 @@ class CineSubzCrawler:
                             self.status_detail = f"Enqueuing {item_label} for Auto-Leech..."
                             await self._update_status_msg()
 
-                            # Prepare query: direct URL + title + year with --auto for full auto publish
+                            # Prepare query: direct URL + title + year with --auto --strict-cinesubz
                             item_url = item.get("url") or ""
                             if item_url:
-                                q_text = f"{item_url} {item['clean_title']} {item['year']} --auto" if item["year"] else f"{item_url} {item['clean_title']} --auto"
+                                q_text = f"{item_url} {item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item_url} {item['clean_title']} --auto --strict-cinesubz"
                             else:
-                                q_text = f"{item['clean_title']} {item['year']} --auto" if item["year"] else f"{item['clean_title']} --auto"
+                                q_text = f"{item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item['clean_title']} --auto --strict-cinesubz"
                             log.info("[CineSubzCrawler] 🎯 Enqueuing missing movie: %s (Page %d)", q_text, p)
 
                             # Send dedicated leech notification in admin chat
@@ -568,20 +568,20 @@ class CineSubzCrawler:
                                     imdb_id=item.get("imdb_id", ""),
                                 )
 
-                            # Wait until queue has completely finished processing this film before enqueuing next
-                            # Ensures strictly one movie at a time (zero VPS memory or Seedr overflow)
-                            log.info("[CineSubzCrawler] Waiting for '%s' to complete before next item...", item_label)
+                            # Pipelined waiting: wait until queue pipeline has capacity for next download
+                            # Enables Movie N+1 to download in background while Movie N is encoding & uploading!
+                            log.info("[CineSubzCrawler] Waiting for pipeline slot before next item (current: '%s')...", item_label)
                             wait_ticks = 0
-                            max_wait_ticks = 120  # Max 10 minutes per item safeguard
-                            while self._is_running and not queue_service.is_idle() and wait_ticks < max_wait_ticks:
-                                self.status_detail = f"Processing '{item_label}' (Leech + Uploading)..."
+                            max_wait_ticks = 150  # Max 12.5 minutes per item safeguard
+                            while self._is_running and not queue_service.can_accept_next() and wait_ticks < max_wait_ticks:
+                                self.status_detail = f"Pipelined processing '{item_label}' (Leech + Uploading)..."
                                 wait_ticks += 1
                                 if wait_ticks % 3 == 0:
                                     await self._update_status_msg()
                                 await asyncio.sleep(5.0)
 
                             if wait_ticks >= max_wait_ticks:
-                                log.warning("[CineSubzCrawler] Item '%s' queue wait timed out after 10m. Cancelling and skipping...", item_label)
+                                log.warning("[CineSubzCrawler] Item '%s' queue wait timed out after 12.5m. Cancelling and skipping...", item_label)
                                 queue_service.cancel_user(self._admin_chat_id)
 
                             self.last_completed_item = item_label
@@ -635,9 +635,9 @@ class CineSubzCrawler:
 
                                 ep_url = ep.get("url") or ""
                                 if ep_url:
-                                    ep_query = f"{ep_url} {show_title} S{s_num:02d}E{e_num:02d} --auto"
+                                    ep_query = f"{ep_url} {show_title} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz"
                                 else:
-                                    ep_query = f"{show_title} S{s_num:02d}E{e_num:02d} --auto"
+                                    ep_query = f"{show_title} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz"
                                 log.info("[CineSubzCrawler] 🎯 Enqueuing missing episode: %s", ep_query)
 
                                 leech_status_msg = None
@@ -662,10 +662,10 @@ class CineSubzCrawler:
                                         auto_publish=True,
                                     )
 
-                                # Wait until episode completes before queuing the next episode
+                                # Pipelined waiting: wait until queue pipeline has capacity for next episode
                                 wait_ticks_tv = 0
-                                while self._is_running and not queue_service.is_idle():
-                                    self.status_detail = f"Processing '{ep_tag}' (Leech + Uploading)..."
+                                while self._is_running and not queue_service.can_accept_next() and wait_ticks_tv < 150:
+                                    self.status_detail = f"Pipelined processing '{ep_tag}' (Leech + Uploading)..."
                                     wait_ticks_tv += 1
                                     if wait_ticks_tv % 3 == 0:
                                         await self._update_status_msg()

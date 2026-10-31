@@ -32,7 +32,7 @@ TELEGRAM_MTPROTO_MAX_BYTES = 2_090_000_000
 # ── Colab / Render environment detection ─────────────────────────────────────
 # Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
 # Render Free Tier (0.1 vCPU, 512 MB RAM): use veryfast + limited remux
-_on_colab: bool = os.path.exists("/content") or os.path.exists("/kaggle")
+_on_colab: bool = os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))
 _threads: str = "0"          # always use all available CPU cores
 _preset: str = "ultrafast" if _on_colab else "veryfast"
 
@@ -597,7 +597,7 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
         last_err = err_msg
 
     # On Google Colab with GPU: if NVENC failed (e.g. due to BtbN master NVENC 13.0 driver mismatch), heal FFmpeg
-    if os.path.exists("/content") and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
+    if (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))) and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
         setattr(detect_hw_encoder, "_attempted_cuda_install", True)
         log.warning("[VideoService] Initial h264_nvenc probe failed (%s) — repairing Colab CUDA FFmpeg...", last_err[:160])
         if setup_colab_cuda_ffmpeg():
@@ -2771,13 +2771,13 @@ async def cover_cinesubz_watermark(
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "fast"
+        nvenc_preset = "p4" if _on_colab else "fast"
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
             "-tune", "hq",
             "-rc", "vbr",
-            "-cq", "24",
+            "-cq", "22",
             "-b:v", f"{target_kbps}k",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",

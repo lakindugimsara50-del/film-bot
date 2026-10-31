@@ -51,6 +51,8 @@ WEBSITE_STATE_FILE = os.path.join(
 )
 COLAB_GDRIVE_STATE_DIR = "/content/drive/MyDrive/film_bot"
 COLAB_GDRIVE_STATE_FILE = os.path.join(COLAB_GDRIVE_STATE_DIR, "cinesubz_crawler_state.json")
+KAGGLE_STATE_FILE = "/kaggle/working/data/cinesubz_crawler_state.json"
+ALL_STATE_FILES = (STATE_FILE, KAGGLE_STATE_FILE, COLAB_GDRIVE_STATE_FILE, WEBSITE_STATE_FILE)
 
 
 def clean_cinesubz_title(raw_text: str) -> Dict[str, Any]:
@@ -347,7 +349,7 @@ class CineSubzCrawler:
     def load_state(self) -> None:
         """Load persistent crawler state from disk, checking local, Google Drive, or website backup."""
         self.last_completed_item: str = "None"
-        for p in (STATE_FILE, COLAB_GDRIVE_STATE_FILE, WEBSITE_STATE_FILE):
+        for p in ALL_STATE_FILES:
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
@@ -381,7 +383,7 @@ class CineSubzCrawler:
             "last_completed_item": getattr(self, "last_completed_item", "None"),
             "updated_at": time.time(),
         }
-        for p in (STATE_FILE, WEBSITE_STATE_FILE, COLAB_GDRIVE_STATE_FILE):
+        for p in ALL_STATE_FILES:
             try:
                 os.makedirs(os.path.dirname(p), exist_ok=True)
                 with open(p, "w", encoding="utf-8") as f:
@@ -500,6 +502,16 @@ class CineSubzCrawler:
                         await self._update_status_msg()
 
                         items = await scrape_cinesubz_page(http_client, p, "movies")
+                        if not items:
+                            log.warning("[CineSubzCrawler] Page %d returned 0 items. Retrying in 4s...", p)
+                            await asyncio.sleep(4.0)
+                            items = await scrape_cinesubz_page(http_client, p, "movies")
+                            if not items:
+                                log.warning("[CineSubzCrawler] Page %d still empty. Decrementing page...", p)
+                                self.current_movie_page -= 1
+                                self.save_state()
+                                continue
+
                         # Process items on this page (oldest first within page is bottom-up, or in order)
                         for item in reversed(items):
                             if not self._is_running:
@@ -560,12 +572,17 @@ class CineSubzCrawler:
                             # Ensures strictly one movie at a time (zero VPS memory or Seedr overflow)
                             log.info("[CineSubzCrawler] Waiting for '%s' to complete before next item...", item_label)
                             wait_ticks = 0
-                            while self._is_running and not queue_service.is_idle():
+                            max_wait_ticks = 120  # Max 10 minutes per item safeguard
+                            while self._is_running and not queue_service.is_idle() and wait_ticks < max_wait_ticks:
                                 self.status_detail = f"Processing '{item_label}' (Leech + Uploading)..."
                                 wait_ticks += 1
                                 if wait_ticks % 3 == 0:
                                     await self._update_status_msg()
                                 await asyncio.sleep(5.0)
+
+                            if wait_ticks >= max_wait_ticks:
+                                log.warning("[CineSubzCrawler] Item '%s' queue wait timed out after 10m. Cancelling and skipping...", item_label)
+                                queue_service.cancel_user(self._admin_chat_id)
 
                             self.last_completed_item = item_label
                             self.save_state()

@@ -36,12 +36,17 @@ class QueueItem:
 
 class QueueService:
     def __init__(self):
-        self._queue: asyncio.Queue = asyncio.Queue()
+        self._queue: Optional[asyncio.Queue] = None
         self._pending_items: List[QueueItem] = []
         self._is_worker_running = False
         self._active_item: Optional[QueueItem] = None
         self._current_task: Optional[asyncio.Task] = None
         self._worker_task: Optional[asyncio.Task] = None
+
+    def _ensure_queue(self) -> asyncio.Queue:
+        if self._queue is None:
+            self._queue = asyncio.Queue()
+        return self._queue
 
     def start_worker(self) -> None:
         """Start background queue consumer."""
@@ -91,7 +96,7 @@ class QueueService:
         task_tracker.tracker.start_task(user_id=user_id, title=title)
 
         self._pending_items.append(item)
-        await self._queue.put(item)
+        await self._ensure_queue().put(item)
         position = len(self._pending_items)
 
         log.info(
@@ -133,16 +138,16 @@ class QueueService:
 
         # Purge cancelled items from asyncio.Queue without replacing the instance
         kept_items = []
-        while not self._queue.empty():
+        while not self._ensure_queue().empty():
             try:
-                q_item = self._queue.get_nowait()
+                q_item = self._ensure_queue().get_nowait()
                 if not q_item.is_cancelled and (user_id is not None and q_item.user_id != user_id):
                     kept_items.append(q_item)
-                self._queue.task_done()
+                self._ensure_queue().task_done()
             except (asyncio.QueueEmpty, Exception):
                 break
         for q_item in kept_items:
-            self._queue.put_nowait(q_item)
+            self._ensure_queue().put_nowait(q_item)
 
         return cancelled
 
@@ -173,10 +178,10 @@ class QueueService:
         log.info("[QueueService] Queue loop running.")
         while self._is_worker_running:
             try:
-                item: QueueItem = await self._queue.get()
+                item: QueueItem = await self._ensure_queue().get()
                 if item.is_cancelled or item not in self._pending_items:
                     log.info("[QueueService] Discarding cancelled queue item: %s", item.title)
-                    self._queue.task_done()
+                    self._ensure_queue().task_done()
                     continue
 
                 self._active_item = item
@@ -217,7 +222,7 @@ class QueueService:
                         self._pending_items.remove(item)
                     if self._active_item == item:
                         self._active_item = None
-                    self._queue.task_done()
+                    self._ensure_queue().task_done()
 
                     # Pause 1 second between jobs to allow system memory GC
                     await asyncio.sleep(1)

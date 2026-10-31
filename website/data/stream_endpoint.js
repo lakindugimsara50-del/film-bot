@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://generation-maine-hundred-investigations.trycloudflare.com",
+  "stream_base_url": "https://students-jeff-marks-supreme.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T18:30:26.559065+00:00",
+  "updated_at": "2026-10-31T18:31:18.713516+00:00",
   "status": "online"
 };

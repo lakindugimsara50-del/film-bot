@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://mime-gates-his-franchise.trycloudflare.com",
+  "stream_base_url": "https://bacon-subsequently-but-expanding.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T18:41:39.159030+00:00",
+  "updated_at": "2026-10-31T18:42:30.571492+00:00",
   "status": "online"
 };

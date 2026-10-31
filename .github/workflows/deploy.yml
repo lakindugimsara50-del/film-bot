@@ -6,6 +6,7 @@ on:
     paths:
       - 'website/**'
       - 'website/data/movies.json'
+      - 'functions/**'
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
 

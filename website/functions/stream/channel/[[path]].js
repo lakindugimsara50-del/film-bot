@@ -419,12 +419,29 @@ export async function onRequest(context) {
   };
 
   for (const activeBase of urlsToTry) {
-    const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
+    let targetUrl;
+    try {
+      const targetUrlObj = new URL(
+        `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`
+      );
+      if (isDownload && !targetUrlObj.searchParams.get('dl')) {
+        targetUrlObj.searchParams.set('dl', '1');
+      }
+      targetUrl = targetUrlObj.href;
+    } catch (e) {
+      targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
+      if (isDownload && !targetUrl.includes('dl=')) {
+        targetUrl += targetUrl.includes('?') ? '&dl=1' : '?dl=1';
+      }
+    }
 
     const upstreamHeaders = {
       'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
       'Accept': '*/*',
     };
+    if (request.headers.get('Sec-Fetch-Dest')) {
+      upstreamHeaders['Sec-Fetch-Dest'] = request.headers.get('Sec-Fetch-Dest');
+    }
 
     if (isInitialRange) {
       if (isBoundedProbe && rangeHeader) {

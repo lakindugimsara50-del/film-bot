@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 CINESUBZ_BASE_URLS = [
     "https://cinesubz.lk",
     "https://cinesubz.co",
+    "https://cinesubz.net",
 ]
 
 HEADERS = {
@@ -558,12 +559,17 @@ class CineSubzCrawler:
                             # Wait until queue has completely finished processing this film before enqueuing next
                             # Ensures strictly one movie at a time (zero VPS memory or Seedr overflow)
                             log.info("[CineSubzCrawler] Waiting for '%s' to complete before next item...", item_label)
+                            wait_ticks = 0
                             while self._is_running and not queue_service.is_idle():
                                 self.status_detail = f"Processing '{item_label}' (Leech + Uploading)..."
+                                wait_ticks += 1
+                                if wait_ticks % 3 == 0:
+                                    await self._update_status_msg()
                                 await asyncio.sleep(5.0)
 
                             self.last_completed_item = item_label
                             self.save_state()
+                            await self._update_status_msg()
                             await asyncio.sleep(2.0)
 
                         self.current_movie_page -= 1
@@ -640,12 +646,17 @@ class CineSubzCrawler:
                                     )
 
                                 # Wait until episode completes before queuing the next episode
+                                wait_ticks_tv = 0
                                 while self._is_running and not queue_service.is_idle():
                                     self.status_detail = f"Processing '{ep_tag}' (Leech + Uploading)..."
+                                    wait_ticks_tv += 1
+                                    if wait_ticks_tv % 3 == 0:
+                                        await self._update_status_msg()
                                     await asyncio.sleep(5.0)
 
                                 self.last_completed_item = ep_tag
                                 self.save_state()
+                                await self._update_status_msg()
                                 await asyncio.sleep(2.0)
 
                         self.current_tv_page -= 1

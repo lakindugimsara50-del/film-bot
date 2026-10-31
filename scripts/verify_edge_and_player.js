@@ -76,6 +76,7 @@ function startMockUpstreamServer(port) {
         let start = 0;
         let end = TOTAL_FILE_SIZE - 1;
         let isPartial = false;
+        const isDownload = req.url.includes('dl=1') || req.url.includes('download=1');
 
         if (rangeHeader && rangeHeader.startsWith('bytes=')) {
           isPartial = true;
@@ -86,16 +87,24 @@ function startMockUpstreamServer(port) {
             end = Math.min(parseInt(eStr, 10), TOTAL_FILE_SIZE - 1);
           } else if (sStr && !eStr) {
             start = parseInt(sStr, 10);
-            // Open-ended range returns 8MB slice (like Python backend)
-            end = Math.min(start + (8 * 1024 * 1024) - 1, TOTAL_FILE_SIZE - 1);
+            if (isDownload) {
+              end = TOTAL_FILE_SIZE - 1;
+            } else {
+              // Open-ended range returns 8MB slice for streaming playback
+              end = Math.min(start + (8 * 1024 * 1024) - 1, TOTAL_FILE_SIZE - 1);
+            }
           } else if (!sStr && eStr) {
             // Suffix range
             const suffix = parseInt(eStr, 10);
             start = Math.max(0, TOTAL_FILE_SIZE - suffix);
             end = TOTAL_FILE_SIZE - 1;
           }
+        } else if (isDownload) {
+          // Full file direct download without range
+          end = TOTAL_FILE_SIZE - 1;
+          isPartial = false;
         } else {
-          // Unspecified range: serve first 8MB slice
+          // Unspecified range for player: serve first 8MB slice
           end = Math.min((8 * 1024 * 1024) - 1, TOTAL_FILE_SIZE - 1);
           isPartial = true;
         }
@@ -368,7 +377,41 @@ async function runTests() {
     }
     console.log('✅ TEST 7b PASSED: Background priming cached 279, subsequent request is HIT!');
 
-    console.log('\n====================================================');
+    // --- TEST 8: Full File Direct Download (dl=1) Never Capped at 8MB ---
+    console.log('\n--- TEST 8: Full File Direct Download (dl=1) Never Capped at 8MB ---');
+    const dlContext = makeContext(`https://filmsub.pages.dev/stream/channel/${chatId}/${msgId1080p}?dl=1`, null, [chatId, msgId1080p]);
+    const dlRes = await channelModule.onRequest(dlContext);
+    console.log('Status:', dlRes.status);
+    console.log('Content-Length:', dlRes.headers.get('Content-Length'));
+    console.log('Content-Disposition:', dlRes.headers.get('Content-Disposition'));
+    console.log('Cache-Control:', dlRes.headers.get('Cache-Control'));
+
+    if (dlRes.status !== 200) throw new Error(`Expected 200 for download without Range, got ${dlRes.status}`);
+    if (dlRes.headers.get('Content-Length') !== String(TOTAL_FILE_SIZE)) {
+      throw new Error(`Expected Content-Length ${TOTAL_FILE_SIZE}, got ${dlRes.headers.get('Content-Length')}`);
+    }
+    if (!dlRes.headers.get('Content-Disposition') || !dlRes.headers.get('Content-Disposition').includes('attachment;')) {
+      throw new Error('Expected Content-Disposition: attachment header for download');
+    }
+    console.log('✅ TEST 8 PASSED: Direct browser download serves FULL 1.86GB file (200 OK, never capped at 8MB)!');
+
+    console.log('\n--- TEST 9: Direct Download with open range bytes=0- & dl=1 ---');
+    const dlRangeContext = makeContext(`https://filmsub.pages.dev/stream/channel/${chatId}/${msgId1080p}?dl=1`, 'bytes=0-', [chatId, msgId1080p]);
+    const dlRangeRes = await channelModule.onRequest(dlRangeContext);
+    console.log('Status:', dlRangeRes.status);
+    console.log('Content-Length:', dlRangeRes.headers.get('Content-Length'));
+    console.log('Content-Range:', dlRangeRes.headers.get('Content-Range'));
+
+    if (dlRangeRes.status !== 206) throw new Error(`Expected 206, got ${dlRangeRes.status}`);
+    if (dlRangeRes.headers.get('Content-Length') !== String(TOTAL_FILE_SIZE)) {
+      throw new Error(`Expected Content-Length ${TOTAL_FILE_SIZE}, got ${dlRangeRes.headers.get('Content-Length')}`);
+    }
+    if (dlRangeRes.headers.get('Content-Range') !== `bytes 0-${TOTAL_FILE_SIZE - 1}/${TOTAL_FILE_SIZE}`) {
+      throw new Error(`Expected Content-Range bytes 0-${TOTAL_FILE_SIZE - 1}/${TOTAL_FILE_SIZE}, got ${dlRangeRes.headers.get('Content-Range')}`);
+    }
+    console.log('✅ TEST 9 PASSED: Direct download with bytes=0- serves FULL 1.86GB file in 206 without 8MB cap!');
+
+    console.log('====================================================');
     console.log('🎉 ALL EDGE PROXY VERIFICATION TESTS PASSED!');
     console.log('====================================================');
   } finally {

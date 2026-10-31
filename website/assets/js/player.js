@@ -4492,9 +4492,12 @@ function renderDownloadSection(movie) {
       const sz = dl.size || '';
       const fmt = dl.format || 'MP4';
       let directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
-    if (directUrl && directUrl.includes('/stream/') && !directUrl.includes('dl=1') && !directUrl.includes('download=1')) {
-      directUrl = directUrl.includes('?') ? `${directUrl}&dl=1` : `${directUrl}?dl=1`;
-    }
+      if (directUrl) {
+        directUrl = normalizeStreamUrl(directUrl);
+        if (directUrl && directUrl.includes('/stream/') && !directUrl.includes('dl=1') && !directUrl.includes('download=1')) {
+          directUrl = directUrl.includes('?') ? `${directUrl}&dl=1` : `${directUrl}?dl=1`;
+        }
+      }
       const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
 
       let actionBtns = '';

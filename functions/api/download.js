@@ -67,7 +67,7 @@ function buildCleanFilename(title, quality, customFilename) {
   const safeQuality = String(quality || '1080p')
     .replace(/[^a-zA-Z0-9]/g, '')
     .trim() || '1080p';
-  return `${safeTitle} [${safeQuality}] - FilmSub.mp4`;
+  return `${safeTitle} [${safeQuality}] - FilmZilla.mp4`;
 }
 
 async function getDriveAccessToken(env) {
@@ -352,7 +352,7 @@ export async function onRequest(context) {
     respHeaders.set('Content-Type', 'video/mp4');
     respHeaders.set(
       'Content-Disposition',
-      `attachment; filename="${asciiFilename || 'FilmSub-Movie.mp4'}"; filename*=UTF-8''${encodedFilename}`
+      `attachment; filename="${asciiFilename || 'FilmZilla-Movie.mp4'}"; filename*=UTF-8''${encodedFilename}`
     );
     respHeaders.set('Accept-Ranges', 'bytes');
     respHeaders.set('X-Download-Quality', String(quality));

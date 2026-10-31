@@ -583,6 +583,21 @@ def _build_status_content(user_id: int, me_username: str, is_admin: bool):
     except Exception:
         pass
 
+    crawler_note = ""
+    try:
+        from services.cinesubz_crawler import cinesubz_crawler
+        if cinesubz_crawler.is_running():
+            m_curr = cinesubz_crawler.current_movie_page or cinesubz_crawler.max_movie_pages
+            crawler_note = (
+                f"\n\n🕷 <b>CineSubz Harvester:</b> 🟢 <code>ක්‍රියාත්මකයි (Running)</code>\n"
+                f"• පිටුව: <b>Page {m_curr} / {cinesubz_crawler.max_movie_pages}</b>\n"
+                f"• වත්මන් ගොනුව: <code>{cinesubz_crawler.current_item_name}</code>\n"
+                f"• විස්තරය: <i>{cinesubz_crawler.status_detail}</i>\n"
+                f"• Scraped: <b>{cinesubz_crawler.total_scraped}</b> | Queued: <b>{cinesubz_crawler.total_queued}</b>"
+            )
+    except Exception:
+        pass
+
     admin_details = ""
     if is_admin:
         pool_txt = ""
@@ -610,6 +625,7 @@ def _build_status_content(user_id: int, me_username: str, is_admin: bool):
         f"🤖 <b>Film Bot තත්ත්වය (Status):</b>\n\n"
         f"Bot: @{me_username}\n\n"
         f"{task_summary}"
+        f"{crawler_note}"
         f"{queue_note}"
         f"{wizard_note}"
         f"{admin_details}"

@@ -30,8 +30,12 @@ const GITHUB_ENDPOINT_JSON =
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk (moov atom + first video frames)
 const CANONICAL_CACHE_ORIGIN = 'https://filmsub.pages.dev';
 
-let cachedStreamBaseUrl = '';
-let cachedFallbackBaseUrl = '';
+const DEFAULT_FALLBACK_TUNNEL =
+  'https://insertion-cult-pipes-sandy.trycloudflare.com';
+const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
+
+let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;
+let cachedFallbackBaseUrl = DEFAULT_FALLBACK_RENDER;
 let cachedAtEpoch = 0;
 const CACHE_TTL_MS = 60000;
 
@@ -46,6 +50,55 @@ function buildCorsHeaders() {
   };
 }
 
+function concatStreams(stream1, stream2PromiseFn) {
+  let reader1 = stream1.getReader();
+  let reader2 = null;
+  return new ReadableStream({
+    async pull(controller) {
+      if (reader1) {
+        try {
+          const { done, value } = await reader1.read();
+          if (!done) {
+            controller.enqueue(value);
+            return;
+          }
+        } catch (rErr) {
+          reader1 = null;
+        }
+        reader1 = null;
+      }
+      if (!reader2) {
+        try {
+          const s2 = await stream2PromiseFn();
+          if (s2) {
+            reader2 = s2.getReader();
+          } else {
+            controller.close();
+            return;
+          }
+        } catch (e) {
+          controller.close();
+          return;
+        }
+      }
+      try {
+        const { done, value } = await reader2.read();
+        if (!done) {
+          controller.enqueue(value);
+        } else {
+          controller.close();
+        }
+      } catch (err) {
+        controller.close();
+      }
+    },
+    async cancel(reason) {
+      if (reader1) try { await reader1.cancel(reason); } catch (e) {}
+      if (reader2) try { await reader2.cancel(reason); } catch (e) {}
+    }
+  });
+}
+
 function getCanonicalCacheKey(chatId, msgId) {
   return new Request(
     `${CANONICAL_CACHE_ORIGIN}/__edge_stream_cache/v2/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}/chunk_0_8m`,
@@ -53,7 +106,7 @@ function getCanonicalCacheKey(chatId, msgId) {
   );
 }
 
-async function readExactBytes(readableStream, skip, limit) {
+async function readExactBytes(readableStream, skip, limit, shouldCancel = true) {
   const reader = readableStream.getReader();
   const out = new Uint8Array(limit);
   let bytesSkipped = 0;
@@ -83,13 +136,17 @@ async function readExactBytes(readableStream, skip, limit) {
       bytesWritten += toCopy;
     }
   } finally {
-    try { await reader.cancel(); } catch (e) {}
+    if (shouldCancel) {
+      try { await reader.cancel(); } catch (e) {}
+    } else {
+      try { reader.releaseLock(); } catch (e) {}
+    }
   }
 
   return bytesWritten === limit ? out : out.subarray(0, bytesWritten);
 }
 
-async function resolveLiveStreamBaseUrl(env) {
+async function resolveLiveStreamBaseUrl(env, context) {
   if (env && env.STREAM_BACKEND_URL) {
     return {
       primary: String(env.STREAM_BACKEND_URL).trim().replace(/\/+$/, ''),
@@ -98,40 +155,56 @@ async function resolveLiveStreamBaseUrl(env) {
   }
 
   const now = Date.now();
-  if (cachedStreamBaseUrl && now - cachedAtEpoch < CACHE_TTL_MS) {
+  // 1. If we already have a cached tunnel URL and TTL is fresh, return in 0ms
+  if (cachedStreamBaseUrl && (now - cachedAtEpoch < CACHE_TTL_MS)) {
     return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
   }
 
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 2500);
-    const resp = await fetch(`${GITHUB_ENDPOINT_JSON}?t=${now}`, {
-      headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0', 'Cache-Control': 'no-cache' },
-      signal: ctrl.signal,
-    });
-    clearTimeout(timer);
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
-        const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
-        if (cleaned.startsWith('http')) {
-          cachedStreamBaseUrl = cleaned;
-          cachedAtEpoch = now;
+  // Helper background task to refresh endpoints without blocking client
+  const refreshTask = async () => {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 2500);
+      const resp = await fetch(`${GITHUB_ENDPOINT_JSON}?t=${Date.now()}`, {
+        headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0', 'Cache-Control': 'no-cache' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.stream_base_url && typeof data.stream_base_url === 'string') {
+          const cleaned = data.stream_base_url.trim().replace(/\/+$/, '');
+          if (cleaned.startsWith('http')) {
+            cachedStreamBaseUrl = cleaned;
+            cachedAtEpoch = Date.now();
+          }
+        }
+        if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
+          const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
+          if (cleanedFb.startsWith('http')) {
+            cachedFallbackBaseUrl = cleanedFb;
+          }
         }
       }
-      if (data && data.fallback_stream_url && typeof data.fallback_stream_url === 'string') {
-        const cleanedFb = data.fallback_stream_url.trim().replace(/\/+$/, '');
-        if (cleanedFb.startsWith('http')) {
-          cachedFallbackBaseUrl = cleanedFb;
-        }
-      }
-      if (cachedStreamBaseUrl) {
-        return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
-      }
-    }
-  } catch (err) {}
+    } catch (err) {}
+  };
 
-  return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
+  // 2. If cached URL exists, return immediately (0ms) and revalidate in background
+  if (cachedStreamBaseUrl) {
+    if (context && typeof context.waitUntil === 'function') {
+      context.waitUntil(refreshTask());
+    } else {
+      refreshTask().catch(() => {});
+    }
+    return { primary: cachedStreamBaseUrl, fallback: cachedFallbackBaseUrl };
+  }
+
+  // 3. Fallback only if no URL present
+  await refreshTask();
+  return {
+    primary: cachedStreamBaseUrl || DEFAULT_FALLBACK_TUNNEL,
+    fallback: cachedFallbackBaseUrl || DEFAULT_FALLBACK_RENDER,
+  };
 }
 
 export async function onRequest(context) {
@@ -206,8 +279,20 @@ export async function onRequest(context) {
     }
   }
 
+  const userAgent = (request.headers.get('User-Agent') || '').toLowerCase();
+  const secFetchDest = (request.headers.get('Sec-Fetch-Dest') || '').toLowerCase();
+  const isDownloaderUA = /idm|1dm|adm|fdm|aria2|wget|curl|download/i.test(userAgent);
+
+  const isDownload = urlObj.searchParams.get('dl') === '1' ||
+                     urlObj.searchParams.get('download') === '1' ||
+                     urlObj.pathname.includes('/download/') ||
+                     secFetchDest === 'document' ||
+                     secFetchDest === 'download' ||
+                     isDownloaderUA;
+
   // Suffix ranges (bytes=-N) must not match the initial 0-8MB chunk
-  const isInitialRange = suffixBytes === null && (clientStart === null || clientStart < EDGE_INITIAL_CHUNK_BYTES);
+  // For file downloads (dl=1 without range), do NOT constrain to initial 8MB chunk
+  const isInitialRange = !isDownload && suffixBytes === null && (clientStart === null || clientStart < EDGE_INITIAL_CHUNK_BYTES);
   const isBoundedProbe = isInitialRange && clientStart === 0 && clientEnd !== null && (clientEnd - clientStart + 1) <= 2 * 1024 * 1024;
 
   // ── 1. Cloudflare Edge Cache Lookup (caches.default) ────────────────────────
@@ -215,22 +300,35 @@ export async function onRequest(context) {
   const edgeCache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheKey = getCanonicalCacheKey(chatId, msgId);
 
-  if (edgeCache && isInitialRange) {
+  if (edgeCache && isInitialRange && !isDownload) {
     try {
       const cachedHit = await edgeCache.match(cacheKey);
       if (cachedHit) {
+        const totalSize = cachedHit.headers.get('X-Total-Size') || '*';
+        const contentType = cachedHit.headers.get('Content-Type') || 'video/mp4';
+
+        const outHeaders = new Headers(corsHeaders);
+        outHeaders.set('Content-Type', contentType);
+        outHeaders.set('Accept-Ranges', 'bytes');
+        outHeaders.set('X-Edge-Cache', 'HIT');
+        outHeaders.set('X-Accel-Buffering', 'no');
+        outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+
+        // Fast-path: Open-ended requests (bytes=0- or no range):
+        // Deliver initial 8MB chunk directly from Cloudflare Edge Cache in <20ms
+        // Browser reads moov atom and GOPs immediately, then sends subsequent byte-range requests
+        if (!isDownload && (clientStart === null || clientStart === 0) && clientEnd === null) {
+          const chunkLenNum = parseInt(cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES), 10);
+          outHeaders.set('Content-Length', String(chunkLenNum));
+          outHeaders.set('Content-Range', `bytes 0-${chunkLenNum - 1}/${totalSize}`);
+          if (request.method === 'HEAD') {
+            return new Response(null, { status: 206, headers: outHeaders });
+          }
+          return new Response(cachedHit.body, { status: 206, headers: outHeaders });
+        }
+
         const cachedBuffer = new Uint8Array(await cachedHit.arrayBuffer());
         if (cachedBuffer && cachedBuffer.byteLength > 0) {
-          const totalSize = cachedHit.headers.get('X-Total-Size') || '*';
-          const contentType = cachedHit.headers.get('Content-Type') || 'video/mp4';
-
-          const outHeaders = new Headers(corsHeaders);
-          outHeaders.set('Content-Type', contentType);
-          outHeaders.set('Accept-Ranges', 'bytes');
-          outHeaders.set('X-Edge-Cache', 'HIT');
-          outHeaders.set('X-Accel-Buffering', 'no');
-          outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
-
           const effectiveStart = clientStart !== null ? clientStart : 0;
           if (effectiveStart < cachedBuffer.byteLength) {
             const effectiveEnd = (clientEnd !== null)
@@ -252,7 +350,7 @@ export async function onRequest(context) {
   }
 
   // ── 2. Upstream Backend Resolution & Proxying ───────────────────────────────
-  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env);
+  const { primary: baseUrl, fallback: fallbackUrl } = await resolveLiveStreamBaseUrl(env, context);
   if (!baseUrl && !fallbackUrl) {
     return new Response(
       JSON.stringify({ error: 'Stream backend endpoint not configured' }),
@@ -321,12 +419,29 @@ export async function onRequest(context) {
   };
 
   for (const activeBase of urlsToTry) {
-    const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
+    let targetUrl;
+    try {
+      const targetUrlObj = new URL(
+        `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`
+      );
+      if (isDownload && !targetUrlObj.searchParams.get('dl')) {
+        targetUrlObj.searchParams.set('dl', '1');
+      }
+      targetUrl = targetUrlObj.href;
+    } catch (e) {
+      targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
+      if (isDownload && !targetUrl.includes('dl=')) {
+        targetUrl += targetUrl.includes('?') ? '&dl=1' : '?dl=1';
+      }
+    }
 
     const upstreamHeaders = {
       'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
       'Accept': '*/*',
     };
+    if (request.headers.get('Sec-Fetch-Dest')) {
+      upstreamHeaders['Sec-Fetch-Dest'] = request.headers.get('Sec-Fetch-Dest');
+    }
 
     if (isInitialRange) {
       if (isBoundedProbe && rangeHeader) {
@@ -340,13 +455,22 @@ export async function onRequest(context) {
       upstreamHeaders['Range'] = rangeHeader;
     }
 
+    const abortCtrl = new AbortController();
+    const tId = setTimeout(() => {
+      try { abortCtrl.abort(); } catch (e) {}
+    }, 15000);
+    const combinedSignal = (request.signal && typeof AbortSignal.any === 'function')
+      ? AbortSignal.any([request.signal, abortCtrl.signal])
+      : abortCtrl.signal;
+
     try {
       const upstreamRes = await fetch(targetUrl, {
         method: request.method === 'HEAD' && !isInitialRange ? 'HEAD' : 'GET',
         headers: upstreamHeaders,
         redirect: 'follow',
-        signal: request.signal,
+        signal: combinedSignal,
       });
+      clearTimeout(tId);
 
       if (!upstreamRes.ok && upstreamRes.status !== 206) {
         if (activeBase === baseUrl) {
@@ -402,7 +526,7 @@ export async function onRequest(context) {
 
         const cacheTask = async () => {
           try {
-            const initialBuffer = await readExactBytes(cacheStream, 0, EDGE_INITIAL_CHUNK_BYTES);
+            const initialBuffer = await readExactBytes(cacheStream, 0, EDGE_INITIAL_CHUNK_BYTES, false);
             if (edgeCache && initialBuffer && initialBuffer.byteLength > 0) {
               const cacheableRes = new Response(initialBuffer, {
                 status: 200,
@@ -468,20 +592,38 @@ export async function onRequest(context) {
         }
       }
 
-      if (contentRange) outHeaders.set('Content-Range', contentRange);
+      if (contentRange && rangeHeader) {
+        outHeaders.set('Content-Range', contentRange);
+      }
       const contentLength = upstreamRes.headers.get('Content-Length');
       if (contentLength) outHeaders.set('Content-Length', contentLength);
 
       const contentDisposition = upstreamRes.headers.get('Content-Disposition');
-      if (contentDisposition) outHeaders.set('Content-Disposition', contentDisposition);
+      if (contentDisposition) {
+        outHeaders.set('Content-Disposition', contentDisposition);
+      } else if (isDownload) {
+        outHeaders.set('Content-Disposition', `attachment; filename="video_${msgId}.mp4"`);
+      }
 
-      outHeaders.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+      if (isDownload) {
+        outHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      } else {
+        outHeaders.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+      }
+
+      // RFC 7233 Section 3.1: A server MUST NOT send a 206 response to a request that does not contain a Range header.
+      let finalStatus = upstreamRes.status;
+      if (!rangeHeader && finalStatus === 206) {
+        finalStatus = 200;
+        outHeaders.delete('Content-Range');
+      }
 
       return new Response(request.method === 'HEAD' ? null : responseBody, {
-        status: upstreamRes.status,
+        status: finalStatus,
         headers: outHeaders,
       });
     } catch (err) {
+      clearTimeout(tId);
       if (activeBase === baseUrl) {
         cachedStreamBaseUrl = '';
         cachedAtEpoch = 0;

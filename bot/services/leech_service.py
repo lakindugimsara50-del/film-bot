@@ -739,7 +739,7 @@ async def _execute_leech(
                                 extra=tg_direct,
                             )
                         )
-                else:
+                elif not any(dom in direct_link.lower() for dom in sl_domains):
                     candidates.append(
                         LeechCandidate(
                             method="direct",

@@ -139,7 +139,7 @@ async def resolve_srilankan_intermediate_link(
         soup = BeautifulSoup(body, "html.parser")
         link_elem = soup.find(id="link")
         if link_elem and link_elem.get("href"):
-            raw_href = link_elem["href"].strip()
+            raw_href = (link_elem.get("href") or "").strip()
             if "google.com/server" in raw_href or "drive.csplayer2.space" in raw_href:
                 # drive.csplayer2.space is an interactive HTML ad locker, not a direct media link
                 return None
@@ -147,7 +147,7 @@ async def resolve_srilankan_intermediate_link(
 
         # D. Search anchors inside the resolved page (e.g. LKSubs /links/ -> Continue button)
         for a in soup.find_all("a", href=True):
-            h = a["href"].strip()
+            h = (a.get("href") or "").strip()
             txt = a.get_text(" ", strip=True).lower()
             if any(k in h.lower() for k in ["cdn.sinhalasub", "ddl.sinhalasub", "pixeldrain.com", "mega.nz"]):
                 return resolve_direct_video_url(h)
@@ -487,7 +487,7 @@ async def _search_portal(
                 slug_tokens = [t for t in raw_tokens if len(t) >= 2 or len(raw_tokens) == 1]
                 ep_link = None
                 for a in soup.find_all("a", href=True):
-                    h = a["href"].strip()
+                    h = (a.get("href") or "").strip()
                     txt = a.get_text(" ", strip=True)
                     is_internal = any(dom in h.lower() for dom in ("sinhalasub.lk", "cinesubz.co", "piratelk.com", "baiscope.lk", "baiscopedownloads.co", "subz.lk", "cines.lk", "cineru.lk", "zoom.lk")) or h.startswith("/")
                     is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))
@@ -524,7 +524,7 @@ async def _search_portal(
                         break
                     article_elem = cur_s.select_one(".entry-content, article, main, .download-links, .box-download") or cur_s
                     for a in article_elem.find_all("a", href=True):
-                        href = a["href"].strip()
+                        href = (a.get("href") or "").strip()
                         cls = " ".join(a.get("class", [])).lower()
                         a_txt = a.get_text(" ", strip=True).lower()
                         if any(ign in href.lower() for ign in ("t.me", "telegram.me", "#", "facebook", "youtube", "imdb", "wikipedia")):
@@ -563,7 +563,7 @@ async def _search_portal(
                                 sub_page_soup = BeautifulSoup(s_res.text if hasattr(s_res, "text") else res_content.decode("utf-8", errors="ignore"), "html.parser")
                                 real_sub_url = None
                                 for sa in sub_page_soup.find_all("a", href=True):
-                                    sh = sa["href"].strip()
+                                    sh = (sa.get("href") or "").strip()
                                     st = sa.get_text(" ", strip=True).lower()
                                     if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
                                         real_sub_url = urllib.parse.urljoin(sub_url, sh)
@@ -631,10 +631,10 @@ async def _search_portal(
 
             for elem in soup.find_all(["tr", "p", "div", "a"]):
                 ctx = elem.get_text(" ", strip=True)
-                anchors = elem.find_all("a", href=True) if elem.name != "a" else [elem]
+                anchors = elem.find_all("a", href=True) if elem.name != "a" else ([elem] if elem.get("href") else [])
                 for a in anchors:
-                    h = a["href"].strip()
-                    if h in seen_dl_urls or h.startswith("#"):
+                    h = (a.get("href") or "").strip()
+                    if not h or h in seen_dl_urls or h.startswith("#"):
                         continue
                     seen_dl_urls.add(h)
 
@@ -929,7 +929,7 @@ async def resolve_srilankan_post_url(
                 )
                 ep_link = None
                 for a in soup.find_all("a", href=True):
-                    h = a["href"].strip()
+                    h = (a.get("href") or "").strip()
                     txt = a.get_text(" ", strip=True)
                     is_internal = any(dom in h.lower() for dom in ("piratelk.com", "baiscope.lk", "baiscopedownloads.co", "subz.lk", "cines.lk", "cineru.lk", "zoom.lk")) or h.startswith("/")
                     is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))
@@ -954,7 +954,7 @@ async def resolve_srilankan_post_url(
                         break
                     article_elem = cur_s.select_one(".entry-content, article, main, .download-links, .box-download") or cur_s
                     for a in article_elem.find_all("a", href=True):
-                        href = a["href"].strip()
+                        href = (a.get("href") or "").strip()
                         cls = " ".join(a.get("class", [])).lower()
                         a_txt = a.get_text(" ", strip=True).lower()
                         if any(ign in href.lower() for ign in ("t.me", "telegram.me", "#", "facebook", "youtube", "imdb", "wikipedia")):
@@ -990,7 +990,7 @@ async def resolve_srilankan_post_url(
                                 sub_page_soup = BeautifulSoup(s_res.text if hasattr(s_res, "text") else res_content.decode("utf-8", errors="ignore"), "html.parser")
                                 real_sub_url = None
                                 for sa in sub_page_soup.find_all("a", href=True):
-                                    sh = sa["href"].strip()
+                                    sh = (sa.get("href") or "").strip()
                                     st = sa.get_text(" ", strip=True).lower()
                                     if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
                                         real_sub_url = urllib.parse.urljoin(sub_url, sh)
@@ -1024,10 +1024,10 @@ async def resolve_srilankan_post_url(
 
             for elem in soup.find_all(["tr", "p", "div", "a"]):
                 ctx = elem.get_text(" ", strip=True)
-                anchors = elem.find_all("a", href=True) if elem.name != "a" else [elem]
+                anchors = elem.find_all("a", href=True) if elem.name != "a" else ([elem] if elem.get("href") else [])
                 for a in anchors:
-                    h = a["href"].strip()
-                    if h in seen_dl_urls or h.startswith("#"):
+                    h = (a.get("href") or "").strip()
+                    if not h or h in seen_dl_urls or h.startswith("#"):
                         continue
                     seen_dl_urls.add(h)
                     if "t.me" in h.lower() or "telegram.me" in h.lower():
@@ -1120,5 +1120,7 @@ async def resolve_srilankan_post_url(
 
             return results
         except Exception as exc:
+            import traceback
+            traceback.print_exc()
             log.warning("[MatchedScraper] Error resolving post URL %s: %s", post_url, exc)
             return []

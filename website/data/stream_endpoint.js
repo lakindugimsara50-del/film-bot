@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://avenue-opinion-sees-wiki.trycloudflare.com",
+  "stream_base_url": "https://reputation-photo-saves-wishing.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T15:22:32.689027+00:00",
+  "updated_at": "2026-10-31T15:23:02.112626+00:00",
   "status": "online"
 };

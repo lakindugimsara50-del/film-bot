@@ -39,6 +39,8 @@ def _is_admin(uid: int) -> bool:
 
 def get_repo_dir() -> str:
     """Return the git repository root directory."""
+    if os.path.exists("/kaggle/working/film_web_site"):
+        return "/kaggle/working/film_web_site"
     if os.path.exists("/content/film_web_site"):
         return "/content/film_web_site"
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -128,7 +130,7 @@ def register(app: Client) -> None:
             log.error("[AdminControl] Git pull failed: %s", git_err)
 
         # 2. Re-apply Colab limits patch if running in /content
-        if os.path.exists("/content"):
+        if os.path.exists("/content") or os.path.exists("/kaggle"):
             try:
                 for _f, _p, _r in [
                     (f"{repo_dir}/bot/services/scrapers/torrent_finder.py", r"MAX_FILE_SIZE_BYTES\s*=\s*int\([^)]+\)", "MAX_FILE_SIZE_BYTES = int(4 * 1024 * 1024 * 1024)"),
@@ -595,6 +597,7 @@ async def _handle_system_logs(message: Message) -> None:
     log_candidates = [
         "bot.log",
         "/content/film_web_site/bot/bot.log",
+        "/kaggle/working/film_web_site/bot/bot.log",
         "/tmp/bot.log",
     ]
     for lp in log_candidates:

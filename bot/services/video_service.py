@@ -32,7 +32,7 @@ TELEGRAM_MTPROTO_MAX_BYTES = 2_090_000_000
 # ── Colab / Render environment detection ─────────────────────────────────────
 # Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
 # Render Free Tier (0.1 vCPU, 512 MB RAM): use veryfast + limited remux
-_on_colab: bool = os.path.exists("/content")
+_on_colab: bool = os.path.exists("/content") or os.path.exists("/kaggle")
 _threads: str = "0"          # always use all available CPU cores
 _preset: str = "ultrafast" if _on_colab else "veryfast"
 
@@ -1495,10 +1495,11 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
         except Exception as exc:
             log.debug("[VideoService] /dev/shm check skipped: %s", exc)
 
-    if os.path.isdir("/content") and os.access("/content", os.W_OK):
+    cloud_nvme = "/kaggle/working" if os.path.isdir("/kaggle/working") else ("/content" if os.path.isdir("/content") else None)
+    if cloud_nvme and os.access(cloud_nvme, os.W_OK):
         try:
-            work_dir = tempfile.mkdtemp(prefix=prefix, dir="/content")
-            log.info("[VideoService] Allocated /content high-capacity workspace: %s", work_dir)
+            work_dir = tempfile.mkdtemp(prefix=prefix, dir=cloud_nvme)
+            log.info("[VideoService] Allocated %s high-capacity workspace: %s", cloud_nvme, work_dir)
             return work_dir
         except Exception:
             pass
@@ -3117,11 +3118,12 @@ async def generate_multi_quality_variants_ram(
 
     abs_out_dir = os.path.abspath(output_dir)
     # Guard against /dev/shm running out of space mid-encode when input_path is already occupying RAM disk
-    if abs_out_dir.startswith("/dev/shm") and os.path.isdir("/content") and os.access("/content", os.W_OK):
+    cloud_alt = "/kaggle/working" if os.path.isdir("/kaggle/working") else ("/content" if os.path.isdir("/content") else None)
+    if abs_out_dir.startswith("/dev/shm") and cloud_alt and os.access(cloud_alt, os.W_OK):
         try:
             free_shm = shutil.disk_usage(abs_out_dir).free
             if free_shm < int(2.2 * 1024 * 1024 * 1024):
-                alt_dir = os.path.join("/content", os.path.basename(abs_out_dir) + "_variants")
+                alt_dir = os.path.join(cloud_alt, os.path.basename(abs_out_dir) + "_variants")
                 os.makedirs(alt_dir, exist_ok=True)
                 log.info(
                     "[VideoService] /dev/shm free space low (%.2f GB) -> redirecting variant output to %s",

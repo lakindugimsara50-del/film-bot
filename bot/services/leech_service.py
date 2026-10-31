@@ -935,7 +935,7 @@ async def _execute_leech(
                     else:
                         status_line = f"⚡ <b>වේගය:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}"
 
-                    _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
+                    _env_name = "Kaggle Cloud" if os.path.exists("/kaggle") else ("Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS")
                     text = (
                         f"📥 <b>පියවර 2/4: {cloud_service_name} ➔ {_env_name} වෙත බාගත කරමින්...</b>\n\n"
                         f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
@@ -1234,7 +1234,7 @@ async def _execute_leech(
                                 if not force and (now - last_edit_time < 2.5):
                                     return
 
-                                _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
+                                _env_name = "Kaggle Cloud" if os.path.exists("/kaggle") else ("Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS")
                                 lines = [
                                     f"⚡ <b>Parallel Multi-Quality Direct Download ➔ Pipelined Telegram Upload ({cand_portal or cand_host})</b>\n",
                                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",

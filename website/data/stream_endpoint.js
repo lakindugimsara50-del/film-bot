@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://santa-fcc-cpu-louis.trycloudflare.com",
+  "stream_base_url": "https://designated-specifics-studying-lined.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T18:34:46.963646+00:00",
+  "updated_at": "2026-10-31T18:35:38.433877+00:00",
   "status": "online"
 };

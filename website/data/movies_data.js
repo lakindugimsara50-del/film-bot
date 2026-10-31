@@ -18832,7 +18832,242 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-10-27",
       "added_at": "2026-10-27T14:35:28Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "neagley-2026-s01e01",
+      "slug": "neagley-2026-s01e01",
+      "title": "Neagley",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt33539520",
+      "tmdb_id": "273207",
+      "type": "series",
+      "season": 1,
+      "episode": 1,
+      "episode_title": "L Train",
+      "number_of_seasons": 1,
+      "number_of_episodes": 8,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 8,
+          "poster_url": "https://image.tmdb.org/t/p/w500/iKaOtqE88aoIH6CcGg1AIp4TiKW.jpg",
+          "air_date": "2026-09-16"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/lKOPmO0ah17ogQ9hWg7lSd40kIr.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/lKOPmO0ah17ogQ9hWg7lSd40kIr.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/uYOYLFQ4q7asuhdiKXCqGaeAQUH.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/uYOYLFQ4q7asuhdiKXCqGaeAQUH.jpg",
+      "genres": [
+        "Drama",
+        "Mystery",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "57 min",
+      "description": "Frances Neagley is a private investigator in Chicago and former military colleague of Jack Reacher in the Army's 110th Special Investigations Unit. When she learns that a beloved friend from her past has been killed in a suspicious accident, she becomes hell-bent on justice.",
+      "director": "Nick Santora, Nicholas Wootton",
+      "cast": [
+        {
+          "name": "Maria Sten",
+          "character": "Frances Neagley"
+        },
+        {
+          "name": "Greyston Holt",
+          "character": "Detective Hudson Riley"
+        },
+        {
+          "name": "Adeline Rudolph",
+          "character": "Renee"
+        },
+        {
+          "name": "Matthew Del Negro",
+          "character": "Pierce Woodrow"
+        },
+        {
+          "name": "Damon Herriman",
+          "character": "Lawrence Cole"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWlq5aOfZ2qUGkYUswnDrUjKvOIQ6gACtyQAAl_0MVfcD7vlqchkvR4E",
+      "message_id": 361,
+      "file_name": "fs_neagley-2026-s01e01_720p.mp4",
+      "file_size": 706469493,
+      "drive_file_id": "",
+      "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWlq5aOfZ2qUGkYUswnDrUjKvOIQ6gACtyQAAl_0MVfcD7vlqchkvR4E",
+          "message_id": 361,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/273207/1/1"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt33539520-1-1"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt33539520&s=1&e=1"
+        }
+      ],
+      "qualities": {
+        "auto": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+        "1080p": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+        "720p": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+        "480p": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/360",
+        "360p": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "673.7 MB",
+          "size_bytes": 706469493,
+          "url": "https://t.me/c/4325759505/361",
+          "telegram_url": "https://t.me/c/4325759505/361",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWlq5aOfZ2qUGkYUswnDrUjKvOIQ6gACtyQAAl_0MVfcD7vlqchkvR4E",
+          "message_id": 361,
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "353.0 MB",
+          "size_bytes": 370116796,
+          "url": "https://t.me/c/4325759505/360",
+          "telegram_url": "https://t.me/c/4325759505/360",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWhq5aNM-w-6duN4zCSnYVFGf6ZLzAACtiQAAl_0MVfG5xeB3HftMB4E",
+          "message_id": 360,
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/360",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "673.7 MB",
+          "size_bytes": 706469493,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neagley-2026-s01e01_1080p",
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "673.7 MB",
+          "size_bytes": 706469493,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neagley-2026-s01e01_720p",
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "353.0 MB",
+          "size_bytes": 370116796,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neagley-2026-s01e01_480p",
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/360",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "121.3 MB",
+          "size_bytes": 127164508,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neagley-2026-s01e01_360p",
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWlq5aOfZ2qUGkYUswnDrUjKvOIQ6gACtyQAAl_0MVfcD7vlqchkvR4E",
+          "message_id": 361,
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "size_bytes": 706469493
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAWhq5aNM-w-6duN4zCSnYVFGf6ZLzAACtiQAAl_0MVfG5xeB3HftMB4E",
+          "message_id": 360,
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/360",
+          "size_bytes": 370116796
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://victoria-toolbar-inches-gnu.trycloudflare.com/stream/channel/-1004325759505/361",
+          "size_bytes": 127164508
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/neagley-2026-s01e01-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=neagley-2026-s01e01",
+      "added_date": "2026-10-31",
+      "added_at": "2026-10-31T08:15:30Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-27T14:35:30Z"
+  "last_updated": "2026-10-31T08:15:31Z"
 };

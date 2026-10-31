@@ -238,3 +238,11 @@ class QueueService:
 
 # Global singleton
 queue_service = QueueService()
+
+
+# Module-level alias exports
+add_to_queue = queue_service.add_to_queue
+is_idle = queue_service.is_idle
+cancel_user = queue_service.cancel_user
+get_queue_status = queue_service.get_queue_status
+start_worker = queue_service.start_worker

@@ -23,7 +23,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import Message
 
 from services.catalog_audit_service import load_website_catalog, normalize_title
-from services import queue_service
+from services.queue_service import queue_service
 
 log = logging.getLogger(__name__)
 

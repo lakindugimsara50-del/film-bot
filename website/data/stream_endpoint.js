@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://happened-earnings-bright-submitted.trycloudflare.com",
+  "stream_base_url": "https://besides-chosen-flexible-decided.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T14:18:25.364846+00:00",
+  "updated_at": "2026-10-31T14:19:01.423341+00:00",
   "status": "online"
 };

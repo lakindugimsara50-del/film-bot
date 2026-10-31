@@ -18,7 +18,8 @@ import multiprocessing
 import shutil
 import subprocess
 import tempfile
-from typing import Callable, Optional
+from contextlib import asynccontextmanager
+from typing import Any, Callable, Optional
 
 log = logging.getLogger(__name__)
 
@@ -57,8 +58,107 @@ log.info(
 _VALIDATED_FFMPEG: dict[str, bool] = {}
 _PREFERRED_FFMPEG_BIN: Optional[str] = None
 _COLAB_FFMPEG_REPAIR_ATTEMPTED: bool = False
-# Concurrency gate for heavy GPU/CPU video transcoding (guarantees full 100% NVDEC/NVENC throughput per job)
-_GPU_ENCODE_SEMAPHORE = asyncio.Semaphore(1)
+class GPUDevicePool:
+    """
+    Dynamic Multi-GPU Device Pool for Single-GPU and Multi-GPU setups (e.g. Kaggle Dual Tesla T4).
+    Enables true parallel NVENC/CUDA hardware-accelerated transcoding across all host GPUs (cuda:0, cuda:1).
+    """
+    def __init__(self):
+        self._devices: list[int] = []
+        self._queue: Optional[asyncio.Queue] = None
+        self._lock: Optional[asyncio.Lock] = None
+
+    def _discover_devices(self) -> list[int]:
+        devs = []
+        # 1. Check PyTorch device count
+        try:
+            import torch
+            if torch.cuda.is_available():
+                cnt = torch.cuda.device_count()
+                if cnt > 0:
+                    devs = list(range(cnt))
+        except Exception:
+            pass
+
+        # 2. Check nvidia-smi -L
+        if not devs:
+            try:
+                out = subprocess.check_output(["nvidia-smi", "-L"], text=True, errors="ignore", timeout=3)
+                lines = [l for l in out.strip().splitlines() if l.startswith("GPU ")]
+                if lines:
+                    devs = list(range(len(lines)))
+            except Exception:
+                pass
+
+        # 3. Check ctypes libcuda
+        if not devs and os.name != "nt":
+            try:
+                import ctypes
+                cuda = ctypes.CDLL("libcuda.so.1")
+                if cuda.cuInit(0) == 0:
+                    cnt = ctypes.c_int()
+                    if cuda.cuDeviceGetCount(ctypes.byref(cnt)) == 0 and cnt.value > 0:
+                        devs = list(range(cnt.value))
+            except Exception:
+                pass
+
+        if not devs:
+            devs = [0]
+        # If single GPU, allow 2 parallel NVENC slots so 720p and 480p don't block each other.
+        # If multiple GPUs (e.g. Kaggle T4 x2), allocate 1 dedicated slot per physical GPU!
+        if len(devs) == 1:
+            return [devs[0], devs[0]]
+        return devs
+
+    async def _ensure_queue(self):
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        if self._queue is None:
+            async with self._lock:
+                if self._queue is None:
+                    self._devices = self._discover_devices()
+                    q = asyncio.Queue()
+                    for d in self._devices:
+                        q.put_nowait(d)
+                    self._queue = q
+                    log.info("[VideoService] Dynamic Multi-GPU Pool initialized with %d slot(s) across GPU(s) %s", len(self._devices), sorted(list(set(self._devices))))
+
+    def is_busy(self) -> bool:
+        if self._queue is None:
+            return False
+        return self._queue.empty()
+
+    @asynccontextmanager
+    async def acquire(self):
+        await self._ensure_queue()
+        gpu_id = await self._queue.get()
+        try:
+            yield gpu_id
+        finally:
+            self._queue.put_nowait(gpu_id)
+            self._queue.task_done()
+
+_GPU_POOL = GPUDevicePool()
+
+class GPUSemaphoreProxy:
+    """Backwards compatibility proxy for _GPU_ENCODE_SEMAPHORE."""
+    def __init__(self, pool: GPUDevicePool):
+        self._pool = pool
+        self._ctx = None
+
+    def locked(self) -> bool:
+        return self._pool.is_busy()
+
+    async def __aenter__(self):
+        self._ctx = self._pool.acquire()
+        return await self._ctx.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._ctx:
+            await self._ctx.__aexit__(exc_type, exc_val, exc_tb)
+            self._ctx = None
+
+_GPU_ENCODE_SEMAPHORE = GPUSemaphoreProxy(_GPU_POOL)
 
 
 def _is_working_ffmpeg(exe_path: Optional[str]) -> bool:
@@ -614,34 +714,39 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
     return _CACHED_HW_ENCODER
 
 
-_CUDA_CTX_HANDLE = None
-_CUDA_MEM_PTR = None
+_CUDA_CTX_HANDLES: list[Any] = []
+_CUDA_MEM_PTRS: list[Any] = []
 
 
 def warm_up_colab_gpu() -> str:
     """
-    Ensure FFmpeg h264_nvenc is healed/verified on Google Colab and hold a lightweight
-    persistent CUDA context (~256 MB VRAM) via libcuda.so.1 so:
-      1. The Tesla T4 GPU stays initialized (zero cold-start latency when FFmpeg launches).
-      2. Colab's GPU RAM monitor shows active GPU utilization and never triggers idle GPU warnings.
+    Ensure FFmpeg h264_nvenc is healed/verified on Google Colab / Kaggle and hold lightweight
+    persistent CUDA contexts (~256 MB VRAM) across ALL available GPUs via libcuda.so.1 so:
+      1. Every Tesla T4 GPU stays initialized (zero cold-start latency when FFmpeg launches).
+      2. Kaggle/Colab GPU monitor shows active GPU utilization across all GPUs (GPU 1 and GPU 2)
+         and never triggers idle GPU warnings.
     Returns the active hardware encoder name ('h264_nvenc' or 'libx264').
     """
-    global _CUDA_CTX_HANDLE, _CUDA_MEM_PTR
+    global _CUDA_CTX_HANDLES, _CUDA_MEM_PTRS
     hw_enc = detect_hw_encoder()
-    if hw_enc == "h264_nvenc" and _CUDA_CTX_HANDLE is None and os.name != "nt":
+    if hw_enc == "h264_nvenc" and not _CUDA_CTX_HANDLES and os.name != "nt":
         try:
             import ctypes
             cuda = ctypes.CDLL("libcuda.so.1")
             if cuda.cuInit(0) == 0:
-                dev = ctypes.c_int()
-                if cuda.cuDeviceGet(ctypes.byref(dev), 0) == 0:
-                    ctx = ctypes.c_void_p()
-                    if cuda.cuCtxCreate_v2(ctypes.byref(ctx), 0, dev) == 0:
-                        _CUDA_CTX_HANDLE = ctx
-                        dptr = ctypes.c_uint64()
-                        if cuda.cuMemAlloc_v2(ctypes.byref(dptr), ctypes.c_size_t(256 * 1024 * 1024)) == 0:
-                            _CUDA_MEM_PTR = dptr
-                            log.info("[VideoService] Tesla T4 CUDA context warmed up (256 MB VRAM pinned for instant NVENC).")
+                count = ctypes.c_int()
+                if cuda.cuDeviceGetCount(ctypes.byref(count)) == 0:
+                    num_devs = max(1, count.value)
+                    for d_idx in range(num_devs):
+                        dev = ctypes.c_int()
+                        if cuda.cuDeviceGet(ctypes.byref(dev), d_idx) == 0:
+                            ctx = ctypes.c_void_p()
+                            if cuda.cuCtxCreate_v2(ctypes.byref(ctx), 0, dev) == 0:
+                                _CUDA_CTX_HANDLES.append(ctx)
+                                dptr = ctypes.c_uint64()
+                                if cuda.cuMemAlloc_v2(ctypes.byref(dptr), ctypes.c_size_t(256 * 1024 * 1024)) == 0:
+                                    _CUDA_MEM_PTRS.append(dptr)
+                                    log.info("[VideoService] Tesla T4 GPU %d CUDA context warmed up (256 MB VRAM pinned for instant NVENC).", d_idx)
         except Exception as exc:
             log.debug("[VideoService] CUDA context warmup note: %s", exc)
     return hw_enc
@@ -1221,7 +1326,7 @@ async def compress_video(
 
     proc = None
     try:
-        if _GPU_ENCODE_SEMAPHORE.locked() and progress_callback:
+        if _GPU_POOL.is_busy() and progress_callback:
             try:
                 if asyncio.iscoroutinefunction(progress_callback):
                     await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
@@ -1230,9 +1335,20 @@ async def compress_video(
             except Exception:
                 pass
 
-        async with _GPU_ENCODE_SEMAPHORE:
+        async with _GPU_POOL.acquire() as gpu_id:
+            final_cmd = list(cmd)
+            if hw_enc == "h264_nvenc":
+                if "-hwaccel" in final_cmd:
+                    hw_idx = final_cmd.index("-hwaccel")
+                    final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                    final_cmd.insert(hw_idx + 3, str(gpu_id))
+                if "-c:v" in final_cmd:
+                    cv_idx = final_cmd.index("-c:v")
+                    final_cmd.insert(cv_idx + 2, "-gpu")
+                    final_cmd.insert(cv_idx + 3, str(gpu_id))
+
             proc = await asyncio.create_subprocess_exec(
-                *cmd,
+                *final_cmd,
                 cwd=out_dir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -2256,7 +2372,7 @@ async def prepend_filmzilla_intro(
 
     proc = None
     try:
-        if _GPU_ENCODE_SEMAPHORE.locked() and progress_callback:
+        if _GPU_POOL.is_busy() and progress_callback:
             try:
                 if asyncio.iscoroutinefunction(progress_callback):
                     await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
@@ -2265,9 +2381,20 @@ async def prepend_filmzilla_intro(
             except Exception:
                 pass
 
-        async with _GPU_ENCODE_SEMAPHORE:
+        async with _GPU_POOL.acquire() as gpu_id:
+            final_cmd = list(cmd)
+            if hw_enc == "h264_nvenc":
+                if "-hwaccel" in final_cmd:
+                    hw_idx = final_cmd.index("-hwaccel")
+                    final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                    final_cmd.insert(hw_idx + 3, str(gpu_id))
+                if "-c:v" in final_cmd:
+                    cv_idx = final_cmd.index("-c:v")
+                    final_cmd.insert(cv_idx + 2, "-gpu")
+                    final_cmd.insert(cv_idx + 3, str(gpu_id))
+
             proc = await asyncio.create_subprocess_exec(
-                *cmd,
+                *final_cmd,
                 cwd=out_dir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -2911,7 +3038,7 @@ async def cover_cinesubz_watermark(
         total_target_duration = max(1.0, (duration - trim_start) + (5.0 if intro_video else 0.0))
         log.info("[VideoService] Executing single-pass watermark cover + intro (%s -> %s, trim_start=%.1fs, intro=%s, hwaccel=%s)...",
                  video_path, output_path, trim_start, bool(intro_video), bool(hw_opts))
-        if _GPU_ENCODE_SEMAPHORE.locked() and progress_callback:
+        if _GPU_POOL.is_busy() and progress_callback:
             try:
                 if asyncio.iscoroutinefunction(progress_callback):
                     await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
@@ -2920,9 +3047,20 @@ async def cover_cinesubz_watermark(
             except Exception:
                 pass
 
-        async with _GPU_ENCODE_SEMAPHORE:
+        async with _GPU_POOL.acquire() as gpu_id:
+            final_cmd = list(cmd)
+            if hw_enc == "h264_nvenc":
+                if "-hwaccel" in final_cmd:
+                    hw_idx = final_cmd.index("-hwaccel")
+                    final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                    final_cmd.insert(hw_idx + 3, str(gpu_id))
+                if "-c:v" in final_cmd:
+                    cv_idx = final_cmd.index("-c:v")
+                    final_cmd.insert(cv_idx + 2, "-gpu")
+                    final_cmd.insert(cv_idx + 3, str(gpu_id))
+
             proc = await asyncio.create_subprocess_exec(
-                *cmd,
+                *final_cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

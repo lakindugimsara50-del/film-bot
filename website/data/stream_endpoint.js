@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://heel-vinyl-trace-strategy.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T07:59:38.867487+00:00",
+  "updated_at": "2026-10-31T07:59:57.283144+00:00",
   "status": "online"
 };

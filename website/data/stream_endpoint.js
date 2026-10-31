@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://guests-interface-dylan-document.trycloudflare.com",
+  "stream_base_url": "https://stream.yourdomain.workers.dev",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-10-31T18:50:18.129392+00:00",
+  "updated_at": "2026-10-31T19:11:09.097556+00:00",
   "status": "online"
 };

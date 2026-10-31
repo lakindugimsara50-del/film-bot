@@ -32,12 +32,13 @@ class TestStrictCineSubzAndPipeline(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(q.can_accept_next())
 
     async def test_strict_cinesubz_skips_external_torrents(self):
-        """Test that --strict-cinesubz skips immediately when no direct candidate is found."""
+        """Test that --strict-cinesubz searches CineSubz/SriLankan portals and skips external torrents when no candidates found."""
         mock_client = MagicMock()
         mock_status = AsyncMock()
         mock_status.edit_text = AsyncMock()
 
         with patch("services.leech_service.find_all_candidates", new_callable=AsyncMock) as mock_find:
+            mock_find.return_value = []
             await leech_service.run_auto_leech(
                 client=mock_client,
                 status_msg=mock_status,
@@ -45,8 +46,10 @@ class TestStrictCineSubzAndPipeline(unittest.IsolatedAsyncioTestCase):
                 query_text="NonExistentMovie 2026 --strict-cinesubz",
                 auto_publish=True,
             )
-            # find_all_candidates should NEVER be called!
-            mock_find.assert_not_called()
+            # find_all_candidates SHOULD be called with strict_cinesubz=True
+            mock_find.assert_called_once()
+            _, kwargs = mock_find.call_args
+            self.assertTrue(kwargs.get("strict_cinesubz"))
             # status_msg should show skip message
             mock_status.edit_text.assert_called()
             call_text = mock_status.edit_text.call_args[0][0]
@@ -58,18 +61,21 @@ class TestStrictCineSubzAndPipeline(unittest.IsolatedAsyncioTestCase):
         dl_lock = leech_service._get_download_lock()
         enc_lock = leech_service._get_encode_upload_lock()
 
-        # Both locks start unlocked
+        # Both locks should be unlocked initially
         self.assertFalse(dl_lock.locked())
         self.assertFalse(enc_lock.locked())
 
-        # Task 1 holds encode lock, Task 2 holds download lock simultaneously
-        await enc_lock.acquire()
-        self.assertTrue(enc_lock.locked())
-
-        # dl_lock can still be acquired without blocking!
+        # Lock download
         await dl_lock.acquire()
         self.assertTrue(dl_lock.locked())
+        self.assertFalse(enc_lock.locked())
 
+        # Lock encode concurrently
+        await enc_lock.acquire()
+        self.assertTrue(dl_lock.locked())
+        self.assertTrue(enc_lock.locked())
+
+        # Release both
         dl_lock.release()
         enc_lock.release()
         self.assertFalse(dl_lock.locked())

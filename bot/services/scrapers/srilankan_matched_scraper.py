@@ -626,8 +626,11 @@ async def _search_portal(
                             "context": f"CineSubz ZetaPlayer CDN {zs['quality']}",
                         })
                         seen_dl_urls.add(zs["url"])
+                    if zeta_streams:
+                        log.info("[MatchedScraper] Extracted %d CineSubz ZetaPlayer CDN stream(s) directly from %s", len(zeta_streams), current_target_url)
                 except Exception as e_z:
                     log.debug("[MatchedScraper] CineSubz ZetaPlayer stream extraction error: %s", e_z)
+
 
             for elem in soup.find_all(["tr", "p", "div", "a"]):
                 ctx = elem.get_text(" ", strip=True)
@@ -1021,6 +1024,28 @@ async def resolve_srilankan_post_url(
             video_links: list[dict] = []
             seen_dl_urls: set[str] = set()
             intermediate_to_resolve: list[tuple[str, str, str]] = []
+
+            # CineSubz ZetaPlayer high-speed direct CDN stream extraction
+            if p_name == "CineSubz" or "cinesubz" in post_url.lower() or "cinesubz" in current_target_url.lower():
+                try:
+                    try:
+                        from services.scrapers import cinesubz
+                    except ImportError:
+                        from bot.services.scrapers import cinesubz
+                    zeta_streams = await cinesubz._extract_cinesubz_zetaplayer_streams(client, soup, current_target_url)
+                    for zs in zeta_streams:
+                        video_links.append({
+                            "url": zs["url"],
+                            "original_url": zs["url"],
+                            "host_type": "cdn",
+                            "quality": zs["quality"],
+                            "context": f"CineSubz ZetaPlayer CDN {zs['quality']}",
+                        })
+                        seen_dl_urls.add(zs["url"])
+                    if zeta_streams:
+                        log.info("[MatchedScraper] Extracted %d CineSubz ZetaPlayer CDN stream(s) directly from %s", len(zeta_streams), current_target_url)
+                except Exception as e_z:
+                    log.debug("[MatchedScraper] CineSubz ZetaPlayer stream extraction error: %s", e_z)
 
             for elem in soup.find_all(["tr", "p", "div", "a"]):
                 ctx = elem.get_text(" ", strip=True)

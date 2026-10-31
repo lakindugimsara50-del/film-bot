@@ -215,6 +215,7 @@ async def find_all_candidates(
     original_title: Optional[str] = None,
     original_language: Optional[str] = None,
     skip_srilankan: bool = False,
+    strict_cinesubz: bool = False,
 ) -> list[LeechCandidate]:
     """
     Query all acquisition sources in priority order:
@@ -360,17 +361,27 @@ async def find_all_candidates(
                 log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
                 return matched_candidates
 
-    # If no Lankan matched releases found, query Telegram, DDL, and Torrents concurrently
-    results = await asyncio.gather(
-        _fetch_telegram(),
-        _fetch_ddl(),
-        _fetch_torrents(),
-        return_exceptions=True,
-    )
-
-    tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
-    ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
-    tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
+    # If no Lankan matched releases found, query secondary sources
+    # When strict_cinesubz is True, DO NOT query external torrents (YTS/EZTV/Torrentio)!
+    if strict_cinesubz:
+        results = await asyncio.gather(
+            _fetch_telegram(),
+            _fetch_ddl(),
+            return_exceptions=True,
+        )
+        tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
+        ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
+        tor_list = []
+    else:
+        results = await asyncio.gather(
+            _fetch_telegram(),
+            _fetch_ddl(),
+            _fetch_torrents(),
+            return_exceptions=True,
+        )
+        tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
+        ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
+        tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
 
     allowed_qualities = ("720p", "480p") if is_series_mode else ("1080p", "720p", "480p")
 
@@ -786,20 +797,6 @@ async def _execute_leech(
                 log.debug("[LeechService] Pre-discovery subtitle note: %s", pre_sub_err)
 
         if not candidates:
-            if is_strict_cinesubz:
-                log.info("[LeechService] Strict CineSubz mode active: No direct CineSubz streaming links found for '%s'. Skipping external torrents as requested.", display_title)
-                task_tracker.tracker.complete_task(user_id)
-                try:
-                    await status_msg.edit_text(
-                        f"⏭️ <b>CineSubz සෘජු Link හමු නොවූ බැවින් skip කරන ලදී.</b>\n\n"
-                        f"🎬 <b>{display_title}</b>\n"
-                        f"<i>(Strict CineSubz Mode: බාහිර Torrent වලින් ලබා නොගෙන මඟහරින ලදී)</i>",
-                        parse_mode=ParseMode.HTML,
-                    )
-                except Exception:
-                    pass
-                return
-
             candidates = await find_all_candidates(
                 title=title,
                 year=year,
@@ -810,7 +807,22 @@ async def _execute_leech(
                 is_series=is_series,
                 original_title=tmdb_meta.get("original_title"),
                 original_language=tmdb_meta.get("original_language"),
+                strict_cinesubz=is_strict_cinesubz,
             )
+
+        if not candidates and is_strict_cinesubz:
+            log.info("[LeechService] Strict CineSubz mode active: No CineSubz or direct streaming links found for '%s'. Skipping external torrents as requested.", display_title)
+            task_tracker.tracker.complete_task(user_id)
+            try:
+                await status_msg.edit_text(
+                    f"⏭️ <b>CineSubz සෘජු Link හමු නොවූ බැවින් skip කරන ලදී.</b>\n\n"
+                    f"🎬 <b>{display_title}</b>\n"
+                    f"<i>(Strict CineSubz Mode: බාහිර Torrent වලින් ලබා නොගෙන මඟහරින ලදී)</i>",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception:
+                pass
+            return
 
         is_series_mode = bool(is_series or season is not None or episode is not None)
         if is_series_mode and candidates:

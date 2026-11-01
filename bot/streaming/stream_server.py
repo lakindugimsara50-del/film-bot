@@ -636,8 +636,11 @@ async def stream_channel_message(
         dl == 1
         or str(request.query_params.get("dl", "")).lower() in ("1", "true", "yes")
         or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
+        or "dl" in request.query_params
         or "/download/" in request.url.path
         or sec_dest in ("document", "download")
+        or request.headers.get("x-download") == "1"
+        or request.headers.get("x-purpose") == "download"
         or is_downloader_ua
     )
 
@@ -751,8 +754,11 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
         dl == 1
         or str(request.query_params.get("dl", "")).lower() in ("1", "true", "yes")
         or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
+        or "dl" in request.query_params
         or "/download/" in request.url.path
         or sec_dest in ("document", "download")
+        or request.headers.get("x-download") == "1"
+        or request.headers.get("x-purpose") == "download"
         or is_downloader_ua
     )
 

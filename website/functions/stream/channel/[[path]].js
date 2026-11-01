@@ -229,7 +229,7 @@ export async function onRequest(context) {
   } else if (params && typeof params.path === 'string') {
     pathSegments = params.path.split('/').filter(Boolean);
   } else {
-    const m = urlObj.pathname.match(/\/stream\/channel\/([^/]+)\/(\d+)/);
+    const m = urlObj.pathname.match(/\/stream\/(?:channel|download)\/([^/]+)\/(\d+)/);
     if (m) pathSegments = [m[1], m[2]];
   }
 
@@ -279,15 +279,19 @@ export async function onRequest(context) {
     }
   }
 
-  const secFetchDest = (request.headers.get('Sec-Fetch-Dest') || '').toLowerCase();
   const userAgent = (request.headers.get('User-Agent') || '').toLowerCase();
-  const isDownloaderUA = /idm|adm|1dm|fdm|aria2|curl|wget|python|httpx|aiohttp|download/i.test(userAgent);
-  const isDownload = urlObj.searchParams.get('dl') === '1'
-    || urlObj.searchParams.get('download') === '1'
-    || urlObj.pathname.includes('/download/')
-    || secFetchDest === 'document'
-    || secFetchDest === 'download'
-    || isDownloaderUA;
+  const secFetchDest = (request.headers.get('Sec-Fetch-Dest') || '').toLowerCase();
+  const isDownloaderUA = /idm|1dm|adm|fdm|aria2|wget|curl|download|python|httpx|aiohttp/i.test(userAgent);
+  const xDownload = request.headers.get('X-Download') === '1' || request.headers.get('X-Purpose') === 'download';
+
+  const isDownload = urlObj.searchParams.get('dl') === '1' ||
+                     urlObj.searchParams.get('download') === '1' ||
+                     urlObj.searchParams.has('dl') ||
+                     urlObj.pathname.includes('/download/') ||
+                     secFetchDest === 'document' ||
+                     secFetchDest === 'download' ||
+                     xDownload ||
+                     isDownloaderUA;
 
   // Suffix ranges (bytes=-N) must not match the initial 0-8MB chunk
   // For file downloads (dl=1 without range), do NOT constrain to initial 8MB chunk
@@ -316,7 +320,7 @@ export async function onRequest(context) {
         // Fast-path: Open-ended requests (bytes=0- or no range):
         // Deliver initial 8MB chunk directly from Cloudflare Edge Cache in <20ms
         // Browser reads moov atom and GOPs immediately, then sends subsequent byte-range requests
-        if ((clientStart === null || clientStart === 0) && clientEnd === null) {
+        if (!isDownload && (clientStart === null || clientStart === 0) && clientEnd === null) {
           const chunkLenNum = parseInt(cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES), 10);
           outHeaders.set('Content-Length', String(chunkLenNum));
           outHeaders.set('Content-Range', `bytes 0-${chunkLenNum - 1}/${totalSize}`);
@@ -418,17 +422,32 @@ export async function onRequest(context) {
   };
 
   for (const activeBase of urlsToTry) {
-    const forwardSearch = new URLSearchParams(urlObj.searchParams);
-    if (isDownload && !forwardSearch.has('dl')) {
-      forwardSearch.set('dl', '1');
+    let targetUrl;
+    try {
+      const targetUrlObj = new URL(
+        `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`
+      );
+      if (isDownload && !targetUrlObj.searchParams.get('dl')) {
+        targetUrlObj.searchParams.set('dl', '1');
+      }
+      targetUrl = targetUrlObj.href;
+    } catch (e) {
+      targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
+      if (isDownload && !targetUrl.includes('dl=')) {
+        targetUrl += targetUrl.includes('?') ? '&dl=1' : '?dl=1';
+      }
     }
-    const searchStr = forwardSearch.toString() ? `?${forwardSearch.toString()}` : '';
-    const targetUrl = `${activeBase}/stream/channel/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${searchStr}`;
 
     const upstreamHeaders = {
       'User-Agent': request.headers.get('User-Agent') || 'FilmSub-Edge-Proxy/2.0',
       'Accept': '*/*',
     };
+    if (request.headers.get('Sec-Fetch-Dest')) {
+      upstreamHeaders['Sec-Fetch-Dest'] = request.headers.get('Sec-Fetch-Dest');
+    }
+    if (isDownload) {
+      upstreamHeaders['X-Download'] = '1';
+    }
 
     if (isInitialRange) {
       if (isBoundedProbe && rangeHeader) {
@@ -474,13 +493,6 @@ export async function onRequest(context) {
       outHeaders.set('Accept-Ranges', 'bytes');
       outHeaders.set('X-Accel-Buffering', 'no');
       outHeaders.set('X-Stream-Backend', activeBase);
-
-      const cd = upstreamRes.headers.get('Content-Disposition');
-      if (cd) {
-        outHeaders.set('Content-Disposition', cd);
-      } else if (isDownload) {
-        outHeaders.set('Content-Disposition', `attachment; filename="movie_${encodeURIComponent(msgId)}.mp4"`);
-      }
 
       const contentRange = upstreamRes.headers.get('Content-Range');
       const responseBody = upstreamRes.body;

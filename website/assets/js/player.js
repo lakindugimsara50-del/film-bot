@@ -1286,7 +1286,8 @@ function getMovieDownloads(movie) {
   };
 
   const addCard = (card) => {
-    if (!card || !card.url || isDeadTunnel(card.url)) return;
+    if (!card || !card.url) return;
+    if (isDeadTunnel(card.url) && !card.url.includes('/stream/channel/') && !card.url.includes('t.me/c/')) return;
     if (seenUrls.has(card.url)) return;
     seenUrls.add(card.url);
 

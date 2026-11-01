@@ -18,6 +18,7 @@ test_stream_server_bugs_and_edge_cases.py — Deep verification tests for:
 """
 
 import asyncio
+import os
 from pathlib import Path
 import sys
 import time
@@ -659,5 +660,132 @@ async def test_downloader_range_resumption_on_interrupted_stream(tmp_path):
         assert requested_ranges[1] == "bytes=400-"
 
 
+@pytest.mark.asyncio
+async def test_stream_channel_message_download_detected_by_x_download_header():
+    """Verify X-Download: 1 header triggers full unconstrained direct download."""
+    file_size = 800 * 1024 * 1024
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "Tenet.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {"x-download": "1"}
+        req.query_params = {}
+        req.url = MagicMock()
+        req.url.path = "/stream/channel/-100123/999"
+        req.method = "GET"
+
+        resp = await stream_server.stream_channel_message("-100123", 999, req)
+
+        assert resp.status_code == 200
+        assert resp.headers.get("Content-Length") == str(file_size)
+        assert "Content-Range" not in resp.headers
+        assert 'attachment; filename="Tenet.mp4"' in resp.headers.get("Content-Disposition", "")
 
 
+@pytest.mark.asyncio
+async def test_downloader_aria2c_command_includes_download_headers():
+    """Verify aria2c subprocess is spawned with X-Download and Sec-Fetch-Dest headers."""
+    from services import downloader
+
+    captured_cmds = []
+
+    async def fake_create_subprocess_exec(*cmd, **kwargs):
+        captured_cmds.append(list(cmd))
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.stdout.read = AsyncMock(return_value=b"")
+        mock_proc.wait = AsyncMock()
+        return mock_proc
+
+    with patch("asyncio.create_subprocess_exec", side_effect=fake_create_subprocess_exec), \
+         patch.object(downloader, "is_valid_downloaded_video", return_value=True):
+
+        try:
+            await downloader._download_aria2c_http(
+                aria2_bin="aria2c",
+                url="https://example.com/stream/channel/-100123/456?dl=1",
+                dest_dir="/tmp",
+                filename="test.mp4",
+                task_key="test_task",
+                progress_callback=None,
+            )
+        except Exception:
+            pass
+
+        assert len(captured_cmds) == 1
+        cmd_str = " ".join(captured_cmds[0])
+        assert "--header=X-Download: 1" in cmd_str
+        assert "--header=Sec-Fetch-Dest: download" in cmd_str
+
+
+@pytest.mark.asyncio
+async def test_downloader_resume_server_ignores_range_restarts_cleanly(tmp_path):
+    """Verify that if server returns HTTP 200 on Range resume, downloaded_cnt resets to avoid file corruption."""
+    from services import downloader
+
+    dest_dir = str(tmp_path)
+    url = "https://example.com/stream/video.mp4"
+    total_size = 500
+
+    call_count = 0
+
+    class NonRangeResponse:
+        def __init__(self):
+            self.status_code = 200
+            self.headers = {
+                "content-length": str(total_size),
+                "content-disposition": 'attachment; filename="non_range.mp4"',
+            }
+
+        def raise_for_status(self):
+            pass
+
+        async def aiter_bytes(self, chunk_size):
+            if call_count == 1:
+                yield b"A" * 200
+            else:
+                yield b"B" * total_size
+
+    class NonRangeAsyncClient:
+        def __init__(self, *args, **kwargs):
+            self.headers = kwargs.get("headers", {})
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def get(self, *args, **kwargs):
+            resp = MagicMock()
+            resp.status_code = 200
+            resp.headers = {"content-length": str(total_size)}
+            return resp
+
+        def stream(self, method, stream_url):
+            nonlocal call_count
+            call_count += 1
+
+            class NonRangeCtx:
+                async def __aenter__(self_ctx):
+                    return NonRangeResponse()
+
+                async def __aexit__(self_ctx, *args):
+                    pass
+
+            return NonRangeCtx()
+
+    with patch("httpx.AsyncClient", NonRangeAsyncClient), \
+         patch.object(downloader, "is_valid_downloaded_video", return_value=True):
+
+        res_path = await downloader._download_httpx(url, dest_dir, "non_range.mp4", None)
+
+        assert os.path.exists(res_path)
+        assert os.path.getsize(res_path) == 500
+        with open(res_path, "rb") as f:
+            content = f.read()
+            assert content == b"B" * total_size

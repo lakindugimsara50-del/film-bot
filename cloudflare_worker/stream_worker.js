@@ -84,13 +84,16 @@ async function proxyStream(request, routeInfo, env, corsHeaders) {
   const secFetchDest = (request.headers.get('Sec-Fetch-Dest') || '').toLowerCase();
   const clientUA = request.headers.get('User-Agent') || '';
   const isDownloaderUA = /idm|adm|1dm|fdm|aria2|curl|wget|python|httpx|aiohttp|download/i.test(clientUA);
+  const xDownload = request.headers.get('X-Download') === '1' || request.headers.get('X-Purpose') === 'download';
   const isDownload = Boolean(
     isRouteDl
     || url.searchParams.get('dl') === '1'
     || url.searchParams.get('download') === '1'
+    || url.searchParams.has('dl')
     || url.pathname.includes('/download/')
     || secFetchDest === 'document'
     || secFetchDest === 'download'
+    || xDownload
     || isDownloaderUA
   );
 
@@ -116,6 +119,9 @@ async function proxyStream(request, routeInfo, env, corsHeaders) {
   upstreamHeaders.set('User-Agent', clientUA || 'FilmSite-StreamWorker/1.0');
   if (request.headers.get('Sec-Fetch-Dest')) {
     upstreamHeaders.set('Sec-Fetch-Dest', request.headers.get('Sec-Fetch-Dest'));
+  }
+  if (isDownload) {
+    upstreamHeaders.set('X-Download', '1');
   }
 
   let upstreamResponse;

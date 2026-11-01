@@ -96,7 +96,7 @@ async def _search_pahe(title: str, year: Optional[int], client: httpx.AsyncClien
                 for host_name, pattern in DDL_HOST_PATTERNS.items():
                     matches = re.findall(pattern, page_text, re.IGNORECASE)
                     for m in matches:
-                        direct = resolve_direct_url(m)
+                        direct = resolve_direct_url(m, for_download=True)
                         downloads.append({
                             "host": host_name,
                             "url": m,
@@ -165,7 +165,7 @@ async def _search_psarips(title: str, year: Optional[int], client: httpx.AsyncCl
                 for host_name, pattern in DDL_HOST_PATTERNS.items():
                     matches = re.findall(pattern, page_text, re.IGNORECASE)
                     for m in matches:
-                        direct = resolve_direct_url(m)
+                        direct = resolve_direct_url(m, for_download=True)
                         downloads.append({
                             "host": host_name,
                             "url": m,

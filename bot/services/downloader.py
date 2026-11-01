@@ -282,6 +282,8 @@ async def _download_aria2c_http(
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         f"--referer={ref}",
         f"--header=Referer: {ref}",
+        "--header=X-Download: 1",
+        "--header=Sec-Fetch-Dest: download",
         "--summary-interval=1",
         "--console-log-level=warn",
         "--allow-overwrite=true",
@@ -523,6 +525,9 @@ async def _download_httpx(
                             raise
                         await asyncio.sleep(1.0 * (w_attempt + 1))
 
+                if cur_pos <= end_byte:
+                    raise RuntimeError(f"Worker {worker_idx} ended prematurely at {cur_pos}/{end_byte}")
+
             tasks = []
             for i in range(num_workers):
                 sb = i * part_size
@@ -575,13 +580,18 @@ async def _download_httpx(
                         out_name = cd_match.group(1).strip()
                         local_path = os.path.join(dest_dir, out_name)
 
+                    if downloaded_cnt > 0 and resp.status_code == 200:
+                        log.warning("[Downloader] Server ignored Range header on resume, resetting to byte 0")
+                        downloaded_cnt = 0
+
                     if total_size <= 0:
                         cr = resp.headers.get("content-range", "")
                         m_cr = re.search(r"/(\d+)$", cr)
                         if m_cr:
                             total_size = int(m_cr.group(1))
                         else:
-                            total_size = int(resp.headers.get("content-length", 0))
+                            c_len = int(resp.headers.get("content-length", 0))
+                            total_size = (downloaded_cnt + c_len) if c_len else 0
 
                     total = total_size
 

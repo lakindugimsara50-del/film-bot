@@ -123,6 +123,9 @@ def parse_query(text: str) -> ParsedQuery:
       /boost@Bot Inception 2010
     """
     raw = re.sub(r"^/(?:leechseries|series|batch|leech|auto|boost)(?:@\w+)?\s*", "", text.strip())
+    # Clean any stray flags (--auto, --strict-cinesubz, etc.) so they never pollute movie titles
+    raw = re.sub(r"--[a-zA-Z0-9_-]+", " ", raw).strip()
+    raw = re.sub(r"\s+", " ", raw)
 
     # Check for magnet
     if raw.startswith("magnet:?"):
@@ -527,22 +530,26 @@ async def _execute_leech(
     clean_query = (query_text or "").strip()
     lower_q = clean_query.lower()
     is_strict_cinesubz = False
-    if "--strict-cinesubz" in lower_q or "--strict-portal" in lower_q or "--cinesubz-only" in lower_q:
+    if re.search(r"--(?:strict-cinesubz|strict-portal|cinesubz-only)(?:\s+|$)", clean_query, re.IGNORECASE):
         is_strict_cinesubz = True
-        clean_query = re.sub(r"\b(--strict-cinesubz|--strict-portal|--cinesubz-only)\b", "", clean_query, flags=re.IGNORECASE).strip()
+        clean_query = re.sub(r"--(?:strict-cinesubz|strict-portal|cinesubz-only)(?:\s+|$)", " ", clean_query, flags=re.IGNORECASE).strip()
         lower_q = clean_query.lower()
-    if "--draft" in lower_q or "-d" in clean_query.split():
+    if re.search(r"--draft(?:\s+|$)|(?:\s+|^)-d(?:\s+|$)", clean_query, re.IGNORECASE):
         is_auto_mode = False  # Manual choice buttons shown only with --draft
-        clean_query = re.sub(r"\b(--draft|-d)\b", "", clean_query).strip()
-    elif "--auto" in lower_q or "-a" in clean_query.split():
+        clean_query = re.sub(r"--draft(?:\s+|$)|(?:\s+|^)-d(?:\s+|$)", " ", clean_query, flags=re.IGNORECASE).strip()
+    elif re.search(r"--auto(?:\s+|$)|(?:\s+|^)-a(?:\s+|$)", clean_query, re.IGNORECASE):
         is_auto_mode = True
-        clean_query = re.sub(r"\b(--auto|-a)\b", "", clean_query).strip()
+        clean_query = re.sub(r"--auto(?:\s+|$)|(?:\s+|^)-a(?:\s+|$)", " ", clean_query, flags=re.IGNORECASE).strip()
     elif lower_q.startswith("auto "):
         is_auto_mode = True
         clean_query = clean_query[5:].strip()
     elif lower_q.endswith(" auto"):
         is_auto_mode = True
         clean_query = clean_query[:-5].strip()
+
+    # Strip any remaining CLI flags and normalize whitespace
+    clean_query = re.sub(r"--[a-zA-Z0-9_-]+", " ", clean_query).strip()
+    clean_query = re.sub(r"\s+", " ", clean_query)
 
     parsed = parse_query(clean_query)
     title, year, imdb_id, direct_link = parsed
@@ -568,6 +575,20 @@ async def _execute_leech(
             )
         except Exception as exc:
             log.warning("[LeechService] TMDB fetch by title failed: %s", exc)
+
+        # Secondary fallback: Clean up title (remove AKA, remove duplicated year, remove noise) and re-query TMDB
+        if not tmdb_meta:
+            clean_search_title = re.sub(r"(?i)\s+AKA\s+.*$", "", title).strip()
+            clean_search_title = re.sub(r"\s+(?:19\d\d|20\d\d)\b.*$", "", clean_search_title).strip()
+            clean_search_title = re.sub(r"--[a-zA-Z0-9_-]+", "", clean_search_title).strip()
+            if clean_search_title and clean_search_title.lower() != title.lower():
+                try:
+                    log.info("[LeechService] Retrying TMDB with cleaned title: '%s' (year: %s)", clean_search_title, year)
+                    tmdb_meta = await tmdb_service.fetch_metadata(
+                        clean_search_title, year, is_series=is_series, season=season, episode=episode
+                    )
+                except Exception as fb_exc:
+                    log.warning("[LeechService] TMDB fallback fetch failed: %s", fb_exc)
 
     user_specified_year = parsed.year
     if tmdb_meta:

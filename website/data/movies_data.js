@@ -13361,13 +13361,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "irumadi-2026",
       "slug": "irumadi-2026",
-      "title": "irumadi",
+      "title": "Irumudi",
       "title_si": "",
       "year": 2026,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "imdb": "6.4",
+      "rating": "6.4",
+      "imdb_id": "tt39108319",
+      "tmdb_id": "1441228",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -13375,11 +13375,15 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/dVFtTKMWW1aq7aWq30wjwOP6W3J.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/dVFtTKMWW1aq7aWq30wjwOP6W3J.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/578jrGVEN4a5rxJGtkt9sMI2w6c.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/578jrGVEN4a5rxJGtkt9sMI2w6c.jpg",
+      "genres": [
+        "Drama",
+        "Action",
+        "Thriller"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": false,
@@ -13387,10 +13391,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": false,
       "sub_hardcoded": false,
       "quality": "1080p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "152 min",
+      "description": "An alcoholic with a violent past—living peacefully with his daughter beside a waterfall—decides to take Ayyappa Deeksha (a 41-day spiritual vow and period of intense austerity) at her request.",
+      "director": "Shiva Nirvana",
+      "cast": [
+        {
+          "name": "Ravi Teja",
+          "character": "Trinadh Rama Kasu"
+        },
+        {
+          "name": "Nakshathra C M",
+          "character": "Manikanta \"Manamma\""
+        },
+        {
+          "name": "Priya Bhavani Shankar",
+          "character": "Kaveri"
+        },
+        {
+          "name": "Sai Kumar",
+          "character": "Goparaju \"Guru Swamy\""
+        },
+        {
+          "name": "Ajay Ghosh",
+          "character": "Erraji"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQAD-Wq-25Xxu14QnD_ynm5qxs7VfPYcAALlJgACUXf5VYRcKXAEi_oLHgQ",
@@ -19313,13 +19338,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "chaos-walking-2021-auto-strict-cinesubz",
       "slug": "chaos-walking-2021-auto-strict-cinesubz",
-      "title": "Chaos Walking 2021 --auto --strict-cinesubz",
+      "title": "Chaos Walking",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2021,
+      "imdb": "6.5",
+      "rating": "6.5",
+      "imdb_id": "tt2076822",
+      "tmdb_id": "412656",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -19327,11 +19352,15 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/xAYGdGBGptNkisXRpmhZSry6SPF.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/xAYGdGBGptNkisXRpmhZSry6SPF.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/qCPLtXrTB10UsgAFxsWOB44gDPu.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/qCPLtXrTB10UsgAFxsWOB44gDPu.jpg",
+      "genres": [
+        "Fantasy",
+        "Science Fiction",
+        "Adventure"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -19339,10 +19368,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "720p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "109 min",
+      "description": "Two unlikely companions embark on a perilous adventure through the badlands of an unexplored planet as they try to escape a dangerous and disorienting reality, where all inner thoughts are seen and heard by everyone.",
+      "director": "Doug Liman",
+      "cast": [
+        {
+          "name": "Tom Holland",
+          "character": "Todd Hewitt"
+        },
+        {
+          "name": "Daisy Ridley",
+          "character": "Viola Eade"
+        },
+        {
+          "name": "Mads Mikkelsen",
+          "character": "Mayor David Prentiss"
+        },
+        {
+          "name": "Demián Bichir",
+          "character": "Ben Moore"
+        },
+        {
+          "name": "David Oyelowo",
+          "character": "Aaron"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXdq5vzpzYWKMBa6UKa41HK0OebGFQACOzAAAnN2OVefqt3ZX-0tLB4E",
@@ -19494,13 +19544,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "godzilla-vs-kong-2021-auto-strict-cinesubz",
       "slug": "godzilla-vs-kong-2021-auto-strict-cinesubz",
-      "title": "Godzilla vs. Kong 2021 --auto --strict-cinesubz",
+      "title": "Godzilla vs. Kong",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2021,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt5034838",
+      "tmdb_id": "399566",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -19508,11 +19558,15 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/pgqgaUx1cJb5oZQQ5v0tNARCeBp.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/pgqgaUx1cJb5oZQQ5v0tNARCeBp.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/wWqTMWkEw6HouLd1zPZbZWxtAPr.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/wWqTMWkEw6HouLd1zPZbZWxtAPr.jpg",
+      "genres": [
+        "Action",
+        "Science Fiction",
+        "Adventure"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -19520,10 +19574,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "720p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "114 min",
+      "description": "In a time when monsters walk the Earth, humanity’s fight for its future sets Godzilla and Kong on a collision course that will see the two most powerful forces of nature on the planet collide in a spectacular battle for the ages.",
+      "director": "Adam Wingard",
+      "cast": [
+        {
+          "name": "Alexander Skarsgård",
+          "character": "Nathan Lind"
+        },
+        {
+          "name": "Rebecca Hall",
+          "character": "Ilene Andrews"
+        },
+        {
+          "name": "Kaylee Hottle",
+          "character": "Jia"
+        },
+        {
+          "name": "Brian Tyree Henry",
+          "character": "Bernie Hayes"
+        },
+        {
+          "name": "Millie Bobby Brown",
+          "character": "Madison Russell"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYtq51mSxypmGIr05eceC-ZzaQuouAACVjkAAnN2OVeDpJO6W7hBvB4E",
@@ -19677,13 +19752,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "enforcement-aka-shorta-2020-auto-strict-cinesubz",
       "slug": "enforcement-aka-shorta-2020-auto-strict-cinesubz",
-      "title": "Enforcement AKA Shorta 2020 --auto --strict-cinesubz",
+      "title": "Enforcement",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2020,
+      "imdb": "6.3",
+      "rating": "6.3",
+      "imdb_id": "tt11081050",
+      "tmdb_id": "711017",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -19691,11 +19766,14 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/9At4gHXspTVG89nUZBJNM5zGmHm.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/9At4gHXspTVG89nUZBJNM5zGmHm.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/rVttzFfjuFABzVoafvUxwuGtgV8.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/rVttzFfjuFABzVoafvUxwuGtgV8.jpg",
+      "genres": [
+        "Action",
+        "Crime"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -19703,10 +19781,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "1080p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "108 min",
+      "description": "The exact details of what took place while Talib Ben Hassi was in police custody remain unclear. Police officers Jens and Mike are on routine patrol in Svalegården's ghetto when news of Talib's death comes in over the radio, igniting uncontrollable, pent-up rage in the ghetto's youth, who lust for revenge. Suddenly, the two officers find themselves fair game and must fight tooth and claw to find a way out.",
+      "director": "Frederik Louis Hviid, Anders Ølholm",
+      "cast": [
+        {
+          "name": "Jacob Lohmann",
+          "character": "Mike Andersen"
+        },
+        {
+          "name": "Simon Sears",
+          "character": "Jens Høyer"
+        },
+        {
+          "name": "Tarek Zayat",
+          "character": "Amos Al-Shami"
+        },
+        {
+          "name": "Issa Khattab",
+          "character": "Iza"
+        },
+        {
+          "name": "Abdelmalik Dhaflaoui",
+          "character": "Danjiel"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX5q5wiVWa4DNPKPUNTStDSL3_vCHQACfzEAAnN2OVc5Q_oNN3qDNh4E",
@@ -19873,13 +19972,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "mirugaa-2021-auto-strict-cinesubz",
       "slug": "mirugaa-2021-auto-strict-cinesubz",
-      "title": "Mirugaa 2021 --auto --strict-cinesubz",
+      "title": "Mirugaa",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2021,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt11640108",
+      "tmdb_id": "601256",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -19887,11 +19986,14 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/wQv2UNbW6uB5hpRc6yYybGVEt40.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/wQv2UNbW6uB5hpRc6yYybGVEt40.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/wO7DCVgditL0YxDiuRZAWumUppZ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/wO7DCVgditL0YxDiuRZAWumUppZ.jpg",
+      "genres": [
+        "Thriller",
+        "Crime"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -19899,10 +20001,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "720p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "130 min",
+      "description": "A serial killer gets hitched to a billionaire with the sole aim of looting her money. However, the presence of a man-eating tiger at the place they reside in becomes an obstacle to him.",
+      "director": "J. Parthiban",
+      "cast": [
+        {
+          "name": "Raai Laxmi",
+          "character": "Lakshmi"
+        },
+        {
+          "name": "Srikanth",
+          "character": "John"
+        },
+        {
+          "name": "Pandi",
+          "character": ""
+        },
+        {
+          "name": "Dev Gill",
+          "character": ""
+        },
+        {
+          "name": "Naira Shah",
+          "character": ""
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYFq5w4fgSYN8-7wYtyphYf9lZtPIgACDjIAAnN2OVe4x9NU5WW-Mx4E",
@@ -20054,13 +20177,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "salt-2021-auto-strict-cinesubz",
       "slug": "salt-2021-auto-strict-cinesubz",
-      "title": "Salt 2021 --auto --strict-cinesubz",
+      "title": "Salt",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2010,
+      "imdb": "6.4",
+      "rating": "6.4",
+      "imdb_id": "tt0944835",
+      "tmdb_id": "27576",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -20068,11 +20191,15 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/ppXyhOe8UCEOrBRSYqE3SkHwrcR.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/ppXyhOe8UCEOrBRSYqE3SkHwrcR.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/sgTnSgLfLAARam9Fz9CMblOBiwW.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/sgTnSgLfLAARam9Fz9CMblOBiwW.jpg",
+      "genres": [
+        "Action",
+        "Mystery",
+        "Thriller"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -20080,10 +20207,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "1080p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "100 min",
+      "description": "As a CIA officer, Evelyn Salt swore an oath to duty, honor, and country. Her loyalty will be tested when a Russian defector accuses her of being a Russian sleeper spy. She goes on the run, using all her skills and years of experience as a covert operative to elude capture, protect her husband, and stay one step ahead of her colleagues at the CIA. Her efforts to prove her innocence only serve to cast doubt on her motives, as the hunt to uncover the truth behind her identity continues and the question remains: \"Who is Salt?\"",
+      "director": "Phillip Noyce",
+      "cast": [
+        {
+          "name": "Angelina Jolie",
+          "character": "Evelyn Salt"
+        },
+        {
+          "name": "Liev Schreiber",
+          "character": "Theodore Winter"
+        },
+        {
+          "name": "Chiwetel Ejiofor",
+          "character": "Darryl Peabody"
+        },
+        {
+          "name": "Daniel Olbrychski",
+          "character": "Oleg Vasilyevich Orlov"
+        },
+        {
+          "name": "August Diehl",
+          "character": "Mike Krause"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYhq5xa4PgmB-Q8BwdkHNs2pqwHv-AAC5jIAAnN2OVdFUfITLYtREx4E",
@@ -20250,13 +20398,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
     {
       "id": "sugriva-2026-auto-strict-cinesubz",
       "slug": "sugriva-2026-auto-strict-cinesubz",
-      "title": "Sugriva 2026 --auto --strict-cinesubz",
+      "title": "Sugriva",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2026,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt39558804",
+      "tmdb_id": "1799570",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -20264,11 +20412,15 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/dtnutjXr4bXhwfniuX4jaSholLT.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/dtnutjXr4bXhwfniuX4jaSholLT.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/15RG8RGQZ5Vopb9EPLdhq74ptLd.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/15RG8RGQZ5Vopb9EPLdhq74ptLd.jpg",
+      "genres": [
+        "Action",
+        "Drama",
+        "Thriller"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -20276,10 +20428,31 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "720p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "96 min",
+      "description": "Balu leads a quiet life with his wife Prashanthi and young daughter Akshara until an accident leaves the girl in hospital, needing a surgery that costs 50 lakh rupees. Out of options, the desperate father turns to a powerful mafia boss and is drawn into the underworld, where he must rely on his strength and wits to save his family.",
+      "director": "Narthu Chiranjeevi",
+      "cast": [
+        {
+          "name": "Balu Charan",
+          "character": "Balu"
+        },
+        {
+          "name": "Kajal Tiwari",
+          "character": "Prashanthi"
+        },
+        {
+          "name": "Sai Krupa",
+          "character": ""
+        },
+        {
+          "name": "Suman Shetty",
+          "character": ""
+        },
+        {
+          "name": "Karan Vijay",
+          "character": ""
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY5q55xMeAxwDR5hk23ITLrLFVEdbgACnT4AAnN2OVdAa-C99WDpux4E",

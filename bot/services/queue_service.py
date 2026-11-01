@@ -39,7 +39,7 @@ class QueueItem:
 
 class QueueService:
     def __init__(self):
-        self._queue: Optional[asyncio.Queue] = None
+        self._queue: asyncio.Queue = asyncio.Queue()
         self._pending_items: List[QueueItem] = []
         self._is_worker_running = False
         self._active_item: Optional[QueueItem] = None
@@ -51,6 +51,18 @@ class QueueService:
         if self._queue is None:
             self._queue = asyncio.Queue()
         return self._queue
+
+    def is_user_busy(self, user_id: Optional[int] = None) -> bool:
+        """Check if user currently has an active task running or items pending in queue."""
+        if self._active_item and (user_id is None or self._active_item.user_id == user_id) and not self._active_item.is_cancelled:
+            return True
+        for task, item in self._active_tasks.items():
+            if not task.done() and (user_id is None or item.user_id == user_id) and not item.is_cancelled:
+                return True
+        for item in self._pending_items:
+            if (user_id is None or item.user_id == user_id) and not item.is_cancelled:
+                return True
+        return False
 
     def start_worker(self) -> None:
         """Start background queue consumer."""
@@ -305,6 +317,7 @@ queue_service = QueueService()
 # Module-level alias exports
 add_to_queue = queue_service.add_to_queue
 is_idle = queue_service.is_idle
+is_user_busy = queue_service.is_user_busy
 can_accept_next = queue_service.can_accept_next
 cancel_user = queue_service.cancel_user
 get_queue_status = queue_service.get_queue_status

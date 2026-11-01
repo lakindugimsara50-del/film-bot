@@ -574,17 +574,25 @@ class CineSubzCrawler:
                             # Enables Movie N+1 to download in background while Movie N is encoding & uploading!
                             log.info("[CineSubzCrawler] Waiting for pipeline slot before next item (current: '%s')...", item_label)
                             wait_ticks = 0
-                            max_wait_ticks = 150  # Max 12.5 minutes per item safeguard
-                            while self._is_running and not queue_service.can_accept_next() and wait_ticks < max_wait_ticks:
-                                self.status_detail = f"Pipelined processing '{item_label}' (Leech + Uploading)..."
+                            max_idle_safeguard_ticks = 720  # 60 minutes
+                            while self._is_running and not queue_service.can_accept_next():
+                                is_busy = queue_service.is_user_busy(self._admin_chat_id)
                                 wait_ticks += 1
+                                self.status_detail = f"Pipelined processing '{item_label}' (Leech + Uploading)..."
                                 if wait_ticks % 3 == 0:
                                     await self._update_status_msg()
-                                await asyncio.sleep(5.0)
 
-                            if wait_ticks >= max_wait_ticks:
-                                log.warning("[CineSubzCrawler] Item '%s' queue wait timed out after 12.5m. Cancelling and skipping...", item_label)
-                                queue_service.cancel_user(self._admin_chat_id)
+                                if not is_busy and wait_ticks > 6:
+                                    log.info("[CineSubzCrawler] User %s has no active tasks in queue. Proceeding...", self._admin_chat_id)
+                                    break
+
+                                if wait_ticks >= max_idle_safeguard_ticks:
+                                    log.warning("[CineSubzCrawler] Item '%s' queue wait reached safeguard timeout (60m). Checking status...", item_label)
+                                    if not is_busy:
+                                        break
+                                    wait_ticks = 0
+
+                                await asyncio.sleep(5.0)
 
                             self.last_completed_item = item_label
                             self.save_state()
@@ -666,11 +674,24 @@ class CineSubzCrawler:
 
                                 # Pipelined waiting: wait until queue pipeline has capacity for next episode
                                 wait_ticks_tv = 0
-                                while self._is_running and not queue_service.can_accept_next() and wait_ticks_tv < 150:
-                                    self.status_detail = f"Pipelined processing '{ep_tag}' (Leech + Uploading)..."
+                                max_idle_safeguard_tv = 720  # 60 minutes
+                                while self._is_running and not queue_service.can_accept_next():
+                                    is_busy_tv = queue_service.is_user_busy(self._admin_chat_id)
                                     wait_ticks_tv += 1
+                                    self.status_detail = f"Pipelined processing '{ep_tag}' (Leech + Uploading)..."
                                     if wait_ticks_tv % 3 == 0:
                                         await self._update_status_msg()
+
+                                    if not is_busy_tv and wait_ticks_tv > 6:
+                                        log.info("[CineSubzCrawler] User %s has no active TV tasks in queue. Proceeding...", self._admin_chat_id)
+                                        break
+
+                                    if wait_ticks_tv >= max_idle_safeguard_tv:
+                                        log.warning("[CineSubzCrawler] Episode '%s' queue wait reached safeguard timeout (60m). Checking status...", ep_tag)
+                                        if not is_busy_tv:
+                                            break
+                                        wait_ticks_tv = 0
+
                                     await asyncio.sleep(5.0)
 
                                 self.last_completed_item = ep_tag

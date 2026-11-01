@@ -1596,6 +1596,7 @@ async def _execute_leech(
                                         is_hardsub=q_cand_is_hardsub,
                                         cover_watermark=is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
                                         trim_start=10.0,
+                                        prepend_intro=True,
                                     )
                                     actual_comp = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else comp_out
                                     if comp_res and os.path.exists(actual_comp) and 0 < os.path.getsize(actual_comp) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
@@ -1606,26 +1607,30 @@ async def _execute_leech(
                                             pass
                                         c_dl = actual_comp
                                         c_size_bytes = os.path.getsize(c_dl)
-                                        log.info("[LeechService] Compression complete for %s: %s (path=%s)", q_name, downloader.format_bytes(c_size_bytes), c_dl)
-                                        intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
+                                        intro_already_prepended = True
+                                        log.info("[LeechService] Single-pass compression + intro + watermark cover complete for %s: %s (path=%s)", q_name, downloader.format_bytes(c_size_bytes), c_dl)
 
-                                        async def _intro_comp_cb(pct: float, p_str: str):
-                                            companion_progress[q_name].update({
-                                                "stage": "processing",
-                                                "dl_pct": pct,
-                                                "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Intro {p_str}",
-                                            })
-                                            await _update_multi_dl_display()
+                                        if not intro_already_prepended:
+                                            intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
 
-                                        if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0, progress_callback=_intro_comp_cb):
-                                            try:
-                                                if os.path.abspath(c_dl) != os.path.abspath(intro_out):
-                                                    os.remove(c_dl)
-                                            except Exception:
-                                                pass
-                                            c_dl = intro_out
-                                            c_size_bytes = os.path.getsize(c_dl)
-                                            log.info("[LeechService] Successfully prepended 5s FilmZilla intro to compressed %s [%s]", slug, q_name)
+                                            async def _intro_comp_cb(pct: float, p_str: str):
+                                                companion_progress[q_name].update({
+                                                    "stage": "processing",
+                                                    "dl_pct": pct,
+                                                    "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Intro {p_str}",
+                                                })
+                                                await _update_multi_dl_display()
+
+                                            if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0, progress_callback=_intro_comp_cb):
+                                                try:
+                                                    if os.path.abspath(c_dl) != os.path.abspath(intro_out):
+                                                        os.remove(c_dl)
+                                                except Exception:
+                                                    pass
+                                                c_dl = intro_out
+                                                c_size_bytes = os.path.getsize(c_dl)
+                                                intro_already_prepended = True
+                                                log.info("[LeechService] Successfully prepended 5s FilmZilla intro to compressed %s [%s]", slug, q_name)
                                     else:
                                         log.error("[LeechService] Compression failed or output exceeds MTProto limit for %s. Skipping doomed upload.", q_name)
                                         companion_progress[q_name].update({
@@ -1934,6 +1939,7 @@ async def _execute_leech(
             )
         )
         was_trimmed_10s = False
+        intro_already_prepended = False
         if not is_already_pipelined_and_uploaded and local_file and os.path.exists(local_file):
             seq_trim_out = os.path.join(temp_dir, f"trimmed_primary_{slug}.mp4")
             if await video_service.trim_video_start(local_file, seq_trim_out, start_seconds=10.0):
@@ -1955,6 +1961,7 @@ async def _execute_leech(
                 except Exception:
                     pass
                 local_file = intro_primary_out
+                intro_already_prepended = True
                 log.info("[LeechService] Successfully prepended 5s FilmZilla intro to primary video %s", slug)
 
         curr_size = os.path.getsize(local_file)
@@ -2177,9 +2184,13 @@ async def _execute_leech(
                     sub_path=sub_to_burn_video,
                     is_hardsub=is_already_hardsubbed,
                     cover_watermark=is_cinesubz_cand and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
+                    trim_start=0.0 if was_trimmed_10s else 10.0,
+                    prepend_intro=not intro_already_prepended,
                 )
                 actual_remuxed = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else remuxed
                 if comp_res and os.path.exists(actual_remuxed) and 0 < os.path.getsize(actual_remuxed) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
+                    intro_already_prepended = True
+                    was_trimmed_10s = True
                     if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(actual_remuxed):
                         try:
                             os.remove(local_file)

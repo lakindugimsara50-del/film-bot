@@ -104,11 +104,12 @@ class GPUDevicePool:
 
         if not devs:
             devs = [0]
-        # If single GPU, allow 2 parallel NVENC slots so 720p and 480p don't block each other.
-        # If multiple GPUs (e.g. Kaggle T4 x2), allocate 1 dedicated slot per physical GPU!
+        # Multi-quality (1080p, 720p, 480p) simultaneous hardware encoding:
+        # Dual/Multi GPU (e.g. Kaggle Dual T4): allocate 2 concurrent NVENC slots per physical GPU ([0, 1, 0, 1] = 4 slots)!
+        # Single GPU (e.g. Colab / Kaggle 1x T4): allocate 3 concurrent NVENC slots ([dev, dev, dev]) so 1080p, 720p, 480p all encode concurrently.
         if len(devs) == 1:
-            return [devs[0], devs[0]]
-        return devs
+            return [devs[0], devs[0], devs[0]]
+        return [d for _ in range(2) for d in devs]
 
     async def _ensure_queue(self):
         if self._lock is None:
@@ -129,9 +130,12 @@ class GPUDevicePool:
         return self._queue.empty()
 
     @asynccontextmanager
-    async def acquire(self):
+    async def acquire(self, timeout: Optional[float] = None):
         await self._ensure_queue()
-        gpu_id = await self._queue.get()
+        if timeout is not None:
+            gpu_id = await asyncio.wait_for(self._queue.get(), timeout=timeout)
+        else:
+            gpu_id = await self._queue.get()
         try:
             yield gpu_id
         finally:
@@ -1095,12 +1099,14 @@ async def compress_video(
     cover_watermark: bool = False,
     badge_path: Optional[str] = None,
     trim_start: float = 0.0,
+    prepend_intro: bool = False,
 ) -> bool:
     """
     Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
     (target ~1.90GB safe ceiling to maximize 1080p visual fidelity) using multi-core CPU or GPU NVENC.
     Calculates exact target bitrate from video duration to guarantee the output never exceeds
     the Telegram Bot 1.95GB limit while preserving sharp resolution, audio fidelity, and crisp detail.
+    Supports single-pass 10s intro trim, watermark cover, and 5s FilmZilla intro prepending.
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
@@ -1113,6 +1119,18 @@ async def compress_video(
 
     out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
     os.makedirs(out_dir, exist_ok=True)
+
+    in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
+    if in_w <= 0:
+        in_w = 1280
+    if in_h <= 0:
+        in_h = 720
+
+    intro_video = None
+    if prepend_intro:
+        intro_video = get_or_create_filmzilla_intro(in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
+        if intro_video and not os.path.exists(intro_video):
+            intro_video = None
 
     # Disk space safety check: ensure disk/RAM has sufficient space for input + output
     try:
@@ -1147,9 +1165,11 @@ async def compress_video(
     requested_output_path = output_path
     raw_duration = get_video_duration(input_path, ffmpeg_bin)
     duration = max(1.0, raw_duration - trim_start) if trim_start > 0 else raw_duration
+    if intro_video:
+        duration += 5.0
     in_bytes = os.path.getsize(input_path)
-    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, raw=%.1fs, trim_start=%.1fs, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
-             input_path, duration, raw_duration, trim_start, in_bytes, output_path, target_size_bytes, is_hardsub)
+    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, raw=%.1fs, trim_start=%.1fs, intro=%s, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
+             input_path, duration, raw_duration, trim_start, bool(intro_video), in_bytes, output_path, target_size_bytes, is_hardsub)
 
     # Calculate optimal target bitrate with ~4% margin reserved for container/muxing overhead
     audio_bps = 128_000
@@ -1219,6 +1239,12 @@ async def compress_video(
     cmd.extend(["-i", os.path.abspath(input_path)])
 
     next_input_idx = 1
+    intro_input_idx = -1
+    if intro_video:
+        cmd.extend(["-i", os.path.abspath(intro_video)])
+        intro_input_idx = next_input_idx
+        next_input_idx += 1
+
     sub_input_idx = -1
     if has_sub:
         cmd.extend(["-i", os.path.abspath(sub_path)])
@@ -1231,13 +1257,37 @@ async def compress_video(
         badge_input_idx = next_input_idx
         next_input_idx += 1
 
-    if has_badge_img:
-        in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
-        if in_w <= 0:
-            in_w = 1280
-        # Scaled to CineSubz exact footprint and placed flush at the bottom-left corner
-        badge_w = max(100, min(220, int(in_w * 0.115)))
-        ox = 0
+    badge_w = max(100, min(220, int(in_w * 0.115)))
+    ox = 0
+    bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+    by = f"ih-{bh}"
+
+    if intro_video:
+        filter_parts = [
+            f"[{intro_input_idx}:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro]",
+            f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main]",
+            f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined]",
+        ]
+        curr_v = "[v_joined]"
+        if has_badge_img:
+            filter_parts.append(f"[{badge_input_idx}:v]scale={badge_w}:-1[badge]")
+            filter_parts.append(f"{curr_v}[badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[v_badged]")
+            curr_v = "[v_badged]"
+        elif has_fallback_box:
+            filter_parts.append(f"{curr_v}drawbox=x=0:y={by}:w={badge_w}:h={bh}:color=black@0.95:t=fill:enable='gte(t,5.0)'[v_badged]")
+            curr_v = "[v_badged]"
+
+        if burn_vf:
+            filter_parts.append(f"{curr_v}{burn_vf}[v_out]")
+        else:
+            filter_parts.append(f"{curr_v}null[v_out]")
+
+        filter_parts.append(f"[{intro_input_idx}:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_intro]")
+        filter_parts.append(f"[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_main]")
+        filter_parts.append(f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]")
+
+        cmd.extend(["-filter_complex", ";".join(filter_parts), "-map", "[v_out]", "-map", "[outa]"])
+    elif has_badge_img:
         filter_complex = (
             f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
             f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h"
@@ -1245,23 +1295,15 @@ async def compress_video(
         if burn_vf:
             filter_complex += f",{burn_vf}"
         filter_complex += "[v_out]"
-        cmd.extend(["-filter_complex", filter_complex, "-map", "[v_out]"])
+        cmd.extend(["-filter_complex", filter_complex, "-map", "[v_out]", "-map", "0:a:0?"])
     elif has_fallback_box:
-        in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
-        if in_w <= 0:
-            in_w = 1280
-        bw = max(100, min(220, int(in_w * 0.115)))
-        bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
-        by = f"ih-{bh}"
-        box_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+        box_str = f"drawbox=x=0:y={by}:w={badge_w}:h={bh}:color=black@0.95:t=fill"
         full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
-        cmd.extend(["-map", "0:v:0", "-vf", full_vf])
+        cmd.extend(["-map", "0:v:0", "-vf", full_vf, "-map", "0:a:0?"])
     elif burn_vf:
-        cmd.extend(["-map", "0:v:0", "-vf", burn_vf])
+        cmd.extend(["-map", "0:v:0", "-vf", burn_vf, "-map", "0:a:0?"])
     else:
-        cmd.extend(["-map", "0:v:0"])
-
-    cmd.extend(["-map", "0:a:0?"])
+        cmd.extend(["-map", "0:v:0", "-map", "0:a:0?"])
 
     if has_sub and sub_input_idx != -1:
         cmd.extend([
@@ -1292,9 +1334,6 @@ async def compress_video(
             "-pix_fmt", "yuv420p",
         ])
     else:
-        # Multi-threaded CPU encoding:
-        # On Colab (_on_colab=True): use 'ultrafast' for 4x-5x speedup
-        # In test suite / local (_on_colab=False): use 'veryfast' to satisfy test expectations
         cpu_preset = "ultrafast" if _on_colab else "veryfast"
         cmd.extend([
             "-c:v", "libx264",
@@ -1308,104 +1347,165 @@ async def compress_video(
             "-pix_fmt", "yuv420p",
         ])
 
-    # Audio optimization: if source is already web-compatible AAC or MP3, stream-copy without re-encoding!
-    in_audio_codec = get_audio_codec(input_path, ffmpeg_bin)
-    if in_audio_codec and is_web_compatible_audio(in_audio_codec):
-        cmd.extend(["-c:a", "copy"])
-    else:
+    if intro_video:
         cmd.extend([
             "-c:a", "aac",
             "-b:a", "128k",
             "-ac", "2",
             "-af", "aresample=async=1",
         ])
+    else:
+        in_audio_codec = get_audio_codec(input_path, ffmpeg_bin)
+        if in_audio_codec and is_web_compatible_audio(in_audio_codec):
+            cmd.extend(["-c:a", "copy"])
+        else:
+            cmd.extend([
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-ac", "2",
+                "-af", "aresample=async=1",
+            ])
     cmd.extend(["-max_muxing_queue_size", "9999"])
     if is_mp4:
         cmd.extend(["-movflags", "+faststart"])
     cmd.append(os.path.abspath(output_path))
 
     proc = None
+    is_low_res = (in_h <= 500 or in_w <= 854)
+    use_cpu_fallback = False
+    gpu_slot_ctx = None
+    gpu_id = None
+
     try:
-        if _GPU_POOL.is_busy() and progress_callback:
-            try:
-                if asyncio.iscoroutinefunction(progress_callback):
-                    await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
-                else:
-                    progress_callback(0.0, "GPU Queued (Waiting for slot)...")
-            except Exception:
-                pass
-
-        async with _GPU_POOL.acquire() as gpu_id:
-            final_cmd = list(cmd)
-            if hw_enc == "h264_nvenc":
-                if "-hwaccel" in final_cmd:
-                    hw_idx = final_cmd.index("-hwaccel")
-                    final_cmd.insert(hw_idx + 2, "-hwaccel_device")
-                    final_cmd.insert(hw_idx + 3, str(gpu_id))
-                if "-c:v" in final_cmd:
-                    cv_idx = final_cmd.index("-c:v")
-                    final_cmd.insert(cv_idx + 2, "-gpu")
-                    final_cmd.insert(cv_idx + 3, str(gpu_id))
-
-            proc = await asyncio.create_subprocess_exec(
-                *final_cmd,
-                cwd=out_dir,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-
-            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
-            speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
-            fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
-            last_pct = 0.0
-
-            async def _read_stderr():
-                nonlocal last_pct
-                while True:
-                    if hasattr(proc.stderr, "read"):
-                        chunk = await proc.stderr.read(4096)
+        if hw_enc == "h264_nvenc":
+            if _GPU_POOL.is_busy() and progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
                     else:
-                        chunk = await proc.stderr.readline()
-                    if not chunk:
-                        break
-                    decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
-                    matches = time_pattern.findall(decoded)
-                    if matches and duration > 0:
-                        h, mm, ss = matches[-1]
-                        cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
-                        pct = min(99.0, (cur_secs / duration) * 100.0)
-                        if pct - last_pct >= 1.5:
-                            last_pct = pct
-                            speed_match = speed_pattern.search(decoded)
-                            fps_match = fps_pattern.search(decoded)
-                            speed_val = float(speed_match.group(1)) if speed_match else 0.0
-                            fps_val = float(fps_match.group(1)) if fps_match else 0.0
+                        progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                except Exception:
+                    pass
 
-                            detail_parts = [f"{pct:.1f}%"]
-                            if speed_val > 0:
-                                if fps_val > 0:
-                                    detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
+            acq_timeout = 10.0 if (is_low_res and _GPU_POOL.is_busy()) else None
+            try:
+                gpu_slot_ctx = _GPU_POOL.acquire(timeout=acq_timeout)
+                gpu_id = await gpu_slot_ctx.__aenter__()
+            except (asyncio.TimeoutError, TimeoutError):
+                log.info("[VideoService] GPU slots busy for >10s in compress_video. Falling back to multi-core CPU encoding for 480p/low-res...")
+                use_cpu_fallback = True
+                gpu_slot_ctx = None
+
+        final_cmd = list(cmd)
+        if use_cpu_fallback and hw_enc == "h264_nvenc":
+            cpu_enc_opts = [
+                "-c:v", "libx264",
+                "-preset", "ultrafast" if _on_colab else "veryfast",
+                "-threads", "0",
+                "-b:v", f"{v_bitrate_k}k",
+                "-maxrate", f"{maxrate_k}k",
+                "-bufsize", f"{bufsize_k}k",
+                "-profile:v", "high",
+                "-level:v", "4.1",
+                "-pix_fmt", "yuv420p",
+            ]
+            new_cmd = []
+            skip = 0
+            for idx, tok in enumerate(final_cmd):
+                if skip > 0:
+                    skip -= 1
+                    continue
+                if tok in ("-hwaccel", "-hwaccel_device"):
+                    skip = 1
+                    continue
+                if tok == "-c:v":
+                    new_cmd.extend(cpu_enc_opts)
+                    skip = len([
+                        "-c:v", "h264_nvenc",
+                        "-preset", nvenc_preset,
+                        "-tune", "hq",
+                        "-rc", "vbr",
+                        "-b:v", f"{v_bitrate_k}k",
+                        "-maxrate", f"{maxrate_k}k",
+                        "-bufsize", f"{bufsize_k}k",
+                        "-rc-lookahead", "32",
+                        "-profile:v", "high",
+                        "-spatial-aq", "1",
+                        "-temporal-aq", "1",
+                        "-pix_fmt", "yuv420p",
+                    ]) - 1
+                    continue
+                new_cmd.append(tok)
+            final_cmd = new_cmd
+        elif hw_enc == "h264_nvenc" and gpu_id is not None:
+            if "-hwaccel" in final_cmd:
+                hw_idx = final_cmd.index("-hwaccel")
+                final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                final_cmd.insert(hw_idx + 3, str(gpu_id))
+            if "-c:v" in final_cmd:
+                cv_idx = final_cmd.index("-c:v")
+                final_cmd.insert(cv_idx + 2, "-gpu")
+                final_cmd.insert(cv_idx + 3, str(gpu_id))
+
+        proc = await asyncio.create_subprocess_exec(
+            *final_cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+        fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+        last_pct = 0.0
+
+        async def _read_stderr():
+            nonlocal last_pct
+            while True:
+                if hasattr(proc.stderr, "read"):
+                    chunk = await proc.stderr.read(4096)
+                else:
+                    chunk = await proc.stderr.readline()
+                if not chunk:
+                    break
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                matches = time_pattern.findall(decoded)
+                if matches and duration > 0:
+                    h, mm, ss = matches[-1]
+                    cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                    pct = min(99.0, (cur_secs / duration) * 100.0)
+                    if pct - last_pct >= 1.5:
+                        last_pct = pct
+                        speed_match = speed_pattern.search(decoded)
+                        fps_match = fps_pattern.search(decoded)
+                        speed_val = float(speed_match.group(1)) if speed_match else 0.0
+                        fps_val = float(fps_match.group(1)) if fps_match else 0.0
+
+                        detail_parts = [f"{pct:.1f}%"]
+                        if speed_val > 0:
+                            if fps_val > 0:
+                                detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
+                            else:
+                                detail_parts.append(f"⚡ {speed_val:.1f}x")
+                            if duration > cur_secs:
+                                rem_s = int((duration - cur_secs) / speed_val)
+                                m_rem, s_rem = divmod(rem_s, 60)
+                                h_rem, m_rem = divmod(m_rem, 60)
+                                eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
+                                detail_parts.append(f"| ⏱ {eta_str}")
+
+                        p_str = " ".join(detail_parts)
+                        if progress_callback:
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    await progress_callback(pct, p_str)
                                 else:
-                                    detail_parts.append(f"⚡ {speed_val:.1f}x")
-                                if duration > cur_secs:
-                                    rem_s = int((duration - cur_secs) / speed_val)
-                                    m_rem, s_rem = divmod(rem_s, 60)
-                                    h_rem, m_rem = divmod(m_rem, 60)
-                                    eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
-                                    detail_parts.append(f"| ⏱ {eta_str}")
+                                    progress_callback(pct, p_str)
+                            except Exception:
+                                pass
 
-                            p_str = " ".join(detail_parts)
-                            if progress_callback:
-                                try:
-                                    if asyncio.iscoroutinefunction(progress_callback):
-                                        await progress_callback(pct, p_str)
-                                    else:
-                                        progress_callback(pct, p_str)
-                                except Exception:
-                                    pass
-
-            # Generous 1800s (30 minute) timeout to ensure long 3-hour movie compression finishes
-            await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
+        # Generous 1800s (30 minute) timeout to ensure long 3-hour movie compression finishes
+        await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             out_sz = os.path.getsize(output_path)
@@ -1506,6 +1606,11 @@ async def compress_video(
         _cleanup_output()
         return ""
     finally:
+        if gpu_slot_ctx:
+            try:
+                await gpu_slot_ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
         if proc and proc.returncode is None:
             try:
                 proc.terminate()
@@ -3040,18 +3145,58 @@ async def cover_cinesubz_watermark(
         total_target_duration = max(1.0, (duration - trim_start) + (5.0 if intro_video else 0.0))
         log.info("[VideoService] Executing single-pass watermark cover + intro (%s -> %s, trim_start=%.1fs, intro=%s, hwaccel=%s)...",
                  video_path, output_path, trim_start, bool(intro_video), bool(hw_opts))
-        if _GPU_POOL.is_busy() and progress_callback:
-            try:
-                if asyncio.iscoroutinefunction(progress_callback):
-                    await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
-                else:
-                    progress_callback(0.0, "GPU Queued (Waiting for slot)...")
-            except Exception:
-                pass
+        is_low_res = (in_h <= 500 or in_w <= 854)
+        use_cpu_fallback = False
+        gpu_slot_ctx = None
+        gpu_id = None
 
-        async with _GPU_POOL.acquire() as gpu_id:
+        if hw_enc == "h264_nvenc":
+            if _GPU_POOL.is_busy() and progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                    else:
+                        progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                except Exception:
+                    pass
+
+            acq_timeout = 10.0 if (is_low_res and _GPU_POOL.is_busy()) else None
+            try:
+                gpu_slot_ctx = _GPU_POOL.acquire(timeout=acq_timeout)
+                gpu_id = await gpu_slot_ctx.__aenter__()
+            except (asyncio.TimeoutError, TimeoutError):
+                log.info("[VideoService] All GPU slots busy for >10s. Falling back to multi-core CPU encoding for 480p/low-res...")
+                use_cpu_fallback = True
+                gpu_slot_ctx = None
+
+        try:
             final_cmd = list(cmd)
-            if hw_enc == "h264_nvenc":
+            if use_cpu_fallback and hw_enc == "h264_nvenc":
+                cpu_enc_opts = [
+                    "-c:v", "libx264",
+                    "-preset", "veryfast" if _on_colab else "faster",
+                    "-crf", "25",
+                    "-maxrate", f"{max_kbps}k",
+                    "-bufsize", f"{buf_kbps}k",
+                    "-threads", "0",
+                    "-pix_fmt", "yuv420p",
+                ]
+                new_cmd = []
+                skip = 0
+                for idx, tok in enumerate(final_cmd):
+                    if skip > 0:
+                        skip -= 1
+                        continue
+                    if tok in ("-hwaccel", "-hwaccel_device"):
+                        skip = 1
+                        continue
+                    if tok == "-c:v":
+                        new_cmd.extend(cpu_enc_opts)
+                        skip = len(enc_opts) - 1
+                        continue
+                    new_cmd.append(tok)
+                final_cmd = new_cmd
+            elif hw_enc == "h264_nvenc" and gpu_id is not None:
                 if "-hwaccel" in final_cmd:
                     hw_idx = final_cmd.index("-hwaccel")
                     final_cmd.insert(hw_idx + 2, "-hwaccel_device")
@@ -3139,6 +3284,12 @@ async def cover_cinesubz_watermark(
                         except Exception:
                             pass
                     raise
+        finally:
+            if gpu_slot_ctx:
+                try:
+                    await gpu_slot_ctx.__aexit__(None, None, None)
+                except Exception:
+                    pass
 
         if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
             if progress_callback:

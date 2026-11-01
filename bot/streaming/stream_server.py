@@ -628,13 +628,12 @@ async def stream_channel_message(
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response for unconstrained initial requests
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
-    sec_dest = (request.headers.get("sec-fetch-dest") or "").lower()
-    user_agent = (request.headers.get("user-agent") or "").lower()
-    is_downloader_ua = any(x in user_agent for x in ("idm", "1dm", "adm", "fdm", "aria2", "wget", "curl", "download"))
+    sec_dest = str(request.headers.get("sec-fetch-dest", "")).lower()
+    ua = str(request.headers.get("user-agent", "")).lower()
+    is_downloader_ua = any(tool in ua for tool in ("idm", "adm", "1dm", "fdm", "aria2", "curl", "wget", "python", "httpx", "aiohttp", "downlo"))
 
     is_download = bool(
         dl == 1
-        or str(dl or "").lower() in ("1", "true", "yes")
         or str(request.query_params.get("dl", "")).lower() in ("1", "true", "yes")
         or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
         or "/download/" in request.url.path
@@ -709,11 +708,18 @@ async def download_channel_message(chat_id: str, message_id: int, request: Reque
     return await stream_channel_message(chat_id, message_id, request, dl=1)
 
 
+@stream_router.get("/stream/download/{file_id}")
+@stream_router.head("/stream/download/{file_id}")
+async def download_by_file_id(file_id: str, request: Request, size: Optional[int] = None) -> Response:
+    """One-click binary download proxy for file_id with Content-Disposition header."""
+    return await stream_by_file_id(file_id, request, size=size, dl=1)
+
+
 @stream_router.get("/stream/file/{file_id}")
 @stream_router.get("/stream/{file_id}")
 @stream_router.head("/stream/file/{file_id}")
 @stream_router.head("/stream/{file_id}")
-async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] = None) -> Response:
+async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] = None, dl: Optional[int] = None) -> Response:
     """Stream directly by Telegram file_id with 16MB RAM header caching."""
     file_size = size or 1563733824
 
@@ -729,7 +735,7 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
                 "Access-Control-Allow-Headers": "Range, Content-Type",
-                "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
+                "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Disposition",
             },
         )
 
@@ -737,11 +743,17 @@ async def stream_by_file_id(file_id: str, request: Request, size: Optional[int] 
     MIN_SERVE = 8 * 1024 * 1024  # 8 MiB minimum response
     is_probe_range = explicit_end and (end - start + 1) <= 128
 
-    dl = request.query_params.get("dl")
+    sec_dest = str(request.headers.get("sec-fetch-dest", "")).lower()
+    ua = str(request.headers.get("user-agent", "")).lower()
+    is_downloader_ua = any(tool in ua for tool in ("idm", "adm", "1dm", "fdm", "aria2", "curl", "wget", "python", "httpx", "aiohttp", "downlo"))
+
     is_download = bool(
-        str(dl or "").lower() in ("1", "true", "yes")
+        dl == 1
+        or str(request.query_params.get("dl", "")).lower() in ("1", "true", "yes")
         or str(request.query_params.get("download", "")).lower() in ("1", "true", "yes")
         or "/download/" in request.url.path
+        or sec_dest in ("document", "download")
+        or is_downloader_ua
     )
 
     if is_download:

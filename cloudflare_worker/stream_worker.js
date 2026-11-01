@@ -30,7 +30,7 @@ function buildCorsHeaders(request, env) {
     'Access-Control-Allow-Origin':   allowOrigin,
     'Access-Control-Allow-Methods':  'GET, HEAD, OPTIONS',
     'Access-Control-Allow-Headers':  'Range, Content-Type, Authorization',
-    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Disposition',
     'Access-Control-Max-Age':        '86400',
     'Vary':                          'Origin',
   };
@@ -45,21 +45,33 @@ function isTokenValid(url, env) {
 
 // ── Route parser ─────────────────────────────────────────────────────────────
 function parseRoute(pathname) {
+  const matchDl = pathname.match(/^\/stream\/download\/([^/?#]+)$/);
+  if (matchDl) return { route: 'stream', fileId: decodeURIComponent(matchDl[1]), isDownload: true };
+  const matchFile = pathname.match(/^\/stream\/file\/([^/?#]+)$/);
+  if (matchFile) return { route: 'stream', fileId: decodeURIComponent(matchFile[1]) };
   const match = pathname.match(/^\/stream\/([^/?#]+)$/);
   if (match) return { route: 'stream', fileId: decodeURIComponent(match[1]) };
-  if (pathname === '/health') return { route: 'health' };
+  if (pathname === '/health' || pathname === '/ping') return { route: 'health' };
   return { route: 'not_found' };
 }
 
 // ── Build upstream URL ────────────────────────────────────────────────────────
-function buildUpstreamUrl(fileId, env) {
+function buildUpstreamUrl(fileId, env, search = '', isDownload = false) {
   const base = (env.VPS_STREAM_BASE_URL || '').replace(/\/$/, '');
   if (!base) throw new Error('VPS_STREAM_BASE_URL is not configured.');
-  return `${base}/${encodeURIComponent(fileId)}`;
+
+  const searchParams = new URLSearchParams(search);
+  if (isDownload && !searchParams.has('dl')) {
+    searchParams.set('dl', '1');
+  }
+  const qs = searchParams.toString();
+  return `${base}/${encodeURIComponent(fileId)}${qs ? '?' + qs : ''}`;
 }
 
 // ── Proxy the stream ──────────────────────────────────────────────────────────
-async function proxyStream(request, fileId, env, corsHeaders) {
+async function proxyStream(request, routeInfo, env, corsHeaders) {
+  const fileId = typeof routeInfo === 'string' ? routeInfo : routeInfo.fileId;
+  const isRouteDl = typeof routeInfo === 'object' && Boolean(routeInfo.isDownload);
   const url = new URL(request.url);
 
   if (!isTokenValid(url, env)) {
@@ -69,9 +81,22 @@ async function proxyStream(request, fileId, env, corsHeaders) {
     });
   }
 
+  const secFetchDest = (request.headers.get('Sec-Fetch-Dest') || '').toLowerCase();
+  const clientUA = request.headers.get('User-Agent') || '';
+  const isDownloaderUA = /idm|adm|1dm|fdm|aria2|curl|wget|python|httpx|aiohttp|download/i.test(clientUA);
+  const isDownload = Boolean(
+    isRouteDl
+    || url.searchParams.get('dl') === '1'
+    || url.searchParams.get('download') === '1'
+    || url.pathname.includes('/download/')
+    || secFetchDest === 'document'
+    || secFetchDest === 'download'
+    || isDownloaderUA
+  );
+
   let upstreamUrl;
   try {
-    upstreamUrl = buildUpstreamUrl(fileId, env);
+    upstreamUrl = buildUpstreamUrl(fileId, env, url.search, isDownload);
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status:  500,
@@ -88,7 +113,10 @@ async function proxyStream(request, fileId, env, corsHeaders) {
   if (env.VPS_INTERNAL_SECRET) {
     upstreamHeaders.set('X-Stream-Secret', env.VPS_INTERNAL_SECRET);
   }
-  upstreamHeaders.set('User-Agent', 'FilmSite-StreamWorker/1.0');
+  upstreamHeaders.set('User-Agent', clientUA || 'FilmSite-StreamWorker/1.0');
+  if (request.headers.get('Sec-Fetch-Dest')) {
+    upstreamHeaders.set('Sec-Fetch-Dest', request.headers.get('Sec-Fetch-Dest'));
+  }
 
   let upstreamResponse;
   try {
@@ -116,6 +144,7 @@ async function proxyStream(request, fileId, env, corsHeaders) {
   const passthroughHeaders = [
     'Content-Type', 'Content-Length', 'Content-Range',
     'Accept-Ranges', 'Cache-Control', 'ETag', 'Last-Modified',
+    'Content-Disposition',
   ];
   for (const h of passthroughHeaders) {
     const v = upstreamResponse.headers.get(h);
@@ -138,7 +167,8 @@ export default {
     const url    = new URL(request.url);
     const method = request.method.toUpperCase();
     const cors   = buildCorsHeaders(request, env);
-    const { route, fileId } = parseRoute(url.pathname);
+    const routeInfo = parseRoute(url.pathname);
+    const { route } = routeInfo;
 
     // CORS preflight
     if (method === 'OPTIONS') {
@@ -166,7 +196,7 @@ export default {
           headers: { Allow: 'GET, HEAD, OPTIONS', ...cors },
         });
       }
-      return proxyStream(request, fileId, env, cors);
+      return proxyStream(request, routeInfo, env, cors);
     }
 
     // 404

@@ -455,3 +455,209 @@ async def test_stream_by_file_id_download_returns_200_and_full_size():
     assert "attachment;" in resp.headers.get("Content-Disposition", "")
 
 
+@pytest.mark.asyncio
+async def test_download_by_file_id_endpoint():
+    """Verify download_by_file_id route serves full file with attachment Content-Disposition."""
+    file_size = 250 * 1024 * 1024
+    req = MagicMock(spec=Request)
+    req.headers = {}
+    req.query_params = {}
+    req.url = MagicMock()
+    req.url.path = "/stream/download/TestFileId123"
+    req.method = "GET"
+
+    resp = await stream_server.download_by_file_id("TestFileId123", req, size=file_size)
+
+    assert resp.status_code == 200
+    assert resp.headers.get("Content-Length") == str(file_size)
+    assert "attachment;" in resp.headers.get("Content-Disposition", "")
+    assert "Content-Range" not in resp.headers
+
+
+@pytest.mark.asyncio
+async def test_stream_channel_message_download_detected_by_downloader_ua():
+    """Downloader user-agents (IDM, curl, aria2) must trigger full download without 8MB cap."""
+    file_size = 400 * 1024 * 1024
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "Inception.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {
+            "range": "bytes=0-",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 (IDM 6.42/2)",
+        }
+        req.query_params = {}
+        req.url = MagicMock()
+        req.url.path = "/stream/channel/-100123/456"
+        req.method = "GET"
+
+        resp = await stream_server.stream_channel_message("-100123", 456, req)
+
+        assert resp.status_code == 206
+        assert resp.headers.get("Content-Length") == str(file_size)
+        assert resp.headers.get("Content-Range") == f"bytes 0-{file_size - 1}/{file_size}"
+        assert 'attachment; filename="Inception.mp4"' in resp.headers.get("Content-Disposition", "")
+
+
+@pytest.mark.asyncio
+async def test_stream_channel_message_download_detected_by_sec_fetch_dest():
+    """Browser download navigation (Sec-Fetch-Dest: document) must trigger full download."""
+    file_size = 600 * 1024 * 1024
+    dummy_info = {
+        "file_size": file_size,
+        "message": MagicMock(),
+        "mime_type": "video/mp4",
+        "file_name": "Interstellar.mp4",
+    }
+    with patch.object(stream_server.stream_pool, "get_media_info", return_value=dummy_info):
+        req = MagicMock(spec=Request)
+        req.headers = {
+            "sec-fetch-dest": "document",
+        }
+        req.query_params = {}
+        req.url = MagicMock()
+        req.url.path = "/stream/channel/-100123/789"
+        req.method = "GET"
+
+        resp = await stream_server.stream_channel_message("-100123", 789, req)
+
+        assert resp.status_code == 200
+        assert resp.headers.get("Content-Length") == str(file_size)
+        assert "Content-Range" not in resp.headers
+        assert 'attachment; filename="Interstellar.mp4"' in resp.headers.get("Content-Disposition", "")
+
+
+def test_method3_ddl_resolve_direct_url():
+    """Verify method3_ddl.resolve_direct_url resolves PixelDrain (standard and for_download) and GDrive."""
+    from services.scrapers import method3_ddl
+
+    # PixelDrain view link default
+    pd_url = "https://pixeldrain.com/u/abc12345"
+    assert method3_ddl.resolve_direct_url(pd_url) == "https://pixeldrain.com/api/file/abc12345"
+    assert method3_ddl.resolve_direct_url(pd_url, for_download=True) == "https://pixeldrain.com/api/file/abc12345?download"
+
+    # PixelDrain api file link
+    pd_api = "https://pixeldrain.com/api/file/xyz987"
+    assert method3_ddl.resolve_direct_url(pd_api) == "https://pixeldrain.com/api/file/xyz987"
+    assert method3_ddl.resolve_direct_url(pd_api, for_download=True) == "https://pixeldrain.com/api/file/xyz987?download"
+
+    # Google Drive view link
+    gd_url = "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OIvE2up0/view"
+    assert "drive.usercontent.google.com/download" in method3_ddl.resolve_direct_url(gd_url)
+    assert "confirm=t" in method3_ddl.resolve_direct_url(gd_url)
+
+
+@pytest.mark.asyncio
+async def test_downloader_ensures_dl_and_pixeldrain_params():
+    """Verify download_http automatically appends dl=1 to /stream/ URLs and ?download to pixeldrain."""
+    from services import downloader
+
+    captured_urls = []
+
+    async def fake_download_httpx(url, *args, **kwargs):
+        captured_urls.append(url)
+        return "/tmp/fake.mp4"
+
+    with patch.object(downloader, "find_aria2c", return_value=None), \
+         patch.object(downloader, "_download_httpx", side_effect=fake_download_httpx):
+
+        # /stream/ URL without query
+        await downloader.download_http("https://example.com/stream/channel/-100123/456", "/tmp")
+        assert captured_urls[-1] == "https://example.com/stream/channel/-100123/456?dl=1"
+
+        # /stream/ URL with existing query
+        await downloader.download_http("https://example.com/stream/channel/-100123/456?token=abc", "/tmp")
+        assert captured_urls[-1] == "https://example.com/stream/channel/-100123/456?token=abc&dl=1"
+
+        # PixelDrain API URL
+        await downloader.download_http("https://pixeldrain.com/api/file/abc12345", "/tmp")
+        assert captured_urls[-1] == "https://pixeldrain.com/api/file/abc12345?download"
+
+
+@pytest.mark.asyncio
+async def test_downloader_range_resumption_on_interrupted_stream(tmp_path):
+    """Verify _download_httpx resumes seamlessly with Range header when stream cuts off prematurely."""
+    import os
+    import tempfile
+    from services import downloader
+
+    dest_dir = str(tmp_path)
+    url = "https://example.com/stream/video.mp4"
+    total_size = 1000  # 1000 bytes
+
+    # Stream attempt 1: yields first 400 bytes, then drops
+    # Stream attempt 2: receives Range: bytes=400-, yields remaining 600 bytes
+    call_count = 0
+    requested_ranges = []
+
+    class FakeResponse:
+        def __init__(self, start_b, end_b):
+            self.status_code = 206 if start_b > 0 else 200
+            self.headers = {
+                "content-length": str(end_b - start_b),
+                "content-range": f"bytes {start_b}-{end_b - 1}/{total_size}",
+                "content-disposition": 'attachment; filename="test_resumed.mp4"',
+            }
+            self._start = start_b
+            self._end = end_b
+
+        def raise_for_status(self):
+            pass
+
+        async def aiter_bytes(self, chunk_size):
+            yield b"X" * (self._end - self._start)
+
+    class FakeAsyncClient:
+        def __init__(self, *args, **kwargs):
+            self.headers = kwargs.get("headers", {})
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+        async def get(self, *args, **kwargs):
+            resp = MagicMock()
+            resp.status_code = 200
+            resp.headers = {"content-length": str(total_size)}
+            return resp
+
+        def stream(self, method, stream_url):
+            nonlocal call_count
+            call_count += 1
+            range_header = self.headers.get("Range", "")
+            requested_ranges.append(range_header)
+
+            class StreamContext:
+                async def __aenter__(self_ctx):
+                    if call_count == 1:
+                        # Initial request without range or bytes=0- -> only yields 400 bytes (e.g. proxy cutoff)
+                        return FakeResponse(0, 400)
+                    else:
+                        # Resumed request from byte 400 -> yields remaining 600 bytes
+                        return FakeResponse(400, 1000)
+
+                async def __aexit__(self_ctx, *args):
+                    pass
+
+            return StreamContext()
+
+    with patch("httpx.AsyncClient", FakeAsyncClient), \
+         patch.object(downloader, "is_valid_downloaded_video", return_value=True):
+
+        res_path = await downloader._download_httpx(url, dest_dir, "test_resumed.mp4", None)
+
+        assert os.path.exists(res_path)
+        assert os.path.getsize(res_path) == 1000
+        assert call_count == 2
+        assert requested_ranges[0] == ""
+        assert requested_ranges[1] == "bytes=400-"
+
+
+
+

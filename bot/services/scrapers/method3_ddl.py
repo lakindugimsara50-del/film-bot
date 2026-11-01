@@ -40,15 +40,23 @@ PAHE_MIRRORS = ["https://pahe.ink/", "https://pahe.li/", "https://pahe.plus/"]
 PSARIPS_MIRRORS = ["https://psarips.net/", "https://psa.wf/"]
 
 
-def resolve_direct_url(url: str) -> Optional[str]:
+def resolve_direct_url(url: str, for_download: bool = False) -> Optional[str]:
     """
     Resolve third-party file host URLs to direct, raw downloadable HTTP endpoints.
-    Specifically converts PixelDrain view URLs to high-speed direct API download streams.
+    Specifically converts PixelDrain view URLs to high-speed direct API download streams,
+    and Google Drive view links to direct media endpoints.
     """
     pd_match = re.search(r"pixeldrain\.com/(?:u|api/file)/([a-zA-Z0-9_-]+)", url)
     if pd_match:
         file_id = pd_match.group(1)
-        return f"https://pixeldrain.com/api/file/{file_id}"
+        suffix = "?download" if for_download else ""
+        return f"https://pixeldrain.com/api/file/{file_id}{suffix}"
+
+    gd_match = re.search(r"drive\.google\.com/(?:file/d/|open\?id=)([a-zA-Z0-9_-]+)", url)
+    if gd_match:
+        file_id = gd_match.group(1)
+        return f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
+
     return None
 
 
@@ -75,7 +83,7 @@ async def _search_pahe(title: str, year: Optional[int], client: httpx.AsyncClien
                 link_tag = article.find("a", href=True)
                 if not link_tag:
                     continue
-                href = (link_tag.get("href") or "")
+                href = link_tag["href"]
                 if not href.startswith("http"):
                     href = base_url.rstrip("/") + "/" + href.lstrip("/")
 
@@ -146,7 +154,7 @@ async def _search_psarips(title: str, year: Optional[int], client: httpx.AsyncCl
                 link_tag = article.find("a", href=True)
                 if not link_tag:
                     continue
-                href = (link_tag.get("href") or "")
+                href = link_tag["href"]
 
                 page_resp = await client.get(href, headers=HEADERS, timeout=2.5)
                 if page_resp.status_code != 200:

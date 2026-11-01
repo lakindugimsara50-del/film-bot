@@ -215,7 +215,6 @@ async def find_all_candidates(
     original_title: Optional[str] = None,
     original_language: Optional[str] = None,
     skip_srilankan: bool = False,
-    strict_cinesubz: bool = False,
 ) -> list[LeechCandidate]:
     """
     Query all acquisition sources in priority order:
@@ -361,27 +360,17 @@ async def find_all_candidates(
                 log.info("[LeechService] Method 0 yielded %d same-site matched candidate(s). Using directly (no torrents queried).", len(matched_candidates))
                 return matched_candidates
 
-    # If no Lankan matched releases found, query secondary sources
-    # When strict_cinesubz is True, DO NOT query external torrents (YTS/EZTV/Torrentio)!
-    if strict_cinesubz:
-        results = await asyncio.gather(
-            _fetch_telegram(),
-            _fetch_ddl(),
-            return_exceptions=True,
-        )
-        tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
-        ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
-        tor_list = []
-    else:
-        results = await asyncio.gather(
-            _fetch_telegram(),
-            _fetch_ddl(),
-            _fetch_torrents(),
-            return_exceptions=True,
-        )
-        tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
-        ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
-        tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
+    # If no Lankan matched releases found, query Telegram, DDL, and Torrents concurrently
+    results = await asyncio.gather(
+        _fetch_telegram(),
+        _fetch_ddl(),
+        _fetch_torrents(),
+        return_exceptions=True,
+    )
+
+    tg_res = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else None
+    ddl_res = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else None
+    tor_list = results[2] if len(results) > 2 and isinstance(results[2], list) else []
 
     allowed_qualities = ("720p", "480p") if is_series_mode else ("1080p", "720p", "480p")
 
@@ -467,22 +456,7 @@ _find_candidates = find_all_candidates
 # immediately terminating aria2c subprocesses, FFmpeg, and purging storage.
 # ─────────────────────────────────────────────────────────────────────────────
 
-_download_lock: Optional[asyncio.Lock] = None
-_encode_upload_lock: Optional[asyncio.Lock] = None
-
-
-def _get_download_lock() -> asyncio.Lock:
-    global _download_lock
-    if _download_lock is None:
-        _download_lock = asyncio.Lock()
-    return _download_lock
-
-
-def _get_encode_upload_lock() -> asyncio.Lock:
-    global _encode_upload_lock
-    if _encode_upload_lock is None:
-        _encode_upload_lock = asyncio.Lock()
-    return _encode_upload_lock
+_leech_lock: Optional[asyncio.Lock] = None
 
 
 async def run_auto_leech(
@@ -494,18 +468,23 @@ async def run_auto_leech(
     auto_publish: bool = False,
 ) -> None:
     """
-    Public entry point: runs auto-leech with pipelined execution.
-    Phase 1 (Download) and Phase 2 (GPU Encode & Upload) are each synchronized with dedicated locks,
-    enabling candidate N+1 to download concurrently while candidate N is encoding on GPU and uploading!
+    Public entry point: runs auto-leech with direct cancellation propagation.
+    Directly awaits _execute_leech under _leech_lock so that task_tracker and callers
+    stay synchronized, and task cancellation immediately aborts the active operation.
     """
-    await _execute_leech(
-        client=client,
-        status_msg=status_msg,
-        user_id=user_id,
-        query_text=query_text,
-        reply_media=reply_media,
-        auto_publish=auto_publish,
-    )
+    global _leech_lock
+    if _leech_lock is None:
+        _leech_lock = asyncio.Lock()
+
+    async with _leech_lock:
+        await _execute_leech(
+            client=client,
+            status_msg=status_msg,
+            user_id=user_id,
+            query_text=query_text,
+            reply_media=reply_media,
+            auto_publish=auto_publish,
+        )
 
 
 async def _execute_leech(
@@ -526,11 +505,6 @@ async def _execute_leech(
     is_auto_mode = True  # Always publish by default
     clean_query = (query_text or "").strip()
     lower_q = clean_query.lower()
-    is_strict_cinesubz = False
-    if "--strict-cinesubz" in lower_q or "--strict-portal" in lower_q or "--cinesubz-only" in lower_q:
-        is_strict_cinesubz = True
-        clean_query = re.sub(r"\b(--strict-cinesubz|--strict-portal|--cinesubz-only)\b", "", clean_query, flags=re.IGNORECASE).strip()
-        lower_q = clean_query.lower()
     if "--draft" in lower_q or "-d" in clean_query.split():
         is_auto_mode = False  # Manual choice buttons shown only with --draft
         clean_query = re.sub(r"\b(--draft|-d)\b", "", clean_query).strip()
@@ -765,7 +739,7 @@ async def _execute_leech(
                                 extra=tg_direct,
                             )
                         )
-                elif not any(dom in direct_link.lower() for dom in sl_domains):
+                else:
                     candidates.append(
                         LeechCandidate(
                             method="direct",
@@ -807,22 +781,7 @@ async def _execute_leech(
                 is_series=is_series,
                 original_title=tmdb_meta.get("original_title"),
                 original_language=tmdb_meta.get("original_language"),
-                strict_cinesubz=is_strict_cinesubz,
             )
-
-        if not candidates and is_strict_cinesubz:
-            log.info("[LeechService] Strict CineSubz mode active: No CineSubz or direct streaming links found for '%s'. Skipping external torrents as requested.", display_title)
-            task_tracker.tracker.complete_task(user_id)
-            try:
-                await status_msg.edit_text(
-                    f"⏭️ <b>CineSubz සෘජු Link හමු නොවූ බැවින් skip කරන ලදී.</b>\n\n"
-                    f"🎬 <b>{display_title}</b>\n"
-                    f"<i>(Strict CineSubz Mode: බාහිර Torrent වලින් ලබා නොගෙන මඟහරින ලදී)</i>",
-                    parse_mode=ParseMode.HTML,
-                )
-            except Exception:
-                pass
-            return
 
         is_series_mode = bool(is_series or season is not None or episode is not None)
         if is_series_mode and candidates:
@@ -896,8 +855,6 @@ async def _execute_leech(
         attempted_idx = 0
         tried_fallback = False
 
-        # Phase 1: Pipelined Download — acquire dedicated download slot
-        await _get_download_lock().acquire()
         while candidate_queue:
             candidate = candidate_queue.pop(0)
             attempted_idx += 1
@@ -978,7 +935,7 @@ async def _execute_leech(
                     else:
                         status_line = f"⚡ <b>වේගය:</b> {speed_str} | ⏱ <b>ETA:</b> {eta_str}"
 
-                    _env_name = "Kaggle Cloud" if os.path.exists("/kaggle") else ("Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS")
+                    _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
                     text = (
                         f"📥 <b>පියවර 2/4: {cloud_service_name} ➔ {_env_name} වෙත බාගත කරමින්...</b>\n\n"
                         f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
@@ -1277,7 +1234,7 @@ async def _execute_leech(
                                 if not force and (now - last_edit_time < 2.5):
                                     return
 
-                                _env_name = "Kaggle Cloud" if os.path.exists("/kaggle") else ("Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS")
+                                _env_name = "Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS"
                                 lines = [
                                     f"⚡ <b>Parallel Multi-Quality Direct Download ➔ Pipelined Telegram Upload ({cand_portal or cand_host})</b>\n",
                                     f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}",
@@ -1439,7 +1396,7 @@ async def _execute_leech(
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
-                                            "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Processing {p_str}",
+                                            "detail": f"FilmZilla Processing {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
@@ -1460,26 +1417,6 @@ async def _execute_leech(
                                         c_size_bytes = os.path.getsize(c_dl)
                                         intro_already_prepended = True
                                         log.info("[LeechService] Successfully covered CineSubz watermark, prepended intro, and trimmed 10s on %s [%s]", slug, q_name)
-                                    else:
-                                        log.warning("[LeechService] cover_cinesubz_watermark failed for %s [%s]. Executing trim + intro fallback...", slug, q_name)
-                                        fb_trim = os.path.join(temp_dir, f"fb_trim_{slug}_{q_name}.mp4")
-                                        if await video_service.trim_video_start(c_dl, fb_trim, start_seconds=10.0):
-                                            try:
-                                                if os.path.abspath(c_dl) != os.path.abspath(fb_trim):
-                                                    os.remove(c_dl)
-                                            except Exception:
-                                                pass
-                                            c_dl = fb_trim
-                                        fb_intro = os.path.join(temp_dir, f"fb_intro_{slug}_{q_name}.mp4")
-                                        if await video_service.prepend_filmzilla_intro(c_dl, fb_intro, intro_duration=5.0):
-                                            try:
-                                                if os.path.abspath(c_dl) != os.path.abspath(fb_intro):
-                                                    os.remove(c_dl)
-                                            except Exception:
-                                                pass
-                                            c_dl = fb_intro
-                                            intro_already_prepended = True
-                                        c_size_bytes = os.path.getsize(c_dl)
                                 elif not needs_compression:
                                     # Non-CineSubz release <= 1.95GB: trim 10s intro via instant stream copy
                                     companion_progress[q_name].update({
@@ -1504,7 +1441,7 @@ async def _execute_leech(
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
-                                            "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Intro {p_str}",
+                                            "detail": f"FilmZilla Intro {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
@@ -1582,7 +1519,7 @@ async def _execute_leech(
                                         companion_progress[q_name].update({
                                             "stage": "compressing",
                                             "dl_pct": pct,
-                                            "dl_done": p_str if str(p_str).startswith("GPU Queued") else f"Compressing {p_str}",
+                                            "dl_done": f"Compressing {p_str}",
                                         })
                                         await _update_multi_dl_display()
 
@@ -1596,7 +1533,6 @@ async def _execute_leech(
                                         is_hardsub=q_cand_is_hardsub,
                                         cover_watermark=is_cinesubz_wm and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
                                         trim_start=10.0,
-                                        prepend_intro=True,
                                     )
                                     actual_comp = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else comp_out
                                     if comp_res and os.path.exists(actual_comp) and 0 < os.path.getsize(actual_comp) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
@@ -1607,30 +1543,26 @@ async def _execute_leech(
                                             pass
                                         c_dl = actual_comp
                                         c_size_bytes = os.path.getsize(c_dl)
-                                        intro_already_prepended = True
-                                        log.info("[LeechService] Single-pass compression + intro + watermark cover complete for %s: %s (path=%s)", q_name, downloader.format_bytes(c_size_bytes), c_dl)
+                                        log.info("[LeechService] Compression complete for %s: %s (path=%s)", q_name, downloader.format_bytes(c_size_bytes), c_dl)
+                                        intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
 
-                                        if not intro_already_prepended:
-                                            intro_out = os.path.join(temp_dir, f"intro_{slug}_{q_name}.mp4")
+                                        async def _intro_comp_cb(pct: float, p_str: str):
+                                            companion_progress[q_name].update({
+                                                "stage": "processing",
+                                                "dl_pct": pct,
+                                                "detail": f"FilmZilla Intro {p_str}",
+                                            })
+                                            await _update_multi_dl_display()
 
-                                            async def _intro_comp_cb(pct: float, p_str: str):
-                                                companion_progress[q_name].update({
-                                                    "stage": "processing",
-                                                    "dl_pct": pct,
-                                                    "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Intro {p_str}",
-                                                })
-                                                await _update_multi_dl_display()
-
-                                            if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0, progress_callback=_intro_comp_cb):
-                                                try:
-                                                    if os.path.abspath(c_dl) != os.path.abspath(intro_out):
-                                                        os.remove(c_dl)
-                                                except Exception:
-                                                    pass
-                                                c_dl = intro_out
-                                                c_size_bytes = os.path.getsize(c_dl)
-                                                intro_already_prepended = True
-                                                log.info("[LeechService] Successfully prepended 5s FilmZilla intro to compressed %s [%s]", slug, q_name)
+                                        if await video_service.prepend_filmzilla_intro(c_dl, intro_out, intro_duration=5.0, progress_callback=_intro_comp_cb):
+                                            try:
+                                                if os.path.abspath(c_dl) != os.path.abspath(intro_out):
+                                                    os.remove(c_dl)
+                                            except Exception:
+                                                pass
+                                            c_dl = intro_out
+                                            c_size_bytes = os.path.getsize(c_dl)
+                                            log.info("[LeechService] Successfully prepended 5s FilmZilla intro to compressed %s [%s]", slug, q_name)
                                     else:
                                         log.error("[LeechService] Compression failed or output exceeds MTProto limit for %s. Skipping doomed upload.", q_name)
                                         companion_progress[q_name].update({
@@ -1908,12 +1840,6 @@ async def _execute_leech(
                         log.info("[LeechService] Acquired %d fallback candidate(s). Adding to download queue.", len(fallback_cands))
                         candidate_queue.extend(fallback_cands)
 
-        if _get_download_lock().locked():
-            try:
-                _get_download_lock().release()
-            except RuntimeError:
-                pass
-
         if not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file):
             task_tracker.tracker.fail_task(user_id, "All download candidates failed.")
             await status_msg.edit_text(
@@ -1923,10 +1849,6 @@ async def _execute_leech(
                 parse_mode=ParseMode.HTML,
             )
             return
-
-        # Phase 2: Pipelined GPU Encode & Upload — acquire dedicated encode slot
-        # Allows candidate N+1 to download in parallel while candidate N encodes & uploads!
-        await _get_encode_upload_lock().acquire()
 
         # ── Step 2.5 & 2.6: Auto-Acquire Sinhala Subtitles + 12GB RAM MKV->MP4 & Sub Merge ──
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
@@ -1939,7 +1861,6 @@ async def _execute_leech(
             )
         )
         was_trimmed_10s = False
-        intro_already_prepended = False
         if not is_already_pipelined_and_uploaded and local_file and os.path.exists(local_file):
             seq_trim_out = os.path.join(temp_dir, f"trimmed_primary_{slug}.mp4")
             if await video_service.trim_video_start(local_file, seq_trim_out, start_seconds=10.0):
@@ -1961,7 +1882,6 @@ async def _execute_leech(
                 except Exception:
                     pass
                 local_file = intro_primary_out
-                intro_already_prepended = True
                 log.info("[LeechService] Successfully prepended 5s FilmZilla intro to primary video %s", slug)
 
         curr_size = os.path.getsize(local_file)
@@ -2184,13 +2104,9 @@ async def _execute_leech(
                     sub_path=sub_to_burn_video,
                     is_hardsub=is_already_hardsubbed,
                     cover_watermark=is_cinesubz_cand and getattr(config, 'ENABLE_CINESUBZ_WATERMARK_COVER', True),
-                    trim_start=0.0 if was_trimmed_10s else 10.0,
-                    prepend_intro=not intro_already_prepended,
                 )
                 actual_remuxed = comp_res if (isinstance(comp_res, str) and os.path.exists(comp_res)) else remuxed
                 if comp_res and os.path.exists(actual_remuxed) and 0 < os.path.getsize(actual_remuxed) <= video_service.TELEGRAM_MTPROTO_MAX_BYTES:
-                    intro_already_prepended = True
-                    was_trimmed_10s = True
                     if os.path.exists(local_file) and os.path.abspath(local_file) != os.path.abspath(actual_remuxed):
                         try:
                             os.remove(local_file)
@@ -2247,21 +2163,8 @@ async def _execute_leech(
                         trim_start=0.0 if was_trimmed_10s else 10.0,
                         prepend_intro=not intro_already_prepended,
                     )
-                    if sub_processed:
-                        intro_already_prepended = True
-                    else:
-                        log.warning("[LeechService] Watermark cover failed on %s. Executing trim + intro fallback...", local_file)
-                        fb_in = local_file
-                        if not was_trimmed_10s:
-                            t_out = os.path.join(temp_dir, f"fb_trim_{slug}.mp4")
-                            if await video_service.trim_video_start(fb_in, t_out, start_seconds=10.0):
-                                fb_in = t_out
-                        if not intro_already_prepended:
-                            if await video_service.prepend_filmzilla_intro(fb_in, remuxed, intro_duration=5.0):
-                                sub_processed = True
-                                intro_already_prepended = True
-                        if not sub_processed:
-                            sub_processed = await video_service.ensure_web_streamable(fb_in, remuxed)
+                    if not sub_processed:
+                        sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
                 else:
                     sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
 
@@ -2942,16 +2845,6 @@ async def _execute_leech(
                                         dl_out = wm_var_out
                                         v_intro_already_prepended = True
                                         log.info("[LeechService] Covered CineSubz watermark, prepended intro, and trimmed 10s on variant %s [%s]", slug, vq)
-                                    else:
-                                        log.warning("[LeechService] Watermark cover failed on variant %s [%s]. Trimming first 10s...", slug, vq)
-                                        t_var = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
-                                        if await video_service.trim_video_start(dl_out, t_var, start_seconds=10.0):
-                                            try:
-                                                if os.path.abspath(dl_out) != os.path.abspath(t_var):
-                                                    os.remove(dl_out)
-                                            except Exception:
-                                                pass
-                                            dl_out = t_var
                                 else:
                                     # User requirement: Cut first 10 seconds (remove intro / watermark)
                                     trim_var_out = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
@@ -3411,6 +3304,7 @@ async def _execute_leech(
                     "size_bytes": v_sz,
                     "url": f"https://t.me/c/{tg_channel_id_clean}/{v_msg}",
                     "telegram_url": f"https://t.me/c/{tg_channel_id_clean}/{v_msg}",
+                    "direct_url": f"/stream/download/-100{tg_channel_id_clean}/{v_msg}",
                     "file_id": v_fid,
                     "message_id": v_msg,
                     "stream_url": v_stream,
@@ -3671,24 +3565,8 @@ async def _execute_leech(
                 disable_web_page_preview=True,
             )
 
-        if _get_encode_upload_lock().locked():
-            try:
-                _get_encode_upload_lock().release()
-            except RuntimeError:
-                pass
-
     except asyncio.CancelledError:
         log.info("[LeechService] Auto-leech task cancelled for user %s (%s)", user_id, display_title)
-        if _get_download_lock().locked():
-            try:
-                _get_download_lock().release()
-            except RuntimeError:
-                pass
-        if _get_encode_upload_lock().locked():
-            try:
-                _get_encode_upload_lock().release()
-            except RuntimeError:
-                pass
         async def _do_cancel_cleanup():
             try:
                 await downloader.cancel_active_download(task_key)
@@ -3728,16 +3606,6 @@ async def _execute_leech(
 
     except Exception as exc:
         log.exception("[LeechService] Unhandled error during auto-leech for user %s: %s", user_id, exc)
-        if _get_download_lock().locked():
-            try:
-                _get_download_lock().release()
-            except RuntimeError:
-                pass
-        if _get_encode_upload_lock().locked():
-            try:
-                _get_encode_upload_lock().release()
-            except RuntimeError:
-                pass
         task_tracker.tracker.fail_task(user_id, str(exc))
 
         try:

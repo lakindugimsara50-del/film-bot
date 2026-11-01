@@ -19526,30 +19526,30 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "cast": [],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
-      "message_id": 378,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYtq51mSxypmGIr05eceC-ZzaQuouAACVjkAAnN2OVeDpJO6W7hBvB4E",
+      "message_id": 395,
       "file_name": "fs_godzilla-vs-kong-2021-auto-strict-cinesubz_720p.mp4",
       "file_size": 1326476955,
       "drive_file_id": "",
-      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+      "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
-          "message_id": 378,
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYtq51mSxypmGIr05eceC-ZzaQuouAACVjkAAnN2OVeDpJO6W7hBvB4E",
+          "message_id": 395,
           "quality": "1080p"
         }
       ],
       "qualities": {
-        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
-        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
-        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
-        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
-        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378"
+        "auto": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
+        "1080p": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
+        "720p": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
+        "480p": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/394",
+        "360p": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395"
       },
       "downloads": [
         {
@@ -19557,11 +19557,12 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "label": "720p HD (Telegram Channel • Fast)",
           "size": "1.2 GB",
           "size_bytes": 1326476955,
-          "url": "https://t.me/c/4325759505/378",
-          "telegram_url": "https://t.me/c/4325759505/378",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
-          "message_id": 378,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "url": "https://t.me/c/4325759505/395",
+          "telegram_url": "https://t.me/c/4325759505/395",
+          "direct_url": "/stream/channel/-1004325759505/395?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYtq51mSxypmGIr05eceC-ZzaQuouAACVjkAAnN2OVeDpJO6W7hBvB4E",
+          "message_id": 395,
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19572,11 +19573,12 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "label": "480p SD (Telegram Channel • Fast)",
           "size": "738.2 MB",
           "size_bytes": 774088901,
-          "url": "https://t.me/c/4325759505/377",
-          "telegram_url": "https://t.me/c/4325759505/377",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXlq5wGKaV2JIgpUvyBW3COhElptoAACxzAAAnN2OVdPajfQjww2fR4E",
-          "message_id": 377,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+          "url": "https://t.me/c/4325759505/394",
+          "telegram_url": "https://t.me/c/4325759505/394",
+          "direct_url": "/stream/channel/-1004325759505/394?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYpq51jd6UHcWzyrUKCXQAUHk2Ka4wACPjkAAnN2OVeYQvER95pGlB4E",
+          "message_id": 394,
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/394",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19588,7 +19590,7 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size": "1.2 GB",
           "size_bytes": 1326476955,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_1080p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19600,7 +19602,7 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size": "1.2 GB",
           "size_bytes": 1326476955,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_720p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19612,7 +19614,7 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size": "738.2 MB",
           "size_bytes": 774088901,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_480p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/394",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19624,7 +19626,7 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size": "227.7 MB",
           "size_bytes": 238765851,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_360p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19639,21 +19641,21 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size_bytes": 0
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
-          "message_id": 378,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYtq51mSxypmGIr05eceC-ZzaQuouAACVjkAAnN2OVeDpJO6W7hBvB4E",
+          "message_id": 395,
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
           "size_bytes": 1326476955
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXlq5wGKaV2JIgpUvyBW3COhElptoAACxzAAAnN2OVdPajfQjww2fR4E",
-          "message_id": 377,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYpq51jd6UHcWzyrUKCXQAUHk2Ka4wACPjkAAnN2OVeYQvER95pGlB4E",
+          "message_id": 394,
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/394",
           "size_bytes": 774088901
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "stream_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com/stream/channel/-1004325759505/395",
           "size_bytes": 238765851
         }
       },
@@ -19669,7 +19671,7 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=godzilla-vs-kong-2021-auto-strict-cinesubz",
       "added_date": "2026-11-01",
-      "added_at": "2026-11-01T09:14:17Z",
+      "added_at": "2026-11-01T15:24:12Z",
       "added_by": "bot_auto_leech"
     },
     {
@@ -20246,5 +20248,5 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T10:38:58Z"
+  "last_updated": "2026-11-01T15:24:14Z"
 };

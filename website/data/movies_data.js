@@ -20246,7 +20246,190 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-01",
       "added_at": "2026-11-01T10:38:57Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "sugriva-2026-auto-strict-cinesubz",
+      "slug": "sugriva-2026-auto-strict-cinesubz",
+      "title": "Sugriva 2026 --auto --strict-cinesubz",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY5q55xMeAxwDR5hk23ITLrLFVEdbgACnT4AAnN2OVdAa-C99WDpux4E",
+      "message_id": 398,
+      "file_name": "fs_sugriva-2026-auto-strict-cinesubz_720p.mp4",
+      "file_size": 1236976590,
+      "drive_file_id": "",
+      "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY5q55xMeAxwDR5hk23ITLrLFVEdbgACnT4AAnN2OVdAa-C99WDpux4E",
+          "message_id": 398,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+        "1080p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+        "720p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+        "480p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/397",
+        "360p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1236976590,
+          "url": "https://t.me/c/4325759505/398",
+          "telegram_url": "https://t.me/c/4325759505/398",
+          "direct_url": "/stream/channel/-1004325759505/398?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY5q55xMeAxwDR5hk23ITLrLFVEdbgACnT4AAnN2OVdAa-C99WDpux4E",
+          "message_id": 398,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "630.6 MB",
+          "size_bytes": 661207650,
+          "url": "https://t.me/c/4325759505/397",
+          "telegram_url": "https://t.me/c/4325759505/397",
+          "direct_url": "/stream/channel/-1004325759505/397?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY1q55uVJTT81LLdIQLg-jYIsnF_vwACkT4AAnN2OVewAAGPPZ8QsjAeBA",
+          "message_id": 397,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/397",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1236976590,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sugriva-2026-auto-strict-cinesubz_1080p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1236976590,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sugriva-2026-auto-strict-cinesubz_720p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "630.6 MB",
+          "size_bytes": 661207650,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sugriva-2026-auto-strict-cinesubz_480p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/397",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "212.3 MB",
+          "size_bytes": 222655786,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sugriva-2026-auto-strict-cinesubz_360p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY5q55xMeAxwDR5hk23ITLrLFVEdbgACnT4AAnN2OVdAa-C99WDpux4E",
+          "message_id": 398,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "size_bytes": 1236976590
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAY1q55uVJTT81LLdIQLg-jYIsnF_vwACkT4AAnN2OVewAAGPPZ8QsjAeBA",
+          "message_id": 397,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/397",
+          "size_bytes": 661207650
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/398",
+          "size_bytes": 222655786
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/sugriva-2026-auto-strict-cinesubz-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=sugriva-2026-auto-strict-cinesubz",
+      "added_date": "2026-11-01",
+      "added_at": "2026-11-01T20:08:57Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T15:24:14Z"
+  "last_updated": "2026-11-01T20:08:59Z"
 };

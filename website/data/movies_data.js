@@ -19490,7 +19490,188 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-01",
       "added_at": "2026-11-01T08:48:50Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "godzilla-vs-kong-2021-auto-strict-cinesubz",
+      "slug": "godzilla-vs-kong-2021-auto-strict-cinesubz",
+      "title": "Godzilla vs. Kong 2021 --auto --strict-cinesubz",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
+      "message_id": 378,
+      "file_name": "fs_godzilla-vs-kong-2021-auto-strict-cinesubz_720p.mp4",
+      "file_size": 1326476955,
+      "drive_file_id": "",
+      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
+          "message_id": 378,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1326476955,
+          "url": "https://t.me/c/4325759505/378",
+          "telegram_url": "https://t.me/c/4325759505/378",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
+          "message_id": 378,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "738.2 MB",
+          "size_bytes": 774088901,
+          "url": "https://t.me/c/4325759505/377",
+          "telegram_url": "https://t.me/c/4325759505/377",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXlq5wGKaV2JIgpUvyBW3COhElptoAACxzAAAnN2OVdPajfQjww2fR4E",
+          "message_id": 377,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1326476955,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_1080p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1326476955,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_720p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "738.2 MB",
+          "size_bytes": 774088901,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_480p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "227.7 MB",
+          "size_bytes": 238765851,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021-auto-strict-cinesubz_360p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXpq5wLfTrcdfExNox8uX0XlESdY2gAC5TAAAnN2OVdNxsRp0uu8Ch4E",
+          "message_id": 378,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "size_bytes": 1326476955
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXlq5wGKaV2JIgpUvyBW3COhElptoAACxzAAAnN2OVdPajfQjww2fR4E",
+          "message_id": 377,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/377",
+          "size_bytes": 774088901
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/378",
+          "size_bytes": 238765851
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/godzilla-vs-kong-2021-auto-strict-cinesubz-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=godzilla-vs-kong-2021-auto-strict-cinesubz",
+      "added_date": "2026-11-01",
+      "added_at": "2026-11-01T09:14:17Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T08:48:51Z"
+  "last_updated": "2026-11-01T09:14:18Z"
 };

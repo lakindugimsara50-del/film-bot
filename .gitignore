@@ -26,7 +26,9 @@ bot/.env.*
 !bot/.env.example
 seedr_accounts.json
 bot/seedr_accounts.json
-bot/data/
+bot/data/*
+!bot/data/cinesubz_crawler_state.json
+!website/data/cinesubz_crawler_state.json
 *.json.local
 !seedr_accounts.example.json
 !bot/seedr_accounts.example.json

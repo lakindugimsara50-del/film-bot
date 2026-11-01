@@ -403,6 +403,8 @@ class CineSubzCrawler:
         mode: str = "movies",
         start_page: Optional[int] = None,
         status_msg: Optional[Message] = None,
+        resume: bool = False,
+        single_page_only: bool = False,
     ) -> Tuple[bool, str]:
         """Start the background crawler loop."""
         if self._is_running:
@@ -415,16 +417,45 @@ class CineSubzCrawler:
         self.mode = mode.lower()
         self.started_at = time.time()
         self.status_detail = "Initializing..."
+        self.single_page_only = single_page_only
 
         if start_page is not None and start_page > 0:
+            # Target specific page requested (e.g. /crawl 1, /crawl 50)
             if self.mode == "tvshows":
                 self.current_tv_page = start_page
             else:
                 self.current_movie_page = start_page
+            self.save_state()
+        elif resume:
+            # Resume requested: reload saved state from persistent storage if not already in memory
+            if self.current_movie_page <= 0 and self.current_tv_page <= 0:
+                self.load_state()
+            if self.mode != mode.lower() and mode.lower() in ("movies", "tvshows", "all"):
+                self.mode = mode.lower()
+        else:
+            # Fresh start requested (/crawl start): reset progress to start from the very beginning (Oldest -> Newest)
+            if self.mode in ("movies", "all"):
+                self.current_movie_page = 0
+            if self.mode in ("tvshows", "all"):
+                self.current_tv_page = 0
+            self.total_scraped = 0
+            self.total_skipped = 0
+            self.total_queued = 0
+            self.save_state()
 
         self._worker_task = asyncio.create_task(self._crawler_worker())
-        log.info("[CineSubzCrawler] Started crawler in mode '%s'", self.mode)
-        return True, f"🚀 <b>CineSubz Auto-Harvester ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b> (Oldest ➔ Newest)"
+        log.info("[CineSubzCrawler] Started crawler in mode '%s' (start_page=%s, resume=%s, single_page_only=%s)",
+                 self.mode, start_page, resume, single_page_only)
+
+        if start_page is not None and start_page > 0:
+            target_str = f"Page {start_page}" + (" [Single Page Only]" if single_page_only else "")
+            return True, f"🎯 <b>CineSubz Harvester [{target_str}] ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b>"
+        elif resume:
+            r_page = self.current_tv_page if self.mode == "tvshows" else self.current_movie_page
+            p_disp = f"Page {r_page}" if r_page > 0 else "Auto (Oldest)"
+            return True, f"🔄 <b>CineSubz Harvester නැවතුණු තැනින් ({p_disp}) ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b>"
+        else:
+            return True, f"🚀 <b>CineSubz Auto-Harvester මුල සිටම ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b> (Oldest ➔ Newest)"
 
     def stop(self) -> bool:
         """Stop the crawler gracefully."""
@@ -602,6 +633,10 @@ class CineSubzCrawler:
                         self.current_movie_page -= 1
                         self.save_state()
                         await asyncio.sleep(2.0)
+                        if getattr(self, "single_page_only", False):
+                            log.info("[CineSubzCrawler] Single movie page %d complete. Stopping crawler.", p)
+                            self.status_detail = f"Page {p} completed!"
+                            break
 
                 # 3. Crawl TV Series (Oldest to Newest)
                 if self.mode in ("tvshows", "all") and self._is_running:
@@ -702,6 +737,10 @@ class CineSubzCrawler:
                         self.current_tv_page -= 1
                         self.save_state()
                         await asyncio.sleep(2.0)
+                        if getattr(self, "single_page_only", False):
+                            log.info("[CineSubzCrawler] Single TV page %d complete. Stopping crawler.", p)
+                            self.status_detail = f"TV Page {p} completed!"
+                            break
 
                 self._is_running = False
                 self.status_detail = "Completed all pages!"

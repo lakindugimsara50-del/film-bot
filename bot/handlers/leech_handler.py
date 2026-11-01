@@ -860,7 +860,14 @@ def register(app: Client) -> None:
         if subcmd in ("stop", "pause", "cancel"):
             if cinesubz_crawler.is_running():
                 cinesubz_crawler.stop()
-                await message.reply_text("🛑 <b>CineSubz Harvester නවත්වන ලදී (Stopped).</b>", parse_mode=ParseMode.HTML)
+                curr_p = cinesubz_crawler.current_movie_page or cinesubz_crawler.max_movie_pages
+                await message.reply_text(
+                    f"🛑 <b>CineSubz Harvester නවත්වන ලදී (Stopped).</b>\n\n"
+                    f"📌 <b>නැවතුණු පිටුව:</b> Page {curr_p}\n"
+                    f"💡 <i>නැවත මෙතැනින් පටන් ගැනීමට: <code>/crawl resume</code></i>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=crawl_kb,
+                )
             else:
                 await message.reply_text("ℹ️ Harvester එක දැනටමත් ක්‍රියාත්මක නොවේ (Not running).")
             return
@@ -878,46 +885,99 @@ def register(app: Client) -> None:
             await message.reply_text("🔄 <b>Harvester state එක reset කරන ලදී.</b>", parse_mode=ParseMode.HTML)
             return
 
+        # Explicit commands parsing:
+        # A) /crawl start -> Fresh start from the beginning (Page max down to 1)
+        # B) /crawl resume / resum -> Resume from exactly where it was stopped
+        # C) /crawl <number> (e.g. /crawl 1, /crawl 50) -> Download films of that specific page
+
+        is_resume = False
+        is_start_fresh = False
         start_page = None
-        mode = cinesubz_crawler.mode or "movies"
+        single_page = False
+        mode = "movies"
 
         args = tokens[1:]
-        for a in args:
-            if a.isdigit():
-                start_page = int(a)
-                break
 
-        for a in args:
+        # Check if first argument is a number (e.g. /crawl 1, /crawl 50)
+        if subcmd.isdigit():
+            start_page = int(subcmd)
+        elif subcmd in ("resume", "resum", "continue"):
+            is_resume = True
+        elif subcmd in ("start", "begin", "new", "fresh"):
+            is_start_fresh = True
+
+        for a in (args[1:] if (start_page is not None or is_resume or is_start_fresh) else args):
             al = a.lower()
-            if al in ("movies", "movie", "film", "films"):
+            if al.isdigit() and start_page is None:
+                start_page = int(al)
+            elif al in ("movies", "movie", "film", "films"):
                 mode = "movies"
-                break
             elif al in ("tvshows", "tvshow", "series", "tv", "shows", "episodes"):
                 mode = "tvshows"
-                break
             elif al in ("all", "both"):
                 mode = "all"
-                break
-            elif al in ("resume", "continue"):
-                mode = cinesubz_crawler.mode or "movies"
-                break
+            elif al in ("resume", "resum", "continue"):
+                is_resume = True
+            elif al in ("start", "begin", "new", "fresh"):
+                is_start_fresh = True
+            elif al in ("only", "single"):
+                single_page = True
 
         if subcmd == "page" and len(tokens) > 2 and tokens[2].isdigit():
             start_page = int(tokens[2])
 
-        st_msg = await message.reply_text(
-            f"⏳ <b>CineSubz Harvester ({mode.upper()}) ආරම්භ කරමින් පවතී...</b>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=crawl_kb,
-        )
+        if is_resume:
+            cinesubz_crawler.load_state()
+            resume_page = cinesubz_crawler.current_tv_page if mode == "tvshows" else cinesubz_crawler.current_movie_page
+            mode = cinesubz_crawler.mode or mode
+            p_lbl = f"Page {resume_page}" if (resume_page and resume_page > 0) else "Auto"
 
-        ok, msg_txt = await cinesubz_crawler.start(
-            client=client,
-            admin_chat_id=user_id,
-            mode=mode,
-            start_page=start_page,
-            status_msg=st_msg,
-        )
+            st_msg = await message.reply_text(
+                f"🔄 <b>CineSubz Harvester නැවතුණු තැනින් ({p_lbl}) ආරම්භ කරමින් පවතී...</b>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=crawl_kb,
+            )
+
+            ok, msg_txt = await cinesubz_crawler.start(
+                client=client,
+                admin_chat_id=user_id,
+                mode=mode,
+                start_page=resume_page if (resume_page and resume_page > 0) else None,
+                status_msg=st_msg,
+                resume=True,
+            )
+        elif start_page is not None and start_page > 0:
+            st_msg = await message.reply_text(
+                f"🎯 <b>CineSubz Harvester [Page {start_page}] ආරම්භ කරමින් පවතී...</b>\n"
+                f"🎬 Page {start_page} හි ඇති සියලුම චිත්‍රපට පරීක්ෂා කර බාගත කරනු ලැබේ.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=crawl_kb,
+            )
+
+            ok, msg_txt = await cinesubz_crawler.start(
+                client=client,
+                admin_chat_id=user_id,
+                mode=mode,
+                start_page=start_page,
+                status_msg=st_msg,
+                single_page_only=single_page or (start_page == 1),
+            )
+        else:
+            st_msg = await message.reply_text(
+                f"🚀 <b>CineSubz Harvester ({mode.upper()}) මුල සිටම ආරම්භ කරමින් පවතී...</b>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=crawl_kb,
+            )
+
+            ok, msg_txt = await cinesubz_crawler.start(
+                client=client,
+                admin_chat_id=user_id,
+                mode=mode,
+                start_page=None,
+                status_msg=st_msg,
+                resume=False,
+            )
+
         await st_msg.edit_text(
             f"{msg_txt}\n\n{cinesubz_crawler.get_status_text()}",
             parse_mode=ParseMode.HTML,
@@ -979,18 +1039,21 @@ def register(app: Client) -> None:
             return
 
         mode = "movies"
+        is_resume = False
         if action == "series":
             mode = "tvshows"
         elif action == "all":
             mode = "all"
         elif action == "resume":
             mode = cinesubz_crawler.mode or "movies"
+            is_resume = True
 
         ok, msg_txt = await cinesubz_crawler.start(
             client=client,
             admin_chat_id=user_id,
             mode=mode,
             status_msg=query.message,
+            resume=is_resume,
         )
         await query.answer(msg_txt[:50], show_alert=False)
         try:

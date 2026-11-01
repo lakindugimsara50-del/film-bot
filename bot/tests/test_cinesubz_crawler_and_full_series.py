@@ -236,3 +236,136 @@ async def test_resolve_series_episodes_single_target_season():
         assert len(resolved["episodes"]) == 6
         assert resolved["seasons_list"] == [1]
         assert resolved["episodes"][5]["label"] == "S01E06"
+
+
+@pytest.mark.asyncio
+async def test_crawler_start_modes():
+    """Test /crawl start vs /crawl resume vs /crawl <number>."""
+    crawler = CineSubzCrawler()
+    mock_client = MagicMock()
+
+    with patch.object(crawler, "_crawler_worker", AsyncMock()):
+        # 1. Fresh start: resets page to 0 (to detect max pages and start fresh)
+        crawler.current_movie_page = 150
+        crawler.total_scraped = 50
+        ok, msg = await crawler.start(mock_client, 12345, mode="movies", resume=False)
+        assert ok is True
+        assert crawler.current_movie_page == 0
+        assert crawler.total_scraped == 0
+        assert "මුල සිටම ආරම්භ විය" in msg
+        crawler.stop()
+
+        # 2. Resume: preserves saved page
+        crawler.current_movie_page = 150
+        crawler.total_scraped = 50
+        ok2, msg2 = await crawler.start(mock_client, 12345, mode="movies", resume=True)
+        assert ok2 is True
+        assert crawler.current_movie_page == 150
+        assert "නැවතුණු තැනින් (Page 150)" in msg2
+        crawler.stop()
+
+        # 3. Direct page jump (/crawl 1 or /crawl 50)
+        ok3, msg3 = await crawler.start(mock_client, 12345, mode="movies", start_page=1, single_page_only=True)
+        assert ok3 is True
+        assert crawler.current_movie_page == 1
+        assert crawler.single_page_only is True
+        assert "Page 1" in msg3
+        crawler.stop()
+
+
+@pytest.mark.asyncio
+async def test_crawl_command_handler_dispatch():
+    """Test Telegram /crawl start, /crawl resume, and /crawl 1 dispatches."""
+    from handlers.leech_handler import register
+    from pyrogram import Client
+
+    mock_app = MagicMock(spec=Client)
+    handlers_dict = {}
+
+    def mock_on_message(filter_obj):
+        def decorator(func):
+            handlers_dict["crawl"] = func
+            return func
+        return decorator
+
+    mock_app.on_message = mock_on_message
+    mock_app.on_callback_query = MagicMock(return_value=lambda f: f)
+
+    with patch("handlers.leech_handler._is_admin", return_value=True):
+        register(mock_app)
+        crawl_handler = handlers_dict.get("crawl")
+        assert crawl_handler is not None
+
+        mock_crawler = MagicMock()
+        mock_crawler.start = AsyncMock(return_value=(True, "Started"))
+        mock_crawler.stop = MagicMock(return_value=True)
+        mock_crawler.is_running = MagicMock(return_value=False)
+        mock_crawler.get_status_text = MagicMock(return_value="Status OK")
+        mock_crawler.mode = "movies"
+        mock_crawler.current_movie_page = 220
+        mock_crawler.max_movie_pages = 226
+
+        # Test /crawl start -> calls start(resume=False)
+        with patch("services.cinesubz_crawler.cinesubz_crawler", mock_crawler):
+            msg_start = MagicMock()
+            msg_start.from_user.id = 999
+            msg_start.text = "/crawl start"
+            msg_start.reply_text = AsyncMock(return_value=MagicMock(edit_text=AsyncMock()))
+
+            await crawl_handler(mock_app, msg_start)
+            mock_crawler.start.assert_called_with(
+                client=mock_app,
+                admin_chat_id=999,
+                mode="movies",
+                start_page=None,
+                status_msg=msg_start.reply_text.return_value,
+                resume=False,
+            )
+
+            # Test /crawl resume -> calls start(resume=True)
+            msg_resume = MagicMock()
+            msg_resume.from_user.id = 999
+            msg_resume.text = "/crawl resume"
+            msg_resume.reply_text = AsyncMock(return_value=MagicMock(edit_text=AsyncMock()))
+
+            await crawl_handler(mock_app, msg_resume)
+            mock_crawler.start.assert_called_with(
+                client=mock_app,
+                admin_chat_id=999,
+                mode="movies",
+                start_page=220,
+                status_msg=msg_resume.reply_text.return_value,
+                resume=True,
+            )
+
+            # Test /crawl 1 -> calls start(start_page=1, single_page_only=True)
+            msg_1 = MagicMock()
+            msg_1.from_user.id = 999
+            msg_1.text = "/crawl 1"
+            msg_1.reply_text = AsyncMock(return_value=MagicMock(edit_text=AsyncMock()))
+
+            await crawl_handler(mock_app, msg_1)
+            mock_crawler.start.assert_called_with(
+                client=mock_app,
+                admin_chat_id=999,
+                mode="movies",
+                start_page=1,
+                status_msg=msg_1.reply_text.return_value,
+                single_page_only=True,
+            )
+
+            # Test /crawl 50 -> calls start(start_page=50)
+            msg_50 = MagicMock()
+            msg_50.from_user.id = 999
+            msg_50.text = "/crawl 50"
+            msg_50.reply_text = AsyncMock(return_value=MagicMock(edit_text=AsyncMock()))
+
+            await crawl_handler(mock_app, msg_50)
+            mock_crawler.start.assert_called_with(
+                client=mock_app,
+                admin_chat_id=999,
+                mode="movies",
+                start_page=50,
+                status_msg=msg_50.reply_text.return_value,
+                single_page_only=False,
+            )

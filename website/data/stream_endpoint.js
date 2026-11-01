@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://manuals-gallery-voip-officials.trycloudflare.com",
+  "stream_base_url": "https://antarctica-centered-subscription-vocals.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-01T08:29:59.695509+00:00",
+  "updated_at": "2026-11-01T14:55:52.948056+00:00",
   "status": "online"
 };

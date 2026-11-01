@@ -316,10 +316,14 @@ async def search(
                     try:
                         resolved = await resolve_srilankan_intermediate_link(client, link_u, referer_url=current_url)
                         if resolved and not resolved.startswith("magnet:") and ".torrent" not in resolved.lower():
-                            # Strictly filter out drive.csplayer2.space HTML ad pages
+                            if "google.com/server" in resolved or "drive.csplayer2.space" in resolved:
+                                try:
+                                    resolved = unmask_cinesubz_server_url(resolved)
+                                except Exception:
+                                    pass
                             if "drive.csplayer2.space" in resolved:
                                 return None
-                            ht = "cdn" if "csplayer" in resolved else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
+                            ht = "cdn" if ("csplayer" in resolved or "supercloud" in resolved) else ("pixeldrain" if "pixeldrain" in resolved else "ddl")
                             return {
                                 "url": resolved,
                                 "quality": link_q,
@@ -339,8 +343,14 @@ async def search(
 
             for vl in video_links:
                 u_link = vl["url"]
+                if "google.com/server" in u_link or "drive.csplayer2.space" in u_link:
+                    try:
+                        u_link = unmask_cinesubz_server_url(u_link)
+                        vl["url"] = u_link
+                    except Exception:
+                        pass
                 if "drive.csplayer2.space" in u_link:
-                    continue  # Do not add non-downloadable HTML landing pages
+                    continue
                 results.append({
                     "portal": "CineSubz",
                     "post_url": current_url,

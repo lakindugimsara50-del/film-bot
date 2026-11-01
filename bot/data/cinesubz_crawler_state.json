@@ -1,12 +1,12 @@
 {
   "mode": "movies",
-  "current_movie_page": 1,
+  "current_movie_page": 0,
   "max_movie_pages": 0,
   "current_tv_page": 0,
   "max_tv_pages": 0,
-  "total_scraped": 50,
+  "total_scraped": 0,
   "total_skipped": 0,
   "total_queued": 0,
   "last_completed_item": "None",
-  "updated_at": 1793548626.5158482
+  "updated_at": 0
 }

@@ -261,29 +261,31 @@ async def _download_aria2c_http(
 
     ref = referer or get_referer_for_url(url)
 
+    # Optimized CDN connection caps: prevent server reset when multi-qualities download in parallel
+    is_cdn_host = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna", "sinhalasub"))
+    max_conn = "6" if is_cdn_host else "16"
+    split_conn = "16" if is_cdn_host else "32"
+
     cmd = [
         aria2_bin,
-        "-x", "16",
-        "-s", "64",
-        "--split=64",
-        "-j", "64",
+        "-x", max_conn,
+        "-s", split_conn,
+        f"--split={split_conn}",
+        "-j", split_conn,
         "-k", "1M",
         "--min-split-size=1M",
-        "--max-connection-per-server=16",
+        f"--max-connection-per-server={max_conn}",
         "--optimize-concurrent-downloads=true",
         "--file-allocation=none",
-        "--disk-cache=128M" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "--disk-cache=64M",
+        "--disk-cache=128M" if (os.path.exists("/content") or os.path.exists("/kaggle/working") or os.path.isdir("/dev/shm")) else "--disk-cache=64M",
         "--continue=true",
-        "--timeout=30",
+        "--timeout=35",
         "--connect-timeout=15",
         "--max-tries=5",
         "--retry-wait=2",
         "--check-certificate=false",
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         f"--referer={ref}",
-        f"--header=Referer: {ref}",
-        "--header=X-Download: 1",
-        "--header=Sec-Fetch-Dest: download",
         "--summary-interval=1",
         "--console-log-level=warn",
         "--allow-overwrite=true",
@@ -469,7 +471,10 @@ async def _download_httpx(
     # 2. If file size >= 20MB and server supports ranges, use 4-8 parallel range workers
     if total_size >= 20 * 1024 * 1024 and accept_ranges:
         try:
-            num_workers = min(8, max(2, total_size // (10 * 1024 * 1024)))
+            # Cap concurrent workers on sensitive CDNs to prevent IP socket reset
+            is_sensitive_cdn = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna"))
+            max_w = 4 if is_sensitive_cdn else 8
+            num_workers = min(max_w, max(2, total_size // (10 * 1024 * 1024)))
             part_size = total_size // num_workers
             downloaded = [0] * num_workers
             start_time = time.time()

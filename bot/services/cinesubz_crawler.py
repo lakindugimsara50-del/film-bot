@@ -52,7 +52,17 @@ WEBSITE_STATE_FILE = os.path.join(
 COLAB_GDRIVE_STATE_DIR = "/content/drive/MyDrive/film_bot"
 COLAB_GDRIVE_STATE_FILE = os.path.join(COLAB_GDRIVE_STATE_DIR, "cinesubz_crawler_state.json")
 KAGGLE_STATE_FILE = "/kaggle/working/data/cinesubz_crawler_state.json"
-ALL_STATE_FILES = (STATE_FILE, KAGGLE_STATE_FILE, COLAB_GDRIVE_STATE_FILE, WEBSITE_STATE_FILE)
+KAGGLE_WORKING_STATE_FILE = "/kaggle/working/cinesubz_crawler_state.json"
+KAGGLE_BOT_STATE_FILE = "/kaggle/working/film-bot/data/cinesubz_crawler_state.json"
+
+ALL_STATE_FILES = (
+    KAGGLE_STATE_FILE,
+    KAGGLE_WORKING_STATE_FILE,
+    KAGGLE_BOT_STATE_FILE,
+    COLAB_GDRIVE_STATE_FILE,
+    STATE_FILE,
+    WEBSITE_STATE_FILE,
+)
 
 
 def clean_cinesubz_title(raw_text: str) -> Dict[str, Any]:
@@ -349,27 +359,38 @@ class CineSubzCrawler:
         self.load_state()
 
     def load_state(self) -> None:
-        """Load persistent crawler state from disk, checking local, Google Drive, or website backup."""
+        """Load persistent crawler state from disk, checking local, Google Drive, Kaggle, or website backup."""
         self.last_completed_item: str = "None"
+        best_data = None
+        best_time = -1.0
+
         for p in ALL_STATE_FILES:
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    self.mode = data.get("mode", "all")
-                    self.current_movie_page = data.get("current_movie_page", 0)
-                    self.max_movie_pages = data.get("max_movie_pages", 0)
-                    self.current_tv_page = data.get("current_tv_page", 0)
-                    self.max_tv_pages = data.get("max_tv_pages", 0)
-                    self.total_scraped = data.get("total_scraped", 0)
-                    self.total_skipped = data.get("total_skipped", 0)
-                    self.total_queued = data.get("total_queued", 0)
-                    self.last_completed_item = data.get("last_completed_item", "None")
-                    log.info("[CineSubzCrawler] Loaded state from %s: Movie page %d/%d, TV page %d/%d (Last: %s)",
-                             p, self.current_movie_page, self.max_movie_pages, self.current_tv_page, self.max_tv_pages, self.last_completed_item)
-                    return
+                    up_at = float(data.get("updated_at", 0) or 0)
+                    m_page = int(data.get("current_movie_page", 0) or 0)
+                    tv_page = int(data.get("current_tv_page", 0) or 0)
+                    # Pick most up-to-date state file that has actual progress
+                    if up_at > best_time and (m_page > 0 or tv_page > 0 or up_at > 0):
+                        best_time = up_at
+                        best_data = data
                 except Exception as e:
                     log.debug("[CineSubzCrawler] Could not load state from %s: %s", p, e)
+
+        if best_data:
+            self.mode = best_data.get("mode", "movies")
+            self.current_movie_page = int(best_data.get("current_movie_page", 0) or 0)
+            self.max_movie_pages = int(best_data.get("max_movie_pages", 0) or 0)
+            self.current_tv_page = int(best_data.get("current_tv_page", 0) or 0)
+            self.max_tv_pages = int(best_data.get("max_tv_pages", 0) or 0)
+            self.total_scraped = int(best_data.get("total_scraped", 0) or 0)
+            self.total_skipped = int(best_data.get("total_skipped", 0) or 0)
+            self.total_queued = int(best_data.get("total_queued", 0) or 0)
+            self.last_completed_item = str(best_data.get("last_completed_item", "None"))
+            log.info("[CineSubzCrawler] Loaded state: Movie page %d/%d, TV page %d/%d (Last: %s)",
+                     self.current_movie_page, self.max_movie_pages, self.current_tv_page, self.max_tv_pages, self.last_completed_item)
 
     def save_state(self) -> None:
         """Save persistent crawler state to disk and all cloud backups."""
@@ -432,6 +453,25 @@ class CineSubzCrawler:
                 self.load_state()
             if self.mode != mode.lower() and mode.lower() in ("movies", "tvshows", "all"):
                 self.mode = mode.lower()
+            # If current_movie_page <= 0 after resume, safely initialize from oldest page
+            if self.mode in ("movies", "all") and self.current_movie_page <= 0:
+                if self.max_movie_pages <= 0:
+                    try:
+                        async with httpx.AsyncClient(headers=HEADERS, timeout=10.0, follow_redirects=True, verify=False) as hc:
+                            self.max_movie_pages = await get_cinesubz_max_pages(hc, "movies")
+                    except Exception:
+                        pass
+                if self.max_movie_pages > 0:
+                    self.current_movie_page = self.max_movie_pages
+            if self.mode in ("tvshows", "all") and self.current_tv_page <= 0:
+                if self.max_tv_pages <= 0:
+                    try:
+                        async with httpx.AsyncClient(headers=HEADERS, timeout=10.0, follow_redirects=True, verify=False) as hc:
+                            self.max_tv_pages = await get_cinesubz_max_pages(hc, "tvshows")
+                    except Exception:
+                        pass
+                if self.max_tv_pages > 0:
+                    self.current_tv_page = self.max_tv_pages
         else:
             # Fresh start requested (/crawl start): reset progress to start from the very beginning (Oldest -> Newest)
             if self.mode in ("movies", "all"):

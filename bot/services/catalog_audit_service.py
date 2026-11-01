@@ -58,17 +58,31 @@ AUDIT_PORTALS = [
 
 
 def get_movies_json_path() -> str:
-    """Resolve absolute path to website/data/movies.json."""
+    """Resolve absolute path to website/data/movies.json across Kaggle, Colab, Local, and Cloudflare environments."""
+    env_p = os.environ.get("MOVIES_JSON_PATH")
+    if env_p and os.path.exists(env_p):
+        return env_p
+
     candidates = [
+        # Kaggle paths
+        "/kaggle/working/film-bot/website/data/movies.json",
+        "/kaggle/working/film_web_site/website/data/movies.json",
+        "/kaggle/working/website/data/movies.json",
+        # Colab paths
+        "/content/film-bot/website/data/movies.json",
         "/content/film_web_site/website/data/movies.json",
+        "/content/website/data/movies.json",
+        # Relative repository structure
         os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "data", "movies.json"),
         os.path.join(os.getcwd(), "website", "data", "movies.json"),
+        os.path.join(os.getcwd(), "film-bot", "website", "data", "movies.json"),
+        os.path.join(os.getcwd(), "film_web_site", "website", "data", "movies.json"),
         os.path.join(os.getcwd(), "data", "movies.json"),
     ]
     for p in candidates:
         if os.path.exists(p):
             return p
-    return candidates[1]
+    return candidates[6]
 
 
 def normalize_title(title: str) -> str:

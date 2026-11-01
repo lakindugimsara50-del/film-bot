@@ -78,6 +78,22 @@ def resolve_direct_video_url(url: str) -> str:
     return url
 
 
+def unmask_cinesubz_server_url(url: str) -> str:
+    """
+    Unmask CineSubz server URLs (e.g. https://google.com/server7/202608/file.mp4
+    or https://drive.csplayer2.space/server7/.../file.mp4) into direct playable CDN stream URLs:
+    https://cs07.supercloud1.xyz/file.mp4?play=true
+    """
+    if not url:
+        return url
+    m = re.search(r"/(?:google\.com|drive\.csplayer2\.space)/server(\d+)(?:/[^/]+)*/([^/?#]+\.(?:mp4|mkv))", url)
+    if m:
+        srv_num = int(m.group(1))
+        fname = m.group(2)
+        return f"https://cs{srv_num:02d}.supercloud1.xyz/{fname}?play=true"
+    return url
+
+
 async def resolve_srilankan_intermediate_link(
     client: httpx.AsyncClient,
     link_url: str,
@@ -141,8 +157,9 @@ async def resolve_srilankan_intermediate_link(
         if link_elem and link_elem.get("href"):
             raw_href = (link_elem.get("href") or "").strip()
             if "google.com/server" in raw_href or "drive.csplayer2.space" in raw_href:
-                # drive.csplayer2.space is an interactive HTML ad locker, not a direct media link
-                return None
+                unmasked = unmask_cinesubz_server_url(raw_href)
+                if unmasked and unmasked != raw_href:
+                    return unmasked
             return resolve_direct_video_url(raw_href)
 
         # D. Search anchors inside the resolved page (e.g. LKSubs /links/ -> Continue button)
@@ -737,7 +754,15 @@ async def _search_portal(
 
             # Package found video links
             for vl in video_links:
-                u_str = str(vl.get("url", "")).lower()
+                raw_u = str(vl.get("url", ""))
+                if "google.com/server" in raw_u.lower() or "drive.csplayer2.space" in raw_u.lower():
+                    unmasked_u = unmask_cinesubz_server_url(raw_u)
+                    if unmasked_u and unmasked_u != raw_u:
+                        vl["url"] = unmasked_u
+                        raw_u = unmasked_u
+                    else:
+                        continue
+                u_str = raw_u.lower()
                 if "drive.csplayer2.space" in u_str:
                     continue
                 final_is_hardsub = (

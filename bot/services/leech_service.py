@@ -1358,6 +1358,10 @@ async def _execute_leech(
                                             lines.append(
                                                 f"• <b>{q_name}:</b> ⚠️ <i>Telegram Upload අසාර්ථකයි (Auto Fallback)</i>"
                                             )
+                                        elif q_name == primary_q:
+                                            lines.append(
+                                                f"• <b>{q_name}:</b> ⚠️ <i>{q_name} සෘජු බාගත කිරීම අසාර්ථක විය (Auto-Upscale මඟින් සැකසේ)</i>"
+                                            )
                                         else:
                                             lines.append(
                                                 f"• <b>{q_name}:</b> 🔄 <i>Link අක්‍රියයි ({primary_q} මඟින් Auto-Convert වේ)</i>"
@@ -2860,7 +2864,12 @@ async def _execute_leech(
                     if primary_quality == "1080p":
                         requested_qualities = ("1080p", "720p", "480p") if has_hard_sub else ("720p", "480p")
                     elif primary_quality == "720p":
-                        requested_qualities = ("720p", "480p") if has_hard_sub else ("480p",)
+                        # For movies, if 1080p is missing from uploaded variants, auto-upscale to provide 1080p HD
+                        needs_1080p = ("1080p" not in variant_tg_info)
+                        if needs_1080p:
+                            requested_qualities = ("1080p", "720p", "480p") if has_hard_sub else ("1080p", "480p")
+                        else:
+                            requested_qualities = ("720p", "480p") if has_hard_sub else ("480p",)
                     else:
                         requested_qualities = ("480p",) if has_hard_sub else ()
 

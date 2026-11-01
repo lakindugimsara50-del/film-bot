@@ -1698,9 +1698,11 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
     import tempfile
 
     ram_disk = "/dev/shm"
-    # On Colab (/content exists), multi-quality downloads (1080p, 720p, 480p) + compression need >= 15 GB
-    # Since /dev/shm on Colab is only ~5.8 GB, prefer /content which has 100+ GB high-capacity NVMe storage
-    effective_min_gb = max(min_free_gb, 15.0) if (min_free_gb >= 1.0 and os.path.exists("/content")) else min_free_gb
+    # On Cloud environments (Colab /content or Kaggle /kaggle/working exists), multi-quality downloads
+    # (1080p, 720p, 480p) + FFmpeg compression need >= 15 GB of working space.
+    # Since /dev/shm in cloud containers is often only ~2-5.8 GB, prefer high-capacity NVMe storage (/kaggle/working or /content)
+    is_cloud_env = os.path.exists("/content") or os.path.exists("/kaggle/working") or os.path.exists("/kaggle/temp")
+    effective_min_gb = max(min_free_gb, 15.0) if (min_free_gb >= 1.0 and is_cloud_env) else min_free_gb
     min_bytes = int(effective_min_gb * 1024 * 1024 * 1024)
     if os.path.isdir(ram_disk) and os.access(ram_disk, os.W_OK):
         try:
@@ -1716,7 +1718,11 @@ def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -
         except Exception as exc:
             log.debug("[VideoService] /dev/shm check skipped: %s", exc)
 
-    cloud_nvme = "/kaggle/working" if os.path.isdir("/kaggle/working") else ("/content" if os.path.isdir("/content") else None)
+    cloud_nvme = (
+        "/kaggle/temp" if os.path.isdir("/kaggle/temp")
+        else ("/kaggle/working" if os.path.isdir("/kaggle/working")
+        else ("/content" if os.path.isdir("/content") else None))
+    )
     if cloud_nvme and os.access(cloud_nvme, os.W_OK):
         try:
             work_dir = tempfile.mkdtemp(prefix=prefix, dir=cloud_nvme)

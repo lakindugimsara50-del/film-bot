@@ -357,6 +357,135 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
 
+    @app.on_message(filters.command(["setpublicchannel", "set_public_channel", "setpubchannel"]) & filters.private)
+    async def set_public_channel_handler(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            return
+
+        parts = (message.text or "").strip().split(None, 1)
+        if len(parts) < 2:
+            current_pub = getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
+            await message.reply_text(
+                "📢 <b>Public Announcement Channel Setup</b>\n\n"
+                f"📌 <b>වත්මන් Public Channel ID:</b> <code>{current_pub}</code>\n\n"
+                "<b>භාවිතය (Usage):</b>\n"
+                "• <code>/setpublicchannel -1004301214474</code>\n"
+                "• <code>/setpublicchannel @channel_username</code>\n\n"
+                "<i>💡 සටහන: මෙම Bot ව අදාළ Channel එකේ Admin (Post Messages rights සහිතව) එක් කර තිබිය යුතුය.</i>",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        target_input = parts[1].strip()
+        status_msg = await message.reply_text(
+            f"⏳ <b>Public Channel එක පරීක්ෂා කරමින්...</b>\n<code>{target_input}</code>",
+            parse_mode=ParseMode.HTML,
+        )
+        try:
+            try:
+                ch_id_int = int(target_input)
+                chat = await client.get_chat(ch_id_int)
+            except ValueError:
+                clean_uname = target_input.lstrip("@").strip()
+                chat = await client.get_chat(clean_uname)
+
+            config.PUBLIC_CHANNEL_ID = chat.id
+
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+            if not os.path.exists(env_path):
+                env_path = os.path.join(os.getcwd(), ".env")
+
+            try:
+                lines = []
+                if os.path.exists(env_path):
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+
+                found = False
+                for idx, line in enumerate(lines):
+                    if line.startswith("PUBLIC_CHANNEL_ID="):
+                        lines[idx] = f"PUBLIC_CHANNEL_ID={chat.id}\n"
+                        found = True
+                        break
+                if not found:
+                    lines.append(f"PUBLIC_CHANNEL_ID={chat.id}\n")
+
+                with open(env_path, "w", encoding="utf-8") as f:
+                    f.writelines(lines)
+            except Exception as e_err:
+                log.warning("[AdminControl] Could not write public channel to .env: %s", e_err)
+
+            await status_msg.edit_text(
+                f"✅ <b>Public Announcement Channel සාර්ථකව සම්බන්ධ විය!</b>\n\n"
+                f"📢 <b>Channel:</b> {getattr(chat, 'title', 'Channel')}\n"
+                f"🆔 <b>Channel ID:</b> <code>{chat.id}</code>\n"
+                f"🔗 <b>Username:</b> @{getattr(chat, 'username', 'Private')}\n\n"
+                f"🚀 මෙතැන් සිට අලුතින් එක්වන සියලුම චිත්‍රපට වල Premium Banners සහ Posts මෙම Channel එකට ස්වයංක්‍රීයව පළ වේ.",
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception as err:
+            await status_msg.edit_text(
+                f"❌ <b>Public Channel එක සම්බන්ධ කිරීම අසාර්ථකයි:</b>\n\n"
+                f"<code>{str(err)[:300]}</code>\n\n"
+                f"💡 කරුණාකර Bot ව අදාළ Channel එකේ Administrator ලෙස එක්කර ඇත්දැයි බලන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+
+    @app.on_message(filters.command(["postchannel", "announce", "post_channel"]) & filters.private)
+    async def post_channel_cmd_handler(client: Client, message: Message) -> None:
+        user_id = message.from_user.id if message.from_user else 0
+        if not _is_admin(user_id):
+            return
+
+        parts = (message.text or "").strip().split(None, 1)
+        query = parts[1].strip() if len(parts) > 1 else ""
+
+        target_ch = getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
+        if not target_ch:
+            await message.reply_text("❌ Public Channel ID එකක් සකසා නැත. කරුණාකර <code>/setpublicchannel -1004301214474</code> ලබා දෙන්න.")
+            return
+
+        from services import github_service
+        from handlers.announce import post_to_channel
+
+        movies = await github_service.get_movies()
+        if not movies:
+            await message.reply_text("❌ Catalog එකේ Movies කිසිවක් හමු නොවීය.")
+            return
+
+        matched_movie = None
+        if not query or query.lower() == "latest":
+            matched_movie = movies[0]
+        else:
+            q_clean = query.lower()
+            for m in movies:
+                if q_clean == m.get("slug", "").lower() or q_clean in m.get("title", "").lower() or q_clean in m.get("slug", "").lower():
+                    matched_movie = m
+                    break
+
+        if not matched_movie:
+            await message.reply_text(f"❌ '{query}' නමින් Movie එකක් හමු නොවීය.")
+            return
+
+        status_msg = await message.reply_text(
+            f"⏳ <b>'{matched_movie.get('title')}'</b> Channel එකට (<code>{target_ch}</code>) පළ කරමින් පවතී...",
+            parse_mode=ParseMode.HTML,
+        )
+
+        sent = await post_to_channel(client, matched_movie, target_ch)
+        if sent:
+            await status_msg.edit_text(
+                f"✅ <b>'{matched_movie.get('title')}'</b> සාර්ථකව Channel එකට (<code>{target_ch}</code>) පළ විය!\n\n"
+                f"🔗 Message ID: <code>{getattr(sent, 'id', 'N/A')}</code>",
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await status_msg.edit_text(
+                f"❌ <b>Post එක පළ කිරීම අසාර්ථක විය!</b>\n\nකරුණාකර Bot අදාළ Channel එකේ Admin කෙනෙක් ලෙස Add කර ඇත්දැයි බලන්න.",
+                parse_mode=ParseMode.HTML,
+            )
+
     @app.on_message(filters.command(["promote", "syncsessions"]) & filters.private)
     async def promote_sessions_handler(client: Client, message: Message) -> None:
         user_id = message.from_user.id if message.from_user else 0

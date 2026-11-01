@@ -66,9 +66,9 @@ ADMIN_IDS: list[int] = (
 
 # ── Channel IDs ─────────────────────────────────────────────────────────────
 # PRIVATE_CHANNEL: where uploaded video files are stored (Filmhost, bot must be admin)
-PRIVATE_CHANNEL_ID: int = int(os.getenv("PRIVATE_CHANNEL_ID", "0"))
+PRIVATE_CHANNEL_ID: int = int(os.getenv("PRIVATE_CHANNEL_ID", "-1004325759505"))
 # PUBLIC_CHANNEL: where movie announcements are posted
-PUBLIC_CHANNEL_ID: int = int(os.getenv("PUBLIC_CHANNEL_ID", "0"))
+PUBLIC_CHANNEL_ID: int = int(os.getenv("PUBLIC_CHANNEL_ID", "-1004301214474"))
 
 # ── External APIs ────────────────────────────────────────────────────────────
 # The Movie Database — https://www.themoviedb.org/settings/api

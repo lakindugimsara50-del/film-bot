@@ -19869,9 +19869,9 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_by": "bot_auto_leech"
     },
     {
-      "id": "to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz",
-      "slug": "to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz",
-      "title": "To All the Boys Always and Forever 2021 --auto --strict-cinesubz",
+      "id": "mirugaa-2021-auto-strict-cinesubz",
+      "slug": "mirugaa-2021-auto-strict-cinesubz",
+      "title": "Mirugaa 2021 --auto --strict-cinesubz",
       "title_si": "",
       "year": null,
       "imdb": "N/A",
@@ -19903,42 +19903,42 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "cast": [],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYJq5w67BvYq_jnK9KJ4zjt4g6wgiAACGDIAAnN2OVchXII_Y4Z2mB4E",
-      "message_id": 386,
-      "file_name": "to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz.mp4",
-      "file_size": 1327654565,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYFq5w4fgSYN8-7wYtyphYf9lZtPIgACDjIAAnN2OVe4x9NU5WW-Mx4E",
+      "message_id": 385,
+      "file_name": "fs_mirugaa-2021-auto-strict-cinesubz_720p.mp4",
+      "file_size": 1498858349,
       "drive_file_id": "",
-      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
+      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYJq5w67BvYq_jnK9KJ4zjt4g6wgiAACGDIAAnN2OVchXII_Y4Z2mB4E",
-          "message_id": 386,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYFq5w4fgSYN8-7wYtyphYf9lZtPIgACDjIAAnN2OVe4x9NU5WW-Mx4E",
+          "message_id": 385,
           "quality": "1080p"
         }
       ],
       "qualities": {
-        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
-        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
-        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
-        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/387",
-        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386"
+        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
+        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
+        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
+        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/384",
+        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385"
       },
       "downloads": [
         {
           "quality": "720p (Telegram Direct)",
           "label": "720p HD (Telegram Channel • Fast)",
-          "size": "1.2 GB",
-          "size_bytes": 1327654565,
-          "url": "https://t.me/c/4325759505/386",
-          "telegram_url": "https://t.me/c/4325759505/386",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYJq5w67BvYq_jnK9KJ4zjt4g6wgiAACGDIAAnN2OVchXII_Y4Z2mB4E",
-          "message_id": 386,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
+          "size": "1.4 GB",
+          "size_bytes": 1498858349,
+          "url": "https://t.me/c/4325759505/385",
+          "telegram_url": "https://t.me/c/4325759505/385",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYFq5w4fgSYN8-7wYtyphYf9lZtPIgACDjIAAnN2OVe4x9NU5WW-Mx4E",
+          "message_id": 385,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19947,13 +19947,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "480p (Telegram Direct)",
           "label": "480p SD (Telegram Channel • Fast)",
-          "size": "721.4 MB",
-          "size_bytes": 756446991,
-          "url": "https://t.me/c/4325759505/387",
-          "telegram_url": "https://t.me/c/4325759505/387",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYNq5xA8FM3miQ7JjWHG-tkjQ234dAACMzIAAnN2OVfyBmhCV8X_Dx4E",
-          "message_id": 387,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/387",
+          "size": "835.2 MB",
+          "size_bytes": 875720823,
+          "url": "https://t.me/c/4325759505/384",
+          "telegram_url": "https://t.me/c/4325759505/384",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYBq5w0q-ymrAcXGg1bRYtw24knt-wAC-jEAAnN2OVeREXYXCcLsMB4E",
+          "message_id": 384,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/384",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19962,10 +19962,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "1080p",
           "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "1.2 GB",
-          "size_bytes": 1327654565,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz_1080p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
+          "size": "1.4 GB",
+          "size_bytes": 1498858349,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021-auto-strict-cinesubz_1080p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19974,10 +19974,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "720p",
           "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "1.2 GB",
-          "size_bytes": 1327654565,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz_720p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
+          "size": "1.4 GB",
+          "size_bytes": 1498858349,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021-auto-strict-cinesubz_720p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19986,10 +19986,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "480p",
           "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "721.4 MB",
-          "size_bytes": 756446991,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz_480p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/387",
+          "size": "835.2 MB",
+          "size_bytes": 875720823,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021-auto-strict-cinesubz_480p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/384",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19998,10 +19998,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "360p",
           "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "227.9 MB",
-          "size_bytes": 238977821,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz_360p",
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
+          "size": "257.3 MB",
+          "size_bytes": 269794502,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021-auto-strict-cinesubz_360p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -20016,22 +20016,22 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size_bytes": 0
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYJq5w67BvYq_jnK9KJ4zjt4g6wgiAACGDIAAnN2OVchXII_Y4Z2mB4E",
-          "message_id": 386,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
-          "size_bytes": 1327654565
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYFq5w4fgSYN8-7wYtyphYf9lZtPIgACDjIAAnN2OVe4x9NU5WW-Mx4E",
+          "message_id": 385,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
+          "size_bytes": 1498858349
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYNq5xA8FM3miQ7JjWHG-tkjQ234dAACMzIAAnN2OVfyBmhCV8X_Dx4E",
-          "message_id": 387,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/387",
-          "size_bytes": 756446991
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYBq5w0q-ymrAcXGg1bRYtw24knt-wAC-jEAAnN2OVeREXYXCcLsMB4E",
+          "message_id": 384,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/384",
+          "size_bytes": 875720823
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/386",
-          "size_bytes": 238977821
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/385",
+          "size_bytes": 269794502
         }
       },
       "subtitles": [
@@ -20039,16 +20039,16 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "language": "Sinhala",
           "srclang": "si",
           "label": "සිංහල උපසිරැසි (Sinhala)",
-          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz-si.vtt",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/mirugaa-2021-auto-strict-cinesubz-si.vtt",
           "default": false
         }
       ],
       "source_method": "ddl",
-      "site_url": "https://filmsub.pages.dev/movie.html?id=to-all-the-boys-always-and-forever-2021-auto-strict-cinesubz",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=mirugaa-2021-auto-strict-cinesubz",
       "added_date": "2026-11-01",
-      "added_at": "2026-11-01T10:11:09Z",
+      "added_at": "2026-11-01T10:11:21Z",
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T10:11:10Z"
+  "last_updated": "2026-11-01T10:11:22Z"
 };

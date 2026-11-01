@@ -718,6 +718,7 @@ class TelegramUploadPool:
         file_name: str = "",
         progress_callback=None,
         fallback_client: Optional[Client] = None,
+        reply_markup=None,
     ) -> dict:
         """
         Upload a video file using a session from the quality tier pool.
@@ -745,6 +746,8 @@ class TelegramUploadPool:
                             file_path=file_path,
                             target_chat=target_chat,
                             caption=caption,
+                            file_name=file_name,
+                            reply_markup=reply_markup,
                             progress_callback=progress_callback,
                             fallback_chat=0,
                         )
@@ -758,6 +761,8 @@ class TelegramUploadPool:
                         file_path=file_path,
                         target_chat=target_chat,
                         caption=caption,
+                        file_name=file_name,
+                        reply_markup=reply_markup,
                         progress_callback=progress_callback,
                         fallback_chat=0,
                     )
@@ -785,6 +790,8 @@ class TelegramUploadPool:
                         file_path=file_path,
                         target_chat=target_chat,
                         caption=caption,
+                        file_name=file_name,
+                        reply_markup=reply_markup,
                         progress_callback=progress_callback,
                         fallback_chat=0,
                     )
@@ -849,6 +856,8 @@ class TelegramUploadPool:
                                             file_path=file_path,
                                             target_chat=target_chat,
                                             caption=caption,
+                                            file_name=file_name,
+                                            reply_markup=reply_markup,
                                             progress_callback=progress_callback,
                                             fallback_chat=0,
                                         )
@@ -875,6 +884,8 @@ class TelegramUploadPool:
                         file_path=file_path,
                         target_chat=target_chat,
                         caption=caption,
+                        file_name=file_name,
+                        reply_markup=reply_markup,
                         progress_callback=progress_callback,
                         fallback_chat=0,
                     )

@@ -455,21 +455,30 @@ def generate_video_thumbnail(
     thumb_path: Optional[str] = None,
     duration: float = 0.0,
     ffmpeg_bin: Optional[str] = None,
+    prefer_branded: bool = True,
 ) -> Optional[str]:
     """
     Generate a crisp 16:9 widescreen thumbnail image (.jpg) from the video.
-    Uses 640x360 resolution with high JPEG quality so Telegram renders
-    a native full-width 16:9 widescreen video preview card across Mobile,
-    Laptop, and Smart TV screens without square pillarboxing.
+    Prioritizes official FilmZilla branded 16:9 card (filmzilla_branded_thumb.jpg)
+    for Telegram video cards across Mobile, Laptop, and TV screens.
     """
-    exe = ffmpeg_bin or get_ffmpeg_binary()
-    if not exe or not os.path.exists(file_path):
-        return None
-
     if not thumb_path:
         tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
         thumb_path = tmp.name
         tmp.close()
+
+    if prefer_branded:
+        try:
+            from services.branding_service import get_branded_thumbnail
+            branded = get_branded_thumbnail(thumb_path)
+            if branded and os.path.exists(branded) and os.path.getsize(branded) > 500:
+                return branded
+        except Exception:
+            pass
+
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return None
 
     if duration <= 0:
         duration = get_video_duration(file_path, exe)
@@ -532,6 +541,14 @@ def generate_video_thumbnail(
             return thumb_path
     except Exception as exc:
         log.debug("[VideoService] Fallback thumbnail generation failed: %s", exc)
+
+    try:
+        from services.branding_service import get_branded_thumbnail
+        branded = get_branded_thumbnail(thumb_path)
+        if branded and os.path.exists(branded) and os.path.getsize(branded) > 500:
+            return branded
+    except Exception:
+        pass
 
     return None
 
@@ -861,6 +878,10 @@ async def stream_copy_subtitles(
             cmd.extend(["-c:a", "copy"])
         cmd.extend(["-sn"])
     cmd.extend(["-max_muxing_queue_size", "9999"])
+    cmd.extend([
+        "-metadata", "artist=FilmSub.lk",
+        "-metadata", "comment=https://filmsub.pages.dev",
+    ])
     if is_mp4:
         cmd.extend(["-movflags", "+faststart"])
     cmd.append(os.path.abspath(output_path))
@@ -2474,6 +2495,8 @@ async def prepend_filmzilla_intro(
         *enc_opts,
         *audio_opts,
         "-max_muxing_queue_size", "9999",
+        "-metadata", "artist=FilmSub.lk",
+        "-metadata", "comment=https://filmsub.pages.dev",
         "-movflags", "+faststart",
         os.path.abspath(temp_target),
     ]

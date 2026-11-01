@@ -129,7 +129,8 @@ async def download_and_upload(
     with tempfile.TemporaryDirectory() as tmp_dir:
         # ── 1. Download the file ────────────────────────────────────────────
         local_path = await _download_file(url, tmp_dir, progress_callback)
-        file_name = os.path.basename(local_path)
+        from services.branding_service import format_branded_filename
+        file_name = format_branded_filename(title="", original_name=os.path.basename(local_path))
         file_size = os.path.getsize(local_path)
         log.info("Downloaded '%s'  (%d bytes)", file_name, file_size)
 
@@ -149,9 +150,11 @@ async def download_and_upload(
                 target_chat=target_chat,
                 progress_callback=progress_callback,
                 fallback_chat=0,
+                file_name=file_name,
             )
 
         # Userbot upload fallback if bot_client not provided
+        from services.branding_service import get_branded_thumbnail
         from services.video_service import get_video_metadata, generate_video_thumbnail
         meta = get_video_metadata(local_path)
         width = meta.get("width", 1280)
@@ -160,7 +163,9 @@ async def download_and_upload(
 
         thumb_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
         thumb_temp.close()
-        thumb_path = generate_video_thumbnail(local_path, thumb_path=thumb_temp.name, duration=duration)
+        thumb_path = get_branded_thumbnail(thumb_temp.name)
+        if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
+            thumb_path = generate_video_thumbnail(local_path, thumb_path=thumb_temp.name, duration=duration)
         if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
             thumb_path = None
             if os.path.exists(thumb_temp.name):
@@ -229,6 +234,8 @@ async def upload_video_file(
     caption: str = "",
     progress_callback=None,
     fallback_chat: int = 0,
+    file_name: str = "",
+    reply_markup=None,
 ) -> dict:
     """
     Directly upload a local video file to the specified Telegram chat/channel.
@@ -238,7 +245,9 @@ async def upload_video_file(
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Video file not found at: {file_path}")
 
-    file_name = os.path.basename(file_path)
+    from services.branding_service import format_branded_filename, get_branded_thumbnail
+    raw_name = file_name or os.path.basename(file_path)
+    file_name = format_branded_filename(title="", original_name=raw_name)
     file_size = os.path.getsize(file_path)
     target = target_chat if target_chat != 0 else (PRIVATE_CHANNEL_ID or (config.ADMIN_IDS[0] if config.ADMIN_IDS else 0))
     try:
@@ -258,6 +267,8 @@ async def upload_video_file(
     thumb_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
     thumb_temp.close()
     thumb_path = generate_video_thumbnail(file_path, thumb_path=thumb_temp.name, duration=duration)
+    if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
+        thumb_path = get_branded_thumbnail(thumb_temp.name)
     if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
         thumb_path = None
         if os.path.exists(thumb_temp.name):
@@ -370,6 +381,7 @@ async def upload_video_file(
                         height=height,
                         thumb=thumb_path,
                         supports_streaming=True,
+                        reply_markup=reply_markup,
                         progress=_pyrogram_progress,
                         disable_notification=True,
                     )
@@ -384,6 +396,7 @@ async def upload_video_file(
                         caption=caption,
                         thumb=thumb_path,
                         force_document=True,
+                        reply_markup=reply_markup,
                         progress=_pyrogram_progress,
                         disable_notification=True,
                     )
@@ -400,6 +413,7 @@ async def upload_video_file(
                     height=height,
                     thumb=thumb_path,
                     supports_streaming=True,
+                    reply_markup=reply_markup,
                     progress=_pyrogram_progress,
                     disable_notification=True,
                 )
@@ -413,6 +427,7 @@ async def upload_video_file(
                     caption=caption,
                     thumb=thumb_path,
                     force_document=True,
+                    reply_markup=reply_markup,
                     progress=_pyrogram_progress,
                     disable_notification=True,
                 )

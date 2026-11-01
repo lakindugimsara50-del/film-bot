@@ -364,12 +364,21 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
                     target_msg_id = int(m_tg.group(2))
                 break
 
-    site_base = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")
-    caption = (
-        f"🎬 <b>{display_title} [{target_q}]</b>\n\n"
-        f"⚡ <b>Quality:</b> {target_q} (High-Speed Telegram Cloud)\n"
-        f"💬 <b>සිංහල උපසිරැසි:</b> Video එකටම Soft-Mux කර ඇත\n"
-        f"🌐 <b>Watch Online:</b> {site_base}/movie.html?id={movie.get('slug', slug)}"
+    site_base = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+    m_slug = movie.get("slug", slug)
+    from services.branding_service import build_branded_caption, build_branded_inline_keyboard
+    caption = build_branded_caption(
+        title=title,
+        year=str(year or ""),
+        quality=target_q,
+        file_size=target_info.get("size_bytes", 0),
+        slug=m_slug,
+        site_base_url=site_base,
+    )
+    delivery_kb = build_branded_inline_keyboard(
+        slug=m_slug,
+        site_base_url=site_base,
+        bot_username=getattr(client, "username", None) or "Filmsinhala200Bot",
     )
 
     if target_msg_id and ch_id:
@@ -380,6 +389,7 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
                 message_id=target_msg_id,
                 caption=caption,
                 parse_mode=ParseMode.HTML,
+                reply_markup=delivery_kb,
             )
             return
         except Exception as copy_err:
@@ -392,6 +402,7 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
                 video=target_file_id,
                 caption=caption,
                 parse_mode=ParseMode.HTML,
+                reply_markup=delivery_kb,
             )
             return
         except Exception as vid_err:
@@ -403,8 +414,9 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
             chat_id,
             f"🎬 <b>{display_title} [{target_q}]</b>\n\n"
             f"⚡ <b>Direct Stream/Download URL:</b>\n{s_url}\n\n"
-            f"🌐 <b>Website:</b> {site_base}/movie.html?id={movie.get('slug', slug)}",
+            f"🌐 <b>Website:</b> {site_base}/movie.html?id={m_slug}",
             parse_mode=ParseMode.HTML,
+            reply_markup=delivery_kb,
         )
         return
 

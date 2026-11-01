@@ -1760,7 +1760,26 @@ async def _execute_leech(
 
                                 up_res = {}
                                 if ENABLE_TELEGRAM_VIDEO_UPLOAD and target_channel:
-                                    var_caption = f"🎬 {display_title} [{q_name}]\n\n⚡ Quality: {q_name} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
+                                    from services.branding_service import (
+                                        format_branded_filename,
+                                        build_branded_caption,
+                                        build_branded_inline_keyboard,
+                                    )
+                                    b_filename = format_branded_filename(
+                                        title=display_title,
+                                        year=str(year or ""),
+                                        quality=q_name,
+                                        original_name=os.path.basename(c_dl),
+                                    )
+                                    var_caption = build_branded_caption(
+                                        title=display_title,
+                                        year=str(year or ""),
+                                        quality=q_name,
+                                        file_size=os.path.getsize(c_dl) if os.path.exists(c_dl) else 0,
+                                        slug=slug or "",
+                                        site_base_url=site_url,
+                                    )
+                                    branded_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=site_url)
                                     try:
                                         from services.upload_pool import upload_pool
                                         up_res = await upload_pool.upload_with_pool(
@@ -1768,7 +1787,8 @@ async def _execute_leech(
                                             target_chat=target_channel,
                                             quality=q_name,
                                             caption=var_caption,
-                                            file_name=os.path.basename(c_dl),
+                                            file_name=b_filename,
+                                            reply_markup=branded_kb,
                                             progress_callback=_up_cb,
                                             fallback_client=client,
                                         )
@@ -1785,6 +1805,8 @@ async def _execute_leech(
                                                 file_path=c_dl,
                                                 target_chat=target_channel,
                                                 caption=var_caption,
+                                                file_name=b_filename,
+                                                reply_markup=branded_kb,
                                                 progress_callback=_up_cb,
                                                 fallback_chat=0,
                                             )
@@ -2786,10 +2808,30 @@ async def _execute_leech(
             dashboard_state["variant_pct"] = 0.0
             await _render_dashboard(force=True)
 
+            from services.branding_service import (
+                format_branded_filename,
+                build_branded_caption,
+                build_branded_inline_keyboard,
+            )
+            b_var_filename = format_branded_filename(
+                title=display_title,
+                year=str(year or ""),
+                quality=q_label,
+                original_name=os.path.basename(q_path),
+            )
+            var_caption = build_branded_caption(
+                title=display_title,
+                year=str(year or ""),
+                quality=q_label,
+                file_size=q_bytes or (os.path.getsize(q_path) if os.path.exists(q_path) else 0),
+                slug=slug or "",
+                site_base_url=site_url,
+            )
+            branded_var_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=site_url)
+
             for attempt in range(3):
                 try:
                     log.info("[LeechService] Uploading variant '%s' to Telegram channel (attempt %d)...", q_label, attempt + 1)
-                    var_caption = f"🎬 {display_title} [{q_label}]\n\n⚡ Quality: {q_label} (High-Speed Telegram Cloud)\n🌐 Watch: {site_url}"
                     async def _var_cb(p: float, d: str, t: str, s: str, e: str) -> None:
                         await _variant_upload_progress(q_label, p, d, t, s, e)
 
@@ -2799,7 +2841,8 @@ async def _execute_leech(
                         target_chat=target_channel,
                         quality=q_label,
                         caption=var_caption,
-                        file_name=os.path.basename(q_path),
+                        file_name=b_var_filename,
+                        reply_markup=branded_var_kb,
                         progress_callback=_var_cb,
                         fallback_client=client,
                     )
@@ -2825,6 +2868,8 @@ async def _execute_leech(
                         file_path=q_path,
                         target_chat=target_channel,
                         caption=var_caption,
+                        file_name=b_var_filename,
+                        reply_markup=branded_var_kb,
                         progress_callback=_var_cb,
                         fallback_chat=0,
                     )
@@ -3152,13 +3197,34 @@ async def _execute_leech(
             dashboard_state["primary_status"] = "uploading"
             await _render_dashboard(force=True)
             try:
+                from services.branding_service import (
+                    format_branded_filename,
+                    build_branded_caption,
+                    build_branded_inline_keyboard,
+                )
                 from services.upload_pool import upload_pool
+                b_pri_filename = format_branded_filename(
+                    title=display_title,
+                    year=str(year or ""),
+                    quality=primary_quality,
+                    original_name=os.path.basename(local_file),
+                )
+                pri_caption = build_branded_caption(
+                    title=display_title,
+                    year=str(year or ""),
+                    quality=primary_quality,
+                    file_size=os.path.getsize(local_file) if os.path.exists(local_file) else 0,
+                    slug=slug or "",
+                    site_base_url=site_url,
+                )
+                branded_pri_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=site_url)
                 upload_res = await upload_pool.upload_with_pool(
                     file_path=local_file,
                     target_chat=target_channel,
                     quality=primary_quality,
-                    caption=f"🎬 {display_title} [{primary_quality}]\n\n⚡ Uploaded via Auto-Leech (/boost)\n🌐 Watch: {site_url}",
-                    file_name=os.path.basename(local_file),
+                    caption=pri_caption,
+                    file_name=b_pri_filename,
+                    reply_markup=branded_pri_kb,
                     progress_callback=_upload_progress,
                     fallback_client=client,
                 )

@@ -240,6 +240,12 @@ def register(app: Client) -> None:
                                 await status_msg.edit_text("⏳ <b>Telegram Channel එක වෙත නැවත Upload කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
                                 ch_id = target_movie.get("channel_id") or config.PRIVATE_CHANNEL_ID
                                 
+                                from services.branding_service import (
+                                    get_branded_thumbnail,
+                                    format_branded_filename,
+                                    build_branded_caption,
+                                    build_branded_inline_keyboard,
+                                )
                                 from services.video_service import get_video_metadata, generate_video_thumbnail
                                 meta_remux = get_video_metadata(output_mp4)
                                 w_remux = meta_remux.get("width", 1280)
@@ -248,7 +254,9 @@ def register(app: Client) -> None:
                                 
                                 th_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                                 th_temp.close()
-                                th_path = generate_video_thumbnail(output_mp4, thumb_path=th_temp.name, duration=d_remux)
+                                th_path = get_branded_thumbnail(th_temp.name)
+                                if not (th_path and os.path.exists(th_path) and os.path.getsize(th_path) > 500):
+                                    th_path = generate_video_thumbnail(output_mp4, thumb_path=th_temp.name, duration=d_remux)
                                 if not (th_path and os.path.exists(th_path) and os.path.getsize(th_path) > 500):
                                     th_path = None
                                     if os.path.exists(th_temp.name):
@@ -257,16 +265,23 @@ def register(app: Client) -> None:
                                         except Exception:
                                             pass
 
+                                sub_filename = format_branded_filename(movie_title, original_name=os.path.basename(output_mp4))
+                                m_slug = target_movie.get("slug", "")
+                                sub_caption = build_branded_caption(movie_title, slug=m_slug)
+                                sub_kb = build_branded_inline_keyboard(slug=m_slug)
+
                                 try:
                                     sent_msg = await client.send_video(
                                         chat_id=ch_id,
                                         video=output_mp4,
-                                        caption=f"{movie_title} - Hard-Subbed",
+                                        file_name=sub_filename,
+                                        caption=sub_caption,
                                         duration=d_remux,
                                         width=w_remux,
                                         height=h_remux,
                                         thumb=th_path,
-                                        supports_streaming=True
+                                        supports_streaming=True,
+                                        reply_markup=sub_kb,
                                     )
                                 finally:
                                     if th_path and os.path.exists(th_path):

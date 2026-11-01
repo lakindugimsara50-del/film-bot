@@ -20606,13 +20606,13 @@
     {
       "id": "the-florist-2026-auto-strict-cinesubz",
       "slug": "the-florist-2026-auto-strict-cinesubz",
-      "title": "The Florist 2026 --auto --strict-cinesubz",
+      "title": "The Florist",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2026,
+      "imdb": "5.8",
+      "rating": "5.8",
+      "imdb_id": "tt33214716",
+      "tmdb_id": "1476746",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -20620,11 +20620,14 @@
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/4tnRvIiWMzVA2Tw9c7INLo4sfo0.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/4tnRvIiWMzVA2Tw9c7INLo4sfo0.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/jpH1VRw74w0vvPTY0ryKEtMIXc.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/jpH1VRw74w0vvPTY0ryKEtMIXc.jpg",
+      "genres": [
+        "Action",
+        "Thriller"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -20632,10 +20635,31 @@
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "720p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "99 min",
+      "description": "A quiet horticulturalist harboring a secret life as a lethal assassin finds his true identity jeopardized when he forms an unlikely friendship with a witnesses to police corruption.",
+      "director": "Babak Najafi",
+      "cast": [
+        {
+          "name": "Dennis Quaid",
+          "character": "Carl Rikker"
+        },
+        {
+          "name": "Jean Reno",
+          "character": "Charlie"
+        },
+        {
+          "name": "Sky Katz",
+          "character": "Layla"
+        },
+        {
+          "name": "Jim Klock",
+          "character": "Deckard"
+        },
+        {
+          "name": "Leonidas Gulaptis",
+          "character": "Woodrock"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZFq56BE0nD-SF5eLC4GqGw-rA1qhgAC7T4AAnN2OVfKctRXGjX21R4E",
@@ -20789,13 +20813,13 @@
     {
       "id": "after-impact-2026-auto-strict-cinesubz",
       "slug": "after-impact-2026-auto-strict-cinesubz",
-      "title": "After Impact 2026 --auto --strict-cinesubz",
+      "title": "After Impact",
       "title_si": "",
-      "year": null,
-      "imdb": "N/A",
-      "rating": "N/A",
-      "imdb_id": "",
-      "tmdb_id": "",
+      "year": 2026,
+      "imdb": "5.8",
+      "rating": "5.8",
+      "imdb_id": "tt36809539",
+      "tmdb_id": "1751701",
       "type": "movie",
       "season": null,
       "episode": null,
@@ -20803,11 +20827,15 @@
       "number_of_seasons": 0,
       "number_of_episodes": 0,
       "seasons": [],
-      "poster": "",
-      "poster_url": "",
-      "backdrop": "",
-      "backdrop_url": "",
-      "genres": [],
+      "poster": "https://image.tmdb.org/t/p/w500/yzDuAQCY2n6zzOlBkn6JzhLhY3k.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/yzDuAQCY2n6zzOlBkn6JzhLhY3k.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/k22XyPbce7zvzzf5OnT4uaY8ZD1.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/k22XyPbce7zvzzf5OnT4uaY8ZD1.jpg",
+      "genres": [
+        "Science Fiction",
+        "Drama",
+        "Thriller"
+      ],
       "language": "English",
       "subtitle_language": "Sinhala",
       "has_sinhala_sub": true,
@@ -20815,10 +20843,31 @@
       "is_already_hardsubbed": true,
       "sub_hardcoded": true,
       "quality": "720p",
-      "duration": "0 min",
-      "description": "",
-      "director": "Unknown",
-      "cast": [],
+      "duration": "95 min",
+      "description": "After losing his father, Ethan Nichols inherits one of the largest greenhouses in the country, just as the world faces a devastating threat from an approaching asteroid. As society begins to unravel, Ethan grapples with personal betrayal, overwhelming loneliness, and the growing fear that survival may come at the cost of his humanity. Seeking refuge in his family’s bunker, Ethan endures the harsh aftermath of the impact, wrestling with physical injury and emotional despair. When a faint voice crackles over his radio, Ethan discovers he's not as alone as he believed.",
+      "director": "Michiel Rensen, Liam Carter",
+      "cast": [
+        {
+          "name": "Michiel Rensen",
+          "character": "Ethan"
+        },
+        {
+          "name": "Maxie Li",
+          "character": "Jessie"
+        },
+        {
+          "name": "Riki Antonievich",
+          "character": "Jack"
+        },
+        {
+          "name": "Will Clague",
+          "character": "Connor"
+        },
+        {
+          "name": "Stephanie Ramlose",
+          "character": "Elle"
+        }
+      ],
       "featured": false,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZRq56QYz6BYA4TAflOlmzQzreUMtgACPz8AAnN2OVeE7fvdXyBzQx4E",

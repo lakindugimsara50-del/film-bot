@@ -19345,42 +19345,42 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "cast": [],
       "featured": false,
       "trending": true,
-      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
-      "message_id": 368,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXdq5vzpzYWKMBa6UKa41HK0OebGFQACOzAAAnN2OVefqt3ZX-0tLB4E",
+      "message_id": 375,
       "file_name": "fs_chaos-walking-2021-auto-strict-cinesubz_720p.mp4",
-      "file_size": 1088924467,
+      "file_size": 1238789983,
       "drive_file_id": "",
-      "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
       "streams": [
         {
           "server": "Server 1",
           "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
           "type": "video/mp4",
           "mode": "telegram_stream",
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
-          "message_id": 368,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXdq5vzpzYWKMBa6UKa41HK0OebGFQACOzAAAnN2OVefqt3ZX-0tLB4E",
+          "message_id": 375,
           "quality": "1080p"
         }
       ],
       "qualities": {
-        "auto": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
-        "1080p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
-        "720p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
-        "480p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
-        "360p": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368"
+        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
+        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
+        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
+        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/374",
+        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375"
       },
       "downloads": [
         {
           "quality": "720p (Telegram Direct)",
           "label": "720p HD (Telegram Channel • Fast)",
-          "size": "1.0 GB",
-          "size_bytes": 1088924467,
-          "url": "https://t.me/c/4325759505/368",
-          "telegram_url": "https://t.me/c/4325759505/368",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
-          "message_id": 368,
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "size": "1.2 GB",
+          "size_bytes": 1238789983,
+          "url": "https://t.me/c/4325759505/375",
+          "telegram_url": "https://t.me/c/4325759505/375",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXdq5vzpzYWKMBa6UKa41HK0OebGFQACOzAAAnN2OVefqt3ZX-0tLB4E",
+          "message_id": 375,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19389,13 +19389,13 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "480p (Telegram Direct)",
           "label": "480p SD (Telegram Channel • Fast)",
-          "size": "546.3 MB",
-          "size_bytes": 572841324,
-          "url": "https://t.me/c/4325759505/367",
-          "telegram_url": "https://t.me/c/4325759505/367",
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAW9q5mTtaFpcAVaijm81BkQiYBU5FgACeTAAAnN2MVfuNHz3xc-o5x4E",
-          "message_id": 367,
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
+          "size": "689.3 MB",
+          "size_bytes": 722757114,
+          "url": "https://t.me/c/4325759505/374",
+          "telegram_url": "https://t.me/c/4325759505/374",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXZq5vwNrhi7aDd2JHIgibcwIBIvpAACHzAAAnN2OVebb0GI42GQAAEeBA",
+          "message_id": 374,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/374",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19404,10 +19404,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "1080p",
           "label": "1080p Full HD (Telegram Bot / Cloud)",
-          "size": "1.0 GB",
-          "size_bytes": 1088924467,
+          "size": "1.2 GB",
+          "size_bytes": 1238789983,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_1080p",
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19416,10 +19416,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "720p",
           "label": "720p HD (Telegram Bot / Cloud)",
-          "size": "1.0 GB",
-          "size_bytes": 1088924467,
+          "size": "1.2 GB",
+          "size_bytes": 1238789983,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_720p",
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19428,10 +19428,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "480p",
           "label": "480p SD (Telegram Bot / Cloud)",
-          "size": "546.3 MB",
-          "size_bytes": 572841324,
+          "size": "689.3 MB",
+          "size_bytes": 722757114,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_480p",
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/374",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19440,10 +19440,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
         {
           "quality": "360p",
           "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "186.9 MB",
-          "size_bytes": 196006404,
+          "size": "212.7 MB",
+          "size_bytes": 222982196,
           "url": "https://t.me/Filmsinhala200Bot?start=dl_chaos-walking-2021-auto-strict-cinesubz_360p",
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
           "format": "MP4",
           "host": "Telegram",
           "sub_merged": true,
@@ -19458,22 +19458,22 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
           "size_bytes": 0
         },
         "720p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXBq5mV1AjJ-0x2f4cw1P9cGDcWKqAAChzAAAnN2MVdTbA_kwxZPTR4E",
-          "message_id": 368,
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
-          "size_bytes": 1088924467
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXdq5vzpzYWKMBa6UKa41HK0OebGFQACOzAAAnN2OVefqt3ZX-0tLB4E",
+          "message_id": 375,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
+          "size_bytes": 1238789983
         },
         "480p": {
-          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAW9q5mTtaFpcAVaijm81BkQiYBU5FgACeTAAAnN2MVfuNHz3xc-o5x4E",
-          "message_id": 367,
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/367",
-          "size_bytes": 572841324
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXZq5vwNrhi7aDd2JHIgibcwIBIvpAACHzAAAnN2OVebb0GI42GQAAEeBA",
+          "message_id": 374,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/374",
+          "size_bytes": 722757114
         },
         "360p": {
           "file_id": "",
           "message_id": 0,
-          "stream_url": "https://hawaiian-senior-documents-scholars.trycloudflare.com/stream/channel/-1004325759505/368",
-          "size_bytes": 196006404
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/375",
+          "size_bytes": 222982196
         }
       },
       "subtitles": [
@@ -19487,10 +19487,10 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       ],
       "source_method": "ddl",
       "site_url": "https://filmsub.pages.dev/movie.html?id=chaos-walking-2021-auto-strict-cinesubz",
-      "added_date": "2026-10-31",
-      "added_at": "2026-10-31T22:02:41Z",
+      "added_date": "2026-11-01",
+      "added_at": "2026-11-01T08:48:50Z",
       "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-10-31T22:02:43Z"
+  "last_updated": "2026-11-01T08:48:51Z"
 };

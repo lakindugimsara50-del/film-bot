@@ -20048,7 +20048,203 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-01",
       "added_at": "2026-11-01T10:11:21Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "salt-2021-auto-strict-cinesubz",
+      "slug": "salt-2021-auto-strict-cinesubz",
+      "title": "Salt 2021 --auto --strict-cinesubz",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYhq5xa4PgmB-Q8BwdkHNs2pqwHv-AAC5jIAAnN2OVdFUfITLYtREx4E",
+      "message_id": 392,
+      "file_name": "fs_salt-2021-auto-strict-cinesubz_1080p.mp4",
+      "file_size": 1134929749,
+      "drive_file_id": "",
+      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYhq5xa4PgmB-Q8BwdkHNs2pqwHv-AAC5jIAAnN2OVdFUfITLYtREx4E",
+          "message_id": 392,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/391",
+        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/390",
+        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1134929749,
+          "url": "https://t.me/c/4325759505/392",
+          "telegram_url": "https://t.me/c/4325759505/392",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYhq5xa4PgmB-Q8BwdkHNs2pqwHv-AAC5jIAAnN2OVdFUfITLYtREx4E",
+          "message_id": 392,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "585.1 MB",
+          "size_bytes": 613470288,
+          "url": "https://t.me/c/4325759505/391",
+          "telegram_url": "https://t.me/c/4325759505/391",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYdq5xK9Wl_Jcefe_pjAZWCqZxRgrwACbjIAAnN2OVfDcN_lN7CBux4E",
+          "message_id": 391,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/391",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "387.5 MB",
+          "size_bytes": 406368618,
+          "url": "https://t.me/c/4325759505/390",
+          "telegram_url": "https://t.me/c/4325759505/390",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYZq5xJ79SEBiDdWSJclIMS72cYwcQACYzIAAnN2OVcpK6iXM2xMUR4E",
+          "message_id": 390,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/390",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1134929749,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021-auto-strict-cinesubz_1080p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "585.1 MB",
+          "size_bytes": 613470288,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021-auto-strict-cinesubz_720p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/391",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "387.5 MB",
+          "size_bytes": 406368618,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021-auto-strict-cinesubz_480p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/390",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "194.8 MB",
+          "size_bytes": 204287354,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021-auto-strict-cinesubz_360p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYhq5xa4PgmB-Q8BwdkHNs2pqwHv-AAC5jIAAnN2OVdFUfITLYtREx4E",
+          "message_id": 392,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+          "size_bytes": 1134929749
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYdq5xK9Wl_Jcefe_pjAZWCqZxRgrwACbjIAAnN2OVfDcN_lN7CBux4E",
+          "message_id": 391,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/391",
+          "size_bytes": 613470288
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAYZq5xJ79SEBiDdWSJclIMS72cYwcQACYzIAAnN2OVcpK6iXM2xMUR4E",
+          "message_id": 390,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/390",
+          "size_bytes": 406368618
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/392",
+          "size_bytes": 204287354
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/salt-2021-auto-strict-cinesubz-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=salt-2021-auto-strict-cinesubz",
+      "added_date": "2026-11-01",
+      "added_at": "2026-11-01T10:38:57Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T10:11:22Z"
+  "last_updated": "2026-11-01T10:38:58Z"
 };

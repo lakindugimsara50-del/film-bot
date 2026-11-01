@@ -66,7 +66,8 @@ if _missing:
         "Missing required environment variable(s): %s  —  Cannot start bot.",
         ", ".join(_missing),
     )
-    sys.exit(1)
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        sys.exit(1)
 
 # Ensure an active event loop exists for Pyrogram Dispatcher in Python 3.11+
 try:
@@ -83,9 +84,9 @@ _PYROGRAM_WORKERS = 16 if _on_colab_env else 4
 app = Client(
     name="film_bot",
     in_memory=True,
-    api_id=config.API_ID,
-    api_hash=config.API_HASH,
-    bot_token=config.BOT_TOKEN,
+    api_id=config.API_ID or 12345,
+    api_hash=config.API_HASH or "mock_hash",
+    bot_token=config.BOT_TOKEN or "123456:mock_token",
     workers=_PYROGRAM_WORKERS,
     max_concurrent_transmissions=10,
     sleep_threshold=30,

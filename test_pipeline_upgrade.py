@@ -150,6 +150,8 @@ class TestPipelineUpgrade(unittest.TestCase):
 
     def test_tmdb_query_normalization(self):
         from bot.services import tmdb_service
+        if not tmdb_service.TMDB_API_KEY:
+            self.skipTest("TMDB_API_KEY is not configured in this environment")
 
         async def _check_tmdb():
             meta = await tmdb_service.fetch_metadata("ice age 01")

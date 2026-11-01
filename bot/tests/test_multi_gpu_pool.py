@@ -173,6 +173,112 @@ class TestMultiGPUPool(unittest.IsolatedAsyncioTestCase):
             ss_idx = call_args.index("-ss")
             self.assertEqual(call_args[ss_idx + 1], "10.0")
 
+    async def test_cover_cinesubz_watermark_releases_gpu_slot_in_finally(self):
+        """Verify cover_cinesubz_watermark releases the acquired GPU slot in its finally block."""
+        pool = video_service._GPU_POOL
+        dummy_in = "test_cinesubz_1080p.mp4"
+        dummy_out = "test_cinesubz_badged.mp4"
+
+        with patch.object(pool, "_discover_devices", return_value=[0]), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1024 * 1024 * 50), \
+             patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("services.video_service.get_video_resolution", return_value=(1920, 1080)), \
+             patch("services.video_service.get_video_duration", return_value=120.0), \
+             patch("services.video_service.detect_hw_encoder", return_value="h264_nvenc"), \
+             patch("services.video_service.get_or_create_filmzilla_intro", return_value=None), \
+             patch("services.video_service.get_audio_codec", return_value="aac"), \
+             patch("asyncio.create_subprocess_exec") as mock_exec:
+
+            mock_proc = MagicMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = MagicMock(return_value=asyncio.sleep(0.01))
+            mock_proc.communicate = MagicMock(return_value=asyncio.sleep(0.01, result=(b"", b"")))
+            mock_exec.return_value = mock_proc
+
+            # Re-initialize pool queue to single slot [0]
+            pool._queue = None
+            await pool._ensure_queue()
+            self.assertFalse(pool.is_busy())
+
+            ok = await video_service.cover_cinesubz_watermark(dummy_in, dummy_out, prepend_intro=False)
+            self.assertTrue(ok)
+
+            # CRITICAL: Pool must NOT be left busy or leaked!
+            self.assertFalse(pool.is_busy())
+            # Should be able to acquire immediately without timeout
+            async with pool.acquire(timeout=0.1) as slot:
+                self.assertEqual(slot, 0)
+
+    async def test_cover_cinesubz_watermark_cpu_fallback_on_480p_slot_exhaustion(self):
+        """Verify 480p falls back to multi-core CPU libx264 when GPU slots are busy."""
+        pool = video_service._GPU_POOL
+        dummy_in = "test_movie_480p.mp4"
+        dummy_out = "test_movie_480p_out.mp4"
+
+        with patch.object(pool, "_discover_devices", return_value=[0]), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1024 * 1024 * 20), \
+             patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("services.video_service.get_video_resolution", return_value=(854, 480)), \
+             patch("services.video_service.get_video_duration", return_value=120.0), \
+             patch("services.video_service.detect_hw_encoder", return_value="h264_nvenc"), \
+             patch("services.video_service.get_or_create_filmzilla_intro", return_value=None), \
+             patch("services.video_service.get_audio_codec", return_value="aac"), \
+             patch("asyncio.create_subprocess_exec") as mock_exec:
+
+            mock_proc = MagicMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = MagicMock(return_value=asyncio.sleep(0.01))
+            mock_proc.communicate = MagicMock(return_value=asyncio.sleep(0.01, result=(b"", b"")))
+            mock_exec.return_value = mock_proc
+
+            pool._queue = None
+            await pool._ensure_queue()
+
+            # Occupy the only GPU slot
+            async with pool.acquire():
+                self.assertTrue(pool.is_busy())
+
+                # Now run 480p watermark cover with mock acquire raising TimeoutError
+                with patch.object(pool, "acquire", side_effect=asyncio.TimeoutError("GPU busy")):
+                    ok = await video_service.cover_cinesubz_watermark(dummy_in, dummy_out, prepend_intro=False)
+                    self.assertTrue(ok)
+                    call_args = list(mock_exec.call_args[0])
+                    # Verify libx264 CPU encoder was used instead of h264_nvenc
+                    self.assertIn("-c:v", call_args)
+                    cv_idx = call_args.index("-c:v")
+                    self.assertEqual(call_args[cv_idx + 1], "libx264")
+
+    async def test_prepend_filmzilla_intro_cpu_mode_does_not_acquire_gpu(self):
+        """Verify prepend_filmzilla_intro in CPU mode does not acquire a slot from _GPU_POOL."""
+        pool = video_service._GPU_POOL
+        dummy_in = "test_in.mp4"
+        dummy_out = "test_out.mp4"
+
+        with patch("services.video_service.get_ffmpeg_binary", return_value="ffmpeg"), \
+             patch("services.video_service.detect_hw_encoder", return_value=None), \
+             patch("services.video_service.get_video_resolution", return_value=(1280, 720)), \
+             patch("services.video_service.get_video_duration", return_value=60.0), \
+             patch("services.video_service.get_audio_codec", return_value="aac"), \
+             patch("services.video_service.get_or_create_filmzilla_intro", return_value="intro.mp4"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.getsize", return_value=1024 * 1024 * 10), \
+             patch.object(pool, "acquire") as mock_acquire, \
+             patch("asyncio.create_subprocess_exec") as mock_exec:
+
+            mock_proc = MagicMock()
+            mock_proc.returncode = 0
+            mock_proc.wait = MagicMock(return_value=asyncio.sleep(0.01))
+            mock_proc.stderr.readline = MagicMock(return_value=asyncio.sleep(0.01, result=b""))
+            mock_exec.return_value = mock_proc
+
+            ok = await video_service.prepend_filmzilla_intro(dummy_in, dummy_out)
+            self.assertTrue(ok)
+            # Should NOT have attempted to acquire a GPU slot
+            self.assertFalse(mock_acquire.called)
+
 
 if __name__ == "__main__":
     unittest.main()
+

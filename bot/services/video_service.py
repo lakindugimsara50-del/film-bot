@@ -1371,7 +1371,7 @@ async def compress_video(
     cmd.append(os.path.abspath(output_path))
 
     proc = None
-    is_low_res = (in_h <= 500 or in_w <= 854)
+    is_low_res = (in_h <= 500 or in_w <= 854 or "480p" in str(input_path).lower() or "480p" in str(output_path).lower() or "360p" in str(input_path).lower())
     use_cpu_fallback = False
     gpu_slot_ctx = None
     gpu_id = None
@@ -1387,7 +1387,7 @@ async def compress_video(
                 except Exception:
                     pass
 
-            acq_timeout = 10.0 if (is_low_res and _GPU_POOL.is_busy()) else None
+            acq_timeout = 10.0 if is_low_res else None
             try:
                 gpu_slot_ctx = _GPU_POOL.acquire(timeout=acq_timeout)
                 gpu_id = await gpu_slot_ctx.__aenter__()
@@ -2477,18 +2477,23 @@ async def prepend_filmzilla_intro(
 
     proc = None
     try:
-        if _GPU_POOL.is_busy() and progress_callback:
-            try:
-                if asyncio.iscoroutinefunction(progress_callback):
-                    await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
-                else:
-                    progress_callback(0.0, "GPU Queued (Waiting for slot)...")
-            except Exception:
-                pass
+        gpu_slot_ctx = None
+        gpu_id = None
+        if hw_enc == "h264_nvenc":
+            if _GPU_POOL.is_busy() and progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                    else:
+                        progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                except Exception:
+                    pass
+            gpu_slot_ctx = _GPU_POOL.acquire()
+            gpu_id = await gpu_slot_ctx.__aenter__()
 
-        async with _GPU_POOL.acquire() as gpu_id:
+        try:
             final_cmd = list(cmd)
-            if hw_enc == "h264_nvenc":
+            if hw_enc == "h264_nvenc" and gpu_id is not None:
                 if "-hwaccel" in final_cmd:
                     hw_idx = final_cmd.index("-hwaccel")
                     final_cmd.insert(hw_idx + 2, "-hwaccel_device")
@@ -2533,6 +2538,12 @@ async def prepend_filmzilla_intro(
                                 pass
 
             await proc.wait()
+        finally:
+            if gpu_slot_ctx:
+                try:
+                    await gpu_slot_ctx.__aexit__(None, None, None)
+                except Exception:
+                    pass
 
         if proc.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
             if is_inplace:
@@ -3145,7 +3156,7 @@ async def cover_cinesubz_watermark(
         total_target_duration = max(1.0, (duration - trim_start) + (5.0 if intro_video else 0.0))
         log.info("[VideoService] Executing single-pass watermark cover + intro (%s -> %s, trim_start=%.1fs, intro=%s, hwaccel=%s)...",
                  video_path, output_path, trim_start, bool(intro_video), bool(hw_opts))
-        is_low_res = (in_h <= 500 or in_w <= 854)
+        is_low_res = (in_h <= 500 or in_w <= 854 or "480p" in str(video_path).lower() or "480p" in str(output_path).lower() or "360p" in str(video_path).lower())
         use_cpu_fallback = False
         gpu_slot_ctx = None
         gpu_id = None
@@ -3160,7 +3171,7 @@ async def cover_cinesubz_watermark(
                 except Exception:
                     pass
 
-            acq_timeout = 10.0 if (is_low_res and _GPU_POOL.is_busy()) else None
+            acq_timeout = 10.0 if is_low_res else None
             try:
                 gpu_slot_ctx = _GPU_POOL.acquire(timeout=acq_timeout)
                 gpu_id = await gpu_slot_ctx.__aenter__()

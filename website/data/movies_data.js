@@ -20612,7 +20612,190 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-01",
       "added_at": "2026-11-01T20:25:53Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "after-impact-2026-auto-strict-cinesubz",
+      "slug": "after-impact-2026-auto-strict-cinesubz",
+      "title": "After Impact 2026 --auto --strict-cinesubz",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZRq56QYz6BYA4TAflOlmzQzreUMtgACPz8AAnN2OVeE7fvdXyBzQx4E",
+      "message_id": 404,
+      "file_name": "fs_after-impact-2026-auto-strict-cinesubz_720p.mp4",
+      "file_size": 1244946933,
+      "drive_file_id": "",
+      "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZRq56QYz6BYA4TAflOlmzQzreUMtgACPz8AAnN2OVeE7fvdXyBzQx4E",
+          "message_id": 404,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+        "1080p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+        "720p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+        "480p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/403",
+        "360p": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1244946933,
+          "url": "https://t.me/c/4325759505/404",
+          "telegram_url": "https://t.me/c/4325759505/404",
+          "direct_url": "/stream/channel/-1004325759505/404?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZRq56QYz6BYA4TAflOlmzQzreUMtgACPz8AAnN2OVeE7fvdXyBzQx4E",
+          "message_id": 404,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "632.2 MB",
+          "size_bytes": 662942101,
+          "url": "https://t.me/c/4325759505/403",
+          "telegram_url": "https://t.me/c/4325759505/403",
+          "direct_url": "/stream/channel/-1004325759505/403?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZNq56NcDbmN_Sf-Qn0PzMx5Q8ewUQACLj8AAnN2OVchcIansMf_zh4E",
+          "message_id": 403,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/403",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1244946933,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026-auto-strict-cinesubz_1080p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1244946933,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026-auto-strict-cinesubz_720p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "632.2 MB",
+          "size_bytes": 662942101,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026-auto-strict-cinesubz_480p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/403",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "213.7 MB",
+          "size_bytes": 224090447,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026-auto-strict-cinesubz_360p",
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZRq56QYz6BYA4TAflOlmzQzreUMtgACPz8AAnN2OVeE7fvdXyBzQx4E",
+          "message_id": 404,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "size_bytes": 1244946933
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAZNq56NcDbmN_Sf-Qn0PzMx5Q8ewUQACLj8AAnN2OVchcIansMf_zh4E",
+          "message_id": 403,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/403",
+          "size_bytes": 662942101
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com/stream/channel/-1004325759505/404",
+          "size_bytes": 224090447
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/after-impact-2026-auto-strict-cinesubz-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=after-impact-2026-auto-strict-cinesubz",
+      "added_date": "2026-11-01",
+      "added_at": "2026-11-01T20:42:14Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T20:25:55Z"
+  "last_updated": "2026-11-01T20:42:16Z"
 };

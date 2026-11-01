@@ -208,7 +208,7 @@ async def search(
                 raw_tokens = re.sub(r"[^a-zA-Z0-9]+", " ", clean_t.lower()).split()
                 slug_tokens = [t for t in raw_tokens if len(t) >= 2 or len(raw_tokens) == 1]
                 for a in soup.find_all("a", href=True):
-                    h = a["href"].strip()
+                    h = (a.get("href") or "").strip()
                     txt = a.get_text(" ", strip=True)
                     is_internal = ("sinhalasub" in h.lower() or h.startswith("/"))
                     is_file_or_host = any(ext in h.lower() for ext in (".zip", ".rar", ".7z", ".mp4", ".mkv", ".avi", ".webm")) or any(vh in h.lower() for vh in ("pixeldrain", "userscloud", "mega.nz", "1fichier", "drive.google"))

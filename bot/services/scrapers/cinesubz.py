@@ -53,7 +53,8 @@ async def _extract_cinesubz_zetaplayer_streams(
     Direct streams from supercloud2.space / setwenna.one / player endpoints contain
     genuine .mp4 files with pre-hardsubbed Sinhala subtitles.
     """
-    domain_base = "https://cinesubz.lk" if "cinesubz.lk" in current_url else "https://cinesubz.co"
+    parsed = urllib.parse.urlparse(current_url)
+    domain_base = f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else "https://cinesubz.lk"
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -248,7 +249,7 @@ async def search(
             if not is_matched:
                 continue
 
-            current_url = post_url
+            current_url = str(p_resp.url) if p_resp.url else post_url
             if season and episode:
                 ep_pat = re.compile(
                     rf"(?:s0*{season}\s*[-._xe/]\s*0*{episode}\b"
@@ -258,7 +259,7 @@ async def search(
                     re.IGNORECASE,
                 )
                 for a in soup.find_all("a", href=True):
-                    h = a["href"].strip()
+                    h = (a.get("href") or "").strip()
                     if ep_pat.search(h) or ep_pat.search(a.get_text(" ", strip=True)):
                         ep_link = urllib.parse.urljoin(post_url, h)
                         ep_resp = await client.get(ep_link, headers=HEADERS, timeout=8.0)
@@ -279,7 +280,7 @@ async def search(
             # Only scan relevant container elements to avoid header/footer navigation
             scan_container = soup.find(id="directandtgdownload") or soup.find(id="links") or soup.find(class_="links-table") or soup.find("article") or soup
             for a in scan_container.find_all("a", href=True):
-                h = a["href"].strip()
+                h = (a.get("href") or "").strip()
                 if any(ign in h.lower() for ign in [
                     "t.me", "telegram.me", "#", "contact", "about", "terms", "privacy",
                     "dmca", "disclaimer", "wp-login", "account", "category", "tag",

@@ -1460,6 +1460,26 @@ async def _execute_leech(
                                         c_size_bytes = os.path.getsize(c_dl)
                                         intro_already_prepended = True
                                         log.info("[LeechService] Successfully covered CineSubz watermark, prepended intro, and trimmed 10s on %s [%s]", slug, q_name)
+                                    else:
+                                        log.warning("[LeechService] cover_cinesubz_watermark failed for %s [%s]. Executing trim + intro fallback...", slug, q_name)
+                                        fb_trim = os.path.join(temp_dir, f"fb_trim_{slug}_{q_name}.mp4")
+                                        if await video_service.trim_video_start(c_dl, fb_trim, start_seconds=10.0):
+                                            try:
+                                                if os.path.abspath(c_dl) != os.path.abspath(fb_trim):
+                                                    os.remove(c_dl)
+                                            except Exception:
+                                                pass
+                                            c_dl = fb_trim
+                                        fb_intro = os.path.join(temp_dir, f"fb_intro_{slug}_{q_name}.mp4")
+                                        if await video_service.prepend_filmzilla_intro(c_dl, fb_intro, intro_duration=5.0):
+                                            try:
+                                                if os.path.abspath(c_dl) != os.path.abspath(fb_intro):
+                                                    os.remove(c_dl)
+                                            except Exception:
+                                                pass
+                                            c_dl = fb_intro
+                                            intro_already_prepended = True
+                                        c_size_bytes = os.path.getsize(c_dl)
                                 elif not needs_compression:
                                     # Non-CineSubz release <= 1.95GB: trim 10s intro via instant stream copy
                                     companion_progress[q_name].update({
@@ -2216,8 +2236,21 @@ async def _execute_leech(
                         trim_start=0.0 if was_trimmed_10s else 10.0,
                         prepend_intro=not intro_already_prepended,
                     )
-                    if not sub_processed:
-                        sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
+                    if sub_processed:
+                        intro_already_prepended = True
+                    else:
+                        log.warning("[LeechService] Watermark cover failed on %s. Executing trim + intro fallback...", local_file)
+                        fb_in = local_file
+                        if not was_trimmed_10s:
+                            t_out = os.path.join(temp_dir, f"fb_trim_{slug}.mp4")
+                            if await video_service.trim_video_start(fb_in, t_out, start_seconds=10.0):
+                                fb_in = t_out
+                        if not intro_already_prepended:
+                            if await video_service.prepend_filmzilla_intro(fb_in, remuxed, intro_duration=5.0):
+                                sub_processed = True
+                                intro_already_prepended = True
+                        if not sub_processed:
+                            sub_processed = await video_service.ensure_web_streamable(fb_in, remuxed)
                 else:
                     sub_processed = await video_service.stream_copy_subtitles(local_file, None, remuxed, disposition="default")
 
@@ -2898,6 +2931,16 @@ async def _execute_leech(
                                         dl_out = wm_var_out
                                         v_intro_already_prepended = True
                                         log.info("[LeechService] Covered CineSubz watermark, prepended intro, and trimmed 10s on variant %s [%s]", slug, vq)
+                                    else:
+                                        log.warning("[LeechService] Watermark cover failed on variant %s [%s]. Trimming first 10s...", slug, vq)
+                                        t_var = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")
+                                        if await video_service.trim_video_start(dl_out, t_var, start_seconds=10.0):
+                                            try:
+                                                if os.path.abspath(dl_out) != os.path.abspath(t_var):
+                                                    os.remove(dl_out)
+                                            except Exception:
+                                                pass
+                                            dl_out = t_var
                                 else:
                                     # User requirement: Cut first 10 seconds (remove intro / watermark)
                                     trim_var_out = os.path.join(temp_dir, f"trimmed_{slug}_{vq}.mp4")

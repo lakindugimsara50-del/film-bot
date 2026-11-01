@@ -118,7 +118,7 @@ async def get_cinesubz_max_pages(client: httpx.AsyncClient, section: str = "movi
                         # 2. Fallback: scan page links in pagination
                         page_nums = []
                         for a in pag.find_all("a", href=True):
-                            pm = re.search(r"/page/(\d+)/?", a["href"])
+                            pm = re.search(r"/page/(\d+)/?", (a.get("href") or ""))
                             if pm:
                                 page_nums.append(int(pm.group(1)))
                         if page_nums:
@@ -127,7 +127,7 @@ async def get_cinesubz_max_pages(client: httpx.AsyncClient, section: str = "movi
                     # 3. Scan whole document for pagination links
                     doc_page_nums = []
                     for a in soup.find_all("a", href=re.compile(rf"/{section}/page/(\d+)")):
-                        pm = re.search(rf"/{section}/page/(\d+)", a["href"])
+                        pm = re.search(rf"/{section}/page/(\d+)", (a.get("href") or ""))
                         if pm:
                             doc_page_nums.append(int(pm.group(1)))
                     if doc_page_nums:
@@ -161,9 +161,11 @@ async def scrape_cinesubz_page(
                 a_link = card.find("a", href=True)
                 if not a_link:
                     continue
-                href = a_link["href"].strip()
+                href = (a_link.get("href") or "").strip()
                 if f"/{section}/" not in href or "/page/" in href:
                     continue
+                if href.startswith("/"):
+                    href = urllib.parse.urljoin(str(resp.url), href)
 
                 h3_elem = card.find("h3") or card.find("h2") or a_link
                 raw_title = h3_elem.get_text(strip=True) if h3_elem else ""
@@ -217,7 +219,7 @@ async def scrape_cinesubz_tvshow_episodes(
 
         soup = BeautifulSoup(resp.text, "html.parser")
         for a in soup.find_all("a", href=True):
-            h = a["href"].strip()
+            h = (a.get("href") or "").strip()
             if "/episodes/" not in h:
                 continue
 
@@ -800,7 +802,7 @@ async def resolve_series_episodes(
                             s_soup = BeautifulSoup(resp.text, "html.parser")
                             tv_links: List[str] = []
                             for a in s_soup.find_all("a", href=True):
-                                href = a["href"].strip()
+                                href = (a.get("href") or "").strip()
                                 if "/tvshows/" in href and href not in tv_links:
                                     tv_links.append(href)
                             for tv_link in tv_links:

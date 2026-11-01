@@ -919,7 +919,7 @@ async def resolve_srilankan_post_url(
                 return []
 
             soup = BeautifulSoup(resp.text, "html.parser")
-            current_target_url = post_url
+            current_target_url = str(resp.url) if resp.url else post_url
             main_soup = soup
 
             if season and episode:
@@ -1146,6 +1146,6 @@ async def resolve_srilankan_post_url(
             return results
         except Exception as exc:
             import traceback
-            traceback.print_exc()
+            import sys; traceback.print_exc(file=sys.stdout)
             log.warning("[MatchedScraper] Error resolving post URL %s: %s", post_url, exc)
             return []

@@ -199,7 +199,7 @@ async def search(
                     s_pat = re.compile(rf"(?:season[\s._-]*0*{season}\b|s0*{season}\b)", re.IGNORECASE)
                     slug_tokens = [t for t in slug_title.split("-") if len(t) > 2]
                     for a in soup.find_all("a", href=True):
-                        h = a["href"].strip()
+                        h = (a.get("href") or "").strip()
                         txt = a.get_text(" ", strip=True)
                         is_show_match = any(tok in h.lower() for tok in slug_tokens) or any(tok in txt.lower() for tok in slug_tokens)
                         if is_show_match and (s_pat.search(h) or s_pat.search(txt)) and ("piratelk.com" in h or h.startswith("/")):
@@ -225,7 +225,7 @@ async def search(
                 )
                 slug_tokens = [t for t in slug_title.split("-") if len(t) > 2]
                 for a in soup.find_all("a", href=True):
-                    h = a["href"].strip()
+                    h = (a.get("href") or "").strip()
                     txt = a.get_text(" ", strip=True)
                     # ONLY navigate to an internal episode HTML page on PirateLK, NEVER to a video host or video file
                     is_internal = ("piratelk.com" in h.lower() or h.startswith("/"))
@@ -254,7 +254,7 @@ async def search(
                     break
                 article_elem = s_soup.select_one(".entry-content, article, main, .download-links, .box-download") or s_soup
                 for a in article_elem.find_all("a", href=True):
-                    h = a["href"].strip()
+                    h = (a.get("href") or "").strip()
                     txt = a.get_text(" ", strip=True).lower()
                     if any(ign in h.lower() for ign in ("t.me", "telegram.me", "#", "facebook", "youtube", "imdb", "wikipedia")):
                         continue
@@ -283,7 +283,7 @@ async def search(
                             sub_page_soup = BeautifulSoup(s_resp.text, "html.parser")
                             real_sub_url = None
                             for sa in sub_page_soup.find_all("a", href=True):
-                                sh = sa["href"].strip()
+                                sh = (sa.get("href") or "").strip()
                                 st = sa.get_text(" ", strip=True).lower()
                                 if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
                                     real_sub_url = urllib.parse.urljoin(s_url, sh)
@@ -319,7 +319,7 @@ async def search(
             # 2. Direct Video Download Links (STRICT: NO TORRENTS)
             video_links = []
             for a in soup.find_all("a", href=True):
-                h = a["href"].strip()
+                h = (a.get("href") or "").strip()
                 if any(ign in h.lower() for ign in ["t.me", "telegram.me", "#"]):
                     continue
                 # Exclude torrents and magnets completely

@@ -2863,8 +2863,8 @@ async def cover_cinesubz_watermark(
     """
     ffmpeg_bin = get_ffmpeg_binary()
     if not ffmpeg_bin:
-        log.warning("[VideoService] FFmpeg binary not found. Falling back to stream_copy_subtitles.")
-        return await stream_copy_subtitles(video_path, None, output_path, disposition="default")
+        log.warning("[VideoService] FFmpeg binary not found for cover_cinesubz_watermark.")
+        return False
 
     if not badge_path:
         default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_badge.png")
@@ -2944,21 +2944,21 @@ async def cover_cinesubz_watermark(
             # Method 2 & 3: Never run scale/pad on the 2-hour movie [0:v]! Only scale 5s intro [1:v] (150 frames)
             if has_audio:
                 filter_complex = (
-                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
-                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
+                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
                     f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
                     f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv];"
-                    f"[1:a]asetpts=PTS-STARTPTS,aresample=async=1[a_intro];"
-                    f"[0:a]asetpts=PTS-STARTPTS[a_main];"
+                    f"[1:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_intro];"
+                    f"[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_main];"
                     f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]"
                 )
                 maps = ["-map", "[outv]", "-map", "[outa]"]
                 audio_opts = ["-c:a", "aac", "-b:a", "192k", "-threads", "0"]
             else:
                 filter_complex = (
-                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
-                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
+                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
                     f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
                     f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv]"
@@ -2976,6 +2976,7 @@ async def cover_cinesubz_watermark(
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
                 "-i", os.path.abspath(intro_video),
+                "-loop", "1",
                 "-i", os.path.abspath(badge_path),
                 "-filter_complex", filter_complex,
                 *maps,
@@ -3001,6 +3002,7 @@ async def cover_cinesubz_watermark(
                 *hw_opts,
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
+                "-loop", "1",
                 "-i", os.path.abspath(badge_path),
                 "-filter_complex", filter_complex,
                 *maps,
@@ -3173,6 +3175,7 @@ async def cover_cinesubz_watermark(
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-i", os.path.abspath(intro_video),
+                        "-loop", "1",
                         "-i", os.path.abspath(badge_path),
                         "-filter_complex", filter_complex,
                         *maps,
@@ -3191,6 +3194,7 @@ async def cover_cinesubz_watermark(
                         "-filter_complex_threads", "0",
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
+                        "-loop", "1",
                         "-i", os.path.abspath(badge_path),
                         "-filter_complex", filter_complex,
                         *maps,
@@ -3223,9 +3227,36 @@ async def cover_cinesubz_watermark(
                     log.info("[VideoService] Watermark cover succeeded via CPU retry: %s", output_path)
                     return True
     except Exception as exc:
-        log.warning("[VideoService] cover_cinesubz_watermark exception: %s. Falling back to stream copy.", exc)
+        log.warning("[VideoService] cover_cinesubz_watermark exception: %s", exc)
 
-    return await stream_copy_subtitles(video_path, None, output_path, disposition="default")
+    # Robust 2-step fallback if single-pass fails: (Trim 10s + Badge) -> Prepend Intro.
+    # Never upload raw unprocessed video with foreign watermarks or promos!
+    try:
+        if intro_video and badge_path and os.path.exists(badge_path):
+            log.info("[VideoService] Executing 2-step fallback for watermark cover + intro on %s...", video_path)
+            temp_work_dir = os.path.dirname(os.path.abspath(output_path))
+            step1_out = os.path.join(temp_work_dir, f"step1_wm_{os.path.basename(output_path)}")
+            s1_ok = await cover_cinesubz_watermark(
+                video_path=video_path,
+                output_path=step1_out,
+                badge_path=badge_path,
+                trim_start=trim_start,
+                prepend_intro=False,
+            )
+            if s1_ok and os.path.exists(step1_out) and os.path.getsize(step1_out) > 1024:
+                s2_ok = await prepend_filmzilla_intro(step1_out, output_path, intro_duration=5.0)
+                try:
+                    if os.path.exists(step1_out):
+                        os.remove(step1_out)
+                except Exception:
+                    pass
+                if s2_ok and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+                    log.info("[VideoService] 2-step fallback succeeded: %s", output_path)
+                    return True
+    except Exception as e_step:
+        log.warning("[VideoService] 2-step fallback error: %s", e_step)
+
+    return False
 
 
 async def generate_multi_quality_variants_ram(

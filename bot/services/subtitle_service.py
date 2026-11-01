@@ -840,7 +840,7 @@ async def _scrape_wp_subtitle_site(
             dl_targets: list[str] = []
             # A. Subz.lk AJAX / button download links (admin-ajax.php?action=sub_download or .subz-list-btn)
             for a in p_soup.find_all("a", href=True):
-                href = a["href"].strip()
+                href = (a.get("href") or "").strip()
                 cls = " ".join(a.get("class", [])).lower()
                 a_txt = a.get_text(" ", strip=True).lower()
                 data_link = a.get("data-link") or a.get("data-href") or ""
@@ -871,7 +871,7 @@ async def _scrape_wp_subtitle_site(
                         sub_page_soup = BeautifulSoup(sub_resp.text, "html.parser")
                         real_dl = None
                         for sa in sub_page_soup.find_all("a", href=True):
-                            sh = sa["href"].strip()
+                            sh = (sa.get("href") or "").strip()
                             st = sa.get_text(" ", strip=True).lower()
                             if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
                                 real_dl = urllib.parse.urljoin(dl_url, sh)
@@ -1037,7 +1037,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
                         s_slug_alt = f"season-{season}"
                         for sa in p_soup.find_all("a", href=True):
                             sa_text = sa.get_text(strip=True).lower()
-                            sa_href = sa["href"]
+                            sa_href = (sa.get("href") or "")
                             if "/download/" in sa_href or ".zip" in sa_href or ".rar" in sa_href:
                                 continue
                             if (s_target in sa_text or s_alt in sa_text or s_slug_target in sa_href.lower() or s_slug_alt in sa_href.lower()) and "piratelk.com/" in sa_href:
@@ -1051,7 +1051,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
                     # Search inside main article content first to avoid header/footer/sidebar noise
                     article_elem = p_soup.select_one(".entry-content, article, main, .download-links, .box-download") or p_soup
                     for da in article_elem.find_all("a", href=True):
-                        dh = da["href"].strip()
+                        dh = (da.get("href") or "").strip()
                         dt = da.get_text(" ", strip=True).lower()
                         if any(ign in dh.lower() for ign in ("/category/", "/tag/", "usersdrive", "mega.nz", "t.me", "facebook", "youtube", "imdb", "wikipedia")):
                             continue
@@ -1082,7 +1082,7 @@ async def fetch_sri_lankan_sinhala_subtitle(
                                 sub_page_soup = BeautifulSoup(z_resp.text, "html.parser")
                                 real_dl = None
                                 for sa in sub_page_soup.find_all("a", href=True):
-                                    sh = sa["href"].strip()
+                                    sh = (sa.get("href") or "").strip()
                                     st = sa.get_text(" ", strip=True).lower()
                                     if any(ext in sh.lower() for ext in (".zip", ".rar", ".7z", ".srt", ".vtt")) or "download" in st or "බාගත" in st:
                                         real_dl = urllib.parse.urljoin(dl_link, sh)

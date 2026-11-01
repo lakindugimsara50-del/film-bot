@@ -19671,7 +19671,203 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-01",
       "added_at": "2026-11-01T09:14:17Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "enforcement-aka-shorta-2020-auto-strict-cinesubz",
+      "slug": "enforcement-aka-shorta-2020-auto-strict-cinesubz",
+      "title": "Enforcement AKA Shorta 2020 --auto --strict-cinesubz",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX5q5wiVWa4DNPKPUNTStDSL3_vCHQACfzEAAnN2OVc5Q_oNN3qDNh4E",
+      "message_id": 382,
+      "file_name": "fs_enforcement-aka-shorta-2020-auto-strict-cinesubz_1080p.mp4",
+      "file_size": 2021719208,
+      "drive_file_id": "",
+      "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX5q5wiVWa4DNPKPUNTStDSL3_vCHQACfzEAAnN2OVc5Q_oNN3qDNh4E",
+          "message_id": 382,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+        "1080p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+        "720p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/380",
+        "480p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/381",
+        "360p": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2021719208,
+          "url": "https://t.me/c/4325759505/382",
+          "telegram_url": "https://t.me/c/4325759505/382",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX5q5wiVWa4DNPKPUNTStDSL3_vCHQACfzEAAnN2OVc5Q_oNN3qDNh4E",
+          "message_id": 382,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "607.2 MB",
+          "size_bytes": 636741253,
+          "url": "https://t.me/c/4325759505/380",
+          "telegram_url": "https://t.me/c/4325759505/380",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXxq5wWVWqUPTszHX7UcDIupprqh4QACLTEAAnN2OVeKDH8XqY_psR4E",
+          "message_id": 380,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/380",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "669.1 MB",
+          "size_bytes": 701610694,
+          "url": "https://t.me/c/4325759505/381",
+          "telegram_url": "https://t.me/c/4325759505/381",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX1q5wYixmFKy3e_d3JspfFGJQOj4QACPjEAAnN2OVdgmBH1oziIER4E",
+          "message_id": 381,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/381",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2021719208,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020-auto-strict-cinesubz_1080p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "607.2 MB",
+          "size_bytes": 636741253,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020-auto-strict-cinesubz_720p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/380",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "669.1 MB",
+          "size_bytes": 701610694,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020-auto-strict-cinesubz_480p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/381",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "347.1 MB",
+          "size_bytes": 363909457,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020-auto-strict-cinesubz_360p",
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX5q5wiVWa4DNPKPUNTStDSL3_vCHQACfzEAAnN2OVc5Q_oNN3qDNh4E",
+          "message_id": 382,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+          "size_bytes": 2021719208
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAXxq5wWVWqUPTszHX7UcDIupprqh4QACLTEAAnN2OVeKDH8XqY_psR4E",
+          "message_id": 380,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/380",
+          "size_bytes": 636741253
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAX1q5wYixmFKy3e_d3JspfFGJQOj4QACPjEAAnN2OVdgmBH1oziIER4E",
+          "message_id": 381,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/381",
+          "size_bytes": 701610694
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://manuals-gallery-voip-officials.trycloudflare.com/stream/channel/-1004325759505/382",
+          "size_bytes": 363909457
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/enforcement-aka-shorta-2020-auto-strict-cinesubz-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=enforcement-aka-shorta-2020-auto-strict-cinesubz",
+      "added_date": "2026-11-01",
+      "added_at": "2026-11-01T09:38:40Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-01T09:14:18Z"
+  "last_updated": "2026-11-01T09:38:41Z"
 };

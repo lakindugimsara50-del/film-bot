@@ -28,10 +28,30 @@
 
     // Direct Telegram Cloud stream download endpoint
     if (str.includes('/stream/')) {
-      if (!str.includes('dl=1')) {
-        return str + (str.includes('?') ? '&dl=1' : '?dl=1');
+      let liveEndpoint = (typeof window !== 'undefined' && window.__LIVE_STREAM_BASE_URL) ||
+                         (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) ||
+                         (window.FILMZILLA_STREAM_CONFIG && window.FILMZILLA_STREAM_CONFIG.stream_base_url) ||
+                         '';
+      if (!liveEndpoint && typeof sessionStorage !== 'undefined') {
+        try { liveEndpoint = sessionStorage.getItem('filmsub_stream_base') || ''; } catch (e) {}
       }
-      return str;
+      let resolved = str;
+      if (liveEndpoint && !liveEndpoint.includes('localhost') && !liveEndpoint.includes('127.0.0.1')) {
+        const cleanBase = liveEndpoint.replace(/\/+$/, '');
+        const matchChan = str.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+        if (matchChan) {
+          resolved = `${cleanBase}/stream/download/${matchChan[1]}/${matchChan[2]}`;
+        } else {
+          const matchDl = str.match(/\/stream\/download\/(-?\d+)\/(\d+)/);
+          if (matchDl) {
+            resolved = `${cleanBase}/stream/download/${matchDl[1]}/${matchDl[2]}`;
+          }
+        }
+      }
+      if (!resolved.includes('dl=1') && !resolved.includes('/stream/download/')) {
+        return resolved + (resolved.includes('?') ? '&dl=1' : '?dl=1');
+      }
+      return resolved;
     }
 
     // Already pointing to /api/download

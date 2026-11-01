@@ -226,6 +226,11 @@ async function loadLiveStreamConfig(forceRefresh = false) {
   if (activeUrl) {
     activeStreamBaseUrl = activeUrl;
     streamServerHealthy = true;
+    if (typeof window !== 'undefined') {
+      window.FILMSUB_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG || {};
+      window.FILMSUB_STREAM_CONFIG.stream_base_url = activeStreamBaseUrl;
+      window.__LIVE_STREAM_BASE_URL = activeStreamBaseUrl;
+    }
   } else if (edgeProxyHealthy) {
     if (!activeStreamBaseUrl || !activeStreamBaseUrl.startsWith('http')) {
       activeStreamBaseUrl = candidateUrl || fallbackUrl || 'https://filmsub.pages.dev';
@@ -1264,19 +1269,43 @@ function getMovieDownloads(movie) {
   const seenQualities = new Set();
   const seenUrls = new Set();
 
+  const getLiveStreamBase = () => {
+    let liveEndpoint = (typeof window !== 'undefined' && window.__LIVE_STREAM_BASE_URL) ||
+                       (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) ||
+                       (window.FILMZILLA_STREAM_CONFIG && window.FILMZILLA_STREAM_CONFIG.stream_base_url) ||
+                       (typeof activeStreamBaseUrl === 'string' && activeStreamBaseUrl) ||
+                       '';
+    if (!liveEndpoint && typeof sessionStorage !== 'undefined') {
+      try { liveEndpoint = sessionStorage.getItem('filmsub_stream_base') || ''; } catch (e) {}
+    }
+    if (liveEndpoint && !liveEndpoint.includes('localhost') && !liveEndpoint.includes('127.0.0.1')) {
+      return liveEndpoint.replace(/\/+$/, '');
+    }
+    return '';
+  };
+
   const getDirectUrlForCard = (card, q) => {
     if (card.direct_url) return card.direct_url;
+    const liveBase = getLiveStreamBase();
     if (card.url && (card.url.includes('/stream/channel/') || card.url.includes('/stream/file/') || card.url.includes('/stream/download/') || card.url.includes('/stream/'))) {
-      if (!card.url.includes('dl=1')) {
+      const matchChan = card.url.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
+      if (matchChan && liveBase) {
+        return `${liveBase}/stream/download/${matchChan[1]}/${matchChan[2]}`;
+      }
+      if (!card.url.includes('dl=1') && !card.url.includes('/stream/download/')) {
         return card.url.includes('?') ? `${card.url}&dl=1` : `${card.url}?dl=1`;
       }
       return card.url;
     }
     if (card.url && card.url.includes('t.me/c/')) {
       const cm = card.url.match(/\/c\/(\d+)\/(\d+)/);
-      if (cm) return `/stream/channel/-100${cm[1]}/${cm[2]}?dl=1`;
+      if (cm) {
+        if (liveBase) return `${liveBase}/stream/download/-100${cm[1]}/${cm[2]}`;
+        return `/stream/channel/-100${cm[1]}/${cm[2]}?dl=1`;
+      }
     }
     if (effectiveMovie.message_id) {
+      if (liveBase) return `${liveBase}/stream/download/-100${chClean}/${effectiveMovie.message_id}`;
       return `/stream/channel/-100${chClean}/${effectiveMovie.message_id}?dl=1`;
     }
     if (effectiveMovie.stream_url && !isDeadTunnel(effectiveMovie.stream_url)) {
@@ -1326,7 +1355,10 @@ function getMovieDownloads(movie) {
         const sz = v.size_bytes ? formatBytesFromBytes(v.size_bytes) : '';
         const botUrl = `https://t.me/${botUsername}?start=dl_${effectiveMovie.slug || movie.slug}_${q}`;
         const chanUrl = v.message_id ? `https://t.me/c/${chClean}/${v.message_id}` : '';
-        const directUrl = v.message_id ? `/stream/channel/-100${chClean}/${v.message_id}?dl=1` : '';
+        const liveBase = getLiveStreamBase();
+        const directUrl = v.message_id
+          ? (liveBase ? `${liveBase}/stream/download/-100${chClean}/${v.message_id}` : `/stream/channel/-100${chClean}/${v.message_id}?dl=1`)
+          : '';
         const primaryDlUrl = directUrl || botUrl || chanUrl;
         
         seenQualities.add(q.toLowerCase());

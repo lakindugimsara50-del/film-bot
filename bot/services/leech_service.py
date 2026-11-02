@@ -698,7 +698,7 @@ async def _execute_leech(
             if any(dom in direct_link.lower() for dom in sl_domains):
                 try:
                     from services.scrapers import srilankan_matched_scraper
-                    temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
+                    temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_work_")
                     resolved_sl = await srilankan_matched_scraper.resolve_srilankan_post_url(
                         post_url=direct_link,
                         season=season,
@@ -798,7 +798,7 @@ async def _execute_leech(
         pre_sub_srt: Optional[str] = None
         if not candidates and not os.environ.get("PYTEST_CURRENT_TEST"):
             try:
-                temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
+                temp_dir = temp_dir or video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_work_")
                 _show_name_pre = locals().get("show_name", "") or title or display_title
                 clean_sub_title_pre = subtitle_service.extract_clean_show_name(_show_name_pre) if (is_series or season) else (title or display_title)
                 pre_sub_srt = await subtitle_service.fetch_sri_lankan_sinhala_subtitle(
@@ -910,7 +910,7 @@ async def _execute_leech(
         site_url = f"{base_site}/movie.html?id={slug}"
 
         if not temp_dir:
-            temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_ram_")
+            temp_dir = video_service.get_optimal_work_dir(min_free_gb=2.0, prefix="leech_work_")
         task_tracker.tracker.set_metadata(user_id, task_key=task_key, temp_dir=temp_dir)
 
         candidate_queue = list(candidates)
@@ -1408,14 +1408,34 @@ async def _execute_leech(
                                 companion_progress[q_name]["stage"] = "downloading"
                                 await _update_multi_dl_display(force=True)
                                 log.info("[LeechService] Starting concurrent download for quality %s from %s...", q_name, cand_obj.source_url)
-                                c_dl = await downloader.download_http(
-                                    url=cand_obj.source_url,
-                                    dest_dir=temp_dir,
-                                    filename=v_clean_name,
-                                    task_key=f"{task_key}_{q_name}",
-                                    progress_callback=_dl_cb,
-                                    referer=(cand_obj.extra.get("post_url") or None) if cand_obj.extra else None,
-                                )
+                                c_dl = None
+                                try:
+                                    c_dl = await downloader.download_http(
+                                        url=cand_obj.source_url,
+                                        dest_dir=temp_dir,
+                                        filename=v_clean_name,
+                                        task_key=f"{task_key}_{q_name}",
+                                        progress_callback=_dl_cb,
+                                        referer=(cand_obj.extra.get("post_url") or None) if cand_obj.extra else None,
+                                    )
+                                except Exception as dl_err1:
+                                    log.warning("[LeechService] Pipeline quality %s download attempt 1 failed: %s", q_name, dl_err1)
+
+                                # Resilient retry: if first attempt failed or was interrupted by socket burst, wait 2.5s and retry cleanly
+                                if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
+                                    log.info("[LeechService] Retrying direct download for quality %s in 2.5s...", q_name)
+                                    await asyncio.sleep(2.5)
+                                    try:
+                                        c_dl = await downloader.download_http(
+                                            url=cand_obj.source_url,
+                                            dest_dir=temp_dir,
+                                            filename=v_clean_name,
+                                            task_key=f"{task_key}_{q_name}_retry",
+                                            progress_callback=_dl_cb,
+                                            referer=(cand_obj.extra.get("post_url") or None) if cand_obj.extra else None,
+                                        )
+                                    except Exception as dl_err2:
+                                        log.warning("[LeechService] Pipeline quality %s download retry failed: %s", q_name, dl_err2)
 
                                 if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
                                     companion_progress[q_name].update({
@@ -1423,7 +1443,7 @@ async def _execute_leech(
                                         "up_pct": 0.0,
                                     })
                                     await _update_multi_dl_display(force=True)
-                                    log.warning("[LeechService] Pipeline quality %s download failed.", q_name)
+                                    log.warning("[LeechService] Pipeline quality %s download failed permanently.", q_name)
                                     return None
 
                                 # Download finished for this quality! Transition status from 'downloading' immediately
@@ -1845,7 +1865,7 @@ async def _execute_leech(
 
                         async def _run_staggered(idx: int, q_label: str, cand_o: LeechCandidate, is_pri: bool):
                             if idx > 0:
-                                await asyncio.sleep(idx * 1.2)  # Gentle stagger to prevent CDN burst connection limits
+                                await asyncio.sleep(idx * 2.5)  # Stagger initial handshakes to prevent CDN burst rate limits
                             return await _run_single_quality_pipeline(q_label, cand_o, is_primary_flag=is_pri)
 
                         pipe_tasks = [

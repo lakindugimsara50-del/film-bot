@@ -1073,6 +1073,13 @@ async def _on_start(client: Client) -> None:
     except Exception as re_err:
         log.debug("[Main] check_and_notify_restart note: %s", re_err)
 
+    # Clean up any leftover temporary scratch directories from previous runs in /kaggle/working or /tmp
+    try:
+        from services import video_service
+        video_service.cleanup_stale_work_dirs()
+    except Exception as cl_err:
+        log.debug("[Main] Stale workspace cleanup note: %s", cl_err)
+
 
 async def main() -> None:
     port = int(os.getenv("PORT", 7860))

@@ -166,10 +166,14 @@ def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
     requests without a matching Referer header with a 403 HTML error page (~757 bytes).
     """
     if custom_referer:
+        # Crucial safeguard: player45.setwenna.one referer causes 404 Not Found on cs45.supercloud1.xyz
+        # direct streams, while cinesubz.lk / cinesubz.co returns 200 OK!
+        if "setwenna" in custom_referer and "supercloud" in (url or "").lower():
+            return "https://cinesubz.lk/"
         return custom_referer
     u_lower = (url or "").lower()
     if any(k in u_lower for k in ("cinesubz", "csplayer", "supercloud", "setwenna")):
-        return "https://cinesubz.co/"
+        return "https://cinesubz.lk/"
     elif "sinhalasub" in u_lower:
         return "https://sinhalasub.lk/"
     elif "piratelk" in u_lower:
@@ -263,8 +267,8 @@ async def _download_aria2c_http(
 
     # Optimized CDN connection caps: prevent server reset when multi-qualities download in parallel
     is_cdn_host = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna", "sinhalasub"))
-    max_conn = "6" if is_cdn_host else "16"
-    split_conn = "16" if is_cdn_host else "32"
+    max_conn = "4" if is_cdn_host else "16"
+    split_conn = "8" if is_cdn_host else "32"
 
     cmd = [
         aria2_bin,
@@ -427,7 +431,7 @@ async def _download_httpx(
         try:
             probe_headers = dict(headers)
             probe_headers["Range"] = "bytes=0-0"
-            p_resp = await client.get(url, headers=probe_headers, timeout=6.0)
+            p_resp = await client.get(url, headers=probe_headers, timeout=15.0)
             if p_resp.status_code == 206:
                 cr = p_resp.headers.get("content-range", "")
                 m_cr = re.search(r"/(\d+)$", cr)
@@ -450,7 +454,7 @@ async def _download_httpx(
         # Fallback to fast HEAD probe if Range didn't return size
         if total_size <= 0:
             try:
-                head_resp = await client.head(url, timeout=4.0)
+                head_resp = await client.head(url, timeout=10.0)
                 if head_resp.status_code == 200:
                     total_size = int(head_resp.headers.get("content-length", 0))
                     accept_ranges = "bytes" in head_resp.headers.get("accept-ranges", "").lower()

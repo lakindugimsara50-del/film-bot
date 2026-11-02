@@ -1709,48 +1709,67 @@ async def compress_smart_1080p(
     return False
 
 
-def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_ram_") -> str:
+def cleanup_stale_work_dirs(extra_parents: tuple = ()) -> None:
     """
-    Allocate a working directory in the 12GB RAM disk (/dev/shm) on Google Colab / Linux
-    when sufficient free RAM space is available, eliminating disk I/O bottlenecks
-    during downloading, MKV-to-MP4 remuxing, subtitle muxing, and quality conversion.
-    Falls back to /content or system temp directory if /dev/shm is unavailable or low on space.
+    Clean up any leftover temporary scratch directories from previous runs in /kaggle/working, /tmp, or /content.
+    Prevents /kaggle/working output quota inflation (19.5GB limit) and clears orphaned downloads.
+    """
+    targets = ("/kaggle/working", "/tmp", "/content") + tuple(extra_parents)
+    for parent in targets:
+        if os.path.isdir(parent) and os.access(parent, os.W_OK):
+            try:
+                for entry in os.listdir(parent):
+                    if entry.startswith(("leech_ram_", "leech_work_")):
+                        p = os.path.join(parent, entry)
+                        try:
+                            if os.path.isdir(p):
+                                shutil.rmtree(p, ignore_errors=True)
+                                log.info("[VideoService] Cleaned up stale workspace: %s", p)
+                            elif os.path.isfile(p):
+                                os.remove(p)
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+
+def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_work_") -> str:
+    """
+    Allocate a working directory in high-capacity fast scratch storage.
+    On Kaggle / Colab, prioritizes /tmp which has 70+ GB of free fast scratch space
+    and crucially DOES NOT count towards Kaggle's 19.5 GB output limit (/kaggle/working).
+    Falls back to /kaggle/temp, /content, /dev/shm, or /kaggle/working only if needed.
     """
     import tempfile
 
-    ram_disk = "/dev/shm"
-    # On Cloud environments (Colab /content or Kaggle /kaggle/working exists), multi-quality downloads
-    # (1080p, 720p, 480p) + FFmpeg compression need >= 15 GB of working space.
-    # Since /dev/shm in cloud containers is often only ~2-5.8 GB, prefer high-capacity NVMe storage (/kaggle/working or /content)
+    # On Cloud environments, multi-quality downloads (1080p, 720p, 480p) + FFmpeg operations
+    # need >= 15 GB of working space.
     is_cloud_env = os.path.exists("/content") or os.path.exists("/kaggle/working") or os.path.exists("/kaggle/temp")
     effective_min_gb = max(min_free_gb, 15.0) if (min_free_gb >= 1.0 and is_cloud_env) else min_free_gb
     min_bytes = int(effective_min_gb * 1024 * 1024 * 1024)
-    if os.path.isdir(ram_disk) and os.access(ram_disk, os.W_OK):
-        try:
-            free_ram = shutil.disk_usage(ram_disk).free
-            if free_ram >= min_bytes:
-                work_dir = tempfile.mkdtemp(prefix=prefix, dir=ram_disk)
-                log.info(
-                    "[VideoService] Allocated RAM Disk workspace: %s (%.2f GB free in /dev/shm)",
-                    work_dir,
-                    free_ram / (1024 ** 3),
-                )
-                return work_dir
-        except Exception as exc:
-            log.debug("[VideoService] /dev/shm check skipped: %s", exc)
 
-    cloud_nvme = (
-        "/kaggle/temp" if os.path.isdir("/kaggle/temp")
-        else ("/kaggle/working" if os.path.isdir("/kaggle/working")
-        else ("/content" if os.path.isdir("/content") else None))
-    )
-    if cloud_nvme and os.access(cloud_nvme, os.W_OK):
-        try:
-            work_dir = tempfile.mkdtemp(prefix=prefix, dir=cloud_nvme)
-            log.info("[VideoService] Allocated %s high-capacity workspace: %s", cloud_nvme, work_dir)
-            return work_dir
-        except Exception:
-            pass
+    # Candidate scratch directories in priority order:
+    # 1. /tmp: High-capacity NVMe scratch on Linux/Kaggle (70+ GB free, 0 MB charged to Kaggle Output!)
+    # 2. /kaggle/temp: Dedicated Kaggle temporary scratch if present
+    # 3. /content: Google Colab root NVMe
+    # 4. /dev/shm: Fast RAM disk if >= 15GB free
+    # 5. /kaggle/working: Persistent Kaggle output (last resort due to strict 19.5 GB notebook output quota)
+    candidates = ["/tmp", "/kaggle/temp", "/content", "/dev/shm", "/kaggle/working"]
+    for cand in candidates:
+        if os.path.isdir(cand) and os.access(cand, os.W_OK):
+            try:
+                free_sp = shutil.disk_usage(cand).free
+                if free_sp >= min_bytes:
+                    work_dir = tempfile.mkdtemp(prefix=prefix, dir=cand)
+                    log.info(
+                        "[VideoService] Allocated %s high-capacity scratch workspace: %s (%.2f GB free)",
+                        cand,
+                        work_dir,
+                        free_sp / (1024 ** 3),
+                    )
+                    return work_dir
+            except Exception:
+                pass
 
     return tempfile.mkdtemp(prefix=prefix)
 

@@ -118,6 +118,27 @@ class TestBrandingService(unittest.TestCase):
         self.assertIn("Filmsinhala200Bot", r2[0].url)
         self.assertIn("Filmsinhala200Bot", r2[1].url)
 
+    def test_no_duplicate_movie_html_in_caption_and_keyboard(self):
+        # When site_base_url is already a full watch URL with /movie.html?id=...
+        full_url = "https://filmsub.pages.dev/movie.html?id=aasha-2026"
+        caption = build_branded_caption(
+            title="Aasha",
+            year="2026",
+            quality="720p",
+            slug="aasha-2026",
+            site_base_url=full_url,
+        )
+        self.assertNotIn("movie.html?id=aasha-2026/movie.html", caption)
+        self.assertIn(full_url, caption)
+
+        kb = build_branded_inline_keyboard(
+            slug="aasha-2026",
+            site_base_url=full_url,
+        )
+        r1 = kb.inline_keyboard[0]
+        self.assertEqual(r1[0].url, full_url)
+        self.assertNotIn("movie.html?id=aasha-2026/movie.html", r1[0].url)
+
 
 class TestTelegramUploadBrandingIntegration(unittest.IsolatedAsyncioTestCase):
     async def test_upload_video_file_brands_filename_and_passes_reply_markup(self):

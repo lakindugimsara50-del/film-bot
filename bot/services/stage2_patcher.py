@@ -140,33 +140,33 @@ async def patch_movie_downloads(
 
     # Automatically update channel announcement post or create one if previously deferred
     ch_post_id = target.get("channel_post_id")
-    target_ch_id = target.get("channel_chat_id") or getattr(config, "PUBLIC_CHANNEL_ID", 0) or getattr(config, "PRIVATE_CHANNEL_ID", 0)
-    if client and target_ch_id:
+    target_pub_id = getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
+    if client and target_pub_id:
         if ch_post_id:
             try:
                 from handlers.announce import update_channel_post
                 await update_channel_post(
                     client=client,
-                    public_channel_id=target_ch_id,
+                    public_channel_id=target_pub_id,
                     message_id=ch_post_id,
                     movie=target,
                 )
-                log.info("[Stage2Patcher] Channel post %s in chat %s updated with download links for '%s'", ch_post_id, target_ch_id, movie_slug)
+                log.info("[Stage2Patcher] Channel post %s in chat %s updated with download links for '%s'", ch_post_id, target_pub_id, movie_slug)
             except Exception as ann_err:
                 log.warning("[Stage2Patcher] Failed to update channel announcement: %s", ann_err)
         else:
             try:
                 from handlers.announce import post_to_channel
-                ch_msg = await post_to_channel(client, target, target_ch_id)
+                ch_msg = await post_to_channel(client, target, target_pub_id)
                 if ch_msg:
                     target["channel_post_id"] = getattr(ch_msg, "id", None)
-                    target["channel_chat_id"] = target_ch_id
-                    log.info("[Stage2Patcher] Deferred channel post %s created in chat %s for '%s'", target["channel_post_id"], target_ch_id, movie_slug)
+                    target["channel_post_chat_id"] = target_pub_id
+                    log.info("[Stage2Patcher] Deferred channel post %s created in chat %s for '%s'", target["channel_post_id"], target_pub_id, movie_slug)
                     cur_data, cur_sha = await github_service.get_movies_json()
                     for m in cur_data.get("movies", []):
                         if m.get("slug") == movie_slug or m.get("id") == movie_slug:
                             m["channel_post_id"] = target["channel_post_id"]
-                            m["channel_chat_id"] = target_ch_id
+                            m["channel_post_chat_id"] = target_pub_id
                             break
                     await github_service._commit_movies_json(
                         cur_data, cur_sha,

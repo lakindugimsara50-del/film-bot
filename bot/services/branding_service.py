@@ -178,7 +178,12 @@ def build_branded_caption(
     q_str = f" [{quality}]" if quality else ""
 
     site_base = (site_base_url or getattr(config, "SITE_BASE_URL", "https://filmsub.pages.dev")).rstrip("/")
-    watch_url = f"{site_base}/movie.html?id={slug}" if slug else site_base
+    if "/movie.html" in site_base:
+        watch_url = site_base
+    elif slug:
+        watch_url = f"{site_base}/movie.html?id={slug}"
+    else:
+        watch_url = site_base
 
     size_line = ""
     if file_size > 0:
@@ -209,7 +214,12 @@ def build_branded_inline_keyboard(
     site_base = (site_base_url or getattr(config, "SITE_BASE_URL", "https://filmsub.pages.dev")).rstrip("/")
     bot_user = bot_username or getattr(config, "BOT_USERNAME", "Filmsinhala200Bot")
 
-    watch_url = f"{site_base}/movie.html?id={slug}" if slug else site_base
+    if "/movie.html" in site_base:
+        watch_url = site_base
+    elif slug:
+        watch_url = f"{site_base}/movie.html?id={slug}"
+    else:
+        watch_url = site_base
     channel_url = f"https://t.me/{bot_user}?start=channel"
     bot_url = f"https://t.me/{bot_user}"
     help_url = f"https://t.me/{bot_user}?start=help"

@@ -470,8 +470,42 @@ _find_candidates = find_all_candidates
 # immediately terminating aria2c subprocesses, FFmpeg, and purging storage.
 # ─────────────────────────────────────────────────────────────────────────────
 
+class MovieProcessGate:
+    """
+    Concurrency gate for Phase 2 (Video Processing, Logo Badge Overlay, and Uploading).
+    Supports parallel processing across multi-GPU setups (e.g. Kaggle Dual T4) by allowing
+    up to `capacity` concurrent movies in Phase 2.
+    """
+    def __init__(self, capacity: int = 2):
+        self._capacity = capacity
+        self._sem = asyncio.Semaphore(capacity)
+        self._acquired = 0
+
+    async def acquire(self):
+        await self._sem.acquire()
+        self._acquired += 1
+
+    def release(self):
+        if self._acquired > 0:
+            self._acquired -= 1
+            self._sem.release()
+
+    def locked(self) -> bool:
+        """Returns True if any slot is currently acquired."""
+        return self._acquired > 0
+
+    @property
+    def is_full(self) -> bool:
+        """Returns True if all slots are occupied."""
+        return self._acquired >= self._capacity
+
+    @property
+    def capacity(self) -> int:
+        return self._capacity
+
+
 _download_lock: Optional[asyncio.Lock] = None
-_encode_upload_lock: Optional[asyncio.Lock] = None
+_encode_upload_gate: Optional[MovieProcessGate] = None
 
 
 def _get_download_lock() -> asyncio.Lock:
@@ -481,11 +515,11 @@ def _get_download_lock() -> asyncio.Lock:
     return _download_lock
 
 
-def _get_encode_upload_lock() -> asyncio.Lock:
-    global _encode_upload_lock
-    if _encode_upload_lock is None:
-        _encode_upload_lock = asyncio.Lock()
-    return _encode_upload_lock
+def _get_encode_upload_lock() -> MovieProcessGate:
+    global _encode_upload_gate
+    if _encode_upload_gate is None:
+        _encode_upload_gate = MovieProcessGate(capacity=2)
+    return _encode_upload_gate
 
 
 async def run_auto_leech(
@@ -917,8 +951,39 @@ async def _execute_leech(
         attempted_idx = 0
         tried_fallback = False
 
+        download_lock_held = False
+        encode_lock_held = False
+
+        def _release_download_lock():
+            nonlocal download_lock_held
+            if download_lock_held:
+                download_lock_held = False
+                try:
+                    _get_download_lock().release()
+                    log.info("[LeechService] Released download lock for movie: %s", slug)
+                except RuntimeError:
+                    pass
+
+        async def _acquire_encode_lock():
+            nonlocal encode_lock_held
+            if not encode_lock_held:
+                await _get_encode_upload_lock().acquire()
+                encode_lock_held = True
+                log.info("[LeechService] Acquired Phase 2 encode/upload slot for movie: %s", slug)
+
+        def _release_encode_lock():
+            nonlocal encode_lock_held
+            if encode_lock_held:
+                encode_lock_held = False
+                try:
+                    _get_encode_upload_lock().release()
+                    log.info("[LeechService] Released Phase 2 encode/upload slot for movie: %s", slug)
+                except RuntimeError:
+                    pass
+
         # Phase 1: Pipelined Download — acquire dedicated download slot
         await _get_download_lock().acquire()
+        download_lock_held = True
         while candidate_queue:
             candidate = candidate_queue.pop(0)
             attempted_idx += 1
@@ -1388,6 +1453,10 @@ async def _execute_leech(
                             or (pre_sub_srt if (pre_sub_srt and os.path.exists(pre_sub_srt)) else None)
                         )
 
+                        download_pending_qualities = set(ordered_qualities)
+                        download_success_count = 0
+                        download_track_lock = asyncio.Lock()
+
                         async def _run_single_quality_pipeline(q_name: str, cand_obj: LeechCandidate, is_primary_flag: bool):
                             nonlocal active_sub_to_mux
                             try:
@@ -1456,6 +1525,10 @@ async def _execute_leech(
                                     })
                                     await _update_multi_dl_display(force=True)
                                     log.warning("[LeechService] Pipeline quality %s download failed permanently.", q_name)
+                                    async with download_track_lock:
+                                        download_pending_qualities.discard(q_name)
+                                        if not download_pending_qualities and download_success_count > 0:
+                                            _release_download_lock()
                                     return None
 
                                 # Download finished for this quality! Transition status from 'downloading' immediately
@@ -1465,6 +1538,19 @@ async def _execute_leech(
                                     "detail": "Processing video...",
                                 })
                                 await _update_multi_dl_display(force=True)
+
+                                async with download_track_lock:
+                                    download_success_count += 1
+                                    download_pending_qualities.discard(q_name)
+                                    if not download_pending_qualities and download_success_count > 0:
+                                        _release_download_lock()
+                                        log.info(
+                                            "[LeechService] All %d companion quality downloads completed for '%s'. Download slot freed for next movie!",
+                                            len(ordered_qualities), slug
+                                        )
+
+                                # Acquire Phase 2 permit for NVENC processing & logo addition across multi-GPU pool
+                                await _acquire_encode_lock()
 
                                 # User requirement: Cover CineSubz bottom-left watermark with FilmZilla badge
                                 cand_portal_name = str((cand_obj.extra or {}).get("portal", "")).lower()
@@ -1809,9 +1895,9 @@ async def _execute_leech(
                                         quality=q_name,
                                         file_size=os.path.getsize(c_dl) if os.path.exists(c_dl) else 0,
                                         slug=slug or "",
-                                        site_base_url=site_url,
+                                        site_base_url=base_site,
                                     )
-                                    branded_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=site_url)
+                                    branded_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=base_site)
                                     try:
                                         from services.upload_pool import upload_pool
                                         up_res = await upload_pool.upload_with_pool(
@@ -1915,6 +2001,7 @@ async def _execute_leech(
                     if not chosen_candidate:
                         chosen_candidate = candidate
                     log.info("[LeechService] Download SUCCEEDED via %s (%s)", chosen_candidate.method_name, downloader.format_bytes(os.path.getsize(local_file)))
+                    _release_download_lock()
                     break
                 else:
                     if local_file and os.path.exists(local_file):
@@ -1987,11 +2074,7 @@ async def _execute_leech(
                         log.info("[LeechService] Acquired %d fallback candidate(s). Adding to download queue.", len(fallback_cands))
                         candidate_queue.extend(fallback_cands)
 
-        if _get_download_lock().locked():
-            try:
-                _get_download_lock().release()
-            except RuntimeError:
-                pass
+        _release_download_lock()
 
         if not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file):
             task_tracker.tracker.fail_task(user_id, "All download candidates failed.")
@@ -2005,7 +2088,7 @@ async def _execute_leech(
 
         # Phase 2: Pipelined GPU Encode & Upload — acquire dedicated encode slot
         # Allows candidate N+1 to download in parallel while candidate N encodes & uploads!
-        await _get_encode_upload_lock().acquire()
+        await _acquire_encode_lock()
 
         # ── Step 2.5 & 2.6: Auto-Acquire Sinhala Subtitles + 12GB RAM MKV->MP4 & Sub Merge ──
         ep_suffix = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
@@ -2857,9 +2940,9 @@ async def _execute_leech(
                 quality=q_label,
                 file_size=q_bytes or (os.path.getsize(q_path) if os.path.exists(q_path) else 0),
                 slug=slug or "",
-                site_base_url=site_url,
+                site_base_url=base_site,
             )
-            branded_var_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=site_url)
+            branded_var_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=base_site)
 
             for attempt in range(3):
                 try:
@@ -3247,9 +3330,9 @@ async def _execute_leech(
                     quality=primary_quality,
                     file_size=os.path.getsize(local_file) if os.path.exists(local_file) else 0,
                     slug=slug or "",
-                    site_base_url=site_url,
+                    site_base_url=base_site,
                 )
-                branded_pri_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=site_url)
+                branded_pri_kb = build_branded_inline_keyboard(slug=slug or "", site_base_url=base_site)
                 upload_res = await upload_pool.upload_with_pool(
                     file_path=local_file,
                     target_chat=target_channel,
@@ -3800,24 +3883,13 @@ async def _execute_leech(
                 disable_web_page_preview=True,
             )
 
-        if _get_encode_upload_lock().locked():
-            try:
-                _get_encode_upload_lock().release()
-            except RuntimeError:
-                pass
+        _release_download_lock()
+        _release_encode_lock()
 
     except asyncio.CancelledError:
         log.info("[LeechService] Auto-leech task cancelled for user %s (%s)", user_id, display_title)
-        if _get_download_lock().locked():
-            try:
-                _get_download_lock().release()
-            except RuntimeError:
-                pass
-        if _get_encode_upload_lock().locked():
-            try:
-                _get_encode_upload_lock().release()
-            except RuntimeError:
-                pass
+        _release_download_lock()
+        _release_encode_lock()
         async def _do_cancel_cleanup():
             try:
                 await downloader.cancel_active_download(task_key)
@@ -3857,16 +3929,8 @@ async def _execute_leech(
 
     except Exception as exc:
         log.exception("[LeechService] Unhandled error during auto-leech for user %s: %s", user_id, exc)
-        if _get_download_lock().locked():
-            try:
-                _get_download_lock().release()
-            except RuntimeError:
-                pass
-        if _get_encode_upload_lock().locked():
-            try:
-                _get_encode_upload_lock().release()
-            except RuntimeError:
-                pass
+        _release_download_lock()
+        _release_encode_lock()
         task_tracker.tracker.fail_task(user_id, str(exc))
 
         try:

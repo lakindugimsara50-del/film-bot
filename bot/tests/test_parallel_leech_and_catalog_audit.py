@@ -325,3 +325,105 @@ class TestUploadPoolAdminPromotion(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result["message_id"], 888)
             # 3. Userbot is back in admin cache
             self.assertIn(userbot, pool._admin_sessions[target_channel])
+
+
+class TestMoviePipeliningAndProcessGate(unittest.IsolatedAsyncioTestCase):
+    async def test_movie_process_gate_capacity_and_locking(self):
+        """MovieProcessGate(capacity=2) allows exactly 2 concurrent slots, blocks the 3rd until release."""
+        from services.leech_service import MovieProcessGate
+
+        gate = MovieProcessGate(capacity=2)
+        self.assertEqual(gate.capacity, 2)
+        self.assertFalse(gate.locked())
+        self.assertFalse(gate.is_full)
+
+        await gate.acquire()
+        self.assertTrue(gate.locked())
+        self.assertFalse(gate.is_full)
+
+        await gate.acquire()
+        self.assertTrue(gate.locked())
+        self.assertTrue(gate.is_full)
+
+        # 3rd acquire will wait until a slot is freed
+        third_acquired = False
+
+        async def _acquire_third():
+            nonlocal third_acquired
+            await gate.acquire()
+            third_acquired = True
+
+        task = asyncio.create_task(_acquire_third())
+        await asyncio.sleep(0.05)
+        self.assertFalse(third_acquired)
+
+        # Release one slot
+        gate.release()
+        await asyncio.sleep(0.05)
+        self.assertTrue(third_acquired)
+        self.assertTrue(gate.is_full)
+
+        gate.release()
+        gate.release()
+        self.assertFalse(gate.locked())
+
+        # Release when empty must not crash or go negative
+        gate.release()
+        self.assertFalse(gate.locked())
+
+    async def test_staggered_download_and_gpu_parallel_pipelining(self):
+        """
+        Verify:
+        - Only 1 movie downloads at a time (strict CDN safety).
+        - As soon as Film 1 completes downloading, download lock is released and Film 2 starts downloading.
+        - Film 1 and Film 2 can execute Phase 2 (watermark logo / GPU transcode / upload) concurrently.
+        """
+        download_lock = asyncio.Lock()
+        from services.leech_service import MovieProcessGate
+        gpu_gate = MovieProcessGate(capacity=2)
+
+        execution_log = []
+
+        async def simulate_film_pipeline(film_id: str, dl_duration: float, encode_duration: float):
+            # Phase 1: Download with exclusive lock
+            async with download_lock:
+                execution_log.append(f"{film_id}_dl_start")
+                await asyncio.sleep(dl_duration)
+                execution_log.append(f"{film_id}_dl_end")
+            # Download lock is now released immediately!
+
+            # Phase 2: Dual GPU encode / upload with gate capacity 2
+            await gpu_gate.acquire()
+            try:
+                execution_log.append(f"{film_id}_gpu_start")
+                await asyncio.sleep(encode_duration)
+                execution_log.append(f"{film_id}_gpu_end")
+            finally:
+                gpu_gate.release()
+
+        # Run Film 1 and Film 2 concurrently
+        t1 = asyncio.create_task(simulate_film_pipeline("Film1", 0.05, 0.10))
+        t2 = asyncio.create_task(simulate_film_pipeline("Film2", 0.05, 0.10))
+
+        await asyncio.gather(t1, t2)
+
+        # Assert sequence:
+        # Film1 downloads, then Film1 dl ends.
+        # Film2 starts download ONLY AFTER Film1 dl ends (strictly sequential downloads).
+        # But Film1 GPU and Film2 GPU overlap (parallel multi-GPU processing)!
+        self.assertEqual(execution_log[0], "Film1_dl_start")
+        self.assertEqual(execution_log[1], "Film1_dl_end")
+        self.assertIn("Film2_dl_start", execution_log)
+        self.assertIn("Film1_gpu_start", execution_log)
+        self.assertIn("Film2_gpu_start", execution_log)
+
+        idx_f1_dl_end = execution_log.index("Film1_dl_end")
+        idx_f2_dl_start = execution_log.index("Film2_dl_start")
+        idx_f2_gpu_start = execution_log.index("Film2_gpu_start")
+        idx_f1_gpu_end = execution_log.index("Film1_gpu_end")
+
+        # Film2 download starts ONLY after Film1 download has finished
+        self.assertLess(idx_f1_dl_end, idx_f2_dl_start)
+        # Film2 GPU starts BEFORE Film1 GPU ends! (Staggered parallel GPU execution)
+        self.assertLess(idx_f2_gpu_start, idx_f1_gpu_end)
+

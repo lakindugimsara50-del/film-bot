@@ -77,7 +77,8 @@ class TestBotHandlers(unittest.TestCase):
         msg = announce._build_message(movie)
         self.assertIn("Interstellar", msg)
         self.assertIn("http://localhost:8000/movie.html?id=interstellar", msg)
-        self.assertIn("https://download.url", msg)
+        self.assertIn("1080P", msg)
+        self.assertNotIn("https://download.url", msg)
 
     def test_get_file_stream_url_strip_slashes(self):
         url = telegram_upload.get_file_stream_url("test_id")

@@ -283,13 +283,29 @@ class TestPipelineUpgrade(unittest.TestCase):
             ]
         }
 
+        from bot.handlers.announce import _build_keyboard
+
         msg = _build_message(movie)
-        # Verify 1080p button links to the bot deep-link, NOT the private channel link
-        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_1080p">[1080p]</a>', msg)
-        self.assertNotIn('<a href="https://t.me/c/4325759505/100">[1080p]</a>', msg)
-        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_720p">[720p]</a>', msg)
-        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_480p">[480p]</a>', msg)
-        self.assertIn('<a href="https://t.me/Filmsinhala200Bot?start=dl_kgf-chapter-2-2022_360p">[360p]</a>', msg)
+        # Verify announcement post message contains movie info and informative quality lines,
+        # but NEVER contains direct bot deep-links or private channel links
+        self.assertIn("K.G.F: Chapter 2", msg)
+        self.assertIn("1080P", msg)
+        self.assertIn("720P", msg)
+        self.assertIn("480P", msg)
+        self.assertIn("360P", msg)
+        self.assertNotIn("start=dl_", msg)
+        self.assertNotIn("https://t.me/c/4325759505", msg)
+
+        # Verify inline keyboard has NO direct download buttons and ONLY drives traffic to website
+        kb = _build_keyboard(movie, "Filmsinhala200Bot")
+        all_buttons = [btn for row in kb.inline_keyboard for btn in row]
+        btn_labels = [btn.text for btn in all_buttons]
+        btn_urls = [btn.url for btn in all_buttons]
+        self.assertTrue(any("Watch Online / Download" in lbl for lbl in btn_labels))
+        self.assertTrue(any("Share Film" in lbl for lbl in btn_labels))
+        self.assertFalse(any("Bot Download" in lbl for lbl in btn_labels))
+        self.assertFalse(any("📥 1080P" in lbl for lbl in btn_labels))
+        self.assertFalse(any("start=dl_" in url for url in btn_urls))
 
     def test_deliver_movie_quality_recovers_channel_id_from_stream_url(self):
         from unittest.mock import patch, AsyncMock, MagicMock

@@ -37,7 +37,10 @@ async def post_to_channel(
     Returns:
         The sent Pyrogram Message object if successful, else None.
     """
-    target_channel = public_channel_id or getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
+    target_channel = public_channel_id
+    if not target_channel or target_channel == getattr(config, "PRIVATE_CHANNEL_ID", -1004325759505):
+        target_channel = getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
+
     if not target_channel:
         log.warning("[Announce] No public channel ID configured; skipping announcement.")
         return None
@@ -103,7 +106,9 @@ async def update_channel_post(
     """
     Update an existing channel announcement when downloads become available.
     """
-    target_channel = public_channel_id or getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
+    target_channel = public_channel_id
+    if not target_channel or target_channel == getattr(config, "PRIVATE_CHANNEL_ID", -1004325759505):
+        target_channel = getattr(config, "PUBLIC_CHANNEL_ID", -1004301214474)
     if not target_channel or not message_id:
         return False
 
@@ -159,7 +164,11 @@ def _get_banner_candidates(movie: dict) -> list[str]:
 
 
 def _build_keyboard(movie: dict, bot_username: str = "") -> InlineKeyboardMarkup:
-    """Compose user-friendly premium Telegram inline keyboard buttons."""
+    """
+    Compose user-friendly premium Telegram inline keyboard buttons.
+    Exclusively provides website watch & download buttons to drive traffic to the site.
+    Direct file download buttons are omitted from announcement posts as requested.
+    """
     if not bot_username:
         bot_username = getattr(config, "BOT_USERNAME", "Filmsinhala200Bot")
 
@@ -167,40 +176,23 @@ def _build_keyboard(movie: dict, bot_username: str = "") -> InlineKeyboardMarkup
     clean_title = re.sub(r"\s*--[a-zA-Z0-9_-]+", "", title).strip()
     slug = movie.get("slug", _slugify(title))
     site_base = getattr(config, "SITE_BASE_URL", "https://filmsub.pages.dev").rstrip("/")
-    watch_link = f"{site_base}/movie.html?id={slug}"
+    site_url = movie.get("site_url") or ""
+    if site_url:
+        watch_link = site_url.replace("https://yoursite.lk", site_base).replace("http://yoursite.lk", site_base)
+        if "yoursite.lk" in watch_link:
+            watch_link = f"{site_base}/movie.html?id={slug}"
+    else:
+        watch_link = f"{site_base}/movie.html?id={slug}"
 
-    buttons = [
-        [InlineKeyboardButton("🌐 Watch Online (නරඹන්න)", url=watch_link)]
-    ]
-
-    # Extract quality buttons
-    dls = movie.get("downloads", []) or []
-    quality_btns = []
-    seen_q = set()
-    for d in dls:
-        q_raw = d.get("quality", "")
-        mq = re.search(r"\b(1080p|720p|480p|360p)\b", q_raw, re.I)
-        if mq:
-            q_norm = mq.group(1).lower()
-            if q_norm not in seen_q:
-                seen_q.add(q_norm)
-                sz = d.get("size", "")
-                label = f"📥 {q_norm.upper()}" + (f" ({sz})" if sz else "")
-                bot_url = f"https://t.me/{bot_username}?start=dl_{slug}_{q_norm}"
-                quality_btns.append(InlineKeyboardButton(label, url=bot_url))
-
-    # Add quality buttons in rows of 2
-    for i in range(0, len(quality_btns), 2):
-        buttons.append(quality_btns[i : i + 2])
-
-    # Footer row: Bot link & Share link
-    share_text = urllib.parse.quote_plus(f"Watch {clean_title} with Sinhala Subtitles on FilmSub!")
+    share_text = urllib.parse.quote_plus(f"Watch {clean_title} with Sinhala Subtitles on FilmZilla!")
     share_url = f"https://t.me/share/url?url={urllib.parse.quote_plus(watch_link)}&text={share_text}"
 
-    buttons.append([
-        InlineKeyboardButton("🤖 Bot Download", url=f"https://t.me/{bot_username}?start=dl_{slug}"),
-        InlineKeyboardButton("👥 Share Film", url=share_url),
-    ])
+    # As requested by the user: NO direct video download buttons on the announcement banner.
+    # Keep only Watch Online / Download on Website and Share buttons to bring traffic to the site.
+    buttons = [
+        [InlineKeyboardButton("🌐 Watch Online / Download (නරඹන්න / බාගන්න)", url=watch_link)],
+        [InlineKeyboardButton("👥 Share Film (Share කරන්න)", url=share_url)],
+    ]
 
     return InlineKeyboardMarkup(buttons)
 
@@ -231,7 +223,15 @@ def _build_message(movie: dict, bot_username: str = "") -> str:
 
     slug: str = movie.get("slug", _slugify(title))
     site_base = getattr(config, "SITE_BASE_URL", "https://filmsub.pages.dev").rstrip("/")
-    watch_link = f"{site_base}/movie.html?id={slug}"
+    site_url = movie.get("site_url") or ""
+    if site_url:
+        watch_link = site_url.replace("https://yoursite.lk", site_base).replace("http://yoursite.lk", site_base)
+        if "yoursite.lk" in watch_link:
+            watch_link = f"{site_base}/movie.html?id={slug}"
+    else:
+        watch_link = f"{site_base}/movie.html?id={slug}"
+
+    parsed_netloc = urllib.parse.urlparse(watch_link).netloc or "www.filmzilla.lk"
 
     # Extract quality lines
     dls = movie.get("downloads", []) or []
@@ -272,10 +272,10 @@ def _build_message(movie: dict, bot_username: str = "") -> str:
         f"⬇️ <b>ලබාගත හැකි පිටපත් (Downloads):</b>\n"
         f"{downloads_block}\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🌐 <b>Website:</b> <a href=\"{watch_link}\">filmsub.pages.dev</a>\n"
+        f"🌐 <b>Website:</b> <a href=\"{watch_link}\">{parsed_netloc}</a>\n"
         f"👇 <b>නැරඹීමට සහ Download කිරීමට පහත Buttons භාවිතා කරන්න:</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"💎 <i>FilmSub Official Cinema Network | Share with Friends!</i> ❤️"
+        f"💎 <i>FilmZilla Official Cinema Network | Share with Friends!</i> ❤️"
     )
 
     wrapper_len = len("📖 <i>\"\"</i>\n━━━━━━━━━━━━━━━━━━━━━\n")

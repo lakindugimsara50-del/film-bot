@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://volleyball-offline-upload-card.trycloudflare.com",
+  "stream_base_url": "https://indexed-blackjack-posted-instrument.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-02T06:58:14.759915+00:00",
+  "updated_at": "2026-11-02T11:07:38.582126+00:00",
   "status": "online"
 };

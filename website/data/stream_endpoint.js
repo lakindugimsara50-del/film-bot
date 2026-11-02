@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://argue-inquiry-hobbies-adams.trycloudflare.com",
+  "stream_base_url": "https://volleyball-offline-upload-card.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-01T19:50:00.494737+00:00",
+  "updated_at": "2026-11-02T06:57:57.292756+00:00",
   "status": "online"
 };

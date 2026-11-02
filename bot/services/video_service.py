@@ -33,7 +33,7 @@ TELEGRAM_MTPROTO_MAX_BYTES = 2_090_000_000
 # ── Colab / Render environment detection ─────────────────────────────────────
 # Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
 # Render Free Tier (0.1 vCPU, 512 MB RAM): use veryfast + limited remux
-_on_colab: bool = os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))
+_on_colab: bool = (os.name != "nt") and (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE")))
 _threads: str = "0"          # always use all available CPU cores
 _preset: str = "ultrafast" if _on_colab else "veryfast"
 

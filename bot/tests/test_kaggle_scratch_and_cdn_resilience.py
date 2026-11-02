@@ -3,6 +3,7 @@ import sys
 sys.path.insert(0, os.path.abspath("bot"))
 import shutil
 import tempfile
+import re
 from unittest.mock import patch, MagicMock
 import pytest
 
@@ -73,3 +74,96 @@ def test_downloader_aria2c_cdn_connection_caps():
     split_conn = "8" if is_cdn else "32"
     assert max_conn == "4"
     assert split_conn == "8"
+
+
+def test_get_aria2c_connection_caps_sensitive_cdns():
+    """Verify single connection is assigned to sensitive CDNs to prevent size mismatch aborts."""
+    assert downloader.get_aria2c_connection_caps("https://cs45.supercloud1.xyz/Master-1080p.mp4?play=true") == ("1", "1")
+    assert downloader.get_aria2c_connection_caps("https://player45.setwenna.one/video.mp4") == ("1", "1")
+    assert downloader.get_aria2c_connection_caps("https://csplayer.net/video.mp4") == ("1", "1")
+    assert downloader.get_aria2c_connection_caps("https://cdn.sinhalasub.net/video.mp4") == ("4", "8")
+    assert downloader.get_aria2c_connection_caps("https://cinesubz.lk/video.mp4") == ("4", "8")
+    assert downloader.get_aria2c_connection_caps("https://example.com/video.mp4") == ("16", "32")
+
+
+def test_dead_cdn_hosts_filtered_from_cinesubz_and_matched_scraper():
+    """Verify cs05.supercloud1.xyz is rejected and not returned as active candidates."""
+    from services.scrapers import srilankan_matched_scraper, cinesubz
+    assert "cs05.supercloud1.xyz" in cinesubz.DEAD_CDN_HOSTS
+    assert "cs05.supercloud1.xyz" in srilankan_matched_scraper.DEAD_CDN_HOSTS
+    assert srilankan_matched_scraper.resolve_direct_video_url("https://cs05.supercloud1.xyz/Master-1080p.mp4") == ""
+    assert srilankan_matched_scraper.unmask_cinesubz_server_url("https://google.com/server5/2021/Master.mp4") == ""
+
+
+@pytest.mark.asyncio
+async def test_httpx_resumes_indefinitely_while_making_progress(tmp_path):
+    """Verify httpx single-stream GET resumes past 5 attempts when chunks arrive progressively."""
+    dest_dir = str(tmp_path)
+    total_test_bytes = 2000
+    chunk_size = 300  # Will require ceil(2000/300) = 7 chunks (exceeding old max_resumes=5)
+
+    calls = 0
+
+    class MockStream:
+        def __init__(self, start_b):
+            self.start_b = start_b
+            self.status_code = 206
+            self.headers = {
+                "content-range": f"bytes {start_b}-{min(start_b + chunk_size - 1, total_test_bytes - 1)}/{total_test_bytes}",
+                "content-length": str(min(chunk_size, total_test_bytes - start_b)),
+            }
+
+        def raise_for_status(self):
+            pass
+
+        async def aiter_bytes(self, _):
+            nonlocal calls
+            calls += 1
+            yield b"X" * min(chunk_size, total_test_bytes - self.start_b)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            self.headers = kwargs.get("headers", {})
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def get(self, url, *args, **kwargs):
+            resp = MagicMock()
+            resp.status_code = 206
+            resp.headers = {"content-range": f"bytes 0-0/{total_test_bytes}"}
+            return resp
+
+        async def head(self, *args, **kwargs):
+            resp = MagicMock()
+            resp.status_code = 200
+            resp.headers = {"content-length": str(total_test_bytes), "accept-ranges": "bytes"}
+            return resp
+
+        def stream(self, method, url, *args, **kwargs):
+            m_range = re.search(r"bytes=(\d+)-", self.headers.get("Range", ""))
+            start_b = int(m_range.group(1)) if m_range else 0
+            return MockStream(start_b)
+
+    with patch("httpx.AsyncClient", side_effect=MockClient), \
+         patch.object(downloader, "is_valid_downloaded_video", return_value=True):
+        out_file = await downloader._download_httpx(
+            url="https://cs45.supercloud1.xyz/test.mp4",
+            dest_dir=dest_dir,
+            filename="test_resumed.mp4",
+            progress_callback=None,
+        )
+        assert os.path.exists(out_file)
+        assert os.path.getsize(out_file) == total_test_bytes
+        # Verified it required 7 resumes (> old 5 cap) and succeeded
+        assert calls == 7
+

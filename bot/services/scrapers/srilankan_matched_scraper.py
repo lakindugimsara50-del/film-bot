@@ -70,8 +70,16 @@ VIDEO_HOST_PATTERNS = {
 }
 
 
+# Known dead / unresolvable CDN hostnames to strictly reject
+DEAD_CDN_HOSTS = ("cs05.supercloud1.xyz",)
+
+
 def resolve_direct_video_url(url: str) -> str:
     """Resolve view/preview URLs to raw direct stream/download endpoints."""
+    if not url:
+        return ""
+    if any(dead in url.lower() for dead in DEAD_CDN_HOSTS):
+        return ""
     pd = VIDEO_HOST_PATTERNS["pixeldrain"].search(url)
     if pd:
         return f"https://pixeldrain.com/api/file/{pd.group(1)}"
@@ -90,7 +98,10 @@ def unmask_cinesubz_server_url(url: str) -> str:
     if m:
         srv_num = int(m.group(1))
         fname = m.group(2)
-        return f"https://cs{srv_num:02d}.supercloud1.xyz/{fname}?play=true"
+        target = f"https://cs{srv_num:02d}.supercloud1.xyz/{fname}?play=true"
+        if any(dead in target.lower() for dead in DEAD_CDN_HOSTS):
+            return ""
+        return target
     return url
 
 
@@ -157,9 +168,7 @@ async def resolve_srilankan_intermediate_link(
         if link_elem and link_elem.get("href"):
             raw_href = (link_elem.get("href") or "").strip()
             if "google.com/server" in raw_href or "drive.csplayer2.space" in raw_href:
-                unmasked = unmask_cinesubz_server_url(raw_href)
-                if unmasked and unmasked != raw_href:
-                    return unmasked
+                return None
             return resolve_direct_video_url(raw_href)
 
         # D. Search anchors inside the resolved page (e.g. LKSubs /links/ -> Continue button)

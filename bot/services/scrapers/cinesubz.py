@@ -43,6 +43,9 @@ from services.scrapers.srilankan_matched_scraper import (
 )
 
 
+DEAD_CDN_HOSTS = ("cs05.supercloud1.xyz",)
+
+
 async def _extract_cinesubz_zetaplayer_streams(
     client: httpx.AsyncClient,
     soup: BeautifulSoup,
@@ -86,6 +89,8 @@ async def _extract_cinesubz_zetaplayer_streams(
                     if r_embed.status_code == 200:
                         found_urls = re.findall(r"https?://[^\s\"\'<>]+\.(?:mp4|mkv)(?:\?[^\s\"\'<>]*)?", r_embed.text)
                         for fu in set(found_urls):
+                            if any(dead in fu.lower() for dead in DEAD_CDN_HOSTS):
+                                continue
                             # Filter for real media stream hosts (supercloud, setwenna, csplayer CDN)
                             # Exclude ad lockers or non-media endpoints (e.g. drive.csplayer2.space)
                             if "drive.csplayer2.space" not in fu and any(k in fu for k in ["supercloud", "setwenna", "play=true", "csplayer", "cdn"]) and fu not in seen_urls:
@@ -343,13 +348,15 @@ async def search(
 
             for vl in video_links:
                 u_link = vl["url"]
+                if any(dead in u_link.lower() for dead in DEAD_CDN_HOSTS):
+                    continue
                 if "google.com/server" in u_link or "drive.csplayer2.space" in u_link:
                     try:
                         u_link = unmask_cinesubz_server_url(u_link)
                         vl["url"] = u_link
                     except Exception:
                         pass
-                if "drive.csplayer2.space" in u_link:
+                if not u_link or "drive.csplayer2.space" in u_link or any(dead in u_link.lower() for dead in DEAD_CDN_HOSTS):
                     continue
                 results.append({
                     "portal": "CineSubz",

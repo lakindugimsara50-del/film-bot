@@ -165,14 +165,19 @@ def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
     Many Sri Lankan CDNs (e.g. drive.csplayer2.space, cinesubz.co, sinhalasub.lk) reject
     requests without a matching Referer header with a 403 HTML error page (~757 bytes).
     """
+    u_lower = (url or "").lower()
+    is_cinesubz_related = any(k in u_lower for k in ("cinesubz", "csplayer", "supercloud", "setwenna"))
+
     if custom_referer:
         # Crucial safeguard: player45.setwenna.one referer causes 404 Not Found on cs45.supercloud1.xyz
         # direct streams, while cinesubz.lk / cinesubz.co returns 200 OK!
-        if "setwenna" in custom_referer and "supercloud" in (url or "").lower():
+        if "setwenna" in custom_referer.lower() and "supercloud" in u_lower:
             return "https://cinesubz.lk/"
         return custom_referer
-    u_lower = (url or "").lower()
-    if any(k in u_lower for k in ("cinesubz", "csplayer", "supercloud", "setwenna")):
+
+    if is_cinesubz_related:
+        if "cinesubz.co" in u_lower or "supercloud2" in u_lower or "setwenna" in u_lower:
+            return "https://cinesubz.co/"
         return "https://cinesubz.lk/"
     elif "sinhalasub" in u_lower:
         return "https://sinhalasub.lk/"
@@ -197,6 +202,24 @@ def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
     except Exception:
         pass
     return "https://google.com/"
+
+
+def get_aria2c_connection_caps(url: str) -> tuple[str, str]:
+    """
+    Get (max_connection_per_server, split) caps for aria2c based on host characteristics.
+    Sensitive CDNs (supercloud, csplayer, setwenna) return chunked transfer-encoding with no
+    Content-Length for non-zero range requests, causing aria2c multi-connection split to abort
+    with 'Size mismatch Expected:... Actual:0'. For these, max_conn=1, split_conn=1 ensures
+    a stable, full-speed linear stream from byte 0.
+    Other CDNs (sinhalasub, cinesubz) use (4, 8).
+    Generic hosts use (16, 32).
+    """
+    u_lower = (url or "").lower()
+    if any(k in u_lower for k in ("supercloud", "csplayer", "setwenna")):
+        return ("1", "1")
+    elif any(k in u_lower for k in ("sinhalasub", "cinesubz")):
+        return ("4", "8")
+    return ("16", "32")
 
 
 async def download_http(
@@ -265,10 +288,7 @@ async def _download_aria2c_http(
 
     ref = referer or get_referer_for_url(url)
 
-    # Optimized CDN connection caps: prevent server reset when multi-qualities download in parallel
-    is_cdn_host = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna", "sinhalasub"))
-    max_conn = "4" if is_cdn_host else "16"
-    split_conn = "8" if is_cdn_host else "32"
+    max_conn, split_conn = get_aria2c_connection_caps(url)
 
     cmd = [
         aria2_bin,
@@ -283,13 +303,15 @@ async def _download_aria2c_http(
         "--file-allocation=none",
         "--disk-cache=128M" if (os.path.exists("/content") or os.path.exists("/kaggle/working") or os.path.isdir("/dev/shm")) else "--disk-cache=64M",
         "--continue=true",
-        "--timeout=35",
-        "--connect-timeout=15",
-        "--max-tries=5",
+        "--timeout=60",
+        "--connect-timeout=30",
+        "--max-tries=10",
         "--retry-wait=2",
         "--check-certificate=false",
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         f"--referer={ref}",
+        "--header=X-Download: 1",
+        "--header=Sec-Fetch-Dest: download",
         "--summary-interval=1",
         "--console-log-level=warn",
         "--allow-overwrite=true",
@@ -320,17 +342,17 @@ async def _download_aria2c_http(
     try:
         buffer = ""
         while True:
-            # 45s watchdog timeout for reading next chunk from aria2c stdout
+            # 90s watchdog timeout for reading next chunk from aria2c stdout
             try:
-                chunk = await asyncio.wait_for(proc.stdout.read(512), timeout=45.0)
+                chunk = await asyncio.wait_for(proc.stdout.read(512), timeout=90.0)
             except asyncio.TimeoutError:
-                log.warning("[Downloader] aria2c produced no output for 45s, terminating to trigger fallback...")
+                log.warning("[Downloader] aria2c produced no output for 90s, terminating to trigger fallback...")
                 if proc and proc.returncode is None:
                     try:
                         proc.terminate()
                     except Exception:
                         pass
-                raise RuntimeError("aria2c stalled (45s watchdog timeout)")
+                raise RuntimeError("aria2c stalled (90s watchdog timeout)")
 
             if not chunk:
                 break
@@ -473,10 +495,12 @@ async def _download_httpx(
     local_path = os.path.join(dest_dir, out_name)
 
     # 2. If file size >= 20MB and server supports ranges, use 4-8 parallel range workers
-    if total_size >= 20 * 1024 * 1024 and accept_ranges:
+    # Sensitive CDNs (supercloud, csplayer, setwenna) return chunked truncated ranges (32MB)
+    # which causes parallel range workers to prematurely abort; skip directly to resilient single-stream.
+    is_sensitive_cdn = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna"))
+    if total_size >= 20 * 1024 * 1024 and accept_ranges and not is_sensitive_cdn:
         try:
             # Cap concurrent workers on sensitive CDNs to prevent IP socket reset
-            is_sensitive_cdn = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna"))
             max_w = 4 if is_sensitive_cdn else 8
             num_workers = min(max_w, max(2, total_size // (10 * 1024 * 1024)))
             part_size = total_size // num_workers
@@ -568,12 +592,27 @@ async def _download_httpx(
     # 3. Fallback: single-stream GET with automatic Range resumption
     local_path = os.path.join(dest_dir, out_name)
     downloaded_cnt = 0
+    if os.path.exists(local_path):
+        downloaded_cnt = os.path.getsize(local_path)
+
     start_time = time.time()
     last_notify = 0.0
-    max_resumes = 5
-    resume_attempt = 0
+    consecutive_errors = 0
+    max_consecutive_errors = 10
 
-    while resume_attempt < max_resumes:
+    while True:
+        if total_size > 0 and downloaded_cnt >= total_size:
+            break
+        if consecutive_errors >= max_consecutive_errors:
+            log.error(
+                "[Downloader] Exceeded %d consecutive failures at %s / %s",
+                max_consecutive_errors,
+                format_bytes(downloaded_cnt),
+                format_bytes(total_size) if total_size else "unknown",
+            )
+            break
+
+        bytes_received_this_stream = 0
         try:
             req_headers = dict(headers)
             if downloaded_cnt > 0:
@@ -608,7 +647,9 @@ async def _download_httpx(
                     async with aiofiles.open(local_path, file_mode) as fh:
                         async for chunk in resp.aiter_bytes(_CHUNK_SIZE):
                             await fh.write(chunk)
-                            downloaded_cnt += len(chunk)
+                            c_len = len(chunk)
+                            downloaded_cnt += c_len
+                            bytes_received_this_stream += c_len
 
                             now = time.time()
                             if progress_callback and ((now - last_notify >= 2.5) or (total and downloaded_cnt >= total)):
@@ -639,36 +680,42 @@ async def _download_httpx(
                                 except Exception:
                                     pass
 
-            if total_size > 0:
-                if downloaded_cnt >= total_size:
-                    break
-            elif is_valid_downloaded_video(local_path):
+            if total_size > 0 and downloaded_cnt >= total_size:
+                log.info("[Downloader] Reached 100%% of total size (%s)", format_bytes(total_size))
                 break
 
-            # If stream ended prematurely, attempt byte-range resume
-            resume_attempt += 1
-            log.warning(
-                "[Downloader] Stream closed prematurely at %s / %s. Attempting resume %d/%d from byte %d...",
-                format_bytes(downloaded_cnt),
-                format_bytes(total_size) if total_size else "unknown",
-                resume_attempt,
-                max_resumes,
-                downloaded_cnt,
-            )
-            await asyncio.sleep(1.0 * resume_attempt)
+            if bytes_received_this_stream > 0:
+                consecutive_errors = 0
+                log.info(
+                    "[Downloader] Stream chunk finished. Downloaded %s / %s. Continuing resume...",
+                    format_bytes(downloaded_cnt),
+                    format_bytes(total_size) if total_size else "unknown",
+                )
+                await asyncio.sleep(0.5)
+            else:
+                consecutive_errors += 1
+                log.warning(
+                    "[Downloader] Stream ended without data at %s. (Attempt %d/%d)",
+                    format_bytes(downloaded_cnt),
+                    consecutive_errors,
+                    max_consecutive_errors,
+                )
+                await asyncio.sleep(min(5.0, 1.0 * consecutive_errors))
+
         except Exception as s_err:
-            resume_attempt += 1
+            if bytes_received_this_stream > 0:
+                consecutive_errors = 0
+            else:
+                consecutive_errors += 1
+
             log.warning(
-                "[Downloader] Stream interrupted (%s) at %s. Attempting resume %d/%d from byte %d...",
+                "[Downloader] Stream interrupted (%s) at %s (error %d/%d). Resuming...",
                 s_err,
                 format_bytes(downloaded_cnt),
-                resume_attempt,
-                max_resumes,
-                downloaded_cnt,
+                consecutive_errors,
+                max_consecutive_errors,
             )
-            if resume_attempt >= max_resumes:
-                break
-            await asyncio.sleep(1.5 * resume_attempt)
+            await asyncio.sleep(min(5.0, 1.5 * consecutive_errors))
 
     if is_valid_downloaded_video(local_path):
         log.info("[Downloader] httpx download completed: %s (%s)", out_name, format_bytes(os.path.getsize(local_path)))

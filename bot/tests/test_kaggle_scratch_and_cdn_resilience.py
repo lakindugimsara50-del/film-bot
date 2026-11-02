@@ -167,3 +167,113 @@ async def test_httpx_resumes_indefinitely_while_making_progress(tmp_path):
         # Verified it required 7 resumes (> old 5 cap) and succeeded
         assert calls == 7
 
+
+@pytest.mark.asyncio
+async def test_download_httpx_parallel_workers_resilience(tmp_path):
+    """Verify that parallel chunk workers handle truncated streams by resuming progressively."""
+    dest_dir = str(tmp_path)
+    total_test_bytes = 40 * 1024 * 1024  # 40 MB
+    chunk_limit = 2 * 1024 * 1024  # 2 MB per stream invocation
+
+    class MockWorkerStream:
+        def __init__(self, start_b, end_b):
+            self.start_b = start_b
+            self.end_b = end_b
+            self.status_code = 206
+            self.headers = {
+                "content-range": f"bytes {start_b}-{min(start_b + chunk_limit - 1, end_b)}/{total_test_bytes}",
+                "content-length": str(min(chunk_limit, end_b - start_b + 1)),
+            }
+
+        def raise_for_status(self):
+            pass
+
+        async def aiter_bytes(self, _):
+            bytes_to_send = min(chunk_limit, self.end_b - self.start_b + 1)
+            yield b"K" * bytes_to_send
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+    class MockWorkerClient:
+        def __init__(self, *args, **kwargs):
+            self.headers = kwargs.get("headers", {})
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def head(self, *args, **kwargs):
+            resp = MagicMock()
+            resp.status_code = 200
+            resp.headers = {"content-length": str(total_test_bytes), "accept-ranges": "bytes"}
+            return resp
+
+        def stream(self, method, url, *args, **kwargs):
+            m_range = re.search(r"bytes=(\d+)-(\d+)", self.headers.get("Range", ""))
+            start_b = int(m_range.group(1)) if m_range else 0
+            end_b = int(m_range.group(2)) if m_range else total_test_bytes - 1
+            return MockWorkerStream(start_b, end_b)
+
+    with patch("httpx.AsyncClient", side_effect=MockWorkerClient), \
+         patch.object(downloader, "is_valid_downloaded_video", return_value=True):
+        out_file = await downloader._download_httpx(
+            url="https://cs45.supercloud1.xyz/Master-1080p.mp4?play=true",
+            dest_dir=dest_dir,
+            filename="master_parallel.mp4",
+            progress_callback=None,
+        )
+        assert os.path.exists(out_file)
+        assert os.path.getsize(out_file) == total_test_bytes
+
+
+@pytest.mark.asyncio
+async def test_cinesubz_zetaplayer_iframe_embed_handling():
+    """Verify _extract_cinesubz_zetaplayer_streams unwraps iframe src tags and protocol-relative links."""
+    from bs4 import BeautifulSoup
+    from bot.services.scrapers import cinesubz
+
+    html = """
+    <ul id="playeroptionsul">
+        <li class="zetaflix_player_option" data-post="12345" data-type="mv" data-nume="1">Server 1</li>
+        <li class="zetaflix_player_option" data-post="12345" data-type="mv" data-nume="2">Server 2</li>
+    </ul>
+    """
+    soup = BeautifulSoup(html, "html.parser")
+
+    class MockClient:
+        async def get(self, url, *args, **kwargs):
+            resp = MagicMock()
+            resp.status_code = 200
+            if "wp-json/zetaplayer/v2/12345/mv/1" in url:
+                resp.json.return_value = {
+                    "embed_url": '<iframe src="https://setwenna.one/embed/abc123" width="100%" height="100%"></iframe>'
+                }
+            elif "wp-json/zetaplayer/v2/12345/mv/2" in url:
+                resp.json.return_value = {
+                    "embed_url": "//setwenna.one/embed/def456"
+                }
+            elif "embed/abc123" in url:
+                resp.text = 'file: "https://cs45.supercloud1.xyz/Master%20(2021)-1080p.mp4?play=true"'
+            elif "embed/def456" in url:
+                resp.text = 'file: "https://cs45.supercloud1.xyz/Master%20(2021)-720p.mp4?play=true"'
+            else:
+                resp.status_code = 404
+            return resp
+
+    client = MockClient()
+    streams = await cinesubz._extract_cinesubz_zetaplayer_streams(client, soup, "https://cinesubz.co/movies/master-2021/")
+    assert len(streams) == 2
+    qualities = [s["quality"] for s in streams]
+    assert "1080p" in qualities
+    assert "720p" in qualities
+    for s in streams:
+        assert s["portal"] == "CineSubz"
+        assert "supercloud1.xyz" in s["url"]
+
+

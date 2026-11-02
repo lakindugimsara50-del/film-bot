@@ -70,15 +70,44 @@ VIDEO_HOST_PATTERNS = {
 }
 
 
+import socket
+
 # Known dead / unresolvable CDN hostnames to strictly reject
 DEAD_CDN_HOSTS = ("cs05.supercloud1.xyz",)
+_DEAD_HOSTS_CACHE: dict[str, bool] = {}
+
+
+def is_dead_cdn_host(url_or_host: str) -> bool:
+    """Check if host is known dead or cannot be resolved by DNS."""
+    if not url_or_host:
+        return True
+    host = url_or_host.strip()
+    if "://" in host:
+        try:
+            parsed = urllib.parse.urlparse(host)
+            host = parsed.hostname or ""
+        except Exception:
+            return True
+    host_lower = host.lower()
+    for dead in DEAD_CDN_HOSTS:
+        if dead in host_lower:
+            return True
+    if "supercloud" in host_lower:
+        if host_lower in _DEAD_HOSTS_CACHE:
+            return _DEAD_HOSTS_CACHE[host_lower]
+        try:
+            socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)
+            _DEAD_HOSTS_CACHE[host_lower] = False
+            return False
+        except Exception:
+            _DEAD_HOSTS_CACHE[host_lower] = True
+            return True
+    return False
 
 
 def resolve_direct_video_url(url: str) -> str:
     """Resolve view/preview URLs to raw direct stream/download endpoints."""
-    if not url:
-        return ""
-    if any(dead in url.lower() for dead in DEAD_CDN_HOSTS):
+    if not url or is_dead_cdn_host(url):
         return ""
     pd = VIDEO_HOST_PATTERNS["pixeldrain"].search(url)
     if pd:
@@ -99,7 +128,7 @@ def unmask_cinesubz_server_url(url: str) -> str:
         srv_num = int(m.group(1))
         fname = m.group(2)
         target = f"https://cs{srv_num:02d}.supercloud1.xyz/{fname}?play=true"
-        if any(dead in target.lower() for dead in DEAD_CDN_HOSTS):
+        if is_dead_cdn_host(target):
             return ""
         return target
     return url

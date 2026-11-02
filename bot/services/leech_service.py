@@ -1424,6 +1424,12 @@ async def _execute_leech(
                                 # Resilient retry: if first attempt failed or was interrupted by socket burst, wait 2.5s and retry cleanly
                                 if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
                                     log.info("[LeechService] Retrying direct download for quality %s in 2.5s...", q_name)
+                                    p_cand = os.path.join(temp_dir, v_clean_name)
+                                    if os.path.exists(p_cand) and not downloader.is_valid_downloaded_video(p_cand):
+                                        try:
+                                            os.remove(p_cand)
+                                        except Exception:
+                                            pass
                                     await asyncio.sleep(2.5)
                                     try:
                                         c_dl = await downloader.download_http(
@@ -1438,6 +1444,12 @@ async def _execute_leech(
                                         log.warning("[LeechService] Pipeline quality %s download retry failed: %s", q_name, dl_err2)
 
                                 if not (c_dl and downloader.is_valid_downloaded_video(c_dl)):
+                                    p_cand = os.path.join(temp_dir, v_clean_name)
+                                    if os.path.exists(p_cand) and not downloader.is_valid_downloaded_video(p_cand):
+                                        try:
+                                            os.remove(p_cand)
+                                        except Exception:
+                                            pass
                                     companion_progress[q_name].update({
                                         "stage": "failed",
                                         "up_pct": 0.0,

@@ -40,10 +40,9 @@ from services.scrapers.srilankan_matched_scraper import (
     resolve_srilankan_intermediate_link,
     detect_quality_from_context,
     VIDEO_HOST_PATTERNS,
+    DEAD_CDN_HOSTS,
+    is_dead_cdn_host,
 )
-
-
-DEAD_CDN_HOSTS = ("cs05.supercloud1.xyz",)
 
 
 async def _extract_cinesubz_zetaplayer_streams(
@@ -85,36 +84,49 @@ async def _extract_cinesubz_zetaplayer_streams(
                 data = r_api.json()
                 embed_url = data.get("embed_url") or ""
                 if embed_url:
-                    r_embed = await client.get(embed_url, headers=headers, timeout=8.0)
-                    if r_embed.status_code == 200:
-                        found_urls = re.findall(r"https?://[^\s\"\'<>]+\.(?:mp4|mkv)(?:\?[^\s\"\'<>]*)?", r_embed.text)
-                        for fu in set(found_urls):
-                            if any(dead in fu.lower() for dead in DEAD_CDN_HOSTS):
-                                continue
-                            # Filter for real media stream hosts (supercloud, setwenna, csplayer CDN)
-                            # Exclude ad lockers or non-media endpoints (e.g. drive.csplayer2.space)
-                            if "drive.csplayer2.space" not in fu and any(k in fu for k in ["supercloud", "setwenna", "play=true", "csplayer", "cdn"]) and fu not in seen_urls:
-                                seen_urls.add(fu)
-                                fu_lower = fu.lower()
-                                if re.search(r"\b1080p?\b|1080", fu_lower):
-                                    q = "1080p"
-                                elif re.search(r"\b720p?\b|720", fu_lower):
-                                    q = "720p"
-                                elif re.search(r"\b480p?\b|480", fu_lower):
-                                    q = "480p"
-                                elif re.search(r"\b360p?\b|360", fu_lower):
-                                    q = "360p"
-                                else:
-                                    q = "720p"
-                                stream_links.append({
-                                    "portal": "CineSubz",
-                                    "post_url": current_url,
-                                    "url": fu,
-                                    "quality": q,
-                                    "host_type": "cdn",
-                                    "sub_srt_path": None,  # Pre-hardsubbed
-                                    "is_already_hardsubbed": True,
-                                })
+                    if "<iframe" in embed_url.lower():
+                        m_src = re.search(r'src=["\']([^"\']+)["\']', embed_url, re.IGNORECASE)
+                        if m_src:
+                            embed_url = m_src.group(1)
+                    if embed_url.startswith("//"):
+                        embed_url = f"https:{embed_url}"
+                    elif embed_url.startswith("/"):
+                        embed_url = f"{domain_base}{embed_url}"
+
+                    if embed_url.startswith("http") and not is_dead_cdn_host(embed_url):
+                        try:
+                            r_embed = await client.get(embed_url, headers=headers, timeout=8.0)
+                            if r_embed.status_code == 200:
+                                found_urls = re.findall(r"https?://[^\s\"\'<>]+\.(?:mp4|mkv)(?:\?[^\s\"\'<>]*)?", r_embed.text)
+                                for fu in set(found_urls):
+                                    if is_dead_cdn_host(fu):
+                                        continue
+                                    # Filter for real media stream hosts (supercloud, setwenna, csplayer CDN)
+                                    # Exclude ad lockers or non-media endpoints (e.g. drive.csplayer2.space)
+                                    if "drive.csplayer2.space" not in fu and any(k in fu for k in ["supercloud", "setwenna", "play=true", "csplayer", "cdn"]) and fu not in seen_urls:
+                                        seen_urls.add(fu)
+                                        fu_lower = fu.lower()
+                                        if re.search(r"\b1080p?\b|1080", fu_lower):
+                                            q = "1080p"
+                                        elif re.search(r"\b720p?\b|720", fu_lower):
+                                            q = "720p"
+                                        elif re.search(r"\b480p?\b|480", fu_lower):
+                                            q = "480p"
+                                        elif re.search(r"\b360p?\b|360", fu_lower):
+                                            q = "360p"
+                                        else:
+                                            q = "720p"
+                                        stream_links.append({
+                                            "portal": "CineSubz",
+                                            "post_url": current_url,
+                                            "url": fu,
+                                            "quality": q,
+                                            "host_type": "cdn",
+                                            "sub_srt_path": None,  # Pre-hardsubbed
+                                            "is_already_hardsubbed": True,
+                                        })
+                        except Exception as e_embed:
+                            log.debug("[CineSubz] Embed fetch note (%s): %s", embed_url, e_embed)
         except Exception as e_zeta:
             log.debug("[CineSubz] ZetaPlayer stream extraction note (%s): %s", api_url, e_zeta)
 
@@ -348,7 +360,7 @@ async def search(
 
             for vl in video_links:
                 u_link = vl["url"]
-                if any(dead in u_link.lower() for dead in DEAD_CDN_HOSTS):
+                if is_dead_cdn_host(u_link):
                     continue
                 if "google.com/server" in u_link or "drive.csplayer2.space" in u_link:
                     try:
@@ -356,7 +368,7 @@ async def search(
                         vl["url"] = u_link
                     except Exception:
                         pass
-                if not u_link or "drive.csplayer2.space" in u_link or any(dead in u_link.lower() for dead in DEAD_CDN_HOSTS):
+                if not u_link or "drive.csplayer2.space" in u_link or is_dead_cdn_host(u_link):
                     continue
                 results.append({
                     "portal": "CineSubz",

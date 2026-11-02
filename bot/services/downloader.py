@@ -246,7 +246,8 @@ async def download_http(
         url = f"{url}{sep}download"
 
     effective_referer = get_referer_for_url(url, custom_referer=referer)
-    aria2_bin = find_aria2c()
+    is_sensitive_cdn = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna"))
+    aria2_bin = find_aria2c() if not is_sensitive_cdn else None
     if aria2_bin:
         try:
             log.info("[Downloader] Attempting aria2c download for: %s (referer: %s)", url[:80], effective_referer)
@@ -262,7 +263,7 @@ async def download_http(
         except Exception as exc:
             log.warning("[Downloader] aria2c download failed (%s). Falling back to httpx...", exc)
 
-    log.info("[Downloader] Using async httpx stream for: %s (referer: %s)", url[:80], effective_referer)
+    log.info("[Downloader] Using resilient parallel httpx stream for: %s (referer: %s)", url[:80], effective_referer)
     return await _download_httpx(
         url=url,
         dest_dir=dest_dir,
@@ -287,6 +288,12 @@ async def _download_aria2c_http(
         out_name += ".mp4"
 
     ref = referer or get_referer_for_url(url)
+    target_path = os.path.join(dest_dir, out_name)
+    if os.path.exists(target_path) and not is_valid_downloaded_video(target_path):
+        try:
+            os.remove(target_path)
+        except Exception:
+            pass
 
     max_conn, split_conn = get_aria2c_connection_caps(url)
 
@@ -404,12 +411,14 @@ async def _download_aria2c_http(
         if is_valid_downloaded_video(target_path):
             log.info("[Downloader] aria2c download completed: %s (%s)", out_name, format_bytes(os.path.getsize(target_path)))
             return target_path
-        # Defensive fallback: search dest_dir for any valid downloaded video
+        # Defensive fallback: search dest_dir only for files matching this quality/target
+        base_target = os.path.splitext(out_name)[0].lower()
         for f in os.listdir(dest_dir):
-            p = os.path.join(dest_dir, f)
-            if os.path.isfile(p) and not f.endswith(".aria2") and is_valid_downloaded_video(p):
-                log.info("[Downloader] aria2c download completed (found in folder): %s (%s)", f, format_bytes(os.path.getsize(p)))
-                return p
+            if f.lower().startswith(base_target) and not f.endswith(".aria2"):
+                p = os.path.join(dest_dir, f)
+                if os.path.isfile(p) and is_valid_downloaded_video(p):
+                    log.info("[Downloader] aria2c download completed (found in folder): %s (%s)", f, format_bytes(os.path.getsize(p)))
+                    return p
         if os.path.exists(target_path):
             try:
                 os.remove(target_path)
@@ -495,12 +504,12 @@ async def _download_httpx(
     local_path = os.path.join(dest_dir, out_name)
 
     # 2. If file size >= 20MB and server supports ranges, use 4-8 parallel range workers
-    # Sensitive CDNs (supercloud, csplayer, setwenna) return chunked truncated ranges (32MB)
-    # which causes parallel range workers to prematurely abort; skip directly to resilient single-stream.
+    # For sensitive CDNs (supercloud, csplayer, setwenna) that stream in ~32MB chunks,
+    # workers automatically resume progressively across chunks until their full byte range is downloaded.
     is_sensitive_cdn = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna"))
-    if total_size >= 20 * 1024 * 1024 and accept_ranges and not is_sensitive_cdn:
+    if total_size >= 20 * 1024 * 1024 and accept_ranges:
         try:
-            # Cap concurrent workers on sensitive CDNs to prevent IP socket reset
+            # Cap concurrent workers to 4 on sensitive CDNs to avoid IP connection rate limits
             max_w = 4 if is_sensitive_cdn else 8
             num_workers = min(max_w, max(2, total_size // (10 * 1024 * 1024)))
             part_size = total_size // num_workers
@@ -515,9 +524,14 @@ async def _download_httpx(
                 nonlocal last_notify
                 w_headers = dict(headers)
                 cur_pos = start_byte
-                max_worker_retries = 3
+                consecutive_errors = 0
+                max_consecutive_errors = 10
 
-                for w_attempt in range(max_worker_retries):
+                while cur_pos <= end_byte:
+                    if consecutive_errors >= max_consecutive_errors:
+                        raise RuntimeError(f"Worker {worker_idx} exceeded {max_consecutive_errors} consecutive failures at {cur_pos}/{end_byte}")
+
+                    bytes_this_stream = 0
                     try:
                         w_headers["Range"] = f"bytes={cur_pos}-{end_byte}"
                         async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout_config, headers=w_headers) as w_client:
@@ -530,6 +544,7 @@ async def _download_httpx(
                                         await fh.write(chunk)
                                         chunk_len = len(chunk)
                                         cur_pos += chunk_len
+                                        bytes_this_stream += chunk_len
                                         downloaded[worker_idx] += chunk_len
 
                                         now = time.time()
@@ -551,15 +566,21 @@ async def _download_httpx(
                                                     progress_callback(pct, format_bytes(tot_dl), format_bytes(total_size), speed_str, eta_str)
                                             except Exception:
                                                 pass
-                        if cur_pos > end_byte:
-                            break
-                    except Exception as w_exc:
-                        if w_attempt == max_worker_retries - 1:
-                            raise
-                        await asyncio.sleep(1.0 * (w_attempt + 1))
 
-                if cur_pos <= end_byte:
-                    raise RuntimeError(f"Worker {worker_idx} ended prematurely at {cur_pos}/{end_byte}")
+                        if bytes_this_stream > 0:
+                            consecutive_errors = 0
+                        else:
+                            consecutive_errors += 1
+                            await asyncio.sleep(min(5.0, 1.0 * consecutive_errors))
+
+                    except Exception as w_exc:
+                        if bytes_this_stream > 0:
+                            consecutive_errors = 0
+                        else:
+                            consecutive_errors += 1
+                        if consecutive_errors >= max_consecutive_errors:
+                            raise
+                        await asyncio.sleep(min(5.0, 1.0 * consecutive_errors))
 
             tasks = []
             for i in range(num_workers):

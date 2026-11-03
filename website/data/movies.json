@@ -1569,7 +1569,246 @@
       "added_date": "2026-11-03",
       "added_at": "2026-11-03T05:58:25Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "salt-2021",
+      "slug": "salt-2021",
+      "title": "Salt",
+      "title_si": "",
+      "year": 2021,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt14151124",
+      "tmdb_id": "1433303",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/2blF0MMzomSBCgjQOkMijl8QJbQ.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/2blF0MMzomSBCgjQOkMijl8QJbQ.jpg",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "Likhita invites her friends to a birthday party, and they miss it. The next day, she is found dead. The mystery unfolds around whether her death was natural, suicide, or murder, and is revealed as the plot progresses.",
+      "director": "Sayed Munna",
+      "cast": [
+        {
+          "name": "Babawalli",
+          "character": "Ajay"
+        },
+        {
+          "name": "Abdul Mujeer",
+          "character": "Tharun"
+        },
+        {
+          "name": "Mastan Yoyo",
+          "character": "Sujith"
+        },
+        {
+          "name": "Rishika Singh",
+          "character": "Likhita"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbRq6Xh8GUpYPnjEEMq_HqqwXbC31gACkh8AAsDlUFdLLx3EMDUwdR4E",
+      "message_id": 436,
+      "file_name": "fs_salt-2021_1080p.mp4",
+      "file_size": 1134929749,
+      "drive_file_id": "",
+      "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbRq6Xh8GUpYPnjEEMq_HqqwXbC31gACkh8AAsDlUFdLLx3EMDUwdR4E",
+          "message_id": 436,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1433303"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt14151124"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt14151124"
+        }
+      ],
+      "qualities": {
+        "auto": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+        "1080p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+        "720p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/433",
+        "480p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/432",
+        "360p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1134929749,
+          "url": "https://t.me/c/4325759505/436",
+          "telegram_url": "https://t.me/c/4325759505/436",
+          "direct_url": "/stream/channel/-1004325759505/436?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbRq6Xh8GUpYPnjEEMq_HqqwXbC31gACkh8AAsDlUFdLLx3EMDUwdR4E",
+          "message_id": 436,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "585.1 MB",
+          "size_bytes": 613470288,
+          "url": "https://t.me/c/4325759505/433",
+          "telegram_url": "https://t.me/c/4325759505/433",
+          "direct_url": "/stream/channel/-1004325759505/433?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbFq6Xdigh4aHrD98ndgsjc5tGvMUQACjh8AAsDlUFfTppbrkxjsJx4E",
+          "message_id": 433,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/433",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "387.5 MB",
+          "size_bytes": 406368618,
+          "url": "https://t.me/c/4325759505/432",
+          "telegram_url": "https://t.me/c/4325759505/432",
+          "direct_url": "/stream/channel/-1004325759505/432?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbBq6XcraqJBjTidWjSlESrwLCsT1wACjR8AAsDlUFc0nsyUNSQWnR4E",
+          "message_id": 432,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/432",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1134929749,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021_1080p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "585.1 MB",
+          "size_bytes": 613470288,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021_720p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/433",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "387.5 MB",
+          "size_bytes": 406368618,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021_480p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/432",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "194.8 MB",
+          "size_bytes": 204287354,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_salt-2021_360p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbRq6Xh8GUpYPnjEEMq_HqqwXbC31gACkh8AAsDlUFdLLx3EMDUwdR4E",
+          "message_id": 436,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+          "size_bytes": 1134929749
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbFq6Xdigh4aHrD98ndgsjc5tGvMUQACjh8AAsDlUFfTppbrkxjsJx4E",
+          "message_id": 433,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/433",
+          "size_bytes": 613470288
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbBq6XcraqJBjTidWjSlESrwLCsT1wACjR8AAsDlUFc0nsyUNSQWnR4E",
+          "message_id": 432,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/432",
+          "size_bytes": 406368618
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/436",
+          "size_bytes": 204287354
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/salt-2021-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=salt-2021",
+      "added_date": "2026-11-03",
+      "added_at": "2026-11-03T06:00:41Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-03T05:58:26Z"
+  "last_updated": "2026-11-03T06:00:42Z"
 }

@@ -913,7 +913,206 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-03",
       "added_at": "2026-11-03T05:01:51Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "enforcement-aka-shorta-2020",
+      "slug": "enforcement-aka-shorta-2020",
+      "title": "Enforcement AKA Shorta",
+      "title_si": "",
+      "year": 2020,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAapq6W8mm8U1f9Js9EdBv1VSmAkiBAACdh8AAsDlUFcZQEM5MGyz5x4E",
+      "message_id": 426,
+      "file_name": "fs_enforcement-aka-shorta-2020_1080p.mp4",
+      "file_size": 2021719208,
+      "drive_file_id": "",
+      "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAapq6W8mm8U1f9Js9EdBv1VSmAkiBAACdh8AAsDlUFcZQEM5MGyz5x4E",
+          "message_id": 426,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+        "1080p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+        "720p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/424",
+        "480p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/425",
+        "360p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2021719208,
+          "url": "https://t.me/c/4325759505/426",
+          "telegram_url": "https://t.me/c/4325759505/426",
+          "direct_url": "/stream/channel/-1004325759505/426?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAapq6W8mm8U1f9Js9EdBv1VSmAkiBAACdh8AAsDlUFcZQEM5MGyz5x4E",
+          "message_id": 426,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "607.2 MB",
+          "size_bytes": 636741253,
+          "url": "https://t.me/c/4325759505/424",
+          "telegram_url": "https://t.me/c/4325759505/424",
+          "direct_url": "/stream/channel/-1004325759505/424?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAahq6WwJxwRHTWlx918kDWHjc5M9wwACWx8AAsDlUFdyLYGH0eHC0x4E",
+          "message_id": 424,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/424",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "669.1 MB",
+          "size_bytes": 701610694,
+          "url": "https://t.me/c/4325759505/425",
+          "telegram_url": "https://t.me/c/4325759505/425",
+          "direct_url": "/stream/channel/-1004325759505/425?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAalq6W0LtC3uHgKZdI7MNpxP9sPAegACYR8AAsDlUFesfWOa26mMCx4E",
+          "message_id": 425,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/425",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2021719208,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020_1080p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "607.2 MB",
+          "size_bytes": 636741253,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020_720p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/424",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "669.1 MB",
+          "size_bytes": 701610694,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020_480p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/425",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "347.1 MB",
+          "size_bytes": 363909457,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enforcement-aka-shorta-2020_360p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAapq6W8mm8U1f9Js9EdBv1VSmAkiBAACdh8AAsDlUFcZQEM5MGyz5x4E",
+          "message_id": 426,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+          "size_bytes": 2021719208
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAahq6WwJxwRHTWlx918kDWHjc5M9wwACWx8AAsDlUFdyLYGH0eHC0x4E",
+          "message_id": 424,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/424",
+          "size_bytes": 636741253
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAalq6W0LtC3uHgKZdI7MNpxP9sPAegACYR8AAsDlUFesfWOa26mMCx4E",
+          "message_id": 425,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/425",
+          "size_bytes": 701610694
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/426",
+          "size_bytes": 363909457
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/enforcement-aka-shorta-2020-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=enforcement-aka-shorta-2020",
+      "added_date": "2026-11-03",
+      "added_at": "2026-11-03T05:20:41Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-03T05:01:53Z"
+  "last_updated": "2026-11-03T05:20:42Z"
 };

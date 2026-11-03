@@ -1112,7 +1112,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-03",
       "added_at": "2026-11-03T05:20:41Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "mirugaa-2021",
+      "slug": "mirugaa-2021",
+      "title": "Mirugaa",
+      "title_si": "",
+      "year": 2021,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt11640108",
+      "tmdb_id": "601256",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/wQv2UNbW6uB5hpRc6yYybGVEt40.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/wQv2UNbW6uB5hpRc6yYybGVEt40.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/wO7DCVgditL0YxDiuRZAWumUppZ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/wO7DCVgditL0YxDiuRZAWumUppZ.jpg",
+      "genres": [
+        "Thriller",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "130 min",
+      "description": "A serial killer gets hitched to a billionaire with the sole aim of looting her money. However, the presence of a man-eating tiger at the place they reside in becomes an obstacle to him.",
+      "director": "J. Parthiban",
+      "cast": [
+        {
+          "name": "Raai Laxmi",
+          "character": "Lakshmi"
+        },
+        {
+          "name": "Srikanth",
+          "character": "John"
+        },
+        {
+          "name": "Pandi",
+          "character": ""
+        },
+        {
+          "name": "Dev Gill",
+          "character": ""
+        },
+        {
+          "name": "Naira Shah",
+          "character": ""
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAa1q6XAq5ahQPUrYT_ObJFG6jP0YHAACeh8AAsDlUFc6Iw3PkkLfuh4E",
+      "message_id": 429,
+      "file_name": "fs_mirugaa-2021_720p.mp4",
+      "file_size": 1498858349,
+      "drive_file_id": "",
+      "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAa1q6XAq5ahQPUrYT_ObJFG6jP0YHAACeh8AAsDlUFc6Iw3PkkLfuh4E",
+          "message_id": 429,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/601256"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt11640108"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt11640108"
+        }
+      ],
+      "qualities": {
+        "auto": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+        "1080p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+        "720p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+        "480p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/428",
+        "360p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1498858349,
+          "url": "https://t.me/c/4325759505/429",
+          "telegram_url": "https://t.me/c/4325759505/429",
+          "direct_url": "/stream/channel/-1004325759505/429?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAa1q6XAq5ahQPUrYT_ObJFG6jP0YHAACeh8AAsDlUFc6Iw3PkkLfuh4E",
+          "message_id": 429,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "835.2 MB",
+          "size_bytes": 875720823,
+          "url": "https://t.me/c/4325759505/428",
+          "telegram_url": "https://t.me/c/4325759505/428",
+          "direct_url": "/stream/channel/-1004325759505/428?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaxq6W9WzucLXsfGyGpsSoZVDvJLMQACeB8AAsDlUFend7ORvtEa7x4E",
+          "message_id": 428,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/428",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1498858349,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021_1080p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1498858349,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021_720p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "835.2 MB",
+          "size_bytes": 875720823,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021_480p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/428",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "257.3 MB",
+          "size_bytes": 269794502,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirugaa-2021_360p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAa1q6XAq5ahQPUrYT_ObJFG6jP0YHAACeh8AAsDlUFc6Iw3PkkLfuh4E",
+          "message_id": 429,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "size_bytes": 1498858349
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaxq6W9WzucLXsfGyGpsSoZVDvJLMQACeB8AAsDlUFend7ORvtEa7x4E",
+          "message_id": 428,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/428",
+          "size_bytes": 875720823
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/429",
+          "size_bytes": 269794502
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/mirugaa-2021-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=mirugaa-2021",
+      "added_date": "2026-11-03",
+      "added_at": "2026-11-03T05:43:09Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-03T05:20:42Z"
+  "last_updated": "2026-11-03T05:43:10Z"
 };

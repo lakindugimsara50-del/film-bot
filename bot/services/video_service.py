@@ -1287,16 +1287,18 @@ async def compress_video(
         filter_parts = [
             f"[{intro_input_idx}:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro]",
             f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main]",
-            f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined]",
         ]
-        curr_v = "[v_joined]"
+        curr_v = "[v_main]"
         if has_badge_img:
             filter_parts.append(f"[{badge_input_idx}:v]scale={badge_w}:-1[badge]")
-            filter_parts.append(f"{curr_v}[badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[v_badged]")
+            filter_parts.append(f"{curr_v}[badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[v_badged]")
             curr_v = "[v_badged]"
         elif has_fallback_box:
-            filter_parts.append(f"{curr_v}drawbox=x=0:y={by}:w={badge_w}:h={bh}:color=black@0.95:t=fill:enable='gte(t,5.0)'[v_badged]")
+            filter_parts.append(f"{curr_v}drawbox=x=0:y={by}:w={badge_w}:h={bh}:color=black@0.95:t=fill[v_badged]")
             curr_v = "[v_badged]"
+
+        filter_parts.append(f"[v_intro]{curr_v}concat=n=2:v=1:a=0[v_joined]")
+        curr_v = "[v_joined]"
 
         if burn_vf:
             filter_parts.append(f"{curr_v}{burn_vf}[v_out]")
@@ -1311,7 +1313,7 @@ async def compress_video(
     elif has_badge_img:
         filter_complex = (
             f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
-            f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h"
+            f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1"
         )
         if burn_vf:
             filter_complex += f",{burn_vf}"
@@ -1337,23 +1339,27 @@ async def compress_video(
     else:
         cmd.extend(["-sn"])
 
+    nvenc_enc_opts = []
     if hw_enc == "h264_nvenc":
-        # Ultra-fast High-Throughput NVENC hardware encoding (500-1000+ fps on Tesla T4)
-        nvenc_preset = "fast"
-        cmd.extend([
+        # Ultra-fast High-Throughput NVENC hardware encoding (350-1000+ fps on Tesla T4)
+        nvenc_preset = "p2" if _on_colab else "fast"
+        nvenc_enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
             "-tune", "hq",
+            "-multipass", "disabled",
             "-rc", "vbr",
+            "-cq", "22",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
-            "-rc-lookahead", "32",
+            "-rc-lookahead", "12",
             "-profile:v", "high",
             "-spatial-aq", "1",
-            "-temporal-aq", "1",
+            "-temporal-aq", "0",
             "-pix_fmt", "yuv420p",
-        ])
+        ]
+        cmd.extend(nvenc_enc_opts)
     else:
         cpu_preset = "ultrafast" if _on_colab else "veryfast"
         cmd.extend([
@@ -1441,20 +1447,7 @@ async def compress_video(
                     continue
                 if tok == "-c:v":
                     new_cmd.extend(cpu_enc_opts)
-                    skip = len([
-                        "-c:v", "h264_nvenc",
-                        "-preset", nvenc_preset,
-                        "-tune", "hq",
-                        "-rc", "vbr",
-                        "-b:v", f"{v_bitrate_k}k",
-                        "-maxrate", f"{maxrate_k}k",
-                        "-bufsize", f"{bufsize_k}k",
-                        "-rc-lookahead", "32",
-                        "-profile:v", "high",
-                        "-spatial-aq", "1",
-                        "-temporal-aq", "1",
-                        "-pix_fmt", "yuv420p",
-                    ]) - 1
+                    skip = len(nvenc_enc_opts) - 1
                     continue
                 new_cmd.append(tok)
             final_cmd = new_cmd
@@ -2456,17 +2449,18 @@ async def prepend_filmzilla_intro(
     hw_enc = detect_hw_encoder(exe)
 
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "fast"
+        nvenc_preset = "p2" if _on_colab else "fast"
         hw_opts = ["-hwaccel", "cuda"]
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
             "-tune", "hq",
+            "-multipass", "disabled",
             "-rc", "vbr",
             "-cq", "24",
-            "-rc-lookahead", "32",
+            "-rc-lookahead", "8",
             "-spatial-aq", "1",
-            "-temporal-aq", "1",
+            "-temporal-aq", "0",
             "-pix_fmt", "yuv420p",
         ]
     else:
@@ -3062,19 +3056,20 @@ async def cover_cinesubz_watermark(
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p4" if _on_colab else "fast"
+        nvenc_preset = "p2" if _on_colab else "fast"
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
             "-tune", "hq",
+            "-multipass", "disabled",
             "-rc", "vbr",
             "-cq", "22",
             "-b:v", f"{target_kbps}k",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
-            "-rc-lookahead", "32",
+            "-rc-lookahead", "8",
             "-spatial-aq", "1",
-            "-temporal-aq", "1",
+            "-temporal-aq", "0",
             "-pix_fmt", "yuv420p",
         ]
     else:
@@ -3109,7 +3104,7 @@ async def cover_cinesubz_watermark(
             if has_audio:
                 filter_complex = (
                     f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
-                    f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
+                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
                     f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
                     f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv];"
@@ -3122,7 +3117,7 @@ async def cover_cinesubz_watermark(
             else:
                 filter_complex = (
                     f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
-                    f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main];"
+                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
                     f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
                     f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv]"

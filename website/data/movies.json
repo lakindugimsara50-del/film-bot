@@ -685,7 +685,235 @@
       "added_date": "2026-11-03",
       "added_at": "2026-11-03T04:52:43Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "pagglait-2021",
+      "slug": "pagglait-2021",
+      "title": "Pagglait",
+      "title_si": "",
+      "year": 2021,
+      "imdb": "6.6",
+      "rating": "6.6",
+      "imdb_id": "tt11142762",
+      "tmdb_id": "786190",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/oIVAwceJjOwFjUkoJoOiooGupm0.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/oIVAwceJjOwFjUkoJoOiooGupm0.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/fbALWEldsKHueCvEjHqarf9rmiM.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/fbALWEldsKHueCvEjHqarf9rmiM.jpg",
+      "genres": [
+        "Drama",
+        "Comedy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "114 min",
+      "description": "Widowed soon after marriage, a young woman grapples with an inability to grieve, quirky relatives and a startling discovery about her late husband.",
+      "director": "Umesh Bist",
+      "cast": [
+        {
+          "name": "Sanya Malhotra",
+          "character": "Sandhya Giri"
+        },
+        {
+          "name": "Shruti Sharma",
+          "character": "Nazia Zaidei"
+        },
+        {
+          "name": "Chetan Sharma",
+          "character": "Alok Giri"
+        },
+        {
+          "name": "Ashutosh Rana",
+          "character": "Shivendra Giri"
+        },
+        {
+          "name": "Sheeba Chaddha",
+          "character": "Usha Giri"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaVq6WOESmSgM71fF-Kpio5SL60qOQACRB8AAsDlUFd3BMC2UhCfXR4E",
+      "message_id": 421,
+      "file_name": "fs_pagglait-2021_720p.mp4",
+      "file_size": 1323485711,
+      "drive_file_id": "",
+      "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaVq6WOESmSgM71fF-Kpio5SL60qOQACRB8AAsDlUFd3BMC2UhCfXR4E",
+          "message_id": 421,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/786190"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt11142762"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt11142762"
+        }
+      ],
+      "qualities": {
+        "auto": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+        "1080p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+        "720p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+        "480p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/419",
+        "360p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1323485711,
+          "url": "https://t.me/c/4325759505/421",
+          "telegram_url": "https://t.me/c/4325759505/421",
+          "direct_url": "/stream/channel/-1004325759505/421?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaVq6WOESmSgM71fF-Kpio5SL60qOQACRB8AAsDlUFd3BMC2UhCfXR4E",
+          "message_id": 421,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "727.6 MB",
+          "size_bytes": 762995242,
+          "url": "https://t.me/c/4325759505/419",
+          "telegram_url": "https://t.me/c/4325759505/419",
+          "direct_url": "/stream/channel/-1004325759505/419?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaNq6WJFTMiCoqyKVnZMmyZfqYsDZgACPx8AAsDlUFdLQeT9azQjyx4E",
+          "message_id": 419,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/419",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1323485711,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_pagglait-2021_1080p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1323485711,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_pagglait-2021_720p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "727.6 MB",
+          "size_bytes": 762995242,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_pagglait-2021_480p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/419",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "227.2 MB",
+          "size_bytes": 238227427,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_pagglait-2021_360p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaVq6WOESmSgM71fF-Kpio5SL60qOQACRB8AAsDlUFd3BMC2UhCfXR4E",
+          "message_id": 421,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "size_bytes": 1323485711
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaNq6WJFTMiCoqyKVnZMmyZfqYsDZgACPx8AAsDlUFdLQeT9azQjyx4E",
+          "message_id": 419,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/419",
+          "size_bytes": 762995242
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/421",
+          "size_bytes": 238227427
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/pagglait-2021-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=pagglait-2021",
+      "added_date": "2026-11-03",
+      "added_at": "2026-11-03T05:01:51Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-03T04:52:48Z"
+  "last_updated": "2026-11-03T05:01:53Z"
 }

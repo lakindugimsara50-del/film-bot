@@ -456,7 +456,236 @@
       "added_date": "2026-11-02",
       "added_at": "2026-11-02T20:34:10Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "godzilla-vs-kong-2021",
+      "slug": "godzilla-vs-kong-2021",
+      "title": "Godzilla vs. Kong",
+      "title_si": "",
+      "year": 2021,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt5034838",
+      "tmdb_id": "399566",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/pgqgaUx1cJb5oZQQ5v0tNARCeBp.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/pgqgaUx1cJb5oZQQ5v0tNARCeBp.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/wWqTMWkEw6HouLd1zPZbZWxtAPr.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/wWqTMWkEw6HouLd1zPZbZWxtAPr.jpg",
+      "genres": [
+        "Action",
+        "Science Fiction",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "114 min",
+      "description": "In a time when monsters walk the Earth, humanity’s fight for its future sets Godzilla and Kong on a collision course that will see the two most powerful forces of nature on the planet collide in a spectacular battle for the ages.",
+      "director": "Adam Wingard",
+      "cast": [
+        {
+          "name": "Alexander Skarsgård",
+          "character": "Nathan Lind"
+        },
+        {
+          "name": "Rebecca Hall",
+          "character": "Ilene Andrews"
+        },
+        {
+          "name": "Kaylee Hottle",
+          "character": "Jia"
+        },
+        {
+          "name": "Brian Tyree Henry",
+          "character": "Bernie Hayes"
+        },
+        {
+          "name": "Millie Bobby Brown",
+          "character": "Madison Russell"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaRq6WL8PrsnI7IgK_wNbN8rj4XHjAACQh8AAsDlUFfg9uG0OEkIFR4E",
+      "message_id": 420,
+      "file_name": "fs_godzilla-vs-kong-2021_720p.mp4",
+      "file_size": 1326476955,
+      "drive_file_id": "",
+      "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaRq6WL8PrsnI7IgK_wNbN8rj4XHjAACQh8AAsDlUFfg9uG0OEkIFR4E",
+          "message_id": 420,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/399566"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt5034838"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt5034838"
+        }
+      ],
+      "qualities": {
+        "auto": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+        "1080p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+        "720p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+        "480p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/418",
+        "360p": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1326476955,
+          "url": "https://t.me/c/4325759505/420",
+          "telegram_url": "https://t.me/c/4325759505/420",
+          "direct_url": "/stream/channel/-1004325759505/420?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaRq6WL8PrsnI7IgK_wNbN8rj4XHjAACQh8AAsDlUFfg9uG0OEkIFR4E",
+          "message_id": 420,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "738.2 MB",
+          "size_bytes": 774088901,
+          "url": "https://t.me/c/4325759505/418",
+          "telegram_url": "https://t.me/c/4325759505/418",
+          "direct_url": "/stream/channel/-1004325759505/418?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaJq6WHBCWSGEEaZNXN84sCgg3lP9gACPh8AAsDlUFdbKQx0GJA5cR4E",
+          "message_id": 418,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/418",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1326476955,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021_1080p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1326476955,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021_720p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "738.2 MB",
+          "size_bytes": 774088901,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021_480p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/418",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "227.7 MB",
+          "size_bytes": 238765851,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-vs-kong-2021_360p",
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaRq6WL8PrsnI7IgK_wNbN8rj4XHjAACQh8AAsDlUFfg9uG0OEkIFR4E",
+          "message_id": 420,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "size_bytes": 1326476955
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAaJq6WHBCWSGEEaZNXN84sCgg3lP9gACPh8AAsDlUFdbKQx0GJA5cR4E",
+          "message_id": 418,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/418",
+          "size_bytes": 774088901
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://excluded-mice-individually-dude.trycloudflare.com/stream/channel/-1004325759505/420",
+          "size_bytes": 238765851
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/godzilla-vs-kong-2021-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=godzilla-vs-kong-2021",
+      "added_date": "2026-11-03",
+      "added_at": "2026-11-03T04:52:43Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-02T20:34:11Z"
+  "last_updated": "2026-11-03T04:52:48Z"
 }

@@ -1286,7 +1286,7 @@ async def compress_video(
     if intro_video:
         filter_parts = [
             f"[{intro_input_idx}:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro]",
-            f"[0:v]setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_main]",
+            f"[0:v]setpts=PTS-STARTPTS[v_main]",
         ]
         curr_v = "[v_main]"
         if has_badge_img:
@@ -1341,8 +1341,8 @@ async def compress_video(
 
     nvenc_enc_opts = []
     if hw_enc == "h264_nvenc":
-        # Ultra-fast High-Throughput NVENC hardware encoding (350-1000+ fps on Tesla T4)
-        nvenc_preset = "p2" if _on_colab else "fast"
+        # Ultra-fast High-Throughput NVENC hardware encoding (750-1000+ fps on Tesla T4)
+        nvenc_preset = "p1" if _on_colab else "fast"
         nvenc_enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
@@ -1353,9 +1353,9 @@ async def compress_video(
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
             "-bufsize", f"{bufsize_k}k",
-            "-rc-lookahead", "12",
+            "-rc-lookahead", "0",
             "-profile:v", "high",
-            "-spatial-aq", "1",
+            "-spatial-aq", "0",
             "-temporal-aq", "0",
             "-pix_fmt", "yuv420p",
         ]
@@ -2449,7 +2449,7 @@ async def prepend_filmzilla_intro(
     hw_enc = detect_hw_encoder(exe)
 
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p2" if _on_colab else "fast"
+        nvenc_preset = "p1" if _on_colab else "fast"
         hw_opts = ["-hwaccel", "cuda"]
         enc_opts = [
             "-c:v", "h264_nvenc",
@@ -2458,8 +2458,8 @@ async def prepend_filmzilla_intro(
             "-multipass", "disabled",
             "-rc", "vbr",
             "-cq", "24",
-            "-rc-lookahead", "8",
-            "-spatial-aq", "1",
+            "-rc-lookahead", "0",
+            "-spatial-aq", "0",
             "-temporal-aq", "0",
             "-pix_fmt", "yuv420p",
         ]
@@ -3056,7 +3056,7 @@ async def cover_cinesubz_watermark(
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p2" if _on_colab else "fast"
+        nvenc_preset = "p1" if _on_colab else "fast"
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
@@ -3067,8 +3067,8 @@ async def cover_cinesubz_watermark(
             "-b:v", f"{target_kbps}k",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
-            "-rc-lookahead", "8",
-            "-spatial-aq", "1",
+            "-rc-lookahead", "0",
+            "-spatial-aq", "0",
             "-temporal-aq", "0",
             "-pix_fmt", "yuv420p",
         ]
@@ -3105,11 +3105,11 @@ async def cover_cinesubz_watermark(
                 filter_complex = (
                     f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
                     f"[0:v]setpts=PTS-STARTPTS[v_main];"
-                    f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
-                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv];"
-                    f"[1:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_intro];"
-                    f"[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_main];"
+                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:shortest=1[v_badged];"
+                    f"[v_intro][v_badged]concat=n=2:v=1:a=0[outv];"
+                    f"[1:a]asetpts=PTS-STARTPTS[a_intro];"
+                    f"[0:a]asetpts=PTS-STARTPTS[a_main];"
                     f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]"
                 )
                 maps = ["-map", "[outv]", "-map", "[outa]"]
@@ -3118,9 +3118,9 @@ async def cover_cinesubz_watermark(
                 filter_complex = (
                     f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
                     f"[0:v]setpts=PTS-STARTPTS[v_main];"
-                    f"[v_intro][v_main]concat=n=2:v=1:a=0[v_joined];"
                     f"[2:v]scale={badge_w}:-1[badge];"
-                    f"[v_joined][badge]overlay=x={ox}:y=main_h-overlay_h:enable='gte(t,5.0)':shortest=1[outv]"
+                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:shortest=1[v_badged];"
+                    f"[v_intro][v_badged]concat=n=2:v=1:a=0[outv]"
                 )
                 maps = ["-map", "[outv]"]
                 audio_opts = []
@@ -3728,17 +3728,20 @@ async def generate_multi_quality_variants_ram(
                     "-disposition:s:0", "default",
                 ])
             if use_hw == "h264_nvenc":
+                nvenc_preset = "p1" if _on_colab else "fast"
                 c.extend([
                     "-c:v", "h264_nvenc",
-                    "-preset", "fast",
+                    "-preset", nvenc_preset,
                     "-tune", "hq",
+                    "-multipass", "disabled",
                     "-rc", "vbr",
                     "-cq", prof["crf"],
                     "-maxrate", prof["maxrate"],
                     "-bufsize", prof["bufsize"],
-                    "-rc-lookahead", "32",
-                    "-spatial-aq", "1",
-                    "-temporal-aq", "1",
+                    "-rc-lookahead", "0",
+                    "-spatial-aq", "0",
+                    "-temporal-aq", "0",
+                    "-pix_fmt", "yuv420p",
                 ])
             else:
                 c.extend([

@@ -450,7 +450,7 @@ async def _download_httpx(
         "Referer": ref,
     }
 
-    timeout_config = httpx.Timeout(connect=25.0, read=120.0, write=30.0, pool=30.0)
+    timeout_config = httpx.Timeout(connect=30.0, read=300.0, write=60.0, pool=60.0)
 
     # 1. Probe headers to detect filename and file size
     out_name = filename or ""
@@ -504,10 +504,11 @@ async def _download_httpx(
     local_path = os.path.join(dest_dir, out_name)
 
     # 2. If file size >= 20MB and server supports ranges, use 4-8 parallel range workers
-    # For sensitive CDNs (supercloud, csplayer, setwenna) that stream in ~32MB chunks,
-    # workers automatically resume progressively across chunks until their full byte range is downloaded.
+    # For sensitive CDNs (supercloud, csplayer, setwenna) that stream in ~32MB chunks:
+    # A single-stream progressive Range download avoids Cloudflare rate-limiting/drops
+    # on large 2GB+ 1080p files, while pulling at full link speed!
     is_sensitive_cdn = any(k in url.lower() for k in ("supercloud", "csplayer", "setwenna"))
-    if total_size >= 20 * 1024 * 1024 and accept_ranges:
+    if not is_sensitive_cdn and total_size >= 20 * 1024 * 1024 and accept_ranges:
         try:
             # Cap concurrent workers to 4 on sensitive CDNs to avoid IP connection rate limits
             max_w = 4 if is_sensitive_cdn else 8
@@ -525,7 +526,7 @@ async def _download_httpx(
                 w_headers = dict(headers)
                 cur_pos = start_byte
                 consecutive_errors = 0
-                max_consecutive_errors = 10
+                max_consecutive_errors = 20
 
                 while cur_pos <= end_byte:
                     if consecutive_errors >= max_consecutive_errors:

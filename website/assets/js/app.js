@@ -177,7 +177,14 @@ function groupSeriesCatalog(movies) {
 // ---- Extra Catalog Helpers ----
 function getAllTVSeries() {
   const catalog = groupSeriesCatalog(allMovies);
-  return catalog.filter(m => m.type === 'series' || m.is_series_master || Boolean(m.season)).slice(0, 20);
+  return catalog.filter(m => m.type === 'series' || m.is_series_master || Boolean(m.season)).sort((a, b) => {
+    const yA = Number(a.year) || 0;
+    const yB = Number(b.year) || 0;
+    if (yB !== yA) return yB - yA;
+    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
+    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
+    return timeB - timeA;
+  }).slice(0, 20);
 }
 function getMoviesByGenre(keyword) {
   const catalog = groupSeriesCatalog(allMovies);
@@ -185,6 +192,13 @@ function getMoviesByGenre(keyword) {
   return catalog.filter(m => {
     const list = Array.isArray(m.genres) ? m.genres : [];
     return list.some(g => String(g).toLowerCase().includes(kw));
+  }).sort((a, b) => {
+    const yA = Number(a.year) || 0;
+    const yB = Number(b.year) || 0;
+    if (yB !== yA) return yB - yA;
+    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
+    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
+    return timeB - timeA;
   }).slice(0, 20);
 }
 
@@ -196,10 +210,12 @@ function getFeatured() {
 function getNewReleases() {
   const catalog = groupSeriesCatalog(allMovies);
   return [...catalog].sort((a, b) => {
+    const yA = Number(a.year) || 0;
+    const yB = Number(b.year) || 0;
+    if (yB !== yA) return yB - yA;
     const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
     const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
-    if (timeB !== timeA) return timeB - timeA;
-    return (b.year || 0) - (a.year || 0);
+    return timeB - timeA;
   }).slice(0, 20);
 }
 function getTrending() {
@@ -207,10 +223,12 @@ function getTrending() {
   const tr = catalog.filter(m => m.trending);
   const list = tr.length > 0 ? tr : catalog;
   return [...list].sort((a, b) => {
+    const yA = Number(a.year) || 0;
+    const yB = Number(b.year) || 0;
+    if (yB !== yA) return yB - yA;
     const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
     const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
-    if (timeB !== timeA) return timeB - timeA;
-    return (b.year || 0) - (a.year || 0);
+    return timeB - timeA;
   }).slice(0, 20);
 }
 function getSinhalaFilms() {
@@ -218,10 +236,12 @@ function getSinhalaFilms() {
   const sf = catalog.filter(m => (Array.isArray(m.subtitles) && m.subtitles.length > 0) || m.subtitle_url || m.has_sinhala_sub);
   const list = sf.length > 0 ? sf : catalog;
   return [...list].sort((a, b) => {
+    const yA = Number(a.year) || 0;
+    const yB = Number(b.year) || 0;
+    if (yB !== yA) return yB - yA;
     const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
     const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
-    if (timeB !== timeA) return timeB - timeA;
-    return (b.year || 0) - (a.year || 0);
+    return timeB - timeA;
   }).slice(0, 20);
 }
 function getRelated(movie) {

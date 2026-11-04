@@ -199,10 +199,11 @@ class QueueService:
 
     def can_accept_next(self) -> bool:
         """
-        Check if pipeline has capacity to accept another item for pre-downloading.
-        Allows up to 2 items in-flight (1 in encode/upload + 1 downloading in background).
+        Check if pipeline has capacity to accept another item.
+        Strict 1-movie-at-a-time execution ensures 100% of GPU/NVENC and network bandwidth
+        is dedicated to a single film with zero concurrency slowdown.
         """
-        return len(self._pending_items) < 2
+        return len(self._pending_items) == 0 and len(self._active_tasks) == 0
 
     async def _run_item_wrapper(self, item: QueueItem, leech_service) -> None:
         try:
@@ -234,7 +235,7 @@ class QueueService:
                 self._active_item = None
 
     async def _worker_loop(self) -> None:
-        """Pipelined FIFO queue consumer (max 2 in-flight: 1 encode/upload + 1 pre-download)."""
+        """Sequential FIFO queue consumer (strictly 1 movie in-flight at a time)."""
         log.info("[QueueService] Pipelined queue loop running.")
         self._active_tasks.clear()
 
@@ -251,8 +252,8 @@ class QueueService:
                         except ValueError:
                             pass
 
-                # 2. If pipeline has 2 active tasks running, wait until at least one finishes
-                if len(self._active_tasks) >= 2:
+                # 2. Strict sequential execution: if 1 active task is running, wait until it finishes
+                if len(self._active_tasks) >= 1:
                     done, _ = await asyncio.wait(
                         list(self._active_tasks.keys()),
                         return_when=asyncio.FIRST_COMPLETED

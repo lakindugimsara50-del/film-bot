@@ -12,7 +12,7 @@ from services import queue_service, leech_service
 
 class TestStrictCineSubzAndPipeline(unittest.IsolatedAsyncioTestCase):
     async def test_can_accept_next_capacity(self):
-        """Test that can_accept_next returns True when < 2 items, False when >= 2."""
+        """Test that can_accept_next returns True when idle, False when busy with an item."""
         q = queue_service.QueueService()
         self.assertTrue(q.can_accept_next())
         self.assertTrue(q.is_idle())
@@ -20,12 +20,8 @@ class TestStrictCineSubzAndPipeline(unittest.IsolatedAsyncioTestCase):
         # Fake queue items
         item1 = MagicMock()
         q._pending_items.append(item1)
-        self.assertTrue(q.can_accept_next())
-        self.assertFalse(q.is_idle())
-
-        item2 = MagicMock()
-        q._pending_items.append(item2)
         self.assertFalse(q.can_accept_next())
+        self.assertFalse(q.is_idle())
 
         # When an item finishes and is removed
         q._pending_items.remove(item1)

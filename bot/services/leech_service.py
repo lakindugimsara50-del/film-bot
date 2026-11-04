@@ -1362,9 +1362,10 @@ async def _execute_leech(
                                             f"• <b>{q_name}:</b> [██████████] 100% ({q_data.get('size', 'OK')}) ✅ <i>(Telegram HD Uploaded{msg_tag})</i>"
                                         )
                                     elif st == "failed":
-                                        if q_data.get("dl_pct", 0.0) >= 100.0:
+                                        if q_data.get("dl_completed") or q_data.get("dl_pct", 0.0) >= 100.0:
+                                            fail_reason = q_data.get("fail_reason", "Telegram Upload අසාර්ථකයි")
                                             lines.append(
-                                                f"• <b>{q_name}:</b> ⚠️ <i>Telegram Upload අසාර්ථකයි (Auto Fallback)</i>"
+                                                f"• <b>{q_name}:</b> ⚠️ <i>{fail_reason} (Auto Fallback)</i>"
                                             )
                                         elif q_name == primary_q:
                                             lines.append(
@@ -1466,6 +1467,7 @@ async def _execute_leech(
                                 companion_progress[q_name].update({
                                     "stage": "processing",
                                     "dl_pct": 100.0,
+                                    "dl_completed": True,
                                     "detail": "Processing video...",
                                 })
                                 await _update_multi_dl_display(force=True)
@@ -1696,6 +1698,7 @@ async def _execute_leech(
                                         log.error("[LeechService] Compression failed or output exceeds MTProto limit for %s. Skipping doomed upload.", q_name)
                                         companion_progress[q_name].update({
                                             "stage": "failed",
+                                            "fail_reason": "Compression Error",
                                             "up_pct": 0.0,
                                             "size": downloader.format_bytes(c_size_bytes),
                                         })

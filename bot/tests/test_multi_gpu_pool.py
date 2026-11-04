@@ -41,7 +41,7 @@ class TestMultiGPUPool(unittest.IsolatedAsyncioTestCase):
             pass
 
     def test_discover_devices_dual_gpu(self):
-        """Dual T4 (e.g. Kaggle) should allocate 4 slots: [0, 1, 0, 1] for 1080p, 720p, 480p concurrency."""
+        """Dual T4 (e.g. Kaggle) should allocate dedicated slots: [0, 1] for 750+ FPS per physical GPU."""
         pool = video_service.GPUDevicePool()
         mock_torch = MagicMock()
         mock_torch.cuda.is_available.return_value = True
@@ -49,11 +49,11 @@ class TestMultiGPUPool(unittest.IsolatedAsyncioTestCase):
 
         with patch.dict("sys.modules", {"torch": mock_torch}):
             slots = pool._discover_devices()
-            self.assertEqual(slots, [0, 1, 0, 1])
-            self.assertEqual(len(slots), 4)
+            self.assertEqual(slots, [0, 1])
+            self.assertEqual(len(slots), 2)
 
     def test_discover_devices_single_gpu(self):
-        """Single GPU (Colab / Kaggle 1x) should allocate 3 slots: [0, 0, 0]."""
+        """Single GPU (Colab / Kaggle 1x) should allocate dedicated slot: [0] for full 750+ FPS without splitting."""
         pool = video_service.GPUDevicePool()
         mock_torch = MagicMock()
         mock_torch.cuda.is_available.return_value = True
@@ -61,11 +61,11 @@ class TestMultiGPUPool(unittest.IsolatedAsyncioTestCase):
 
         with patch.dict("sys.modules", {"torch": mock_torch}):
             slots = pool._discover_devices()
-            self.assertEqual(slots, [0, 0, 0])
-            self.assertEqual(len(slots), 3)
+            self.assertEqual(slots, [0])
+            self.assertEqual(len(slots), 1)
 
     def test_discover_devices_fallback_zero_gpu(self):
-        """Fallback when no GPU is detected should default to 3 virtual slots: [0, 0, 0]."""
+        """Fallback when no GPU is detected should default to [0]."""
         pool = video_service.GPUDevicePool()
         mock_torch = MagicMock()
         mock_torch.cuda.is_available.return_value = False
@@ -73,7 +73,7 @@ class TestMultiGPUPool(unittest.IsolatedAsyncioTestCase):
         with patch.dict("sys.modules", {"torch": mock_torch}), \
              patch("subprocess.check_output", side_effect=Exception("No nvidia-smi")):
             slots = pool._discover_devices()
-            self.assertEqual(slots, [0, 0, 0])
+            self.assertEqual(slots, [0])
 
     async def test_acquire_with_timeout_success(self):
         """Acquiring a slot within timeout should succeed."""

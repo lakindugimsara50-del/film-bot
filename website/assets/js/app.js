@@ -204,6 +204,8 @@ function getMoviesByGenre(keyword) {
 
 // ---- Data Helpers ----
 function getFeatured() {
+  const spotlight = getHeroSpotlightList();
+  if (spotlight && spotlight.length > 0) return spotlight[0];
   const catalog = groupSeriesCatalog(allMovies);
   return catalog.find(m => m.featured) || catalog[0] || null;
 }
@@ -584,43 +586,129 @@ function getHeroSpotlightList() {
   const catalog = groupSeriesCatalog(allMovies);
   if (!catalog || catalog.length === 0) return [];
 
-  // Filter only movies with a valid trailer_id and backdrop image
-  const valid = catalog.filter(m => Boolean(m.trailer_id) && Boolean(m.backdrop || m.backdrop_url));
+  // 1. Any movie with a backdrop or poster image is eligible for Hero Spotlight!
+  const eligible = catalog.filter(m => Boolean(m.backdrop || m.backdrop_url || m.poster || m.poster_url));
+  const pool = eligible.length > 0 ? eligible : [...catalog];
+
+  // 2. Score movies to automatically pick the BEST and NEWEST movies for the Hero Banner!
+  const scored = pool.map(m => {
+    let score = 0;
+    if (m.featured) score += 1000;
+    if (m.trending) score += 500;
+
+    // Newer release year gets higher priority (e.g. 2026 -> +20260, 2025 -> +20250)
+    const yr = Number(m.year) || 2020;
+    score += yr * 10;
+
+    // IMDb rating bonus (e.g. 8.5 -> +85)
+    const imdb = parseFloat(m.imdb || m.rating || 0);
+    if (!isNaN(imdb) && imdb > 0) score += imdb * 10;
+
+    // High-res backdrop bonus
+    if (m.backdrop || m.backdrop_url) score += 50;
+
+    // Trailer bonus
+    if (m.trailer_id || m.trailer_url) score += 30;
+
+    // Recency of addition
+    const addedTime = m.added_at ? new Date(m.added_at).getTime() : (m.added_date ? new Date(m.added_date).getTime() : 0);
+    if (addedTime > 0) score += (addedTime / 1e12);
+
+    return { movie: m, score };
+  });
+
+  // Sort by score descending
+  scored.sort((a, b) => b.score - a.score);
 
   const merged = [];
   const seenTitles = new Set();
-
-  const priority = [
-    ...valid.filter(m => m.featured),
-    ...valid.filter(m => m.trending),
-    ...valid
-  ];
-
-  priority.forEach(m => {
+  for (const item of scored) {
+    const m = item.movie;
     const rawTitle = (m.title || '').split(' - Season')[0].trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     if (rawTitle && !seenTitles.has(rawTitle)) {
       seenTitles.add(rawTitle);
       merged.push(m);
     }
-  });
+    if (merged.length >= 6) break;
+  }
 
-  return merged.slice(0, 6);
+  return merged;
+}
+
+function ensureHeroDOMStructure(heroEl) {
+  if (!heroEl) return;
+  // If heroEl was previously emptied or missing core elements, restore full Grand Cinema Billboard structure
+  if (!document.getElementById('hero-title') || !document.getElementById('hero-backdrop')) {
+    heroEl.innerHTML = `
+      <div class="hero-backdrop active" id="hero-backdrop"></div>
+      <div class="hero-backdrop-buffer" id="hero-backdrop-buffer"></div>
+      <div class="hero-video-wrap" id="hero-video-wrap" aria-hidden="true">
+        <iframe id="hero-video-iframe" class="hero-video-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" playsinline></iframe>
+      </div>
+      <div class="hero-gradient"></div>
+      <div class="hero-noise"></div>
+      <div class="hero-content">
+        <div class="hero-info-main">
+          <div class="hero-badge-row">
+            <div class="hero-badge" id="hero-badge"><i class="fa-solid fa-bolt"></i> SPOTLIGHT</div>
+          </div>
+          <h1 class="hero-title" id="hero-title">Loading...</h1>
+          <p class="hero-title-si" id="hero-title-si"></p>
+          <div class="hero-meta" id="hero-meta"></div>
+          <div class="hero-genres" id="hero-genres"></div>
+          <p class="hero-description" id="hero-description"></p>
+          <div class="hero-actions">
+            <a href="#" class="btn btn-primary btn-hero hero-btn-watch" id="hero-watch-btn">
+              <i class="fa-solid fa-play"></i> Watch Now
+            </a>
+            <button class="btn btn-secondary btn-hero hero-btn-trailer" id="hero-trailer-btn" type="button" title="Watch Official Trailer">
+              <i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>
+            </button>
+            <a href="#" class="btn btn-secondary btn-hero hero-btn-download" id="hero-download-btn">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Download
+            </a>
+          </div>
+        </div>
+      </div>
+      <button class="hero-edge-nav prev" id="hero-edge-prev" type="button" aria-label="Previous Slide">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <button class="hero-edge-nav next" id="hero-edge-next" type="button" aria-label="Next Slide">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+      <button class="hero-sound-btn" id="hero-sound-btn" type="button" aria-label="Toggle Sound" title="Sound On / Off" style="display:none">
+        <i class="fa-solid fa-volume-xmark"></i>
+      </button>
+      <div class="hero-apple-pagination" id="hero-apple-pagination" role="tablist" aria-label="Featured Spotlight"></div>
+    `;
+    renderHeroAppleIndicators();
+  }
 }
 
 // ---- Hero ----
 function renderHero(targetMovie, forcedIdx) {
+  const heroEl = document.getElementById('hero-section');
+  if (!heroEl) return;
+
   const spotlight = getHeroSpotlightList();
   heroSpotlightMovies = spotlight;
 
   if (typeof forcedIdx === 'number') {
     heroCurrentIdx = forcedIdx;
+  } else if (heroCurrentIdx >= spotlight.length) {
+    heroCurrentIdx = 0;
   }
 
   const movie = targetMovie || spotlight[heroCurrentIdx] || getFeatured();
-  const heroEl = document.getElementById('hero-section');
-  if (!heroEl) return;
+  ensureHeroDOMStructure(heroEl);
+
   if (!movie) {
-    heroEl.innerHTML = `<div class="hero-gradient"></div><div class="hero-content"><p class="text-muted">No featured movies yet.</p></div>`;
+    const titleEl = document.getElementById('hero-title');
+    if (titleEl) titleEl.textContent = 'FilmZilla Cinema';
+    const descEl = document.getElementById('hero-description');
+    if (descEl) descEl.textContent = 'Discover latest Sinhala Subtitles, HD Movies & TV Series with direct streaming.';
+    const metaEl = document.getElementById('hero-meta');
+    if (metaEl) metaEl.innerHTML = '<span class="badge badge-quality">1080p FHD</span><span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>';
     return;
   }
 
@@ -682,13 +770,18 @@ function renderHero(targetMovie, forcedIdx) {
     dlBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Download`;
   }
 
-  // Setup Trailer Button to open dedicated Cinema Modal
+  // Setup Trailer Button to open dedicated Cinema Modal (or hide if no trailer)
   const trailerBtn = document.getElementById('hero-trailer-btn');
   if (trailerBtn) {
-    trailerBtn.onclick = (e) => {
-      e.preventDefault();
-      openTrailerModal(movie);
-    };
+    if (movie.trailer_id || movie.trailer_url) {
+      trailerBtn.style.display = 'inline-flex';
+      trailerBtn.onclick = (e) => {
+        e.preventDefault();
+        openTrailerModal(movie);
+      };
+    } else {
+      trailerBtn.style.display = 'none';
+    }
   }
 
   // Re-trigger text slide-in animation smoothly on each slide transition
@@ -708,27 +801,34 @@ function renderHero(targetMovie, forcedIdx) {
 function renderHeroAppleIndicators() {
   const container = document.getElementById('hero-apple-pagination');
   const list = getHeroSpotlightList();
-  if (container && list && list.length > 0) {
-    container.innerHTML = list.map((_, idx) => `
-      <button class="hero-apple-dot${idx === heroCurrentIdx ? ' active' : ''}" data-idx="${idx}" type="button" aria-label="Slide ${idx + 1}"></button>
-    `).join('');
+  if (container) {
+    if (list && list.length > 1) {
+      container.style.display = 'flex';
+      container.innerHTML = list.map((_, idx) => `
+        <button class="hero-apple-dot${idx === heroCurrentIdx ? ' active' : ''}" data-idx="${idx}" type="button" aria-label="Slide ${idx + 1}"></button>
+      `).join('');
 
-    container.querySelectorAll('.hero-apple-dot').forEach(dot => {
-      dot.onclick = () => {
-        const idx = parseInt(dot.dataset.idx, 10);
-        if (!isNaN(idx) && list[idx]) {
-          heroCurrentIdx = idx;
-          renderHero(list[idx], idx);
-          restartHeroTimer();
-        }
-      };
-    });
+      container.querySelectorAll('.hero-apple-dot').forEach(dot => {
+        dot.onclick = () => {
+          const idx = parseInt(dot.dataset.idx, 10);
+          if (!isNaN(idx) && list[idx]) {
+            heroCurrentIdx = idx;
+            renderHero(list[idx], idx);
+            restartHeroTimer();
+          }
+        };
+      });
+    } else {
+      container.innerHTML = '';
+      container.style.display = 'none';
+    }
   }
 
   // Setup edge navigation chevrons (< and >)
   const prevBtn = document.getElementById('hero-edge-prev') || document.getElementById('hero-prev-btn');
   const nextBtn = document.getElementById('hero-edge-next') || document.getElementById('hero-next-btn');
   if (prevBtn) {
+    prevBtn.style.display = (list && list.length > 1) ? 'flex' : 'none';
     prevBtn.onclick = () => {
       const total = list.length || 1;
       heroCurrentIdx = (heroCurrentIdx - 1 + total) % total;
@@ -737,6 +837,7 @@ function renderHeroAppleIndicators() {
     };
   }
   if (nextBtn) {
+    nextBtn.style.display = (list && list.length > 1) ? 'flex' : 'none';
     nextBtn.onclick = () => {
       const total = list.length || 1;
       heroCurrentIdx = (heroCurrentIdx + 1) % total;

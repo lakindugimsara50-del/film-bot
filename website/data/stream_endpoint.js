@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://copying-foundation-renew-joint.trycloudflare.com",
+  "stream_base_url": "https://individually-sonic-authorized-monitoring.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-04T11:07:07.777664+00:00",
+  "updated_at": "2026-11-04T11:07:59.111302+00:00",
   "status": "online"
 };

@@ -58,7 +58,7 @@
           "character": ""
         }
       ],
-      "featured": false,
+      "featured": true,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAbxq6htWpkAzYW8efDrYpIJ39nDUVwAC2R4AAqfeWFek6OXryFnTlx4E",
       "message_id": 444,
@@ -286,7 +286,7 @@
           "character": "Woodrock"
         }
       ],
-      "featured": false,
+      "featured": true,
       "trending": true,
       "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcJq6wPSI4c8jpyKNHXQhkt-2DxHYgACPCEAAqfeWFcnzekxV7lXGh4E",
       "message_id": 450,

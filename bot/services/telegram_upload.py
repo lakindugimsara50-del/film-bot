@@ -18,8 +18,13 @@ import time
 from typing import Optional, Union
 
 import aiofiles
+import hashlib
 import httpx
-from pyrogram import Client
+import math
+from typing import BinaryIO, Callable, Optional, Union
+from pyrogram import Client, raw
+from pyrogram.errors import FloodWait, RPCError
+from pyrogram.session import Session
 
 # Support 64-bit Telegram channel IDs (e.g. -1004325759505)
 try:
@@ -42,6 +47,251 @@ log = logging.getLogger(__name__)
 
 # How many bytes to buffer while streaming a download to disk
 _CHUNK_SIZE = 1024 * 1024  # 1 MB
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ultra-Fast MTProto Parallel Multi-Connection Chunk Uploader (FastPyrogram)
+# ─────────────────────────────────────────────────────────────────────────────
+async def fast_save_file(
+    self: "Client",
+    path: Union[str, BinaryIO, os.PathLike],
+    file_id: int = None,
+    file_part: int = 0,
+    progress: Callable = None,
+    progress_args: tuple = ()
+):
+    """
+    High-speed multi-connection MTProto parallel chunk uploader for Pyrogram.
+    Uses up to 8 parallel TCP media sessions to Telegram MTProto datacenters
+    with a pre-buffered chunk queue and worker pool to eliminate single-socket speed caps.
+    """
+    if path is None:
+        return None
+
+    if isinstance(path, (str, os.PathLike)):
+        fp = open(path, "rb")
+        should_close = True
+    elif isinstance(path, io.IOBase):
+        fp = path
+        should_close = False
+    else:
+        raise ValueError("Invalid file. Expected a file path as string or a binary file pointer")
+
+    file_name = getattr(fp, "name", "file.mp4")
+    fp.seek(0, os.SEEK_END)
+    file_size = fp.tell()
+    fp.seek(0)
+
+    if file_size == 0:
+        if should_close:
+            try:
+                fp.close()
+            except Exception:
+                pass
+        raise ValueError("File size equals to 0 B")
+
+    is_premium = getattr(getattr(self, "me", None), "is_premium", False)
+    file_size_limit_mib = 4000 if is_premium else 2000
+    if file_size > file_size_limit_mib * 1024 * 1024:
+        if should_close:
+            try:
+                fp.close()
+            except Exception:
+                pass
+        raise ValueError(f"Can't upload files bigger than {file_size_limit_mib} MiB")
+
+    part_size = 512 * 1024  # 512 KB MTProto part
+    file_total_parts = int(math.ceil(file_size / part_size))
+    is_big = file_size > 10 * 1024 * 1024
+    is_missing_part = file_id is not None
+    file_id = file_id or self.rnd_id()
+    md5_sum = hashlib.md5() if not is_big and not is_missing_part else None
+
+    dc_id = await self.storage.dc_id()
+    auth_key = await self.storage.auth_key()
+    test_mode = await self.storage.test_mode()
+
+    # Handle missing single part retry (e.g. from FilePartMissing)
+    if is_missing_part:
+        fp.seek(part_size * file_part)
+        chunk = fp.read(part_size)
+        if is_big:
+            rpc = raw.functions.upload.SaveBigFilePart(
+                file_id=file_id,
+                file_part=file_part,
+                file_total_parts=file_total_parts,
+                bytes=chunk,
+            )
+        else:
+            rpc = raw.functions.upload.SaveFilePart(
+                file_id=file_id,
+                file_part=file_part,
+                bytes=chunk,
+            )
+        s = Session(self, dc_id, auth_key, test_mode, is_media=True)
+        await s.start()
+        try:
+            await s.invoke(rpc)
+        finally:
+            await s.stop()
+            if should_close:
+                try:
+                    fp.close()
+                except Exception:
+                    pass
+        return
+
+    # Scale parallel MTProto connections and worker tasks based on file size
+    if file_size > 50 * 1024 * 1024:
+        num_sessions = 8   # 8 parallel TCP sockets to MTProto media DC
+        num_workers = 12   # 12 concurrent async worker tasks
+    elif file_size > 10 * 1024 * 1024:
+        num_sessions = 4
+        num_workers = 6
+    else:
+        num_sessions = 1
+        num_workers = 2
+
+    sessions = [Session(self, dc_id, auth_key, test_mode, is_media=True) for _ in range(num_sessions)]
+    try:
+        await asyncio.gather(*[s.start() for s in sessions])
+    except Exception as s_err:
+        log.warning("[FastUpload] Error starting %d parallel sessions (%s); falling back to single session", num_sessions, s_err)
+        for s in sessions:
+            try:
+                await s.stop()
+            except Exception:
+                pass
+        sessions = [Session(self, dc_id, auth_key, test_mode, is_media=True)]
+        await sessions[0].start()
+        num_sessions = 1
+        num_workers = 4
+
+    queue = asyncio.Queue(maxsize=num_workers * 2)
+    transferred_bytes = [file_part * part_size]
+    transferred_lock = asyncio.Lock()
+    upload_error = None
+
+    async def worker(worker_id: int):
+        nonlocal upload_error
+        sess = sessions[worker_id % len(sessions)]
+        while True:
+            item = await queue.get()
+            if item is None:
+                queue.task_done()
+                return
+
+            if upload_error is not None:
+                queue.task_done()
+                continue
+
+            part_num, rpc, chunk_len = item
+            success = False
+            for retry in range(5):
+                try:
+                    await sess.invoke(rpc)
+                    success = True
+                    break
+                except FloodWait as fw:
+                    log.warning("[FastUpload] FloodWait %ds in worker %d", fw.value, worker_id)
+                    await asyncio.sleep(fw.value)
+                except Exception as exc:
+                    if retry >= 4:
+                        upload_error = exc
+                        log.error("[FastUpload] Worker %d chunk %d failed after 5 retries: %s", worker_id, part_num, exc)
+                        break
+                    await asyncio.sleep(0.4 * (retry + 1))
+
+            if success:
+                async with transferred_lock:
+                    transferred_bytes[0] += chunk_len
+                    cur_transferred = transferred_bytes[0]
+                if progress:
+                    try:
+                        p_call = progress(min(cur_transferred, file_size), file_size, *progress_args)
+                        if inspect.iscoroutine(p_call):
+                            await p_call
+                    except Exception:
+                        pass
+            queue.task_done()
+
+    worker_tasks = [self.loop.create_task(worker(i)) for i in range(num_workers)]
+    fp.seek(part_size * file_part)
+    cur_part = file_part
+
+    try:
+        while True:
+            if upload_error is not None:
+                raise upload_error
+
+            chunk = fp.read(part_size)
+            if not chunk:
+                if not is_big and not is_missing_part and md5_sum:
+                    md5_hex = "".join([hex(b)[2:].zfill(2) for b in md5_sum.digest()])
+                break
+
+            if is_big:
+                rpc = raw.functions.upload.SaveBigFilePart(
+                    file_id=file_id,
+                    file_part=cur_part,
+                    file_total_parts=file_total_parts,
+                    bytes=chunk,
+                )
+            else:
+                rpc = raw.functions.upload.SaveFilePart(
+                    file_id=file_id,
+                    file_part=cur_part,
+                    bytes=chunk,
+                )
+                if md5_sum:
+                    md5_sum.update(chunk)
+
+            await queue.put((cur_part, rpc, len(chunk)))
+            cur_part += 1
+
+        await queue.join()
+
+        if upload_error is not None:
+            raise upload_error
+
+    finally:
+        for _ in worker_tasks:
+            try:
+                await queue.put(None)
+            except Exception:
+                pass
+        await asyncio.gather(*worker_tasks, return_exceptions=True)
+        await asyncio.gather(*[s.stop() for s in sessions], return_exceptions=True)
+
+        if should_close:
+            try:
+                fp.close()
+            except Exception:
+                pass
+
+    if is_big:
+        return raw.types.InputFileBig(
+            id=file_id,
+            parts=file_total_parts,
+            name=os.path.basename(file_name),
+        )
+    else:
+        return raw.types.InputFile(
+            id=file_id,
+            parts=file_total_parts,
+            name=os.path.basename(file_name),
+            md5_checksum=md5_hex if 'md5_hex' in locals() else "",
+        )
+
+
+# Apply the high-speed parallel MTProto uploader patch globally to Pyrogram
+try:
+    import pyrogram.methods.advanced.save_file
+    pyrogram.methods.advanced.save_file.SaveFile.save_file = fast_save_file
+    Client.save_file = fast_save_file
+    log.info("[TelegramUpload] Successfully installed high-speed parallel MTProto uploader patch!")
+except Exception as patch_err:
+    log.warning("[TelegramUpload] Note while installing fast_save_file patch: %s", patch_err)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -359,7 +609,13 @@ async def upload_video_file(
             log.warning("[TelegramUpload] Pre-resolving chat %s warning: %s", chat_id, gc_err)
 
         _reset_progress_state()
-        _use_low_ram = (not os.path.exists('/content')) and (os.name != 'nt')
+        _is_cloud_runner = (
+            os.path.exists('/kaggle')
+            or os.path.exists('/content')
+            or os.path.isdir('/dev/shm')
+            or os.getenv("KAGGLE_KERNEL_RUN_TYPE") is not None
+        )
+        _use_low_ram = False if _is_cloud_runner else ((not os.path.exists('/content')) and (os.name != 'nt'))
         if _use_low_ram:
             try:
                 import psutil

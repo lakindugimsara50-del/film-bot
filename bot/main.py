@@ -76,8 +76,8 @@ except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
 import multiprocessing as _mp
-_on_colab_env = os.path.exists('/content')
-# On Colab (12GB RAM): 16 Pyrogram workers = parallel MTProto upload sessions → 2-4x faster uploads
+_on_colab_env = os.path.exists('/content') or os.path.exists('/kaggle') or os.path.isdir('/dev/shm') or os.getenv("KAGGLE_KERNEL_RUN_TYPE") is not None
+# On Colab / Kaggle (12-30GB RAM): 16 Pyrogram workers = parallel MTProto upload sessions → ultra-fast transfers
 # On Render (512MB RAM): keep 4 workers to avoid OOM
 _PYROGRAM_WORKERS = 16 if _on_colab_env else 4
 
@@ -88,7 +88,7 @@ app = Client(
     api_hash=config.API_HASH or "mock_hash",
     bot_token=config.BOT_TOKEN or "123456:mock_token",
     workers=_PYROGRAM_WORKERS,
-    max_concurrent_transmissions=10,
+    max_concurrent_transmissions=16 if _on_colab_env else 4,
     sleep_threshold=30,
 )
 

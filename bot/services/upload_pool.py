@@ -770,15 +770,38 @@ class TelegramUploadPool:
         last_exc = None
         tried_clients: list = []
 
-        for attempt in range(3):
-            client = await self.get_client_for_quality(quality, fallback_client, target_chat=target_chat)
-            if client in tried_clients and len(tried_clients) < len(self.clients):
+        # Build candidate pool:
+        # 1) Verified admin sessions in this quality tier (1080p, 720p, 480p)
+        # 2) Other verified admin sessions in channel (cross-tier fallback)
+        # 3) Remaining connected userbot sessions in the pool
+        candidates: List[Client] = []
+        try:
+            t_key = int(target_chat)
+        except Exception:
+            t_key = target_chat
+
+        active_admins = [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
+        if active_admins:
+            quality_map = {"1080p": 0, "720p": 1, "480p": 2, "360p": 3, "default": 0}
+            base_idx = quality_map.get(quality, 0)
+            n_admins = len(active_admins)
+            tier_admins = [active_admins[i] for i in range(n_admins) if (i % 3 == base_idx % 3)] if n_admins >= 3 else active_admins
+            other_admins = [c for c in active_admins if c not in tier_admins]
+            candidates = tier_admins + other_admins
+        else:
+            candidates = [c for c in self.clients if getattr(c, "is_connected", False)]
+
+        max_attempts = min(len(candidates), 12) if candidates else 1
+        for attempt in range(max_attempts):
+            client = candidates[attempt]
+            if client in tried_clients and len(tried_clients) < len(candidates):
                 continue
             tried_clients.append(client)
             log.info(
-                "[UploadPool] Uploading [%s] attempt %d via session '%s' → chat %s",
-                quality, attempt + 1,
+                "[UploadPool] Uploading [%s] attempt %d/%d via session '%s' (user_id=%s) → chat %s",
+                quality, attempt + 1, max_attempts,
                 getattr(client, "name", "main_bot"),
+                getattr(getattr(client, "me", None), "id", "?"),
                 target_chat,
             )
 
@@ -815,12 +838,11 @@ class TelegramUploadPool:
                         "[UploadPool] Session '%s' lacks admin/write permissions in chat %s (%s) — removing from admin cache and rotating.",
                         getattr(client, "name", "?"), target_chat, exc,
                     )
-                    try:
-                        t_key = int(target_chat)
-                    except Exception:
-                        t_key = target_chat
                     if t_key in self._admin_sessions and client in self._admin_sessions[t_key]:
-                        self._admin_sessions[t_key].remove(client)
+                        try:
+                            self._admin_sessions[t_key].remove(client)
+                        except Exception:
+                            pass
 
                     # Attempt on-the-fly promotion if main bot is admin with can_promote_members
                     if self._main_client and getattr(self._main_client, "is_connected", False):
@@ -875,7 +897,10 @@ class TelegramUploadPool:
 
         # All userbot attempts exhausted — use main bot client
         if fallback:
-            log.info("[UploadPool] Uploading [%s] via verified main client '%s' → chat %s", quality, getattr(fallback, "name", "main_bot"), target_chat)
+            log.warning(
+                "[UploadPool] All %d userbot session attempts exhausted for [%s]! Falling back to main bot client '%s' → chat %s",
+                max_attempts, quality, getattr(fallback, "name", "main_bot"), target_chat
+            )
             try:
                 c_lock = self.get_client_lock(fallback)
                 async with c_lock:

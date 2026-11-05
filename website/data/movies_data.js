@@ -472,7 +472,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-04",
       "added_at": "2026-11-04T10:07:27Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "godzilla-against-mechagodzilla-2002",
+      "slug": "godzilla-against-mechagodzilla-2002",
+      "title": "Godzilla Against MechaGodzilla",
+      "title_si": "",
+      "year": 2002,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt0314111",
+      "tmdb_id": "12636",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/Kg6J3qyf80cwnKkv1YorSjkNaK.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/Kg6J3qyf80cwnKkv1YorSjkNaK.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/fDkwRFthToJTJN1rhf9zAAA1fcF.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/fDkwRFthToJTJN1rhf9zAAA1fcF.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/LZKZ4QJAjIM",
+      "trailer_id": "LZKZ4QJAjIM",
+      "genres": [
+        "Action",
+        "Science Fiction",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "88 min",
+      "description": "JSDF pilot Akane has a fateful encounter when a new Godzilla emerges in Tateyama. As a countermeasure, a cyborg named Kiryu is constructed from the remains of the original. The machine is discovered to harbor the restless soul of the original monster as Akane must learn to find value in her own life as well.",
+      "director": "Masaaki Tezuka",
+      "cast": [
+        {
+          "name": "Yumiko Shaku",
+          "character": "Akane Yashiro"
+        },
+        {
+          "name": "Shin Takuma",
+          "character": "Tokumitsu Yuhara"
+        },
+        {
+          "name": "Kana Onodera",
+          "character": "Sara Yuhara"
+        },
+        {
+          "name": "Koh Takasugi",
+          "character": "JSDF Lieutenant Togashi"
+        },
+        {
+          "name": "Akira Nakao",
+          "character": "2003 Prime Minister Hayato Igarashi"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAchq7FcEBwjZ7GInVyXMi-O2MBJkgAACfCIAArl_YFchlGzoF3wuqR4E",
+      "message_id": 456,
+      "file_name": "comp_godzilla-against-mechagodzilla-2002_1080p.mp4",
+      "file_size": 2064634005,
+      "drive_file_id": "",
+      "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAchq7FcEBwjZ7GInVyXMi-O2MBJkgAACfCIAArl_YFchlGzoF3wuqR4E",
+          "message_id": 456,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/12636"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt0314111"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt0314111"
+        }
+      ],
+      "qualities": {
+        "auto": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+        "1080p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+        "720p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/455",
+        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454",
+        "360p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2064634005,
+          "url": "https://t.me/c/4325759505/456",
+          "telegram_url": "https://t.me/c/4325759505/456",
+          "direct_url": "/stream/channel/-1004325759505/456?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAchq7FcEBwjZ7GInVyXMi-O2MBJkgAACfCIAArl_YFchlGzoF3wuqR4E",
+          "message_id": 456,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1171722842,
+          "url": "https://t.me/c/4325759505/455",
+          "telegram_url": "https://t.me/c/4325759505/455",
+          "direct_url": "/stream/channel/-1004325759505/455?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcdq7FUSFzEpRZBg1qiQ4Lmp__nDXwACdCIAArl_YFdM3e--Y32xOx4E",
+          "message_id": 455,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/455",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "597.8 MB",
+          "size_bytes": 626855570,
+          "url": "https://t.me/c/4325759505/454",
+          "telegram_url": "https://t.me/c/4325759505/454",
+          "direct_url": "/stream/channel/-1004325759505/454?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcZq7FKsKYUySv32DkHF9HSodIrTUwACcSIAArl_YFcW89wb-o-btB4E",
+          "message_id": 454,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2064634005,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-against-mechagodzilla-2002_1080p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1171722842,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-against-mechagodzilla-2002_720p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/455",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "597.8 MB",
+          "size_bytes": 626855570,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-against-mechagodzilla-2002_480p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "354.4 MB",
+          "size_bytes": 371634120,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-against-mechagodzilla-2002_360p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAchq7FcEBwjZ7GInVyXMi-O2MBJkgAACfCIAArl_YFchlGzoF3wuqR4E",
+          "message_id": 456,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+          "size_bytes": 2064634005
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcdq7FUSFzEpRZBg1qiQ4Lmp__nDXwACdCIAArl_YFdM3e--Y32xOx4E",
+          "message_id": 455,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/455",
+          "size_bytes": 1171722842
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcZq7FKsKYUySv32DkHF9HSodIrTUwACcSIAArl_YFcW89wb-o-btB4E",
+          "message_id": 454,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454",
+          "size_bytes": 626855570
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
+          "size_bytes": 371634120
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/godzilla-against-mechagodzilla-2002-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=godzilla-against-mechagodzilla-2002",
+      "added_date": "2026-11-05",
+      "added_at": "2026-11-05T10:14:41Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-04T10:07:29Z"
+  "last_updated": "2026-11-05T10:14:43Z"
 };

@@ -719,7 +719,253 @@
       "added_date": "2026-11-05",
       "added_at": "2026-11-05T10:14:41Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "paris-cafe-2025",
+      "slug": "paris-cafe-2025",
+      "title": "Paris Cafe",
+      "title_si": "",
+      "year": 2025,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt38126135",
+      "tmdb_id": "1603779",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/5rPqzWDqEFjcLGJ5Rvt8SbV3BRv.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/5rPqzWDqEFjcLGJ5Rvt8SbV3BRv.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tS7tSdyGsa5RusEpK0gqPALJp2X.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tS7tSdyGsa5RusEpK0gqPALJp2X.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/E2dFsYJf6HQ",
+      "trailer_id": "E2dFsYJf6HQ",
+      "genres": [
+        "Drama",
+        "Romance"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "117 min",
+      "description": "Olivizhiyaal, from the u.s., dreams of introducing her soulmate kavinSamson, a phd scholar, to the two people she admires most — her parents inIndia. She wants to share a happy news to them. But her smile fades when she learns that her parents, dr. Gautam raja, aSurgeon, and thara, an architect, a fiery social activist, have separated. A buried secret. A shattered trust. A photograph in a paris café that brings thePast crashing back. What did dr. Gautam do? Why did thara, a woman of unshakable ideals, walk away? As oli and kavin dive into the mystery, they uncover a hidden sin, a cry forJustice, and a chance for redemption. A family broken by truth... A daughter determined to heal it. In the end, will forgiveness light the way?",
+      "director": "Saraj Seelan",
+      "cast": [
+        {
+          "name": "Guru Somasundaram",
+          "character": ""
+        },
+        {
+          "name": "Anumol",
+          "character": ""
+        },
+        {
+          "name": "Vijay Vishwa",
+          "character": ""
+        },
+        {
+          "name": "Archana Kumaar",
+          "character": ""
+        },
+        {
+          "name": "Nayana Sai",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcxq7Fycz6EnMPElYdEslmqlSO39PwACjyIAArl_YFcR0NWWSESDiB4E",
+      "message_id": 460,
+      "file_name": "comp_paris-cafe-2025_1080p.mp4",
+      "file_size": 2049093032,
+      "drive_file_id": "",
+      "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcxq7Fycz6EnMPElYdEslmqlSO39PwACjyIAArl_YFcR0NWWSESDiB4E",
+          "message_id": 460,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1603779"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt38126135"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt38126135"
+        }
+      ],
+      "qualities": {
+        "auto": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+        "1080p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+        "720p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/459",
+        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458",
+        "360p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2049093032,
+          "url": "https://t.me/c/4325759505/460",
+          "telegram_url": "https://t.me/c/4325759505/460",
+          "direct_url": "/stream/channel/-1004325759505/460?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcxq7Fycz6EnMPElYdEslmqlSO39PwACjyIAArl_YFcR0NWWSESDiB4E",
+          "message_id": 460,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1516000444,
+          "url": "https://t.me/c/4325759505/459",
+          "telegram_url": "https://t.me/c/4325759505/459",
+          "direct_url": "/stream/channel/-1004325759505/459?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACActq7FsLsVX0RtXCTl8hV_LjgXOUWgACiiIAArl_YFcmDwTH4ssz1x4E",
+          "message_id": 459,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/459",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "777.5 MB",
+          "size_bytes": 815257103,
+          "url": "https://t.me/c/4325759505/458",
+          "telegram_url": "https://t.me/c/4325759505/458",
+          "direct_url": "/stream/channel/-1004325759505/458?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcpq7FoW8ijnTPpWMicv-wSL7L1gPgACiSIAArl_YFejyg9eihSFeR4E",
+          "message_id": 458,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2049093032,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_paris-cafe-2025_1080p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1516000444,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_paris-cafe-2025_720p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/459",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "777.5 MB",
+          "size_bytes": 815257103,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_paris-cafe-2025_480p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "351.8 MB",
+          "size_bytes": 368836745,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_paris-cafe-2025_360p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcxq7Fycz6EnMPElYdEslmqlSO39PwACjyIAArl_YFcR0NWWSESDiB4E",
+          "message_id": 460,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+          "size_bytes": 2049093032
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACActq7FsLsVX0RtXCTl8hV_LjgXOUWgACiiIAArl_YFcmDwTH4ssz1x4E",
+          "message_id": 459,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/459",
+          "size_bytes": 1516000444
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAcpq7FoW8ijnTPpWMicv-wSL7L1gPgACiSIAArl_YFejyg9eihSFeR4E",
+          "message_id": 458,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458",
+          "size_bytes": 815257103
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
+          "size_bytes": 368836745
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/paris-cafe-2025-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=paris-cafe-2025",
+      "added_date": "2026-11-05",
+      "added_at": "2026-11-05T10:38:33Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-05T10:14:43Z"
+  "last_updated": "2026-11-05T10:38:35Z"
 }

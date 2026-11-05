@@ -965,7 +965,255 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-05",
       "added_at": "2026-11-05T10:38:33Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-gentleman-2025",
+      "slug": "the-gentleman-2025",
+      "title": "The Gentleman",
+      "title_si": "",
+      "year": 2025,
+      "imdb": "5.8",
+      "rating": "5.8",
+      "imdb_id": "tt32140922",
+      "tmdb_id": "1426968",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/iIIZ3qIh7A3B8Y1VVo5laFyusVV.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/iIIZ3qIh7A3B8Y1VVo5laFyusVV.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/klXhJ8IpWhzfjupJ1xZmyC2Uk1A.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/klXhJ8IpWhzfjupJ1xZmyC2Uk1A.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Idj87CZ6Ky4",
+      "trailer_id": "Idj87CZ6Ky4",
+      "genres": [
+        "Action",
+        "Crime",
+        "Thriller",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "89 min",
+      "description": "Aging ex-soldier Theo meets weekly with prostitute Olga to reminisce. After Olga's murder, Theo seeks bloody revenge, attracting attention of alcoholic cop Iborra and hitman Herodes.",
+      "director": "Gabriel Beristain",
+      "cast": [
+        {
+          "name": "Ron Perlman",
+          "character": "Theo"
+        },
+        {
+          "name": "Megan Montaner",
+          "character": "Iborras"
+        },
+        {
+          "name": "Hovik Keuchkerian",
+          "character": "Sub Inspector Puertas"
+        },
+        {
+          "name": "Damián Alcázar",
+          "character": "Chapas"
+        },
+        {
+          "name": "Marco de la O",
+          "character": "Herodes"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdBq7GEICswcHUAYhgABgg6-TUGM5bQAArIiAAK5f2BX6tP-p7H8AAHHHgQ",
+      "message_id": 464,
+      "file_name": "comp_the-gentleman-2025_1080p.mp4",
+      "file_size": 2000478651,
+      "drive_file_id": "",
+      "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdBq7GEICswcHUAYhgABgg6-TUGM5bQAArIiAAK5f2BX6tP-p7H8AAHHHgQ",
+          "message_id": 464,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1426968"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32140922"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32140922"
+        }
+      ],
+      "qualities": {
+        "auto": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+        "1080p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+        "720p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/463",
+        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462",
+        "360p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2000478651,
+          "url": "https://t.me/c/4325759505/464",
+          "telegram_url": "https://t.me/c/4325759505/464",
+          "direct_url": "/stream/channel/-1004325759505/464?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdBq7GEICswcHUAYhgABgg6-TUGM5bQAArIiAAK5f2BX6tP-p7H8AAHHHgQ",
+          "message_id": 464,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1143167361,
+          "url": "https://t.me/c/4325759505/463",
+          "telegram_url": "https://t.me/c/4325759505/463",
+          "direct_url": "/stream/channel/-1004325759505/463?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAc9q7F9uQ5qTGq2eXZ6vFfMIr36efAACrSIAArl_YFf_VNdfUDJwdB4E",
+          "message_id": 463,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/463",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "590.0 MB",
+          "size_bytes": 618694958,
+          "url": "https://t.me/c/4325759505/462",
+          "telegram_url": "https://t.me/c/4325759505/462",
+          "direct_url": "/stream/channel/-1004325759505/462?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAc5q7F8GxSQ-lyoTdyJs9VaMlb-MlAACpyIAArl_YFeVbuMvRdRopR4E",
+          "message_id": 462,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2000478651,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-gentleman-2025_1080p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1143167361,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-gentleman-2025_720p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/463",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "590.0 MB",
+          "size_bytes": 618694958,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-gentleman-2025_480p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "343.4 MB",
+          "size_bytes": 360086157,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-gentleman-2025_360p",
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdBq7GEICswcHUAYhgABgg6-TUGM5bQAArIiAAK5f2BX6tP-p7H8AAHHHgQ",
+          "message_id": 464,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+          "size_bytes": 2000478651
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAc9q7F9uQ5qTGq2eXZ6vFfMIr36efAACrSIAArl_YFf_VNdfUDJwdB4E",
+          "message_id": 463,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/463",
+          "size_bytes": 1143167361
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAc5q7F8GxSQ-lyoTdyJs9VaMlb-MlAACpyIAArl_YFeVbuMvRdRopR4E",
+          "message_id": 462,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462",
+          "size_bytes": 618694958
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
+          "size_bytes": 360086157
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-gentleman-2025-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-gentleman-2025",
+      "added_date": "2026-11-05",
+      "added_at": "2026-11-05T10:57:27Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-05T10:38:35Z"
+  "last_updated": "2026-11-05T10:57:33Z"
 };

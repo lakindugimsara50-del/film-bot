@@ -2540,7 +2540,253 @@
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T20:03:39Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "dorothy-2026",
+      "slug": "dorothy-2026",
+      "title": "Dorothy",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.5",
+      "rating": "8.5",
+      "imdb_id": "tt38915678",
+      "tmdb_id": "1578079",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/o3r5DmWhOKdFmeIUoRJj4CvCqOP.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/o3r5DmWhOKdFmeIUoRJj4CvCqOP.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/wlJmF47IHYwzVpG1qA6aYA0UHj.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/wlJmF47IHYwzVpG1qA6aYA0UHj.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/jcBG6U5iX8Y",
+      "trailer_id": "jcBG6U5iX8Y",
+      "genres": [
+        "Crime",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "146 min",
+      "description": "In rural Tamil Nadu, two inseparable childhood friends navigate a world shaped by caste, violence and toxic masculinity, until a compassionate woman enters their lives and quietly challenges the social order around them.",
+      "director": "Karthik Subbaraj",
+      "cast": [
+        {
+          "name": "Sananth",
+          "character": "Subbu"
+        },
+        {
+          "name": "Rishikanth",
+          "character": "Karthik"
+        },
+        {
+          "name": "Keerthy Suresh",
+          "character": "Dorothy"
+        },
+        {
+          "name": "Ramachandran Durairaj",
+          "character": "Vadivelu 'Vadivu'"
+        },
+        {
+          "name": "Soundara Raja",
+          "character": "Kalai"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAetq8Nz4T0Vv50S2FuTC3jTu1P_gKgACXSAAAueJiFeYa4G0dMoVHB4E",
+      "message_id": 491,
+      "file_name": "comp_dorothy-2026_1080p.mp4",
+      "file_size": 2056082333,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAetq8Nz4T0Vv50S2FuTC3jTu1P_gKgACXSAAAueJiFeYa4G0dMoVHB4E",
+          "message_id": 491,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1578079"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt38915678"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt38915678"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/490",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2056082333,
+          "url": "https://t.me/c/4325759505/491",
+          "telegram_url": "https://t.me/c/4325759505/491",
+          "direct_url": "/stream/channel/-1004325759505/491?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAetq8Nz4T0Vv50S2FuTC3jTu1P_gKgACXSAAAueJiFeYa4G0dMoVHB4E",
+          "message_id": 491,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1848481888,
+          "url": "https://t.me/c/4325759505/490",
+          "telegram_url": "https://t.me/c/4325759505/490",
+          "direct_url": "/stream/channel/-1004325759505/490?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAepq8Nncn5u9S1ALoRLhimXArKMqEQACWiAAAueJiFdiX9fwGRucEx4E",
+          "message_id": 490,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/490",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "945.7 MB",
+          "size_bytes": 991611766,
+          "url": "https://t.me/c/4325759505/489",
+          "telegram_url": "https://t.me/c/4325759505/489",
+          "direct_url": "/stream/channel/-1004325759505/489?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAelq8Nld4woXaQdp3-Tk7oiZ82vyzQACWSAAAueJiFe9DTJ6lK8PGh4E",
+          "message_id": 489,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2056082333,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dorothy-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1848481888,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dorothy-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/490",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "945.7 MB",
+          "size_bytes": 991611766,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dorothy-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "352.9 MB",
+          "size_bytes": 370094819,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dorothy-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAetq8Nz4T0Vv50S2FuTC3jTu1P_gKgACXSAAAueJiFeYa4G0dMoVHB4E",
+          "message_id": 491,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+          "size_bytes": 2056082333
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAepq8Nncn5u9S1ALoRLhimXArKMqEQACWiAAAueJiFdiX9fwGRucEx4E",
+          "message_id": 490,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/490",
+          "size_bytes": 1848481888
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAelq8Nld4woXaQdp3-Tk7oiZ82vyzQACWSAAAueJiFe9DTJ6lK8PGh4E",
+          "message_id": 489,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489",
+          "size_bytes": 991611766
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
+          "size_bytes": 370094819
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/dorothy-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=dorothy-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T20:35:19Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T20:03:40Z"
+  "last_updated": "2026-11-08T20:35:20Z"
 }

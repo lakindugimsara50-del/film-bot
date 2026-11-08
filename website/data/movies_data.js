@@ -3525,7 +3525,208 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T22:32:28Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "gajab-raat",
+      "slug": "gajab-raat",
+      "title": "Gajab Raat",
+      "title_si": "",
+      "year": null,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAftq8QABkMU0g1-r-UGDZZ5uXUt0zP4AAnIgAALniYhX4d2finW340QeBA",
+      "message_id": 507,
+      "file_name": "comp_gajab-raat_1080p.mp4",
+      "file_size": 2060623618,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAftq8QABkMU0g1-r-UGDZZ5uXUt0zP4AAnIgAALniYhX4d2finW340QeBA",
+          "message_id": 507,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/506",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2060623618,
+          "url": "https://t.me/c/4325759505/507",
+          "telegram_url": "https://t.me/c/4325759505/507",
+          "direct_url": "/stream/channel/-1004325759505/507?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAftq8QABkMU0g1-r-UGDZZ5uXUt0zP4AAnIgAALniYhX4d2finW340QeBA",
+          "message_id": 507,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1636932419,
+          "url": "https://t.me/c/4325759505/506",
+          "telegram_url": "https://t.me/c/4325759505/506",
+          "direct_url": "/stream/channel/-1004325759505/506?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfpq8Pzv04NaKX1aY5Ia3Eu7UcHz3AACbyAAAueJiFdv8_BLnO2R8R4E",
+          "message_id": 506,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/506",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "835.3 MB",
+          "size_bytes": 875847984,
+          "url": "https://t.me/c/4325759505/505",
+          "telegram_url": "https://t.me/c/4325759505/505",
+          "direct_url": "/stream/channel/-1004325759505/505?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAflq8PwlJ0NPCj6pA_sFfREpu5NtKQACbiAAAueJiFfZaID_iVvyex4E",
+          "message_id": 505,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2060623618,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_gajab-raat_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1636932419,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_gajab-raat_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/506",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "835.3 MB",
+          "size_bytes": 875847984,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_gajab-raat_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "353.7 MB",
+          "size_bytes": 370912251,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_gajab-raat_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAftq8QABkMU0g1-r-UGDZZ5uXUt0zP4AAnIgAALniYhX4d2finW340QeBA",
+          "message_id": 507,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+          "size_bytes": 2060623618
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfpq8Pzv04NaKX1aY5Ia3Eu7UcHz3AACbyAAAueJiFdv8_BLnO2R8R4E",
+          "message_id": 506,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/506",
+          "size_bytes": 1636932419
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAflq8PwlJ0NPCj6pA_sFfREpu5NtKQACbiAAAueJiFfZaID_iVvyex4E",
+          "message_id": 505,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505",
+          "size_bytes": 875847984
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
+          "size_bytes": 370912251
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/gajab-raat-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=gajab-raat",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T23:06:59Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T22:32:29Z"
+  "last_updated": "2026-11-08T23:07:00Z"
 };

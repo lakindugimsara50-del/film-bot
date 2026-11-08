@@ -1458,7 +1458,101 @@
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T18:12:47Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-remarried-empress-2026",
+      "slug": "the-remarried-empress-2026",
+      "title": "The Remarried Empress",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "imdb_id": "tt39325975",
+      "tmdb_id": "279246",
+      "poster": "https://image.tmdb.org/t/p/w500/zn3IXZzGavH3qle3o3g1r32eXDy.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/fNcpHmuZLKoyhNMBEzdqzX8iIvg.jpg",
+      "genres": [
+        "Drama",
+        "Sci-Fi & Fantasy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "quality": "Auto",
+      "duration": 52,
+      "description": "Beloved Empress Navier rules the Eastern Empire alongside Emperor Sovieshu. But when Sovieshu falls for a runaway slave and demands a divorce, Navier will agree on one condition: that she's given approval to remarry rival Prince Heinrey of the Western Kingdom.",
+      "description_si": "",
+      "director": "Unknown",
+      "cast": [
+        {
+          "name": "Shin Min-a",
+          "character": "Navier Ellie Trovi"
+        },
+        {
+          "name": "Ju Ji-hoon",
+          "character": "Sovieshu Vict"
+        },
+        {
+          "name": "Lee Jong-suk",
+          "character": "Heinrey Alles Lazlo"
+        },
+        {
+          "name": "Lee Se-young",
+          "character": "Rashta Isqua"
+        }
+      ],
+      "featured": false,
+      "trending": true,
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "Server 1 (VidSrc)",
+          "type": "embed",
+          "stream_url": "https://vidsrc.to/embed/movie/tt39325975",
+          "embed": true
+        },
+        {
+          "server": "Server 2",
+          "label": "Server 2 (VidSrc.me)",
+          "type": "embed",
+          "stream_url": "https://vidsrc.me/embed/movie?imdb=tt39325975",
+          "embed": true
+        },
+        {
+          "server": "Server 3",
+          "label": "Server 3 (AutoEmbed)",
+          "type": "embed",
+          "stream_url": "https://autoembed.cc/movie/tmdb/279246",
+          "embed": true
+        },
+        {
+          "server": "Server 4",
+          "label": "Server 4 (2Embed)",
+          "type": "embed",
+          "stream_url": "https://www.2embed.cc/embed/tt39325975",
+          "embed": true
+        },
+        {
+          "server": "Server 5",
+          "label": "Server 5 (AutoEmbed)",
+          "type": "embed",
+          "stream_url": "https://player.autoembed.cc/embed/movie/279246",
+          "embed": true
+        }
+      ],
+      "downloads": [],
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "label": "Sinhala Subtitle",
+          "url": "data:text/vtt;charset=utf-8,WEBVTT%0A%0A1%0A00%3A00%3A01.000%20--%3E%2000%3A00%3A06.000%0AFilmZilla.lk%20-%20The%20Remarried%20Empress%20%282026%29%20%28%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%29%0A%0A2%0A00%3A00%3A07.000%20--%3E%2000%3A00%3A15.000%0A%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD%20%E0%B6%8B%E0%B6%B4%E0%B7%83%E0%B7%92%E0%B6%BB%E0%B7%90%E0%B7%83%E0%B7%92%20%E0%B7%83%E0%B6%B8%E0%B6%9F%20%E0%B6%B1%E0%B7%90%E0%B6%BB%E0%B6%B9%E0%B7%93%E0%B6%B8%E0%B6%A7%20%E0%B7%83%E0%B7%84%20%E0%B6%B6%E0%B7%8F%E0%B6%9C%E0%B6%AD%20%E0%B6%9A%E0%B7%92%E0%B6%BB%E0%B7%93%E0%B6%B8%E0%B6%A7%20%E0%B7%83%E0%B7%8A%E0%B6%AD%E0%B7%96%E0%B6%AD%E0%B7%92%E0%B6%BA%E0%B7%92%21%0A",
+          "default": true
+        }
+      ],
+      "source_method": "embed",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-remarried-empress-2026",
+      "added_at": "2026-11-08T18:24:18Z",
+      "added_by": "bot_find",
+      "added_date": "2026-11-08"
     }
   ],
-  "last_updated": "2026-11-08T18:12:49Z"
+  "last_updated": "2026-11-08T18:24:19Z"
 }

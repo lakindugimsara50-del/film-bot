@@ -3973,7 +3973,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T23:37:57Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-cycle-2026",
+      "slug": "the-cycle-2026",
+      "title": "The Cycle",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.8",
+      "rating": "6.8",
+      "imdb_id": "tt32358390",
+      "tmdb_id": "1290418",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/n5gSNf55KWfDc9hqP4H1KCCSutE.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/n5gSNf55KWfDc9hqP4H1KCCSutE.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/bgHW6AJl2SdKzxglvf9tshXbI84.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/bgHW6AJl2SdKzxglvf9tshXbI84.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/m8vcBN8uza8",
+      "trailer_id": "m8vcBN8uza8",
+      "genres": [
+        "Horror",
+        "Thriller",
+        "Mystery"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "111 min",
+      "description": "A daughter unravels her father's dark past after his body, missing for 36 years, is found at a horrific crime scene.",
+      "director": "Jordan Downey",
+      "cast": [
+        {
+          "name": "Deborah Ann Woll",
+          "character": "Meg"
+        },
+        {
+          "name": "Jeffrey Donovan",
+          "character": "Marks"
+        },
+        {
+          "name": "Gretchen Corbett",
+          "character": "Joni"
+        },
+        {
+          "name": "Jack Doolan",
+          "character": "Lenny"
+        },
+        {
+          "name": "Will Hochman",
+          "character": "Ian"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgNq8QzA5idU1ZxW6fwkt0Rk0HcFTQACfyAAAueJiFfd9t1CAoE4Qh4E",
+      "message_id": 515,
+      "file_name": "comp_the-cycle-2026_1080p.mp4",
+      "file_size": 1994541698,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgNq8QzA5idU1ZxW6fwkt0Rk0HcFTQACfyAAAueJiFfd9t1CAoE4Qh4E",
+          "message_id": 515,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1290418"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32358390"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32358390"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/514",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1994541698,
+          "url": "https://t.me/c/4325759505/515",
+          "telegram_url": "https://t.me/c/4325759505/515",
+          "direct_url": "/stream/channel/-1004325759505/515?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgNq8QzA5idU1ZxW6fwkt0Rk0HcFTQACfyAAAueJiFfd9t1CAoE4Qh4E",
+          "message_id": 515,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1340359837,
+          "url": "https://t.me/c/4325759505/514",
+          "telegram_url": "https://t.me/c/4325759505/514",
+          "direct_url": "/stream/channel/-1004325759505/514?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgJq8QuxxLZ6JfsIJdKtZRXJh05P1AACfSAAAueJiFcho_kBxrq2sR4E",
+          "message_id": 514,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/514",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "691.1 MB",
+          "size_bytes": 724628323,
+          "url": "https://t.me/c/4325759505/513",
+          "telegram_url": "https://t.me/c/4325759505/513",
+          "direct_url": "/stream/channel/-1004325759505/513?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgFq8QrdoP_FROhweQyp1MkGj0nx9QACeiAAAueJiFe8E57S1wTYYR4E",
+          "message_id": 513,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1994541698,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-cycle-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1340359837,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-cycle-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/514",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "691.1 MB",
+          "size_bytes": 724628323,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-cycle-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "342.4 MB",
+          "size_bytes": 359017505,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-cycle-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgNq8QzA5idU1ZxW6fwkt0Rk0HcFTQACfyAAAueJiFfd9t1CAoE4Qh4E",
+          "message_id": 515,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+          "size_bytes": 1994541698
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgJq8QuxxLZ6JfsIJdKtZRXJh05P1AACfSAAAueJiFcho_kBxrq2sR4E",
+          "message_id": 514,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/514",
+          "size_bytes": 1340359837
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgFq8QrdoP_FROhweQyp1MkGj0nx9QACeiAAAueJiFe8E57S1wTYYR4E",
+          "message_id": 513,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513",
+          "size_bytes": 724628323
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
+          "size_bytes": 359017505
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-cycle-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-cycle-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T23:59:08Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T23:37:58Z"
+  "last_updated": "2026-11-08T23:59:09Z"
 };

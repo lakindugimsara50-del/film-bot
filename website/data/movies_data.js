@@ -2294,7 +2294,253 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T19:39:23Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "neglected-2025",
+      "slug": "neglected-2025",
+      "title": "Neglected",
+      "title_si": "",
+      "year": 2025,
+      "imdb": "6.3",
+      "rating": "6.3",
+      "imdb_id": "tt35224721",
+      "tmdb_id": "1409853",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/A0gqKFmJ7OArcFob49PErNvzN66.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/A0gqKFmJ7OArcFob49PErNvzN66.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/5nilYwx9jH6P27pnORwlrRdtCwZ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/5nilYwx9jH6P27pnORwlrRdtCwZ.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/EGl9BwPOLVs",
+      "trailer_id": "EGl9BwPOLVs",
+      "genres": [
+        "Action",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "92 min",
+      "description": "Detective Shaw is about to retire when he finds out on his last day of work that a serial killer has buried his son alive. He then races against the clock to solve three murders and find his son’s location before he runs out of air.",
+      "director": "David Lipper",
+      "cast": [
+        {
+          "name": "Josh Duhamel",
+          "character": "Shaw"
+        },
+        {
+          "name": "Dylan Sprouse",
+          "character": "AJ"
+        },
+        {
+          "name": "David Lipper",
+          "character": "Mayor Richards"
+        },
+        {
+          "name": "Elena Sanchez",
+          "character": "Keyes"
+        },
+        {
+          "name": "Jason London",
+          "character": "Deacon"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAedq8NWL39QOnATCqbRqOC-qs9GjPgACVCAAAueJiFe4J-1Eo8Ve7h4E",
+      "message_id": 487,
+      "file_name": "comp_neglected-2025_1080p.mp4",
+      "file_size": 2017668494,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAedq8NWL39QOnATCqbRqOC-qs9GjPgACVCAAAueJiFe4J-1Eo8Ve7h4E",
+          "message_id": 487,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1409853"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35224721"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35224721"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/486",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2017668494,
+          "url": "https://t.me/c/4325759505/487",
+          "telegram_url": "https://t.me/c/4325759505/487",
+          "direct_url": "/stream/channel/-1004325759505/487?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAedq8NWL39QOnATCqbRqOC-qs9GjPgACVCAAAueJiFe4J-1Eo8Ve7h4E",
+          "message_id": 487,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1193912790,
+          "url": "https://t.me/c/4325759505/486",
+          "telegram_url": "https://t.me/c/4325759505/486",
+          "direct_url": "/stream/channel/-1004325759505/486?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeZq8NLZum6dlkF7UlRSd60-27x76wACUiAAAueJiFeXGky_EEydjR4E",
+          "message_id": 486,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/486",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "613.0 MB",
+          "size_bytes": 642803682,
+          "url": "https://t.me/c/4325759505/485",
+          "telegram_url": "https://t.me/c/4325759505/485",
+          "direct_url": "/stream/channel/-1004325759505/485?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeVq8NJmIyRxHYZ64GkNPy9Tq12ydAACUCAAAueJiFecQFyeRDTRbR4E",
+          "message_id": 485,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2017668494,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neglected-2025_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1193912790,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neglected-2025_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/486",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "613.0 MB",
+          "size_bytes": 642803682,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neglected-2025_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "346.4 MB",
+          "size_bytes": 363180328,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_neglected-2025_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAedq8NWL39QOnATCqbRqOC-qs9GjPgACVCAAAueJiFe4J-1Eo8Ve7h4E",
+          "message_id": 487,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+          "size_bytes": 2017668494
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeZq8NLZum6dlkF7UlRSd60-27x76wACUiAAAueJiFeXGky_EEydjR4E",
+          "message_id": 486,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/486",
+          "size_bytes": 1193912790
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeVq8NJmIyRxHYZ64GkNPy9Tq12ydAACUCAAAueJiFecQFyeRDTRbR4E",
+          "message_id": 485,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485",
+          "size_bytes": 642803682
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
+          "size_bytes": 363180328
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/neglected-2025-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=neglected-2025",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T20:03:39Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T19:39:24Z"
+  "last_updated": "2026-11-08T20:03:40Z"
 };

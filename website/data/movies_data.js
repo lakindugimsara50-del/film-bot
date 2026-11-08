@@ -2786,7 +2786,253 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T20:35:19Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "zom-100-bucket-list-of-the-dead-2023",
+      "slug": "zom-100-bucket-list-of-the-dead-2023",
+      "title": "Zom 100: Bucket List of the Dead",
+      "title_si": "",
+      "year": 2023,
+      "imdb": "6.5",
+      "rating": "6.5",
+      "imdb_id": "tt20672534",
+      "tmdb_id": "1070514",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/kD35dB3KOHrLo1Y3RU5xXJ1hI7.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/kD35dB3KOHrLo1Y3RU5xXJ1hI7.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/bD8ftQIovUjCAIA6OVVuquHtLWH.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/bD8ftQIovUjCAIA6OVVuquHtLWH.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/yhbWaJaYDiY",
+      "trailer_id": "yhbWaJaYDiY",
+      "genres": [
+        "Comedy",
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "129 min",
+      "description": "Bullied by his boss, worked around the clock, he's nothing more than a corporate drone. All it takes is a zombie outbreak for him to finally feel alive!",
+      "director": "Yusuke Ishida",
+      "cast": [
+        {
+          "name": "Eiji Akaso",
+          "character": "Akira Tendo"
+        },
+        {
+          "name": "Mai Shiraishi",
+          "character": "Shizuka Mikazuki"
+        },
+        {
+          "name": "Shuntaro Yanagi",
+          "character": "Kenichiro Ryuzaki"
+        },
+        {
+          "name": "Kazuki Kitamura",
+          "character": "Gonzo Kosugi"
+        },
+        {
+          "name": "Yui Ichikawa",
+          "character": "Saori Ohtori"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe9q8ORJYyygu5Hxe59WxIsY5qzbWwACYyAAAueJiFdqe001qQGv7x4E",
+      "message_id": 495,
+      "file_name": "comp_zom-100-bucket-list-of-the-dead-2023_1080p.mp4",
+      "file_size": 2032647618,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe9q8ORJYyygu5Hxe59WxIsY5qzbWwACYyAAAueJiFdqe001qQGv7x4E",
+          "message_id": 495,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1070514"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt20672534"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt20672534"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/494",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2032647618,
+          "url": "https://t.me/c/4325759505/495",
+          "telegram_url": "https://t.me/c/4325759505/495",
+          "direct_url": "/stream/channel/-1004325759505/495?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe9q8ORJYyygu5Hxe59WxIsY5qzbWwACYyAAAueJiFdqe001qQGv7x4E",
+          "message_id": 495,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1670418020,
+          "url": "https://t.me/c/4325759505/494",
+          "telegram_url": "https://t.me/c/4325759505/494",
+          "direct_url": "/stream/channel/-1004325759505/494?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe5q8ODkXpoG6rDrQKI16bxzMGYj4wACXyAAAueJiFdBaj50FI996h4E",
+          "message_id": 494,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/494",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "854.8 MB",
+          "size_bytes": 896297991,
+          "url": "https://t.me/c/4325759505/493",
+          "telegram_url": "https://t.me/c/4325759505/493",
+          "direct_url": "/stream/channel/-1004325759505/493?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe1q8OBudXJca21kEpLpd-L_iy50ewACXiAAAueJiFedaOKJHLKwNB4E",
+          "message_id": 493,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2032647618,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_zom-100-bucket-list-of-the-dead-2023_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1670418020,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_zom-100-bucket-list-of-the-dead-2023_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/494",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "854.8 MB",
+          "size_bytes": 896297991,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_zom-100-bucket-list-of-the-dead-2023_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "348.9 MB",
+          "size_bytes": 365876571,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_zom-100-bucket-list-of-the-dead-2023_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe9q8ORJYyygu5Hxe59WxIsY5qzbWwACYyAAAueJiFdqe001qQGv7x4E",
+          "message_id": 495,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+          "size_bytes": 2032647618
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe5q8ODkXpoG6rDrQKI16bxzMGYj4wACXyAAAueJiFdBaj50FI996h4E",
+          "message_id": 494,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/494",
+          "size_bytes": 1670418020
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAe1q8OBudXJca21kEpLpd-L_iy50ewACXiAAAueJiFedaOKJHLKwNB4E",
+          "message_id": 493,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493",
+          "size_bytes": 896297991
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
+          "size_bytes": 365876571
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/zom-100-bucket-list-of-the-dead-2023-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=zom-100-bucket-list-of-the-dead-2023",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T21:06:33Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T20:35:20Z"
+  "last_updated": "2026-11-08T21:06:34Z"
 };

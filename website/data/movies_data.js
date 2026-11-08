@@ -1800,7 +1800,253 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T18:37:54Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-paradise-2026",
+      "slug": "the-paradise-2026",
+      "title": "The Paradise",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "4.8",
+      "rating": "4.8",
+      "imdb_id": "tt31969655",
+      "tmdb_id": "1376856",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/smghVMoMWSIFi5dgIz4w1UIcEcY.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/smghVMoMWSIFi5dgIz4w1UIcEcY.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/7AcH5TFppoMusNkCBLaQP6UOODp.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/7AcH5TFppoMusNkCBLaQP6UOODp.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Y3xewv1ZnHc",
+      "trailer_id": "Y3xewv1ZnHc",
+      "genres": [
+        "Action",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "170 min",
+      "description": "In 1980s Secunderabad, a marginalized tribe battles discrimination and fights for citizenship under an unexpected leader's guidance, challenging systemic oppression.",
+      "director": "Srikanth Odela",
+      "cast": [
+        {
+          "name": "Nani",
+          "character": "Jadal"
+        },
+        {
+          "name": "Sonali Kulkarni",
+          "character": "Sammakka"
+        },
+        {
+          "name": "Mohan Babu",
+          "character": "Shikanja Maalik"
+        },
+        {
+          "name": "Raghav Juyal",
+          "character": "Vikram Maalik"
+        },
+        {
+          "name": "Kayadu Lohar",
+          "character": "Subbulakshmi 'Subbu'"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd9q8MoutNcKbQ5rXUzMFjtGv46zfwACSCAAAueJiFcQRQjzJ09q3h4E",
+      "message_id": 479,
+      "file_name": "comp_the-paradise-2026_1080p.mp4",
+      "file_size": 2064783235,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd9q8MoutNcKbQ5rXUzMFjtGv46zfwACSCAAAueJiFcQRQjzJ09q3h4E",
+          "message_id": 479,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1376856"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt31969655"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt31969655"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/478",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2064783235,
+          "url": "https://t.me/c/4325759505/479",
+          "telegram_url": "https://t.me/c/4325759505/479",
+          "direct_url": "/stream/channel/-1004325759505/479?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd9q8MoutNcKbQ5rXUzMFjtGv46zfwACSCAAAueJiFcQRQjzJ09q3h4E",
+          "message_id": 479,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2053378550,
+          "url": "https://t.me/c/4325759505/478",
+          "telegram_url": "https://t.me/c/4325759505/478",
+          "direct_url": "/stream/channel/-1004325759505/478?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd5q8Mlbfmej6IV9HgdoFxoXL98LDwACRiAAAueJiFdb4-S48AgmeR4E",
+          "message_id": 478,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/478",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1208732708,
+          "url": "https://t.me/c/4325759505/477",
+          "telegram_url": "https://t.me/c/4325759505/477",
+          "direct_url": "/stream/channel/-1004325759505/477?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd1q8MXANrnyO52_S4_0K2EDMr7BnQACQyAAAueJiFc69AwTh70xxB4E",
+          "message_id": 477,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2064783235,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-paradise-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2053378550,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-paradise-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/478",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1208732708,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-paradise-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "354.4 MB",
+          "size_bytes": 371660982,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-paradise-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd9q8MoutNcKbQ5rXUzMFjtGv46zfwACSCAAAueJiFcQRQjzJ09q3h4E",
+          "message_id": 479,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+          "size_bytes": 2064783235
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd5q8Mlbfmej6IV9HgdoFxoXL98LDwACRiAAAueJiFdb4-S48AgmeR4E",
+          "message_id": 478,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/478",
+          "size_bytes": 2053378550
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAd1q8MXANrnyO52_S4_0K2EDMr7BnQACQyAAAueJiFc69AwTh70xxB4E",
+          "message_id": 477,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477",
+          "size_bytes": 1208732708
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
+          "size_bytes": 371660982
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-paradise-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-paradise-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T19:15:02Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T18:37:55Z"
+  "last_updated": "2026-11-08T19:15:03Z"
 };

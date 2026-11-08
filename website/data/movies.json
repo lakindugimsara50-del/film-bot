@@ -2046,7 +2046,255 @@
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T19:15:02Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "godzilla-tokyo-sos-2003",
+      "slug": "godzilla-tokyo-sos-2003",
+      "title": "Godzilla: Tokyo S.O.S.",
+      "title_si": "",
+      "year": 2003,
+      "imdb": "7.2",
+      "rating": "7.2",
+      "imdb_id": "tt0366526",
+      "tmdb_id": "39469",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/iwRJNFY9yvtPdu0DsTXOJ8sAap3.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/iwRJNFY9yvtPdu0DsTXOJ8sAap3.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/kRLox0vaEZfqXsuHhD3yXLlzWu5.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/kRLox0vaEZfqXsuHhD3yXLlzWu5.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KNrIPkAOsmc",
+      "trailer_id": "KNrIPkAOsmc",
+      "genres": [
+        "Action",
+        "Fantasy",
+        "Adventure",
+        "Science Fiction"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "91 min",
+      "description": "Mothra and her fairies return to Japan to warn mankind that they must return Kiryu to the sea, for the dead must not be disturbed. However Godzilla has survived to menace Japan leaving Kiryu as the nation's only defense.",
+      "director": "Masaaki Tezuka",
+      "cast": [
+        {
+          "name": "Noboru Kaneko",
+          "character": "Yoshito Chûjô"
+        },
+        {
+          "name": "Miho Yoshioka",
+          "character": "Pilot Azusa Kisaragi"
+        },
+        {
+          "name": "Mitzuki Koga",
+          "character": "Mechagodzilla Operator Kyôsuke Akiba"
+        },
+        {
+          "name": "Hiroshi Koizumi",
+          "character": "Dr. Shin'ichi Chûjô"
+        },
+        {
+          "name": "Tsutomu Kitagawa",
+          "character": "Gojira"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeNq8M_dbwAB3hrc3XP6fupTqmFiB90AAk4gAALniYhX_JfcFipfFQ0eBA",
+      "message_id": 483,
+      "file_name": "comp_godzilla-tokyo-sos-2003_1080p.mp4",
+      "file_size": 2044708579,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeNq8M_dbwAB3hrc3XP6fupTqmFiB90AAk4gAALniYhX_JfcFipfFQ0eBA",
+          "message_id": 483,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/39469"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt0366526"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt0366526"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/482",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2044708579,
+          "url": "https://t.me/c/4325759505/483",
+          "telegram_url": "https://t.me/c/4325759505/483",
+          "direct_url": "/stream/channel/-1004325759505/483?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeNq8M_dbwAB3hrc3XP6fupTqmFiB90AAk4gAALniYhX_JfcFipfFQ0eBA",
+          "message_id": 483,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1237845323,
+          "url": "https://t.me/c/4325759505/482",
+          "telegram_url": "https://t.me/c/4325759505/482",
+          "direct_url": "/stream/channel/-1004325759505/482?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeJq8MzxK9sKtJ8OAjEHbeszUqHbTQACTSAAAueJiFdWcBzq8zq2EB4E",
+          "message_id": 482,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/482",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "631.6 MB",
+          "size_bytes": 662277635,
+          "url": "https://t.me/c/4325759505/481",
+          "telegram_url": "https://t.me/c/4325759505/481",
+          "direct_url": "/stream/channel/-1004325759505/481?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeFq8Mya2FemyjtmaR7z4983bHWJDgACTCAAAueJiFft-YharwABmjEeBA",
+          "message_id": 481,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2044708579,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-tokyo-sos-2003_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1237845323,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-tokyo-sos-2003_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/482",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "631.6 MB",
+          "size_bytes": 662277635,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-tokyo-sos-2003_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "351.0 MB",
+          "size_bytes": 368047544,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-tokyo-sos-2003_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeNq8M_dbwAB3hrc3XP6fupTqmFiB90AAk4gAALniYhX_JfcFipfFQ0eBA",
+          "message_id": 483,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+          "size_bytes": 2044708579
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeJq8MzxK9sKtJ8OAjEHbeszUqHbTQACTSAAAueJiFdWcBzq8zq2EB4E",
+          "message_id": 482,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/482",
+          "size_bytes": 1237845323
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAeFq8Mya2FemyjtmaR7z4983bHWJDgACTCAAAueJiFft-YharwABmjEeBA",
+          "message_id": 481,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481",
+          "size_bytes": 662277635
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
+          "size_bytes": 368047544
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/godzilla-tokyo-sos-2003-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=godzilla-tokyo-sos-2003",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T19:39:23Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T19:15:03Z"
+  "last_updated": "2026-11-08T19:39:24Z"
 }

@@ -1213,7 +1213,252 @@
       "added_date": "2026-11-05",
       "added_at": "2026-11-05T10:57:27Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "siccîn-9-2026",
+      "slug": "siccîn-9-2026",
+      "title": "Siccîn 9",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "2.0",
+      "rating": "2.0",
+      "imdb_id": "tt42006709",
+      "tmdb_id": "1579138",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/A1dxZt7rY11CAWIa3iELNq6CdqU.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/A1dxZt7rY11CAWIa3iELNq6CdqU.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/zRHYYq5BQG4XdRjzSOonbZlmWkl.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/zRHYYq5BQG4XdRjzSOonbZlmWkl.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "91 min",
+      "description": "A mother's desperate cry to protect her child awakens an ancient, forbidden spell. As a horrific murder is concealed, the buried secret festers beneath the earth, transforming into a darker force. Years later, a mysterious death resurfaces the long-hidden sin: \"The Seal of Bloodline.\"",
+      "director": "Alper Mestçi",
+      "cast": [
+        {
+          "name": "Adnan Koç",
+          "character": "Orhan"
+        },
+        {
+          "name": "Özenç Eren Yelçi",
+          "character": ""
+        },
+        {
+          "name": "Burcu Almeman",
+          "character": ""
+        },
+        {
+          "name": "Nusret Şenay",
+          "character": ""
+        },
+        {
+          "name": "Ebru Soyuerden",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdZq8LuRCpLyV9kYQTtf0_d_qAgl5AACMyAAAueJiFcJa9vs1CcDuR4E",
+      "message_id": 470,
+      "file_name": "comp_siccîn-9-2026_1080p.mp4",
+      "file_size": 2028739917,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdZq8LuRCpLyV9kYQTtf0_d_qAgl5AACMyAAAueJiFcJa9vs1CcDuR4E",
+          "message_id": 470,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1579138"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt42006709"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt42006709"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/469",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2028739917,
+          "url": "https://t.me/c/4325759505/470",
+          "telegram_url": "https://t.me/c/4325759505/470",
+          "direct_url": "/stream/channel/-1004325759505/470?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdZq8LuRCpLyV9kYQTtf0_d_qAgl5AACMyAAAueJiFcJa9vs1CcDuR4E",
+          "message_id": 470,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1162427911,
+          "url": "https://t.me/c/4325759505/469",
+          "telegram_url": "https://t.me/c/4325759505/469",
+          "direct_url": "/stream/channel/-1004325759505/469?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdVq8LkC6N4iRv3fUayhOSJ9-wVeogACLiAAAueJiFfuEtdaVZKFkB4E",
+          "message_id": 469,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/469",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "595.2 MB",
+          "size_bytes": 624148429,
+          "url": "https://t.me/c/4325759505/468",
+          "telegram_url": "https://t.me/c/4325759505/468",
+          "direct_url": "/stream/channel/-1004325759505/468?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdRq8LjJskv5uYO18O-MwKqtpMRdrQACLCAAAueJiFdEa6ldWDCs9h4E",
+          "message_id": 468,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2028739917,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_siccîn-9-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1162427911,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_siccîn-9-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/469",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "595.2 MB",
+          "size_bytes": 624148429,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_siccîn-9-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "348.3 MB",
+          "size_bytes": 365173185,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_siccîn-9-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdZq8LuRCpLyV9kYQTtf0_d_qAgl5AACMyAAAueJiFcJa9vs1CcDuR4E",
+          "message_id": 470,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+          "size_bytes": 2028739917
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdVq8LkC6N4iRv3fUayhOSJ9-wVeogACLiAAAueJiFfuEtdaVZKFkB4E",
+          "message_id": 469,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/469",
+          "size_bytes": 1162427911
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdRq8LjJskv5uYO18O-MwKqtpMRdrQACLCAAAueJiFdEa6ldWDCs9h4E",
+          "message_id": 468,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468",
+          "size_bytes": 624148429
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
+          "size_bytes": 365173185
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/siccîn-9-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=siccîn-9-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T18:12:47Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-05T10:57:33Z"
+  "last_updated": "2026-11-08T18:12:49Z"
 }

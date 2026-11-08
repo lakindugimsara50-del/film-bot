@@ -3726,7 +3726,254 @@
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T23:06:59Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "tenzing-2026",
+      "slug": "tenzing-2026",
+      "title": "Tenzing",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.3",
+      "rating": "8.3",
+      "imdb_id": "tt6262770",
+      "tmdb_id": "1288069",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/eI0QW02PYqhnmIvLRdn9vrfVVP7.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/eI0QW02PYqhnmIvLRdn9vrfVVP7.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tKvVgMfM6GS4AGZn2KhP8bX1mJm.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tKvVgMfM6GS4AGZn2KhP8bX1mJm.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/KkYCY5YR12U",
+      "trailer_id": "KkYCY5YR12U",
+      "genres": [
+        "Drama",
+        "History",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "126 min",
+      "description": "A determined man embarks on a high-stakes quest—and defies seemingly impossible odds—to fulfill his dream of being the first to reach the summit of Mount Everest.",
+      "director": "Jennifer Peedom",
+      "cast": [
+        {
+          "name": "Genden Phuntsok",
+          "character": "Tenzing Norgay"
+        },
+        {
+          "name": "Tom Hiddleston",
+          "character": "Ed Hillary"
+        },
+        {
+          "name": "Willem Dafoe",
+          "character": "John Hunt"
+        },
+        {
+          "name": "Samdrup Dorje Lama",
+          "character": "Boy Tenzing (9 Yrs)"
+        },
+        {
+          "name": "Bhuchung Kata",
+          "character": "Sherpa"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf9q8QfIuC8YBITArYDqZe6LtaXTUgACeCAAAueJiFcYXMbZlqbIyx4E",
+      "message_id": 511,
+      "file_name": "comp_tenzing-2026_1080p.mp4",
+      "file_size": 2039022762,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf9q8QfIuC8YBITArYDqZe6LtaXTUgACeCAAAueJiFcYXMbZlqbIyx4E",
+          "message_id": 511,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1288069"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt6262770"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt6262770"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/510",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2039022762,
+          "url": "https://t.me/c/4325759505/511",
+          "telegram_url": "https://t.me/c/4325759505/511",
+          "direct_url": "/stream/channel/-1004325759505/511?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf9q8QfIuC8YBITArYDqZe6LtaXTUgACeCAAAueJiFcYXMbZlqbIyx4E",
+          "message_id": 511,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1617237361,
+          "url": "https://t.me/c/4325759505/510",
+          "telegram_url": "https://t.me/c/4325759505/510",
+          "direct_url": "/stream/channel/-1004325759505/510?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf5q8QSrpMH0np2UQplyTX1EWQa_hAACdyAAAueJiFdKUwoSKLh3jh4E",
+          "message_id": 510,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/510",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "824.0 MB",
+          "size_bytes": 864018222,
+          "url": "https://t.me/c/4325759505/509",
+          "telegram_url": "https://t.me/c/4325759505/509",
+          "direct_url": "/stream/channel/-1004325759505/509?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf1q8QPcj_bvNqxSNz2lH6SSjHPTjAACdSAAAueJiFelFwhJp4Zu0x4E",
+          "message_id": 509,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2039022762,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_tenzing-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1617237361,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_tenzing-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/510",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "824.0 MB",
+          "size_bytes": 864018222,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_tenzing-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "350.0 MB",
+          "size_bytes": 367024097,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_tenzing-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf9q8QfIuC8YBITArYDqZe6LtaXTUgACeCAAAueJiFcYXMbZlqbIyx4E",
+          "message_id": 511,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+          "size_bytes": 2039022762
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf5q8QSrpMH0np2UQplyTX1EWQa_hAACdyAAAueJiFdKUwoSKLh3jh4E",
+          "message_id": 510,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/510",
+          "size_bytes": 1617237361
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAf1q8QPcj_bvNqxSNz2lH6SSjHPTjAACdSAAAueJiFelFwhJp4Zu0x4E",
+          "message_id": 509,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509",
+          "size_bytes": 864018222
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
+          "size_bytes": 367024097
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/tenzing-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=tenzing-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T23:37:57Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T23:07:00Z"
+  "last_updated": "2026-11-08T23:37:58Z"
 }

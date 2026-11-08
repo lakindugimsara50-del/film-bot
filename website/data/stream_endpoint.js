@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://generate-erp-matrix-recycling.trycloudflare.com",
+  "stream_base_url": "https://car-pix-envelope-reach.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-08T17:48:59.685131+00:00",
+  "updated_at": "2026-11-08T19:39:04.957408+00:00",
   "status": "online"
 };

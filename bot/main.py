@@ -17,6 +17,12 @@ _bot_dir = os.path.dirname(os.path.abspath(__file__))
 if _bot_dir not in sys.path:
     sys.path.insert(0, _bot_dir)
 
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except Exception:
+    pass
+
 import pyrogram.utils
 pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
 pyrogram.utils.MIN_CHAT_ID = -999999999999

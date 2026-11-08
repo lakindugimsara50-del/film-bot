@@ -3278,7 +3278,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-08",
       "added_at": "2026-11-08T21:34:31Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "ranabaali-2026",
+      "slug": "ranabaali-2026",
+      "title": "Ranabaali",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "4.7",
+      "rating": "4.7",
+      "imdb_id": "tt32324552",
+      "tmdb_id": "1389379",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/cXaCyYYbafVyMrs8rwKmxezBYPJ.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/cXaCyYYbafVyMrs8rwKmxezBYPJ.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/xpImgnsxuqb3VOp0QRtXTS5uBRi.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/xpImgnsxuqb3VOp0QRtXTS5uBRi.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/4AejYUbJiDs",
+      "trailer_id": "4AejYUbJiDs",
+      "genres": [
+        "History",
+        "Action",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "179 min",
+      "description": "Set in 19th-century British India, a fierce leader rises from a drought-stricken land to fight colonial oppression and atrocities.",
+      "director": "Rahul Sankrityan",
+      "cast": [
+        {
+          "name": "Vijay Deverakonda",
+          "character": "Singanamala Bobbili Ranabaali"
+        },
+        {
+          "name": "Rashmika Mandanna",
+          "character": "Jayamma"
+        },
+        {
+          "name": "Arnold Vosloo",
+          "character": "Sir Theodore Hector"
+        },
+        {
+          "name": "Easwari Rao",
+          "character": "Ranabaali's mother"
+        },
+        {
+          "name": "Vinod Sagar",
+          "character": "Easwar"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfdq8PhuMrELQFe9cvULrGLm00M7bQACbSAAAueJiFffsl9SvnQ3Uh4E",
+      "message_id": 503,
+      "file_name": "comp_ranabaali-2026_1080p.mp4",
+      "file_size": 2045890824,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfdq8PhuMrELQFe9cvULrGLm00M7bQACbSAAAueJiFffsl9SvnQ3Uh4E",
+          "message_id": 503,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1389379"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32324552"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32324552"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/502",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2045890824,
+          "url": "https://t.me/c/4325759505/503",
+          "telegram_url": "https://t.me/c/4325759505/503",
+          "direct_url": "/stream/channel/-1004325759505/503?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfdq8PhuMrELQFe9cvULrGLm00M7bQACbSAAAueJiFffsl9SvnQ3Uh4E",
+          "message_id": 503,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1977574626,
+          "url": "https://t.me/c/4325759505/502",
+          "telegram_url": "https://t.me/c/4325759505/502",
+          "direct_url": "/stream/channel/-1004325759505/502?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfZq8PasxHhYz-aBhP3QW9XOrB4LrQACbCAAAueJiFehujHMWMEKex4E",
+          "message_id": 502,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/502",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1197426447,
+          "url": "https://t.me/c/4325759505/501",
+          "telegram_url": "https://t.me/c/4325759505/501",
+          "direct_url": "/stream/channel/-1004325759505/501?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfVq8PKGvM1541ubXAOCDDnBkUhpDwACayAAAueJiFe6QPB5cnUwuR4E",
+          "message_id": 501,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2045890824,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ranabaali-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1977574626,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ranabaali-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/502",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1197426447,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ranabaali-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "351.2 MB",
+          "size_bytes": 368260348,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ranabaali-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfdq8PhuMrELQFe9cvULrGLm00M7bQACbSAAAueJiFffsl9SvnQ3Uh4E",
+          "message_id": 503,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+          "size_bytes": 2045890824
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfZq8PasxHhYz-aBhP3QW9XOrB4LrQACbCAAAueJiFehujHMWMEKex4E",
+          "message_id": 502,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/502",
+          "size_bytes": 1977574626
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAfVq8PKGvM1541ubXAOCDDnBkUhpDwACayAAAueJiFe6QPB5cnUwuR4E",
+          "message_id": 501,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501",
+          "size_bytes": 1197426447
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
+          "size_bytes": 368260348
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ranabaali-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=ranabaali-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T22:32:28Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T21:34:32Z"
+  "last_updated": "2026-11-08T22:32:29Z"
 };

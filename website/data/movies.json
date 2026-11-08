@@ -1552,7 +1552,255 @@
       "added_at": "2026-11-08T18:24:18Z",
       "added_by": "bot_find",
       "added_date": "2026-11-08"
+    },
+    {
+      "id": "ghost-in-the-cell-2026",
+      "slug": "ghost-in-the-cell-2026",
+      "title": "Ghost in the Cell",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.8",
+      "rating": "6.8",
+      "imdb_id": "tt9000310",
+      "tmdb_id": "1393326",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/zxcMdx0w5Zmg8yZuuiS7CJ8vOea.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/zxcMdx0w5Zmg8yZuuiS7CJ8vOea.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tK3QdOOrX4qEkmSlvrmc8cK7iOU.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tK3QdOOrX4qEkmSlvrmc8cK7iOU.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/otL78_pk_A0",
+      "trailer_id": "otL78_pk_A0",
+      "genres": [
+        "Horror",
+        "Comedy",
+        "Thriller",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "106 min",
+      "description": "In a notorious prison, an invisible force begins killing inmates brutally, compelling enemy gangs and corrupt guards to work together as they try to survive the mounting bloodshed.",
+      "director": "Joko Anwar",
+      "cast": [
+        {
+          "name": "Abimana Aryasatya",
+          "character": "Anggoro"
+        },
+        {
+          "name": "Almanzo Konoralma",
+          "character": "Buki"
+        },
+        {
+          "name": "Aming",
+          "character": "Tokek"
+        },
+        {
+          "name": "Arswendy Bening Swara",
+          "character": "Prakasa"
+        },
+        {
+          "name": "Bront Palarae",
+          "character": "Jefri"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdtq8MF7rhvdf3mVqDFu8mTJdeuZsQACPSAAAueJiFe03JqiunH2cB4E",
+      "message_id": 475,
+      "file_name": "comp_ghost-in-the-cell-2026_1080p.mp4",
+      "file_size": 2038192253,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdtq8MF7rhvdf3mVqDFu8mTJdeuZsQACPSAAAueJiFe03JqiunH2cB4E",
+          "message_id": 475,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1393326"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt9000310"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt9000310"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/474",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2038192253,
+          "url": "https://t.me/c/4325759505/475",
+          "telegram_url": "https://t.me/c/4325759505/475",
+          "direct_url": "/stream/channel/-1004325759505/475?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdtq8MF7rhvdf3mVqDFu8mTJdeuZsQACPSAAAueJiFe03JqiunH2cB4E",
+          "message_id": 475,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1381769153,
+          "url": "https://t.me/c/4325759505/474",
+          "telegram_url": "https://t.me/c/4325759505/474",
+          "direct_url": "/stream/channel/-1004325759505/474?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdpq8L7ZkPzm5zc5Eti6vqahjXObcAACOCAAAueJiFd7Kaj5kCDYjx4E",
+          "message_id": 474,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/474",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "705.9 MB",
+          "size_bytes": 740231253,
+          "url": "https://t.me/c/4325759505/473",
+          "telegram_url": "https://t.me/c/4325759505/473",
+          "direct_url": "/stream/channel/-1004325759505/473?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdlq8L57krngI7yjqHRd1Ig91B3RpwACNSAAAueJiFcQ1aAD0mQlIh4E",
+          "message_id": 473,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2038192253,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ghost-in-the-cell-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1381769153,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ghost-in-the-cell-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/474",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "705.9 MB",
+          "size_bytes": 740231253,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ghost-in-the-cell-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "349.9 MB",
+          "size_bytes": 366874605,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ghost-in-the-cell-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdtq8MF7rhvdf3mVqDFu8mTJdeuZsQACPSAAAueJiFe03JqiunH2cB4E",
+          "message_id": 475,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+          "size_bytes": 2038192253
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdpq8L7ZkPzm5zc5Eti6vqahjXObcAACOCAAAueJiFd7Kaj5kCDYjx4E",
+          "message_id": 474,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/474",
+          "size_bytes": 1381769153
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAdlq8L57krngI7yjqHRd1Ig91B3RpwACNSAAAueJiFcQ1aAD0mQlIh4E",
+          "message_id": 473,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473",
+          "size_bytes": 740231253
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
+          "size_bytes": 366874605
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ghost-in-the-cell-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=ghost-in-the-cell-2026",
+      "added_date": "2026-11-08",
+      "added_at": "2026-11-08T18:37:54Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-08T18:24:19Z"
+  "last_updated": "2026-11-08T18:37:55Z"
 }

@@ -220,7 +220,7 @@ def build_branded_inline_keyboard(
         watch_url = f"{site_base}/movie.html?id={slug}"
     else:
         watch_url = site_base
-    channel_url = f"https://t.me/{bot_user}?start=channel"
+    channel_url = getattr(config, "PUBLIC_CHANNEL_LINK", "") or f"https://t.me/{bot_user}?start=channel"
     bot_url = f"https://t.me/{bot_user}"
     help_url = f"https://t.me/{bot_user}?start=help"
     admin_url = f"https://t.me/{bot_user}?start=admin"

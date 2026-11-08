@@ -427,16 +427,97 @@ async def deliver_movie_quality(client: Client, chat_id: int, slug: str, quality
 async def start_handler(client: Client, message: Message) -> None:
     """Greet new users or route /start dl_<slug>_<quality> deep links."""
     command_parts = message.command
-    if len(command_parts) > 1 and command_parts[1].startswith("dl_"):
-        param = command_parts[1][3:].strip()
-        req_q = None
-        for q_cand in ["1080p", "720p", "480p", "360p"]:
-            if param.lower().endswith(f"_{q_cand.lower()}"):
-                req_q = q_cand
-                param = param[:-len(f"_{q_cand.lower()}")]
-                break
-        await deliver_movie_quality(client, message.chat.id, param, req_q)
-        return
+    if len(command_parts) > 1:
+        param = command_parts[1].strip()
+        if param.startswith("dl_"):
+            param_slug = param[3:].strip()
+            req_q = None
+            for q_cand in ["1080p", "720p", "480p", "360p"]:
+                if param_slug.lower().endswith(f"_{q_cand.lower()}"):
+                    req_q = q_cand
+                    param_slug = param_slug[:-len(f"_{q_cand.lower()}")]
+                    break
+            await deliver_movie_quality(client, message.chat.id, param_slug, req_q)
+            return
+        elif param.lower() == "channel":
+            site_base = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+            ch_url = getattr(config, "PUBLIC_CHANNEL_LINK", "")
+            if not ch_url:
+                pub_ch = getattr(config, "PUBLIC_CHANNEL_ID", 0)
+                if pub_ch:
+                    try:
+                        ch_obj = await client.get_chat(pub_ch)
+                        if getattr(ch_obj, "username", None):
+                            ch_url = f"https://t.me/{ch_obj.username}"
+                        elif getattr(ch_obj, "invite_link", None):
+                            ch_url = ch_obj.invite_link
+                    except Exception:
+                        pass
+            if not ch_url:
+                ch_url = f"https://t.me/c/{str(abs(int(getattr(config, 'PUBLIC_CHANNEL_ID', -1004301214474))))[3:]}"
+
+            ch_kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("📢 Join Official Channel", url=ch_url)],
+                [InlineKeyboardButton("🌐 Visit Website (Watch Online)", url=site_base)],
+            ])
+            await message.reply_text(
+                "📢 <b>FilmZilla Official Cinema Channel</b> 🎬\n\n"
+                "අපගේ නිල Telegram නාලිකාවට සම්බන්ධ වී අලුත්ම චිත්‍රපට සහ TV කතාමාලා සිංහල උපසිරැසි සමඟ එසැනින් ලබාගන්න!\n\n"
+                "• ⚡ 1080p Full HD & 720p HD\n"
+                "• 💬 Sinhala Subtitles Merged\n"
+                "• ☁️ Ultra-Fast Direct Streaming",
+                parse_mode=ParseMode.HTML,
+                reply_markup=ch_kb,
+                disable_web_page_preview=True,
+            )
+            return
+        elif param.lower() in ("help", "support"):
+            await help_handler(client, message)
+            return
+        elif param.lower() == "admin":
+            user_id = message.from_user.id if message.from_user else 0
+            is_admin = user_id in getattr(config, "ADMIN_IDS", [])
+            site_base = (config.SITE_BASE_URL or "https://filmsub.pages.dev").rstrip("/")
+            if is_admin:
+                admin_kb = InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("📊 Live Status", callback_data="btn:status_refresh"),
+                        InlineKeyboardButton("📂 Drafts", callback_data="drafts:list"),
+                    ],
+                    [
+                        InlineKeyboardButton("☁️ Drives Quota", callback_data="btn:drives"),
+                        InlineKeyboardButton("📋 Download Queue", callback_data="btn:queue"),
+                    ],
+                    [
+                        InlineKeyboardButton("🕷 Crawler Control", callback_data="crawl:status"),
+                        InlineKeyboardButton("🌐 Visit Website", url=site_base),
+                    ],
+                ])
+                await message.reply_text(
+                    "👑 <b>FilmZilla Admin Control Panel</b> ⚙️\n\n"
+                    "ඔබ FilmZilla Bot හි බලයලත් පරිපාලකයෙකි (Authorized Admin).\n\n"
+                    "පහත බොත්තම් හෝ විධාන මඟින් පද්ධතිය කළමනාකරණය කරන්න:\n"
+                    "• <code>/status</code> — පද්ධතියේ සහ සර්වර් සජීවී තත්ත්වය\n"
+                    "• <code>/drafts</code> — Draft ලැයිස්තුව සහ Publish කිරීම\n"
+                    "• <code>/crawl status</code> — CineSubz Harvester තත්ත්වය\n"
+                    "• <code>/gr status</code> — GPU, RAM, Disk සම්පත්",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=admin_kb,
+                )
+            else:
+                user_admin_kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💬 Join Discussion Group", url=getattr(config, "SUPPORT_CHAT_LINK", site_base) or site_base)],
+                    [InlineKeyboardButton("🌐 FilmZilla Website", url=site_base)],
+                ])
+                await message.reply_text(
+                    "👤 <b>FilmZilla Customer Support & Administration</b>\n\n"
+                    "ඔබට කිසියම් චිත්‍රපටයක් අවශ්‍ය නම් (Film Request) හෝ තාක්ෂණික ගැටළුවක් ඇත්නම්, "
+                    "අපගේ සහාය කණ්ඩායම හෝ පරිපාලකවරයා සම්බන්ධ කරගන්න.\n\n"
+                    "<i>Film Request කිරීමට Bot වෙත <code>/leech &lt;චිත්‍රපටයේ නම&gt;</code> ලෙස එවන්න.</i>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=user_admin_kb,
+                )
+            return
 
     user_name = message.from_user.first_name if message.from_user else "යාලුවා"
     site_base = (config.SITE_BASE_URL or "https://filmzilla.lk").rstrip("/")

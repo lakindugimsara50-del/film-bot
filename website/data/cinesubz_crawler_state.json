@@ -4,9 +4,9 @@
   "max_movie_pages": 0,
   "current_tv_page": 0,
   "max_tv_pages": 0,
-  "total_scraped": 0,
+  "total_scraped": 50,
   "total_skipped": 0,
   "total_queued": 0,
   "last_completed_item": "None",
-  "updated_at": 0
+  "updated_at": 1794151607.8327053
 }

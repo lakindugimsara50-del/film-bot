@@ -4084,3 +4084,60 @@ main > .section:first-of-type {
   contain-intrinsic-size: 1px 400px;
 }
 
+
+/* ============================================================
+   Live In-Player Buffer Badge & Percentage Indicator
+   ============================================================ */
+.player-buffer-badge {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(18, 18, 24, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.35s ease, transform 0.35s ease, background 0.3s ease;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+}
+.player-buffer-badge.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.player-buffer-badge.healthy {
+  opacity: 0.45;
+  background: rgba(18, 18, 24, 0.45);
+}
+.player-buffer-badge:hover,
+.video-js:hover .player-buffer-badge {
+  opacity: 0.95;
+}
+.player-buffer-badge .buffer-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e50914;
+  box-shadow: 0 0 8px #e50914;
+  animation: bufferPulseAnim 1.4s infinite ease-in-out;
+}
+.player-buffer-badge.healthy .buffer-dot {
+  background: #46d369;
+  box-shadow: 0 0 8px #46d369;
+  animation: none;
+}
+@keyframes bufferPulseAnim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}

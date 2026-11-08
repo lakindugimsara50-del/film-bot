@@ -380,7 +380,7 @@ def register(app: Client) -> None:
     # 3. Callback Queries (Inline Button Clicks)
     # ─────────────────────────────────────────────────────────────────────────
 
-    @app.on_callback_query(filters.regex(r"^wiz:"))
+    @app.on_callback_query(filters.regex(r"^(wiz:|drafts?:)"))
     async def wizard_callbacks(client: Client, query: CallbackQuery) -> None:
         data = query.data
         user_id = query.from_user.id

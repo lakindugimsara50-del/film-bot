@@ -1,3 +1,35 @@
+
+function updateSocialMetaTags(movie) {
+  if (!movie) return;
+  const isSeries = movie.type === 'series' || currentSeason > 1 || currentEpisode > 1;
+  const title = isSeries
+    ? `${movie.title || 'Series'} S${String(currentSeason || 1).padStart(2, '0')}E${String(currentEpisode || 1).padStart(2, '0')} Sinhala Subtitles – FilmZilla`
+    : `${movie.title || 'Movie'} (${movie.year || ''}) Sinhala Subtitles – FilmZilla`;
+  const desc = movie.description || movie.description_si || `Watch ${movie.title} with Sinhala Subtitles on FilmZilla. High-Speed 1080p FHD & 720p HD streaming.`;
+  const img = movie.backdrop || movie.poster || 'https://filmsub.pages.dev/assets/img/filmzilla_icon.png';
+  const url = window.location.href;
+
+  const setMeta = (selector, attr, val) => {
+    let el = document.querySelector(selector);
+    if (!el) {
+      el = document.createElement('meta');
+      const parts = selector.replace(/[\[\]"]/g, '').split('=');
+      if (parts.length === 2) el.setAttribute(parts[0], parts[1]);
+      document.head.appendChild(el);
+    }
+    el.setAttribute(attr, val);
+  };
+
+  setMeta('meta[property="og:title"]', 'content', title);
+  setMeta('meta[property="og:description"]', 'content', desc);
+  setMeta('meta[property="og:image"]', 'content', img);
+  setMeta('meta[property="og:url"]', 'content', url);
+  setMeta('meta[name="twitter:title"]', 'content', title);
+  setMeta('meta[name="twitter:description"]', 'content', desc);
+  setMeta('meta[name="twitter:image"]', 'content', img);
+  setMeta('meta[name="description"]', 'content', desc);
+}
+
 /* ============================================================
    FilmSub – player.js | Netflix Super Player v2.0
    ============================================================
@@ -635,6 +667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.title = `${currentMovie.title || 'Movie'} (${currentMovie.year || ''}) Sinhala Subtitles – FilmSub`;
   }
 
+  updateSocialMetaTags(currentMovie);
   renderBreadcrumb(currentMovie);
   renderPageHeader(currentMovie);
   renderServerTabs(currentMovie);
@@ -3599,21 +3632,74 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
       }
     });
 
+    const updateBufferMetrics = () => {
+      try {
+        const tech = vjsPlayer && vjsPlayer.tech({ IWillNotUseThisInPlugins: true });
+        const videoEl = tech && tech.el();
+        if (!videoEl || !videoEl.buffered || !videoEl.buffered.length) return;
+        const curT = videoEl.currentTime || 0;
+        let bufferedAhead = 0;
+        let bufferedEnd = 0;
+        for (let i = 0; i < videoEl.buffered.length; i++) {
+          const s = videoEl.buffered.start(i);
+          const e = videoEl.buffered.end(i);
+          if (s <= curT && curT <= e) {
+            bufferedAhead = e - curT;
+          }
+          if (e > bufferedEnd) bufferedEnd = e;
+        }
+        const dur = videoEl.duration || vjsPlayer.duration() || 0;
+        if (dur > 0 && bufferedEnd > 0) {
+          const pct = Math.min(100, Math.max(1, Math.round((bufferedEnd / dur) * 100)));
+          const badgeEl = document.getElementById('player-buffer-badge');
+          const pctEl = document.getElementById('player-buffer-pct');
+          if (badgeEl && pctEl) {
+            badgeEl.classList.add('visible');
+            pctEl.textContent = `Buffer: ${pct}%`;
+            if (bufferedAhead > 35 && !vjsPlayer.paused()) {
+              badgeEl.classList.add('healthy');
+            } else {
+              badgeEl.classList.remove('healthy');
+            }
+          }
+          updatePlayerLoadPercent(Math.max(currentLoadPercent, pct), '📥 Buffering Stream & Sinhala Subtitles...', `Buffer: ${pct}%`);
+        }
+      } catch (e) {}
+    };
+
+    vjsPlayer.on('progress', updateBufferMetrics);
+    vjsPlayer.on('timeupdate', updateBufferMetrics);
+    vjsPlayer.on('waiting', () => {
+      const badgeEl = document.getElementById('player-buffer-badge');
+      if (badgeEl) {
+        badgeEl.classList.add('visible');
+        badgeEl.classList.remove('healthy');
+      }
+      updateBufferMetrics();
+    });
+
     vjsPlayer.on('loadedmetadata', () => {
-      finishProgressAnimation();
       syncSubtitles();
+      updateBufferMetrics();
     });
 
-    vjsPlayer.on('loadeddata', finishProgressAnimation);
-    vjsPlayer.on('canplay', finishProgressAnimation);
-    vjsPlayer.on('canplaythrough', finishProgressAnimation);
+    vjsPlayer.on('loadeddata', updateBufferMetrics);
+    vjsPlayer.on('canplay', () => {
+      updateBufferMetrics();
+      finishProgressAnimation();
+    });
+    vjsPlayer.on('canplaythrough', () => {
+      updateBufferMetrics();
+      finishProgressAnimation();
+    });
     vjsPlayer.on('playing', () => {
+      updateBufferMetrics();
       finishProgressAnimation();
       syncSubtitles();
     });
 
-    // Safety fallback: Ensure loader fades out after at most 2.4s so big play button is always visible
-    setTimeout(finishProgressAnimation, 2400);
+    // Safety fallback: Ensure loader fades out after at most 5s if playback is already active
+    setTimeout(finishProgressAnimation, 5000);
 
     // Auto-landscape orientation on mobile devices during fullscreen
     vjsPlayer.on('fullscreenchange', () => {

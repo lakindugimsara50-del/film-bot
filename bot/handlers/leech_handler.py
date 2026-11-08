@@ -485,13 +485,17 @@ def register(app: Client) -> None:
 
     @app.on_callback_query(filters.regex(r"^btn:"))
     async def btn_callback_handler(client: Client, query: CallbackQuery) -> None:
+        action = query.data.split(":", 1)[-1]
+        if action not in ("cancel_active", "queue", "status_refresh", "leech_prompt"):
+            query.continue_propagation()
+            return
+
         user_id = query.from_user.id if query.from_user else 0
         username = query.from_user.username if query.from_user else ""
         if not auth_service.is_authorized(user_id, username):
             await query.answer("Unauthorized.", show_alert=True)
             return
 
-        action = query.data.split(":", 1)[-1]
         from services.queue_service import queue_service
 
         if action == "cancel_active":

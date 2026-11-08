@@ -69,6 +69,8 @@ ADMIN_IDS: list[int] = (
 PRIVATE_CHANNEL_ID: int = int(os.getenv("PRIVATE_CHANNEL_ID", "-1004325759505"))
 # PUBLIC_CHANNEL: where movie announcements are posted
 PUBLIC_CHANNEL_ID: int = int(os.getenv("PUBLIC_CHANNEL_ID", "-1004301214474"))
+PUBLIC_CHANNEL_LINK: str = os.getenv("PUBLIC_CHANNEL_LINK", "").strip()
+SUPPORT_CHAT_LINK: str = os.getenv("SUPPORT_CHAT_LINK", "").strip()
 
 # ── External APIs ────────────────────────────────────────────────────────────
 # The Movie Database — https://www.themoviedb.org/settings/api

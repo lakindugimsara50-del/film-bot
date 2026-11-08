@@ -592,13 +592,13 @@ _CACHED_HW_ENCODER: Optional[str] = None
 
 def setup_colab_cuda_ffmpeg() -> bool:
     """
-    On Google Colab GPU runtimes, heal FFmpeg if /usr/local/bin/ffmpeg or /usr/bin/ffmpeg
+    On Google Colab / Kaggle GPU runtimes, heal FFmpeg if /usr/local/bin/ffmpeg or /usr/bin/ffmpeg
     was overwritten by BtbN 'ffmpeg-master-latest' (which requires NVENC API 13.0 / Driver 570+,
     failing on Colab's T4 Driver 535/550). Restores Ubuntu's native NVENC-compatible /usr/bin/ffmpeg
     or BtbN n6.1 so h264_nvenc works 100%.
     """
     global _PREFERRED_FFMPEG_BIN
-    if not os.path.exists("/content"):
+    if not (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))):
         return False
 
     local_bin = "/usr/local/bin/ffmpeg"
@@ -704,7 +704,7 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
         exe = get_ffmpeg_binary()
         if exe:
             candidates.append(exe)
-    for extra in ("/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"):
+    for extra in ("/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/conda/bin/ffmpeg"):
         if extra not in candidates and os.path.exists(extra):
             candidates.append(extra)
 

@@ -590,29 +590,32 @@ function getHeroSpotlightList() {
   const eligible = catalog.filter(m => Boolean(m.backdrop || m.backdrop_url || m.poster || m.poster_url));
   const pool = eligible.length > 0 ? eligible : [...catalog];
 
-  // 2. Score movies to automatically pick the BEST and NEWEST movies for the Hero Banner!
+  // 2. Score movies to automatically place newly uploaded films at the top of the Hero Banner!
   const scored = pool.map(m => {
     let score = 0;
-    if (m.featured) score += 1000;
-    if (m.trending) score += 500;
 
-    // Newer release year gets higher priority (e.g. 2026 -> +20260, 2025 -> +20250)
+    // Recency of upload is #1 priority: newly uploaded films automatically get top spot on Hero Banner!
+    const addedTime = m.added_at ? new Date(m.added_at).getTime() : (m.added_date ? new Date(m.added_date).getTime() : 0);
+    if (addedTime > 0) {
+      score += (addedTime / 1000000); // Higher upload timestamp = higher priority
+    }
+
+    if (m.featured) score += 500;
+    if (m.trending) score += 200;
+
+    // Release year bonus as secondary tie-breaker
     const yr = Number(m.year) || 2020;
-    score += yr * 10;
+    score += (yr - 2000) * 2;
 
-    // IMDb rating bonus (e.g. 8.5 -> +85)
+    // IMDb rating bonus
     const imdb = parseFloat(m.imdb || m.rating || 0);
-    if (!isNaN(imdb) && imdb > 0) score += imdb * 10;
+    if (!isNaN(imdb) && imdb > 0) score += imdb * 5;
 
     // High-res backdrop bonus
     if (m.backdrop || m.backdrop_url) score += 50;
 
     // Trailer bonus
     if (m.trailer_id || m.trailer_url) score += 30;
-
-    // Recency of addition
-    const addedTime = m.added_at ? new Date(m.added_at).getTime() : (m.added_date ? new Date(m.added_date).getTime() : 0);
-    if (addedTime > 0) score += (addedTime / 1e12);
 
     return { movie: m, score };
   });

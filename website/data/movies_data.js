@@ -6191,7 +6191,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T03:39:04Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "apocalypse-z-new-world-2026",
+      "slug": "apocalypse-z-new-world-2026",
+      "title": "Apocalypse Z: New World",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.1",
+      "rating": "6.1",
+      "imdb_id": "tt37522541",
+      "tmdb_id": "1507696",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/wXln4DUrwcyjcFPwgQxFPYTlG1Z.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/wXln4DUrwcyjcFPwgQxFPYTlG1Z.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/o3XwuDUj0n8qnK91p6q8LKfr6rj.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/o3XwuDUj0n8qnK91p6q8LKfr6rj.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/BIEzwpyawtw",
+      "trailer_id": "BIEzwpyawtw",
+      "genres": [
+        "Action",
+        "Thriller",
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "96 min",
+      "description": "The Canary Islands have become Europe’s last refuge following the outbreak of the TSJ virus. When a special mission sets out for the mainland in search of vital supplies, Roberto joins the team with questionable intentions. The dangerous operation turns into a desperate race for survival, and Roberto and his companions find themselves caught between hordes of infected and divided loyalties.",
+      "director": "Carles Torrens",
+      "cast": [
+        {
+          "name": "Carlos Alcaide",
+          "character": "Roberto"
+        },
+        {
+          "name": "Julia Martínez",
+          "character": "Marina"
+        },
+        {
+          "name": "José María Yázpik",
+          "character": "Pritchenko"
+        },
+        {
+          "name": "Mónica López",
+          "character": "Castro"
+        },
+        {
+          "name": "Tamara Casellas",
+          "character": "Comillas"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAidq8Uh2H60qIMZAkezp1JO6O9VFEAAC-SAAAueJiFf54Ycmv71Wqx4E",
+      "message_id": 551,
+      "file_name": "comp_apocalypse-z-new-world-2026_1080p.mp4",
+      "file_size": 2003501475,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAidq8Uh2H60qIMZAkezp1JO6O9VFEAAC-SAAAueJiFf54Ycmv71Wqx4E",
+          "message_id": 551,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1507696"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt37522541"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt37522541"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/550",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2003501475,
+          "url": "https://t.me/c/4325759505/551",
+          "telegram_url": "https://t.me/c/4325759505/551",
+          "direct_url": "/stream/channel/-1004325759505/551?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAidq8Uh2H60qIMZAkezp1JO6O9VFEAAC-SAAAueJiFf54Ycmv71Wqx4E",
+          "message_id": 551,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1230325000,
+          "url": "https://t.me/c/4325759505/550",
+          "telegram_url": "https://t.me/c/4325759505/550",
+          "direct_url": "/stream/channel/-1004325759505/550?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAiZq8URNOsoDi1YG4jflVfAhynfcYwAC9CAAAueJiFeHjcmJClcPXx4E",
+          "message_id": 550,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/550",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "630.8 MB",
+          "size_bytes": 661413793,
+          "url": "https://t.me/c/4325759505/549",
+          "telegram_url": "https://t.me/c/4325759505/549",
+          "direct_url": "/stream/channel/-1004325759505/549?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAiVq8UNAT4RvAAHBXnAvZ1NTtZaaRvAAAvMgAALniYhXUL1CDa4tUtUeBA",
+          "message_id": 549,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2003501475,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_apocalypse-z-new-world-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1230325000,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_apocalypse-z-new-world-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/550",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "630.8 MB",
+          "size_bytes": 661413793,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_apocalypse-z-new-world-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "343.9 MB",
+          "size_bytes": 360630265,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_apocalypse-z-new-world-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAidq8Uh2H60qIMZAkezp1JO6O9VFEAAC-SAAAueJiFf54Ycmv71Wqx4E",
+          "message_id": 551,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+          "size_bytes": 2003501475
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAiZq8URNOsoDi1YG4jflVfAhynfcYwAC9CAAAueJiFeHjcmJClcPXx4E",
+          "message_id": 550,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/550",
+          "size_bytes": 1230325000
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAiVq8UNAT4RvAAHBXnAvZ1NTtZaaRvAAAvMgAALniYhXUL1CDa4tUtUeBA",
+          "message_id": 549,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549",
+          "size_bytes": 661413793
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
+          "size_bytes": 360630265
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/apocalypse-z-new-world-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=apocalypse-z-new-world-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T04:13:56Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T03:39:05Z"
+  "last_updated": "2026-11-09T04:13:57Z"
 };

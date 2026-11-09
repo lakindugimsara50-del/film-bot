@@ -5451,7 +5451,252 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T02:18:27Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "never-after-dark-2026",
+      "slug": "never-after-dark-2026",
+      "title": "Never After Dark",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.1",
+      "rating": "7.1",
+      "imdb_id": "tt38589433",
+      "tmdb_id": "1629051",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/mkqCzIeHgnTSyF1fW6Pkq8kfdJE.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/mkqCzIeHgnTSyF1fW6Pkq8kfdJE.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/o73vpmtXq89bfSUMcAulLVN4TKP.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/o73vpmtXq89bfSUMcAulLVN4TKP.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/fu33xTw654A",
+      "trailer_id": "fu33xTw654A",
+      "genres": [
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "104 min",
+      "description": "A traveling psychic who helps lost souls cross over encounters a powerful entity at a remote house. While investigating its origins, she uncovers dark secrets and faces a deadly threat from an unexpected source.",
+      "director": "Dave Boyle",
+      "cast": [
+        {
+          "name": "Moeka Hoshi",
+          "character": "Airi"
+        },
+        {
+          "name": "Kurumi Inagaki",
+          "character": "Miku"
+        },
+        {
+          "name": "Kento Kaku",
+          "character": "Gunji"
+        },
+        {
+          "name": "Tae Kimura",
+          "character": "Teiko"
+        },
+        {
+          "name": "Mutsuo Yoshioka",
+          "character": "Mysterious Man"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhtq8TI6a8loxx0UEMcx3mcJPrMAAWcAAsMgAALniYhXAVgRa9Nt9W4eBA",
+      "message_id": 539,
+      "file_name": "comp_never-after-dark-2026_1080p.mp4",
+      "file_size": 1996936697,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhtq8TI6a8loxx0UEMcx3mcJPrMAAWcAAsMgAALniYhXAVgRa9Nt9W4eBA",
+          "message_id": 539,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1629051"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt38589433"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt38589433"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/538",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1996936697,
+          "url": "https://t.me/c/4325759505/539",
+          "telegram_url": "https://t.me/c/4325759505/539",
+          "direct_url": "/stream/channel/-1004325759505/539?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhtq8TI6a8loxx0UEMcx3mcJPrMAAWcAAsMgAALniYhXAVgRa9Nt9W4eBA",
+          "message_id": 539,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1232649010,
+          "url": "https://t.me/c/4325759505/538",
+          "telegram_url": "https://t.me/c/4325759505/538",
+          "direct_url": "/stream/channel/-1004325759505/538?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhpq8TFY--likvgKdjmhGWEVko3o0AACwiAAAueJiFcj6q8GlIFcMx4E",
+          "message_id": 538,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/538",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "617.1 MB",
+          "size_bytes": 647055307,
+          "url": "https://t.me/c/4325759505/537",
+          "telegram_url": "https://t.me/c/4325759505/537",
+          "direct_url": "/stream/channel/-1004325759505/537?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhlq8TBePU2MbQRMVsnwsO8eLWZkUwACwCAAAueJiFf4Hdc0mDou4h4E",
+          "message_id": 537,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1996936697,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_never-after-dark-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1232649010,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_never-after-dark-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/538",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "617.1 MB",
+          "size_bytes": 647055307,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_never-after-dark-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "342.8 MB",
+          "size_bytes": 359448605,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_never-after-dark-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhtq8TI6a8loxx0UEMcx3mcJPrMAAWcAAsMgAALniYhXAVgRa9Nt9W4eBA",
+          "message_id": 539,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+          "size_bytes": 1996936697
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhpq8TFY--likvgKdjmhGWEVko3o0AACwiAAAueJiFcj6q8GlIFcMx4E",
+          "message_id": 538,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/538",
+          "size_bytes": 1232649010
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhlq8TBePU2MbQRMVsnwsO8eLWZkUwACwCAAAueJiFf4Hdc0mDou4h4E",
+          "message_id": 537,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537",
+          "size_bytes": 647055307
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
+          "size_bytes": 359448605
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/never-after-dark-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=never-after-dark-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T02:39:04Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T02:18:28Z"
+  "last_updated": "2026-11-09T02:39:05Z"
 };

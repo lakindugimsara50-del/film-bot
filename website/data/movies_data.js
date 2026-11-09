@@ -4467,7 +4467,252 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T00:21:57Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "ali-g-who-iz-i-2026",
+      "slug": "ali-g-who-iz-i-2026",
+      "title": "Ali G: Who Iz I?",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.7",
+      "rating": "5.7",
+      "imdb_id": "tt43655467",
+      "tmdb_id": "1727734",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/uTyVxPeWX8Ai30IQoyDDQONNcq.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/uTyVxPeWX8Ai30IQoyDDQONNcq.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/h7gas4rrcaSitLgF2ODry3Wz9KZ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/h7gas4rrcaSitLgF2ODry3Wz9KZ.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/pV32AcPa-iA",
+      "trailer_id": "pV32AcPa-iA",
+      "genres": [
+        "Comedy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "89 min",
+      "description": "After twenty years spent \"chillin', tokin' and bonin'\", Ali G is shocked to discover that his long-term girlfriend, Julie, is 8 months pregnant. Faced with an extra mouth to feed, he gets off his batty and heads to America to reclaim his former glory… but soon encounters adversaries who will ultimately threaten his and his child's very existence.",
+      "director": "Sacha Baron Cohen",
+      "cast": [
+        {
+          "name": "Sacha Baron Cohen",
+          "character": "Ali G / Nira Cain-N'Degeocello / Erran Morad"
+        },
+        {
+          "name": "Morgana Robinson",
+          "character": "Julie"
+        },
+        {
+          "name": "Alpha Miknas",
+          "character": "Manu"
+        },
+        {
+          "name": "Clive Russell",
+          "character": "Malcolm 'Rocky' Atkins"
+        },
+        {
+          "name": "A$AP Rocky",
+          "character": "A$AP Rocky"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgtq8RagM5YJXUSgaVsgt34RlE9SPwACkCAAAueJiFcsKttjPDS1vh4E",
+      "message_id": 523,
+      "file_name": "comp_ali-g-who-iz-i-2026_1080p.mp4",
+      "file_size": 1959620127,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgtq8RagM5YJXUSgaVsgt34RlE9SPwACkCAAAueJiFcsKttjPDS1vh4E",
+          "message_id": 523,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1727734"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt43655467"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt43655467"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/522",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1959620127,
+          "url": "https://t.me/c/4325759505/523",
+          "telegram_url": "https://t.me/c/4325759505/523",
+          "direct_url": "/stream/channel/-1004325759505/523?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgtq8RagM5YJXUSgaVsgt34RlE9SPwACkCAAAueJiFcsKttjPDS1vh4E",
+          "message_id": 523,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1128145265,
+          "url": "https://t.me/c/4325759505/522",
+          "telegram_url": "https://t.me/c/4325759505/522",
+          "direct_url": "/stream/channel/-1004325759505/522?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgpq8RWHnJXrKRL5x-v_SazsOJXEgQACiyAAAueJiFdQa-ytPqVasx4E",
+          "message_id": 522,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/522",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "582.4 MB",
+          "size_bytes": 610741798,
+          "url": "https://t.me/c/4325759505/521",
+          "telegram_url": "https://t.me/c/4325759505/521",
+          "direct_url": "/stream/channel/-1004325759505/521?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAglq8RTi5_Bl6VLSp7XXN2vRYyCR_AACiSAAAueJiFeaXMgKmMCdMh4E",
+          "message_id": 521,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1959620127,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ali-g-who-iz-i-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1128145265,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ali-g-who-iz-i-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/522",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "582.4 MB",
+          "size_bytes": 610741798,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ali-g-who-iz-i-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "336.4 MB",
+          "size_bytes": 352731622,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ali-g-who-iz-i-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgtq8RagM5YJXUSgaVsgt34RlE9SPwACkCAAAueJiFcsKttjPDS1vh4E",
+          "message_id": 523,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+          "size_bytes": 1959620127
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAgpq8RWHnJXrKRL5x-v_SazsOJXEgQACiyAAAueJiFdQa-ytPqVasx4E",
+          "message_id": 522,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/522",
+          "size_bytes": 1128145265
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAglq8RTi5_Bl6VLSp7XXN2vRYyCR_AACiSAAAueJiFeaXMgKmMCdMh4E",
+          "message_id": 521,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521",
+          "size_bytes": 610741798
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
+          "size_bytes": 352731622
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ali-g-who-iz-i-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=ali-g-who-iz-i-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T00:41:17Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T00:21:58Z"
+  "last_updated": "2026-11-09T00:41:18Z"
 };

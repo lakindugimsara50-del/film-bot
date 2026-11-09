@@ -5696,7 +5696,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T02:39:04Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "sigma-2026",
+      "slug": "sigma-2026",
+      "title": "Sigma",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "4.0",
+      "rating": "4.0",
+      "imdb_id": "tt39239754",
+      "tmdb_id": "1395215",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/18Lhkc3nf92bY1cacQomXIqihhN.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/18Lhkc3nf92bY1cacQomXIqihhN.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/ljNmU4qn8WJbMe9JwH3FAdZiRAi.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/ljNmU4qn8WJbMe9JwH3FAdZiRAi.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Action",
+        "Crime",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "145 min",
+      "description": "A daring treasure hunter throws caution to the wind, outwitting deadly traps and treacherous allies with sheer nerve and cunning.",
+      "director": "Jason Sanjay",
+      "cast": [
+        {
+          "name": "Sundeep Kishan",
+          "character": "Guru"
+        },
+        {
+          "name": "Faria Abdullah",
+          "character": "RJ Sam"
+        },
+        {
+          "name": "Raju Sundaram",
+          "character": "Dr.Neil"
+        },
+        {
+          "name": "Sampath Raj",
+          "character": "Kotlapadi Veeraya Reddy"
+        },
+        {
+          "name": "Shiv Panditt",
+          "character": "Vincent"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh9q8TjBiejRZFijZPR1GqIkqnGueAAC1SAAAueJiFe4G-Kx3gXvYh4E",
+      "message_id": 543,
+      "file_name": "comp_sigma-2026_1080p.mp4",
+      "file_size": 2056004378,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh9q8TjBiejRZFijZPR1GqIkqnGueAAC1SAAAueJiFe4G-Kx3gXvYh4E",
+          "message_id": 543,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1395215"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt39239754"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt39239754"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/542",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2056004378,
+          "url": "https://t.me/c/4325759505/543",
+          "telegram_url": "https://t.me/c/4325759505/543",
+          "direct_url": "/stream/channel/-1004325759505/543?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh9q8TjBiejRZFijZPR1GqIkqnGueAAC1SAAAueJiFe4G-Kx3gXvYh4E",
+          "message_id": 543,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1864316354,
+          "url": "https://t.me/c/4325759505/542",
+          "telegram_url": "https://t.me/c/4325759505/542",
+          "direct_url": "/stream/channel/-1004325759505/542?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh5q8ThDZzkimaqhEJn-HqImix9h0AAC0yAAAueJiFduSiI72WHQAR4E",
+          "message_id": 542,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/542",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "958.5 MB",
+          "size_bytes": 1005112177,
+          "url": "https://t.me/c/4325759505/541",
+          "telegram_url": "https://t.me/c/4325759505/541",
+          "direct_url": "/stream/channel/-1004325759505/541?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh1q8TabZEgJqmlFCkcJOVNXbZMPVAACziAAAueJiFf7jtoU59spTB4E",
+          "message_id": 541,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2056004378,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sigma-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1864316354,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sigma-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/542",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "958.5 MB",
+          "size_bytes": 1005112177,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sigma-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "352.9 MB",
+          "size_bytes": 370080788,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sigma-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh9q8TjBiejRZFijZPR1GqIkqnGueAAC1SAAAueJiFe4G-Kx3gXvYh4E",
+          "message_id": 543,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+          "size_bytes": 2056004378
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh5q8ThDZzkimaqhEJn-HqImix9h0AAC0yAAAueJiFduSiI72WHQAR4E",
+          "message_id": 542,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/542",
+          "size_bytes": 1864316354
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAh1q8TabZEgJqmlFCkcJOVNXbZMPVAACziAAAueJiFf7jtoU59spTB4E",
+          "message_id": 541,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541",
+          "size_bytes": 1005112177
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
+          "size_bytes": 370080788
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/sigma-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=sigma-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T03:06:54Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T02:39:05Z"
+  "last_updated": "2026-11-09T03:06:55Z"
 };

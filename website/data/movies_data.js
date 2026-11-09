@@ -5205,7 +5205,253 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T01:57:04Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "fall-for-me-2026",
+      "slug": "fall-for-me-2026",
+      "title": "Fall for Me",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.1",
+      "rating": "6.1",
+      "imdb_id": "tt32543884",
+      "tmdb_id": "1300116",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/mduZ3YRKele4rHhrse7b7B3d44b.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/mduZ3YRKele4rHhrse7b7B3d44b.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/xd7YqovQSLBY7dbptsz2bPgL0ym.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/xd7YqovQSLBY7dbptsz2bPgL0ym.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/pgu-BsBV-2I",
+      "trailer_id": "pgu-BsBV-2I",
+      "genres": [
+        "Romance",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "103 min",
+      "description": "Lilli is suspicious of her sister's new fiance, but when an attractive stranger enters her life, she's suddenly distracted by the thralls of desire.",
+      "director": "Sherry Hormann",
+      "cast": [
+        {
+          "name": "Svenja Jung",
+          "character": "Lilli"
+        },
+        {
+          "name": "Theo Trebs",
+          "character": "Tom"
+        },
+        {
+          "name": "Tijan Marei",
+          "character": "Valeria"
+        },
+        {
+          "name": "Antje Traue",
+          "character": "Bea"
+        },
+        {
+          "name": "Thomas Kretschmann",
+          "character": "Nick"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhdq8S1oqmVQMAoyVFYWO0zuTSsgRwACuiAAAueJiFeAR-BA49k9EB4E",
+      "message_id": 535,
+      "file_name": "comp_fall-for-me-2026_1080p.mp4",
+      "file_size": 1991417193,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhdq8S1oqmVQMAoyVFYWO0zuTSsgRwACuiAAAueJiFeAR-BA49k9EB4E",
+          "message_id": 535,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1300116"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32543884"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32543884"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/534",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1991417193,
+          "url": "https://t.me/c/4325759505/535",
+          "telegram_url": "https://t.me/c/4325759505/535",
+          "direct_url": "/stream/channel/-1004325759505/535?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhdq8S1oqmVQMAoyVFYWO0zuTSsgRwACuiAAAueJiFeAR-BA49k9EB4E",
+          "message_id": 535,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1320916511,
+          "url": "https://t.me/c/4325759505/534",
+          "telegram_url": "https://t.me/c/4325759505/534",
+          "direct_url": "/stream/channel/-1004325759505/534?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhZq8SyAhb2Bp9-1ZuwI73TYg3h04AACuSAAAueJiFdiKBYmQpmzkB4E",
+          "message_id": 534,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/534",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "684.5 MB",
+          "size_bytes": 717747480,
+          "url": "https://t.me/c/4325759505/533",
+          "telegram_url": "https://t.me/c/4325759505/533",
+          "direct_url": "/stream/channel/-1004325759505/533?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhVq8StvxaIVwduMYN2vQFZPx8D-yQACtiAAAueJiFdu9vUBoB2XVB4E",
+          "message_id": 533,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1991417193,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-for-me-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1320916511,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-for-me-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/534",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "684.5 MB",
+          "size_bytes": 717747480,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-for-me-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "341.8 MB",
+          "size_bytes": 358455094,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-for-me-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhdq8S1oqmVQMAoyVFYWO0zuTSsgRwACuiAAAueJiFeAR-BA49k9EB4E",
+          "message_id": 535,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+          "size_bytes": 1991417193
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhZq8SyAhb2Bp9-1ZuwI73TYg3h04AACuSAAAueJiFdiKBYmQpmzkB4E",
+          "message_id": 534,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/534",
+          "size_bytes": 1320916511
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhVq8StvxaIVwduMYN2vQFZPx8D-yQACtiAAAueJiFdu9vUBoB2XVB4E",
+          "message_id": 533,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533",
+          "size_bytes": 717747480
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
+          "size_bytes": 358455094
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/fall-for-me-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=fall-for-me-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T02:18:27Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T01:57:05Z"
+  "last_updated": "2026-11-09T02:18:28Z"
 };

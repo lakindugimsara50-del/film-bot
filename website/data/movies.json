@@ -4959,7 +4959,253 @@
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T01:22:45Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "verity-2026",
+      "slug": "verity-2026",
+      "title": "Verity",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.0",
+      "rating": "7.0",
+      "imdb_id": "tt32261958",
+      "tmdb_id": "1283515",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/rmaNMA1seHqpjtnYKzyynFAr1g8.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/rmaNMA1seHqpjtnYKzyynFAr1g8.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/cKetrF2dAnQ0AMV5i4BMOs41I5P.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/cKetrF2dAnQ0AMV5i4BMOs41I5P.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/xdPMKhjMSFs",
+      "trailer_id": "xdPMKhjMSFs",
+      "genres": [
+        "Mystery",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "117 min",
+      "description": "Lowen Ashleigh, hired to ghostwrite for best-selling author Verity Crawford, uncovers Verity's autobiographical notes, and becomes involved in what may prove to be a lethal conspiracy.",
+      "director": "Michael Showalter",
+      "cast": [
+        {
+          "name": "Dakota Johnson",
+          "character": "Lowen Ashleigh"
+        },
+        {
+          "name": "Anne Hathaway",
+          "character": "Verity Crawford"
+        },
+        {
+          "name": "Josh Hartnett",
+          "character": "Jeremy Crawford"
+        },
+        {
+          "name": "Brady Wagner",
+          "character": "Crew Crawford"
+        },
+        {
+          "name": "Ismael Cruz Cordova",
+          "character": "Corey"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhNq8ShlYRPOiFm_Ms6RbKBPaJnDIQACsSAAAueJiFcsrDGGujG-lB4E",
+      "message_id": 531,
+      "file_name": "comp_verity-2026_1080p.mp4",
+      "file_size": 1970843065,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhNq8ShlYRPOiFm_Ms6RbKBPaJnDIQACsSAAAueJiFcsrDGGujG-lB4E",
+          "message_id": 531,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1283515"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32261958"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32261958"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/530",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1970843065,
+          "url": "https://t.me/c/4325759505/531",
+          "telegram_url": "https://t.me/c/4325759505/531",
+          "direct_url": "/stream/channel/-1004325759505/531?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhNq8ShlYRPOiFm_Ms6RbKBPaJnDIQACsSAAAueJiFcsrDGGujG-lB4E",
+          "message_id": 531,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1470929563,
+          "url": "https://t.me/c/4325759505/530",
+          "telegram_url": "https://t.me/c/4325759505/530",
+          "direct_url": "/stream/channel/-1004325759505/530?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhJq8STY8d7OWb7_5YIgMvLYEfUf0QACriAAAueJiFd4uqVTUSX4MR4E",
+          "message_id": 530,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/530",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "746.5 MB",
+          "size_bytes": 782724302,
+          "url": "https://t.me/c/4325759505/529",
+          "telegram_url": "https://t.me/c/4325759505/529",
+          "direct_url": "/stream/channel/-1004325759505/529?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhFq8SOhqEwHaevrJHTzejhkMkGDvwACrCAAAueJiFcYWO7hOhFEcR4E",
+          "message_id": 529,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1970843065,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_verity-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1470929563,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_verity-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/530",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "746.5 MB",
+          "size_bytes": 782724302,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_verity-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "338.3 MB",
+          "size_bytes": 354751751,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_verity-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhNq8ShlYRPOiFm_Ms6RbKBPaJnDIQACsSAAAueJiFcsrDGGujG-lB4E",
+          "message_id": 531,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+          "size_bytes": 1970843065
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhJq8STY8d7OWb7_5YIgMvLYEfUf0QACriAAAueJiFd4uqVTUSX4MR4E",
+          "message_id": 530,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/530",
+          "size_bytes": 1470929563
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAhFq8SOhqEwHaevrJHTzejhkMkGDvwACrCAAAueJiFcYWO7hOhFEcR4E",
+          "message_id": 529,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529",
+          "size_bytes": 782724302
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
+          "size_bytes": 354751751
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/verity-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=verity-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T01:57:04Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T01:22:46Z"
+  "last_updated": "2026-11-09T01:57:05Z"
 }

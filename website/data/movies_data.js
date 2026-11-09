@@ -6438,7 +6438,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T04:13:56Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "mirzapur-the-movie-2026",
+      "slug": "mirzapur-the-movie-2026",
+      "title": "Mirzapur: The Movie",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.0",
+      "rating": "7.0",
+      "imdb_id": "tt34339725",
+      "tmdb_id": "1378537",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/tCyTNhOv8NB1iK3U95spJdCaQED.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/tCyTNhOv8NB1iK3U95spJdCaQED.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/nTkQBI8ldvPByIkxsemGxtKlr8E.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/nTkQBI8ldvPByIkxsemGxtKlr8E.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Action",
+        "Crime",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "197 min",
+      "description": "Akhandanand Tripathi sits on the throne of Mirzapur. Munna Tripathi is heir apparent. Rati Shankar Shukla is the rival from Jaunpur. And, Guddu and Bablu are the two brothers who came like a tornado and changed things irreversibly. And now comes a new claimant in town. Babban Babua, from the desert of Jaisalmer. A ruthless man who is power hungry.",
+      "director": "Gurmmeet Singh",
+      "cast": [
+        {
+          "name": "Pankaj Tripathi",
+          "character": "Akhandanand 'Kaleen' Tripathi"
+        },
+        {
+          "name": "Ali Fazal",
+          "character": "Govind 'Guddu' Pandit"
+        },
+        {
+          "name": "Divyendu Sharma",
+          "character": "Phoolchand 'Munna' Tripathi"
+        },
+        {
+          "name": "Jitendra Kumar",
+          "character": "Vinay 'Bablu' Pandit"
+        },
+        {
+          "name": "Ravi Kishan",
+          "character": "Babban Babua"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAitq8VOvwkvx7GxJEPPKy6-rcV3lrgACLSEAAueJiFcLVEm8a_w3qx4E",
+      "message_id": 555,
+      "file_name": "comp_mirzapur-the-movie-2026_1080p.mp4",
+      "file_size": 2053331339,
+      "drive_file_id": "",
+      "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAitq8VOvwkvx7GxJEPPKy6-rcV3lrgACLSEAAueJiFcLVEm8a_w3qx4E",
+          "message_id": 555,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1378537"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt34339725"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt34339725"
+        }
+      ],
+      "qualities": {
+        "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+        "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+        "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/554",
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553",
+        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2053331339,
+          "url": "https://t.me/c/4325759505/555",
+          "telegram_url": "https://t.me/c/4325759505/555",
+          "direct_url": "/stream/channel/-1004325759505/555?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAitq8VOvwkvx7GxJEPPKy6-rcV3lrgACLSEAAueJiFcLVEm8a_w3qx4E",
+          "message_id": 555,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1982170527,
+          "url": "https://t.me/c/4325759505/554",
+          "telegram_url": "https://t.me/c/4325759505/554",
+          "direct_url": "/stream/channel/-1004325759505/554?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAipq8U6_Sg_-quIkX4Ixulg3RVSYVAACCSEAAueJiFcTd2XfSf6B0h4E",
+          "message_id": 554,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/554",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1431681177,
+          "url": "https://t.me/c/4325759505/553",
+          "telegram_url": "https://t.me/c/4325759505/553",
+          "direct_url": "/stream/channel/-1004325759505/553?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAilq8U5-T3froXnKe-nNlTdMa_lpBQACCCEAAueJiFfmp-AqmqX9px4E",
+          "message_id": 553,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2053331339,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirzapur-the-movie-2026_1080p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1982170527,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirzapur-the-movie-2026_720p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/554",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1431681177,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirzapur-the-movie-2026_480p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "352.5 MB",
+          "size_bytes": 369599641,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirzapur-the-movie-2026_360p",
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAitq8VOvwkvx7GxJEPPKy6-rcV3lrgACLSEAAueJiFcLVEm8a_w3qx4E",
+          "message_id": 555,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+          "size_bytes": 2053331339
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAipq8U6_Sg_-quIkX4Ixulg3RVSYVAACCSEAAueJiFcTd2XfSf6B0h4E",
+          "message_id": 554,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/554",
+          "size_bytes": 1982170527
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAilq8U5-T3froXnKe-nNlTdMa_lpBQACCCEAAueJiFfmp-AqmqX9px4E",
+          "message_id": 553,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553",
+          "size_bytes": 1431681177
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
+          "size_bytes": 369599641
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/mirzapur-the-movie-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=mirzapur-the-movie-2026",
+      "added_date": "2026-11-09",
+      "added_at": "2026-11-09T05:01:49Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T04:13:57Z"
+  "last_updated": "2026-11-09T05:01:50Z"
 };

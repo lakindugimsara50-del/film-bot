@@ -705,7 +705,7 @@ function renderHero(targetMovie, forcedIdx) {
     const descEl = document.getElementById('hero-description');
     if (descEl) descEl.textContent = 'Discover latest Sinhala Subtitles, HD Movies & TV Series with direct streaming.';
     const metaEl = document.getElementById('hero-meta');
-    if (metaEl) metaEl.innerHTML = '<span class="badge badge-quality">1080p FHD</span><span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>';
+    if (metaEl) metaEl.innerHTML = '<span class="badge badge-quality"><i class="fa-solid fa-film"></i> Full HD</span><span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>';
     return;
   }
 
@@ -730,7 +730,7 @@ function renderHero(targetMovie, forcedIdx) {
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
   const imdbVal = movie.imdb || movie.rating || '';
   const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
-  const quality = movie.quality ? `<span class="badge badge-quality">${movie.quality}</span>` : '<span class="badge badge-quality">1080p FHD</span>';
+  const quality = `<span class="badge badge-quality"><i class="fa-solid fa-film"></i> ${formatQualityLabel(movie.quality)}</span>`;
   const year = movie.year ? `<span class="badge badge-year">${movie.year}</span>` : '';
   const durationVal = movie.duration ? (typeof movie.duration === 'number' ? `${movie.duration} min` : movie.duration) : '';
   const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${durationVal}</span>` : '';
@@ -1074,6 +1074,17 @@ function initHeroTouchSwipe() {
   });
 }
 
+// ---- Format Quality Label (e.g. 1080p -> Full HD) ----
+function formatQualityLabel(q) {
+  if (!q) return 'Full HD';
+  const s = String(q).trim().toLowerCase();
+  if (s.includes('2160') || s.includes('4k')) return '4K UHD';
+  if (s.includes('1080') || s.includes('fhd')) return 'Full HD';
+  if (s.includes('720') || s.includes('hd')) return 'HD';
+  if (s.includes('480') || s.includes('sd')) return 'SD';
+  return 'Full HD';
+}
+
 // ---- Generate Movie Card (Netflix Cinema Style) ----
 function generateMovieCard(movie, opts = {}) {
   const isTrending = typeof opts === 'boolean' ? opts : Boolean(opts.isTrending);
@@ -1081,7 +1092,7 @@ function generateMovieCard(movie, opts = {}) {
   const poster = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
   const imdbVal = movie.imdb || movie.rating || '';
   const imdb = imdbVal ? `<span class="badge-top-right">★ ${imdbVal}</span>` : '';
-  const rawQ = movie.quality || '1080p';
+  const rawQ = formatQualityLabel(movie.quality);
   const quality = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
   const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || Boolean(movie.season);
   const typeBadge = isSeries ? `<span class="badge-card-type"><i class="fa-solid fa-tv"></i> TV</span>` : '';
@@ -1331,7 +1342,7 @@ function initHighlightPopup() {
       const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
       const imdbVal = movie.imdb || movie.rating || '';
       const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
-      const quality = movie.quality ? `<span class="badge badge-quality">${escHtml(movie.quality)}</span>` : '<span class="badge badge-quality">1080p FHD</span>';
+      const quality = movie.quality ? `<span class="badge badge-quality">${escHtml(movie.quality)}</span>` : '<span class="badge badge-quality"><i class="fa-solid fa-film"></i> Full HD</span>';
       const year = movie.year ? `<span class="badge badge-year">${escHtml(movie.year)}</span>` : '';
       const durationVal = movie.duration ? (typeof movie.duration === 'number' ? `${movie.duration} min` : movie.duration) : '';
       const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${escHtml(durationVal)}</span>` : '';

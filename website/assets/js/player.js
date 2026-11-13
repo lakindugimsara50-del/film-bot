@@ -1,3 +1,13 @@
+function formatQualityLabel(q) {
+  if (!q) return 'Full HD';
+  const s = String(q).trim().toLowerCase();
+  if (s.includes('2160') || s.includes('4k')) return '4K UHD';
+  if (s.includes('1080') || s.includes('fhd')) return 'Full HD';
+  if (s.includes('720') || s.includes('hd')) return 'HD';
+  if (s.includes('480') || s.includes('sd')) return 'SD';
+  return 'Full HD';
+}
+
 
 function updateSocialMetaTags(movie) {
   if (!movie) return;
@@ -4511,7 +4521,7 @@ function renderMovieDetails(movie) {
     if (imdbVal && imdbVal !== '0.0') {
       bHtml += `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${esc(imdbVal)}</span>`;
     }
-    bHtml += `<span class="badge badge-quality"><i class="fa-solid fa-video"></i> ${esc(movie.quality || '1080p FHD')}</span>`;
+    bHtml += `<span class="badge badge-quality"><i class="fa-solid fa-video"></i> ${esc(formatQualityLabel(movie.quality))}</span>`;
     bHtml += `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
     badgesEl.innerHTML = bHtml;
   }
@@ -4557,7 +4567,7 @@ function renderMovieDetails(movie) {
     if (durVal) {
       rHtml += `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${esc(durVal)}</span>`;
     }
-    rHtml += `<span class="badge badge-quality"><i class="fa-solid fa-tv"></i> ${esc(movie.quality || '1080p Full HD')}</span>`;
+    rHtml += `<span class="badge badge-quality"><i class="fa-solid fa-tv"></i> ${esc(formatQualityLabel(movie.quality))}</span>`;
     rHtml += `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</span>`;
     badgesRail.innerHTML = rHtml;
   }

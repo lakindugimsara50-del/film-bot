@@ -783,17 +783,19 @@ main > .section:first-of-type {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: rgba(229, 9, 20, 0.9);
-  color: #fff;
-  font-size: 10.5px;
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.95) 0%, rgba(184, 29, 36, 0.95) 100%);
+  color: #ffffff;
+  font-size: 10px;
   font-weight: 800;
-  padding: 3px 7px;
-  border-radius: 4px;
-  letter-spacing: 0.4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   z-index: 3;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.15);
   line-height: 1.2;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* Netflix Top-Right IMDb Badge */

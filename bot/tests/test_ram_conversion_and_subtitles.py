@@ -311,16 +311,16 @@ def test_website_movies_json_and_movies_data_js_have_multi_quality_and_sinhala_s
         if m.get("telegram_status") == "queued" or m.get("stage") == "embed_only":
             continue
 
-        # 1. Qualities map check (when qualities map is defined)
+        # 1. Qualities map check (when qualities map is defined - 1080p, 720p, 480p; 360p removed)
         if "qualities" in m:
-            for q_key in ("auto", "1080p", "720p", "480p", "360p"):
+            for q_key in ("auto", "1080p", "720p", "480p"):
                 assert q_key in m["qualities"], f"Missing {q_key} in {m.get('title')} qualities"
 
         # 2. Downloads multi-quality check
         dls = m.get("downloads") or []
-        if len(dls) >= 4:
+        if len(dls) >= 3:
             dl_qualities = {d.get("quality") for d in dls}
-            for q_key in ("1080p", "720p", "480p", "360p"):
+            for q_key in ("1080p", "720p", "480p"):
                 assert q_key in dl_qualities, f"Missing {q_key} download in {m.get('title')}"
         if dls:
             assert all(d.get("subtitle_merged") is True or d.get("sub_merged") is True for d in dls)

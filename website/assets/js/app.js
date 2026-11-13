@@ -73,15 +73,8 @@ if (document.readyState === 'loading') {
 
 // ---- Load Movies ----
 function _isValidMovieEntry(m) {
-  if (!m || !m.title) return false;
-  const hasPoster = Boolean(m.poster || m.poster_url);
-  const hasMedia = Boolean(
-    m.stream_url ||
-    (Array.isArray(m.streams) && m.streams.length > 0) ||
-    (Array.isArray(m.downloads) && m.downloads.length > 0) ||
-    (m.qualities && Object.keys(m.qualities).length > 0)
-  );
-  return hasPoster || hasMedia;
+  if (!m) return false;
+  return Boolean(m.title || m.slug || m.id);
 }
 
 function loadBaselineMovies() {
@@ -98,7 +91,7 @@ async function fetchRemoteMovies() {
   const localUrl = `${SITE_CONFIG.moviesPath}${cacheBuster}`;
   const remoteUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json${cacheBuster}`;
 
-  for (const url of [remoteUrl, localUrl]) {
+  for (const url of [localUrl, remoteUrl]) {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 12000);
@@ -583,39 +576,40 @@ function stopHeroTrailer() {
 }
 
 function getHeroSpotlightList() {
-  const catalog = groupSeriesCatalog(allMovies);
+  let catalog = groupSeriesCatalog(allMovies);
+  if (!catalog || catalog.length === 0) {
+    const raw = (window.FILMZILLA_DATA && window.FILMZILLA_DATA.movies) || (window.FILMSUB_DATA && window.FILMSUB_DATA.movies) || [];
+    if (raw.length > 0) {
+      allMovies = raw;
+      catalog = groupSeriesCatalog(raw);
+    }
+  }
   if (!catalog || catalog.length === 0) return [];
 
   // 1. Any movie with a backdrop or poster image is eligible for Hero Spotlight!
   const eligible = catalog.filter(m => Boolean(m.backdrop || m.backdrop_url || m.poster || m.poster_url));
   const pool = eligible.length > 0 ? eligible : [...catalog];
 
-  // 2. Score movies to automatically place newly uploaded films at the top of the Hero Banner!
-  const scored = pool.map(m => {
+  // 2. Score movies so newly uploaded films (at index 0 of movies.json) ALWAYS take top spot on Hero Banner!
+  const scored = pool.map((m, idx) => {
     let score = 0;
 
-    // Recency of upload is #1 priority: newly uploaded films automatically get top spot on Hero Banner!
+    // Highest Priority: Array position (Newly added movies are unshifted to index 0)
+    score += (pool.length - idx) * 1000;
+
+    // Added timestamp bonus
     const addedTime = m.added_at ? new Date(m.added_at).getTime() : (m.added_date ? new Date(m.added_date).getTime() : 0);
     if (addedTime > 0) {
-      score += (addedTime / 1000000); // Higher upload timestamp = higher priority
+      score += (addedTime / 10000);
     }
 
-    if (m.featured) score += 500;
-    if (m.trending) score += 200;
+    // Release year bonus
+    const yr = Number(m.year) || 2024;
+    score += (yr - 2000) * 10;
 
-    // Release year bonus as secondary tie-breaker
-    const yr = Number(m.year) || 2020;
-    score += (yr - 2000) * 2;
-
-    // IMDb rating bonus
-    const imdb = parseFloat(m.imdb || m.rating || 0);
-    if (!isNaN(imdb) && imdb > 0) score += imdb * 5;
-
-    // High-res backdrop bonus
+    // Backdrop presence bonus
     if (m.backdrop || m.backdrop_url) score += 50;
-
-    // Trailer bonus
-    if (m.trailer_id || m.trailer_url) score += 30;
+    if (m.poster || m.poster_url) score += 20;
 
     return { movie: m, score };
   });

@@ -4,7 +4,7 @@
       "id": "sugriva-2026",
       "slug": "sugriva-2026",
       "title": "Sugriva",
-      "title_si": "",
+      "title_si": "සුග්‍රීව",
       "year": 2026,
       "imdb": "0.0",
       "rating": "0.0",
@@ -103,8 +103,7 @@
         "auto": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/444",
         "1080p": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/444",
         "720p": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/444",
-        "480p": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/443",
-        "360p": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/444"
+        "480p": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/443"
       },
       "downloads": [
         {
@@ -174,18 +173,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "212.8 MB",
-          "size_bytes": 223170750,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_sugriva-2026_360p",
-          "stream_url": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/444",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -206,12 +193,6 @@
           "message_id": 443,
           "stream_url": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/443",
           "size_bytes": 663542169
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://marketplace-competitive-tackle-travelling.trycloudflare.com/stream/channel/-1004325759505/444",
-          "size_bytes": 223170750
         }
       },
       "subtitles": [
@@ -227,13 +208,15 @@
       "site_url": "https://filmsub.pages.dev/movie.html?id=sugriva-2026",
       "added_date": "2026-11-03",
       "added_at": "2026-11-03T17:45:50Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "storyline_si": "බාලු සිය බිරිඳ ප්‍රශාන්ති සහ කුඩා දියණිය අක්ෂරා සමඟ සාමකාමී ජීවිතයක් ගත කරයි. නමුත් හදිසි අනතුරකින් දැරිය රෝහල් ගත වන අතර, ඇයට රුපියල් ලක්ෂ 50 ක සැත්කමක් අවශ්‍ය වේ. කිසිදු විකල්පයක් නොමැතිව, මංමුලා සහගත පියා බලවත් පාතාල නායකයෙකු වෙත යොමු වන අතර, සිය පවුල බේරා ගැනීම සඳහා ඔහුට අපරාධ ලෝකයේ සටන් කිරීමට සිදු වේ.",
+      "description_si": "බාලු සිය බිරිඳ ප්‍රශාන්ති සහ කුඩා දියණිය අක්ෂරා සමඟ සාමකාමී ජීවිතයක් ගත කරයි. නමුත් හදිසි අනතුරකින් දැරිය රෝහල් ගත වන අතර, ඇයට රුපියල් ලක්ෂ 50 ක සැත්කමක් අවශ්‍ය වේ. කිසිදු විකල්පයක් නොමැතිව, මංමුලා සහගත පියා බලවත් පාතාල නායකයෙකු වෙත යොමු වන අතර, සිය පවුල බේරා ගැනීම සඳහා ඔහුට අපරාධ ලෝකයේ සටන් කිරීමට සිදු වේ."
     },
     {
       "id": "the-florist-2026",
       "slug": "the-florist-2026",
       "title": "The Florist",
-      "title_si": "",
+      "title_si": "ද ෆ්ලෝරිස්ට්",
       "year": 2026,
       "imdb": "5.8",
       "rating": "5.8",
@@ -331,8 +314,7 @@
         "auto": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/450",
         "1080p": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/450",
         "720p": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/449",
-        "480p": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/448",
-        "360p": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/450"
+        "480p": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/448"
       },
       "downloads": [
         {
@@ -418,18 +400,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "344.3 MB",
-          "size_bytes": 361002564,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-florist-2026_360p",
-          "stream_url": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/450",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -450,12 +420,6 @@
           "message_id": 448,
           "stream_url": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/448",
           "size_bytes": 658365871
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://bookmark-uni-understand-legs.trycloudflare.com/stream/channel/-1004325759505/450",
-          "size_bytes": 361002564
         }
       },
       "subtitles": [
@@ -471,13 +435,15 @@
       "site_url": "https://filmsub.pages.dev/movie.html?id=the-florist-2026",
       "added_date": "2026-11-04",
       "added_at": "2026-11-04T10:07:27Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "storyline_si": "මල් වගාකරුවෙකු ලෙස සාමකාමීව ජීවත් වන මාරාන්තික ඝාතකයෙකු, පොලිස් දූෂණයට එරෙහි සාක්ෂිකරුවෙකු සමඟ අනපේක්ෂිත මිත්‍රත්වයක් ඇති කර ගන්නා විට ඔහුගේ සැබෑ අනන්‍යතාවය අනතුරේ වැටේ.",
+      "description_si": "මල් වගාකරුවෙකු ලෙස සාමකාමීව ජීවත් වන මාරාන්තික ඝාතකයෙකු, පොලිස් දූෂණයට එරෙහි සාක්ෂිකරුවෙකු සමඟ අනපේක්ෂිත මිත්‍රත්වයක් ඇති කර ගන්නා විට ඔහුගේ සැබෑ අනන්‍යතාවය අනතුරේ වැටේ."
     },
     {
       "id": "godzilla-against-mechagodzilla-2002",
       "slug": "godzilla-against-mechagodzilla-2002",
       "title": "Godzilla Against MechaGodzilla",
-      "title_si": "",
+      "title_si": "ගොඩ්සිලා එදිරිව මෙකාගොඩ්සිලා",
       "year": 2002,
       "imdb": "7.5",
       "rating": "7.5",
@@ -578,8 +544,7 @@
         "auto": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
         "1080p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
         "720p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/455",
-        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454",
-        "360p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456"
+        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454"
       },
       "downloads": [
         {
@@ -665,18 +630,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "354.4 MB",
-          "size_bytes": 371634120,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-against-mechagodzilla-2002_360p",
-          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -697,12 +650,6 @@
           "message_id": 454,
           "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/454",
           "size_bytes": 626855570
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/456",
-          "size_bytes": 371634120
         }
       },
       "subtitles": [
@@ -718,13 +665,15 @@
       "site_url": "https://filmsub.pages.dev/movie.html?id=godzilla-against-mechagodzilla-2002",
       "added_date": "2026-11-05",
       "added_at": "2026-11-05T10:14:41Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "storyline_si": "නව ගොඩ්සිලා ටටෙයාමා හි මතු වන විට, ජපන් ස්වයං ආරක්ෂක හමුදාවේ නියමුවරිය වන අකේන් තීරණාත්මක මුහුණපෑමකට මුහුණ දෙයි. මෙයට පිළියමක් ලෙස මුල් ගොඩ්සිලාගේ ඇටසැකිල්ලෙන් 'කිරියු' නම් සයිබර්ග් නිර්මාණය වේ.",
+      "description_si": "නව ගොඩ්සිලා ටටෙයාමා හි මතු වන විට, ජපන් ස්වයං ආරක්ෂක හමුදාවේ නියමුවරිය වන අකේන් තීරණාත්මක මුහුණපෑමකට මුහුණ දෙයි. මෙයට පිළියමක් ලෙස මුල් ගොඩ්සිලාගේ ඇටසැකිල්ලෙන් 'කිරියු' නම් සයිබර්ග් නිර්මාණය වේ."
     },
     {
       "id": "paris-cafe-2025",
       "slug": "paris-cafe-2025",
       "title": "Paris Cafe",
-      "title_si": "",
+      "title_si": "පැරිස් කැෆේ",
       "year": 2025,
       "imdb": "0.0",
       "rating": "0.0",
@@ -824,8 +773,7 @@
         "auto": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
         "1080p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
         "720p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/459",
-        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458",
-        "360p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460"
+        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458"
       },
       "downloads": [
         {
@@ -911,18 +859,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "351.8 MB",
-          "size_bytes": 368836745,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_paris-cafe-2025_360p",
-          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -943,12 +879,6 @@
           "message_id": 458,
           "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/458",
           "size_bytes": 815257103
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/460",
-          "size_bytes": 368836745
         }
       },
       "subtitles": [
@@ -964,13 +894,15 @@
       "site_url": "https://filmsub.pages.dev/movie.html?id=paris-cafe-2025",
       "added_date": "2026-11-05",
       "added_at": "2026-11-05T10:38:33Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "storyline_si": "පැරිසියේ කැෆේ එකක ඇති ඡායාරූපයක් අතීත රහස් හෙළි කරයි. සත්‍යයෙන් බිඳී ගිය පවුලක් සහ එය සුවපත් කිරීමට අධිෂ්ඨාන කරගත් දියණියකගේ සංවේදී කතාව.",
+      "description_si": "පැරිසියේ කැෆේ එකක ඇති ඡායාරූපයක් අතීත රහස් හෙළි කරයි. සත්‍යයෙන් බිඳී ගිය පවුලක් සහ එය සුවපත් කිරීමට අධිෂ්ඨාන කරගත් දියණියකගේ සංවේදී කතාව."
     },
     {
       "id": "the-gentleman-2025",
       "slug": "the-gentleman-2025",
       "title": "The Gentleman",
-      "title_si": "",
+      "title_si": "ද ජෙන්ට්ල්මන්",
       "year": 2025,
       "imdb": "5.8",
       "rating": "5.8",
@@ -1072,8 +1004,7 @@
         "auto": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
         "1080p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
         "720p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/463",
-        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462",
-        "360p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464"
+        "480p": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462"
       },
       "downloads": [
         {
@@ -1159,18 +1090,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "343.4 MB",
-          "size_bytes": 360086157,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-gentleman-2025_360p",
-          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -1191,12 +1110,6 @@
           "message_id": 462,
           "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/462",
           "size_bytes": 618694958
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://believes-warranty-professionals-authors.trycloudflare.com/stream/channel/-1004325759505/464",
-          "size_bytes": 360086157
         }
       },
       "subtitles": [
@@ -1212,7 +1125,9 @@
       "site_url": "https://filmsub.pages.dev/movie.html?id=the-gentleman-2025",
       "added_date": "2026-11-05",
       "added_at": "2026-11-05T10:57:27Z",
-      "added_by": "bot_auto_leech"
+      "added_by": "bot_auto_leech",
+      "storyline_si": "වයෝවෘද්ධ හිටපු සෙබළෙකු වන තියෝ, සිය මිතුරියකගේ ඝාතනයෙන් පසු ලේ වැකි පළිගැනීමක් සොයා යන අතර, එය මත්පැන් ලෝලී පොලිස් නිලධාරියෙකුගේ සහ කුලී ඝාතකයෙකුගේ අවධානයට ලක් වේ.",
+      "description_si": "වයෝවෘද්ධ හිටපු සෙබළෙකු වන තියෝ, සිය මිතුරියකගේ ඝාතනයෙන් පසු ලේ වැකි පළිගැනීමක් සොයා යන අතර, එය මත්පැන් ලෝලී පොලිස් නිලධාරියෙකුගේ සහ කුලී ඝාතකයෙකුගේ අවධානයට ලක් වේ."
     },
     {
       "id": "siccîn-9-2026",
@@ -1317,8 +1232,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/469",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468"
       },
       "downloads": [
         {
@@ -1404,18 +1318,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "348.3 MB",
-          "size_bytes": 365173185,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_siccîn-9-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -1436,12 +1338,6 @@
           "message_id": 468,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/468",
           "size_bytes": 624148429
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/470",
-          "size_bytes": 365173185
         }
       },
       "subtitles": [
@@ -1659,8 +1555,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/474",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473"
       },
       "downloads": [
         {
@@ -1746,18 +1641,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "349.9 MB",
-          "size_bytes": 366874605,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_ghost-in-the-cell-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -1778,12 +1661,6 @@
           "message_id": 473,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/473",
           "size_bytes": 740231253
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/475",
-          "size_bytes": 366874605
         }
       },
       "subtitles": [
@@ -1905,8 +1782,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/478",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477"
       },
       "downloads": [
         {
@@ -1992,18 +1868,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "354.4 MB",
-          "size_bytes": 371660982,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-paradise-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -2024,12 +1888,6 @@
           "message_id": 477,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/477",
           "size_bytes": 1208732708
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/479",
-          "size_bytes": 371660982
         }
       },
       "subtitles": [
@@ -2153,8 +2011,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/482",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481"
       },
       "downloads": [
         {
@@ -2240,18 +2097,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "351.0 MB",
-          "size_bytes": 368047544,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_godzilla-tokyo-sos-2003_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -2272,12 +2117,6 @@
           "message_id": 481,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/481",
           "size_bytes": 662277635
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/483",
-          "size_bytes": 368047544
         }
       },
       "subtitles": [
@@ -2399,8 +2238,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/486",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485"
       },
       "downloads": [
         {
@@ -2486,18 +2324,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "346.4 MB",
-          "size_bytes": 363180328,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_neglected-2025_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -2518,12 +2344,6 @@
           "message_id": 485,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/485",
           "size_bytes": 642803682
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/487",
-          "size_bytes": 363180328
         }
       },
       "subtitles": [
@@ -2645,8 +2465,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/490",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489"
       },
       "downloads": [
         {
@@ -2732,18 +2551,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "352.9 MB",
-          "size_bytes": 370094819,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_dorothy-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -2764,12 +2571,6 @@
           "message_id": 489,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/489",
           "size_bytes": 991611766
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/491",
-          "size_bytes": 370094819
         }
       },
       "subtitles": [
@@ -2891,8 +2692,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/494",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493"
       },
       "downloads": [
         {
@@ -2978,18 +2778,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "348.9 MB",
-          "size_bytes": 365876571,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_zom-100-bucket-list-of-the-dead-2023_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -3010,12 +2798,6 @@
           "message_id": 493,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/493",
           "size_bytes": 896297991
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/495",
-          "size_bytes": 365876571
         }
       },
       "subtitles": [
@@ -3137,8 +2919,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/499",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/499",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/498",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/497",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/499"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/497"
       },
       "downloads": [
         {
@@ -3224,18 +3005,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "326.9 MB",
-          "size_bytes": 342817721,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-weight-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/499",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -3256,12 +3025,6 @@
           "message_id": 497,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/497",
           "size_bytes": 729698270
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/499",
-          "size_bytes": 342817721
         }
       },
       "subtitles": [
@@ -3384,8 +3147,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/502",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501"
       },
       "downloads": [
         {
@@ -3471,18 +3233,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "351.2 MB",
-          "size_bytes": 368260348,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_ranabaali-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -3503,12 +3253,6 @@
           "message_id": 501,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/501",
           "size_bytes": 1197426447
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/503",
-          "size_bytes": 368260348
         }
       },
       "subtitles": [
@@ -3585,8 +3329,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/506",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505"
       },
       "downloads": [
         {
@@ -3672,18 +3415,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "353.7 MB",
-          "size_bytes": 370912251,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_gajab-raat_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -3704,12 +3435,6 @@
           "message_id": 505,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/505",
           "size_bytes": 875847984
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/507",
-          "size_bytes": 370912251
         }
       },
       "subtitles": [
@@ -3832,8 +3557,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/510",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509"
       },
       "downloads": [
         {
@@ -3919,18 +3643,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "350.0 MB",
-          "size_bytes": 367024097,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_tenzing-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -3951,12 +3663,6 @@
           "message_id": 509,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/509",
           "size_bytes": 864018222
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/511",
-          "size_bytes": 367024097
         }
       },
       "subtitles": [
@@ -4079,8 +3785,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/514",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513"
       },
       "downloads": [
         {
@@ -4166,18 +3871,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "342.4 MB",
-          "size_bytes": 359017505,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-cycle-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -4198,12 +3891,6 @@
           "message_id": 513,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/513",
           "size_bytes": 724628323
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/515",
-          "size_bytes": 359017505
         }
       },
       "subtitles": [
@@ -4326,8 +4013,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/519",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/519",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/518",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/517",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/519"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/517"
       },
       "downloads": [
         {
@@ -4413,18 +4099,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "350.4 MB",
-          "size_bytes": 367441729,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-dog-stars-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/519",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -4445,12 +4119,6 @@
           "message_id": 517,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/517",
           "size_bytes": 812869782
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/519",
-          "size_bytes": 367441729
         }
       },
       "subtitles": [
@@ -4571,8 +4239,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/522",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521"
       },
       "downloads": [
         {
@@ -4658,18 +4325,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "336.4 MB",
-          "size_bytes": 352731622,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_ali-g-who-iz-i-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -4690,12 +4345,6 @@
           "message_id": 521,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/521",
           "size_bytes": 610741798
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/523",
-          "size_bytes": 352731622
         }
       },
       "subtitles": [
@@ -4818,8 +4467,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/527",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/527",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/526",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/525",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/527"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/525"
       },
       "downloads": [
         {
@@ -4905,18 +4553,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "352.2 MB",
-          "size_bytes": 369274817,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_baththa-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/527",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -4937,12 +4573,6 @@
           "message_id": 525,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/525",
           "size_bytes": 1082584826
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/527",
-          "size_bytes": 369274817
         }
       },
       "subtitles": [
@@ -5064,8 +4694,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/530",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529"
       },
       "downloads": [
         {
@@ -5151,18 +4780,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "338.3 MB",
-          "size_bytes": 354751751,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_verity-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -5183,12 +4800,6 @@
           "message_id": 529,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/529",
           "size_bytes": 782724302
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/531",
-          "size_bytes": 354751751
         }
       },
       "subtitles": [
@@ -5310,8 +4921,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/534",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533"
       },
       "downloads": [
         {
@@ -5397,18 +5007,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "341.8 MB",
-          "size_bytes": 358455094,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-for-me-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -5429,12 +5027,6 @@
           "message_id": 533,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/533",
           "size_bytes": 717747480
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/535",
-          "size_bytes": 358455094
         }
       },
       "subtitles": [
@@ -5555,8 +5147,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/538",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537"
       },
       "downloads": [
         {
@@ -5642,18 +5233,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "342.8 MB",
-          "size_bytes": 359448605,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_never-after-dark-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -5674,12 +5253,6 @@
           "message_id": 537,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/537",
           "size_bytes": 647055307
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/539",
-          "size_bytes": 359448605
         }
       },
       "subtitles": [
@@ -5802,8 +5375,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/542",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541"
       },
       "downloads": [
         {
@@ -5889,18 +5461,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "352.9 MB",
-          "size_bytes": 370080788,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_sigma-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -5921,12 +5481,6 @@
           "message_id": 541,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/541",
           "size_bytes": 1005112177
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/543",
-          "size_bytes": 370080788
         }
       },
       "subtitles": [
@@ -6050,8 +5604,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/547",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/547",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/546",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/545",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/547"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/545"
       },
       "downloads": [
         {
@@ -6137,18 +5690,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "352.7 MB",
-          "size_bytes": 369814220,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_immortal-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/547",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -6169,12 +5710,6 @@
           "message_id": 545,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/545",
           "size_bytes": 903412526
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/547",
-          "size_bytes": 369814220
         }
       },
       "subtitles": [
@@ -6297,8 +5832,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/550",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549"
       },
       "downloads": [
         {
@@ -6384,18 +5918,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "343.9 MB",
-          "size_bytes": 360630265,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_apocalypse-z-new-world-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -6416,12 +5938,6 @@
           "message_id": 549,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/549",
           "size_bytes": 661413793
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/551",
-          "size_bytes": 360630265
         }
       },
       "subtitles": [
@@ -6544,8 +6060,7 @@
         "auto": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
         "1080p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
         "720p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/554",
-        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553",
-        "360p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555"
+        "480p": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553"
       },
       "downloads": [
         {
@@ -6631,18 +6146,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "352.5 MB",
-          "size_bytes": 369599641,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_mirzapur-the-movie-2026_360p",
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -6663,12 +6166,6 @@
           "message_id": 553,
           "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/553",
           "size_bytes": 1431681177
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://generate-erp-matrix-recycling.trycloudflare.com/stream/channel/-1004325759505/555",
-          "size_bytes": 369599641
         }
       },
       "subtitles": [
@@ -6789,8 +6286,7 @@
         "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
         "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
         "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/557",
-        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558",
-        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559"
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558"
       },
       "downloads": [
         {
@@ -6876,18 +6372,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "345.5 MB",
-          "size_bytes": 362246429,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_sumo-didi-2026_360p",
-          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -6908,12 +6392,6 @@
           "message_id": 558,
           "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558",
           "size_bytes": 781980352
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
-          "size_bytes": 362246429
         }
       },
       "subtitles": [
@@ -7035,8 +6513,7 @@
         "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
         "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
         "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/561",
-        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562",
-        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563"
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562"
       },
       "downloads": [
         {
@@ -7122,18 +6599,6 @@
           "host": "Telegram",
           "sub_merged": true,
           "subtitle_merged": true
-        },
-        {
-          "quality": "360p",
-          "label": "360p Data Saver (Telegram Bot / Cloud)",
-          "size": "342.1 MB",
-          "size_bytes": 358714608,
-          "url": "https://t.me/Filmsinhala200Bot?start=dl_dollhouse-2025_360p",
-          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
-          "format": "MP4",
-          "host": "Telegram",
-          "sub_merged": true,
-          "subtitle_merged": true
         }
       ],
       "variant_media": {
@@ -7154,12 +6619,6 @@
           "message_id": 562,
           "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562",
           "size_bytes": 743849495
-        },
-        "360p": {
-          "file_id": "",
-          "message_id": 0,
-          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
-          "size_bytes": 358714608
         }
       },
       "subtitles": [

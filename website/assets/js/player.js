@@ -964,7 +964,7 @@ function getMovieStreams(movie) {
     if (isValidV(vm[qKey])) {
       vOpt = vm[qKey];
     } else {
-      const candidates = ['720p', '480p', '1080p', '360p'];
+      const candidates = ['720p', '480p', '1080p'];
       for (const q of candidates) {
         if (isValidV(vm[q])) {
           vOpt = vm[q];
@@ -1382,7 +1382,7 @@ function getMovieDownloads(movie) {
       '480p': '480p SD',
       '360p': '360p Data Saver',
     };
-    ['1080p', '720p', '480p', '360p'].forEach(q => {
+    ['1080p', '720p', '480p'].forEach(q => {
       const v = vm[q];
       if (v && typeof v === 'object' && (v.file_id || v.message_id)) {
         const sz = v.size_bytes ? formatBytesFromBytes(v.size_bytes) : '';
@@ -1492,7 +1492,7 @@ function getMovieDownloads(movie) {
     }
   }
 
-  return results;
+  return results.filter(r => !String(r.quality || '').toLowerCase().includes('360'));
 }
 
 // ---- 1. Breadcrumb & 2. Page Header ----
@@ -1700,7 +1700,7 @@ function resolveStreamUrlForQuality(movie, quality) {
     } else if (isValidV(vm[quality])) {
       vEntry = vm[quality];
     } else {
-      const candidates = ['720p', '480p', '1080p', '360p'];
+      const candidates = ['720p', '480p', '1080p'];
       for (const q of candidates) {
         if (isValidV(vm[q])) {
           vEntry = vm[q];
@@ -3620,14 +3620,19 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
 
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
-      try {
-        const p = vjsPlayer.play();
-        if (p && typeof p.catch === 'function') {
-          p.catch(() => {
-            hideLoader();
-          });
+      if (autoPlay) {
+        try {
+          const p = vjsPlayer.play();
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => {
+              hideLoader();
+            });
+          }
+        } catch (e) {
+          hideLoader();
         }
-      } catch (e) {
+      } else {
+        // Autoplay disabled: leave player paused showing poster and big play button
         hideLoader();
       }
     });
@@ -4479,96 +4484,172 @@ function renderSeriesSection(movie) {
   });
 }
 
-// ---- Movie Details & Synopsis ----
+// ---- Movie Details & Synopsis (Legendary Cinema Platform Edition) ----
 function renderMovieDetails(movie) {
   const esc = FilmSub.escHtml;
   const poster = movie.poster || movie.poster_url || FilmSub.SITE_CONFIG.defaultPoster;
+  const backdrop = movie.backdrop || movie.backdrop_url || poster;
+
+  // 1. Ambient Blurred Backdrop Glow
+  const glowEl = document.getElementById('cs-details-backdrop-glow');
+  if (glowEl && backdrop) {
+    glowEl.style.backgroundImage = `url('${backdrop}')`;
+  }
+
+  // 2. Poster Image with 3D Depth
   const posterEl = document.getElementById('movie-poster-img');
   if (posterEl) {
     posterEl.src = poster;
     posterEl.alt = movie.title || '';
   }
 
+  // 3. Floating Quality Badges on Poster
   const badgesEl = document.getElementById('cs-poster-badges');
   if (badgesEl) {
     let bHtml = '';
-    if (movie.imdb) bHtml += `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i>${esc(movie.imdb)}</span>`;
-    if (movie.quality) bHtml += `<span class="badge badge-quality">${esc(movie.quality)}</span>`;
-    if (movie.year) bHtml += `<span class="badge badge-year">${esc(movie.year)}</span>`;
+    const imdbVal = movie.imdb || movie.rating;
+    if (imdbVal && imdbVal !== '0.0') {
+      bHtml += `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${esc(imdbVal)}</span>`;
+    }
+    bHtml += `<span class="badge badge-quality"><i class="fa-solid fa-video"></i> ${esc(movie.quality || '1080p FHD')}</span>`;
+    bHtml += `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
     badgesEl.innerHTML = bHtml;
   }
 
+  // 4. Watch Button on Poster
+  const posterPlayBtn = document.getElementById('poster-play-btn');
+  if (posterPlayBtn) {
+    posterPlayBtn.onclick = (e) => {
+      e.preventDefault();
+      const pSec = document.getElementById('player-section');
+      if (pSec) {
+        pSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (vjsPlayer && typeof vjsPlayer.play === 'function') {
+        try { vjsPlayer.play(); } catch(err) {}
+      }
+    };
+  }
+
+  // 5. Title Banner
+  const titleEl = document.getElementById('cs-details-title');
+  if (titleEl) {
+    titleEl.textContent = movie.title || 'Untitled';
+  }
+  const titleSiEl = document.getElementById('cs-details-title-si');
+  if (titleSiEl) {
+    titleSiEl.textContent = movie.title_si ? `${movie.title_si} ${movie.year ? '(' + movie.year + ')' : ''}` : (movie.year ? `(${movie.year})` : '');
+    titleSiEl.style.display = (movie.title_si || movie.year) ? 'block' : 'none';
+  }
+
+  // 6. Interactive Badges & Metadata Rail
+  const badgesRail = document.getElementById('cs-badges-rail');
+  if (badgesRail) {
+    let rHtml = '';
+    const imdbVal = movie.imdb || movie.rating;
+    if (imdbVal && imdbVal !== '0.0') {
+      rHtml += `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> IMDb ${esc(imdbVal)}</span>`;
+    }
+    if (movie.year) {
+      rHtml += `<span class="badge badge-year"><i class="fa-regular fa-calendar"></i> ${esc(movie.year)}</span>`;
+    }
+    const durVal = typeof movie.duration === 'number' ? `${movie.duration} min` : (movie.duration || '');
+    if (durVal) {
+      rHtml += `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${esc(durVal)}</span>`;
+    }
+    rHtml += `<span class="badge badge-quality"><i class="fa-solid fa-tv"></i> ${esc(movie.quality || '1080p Full HD')}</span>`;
+    rHtml += `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</span>`;
+    badgesRail.innerHTML = rHtml;
+  }
+
+  // 7. Genre Pills
+  const genresEl = document.getElementById('cs-genre-pills');
+  if (genresEl) {
+    const genres = Array.isArray(movie.genres) ? movie.genres : [];
+    if (genres.length > 0) {
+      genresEl.innerHTML = genres.map(g =>
+        `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip"><i class="fa-solid fa-tag" style="font-size:10px"></i> ${esc(g)}</a>`
+      ).join('');
+    } else {
+      genresEl.innerHTML = `<span class="genre-chip">Cinema</span>`;
+    }
+  }
+
+  // 8. Synopsis Tabs Toggle
+  const tabSi = document.getElementById('tab-btn-si');
+  const tabEn = document.getElementById('tab-btn-en');
+  const paneSi = document.getElementById('pane-si');
+  const paneEn = document.getElementById('pane-en');
+
+  if (tabSi && tabEn && paneSi && paneEn) {
+    tabSi.onclick = () => {
+      tabSi.classList.add('active');
+      tabEn.classList.remove('active');
+      paneSi.classList.add('active');
+      paneEn.classList.remove('active');
+    };
+    tabEn.onclick = () => {
+      tabEn.classList.add('active');
+      tabSi.classList.remove('active');
+      paneEn.classList.add('active');
+      paneSi.classList.remove('active');
+    };
+  }
+
+  const siDescEl = document.getElementById('movie-desc-si');
+  if (siDescEl) {
+    siDescEl.textContent = movie.description_si || movie.storyline_si || movie.storyline || movie.description || 'මෙම චිත්‍රපටය සඳහා සිංහල සාරාංශය ළඟදීම එක් කෙරේ.';
+  }
+
+  const enDescEl = document.getElementById('movie-desc-en');
+  if (enDescEl) {
+    enDescEl.textContent = movie.storyline || movie.description || 'No English synopsis available for this title.';
+  }
+
+  // 9. Modern Attributes Micro-Cards Grid
   let castStr = 'N/A';
   if (Array.isArray(movie.cast) && movie.cast.length > 0) {
-    castStr = movie.cast.slice(0, 5).map(c => {
+    castStr = movie.cast.slice(0, 6).map(c => {
       if (typeof c === 'string') return esc(c);
       if (c && typeof c === 'object' && c.name) return esc(c.name);
       return '';
     }).filter(Boolean).join(', ');
   }
 
-  const genres = Array.isArray(movie.genres) ? movie.genres : [];
-  const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${esc(g)}</a>`).join('');
-
   const metaGridEl = document.getElementById('cs-meta-grid');
   if (metaGridEl) {
     metaGridEl.innerHTML = `
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-film"></i> Title:</div>
-        <div class="cs-meta-val"><strong>${esc(movie.title || 'Untitled')}</strong></div>
+      <div class="cs-micro-card">
+        <div class="cs-micro-icon"><i class="fa-solid fa-user-tie"></i></div>
+        <div class="cs-micro-info">
+          <span class="cs-micro-label">Director</span>
+          <span class="cs-micro-val">${esc(movie.director || 'N/A')}</span>
+        </div>
       </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-language"></i> Sinhala Title:</div>
-        <div class="cs-meta-val" style="color:var(--gold);font-weight:600">${esc(movie.title_si || movie.title || '')}</div>
+      <div class="cs-micro-card">
+        <div class="cs-micro-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="cs-micro-info">
+          <span class="cs-micro-label">Leading Cast</span>
+          <span class="cs-micro-val">${castStr}</span>
+        </div>
       </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-regular fa-calendar"></i> Release Year:</div>
-        <div class="cs-meta-val">${esc(movie.year || 'N/A')}</div>
+      <div class="cs-micro-card">
+        <div class="cs-micro-icon"><i class="fa-solid fa-globe"></i></div>
+        <div class="cs-micro-info">
+          <span class="cs-micro-label">Language & Audio</span>
+          <span class="cs-micro-val">${esc(movie.language || 'English')} • Dolby Stereo</span>
+        </div>
       </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-star"></i> IMDb Rating:</div>
-        <div class="cs-meta-val"><span style="color:var(--gold);font-weight:700"><i class="fa-solid fa-star"></i> ${esc(movie.imdb || 'N/A')}</span> / 10</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-regular fa-clock"></i> Runtime:</div>
-        <div class="cs-meta-val">${esc(typeof movie.duration === 'number' ? `${movie.duration} min` : (movie.duration || 'N/A'))}</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-user-tie"></i> Director:</div>
-        <div class="cs-meta-val">${esc(movie.director || 'N/A')}</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-users"></i> Cast:</div>
-        <div class="cs-meta-val">${castStr}</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-tags"></i> Genres:</div>
-        <div class="cs-meta-val">${genreChips || 'Action'}</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-volume-high"></i> Language:</div>
-        <div class="cs-meta-val">${esc(movie.language || 'English')}</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-closed-captioning"></i> Subtitles:</div>
-        <div class="cs-meta-val" style="color:var(--accent);font-weight:600">Sinhala (සිංහල උපසිරැසි)</div>
-      </div>
-      <div class="cs-meta-row">
-        <div class="cs-meta-label"><i class="fa-solid fa-pen-nib"></i> Subbed By:</div>
-        <div class="cs-meta-val">FilmZilla Team</div>
+      <div class="cs-micro-card">
+        <div class="cs-micro-icon"><i class="fa-solid fa-certificate"></i></div>
+        <div class="cs-micro-info">
+          <span class="cs-micro-label">Subtitles</span>
+          <span class="cs-micro-val" style="color:var(--accent);font-weight:700">FilmZilla Official Sinhala (Merged)</span>
+        </div>
       </div>`;
   }
-
-  const siDescEl = document.getElementById('movie-desc-si');
-  if (siDescEl) {
-    siDescEl.textContent = movie.description_si || movie.description || 'මෙම චිත්‍රපටය සඳහා සිංහල විස්තරය ළඟදීම එක් කෙරේ.';
-  }
-
-  const enDescEl = document.getElementById('movie-desc-en');
-  if (enDescEl) {
-    enDescEl.textContent = movie.description || 'No English synopsis available.';
-  }
 }
+
 
 // ---- Download Section ----
 function renderDownloadSection(movie) {

@@ -3351,20 +3351,11 @@ async def _execute_leech(
         else:
             sz_480 = int(file_size * 0.32)
 
-        if "360p" in variant_files and os.path.exists(variant_files["360p"]):
-            sz_360 = os.path.getsize(variant_files["360p"])
-        elif variant_cloud_urls.get("360p", {}).get("size_bytes"):
-            sz_360 = variant_cloud_urls["360p"]["size_bytes"]
-        elif variant_tg_info.get("360p", {}).get("file_size"):
-            sz_360 = variant_tg_info["360p"]["file_size"]
-        else:
-            sz_360 = int(file_size * 0.18)
 
         sz_1080 = file_size
 
         stream_720 = variant_tg_info.get("720p", {}).get("stream_url") or variant_cloud_urls.get("720p", {}).get("stream_url") or stream_url
         stream_480 = variant_tg_info.get("480p", {}).get("stream_url") or variant_cloud_urls.get("480p", {}).get("stream_url") or stream_url
-        stream_360 = variant_tg_info.get("360p", {}).get("stream_url") or variant_cloud_urls.get("360p", {}).get("stream_url") or stream_url
 
         streams_list = []
         downloads_list = []
@@ -3398,7 +3389,6 @@ async def _execute_leech(
                 "1080p": variant_tg_info.get("1080p", {}).get("stream_url") or stream_url,
                 "720p": stream_720,
                 "480p": stream_480,
-                "360p": stream_360,
             }
         elif cloud_stream:
             qualities_map = {
@@ -3406,7 +3396,6 @@ async def _execute_leech(
                 "1080p": cloud_stream,
                 "720p": variant_cloud_urls.get("720p", {}).get("stream_url") or cloud_stream,
                 "480p": variant_cloud_urls.get("480p", {}).get("stream_url") or cloud_stream,
-                "360p": variant_cloud_urls.get("360p", {}).get("stream_url") or cloud_stream,
             }
 
         # 2. If Google Drive upload was explicitly enabled and succeeded, add as backup Server
@@ -3506,12 +3495,6 @@ async def _execute_leech(
                 "stream_url": variant_tg_info.get("480p", {}).get("stream_url") or stream_480,
                 "size_bytes": variant_tg_info.get("480p", {}).get("file_size", 0) or sz_480,
             },
-            "360p": {
-                "file_id": variant_tg_info.get("360p", {}).get("file_id", ""),
-                "message_id": variant_tg_info.get("360p", {}).get("message_id", 0),
-                "stream_url": variant_tg_info.get("360p", {}).get("stream_url") or stream_360,
-                "size_bytes": variant_tg_info.get("360p", {}).get("file_size", 0) or sz_360,
-            },
         }
 
         # Store in task_tracker so QueueService / Stage2Patcher can retrieve it
@@ -3528,7 +3511,6 @@ async def _execute_leech(
             ("1080p", "1080p Full HD (Telegram Channel • Fast)", sz_1080, stream_url),
             ("720p", "720p HD (Telegram Channel • Fast)", sz_720, stream_720),
             ("480p", "480p SD (Telegram Channel • Fast)", sz_480, stream_480),
-            ("360p", "360p Mobile (Telegram Channel • Fast)", sz_360, stream_360),
         ]:
             info = variant_tg_info.get(q_var) or {}
             v_msg = info.get("message_id")
@@ -3561,7 +3543,6 @@ async def _execute_leech(
             ("1080p", "1080p Full HD (Telegram Bot / Cloud)", sz_1080, stream_url),
             ("720p", "720p HD (Telegram Bot / Cloud)", sz_720, stream_720),
             ("480p", "480p SD (Telegram Bot / Cloud)", sz_480, stream_480),
-            ("360p", "360p Data Saver (Telegram Bot / Cloud)", sz_360, stream_360),
         ]:
             downloads_list.append({
                 "quality": q_k,
@@ -3598,7 +3579,6 @@ async def _execute_leech(
                 "1080p": stream_url or primary_stream,
                 "720p": stream_720 or stream_url or primary_stream,
                 "480p": stream_480 or stream_url or primary_stream,
-                "360p": stream_360 or stream_url or primary_stream,
             }
 
         raw_dur = tmdb_meta.get("duration", 120)

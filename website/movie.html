@@ -753,13 +753,7 @@
                 </div>
                 <i class="fa-solid fa-check q-check-icon"></i>
               </button>
-              <button type="button" class="q-menu-item" data-quality="360p">
-                <div class="q-menu-meta">
-                  <span class="q-menu-name">360p Data Saver</span>
-                  <span class="q-menu-desc">Low data usage</span>
-                </div>
-                <i class="fa-solid fa-check q-check-icon"></i>
-              </button>
+
             </div>
           </div>
         </div>
@@ -779,7 +773,7 @@
             <span>Download Video:</span>
           </div>
           <div class="quick-dl-buttons" id="quick-dl-buttons">
-            <!-- Populated dynamically by player.js with 1080p, 720p, 480p, 360p -->
+            <!-- Populated dynamically by player.js with 1080p, 720p, 480p -->
           </div>
         </div>
       </div>
@@ -817,11 +811,13 @@
   </section>
 
 
-  <!-- ========== 2. MOVIE DETAILS & SYNOPSIS (BELOW PLAYER) ========== -->
+  <!-- ========== 2. MOVIE DETAILS & SYNOPSIS (LEGENDARY CINEMA SHOWCASE) ========== -->
   <section class="cs-movie-details-section" id="movie-details-section" aria-label="Movie Information">
-    <div class="cs-container">
+    <!-- Ambient blurred background glow -->
+    <div class="cs-details-backdrop-glow" id="cs-details-backdrop-glow" aria-hidden="true"></div>
+    <div class="cs-container" style="position:relative;z-index:2">
       <div class="cs-details-card">
-        <!-- Left: Poster Column -->
+        <!-- Left: 3D Poster Showcase Column -->
         <div class="cs-poster-col">
           <div class="cs-poster-wrap">
             <img id="movie-poster-img" class="cs-poster-img"
@@ -829,29 +825,61 @@
                  alt="Movie Poster">
             <div class="cs-poster-badges" id="cs-poster-badges"></div>
           </div>
-          <a href="#downloads" class="cs-poster-dl-btn">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Download Links
-          </a>
-          <button class="btn btn-secondary btn-sm" id="movie-share-btn" type="button" style="width:100%;justify-content:center">
-            <i class="fa-solid fa-share-nodes"></i> Share Movie
-          </button>
+          <!-- Action Buttons Beneath Poster -->
+          <div class="cs-poster-actions">
+            <a href="#player-section" class="cs-poster-play-btn" id="poster-play-btn">
+              <i class="fa-solid fa-play"></i> Watch Movie
+            </a>
+            <a href="#downloads" class="cs-poster-dl-btn">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
+            </a>
+            <button class="btn btn-secondary btn-sm" id="movie-share-btn" type="button" style="width:100%;justify-content:center">
+              <i class="fa-solid fa-share-nodes"></i> Share Movie
+            </button>
+          </div>
         </div>
 
-        <!-- Right: Information & Synopsis -->
+        <!-- Right: Grand Cinema Information & Synopsis -->
         <div class="cs-info-col">
-          <!-- Metadata Table -->
-          <div class="cs-meta-grid" id="cs-meta-grid">
-            <!-- Injected by player.js -->
+          <!-- Title Banner -->
+          <div class="cs-title-banner">
+            <h2 class="cs-details-title" id="cs-details-title">Loading...</h2>
+            <h3 class="cs-details-title-si" id="cs-details-title-si"></h3>
           </div>
 
-          <!-- Synopsis Box -->
-          <div class="cs-synopsis-box">
-            <h3 class="cs-synopsis-heading"><i class="fa-solid fa-book-open"></i> Storyline (කතාව සැකෙවින්)</h3>
-            <p class="cs-synopsis-si" id="movie-desc-si"></p>
-            <div class="cs-synopsis-en-wrap">
-              <h4 class="cs-synopsis-en-title">English Plot</h4>
-              <p class="cs-synopsis-en" id="movie-desc-en"></p>
+          <!-- Modern Badges & Key Metadata Rail -->
+          <div class="cs-badges-rail" id="cs-badges-rail">
+            <!-- Populated dynamically by player.js -->
+          </div>
+
+          <!-- Genre Capsules -->
+          <div class="cs-genre-pills" id="cs-genre-pills">
+            <!-- Populated dynamically by player.js -->
+          </div>
+
+          <!-- Interactive Synopsis Tabs (Sinhala & English) -->
+          <div class="cs-synopsis-card">
+            <div class="cs-synopsis-tabs-header">
+              <button type="button" class="cs-synopsis-tab active" id="tab-btn-si" data-tab="si">
+                <i class="fa-solid fa-language" style="color:var(--gold)"></i> සිංහල කතාව (Sinhala Plot)
+              </button>
+              <button type="button" class="cs-synopsis-tab" id="tab-btn-en" data-tab="en">
+                <i class="fa-solid fa-globe" style="color:#00c0ff"></i> English Storyline
+              </button>
             </div>
+            <div class="cs-synopsis-tab-content">
+              <div class="cs-synopsis-pane active" id="pane-si">
+                <p class="cs-synopsis-text" id="movie-desc-si"></p>
+              </div>
+              <div class="cs-synopsis-pane" id="pane-en">
+                <p class="cs-synopsis-text" id="movie-desc-en"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Attributes Micro-Cards Grid (Director, Cast, Audio, Subtitle) -->
+          <div class="cs-meta-grid" id="cs-meta-grid">
+            <!-- Injected by player.js -->
           </div>
         </div>
       </div>

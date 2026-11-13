@@ -4725,23 +4725,26 @@ function renderDownloadSection(movie) {
           </a>`;
       }
 
+      const isRec = rawQ.includes('720');
+      const recRibbon = isRec ? `<div class="cs-dl-rec-ribbon"><i class="fa-solid fa-crown"></i> RECOMMENDED</div>` : '';
+      const qIcon = rawQ.includes('1080') ? 'fa-solid fa-crown' : (rawQ.includes('720') ? 'fa-solid fa-bolt' : 'fa-solid fa-film');
+
       return `
-        <div class="cs-dl-card download-card">
+        <div class="cs-dl-card download-card ${isRec ? 'recommended-dl-card' : ''}">
+          ${recRibbon}
           <div class="cs-dl-top">
             <div class="cs-dl-quality">
-              <i class="fa-solid fa-film" style="color:var(--accent)"></i>
+              <i class="${qIcon}" style="color:var(--accent)"></i>
               <span>${FilmSub.escHtml(qTitle)}</span>
             </div>
-            ${sz ? `<div class="cs-dl-size-badge">${FilmSub.escHtml(sz)}</div>` : ''}
+            ${sz ? `<div class="cs-dl-size-badge"><i class="fa-solid fa-database" style="font-size:10px;margin-right:4px"></i>${FilmSub.escHtml(sz)}</div>` : ''}
           </div>
           <div class="cs-dl-specs">
-            <span><i class="fa-solid fa-bolt" style="color:#00e676"></i> <span style="color:#e5e5e5">High-Speed Cloud</span></span>
-            <span>•</span>
-            <span><i class="fa-solid fa-video"></i> ${FilmSub.escHtml(fmt)}</span>
-            <span>•</span>
-            <span style="color:var(--accent)"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub Merged</span>
+            <span class="dl-spec-chip chip-cloud"><i class="fa-solid fa-bolt"></i> High-Speed Cloud</span>
+            <span class="dl-spec-chip chip-fmt"><i class="fa-solid fa-file-video"></i> ${FilmSub.escHtml(fmt)}</span>
+            <span class="dl-spec-chip chip-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub Merged</span>
           </div>
-          <div class="cs-dl-actions" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">
+          <div class="cs-dl-actions">
             ${actionBtns}
           </div>
         </div>`;

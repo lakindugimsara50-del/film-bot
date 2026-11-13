@@ -6685,7 +6685,252 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-09",
       "added_at": "2026-11-09T05:01:49Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "sumo-didi-2026",
+      "slug": "sumo-didi-2026",
+      "title": "Sumo Didi",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.0",
+      "rating": "5.0",
+      "imdb_id": "tt24226306",
+      "tmdb_id": "1186823",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/qrDFJdUBAqdiwcd0e0ajGpWtUPo.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/qrDFJdUBAqdiwcd0e0ajGpWtUPo.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/2MllO3l2S13r7Dv87SA5TTVZ50s.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/2MllO3l2S13r7Dv87SA5TTVZ50s.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/hJL9MdogzTk",
+      "trailer_id": "hJL9MdogzTk",
+      "genres": [
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "118 min",
+      "description": "Hetal, a talented wrestler, discovers sumo by chance, but her road to improvement is very steep. Unwilling to give up her dream, she goes to Japan and endures rigorous training. A unique Indian sumo girl movie!",
+      "director": "Jayant Rohatgi",
+      "cast": [
+        {
+          "name": "Shriyam Bhagnani",
+          "character": "Hetal Dave"
+        },
+        {
+          "name": "Chaitanya Sharma",
+          "character": "Akshat Sharma"
+        },
+        {
+          "name": "Nitesh Pandey",
+          "character": "Rajendra Dave"
+        },
+        {
+          "name": "Anubha Fatehpuria",
+          "character": "Sudha Dave"
+        },
+        {
+          "name": "Suchita Trivedi",
+          "character": "Kusum"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi9q9ty6e5EOBsH6TOUmjyehZRLoEAACLh8AAlaTuVfbKFaqqszPbx4E",
+      "message_id": 559,
+      "file_name": "comp_sumo-didi-2026_1080p.mp4",
+      "file_size": 2012480165,
+      "drive_file_id": "",
+      "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi9q9ty6e5EOBsH6TOUmjyehZRLoEAACLh8AAlaTuVfbKFaqqszPbx4E",
+          "message_id": 559,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1186823"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt24226306"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt24226306"
+        }
+      ],
+      "qualities": {
+        "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+        "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+        "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/557",
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558",
+        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2012480165,
+          "url": "https://t.me/c/4325759505/559",
+          "telegram_url": "https://t.me/c/4325759505/559",
+          "direct_url": "/stream/channel/-1004325759505/559?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi9q9ty6e5EOBsH6TOUmjyehZRLoEAACLh8AAlaTuVfbKFaqqszPbx4E",
+          "message_id": 559,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1444120991,
+          "url": "https://t.me/c/4325759505/557",
+          "telegram_url": "https://t.me/c/4325759505/557",
+          "direct_url": "/stream/channel/-1004325759505/557?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi1q9tqjUjl_GOpsaVqF_gRploLBkQACKx8AAlaTuVcEPm06bM7ylB4E",
+          "message_id": 557,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/557",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "745.8 MB",
+          "size_bytes": 781980352,
+          "url": "https://t.me/c/4325759505/558",
+          "telegram_url": "https://t.me/c/4325759505/558",
+          "direct_url": "/stream/channel/-1004325759505/558?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi5q9tq2Mu37wqOe7rzRhp92pf-J5wACLB8AAlaTuVddg_VBVYb44x4E",
+          "message_id": 558,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2012480165,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sumo-didi-2026_1080p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1444120991,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sumo-didi-2026_720p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/557",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "745.8 MB",
+          "size_bytes": 781980352,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sumo-didi-2026_480p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "345.5 MB",
+          "size_bytes": 362246429,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sumo-didi-2026_360p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi9q9ty6e5EOBsH6TOUmjyehZRLoEAACLh8AAlaTuVfbKFaqqszPbx4E",
+          "message_id": 559,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+          "size_bytes": 2012480165
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi1q9tqjUjl_GOpsaVqF_gRploLBkQACKx8AAlaTuVcEPm06bM7ylB4E",
+          "message_id": 557,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/557",
+          "size_bytes": 1444120991
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAi5q9tq2Mu37wqOe7rzRhp92pf-J5wACLB8AAlaTuVddg_VBVYb44x4E",
+          "message_id": 558,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/558",
+          "size_bytes": 781980352
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/559",
+          "size_bytes": 362246429
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/sumo-didi-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=sumo-didi-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T09:47:51Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-09T05:01:50Z"
+  "last_updated": "2026-11-13T09:47:53Z"
 };

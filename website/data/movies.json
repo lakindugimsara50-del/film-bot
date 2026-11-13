@@ -6930,7 +6930,253 @@
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T09:47:51Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "dollhouse-2025",
+      "slug": "dollhouse-2025",
+      "title": "Dollhouse",
+      "title_si": "",
+      "year": 2025,
+      "imdb": "7.7",
+      "rating": "7.7",
+      "imdb_id": "tt35276942",
+      "tmdb_id": "1404791",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/vUs4OPpvu4Is7wIGaXkseNJHhEA.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/vUs4OPpvu4Is7wIGaXkseNJHhEA.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/rV9MLgLm4i5ImuhhqdJ2fa7JMc2.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/rV9MLgLm4i5ImuhhqdJ2fa7JMc2.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/BETzErclqok",
+      "trailer_id": "BETzErclqok",
+      "genres": [
+        "Horror",
+        "Mystery"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "110 min",
+      "description": "After losing their child, a mother finds solace in a life-sized ancient doll she finds on the market.  When a new daughter enters the family's life, strange things begin to happen and no matter how hard the family tries to get rid of it, the doll always finds its way back.",
+      "director": "Shinobu Yaguchi",
+      "cast": [
+        {
+          "name": "Masami Nagasawa",
+          "character": "Yoshie Suzuki"
+        },
+        {
+          "name": "Koji Seto",
+          "character": "Tadahiko Suzuki"
+        },
+        {
+          "name": "Tetsushi Tanaka",
+          "character": "Kanda"
+        },
+        {
+          "name": "Aoi Ikemura",
+          "character": "Mai Suzuki"
+        },
+        {
+          "name": "Naomi Nishida",
+          "character": "Ryoko Takeuchi"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjNq9uJkfnlXgjO-Ebaw66jp0vlEIAACOR8AAlaTuVcc4JxQr_yd9x4E",
+      "message_id": 563,
+      "file_name": "comp_dollhouse-2025_1080p.mp4",
+      "file_size": 1992858934,
+      "drive_file_id": "",
+      "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjNq9uJkfnlXgjO-Ebaw66jp0vlEIAACOR8AAlaTuVcc4JxQr_yd9x4E",
+          "message_id": 563,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1404791"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35276942"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35276942"
+        }
+      ],
+      "qualities": {
+        "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+        "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+        "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/561",
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562",
+        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1992858934,
+          "url": "https://t.me/c/4325759505/563",
+          "telegram_url": "https://t.me/c/4325759505/563",
+          "direct_url": "/stream/channel/-1004325759505/563?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjNq9uJkfnlXgjO-Ebaw66jp0vlEIAACOR8AAlaTuVcc4JxQr_yd9x4E",
+          "message_id": 563,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1374918024,
+          "url": "https://t.me/c/4325759505/561",
+          "telegram_url": "https://t.me/c/4325759505/561",
+          "direct_url": "/stream/channel/-1004325759505/561?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjFq9uA6RUZZ_oD4CsIN_kaxvXzoDwACNB8AAlaTuVcZpupXcNnUbR4E",
+          "message_id": 561,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/561",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "709.4 MB",
+          "size_bytes": 743849495,
+          "url": "https://t.me/c/4325759505/562",
+          "telegram_url": "https://t.me/c/4325759505/562",
+          "direct_url": "/stream/channel/-1004325759505/562?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjJq9uBPDSOQgPeIsStFkvPbUbJkmwACNR8AAlaTuVfED9EZNgeKNh4E",
+          "message_id": 562,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1992858934,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dollhouse-2025_1080p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1374918024,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dollhouse-2025_720p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/561",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "709.4 MB",
+          "size_bytes": 743849495,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dollhouse-2025_480p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "342.1 MB",
+          "size_bytes": 358714608,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dollhouse-2025_360p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjNq9uJkfnlXgjO-Ebaw66jp0vlEIAACOR8AAlaTuVcc4JxQr_yd9x4E",
+          "message_id": 563,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+          "size_bytes": 1992858934
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjFq9uA6RUZZ_oD4CsIN_kaxvXzoDwACNB8AAlaTuVcZpupXcNnUbR4E",
+          "message_id": 561,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/561",
+          "size_bytes": 1374918024
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjJq9uBPDSOQgPeIsStFkvPbUbJkmwACNR8AAlaTuVfED9EZNgeKNh4E",
+          "message_id": 562,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/562",
+          "size_bytes": 743849495
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/563",
+          "size_bytes": 358714608
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/dollhouse-2025-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=dollhouse-2025",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T10:12:02Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T09:47:53Z"
+  "last_updated": "2026-11-13T10:12:03Z"
 }

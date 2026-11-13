@@ -8080,7 +8080,234 @@
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T15:08:52Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "masterplan-2026",
+      "slug": "masterplan-2026",
+      "title": "Masterplan",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.8",
+      "rating": "6.8",
+      "imdb_id": "tt38672588",
+      "tmdb_id": "1561726",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/5xmXVd7nCK3tAo34XkO58SxUCip.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/5xmXVd7nCK3tAo34XkO58SxUCip.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/fAlQZsCOCvxOj0PmFmt4i8IWR2u.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/fAlQZsCOCvxOj0PmFmt4i8IWR2u.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/gc0t8AfMP6k",
+      "trailer_id": "gc0t8AfMP6k",
+      "genres": [
+        "Action",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "110 min",
+      "description": "When a legendary thief sets his sights on the Mona Lisa, he recruits two young strangers to help him before revealing they are long-lost siblings… and oh yes, by the way, he is their father. Thrown into a chaotic reunion they never asked for, this new family must learn to work together — and try not to kill each other — if they want any chance at pulling off the heist of the century.",
+      "director": "Thomas Vincent",
+      "cast": [
+        {
+          "name": "Stanley Tucci",
+          "character": "Roger"
+        },
+        {
+          "name": "Simona Tabasco",
+          "character": "Chiara"
+        },
+        {
+          "name": "Victor Belmondo",
+          "character": "Jay"
+        },
+        {
+          "name": "Eliott Margueron",
+          "character": ""
+        },
+        {
+          "name": "Barbara Lo Gaglio",
+          "character": "Professor"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlBq9y05CRxDt3UclWDxqTJada0TyQACByAAAlaTuVdFmEzFvie2vB4E",
+      "message_id": 592,
+      "file_name": "comp_masterplan-2026_1080p.mp4",
+      "file_size": 2016918603,
+      "drive_file_id": "",
+      "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlBq9y05CRxDt3UclWDxqTJada0TyQACByAAAlaTuVdFmEzFvie2vB4E",
+          "message_id": 592,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1561726"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt38672588"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt38672588"
+        }
+      ],
+      "qualities": {
+        "auto": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+        "1080p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+        "720p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/591",
+        "480p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/590"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2016918603,
+          "url": "https://t.me/c/4325759505/592",
+          "telegram_url": "https://t.me/c/4325759505/592",
+          "direct_url": "/stream/channel/-1004325759505/592?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlBq9y05CRxDt3UclWDxqTJada0TyQACByAAAlaTuVdFmEzFvie2vB4E",
+          "message_id": 592,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1383986680,
+          "url": "https://t.me/c/4325759505/591",
+          "telegram_url": "https://t.me/c/4325759505/591",
+          "direct_url": "/stream/channel/-1004325759505/591?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAk9q9ytFrNmj90CkG4I0T3DqKR3WlwAC9h8AAlaTuVegvKBY5Tx4DR4E",
+          "message_id": 591,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/591",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "711.5 MB",
+          "size_bytes": 746067224,
+          "url": "https://t.me/c/4325759505/590",
+          "telegram_url": "https://t.me/c/4325759505/590",
+          "direct_url": "/stream/channel/-1004325759505/590?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAk5q9yrV2CrmSZJ16y06bPG1wDGIAQAC9B8AAlaTuVdDLgr6F8sJOx4E",
+          "message_id": 590,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/590",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2016918603,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_masterplan-2026_1080p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1383986680,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_masterplan-2026_720p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/591",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "711.5 MB",
+          "size_bytes": 746067224,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_masterplan-2026_480p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/590",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlBq9y05CRxDt3UclWDxqTJada0TyQACByAAAlaTuVdFmEzFvie2vB4E",
+          "message_id": 592,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/592",
+          "size_bytes": 2016918603
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAk9q9ytFrNmj90CkG4I0T3DqKR3WlwAC9h8AAlaTuVegvKBY5Tx4DR4E",
+          "message_id": 591,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/591",
+          "size_bytes": 1383986680
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAk5q9yrV2CrmSZJ16y06bPG1wDGIAQAC9B8AAlaTuVdDLgr6F8sJOx4E",
+          "message_id": 590,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/590",
+          "size_bytes": 746067224
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/masterplan-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=masterplan-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T15:31:12Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T15:08:53Z"
+  "last_updated": "2026-11-13T15:31:13Z"
 }

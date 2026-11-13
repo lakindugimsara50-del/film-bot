@@ -7128,7 +7128,256 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T11:49:55Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "forgotten-island-2026",
+      "slug": "forgotten-island-2026",
+      "title": "Forgotten Island",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.0",
+      "rating": "8.0",
+      "imdb_id": "tt36583977",
+      "tmdb_id": "1465063",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/myd1K3gefdNAWFsGNRDdMeiK9Qg.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/myd1K3gefdNAWFsGNRDdMeiK9Qg.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/2o9FzuBzCqrDTdlHRuEVnGD2d5h.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/2o9FzuBzCqrDTdlHRuEVnGD2d5h.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/PhgY8cOJiQA",
+      "trailer_id": "PhgY8cOJiQA",
+      "genres": [
+        "Animation",
+        "Adventure",
+        "Fantasy",
+        "Comedy",
+        "Family"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "109 min",
+      "description": "While celebrating their last night together, high school graduates and best friends Jo and Raissa stumble upon a mysterious portal that transports them to the fantastical island of Nakali. When they discover that the memories of their entire friendship are the price for returning home, Jo and Raissa must race to find a way to leave the island before they forget each other forever.",
+      "director": "Januel Mercado, Joel Crawford",
+      "cast": [
+        {
+          "name": "H.E.R.",
+          "character": "Jo (voice)"
+        },
+        {
+          "name": "Liza Soberano",
+          "character": "Raissa (voice)"
+        },
+        {
+          "name": "Dave Franco",
+          "character": "Raww (voice)"
+        },
+        {
+          "name": "Jenny Slate",
+          "character": "Batiba (voice)"
+        },
+        {
+          "name": "Manny Jacinto",
+          "character": "Bungi Tiyanak (voice)"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj9q9wGW4izz6IeHnRPQp5rE0YzqxwACmR8AAlaTuVd9w-SIN1-A3h4E",
+      "message_id": 575,
+      "file_name": "comp_forgotten-island-2026_1080p.mp4",
+      "file_size": 1981275489,
+      "drive_file_id": "",
+      "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj9q9wGW4izz6IeHnRPQp5rE0YzqxwACmR8AAlaTuVd9w-SIN1-A3h4E",
+          "message_id": 575,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1465063"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36583977"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36583977"
+        }
+      ],
+      "qualities": {
+        "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+        "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+        "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/574",
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/573",
+        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1981275489,
+          "url": "https://t.me/c/4325759505/575",
+          "telegram_url": "https://t.me/c/4325759505/575",
+          "direct_url": "/stream/channel/-1004325759505/575?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj9q9wGW4izz6IeHnRPQp5rE0YzqxwACmR8AAlaTuVd9w-SIN1-A3h4E",
+          "message_id": 575,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1358940397,
+          "url": "https://t.me/c/4325759505/574",
+          "telegram_url": "https://t.me/c/4325759505/574",
+          "direct_url": "/stream/channel/-1004325759505/574?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj5q9v6JEc4glki7Ixw1Gv7oXvQB_wACgx8AAlaTuVcn3NBVbuGFIh4E",
+          "message_id": 574,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/574",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "720.0 MB",
+          "size_bytes": 754998702,
+          "url": "https://t.me/c/4325759505/573",
+          "telegram_url": "https://t.me/c/4325759505/573",
+          "direct_url": "/stream/channel/-1004325759505/573?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj1q9vzxjUoGEDCSDSkMEBEY24cuawACex8AAlaTuVe2O7vws-5FXR4E",
+          "message_id": 573,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/573",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1981275489,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_forgotten-island-2026_1080p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1358940397,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_forgotten-island-2026_720p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/574",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "720.0 MB",
+          "size_bytes": 754998702,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_forgotten-island-2026_480p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/573",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "340.1 MB",
+          "size_bytes": 356629588,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_forgotten-island-2026_360p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj9q9wGW4izz6IeHnRPQp5rE0YzqxwACmR8AAlaTuVd9w-SIN1-A3h4E",
+          "message_id": 575,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+          "size_bytes": 1981275489
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj5q9v6JEc4glki7Ixw1Gv7oXvQB_wACgx8AAlaTuVcn3NBVbuGFIh4E",
+          "message_id": 574,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/574",
+          "size_bytes": 1358940397
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAj1q9vzxjUoGEDCSDSkMEBEY24cuawACex8AAlaTuVe2O7vws-5FXR4E",
+          "message_id": 573,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/573",
+          "size_bytes": 754998702
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/575",
+          "size_bytes": 356629588
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/forgotten-island-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=forgotten-island-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T12:25:05Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T11:49:56Z"
+  "last_updated": "2026-11-13T12:25:07Z"
 };

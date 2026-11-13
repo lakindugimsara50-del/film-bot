@@ -5965,3 +5965,355 @@ main > .section:first-of-type {
     gap: 22px !important;
   }
 }
+
+
+/* ============================================================
+   Studio-Grade Cinema Showcase (Zero Cartoon Boxes / Pure Professional Flow)
+   ============================================================ */
+
+/* 1. Grand Movie Details Section with Seamless Cinematic Backdrop */
+.cs-movie-details-section {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 40px 0 60px !important;
+  background: #08090d !important;
+}
+
+.cs-movie-details-section::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: var(--movie-backdrop-url, none) !important;
+  background-size: cover !important;
+  background-position: center 20% !important;
+  filter: blur(18px) brightness(0.42) saturate(1.8) !important;
+  opacity: 0.9 !important;
+  transform: scale(1.08) !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.cs-movie-details-section::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at 75% 35%, rgba(229, 9, 20, 0.12), transparent 70%),
+              linear-gradient(90deg, rgba(8, 9, 13, 0.98) 0%, rgba(8, 9, 13, 0.88) 42%, rgba(8, 9, 13, 0.65) 75%, rgba(8, 9, 13, 0.95) 100%),
+              linear-gradient(180deg, rgba(8, 9, 13, 0.85) 0%, rgba(8, 9, 13, 0.3) 30%, rgba(8, 9, 13, 0.9) 85%, #08090d 100%) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.cs-details-backdrop-glow {
+  display: none !important;
+}
+
+/* Borderless, Organic Flow (No Floating Gray Box) */
+.cs-details-card {
+  position: relative !important;
+  z-index: 2 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 10px 0 !important;
+  display: flex !important;
+  gap: 48px !important;
+  align-items: flex-start !important;
+}
+
+/* Poster Artwork: 100% Clean, Dramatic & Professional */
+.cs-poster-wrap {
+  position: relative !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 40px rgba(0, 0, 0, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease !important;
+}
+
+.cs-poster-wrap:hover {
+  transform: translateY(-6px) scale(1.02) !important;
+  box-shadow: 0 28px 65px rgba(0, 0, 0, 1), 0 0 50px rgba(229, 9, 20, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.cs-poster-img {
+  width: 100% !important;
+  display: block !important;
+  border-radius: 13px !important;
+  object-fit: cover !important;
+}
+
+#cs-poster-badges {
+  display: none !important;
+}
+
+/* Studio-Grade Typography & Titles */
+.cs-details-title {
+  font-size: 40px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.6px !important;
+  line-height: 1.15 !important;
+  margin: 0 !important;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8) !important;
+}
+
+.cs-details-title-si {
+  font-size: 19px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
+  margin: 6px 0 16px !important;
+  opacity: 0.92 !important;
+}
+
+/* Studio Metadata Rail: Refined Single Line (Zero Cartoon Pills) */
+.cs-badges-rail {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 16px !important;
+  font-size: 14px !important;
+}
+
+.cs-pro-meta-rating {
+  color: #f5c518 !important;
+  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 14px !important;
+}
+
+.cs-pro-meta-dot {
+  color: rgba(255, 255, 255, 0.25) !important;
+  font-size: 14px !important;
+  margin: 0 2px !important;
+}
+
+.cs-pro-meta-item {
+  color: #cbd5e1 !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
+}
+
+.cs-pro-meta-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+}
+
+.cs-pro-meta-tag.tag-quality {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.cs-pro-meta-tag.tag-sub {
+  background: rgba(229, 9, 20, 0.15) !important;
+  color: #ff4d5a !important;
+  border: 1px solid rgba(229, 9, 20, 0.35) !important;
+}
+
+/* Genre Chips: Soft Minimalist Translucent Pills */
+.cs-genre-pills {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 20px !important;
+}
+
+.genre-chip {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #cbd5e1 !important;
+  padding: 4px 14px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.genre-chip:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Synopsis: Clean Editorial Typography (No Box Containment) */
+.cs-synopsis-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 16px 0 24px !important;
+}
+
+.cs-synopsis-tabs-header {
+  background: transparent !important;
+  border: none !important;
+  display: inline-flex !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  margin-bottom: 12px !important;
+}
+
+.cs-synopsis-tab {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  padding: 7px 16px !important;
+  border-radius: 999px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.cs-synopsis-tab.active {
+  background: #ffffff !important;
+  color: #0b0c10 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+.cs-synopsis-text {
+  padding: 0 !important;
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  color: #cbd5e1 !important;
+  max-width: 840px !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Credits Block: Studio Inline Row (Zero Red Square Boxes) */
+.cs-meta-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin-top: 24px !important;
+  padding-top: 18px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  max-width: 840px !important;
+}
+
+.cs-pro-credit-item {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 14px !important;
+  font-size: 13.5px !important;
+}
+
+.cs-pro-credit-label {
+  color: #64748b !important;
+  font-weight: 700 !important;
+  min-width: 80px !important;
+  text-transform: uppercase !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.5px !important;
+}
+
+.cs-pro-credit-val {
+  color: #e2e8f0 !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+}
+
+/* 2. Professional Studio Download Cards */
+.cs-dl-card {
+  background: linear-gradient(155deg, rgba(22, 24, 34, 0.88) 0%, rgba(12, 13, 20, 0.96) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 24px 22px !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.cs-dl-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(229, 9, 20, 0.45) !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(229, 9, 20, 0.15) !important;
+}
+
+.cs-dl-card.recommended-dl-card {
+  border: 1.5px solid rgba(229, 9, 20, 0.4) !important;
+}
+
+.cs-dl-rec-ribbon {
+  background: rgba(229, 9, 20, 0.16) !important;
+  border: 1px solid rgba(229, 9, 20, 0.4) !important;
+  color: #ff3b49 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 10px !important;
+  border-radius: 20px !important;
+  letter-spacing: 0.6px !important;
+}
+
+.cs-dl-specs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin: 10px 0 16px !important;
+}
+
+.dl-spec-chip {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+.dl-spec-chip::after {
+  content: '•' !important;
+  margin-left: 8px !important;
+  color: #475569 !important;
+}
+
+.dl-spec-chip:last-child::after {
+  content: '' !important;
+  margin: 0 !important;
+}
+
+.dl-spec-chip.chip-cloud {
+  color: #4ade80 !important;
+}
+
+.dl-spec-chip.chip-fmt {
+  color: #cbd5e1 !important;
+}
+
+.dl-spec-chip.chip-sub {
+  color: #f87171 !important;
+}
+
+@media (max-width: 768px) {
+  .cs-details-card {
+    flex-direction: column !important;
+    gap: 24px !important;
+  }
+  .cs-details-title {
+    font-size: 28px !important;
+  }
+  .cs-poster-wrap {
+    max-width: 240px !important;
+    margin: 0 auto !important;
+  }
+}

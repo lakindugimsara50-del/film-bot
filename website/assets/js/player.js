@@ -4576,7 +4576,14 @@ function renderMovieDetails(movie) {
   const poster = movie.poster || movie.poster_url || FilmSub.SITE_CONFIG.defaultPoster;
   const backdrop = movie.backdrop || movie.backdrop_url || poster;
 
-  // 1. Ambient Blurred Backdrop Glow
+  // 1. Dynamic Cinema Backdrop on Details Section
+  const detailsSec = document.getElementById('movie-details-section');
+  if (detailsSec && backdrop) {
+    detailsSec.style.setProperty('--movie-backdrop-url', `url('${backdrop}')`);
+    detailsSec.style.backgroundImage = `linear-gradient(90deg, rgba(8,9,13,0.98) 0%, rgba(8,9,13,0.85) 45%, rgba(8,9,13,0.65) 75%, rgba(8,9,13,0.95) 100%), linear-gradient(180deg, rgba(8,9,13,0.85) 0%, rgba(8,9,13,0.3) 30%, rgba(8,9,13,0.9) 85%, #08090d 100%), url('${backdrop}')`;
+    detailsSec.style.backgroundSize = 'cover';
+    detailsSec.style.backgroundPosition = 'center 20%';
+  }
   const glowEl = document.getElementById('cs-details-backdrop-glow');
   if (glowEl && backdrop) {
     glowEl.style.backgroundImage = `url('${backdrop}')`;
@@ -4589,17 +4596,10 @@ function renderMovieDetails(movie) {
     posterEl.alt = movie.title || '';
   }
 
-  // 3. Floating Quality Badges on Poster
+  // 3. Keep Poster Artwork 100% Clean (No Clashing Cartoon Stickers)
   const badgesEl = document.getElementById('cs-poster-badges');
   if (badgesEl) {
-    let bHtml = '';
-    const imdbVal = movie.imdb || movie.rating;
-    if (imdbVal && imdbVal !== '0.0') {
-      bHtml += `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${esc(imdbVal)}</span>`;
-    }
-    bHtml += `<span class="badge badge-quality"><i class="fa-solid fa-video"></i> ${esc(formatQualityLabel(movie.quality))}</span>`;
-    bHtml += `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
-    badgesEl.innerHTML = bHtml;
+    badgesEl.innerHTML = '';
   }
 
   // 4. Watch Button on Poster
@@ -4628,23 +4628,26 @@ function renderMovieDetails(movie) {
     titleSiEl.style.display = (movie.title_si || movie.year) ? 'block' : 'none';
   }
 
-  // 6. Interactive Badges & Metadata Rail
+  // 6. Studio-Grade Subtle Metadata Line (No Clashing Rainbow Pills)
   const badgesRail = document.getElementById('cs-badges-rail');
   if (badgesRail) {
     let rHtml = '';
     const imdbVal = movie.imdb || movie.rating;
     if (imdbVal && imdbVal !== '0.0') {
-      rHtml += `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> IMDb ${esc(imdbVal)}</span>`;
+      rHtml += `<span class="cs-pro-meta-rating"><i class="fa-solid fa-star"></i> IMDb ${esc(imdbVal)}</span>`;
     }
     if (movie.year) {
-      rHtml += `<span class="badge badge-year"><i class="fa-regular fa-calendar"></i> ${esc(movie.year)}</span>`;
+      if (rHtml) rHtml += `<span class="cs-pro-meta-dot">•</span>`;
+      rHtml += `<span class="cs-pro-meta-item">${esc(movie.year)}</span>`;
     }
     const durVal = typeof movie.duration === 'number' ? `${movie.duration} min` : (movie.duration || '');
     if (durVal) {
-      rHtml += `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${esc(durVal)}</span>`;
+      if (rHtml) rHtml += `<span class="cs-pro-meta-dot">•</span>`;
+      rHtml += `<span class="cs-pro-meta-item">${esc(durVal)}</span>`;
     }
-    rHtml += `<span class="badge badge-quality"><i class="fa-solid fa-tv"></i> ${esc(formatQualityLabel(movie.quality))}</span>`;
-    rHtml += `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</span>`;
+    if (rHtml) rHtml += `<span class="cs-pro-meta-dot">•</span>`;
+    rHtml += `<span class="cs-pro-meta-tag tag-quality">${esc(formatQualityLabel(movie.quality))}</span>`;
+    rHtml += `<span class="cs-pro-meta-tag tag-sub"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</span>`;
     badgesRail.innerHTML = rHtml;
   }
 
@@ -4705,33 +4708,21 @@ function renderMovieDetails(movie) {
   const metaGridEl = document.getElementById('cs-meta-grid');
   if (metaGridEl) {
     metaGridEl.innerHTML = `
-      <div class="cs-micro-card">
-        <div class="cs-micro-icon"><i class="fa-solid fa-user-tie"></i></div>
-        <div class="cs-micro-info">
-          <span class="cs-micro-label">Director</span>
-          <span class="cs-micro-val">${esc(movie.director || 'N/A')}</span>
-        </div>
+      <div class="cs-pro-credit-item">
+        <span class="cs-pro-credit-label">Director</span>
+        <span class="cs-pro-credit-val">${esc(movie.director || 'N/A')}</span>
       </div>
-      <div class="cs-micro-card">
-        <div class="cs-micro-icon"><i class="fa-solid fa-users"></i></div>
-        <div class="cs-micro-info">
-          <span class="cs-micro-label">Leading Cast</span>
-          <span class="cs-micro-val">${castStr}</span>
-        </div>
+      <div class="cs-pro-credit-item">
+        <span class="cs-pro-credit-label">Starring</span>
+        <span class="cs-pro-credit-val">${castStr}</span>
       </div>
-      <div class="cs-micro-card">
-        <div class="cs-micro-icon"><i class="fa-solid fa-globe"></i></div>
-        <div class="cs-micro-info">
-          <span class="cs-micro-label">Language & Audio</span>
-          <span class="cs-micro-val">${esc(movie.language || 'English')} • Dolby Stereo</span>
-        </div>
+      <div class="cs-pro-credit-item">
+        <span class="cs-pro-credit-label">Audio</span>
+        <span class="cs-pro-credit-val">${esc(movie.language || 'English')} • Dolby Stereo</span>
       </div>
-      <div class="cs-micro-card">
-        <div class="cs-micro-icon"><i class="fa-solid fa-certificate"></i></div>
-        <div class="cs-micro-info">
-          <span class="cs-micro-label">Subtitles</span>
-          <span class="cs-micro-val" style="color:var(--accent);font-weight:700">FilmZilla Official Sinhala (Merged)</span>
-        </div>
+      <div class="cs-pro-credit-item">
+        <span class="cs-pro-credit-label">Subtitles</span>
+        <span class="cs-pro-credit-val" style="color:#ff4d5a;font-weight:700">FilmZilla Official Sinhala (Merged)</span>
       </div>`;
   }
 }

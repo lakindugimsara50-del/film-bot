@@ -7852,7 +7852,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T14:47:40Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "collision-course-2026",
+      "slug": "collision-course-2026",
+      "title": "Collision Course",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.3",
+      "rating": "6.3",
+      "imdb_id": "tt38793125",
+      "tmdb_id": "1571955",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/s2eAK0uiODjlNUSIiOBwdp3at2u.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/s2eAK0uiODjlNUSIiOBwdp3at2u.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/uI3kWI7kGW5E0F8WduewgQYPt34.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/uI3kWI7kGW5E0F8WduewgQYPt34.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/8hVLhaK619k",
+      "trailer_id": "8hVLhaK619k",
+      "genres": [
+        "Thriller",
+        "Drama",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "122 min",
+      "description": "Spain, 2013. After robbing a bank, a getaway crash reveals the hidden side of each thief, exposing betrayals and lies that began long before the heist.",
+      "director": "Daniel Sánchez Arévalo",
+      "cast": [
+        {
+          "name": "Laia Costa",
+          "character": "Carla Mencía"
+        },
+        {
+          "name": "Karra Elejalde",
+          "character": "Pedro"
+        },
+        {
+          "name": "Luis Zahera",
+          "character": "Ernesto"
+        },
+        {
+          "name": "Tamar Novas",
+          "character": "Tomás"
+        },
+        {
+          "name": "Álvaro Cervantes",
+          "character": "Raúl"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkxq9yf3--v_GvDMfC3yMkNj0As7kwAC4B8AAlaTuVc_bvBur74_UB4E",
+      "message_id": 588,
+      "file_name": "comp_collision-course-2026_1080p.mp4",
+      "file_size": 1993773177,
+      "drive_file_id": "",
+      "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkxq9yf3--v_GvDMfC3yMkNj0As7kwAC4B8AAlaTuVc_bvBur74_UB4E",
+          "message_id": 588,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1571955"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt38793125"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt38793125"
+        }
+      ],
+      "qualities": {
+        "auto": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+        "1080p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+        "720p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/587",
+        "480p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/586"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1993773177,
+          "url": "https://t.me/c/4325759505/588",
+          "telegram_url": "https://t.me/c/4325759505/588",
+          "direct_url": "/stream/channel/-1004325759505/588?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkxq9yf3--v_GvDMfC3yMkNj0As7kwAC4B8AAlaTuVc_bvBur74_UB4E",
+          "message_id": 588,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1341976357,
+          "url": "https://t.me/c/4325759505/587",
+          "telegram_url": "https://t.me/c/4325759505/587",
+          "direct_url": "/stream/channel/-1004325759505/587?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAktq9yYD5dJuOVVRddhcFYSwDPLj7QAC3B8AAlaTuVcWFbEgIYopHx4E",
+          "message_id": 587,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/587",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "692.3 MB",
+          "size_bytes": 725898384,
+          "url": "https://t.me/c/4325759505/586",
+          "telegram_url": "https://t.me/c/4325759505/586",
+          "direct_url": "/stream/channel/-1004325759505/586?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkpq9yWX_aCSVSj6N5Rc2yLHFj3gHQAC2h8AAlaTuVfO8-hG2RVayh4E",
+          "message_id": 586,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/586",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1993773177,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_collision-course-2026_1080p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1341976357,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_collision-course-2026_720p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/587",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "692.3 MB",
+          "size_bytes": 725898384,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_collision-course-2026_480p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/586",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkxq9yf3--v_GvDMfC3yMkNj0As7kwAC4B8AAlaTuVc_bvBur74_UB4E",
+          "message_id": 588,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/588",
+          "size_bytes": 1993773177
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAktq9yYD5dJuOVVRddhcFYSwDPLj7QAC3B8AAlaTuVcWFbEgIYopHx4E",
+          "message_id": 587,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/587",
+          "size_bytes": 1341976357
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkpq9yWX_aCSVSj6N5Rc2yLHFj3gHQAC2h8AAlaTuVfO8-hG2RVayh4E",
+          "message_id": 586,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/586",
+          "size_bytes": 725898384
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/collision-course-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=collision-course-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T15:08:52Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T14:47:41Z"
+  "last_updated": "2026-11-13T15:08:53Z"
 };

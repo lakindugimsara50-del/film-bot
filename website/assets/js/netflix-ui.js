@@ -113,18 +113,7 @@
         const poster = card.querySelector('.card-poster');
         if (!poster) return;
 
-        // "NEW" ribbon: if added within last 14 days
-        const addedAt = movie.added_at || movie.added_date;
-        if (addedAt) {
-          const added = new Date(addedAt);
-          const daysDiff = (Date.now() - added.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysDiff <= 14 && !poster.querySelector('.card-ribbon-new')) {
-            const ribbon = document.createElement('div');
-            ribbon.className = 'card-ribbon-new';
-            ribbon.innerHTML = '<span>NEW</span>';
-            poster.appendChild(ribbon);
-          }
-        }
+        // "NEW" ribbon handled natively in app.js inside .card-badges-left (avoids covering IMDb rating)
 
         // "HOT" badge for trending cards
         if ((movie.trending || movie.hot) && card.classList.contains('trending-card')) {

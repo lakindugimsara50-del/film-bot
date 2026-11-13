@@ -1090,10 +1090,24 @@ function generateMovieCard(movie, opts = {}) {
   const isTrending = typeof opts === 'boolean' ? opts : Boolean(opts.isTrending);
   const rank = opts.rank ? `<span class="card-rank-num">${opts.rank}</span>` : '';
   const poster = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
+  
+  // Clean IMDb badge (top right, completely unobstructed)
   const imdbVal = movie.imdb || movie.rating || '';
-  const imdb = imdbVal ? `<span class="badge-top-right">★ ${imdbVal}</span>` : '';
+  const imdb = (imdbVal && imdbVal !== '0.0') ? `<span class="badge-top-right"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
+  
+  // Left badges rail (Quality + New badge side-by-side on top left)
   const rawQ = formatQualityLabel(movie.quality);
   const quality = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
+  
+  // Calculate if movie is New (added within last 21 days)
+  const addedAt = movie.added_at || movie.added_date;
+  let isNew = false;
+  if (addedAt) {
+    const daysDiff = (Date.now() - new Date(addedAt).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysDiff <= 21) isNew = true;
+  }
+  const newBadge = isNew ? `<span class="badge-card-new">NEW</span>` : '';
+  
   const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || Boolean(movie.season);
   const typeBadge = isSeries ? `<span class="badge-card-type"><i class="fa-solid fa-tv"></i> TV</span>` : '';
   const url = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
@@ -1105,8 +1119,11 @@ function generateMovieCard(movie, opts = {}) {
         <img src="${escHtml(poster)}" alt="${escHtml(movie.title || '')}" loading="lazy" decoding="async"
              onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
         <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
-        ${quality}
-        ${typeBadge}
+        <div class="card-badges-left">
+          ${quality}
+          ${newBadge}
+          ${typeBadge}
+        </div>
         ${imdb}
         ${rank}
         <div class="card-bottom-bar">

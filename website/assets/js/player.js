@@ -1555,30 +1555,33 @@ function renderServerTabs(movie) {
 
   let tabsHtml = '';
 
-  // 1. Clean Cinema Stream indicator pill
+  // 1. Modern live stream indicator pill
   tabsHtml += `
     <span class="player-status-badge">
       <span class="pulse-indicator"></span>
-      <span>${isTrailerActive ? '🎬 Official Trailer' : 'Cinema Stream'}</span>
+      <span>${isTrailerActive ? 'Trailer' : 'Online Stream'}</span>
     </span>`;
 
-  // 2. Movie Stream Servers (Telegram Cloud / VIP Players)
+  // 2. Movie Stream Servers (Clean modern buttons without wordy sentences)
   if (streams.length > 0) {
     streams.forEach((s, i) => {
-      let cleanLabel = s.server || (streams.length === 1 ? '⚡ Super Player (HD • Auto Sinhala Sub)' : `Server ${i + 1}`);
+      let cleanLabel = s.server || `Server ${i + 1}`;
+      if (cleanLabel.toLowerCase().includes('super player') || cleanLabel.toLowerCase().includes('auto sinhala sub')) {
+        cleanLabel = 'Main Server';
+      }
       tabsHtml += `
         <button class="server-tab${i === currentStreamIdx && !isTrailerActive ? ' active' : ''}" data-type="stream" data-index="${i}" type="button" title="Watch Movie Stream">
-          <i class="fa-solid fa-play"></i>
+          <i class="fa-solid fa-circle-play"></i>
           <span>${FilmSub.escHtml(cleanLabel)}</span>
         </button>`;
     });
   }
 
-  // 3. Official Trailer Tab (Always present right beside the stream player!)
+  // 3. Official Trailer Tab (Clean and sleek)
   tabsHtml += `
     <button class="server-tab btn-trailer-pill${isTrailerActive ? ' active' : ''}" data-type="trailer" type="button" title="${isTrailerActive ? 'Playing Official Trailer' : 'Watch Official Trailer'}">
       <i class="fa-solid fa-clapperboard"></i>
-      <span>🎬 Official Trailer</span>
+      <span>Trailer</span>
     </button>`;
 
   tabsEl.innerHTML = tabsHtml;
@@ -4206,11 +4209,10 @@ function renderQuickDownloadStrip(movie) {
     const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
 
     return `
-      <button type="button" class="quick-dl-pill" data-direct-url="${FilmSub.escHtml(directUrl)}" data-tg-url="${FilmSub.escHtml(tgUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Direct Download ${FilmSub.escHtml(rawQ)} to Browser">
-        <i class="fa-solid fa-cloud-arrow-down" style="color:var(--accent)"></i>
-        <strong>${FilmSub.escHtml(qBadge)}</strong>
+      <button type="button" class="quick-dl-pill" data-direct-url="${FilmSub.escHtml(directUrl)}" data-tg-url="${FilmSub.escHtml(tgUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Direct Download ${FilmSub.escHtml(rawQ)}">
+        <i class="fa-solid fa-arrow-down-to-bracket quick-dl-icon"></i>
+        <span class="quick-dl-q-name">${FilmSub.escHtml(qBadge)}</span>
         ${sz ? `<span class="quick-dl-size">${FilmSub.escHtml(sz)}</span>` : ''}
-        <span class="quick-dl-sub-tag">Direct</span>
       </button>`;
   }).join('');
 
@@ -4702,22 +4704,19 @@ function renderDownloadSection(movie) {
 
       let actionBtns = '';
 
-      // 1. Direct Browser Download button (always prominent)
+      // 1. Direct Download button (clean cinema action)
       if (directUrl) {
         actionBtns += `
-          <button type="button" class="btn-download-primary btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Direct Download to Browser (No Telegram required)">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download (Browser)
+          <button type="button" class="btn-download-primary btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="High Speed Direct Download">
+            <i class="fa-solid fa-download"></i> Direct Download
           </button>`;
       }
 
-      // 2. Telegram Download button (Telegram app / bot)
+      // 2. Telegram Cloud button (sleek cyan pill)
       if (tgUrl) {
-        const isBot = tgUrl.includes('start=dl_');
-        const isChannel = tgUrl.includes('/c/');
-        const tgLabel = isBot ? 'Telegram Bot' : (isChannel ? 'Telegram File' : 'Telegram Download');
         actionBtns += `
-          <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-download-secondary btn-tg-dl" title="Open and save in Telegram App">
-            <i class="fa-brands fa-telegram"></i> ${tgLabel}
+          <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-download-secondary btn-tg-dl" title="Save in Telegram Cloud">
+            <i class="fa-brands fa-telegram"></i> Telegram Cloud
           </a>`;
       } else if (!directUrl && dl.url) {
         actionBtns += `

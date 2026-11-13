@@ -836,3 +836,5 @@ img {
     display: none !important;
   }
 }
+
+.card-ribbon-new { display: none !important; }

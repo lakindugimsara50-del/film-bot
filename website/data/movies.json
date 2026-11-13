@@ -7624,7 +7624,235 @@
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T12:55:45Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "im-game-2026",
+      "slug": "im-game-2026",
+      "title": "I'm Game",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.2",
+      "rating": "7.2",
+      "imdb_id": "tt34284946",
+      "tmdb_id": "1250502",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/pHek88ShMFFkueZ6GsrfsN0sc2L.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/pHek88ShMFFkueZ6GsrfsN0sc2L.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/qBq5WnciKVDc9gaVyP7pKKNeveY.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/qBq5WnciKVDc9gaVyP7pKKNeveY.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Msmfyg7yQ60",
+      "trailer_id": "Msmfyg7yQ60",
+      "genres": [
+        "Action",
+        "Thriller",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "173 min",
+      "description": "A fearless gambler who trusts luck more than life gets caught in a series of crazy and unexpected events that turn his world upside down.",
+      "director": "Nahas Hidayath",
+      "cast": [
+        {
+          "name": "Dulquer Salmaan",
+          "character": "Dan John"
+        },
+        {
+          "name": "Kayadu Lohar",
+          "character": "Isha"
+        },
+        {
+          "name": "Antony Varghese",
+          "character": "Vignesh 'Vicky' Das"
+        },
+        {
+          "name": "Mysskin",
+          "character": "David Abraham"
+        },
+        {
+          "name": "Kathir",
+          "character": "Jason Antony"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkhq9yL9mIRhQTY-6Wns8ssFbcpSYAAC1x8AAlaTuVfWX8Jx0Rqokh4E",
+      "message_id": 584,
+      "file_name": "comp_im-game-2026_1080p.mp4",
+      "file_size": 2057845358,
+      "drive_file_id": "",
+      "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkhq9yL9mIRhQTY-6Wns8ssFbcpSYAAC1x8AAlaTuVfWX8Jx0Rqokh4E",
+          "message_id": 584,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1250502"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt34284946"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt34284946"
+        }
+      ],
+      "qualities": {
+        "auto": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+        "1080p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+        "720p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/583",
+        "480p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/582"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2057845358,
+          "url": "https://t.me/c/4325759505/584",
+          "telegram_url": "https://t.me/c/4325759505/584",
+          "direct_url": "/stream/channel/-1004325759505/584?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkhq9yL9mIRhQTY-6Wns8ssFbcpSYAAC1x8AAlaTuVfWX8Jx0Rqokh4E",
+          "message_id": 584,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2042239139,
+          "url": "https://t.me/c/4325759505/583",
+          "telegram_url": "https://t.me/c/4325759505/583",
+          "direct_url": "/stream/channel/-1004325759505/583?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkdq9yL6BHU5bmgWO8DtAAHWwHzpsX8AAtYfAAJWk7lXeZA1oHnc7CgeBA",
+          "message_id": 583,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/583",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1220093181,
+          "url": "https://t.me/c/4325759505/582",
+          "telegram_url": "https://t.me/c/4325759505/582",
+          "direct_url": "/stream/channel/-1004325759505/582?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkZq9x8qsizC4MF7mLo1jbthXjJU6wACzh8AAlaTuVd8j5Rr8KFZVx4E",
+          "message_id": 582,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/582",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2057845358,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_im-game-2026_1080p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2042239139,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_im-game-2026_720p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/583",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1220093181,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_im-game-2026_480p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/582",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkhq9yL9mIRhQTY-6Wns8ssFbcpSYAAC1x8AAlaTuVfWX8Jx0Rqokh4E",
+          "message_id": 584,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/584",
+          "size_bytes": 2057845358
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkdq9yL6BHU5bmgWO8DtAAHWwHzpsX8AAtYfAAJWk7lXeZA1oHnc7CgeBA",
+          "message_id": 583,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/583",
+          "size_bytes": 2042239139
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkZq9x8qsizC4MF7mLo1jbthXjJU6wACzh8AAlaTuVd8j5Rr8KFZVx4E",
+          "message_id": 582,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/582",
+          "size_bytes": 1220093181
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/im-game-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=im-game-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T14:47:40Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T12:55:46Z"
+  "last_updated": "2026-11-13T14:47:41Z"
 }

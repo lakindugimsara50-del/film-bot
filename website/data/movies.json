@@ -8535,7 +8535,235 @@
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T15:55:06Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "beware-boiúna-2026",
+      "slug": "beware-boiúna-2026",
+      "title": "Beware Boiúna",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.2",
+      "rating": "6.2",
+      "imdb_id": "tt10377864",
+      "tmdb_id": "1244523",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/uW5YMPxJUzT9bkafrCKHXjPTCoQ.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/uW5YMPxJUzT9bkafrCKHXjPTCoQ.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/9nU0FKNefmhbgi2xXlvZchZsqwm.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/9nU0FKNefmhbgi2xXlvZchZsqwm.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/MQKqgFVU4dQ",
+      "trailer_id": "MQKqgFVU4dQ",
+      "genres": [
+        "Horror",
+        "Thriller",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "103 min",
+      "description": "A medical mission deep in the Amazon becomes a desperate fight for survival when a colossal ancient predator awakens, turning the jungle into a deadly battleground where nature decides who lives and dies.",
+      "director": "Mike P. Nelson",
+      "cast": [
+        {
+          "name": "Kiana Madeira",
+          "character": "Lena"
+        },
+        {
+          "name": "Jessica Rothe",
+          "character": "Alli"
+        },
+        {
+          "name": "Will Close",
+          "character": "Callum"
+        },
+        {
+          "name": "Juan Pablo Shuk",
+          "character": "Miguel"
+        },
+        {
+          "name": "Logan Marshall-Green",
+          "character": "Brennan"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlhq9z205ewa9TdWPluhQVALCj6KuwACOyAAAlaTuVc_NzV0iWUwCh4E",
+      "message_id": 600,
+      "file_name": "comp_beware-boiúna-2026_1080p.mp4",
+      "file_size": 2041340294,
+      "drive_file_id": "",
+      "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlhq9z205ewa9TdWPluhQVALCj6KuwACOyAAAlaTuVc_NzV0iWUwCh4E",
+          "message_id": 600,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1244523"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt10377864"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt10377864"
+        }
+      ],
+      "qualities": {
+        "auto": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+        "1080p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+        "720p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/599",
+        "480p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/598"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2041340294,
+          "url": "https://t.me/c/4325759505/600",
+          "telegram_url": "https://t.me/c/4325759505/600",
+          "direct_url": "/stream/channel/-1004325759505/600?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlhq9z205ewa9TdWPluhQVALCj6KuwACOyAAAlaTuVc_NzV0iWUwCh4E",
+          "message_id": 600,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1352536431,
+          "url": "https://t.me/c/4325759505/599",
+          "telegram_url": "https://t.me/c/4325759505/599",
+          "direct_url": "/stream/channel/-1004325759505/599?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAldq9zhk7dny88atcRJHnAKUoQ7HTwACGiAAAlaTuVe3ou-Tm1uUzB4E",
+          "message_id": 599,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/599",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "693.0 MB",
+          "size_bytes": 726657786,
+          "url": "https://t.me/c/4325759505/598",
+          "telegram_url": "https://t.me/c/4325759505/598",
+          "direct_url": "/stream/channel/-1004325759505/598?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlZq9zV2yJxH76e8F-4CBxdzxG607QACEyAAAlaTuVflRwtanzCyzB4E",
+          "message_id": 598,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/598",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2041340294,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_beware-boiúna-2026_1080p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1352536431,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_beware-boiúna-2026_720p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/599",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "693.0 MB",
+          "size_bytes": 726657786,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_beware-boiúna-2026_480p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/598",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlhq9z205ewa9TdWPluhQVALCj6KuwACOyAAAlaTuVc_NzV0iWUwCh4E",
+          "message_id": 600,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/600",
+          "size_bytes": 2041340294
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAldq9zhk7dny88atcRJHnAKUoQ7HTwACGiAAAlaTuVe3ou-Tm1uUzB4E",
+          "message_id": 599,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/599",
+          "size_bytes": 1352536431
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlZq9zV2yJxH76e8F-4CBxdzxG607QACEyAAAlaTuVflRwtanzCyzB4E",
+          "message_id": 598,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/598",
+          "size_bytes": 726657786
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/beware-boiúna-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=beware-boiúna-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T16:41:37Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T15:55:07Z"
+  "last_updated": "2026-11-13T16:41:38Z"
 }

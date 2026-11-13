@@ -1095,12 +1095,9 @@ function generateMovieCard(movie, opts = {}) {
   const imdbVal = movie.imdb || movie.rating || '';
   const imdb = (imdbVal && imdbVal !== '0.0') ? `<span class="badge-top-right"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
   
-  // Left badges (Quality or HOT)
+  // Left badges (Always prominent Full HD / 4K / Quality label)
   const rawQ = formatQualityLabel(movie.quality);
-  const isHot = isTrending || movie.trending || movie.hot;
-  const topBadge = isHot 
-    ? `<span class="badge-card-hot"><i class="fa-solid fa-fire"></i> HOT</span>` 
-    : `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
+  const qualityBadge = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
   
   // Calculate if movie is New (added within last 21 days)
   const addedAt = movie.added_at || movie.added_date;
@@ -1123,7 +1120,7 @@ function generateMovieCard(movie, opts = {}) {
              onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
         <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
         <div class="card-badges-left">
-          ${topBadge}
+          ${qualityBadge}
           ${newBadge}
           ${typeBadge}
         </div>

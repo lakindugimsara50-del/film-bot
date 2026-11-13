@@ -838,3 +838,5 @@ img {
 }
 
 .card-ribbon-new { display: none !important; }
+
+.card-ribbon-new, .card-hot-badge { display: none !important; }

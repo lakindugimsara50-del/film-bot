@@ -4496,9 +4496,27 @@ main > .section:first-of-type {
   top: 8px;
   left: 8px;
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   z-index: 4;
+  pointer-events: none;
+}
+
+.badge-card-hot {
+  background: linear-gradient(135deg, #ff4500 0%, #ff8c00 100%) !important;
+  color: #ffffff !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  padding: 3px 7px !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 2px 8px rgba(255, 69, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+  line-height: 1.2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
 }
 
 .badge-top-left {

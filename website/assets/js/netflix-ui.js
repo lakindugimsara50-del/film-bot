@@ -115,15 +115,7 @@
 
         // "NEW" ribbon handled natively in app.js inside .card-badges-left (avoids covering IMDb rating)
 
-        // "HOT" badge for trending cards
-        if ((movie.trending || movie.hot) && card.classList.contains('trending-card')) {
-          if (!poster.querySelector('.card-hot-badge')) {
-            const hotBadge = document.createElement('div');
-            hotBadge.className = 'card-hot-badge';
-            hotBadge.innerHTML = '<i class="fa-solid fa-fire"></i> HOT';
-            poster.appendChild(hotBadge);
-          }
-        }
+        // "HOT" badge handled natively in app.js inside .card-badges-left
 
         // Sinhala subtitle highlight stripe on hover
         const hasSub = (Array.isArray(movie.subtitles) && movie.subtitles.length > 0) || movie.subtitle_url || movie.has_sinhala_sub;

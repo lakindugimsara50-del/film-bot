@@ -3532,8 +3532,33 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
   const posterAttr = posterUrl ? `poster="${FilmSub.escHtml(posterUrl)}"` : '';
 
   playerEl.innerHTML = `
-    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:8px;overflow:hidden">
+    <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:14px;overflow:hidden">
       ${buildSuperLoaderHtml(movie, stream.label || stream.server)}
+      <div class="cs-cinesubz-standby-overlay ${autoPlay ? 'hidden' : ''}" id="cs-cinesubz-standby-overlay">
+        ${posterUrl ? `<img src="${FilmSub.escHtml(posterUrl)}" class="cs-standby-backdrop-img" alt="${FilmSub.escHtml(movie.title)}" />` : ''}
+        <div class="cs-standby-vignette"></div>
+        <button type="button" class="cs-cinesubz-play-btn" id="cs-main-poster-play-btn" aria-label="Play Movie" title="Click to Play">
+          <i class="fa-solid fa-play"></i>
+        </button>
+        <div class="cs-poster-bottom-bar">
+          <div class="cs-pbar-left">
+            <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-dl" title="Direct Download Options">
+              <i class="fa-solid fa-download"></i>
+            </button>
+            <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-fs" title="Fullscreen">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+            <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-sub" title="Sinhala Subtitles">
+              <i class="fa-solid fa-closed-captioning"></i>
+            </button>
+          </div>
+          <div class="cs-pbar-right">
+            <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-alert" title="Report Issue / Telegram Support">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </button>
+          </div>
+        </div>
+      </div>
       <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
              controls preload="auto" playsinline webkit-playsinline ${posterAttr}
              style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000000 !important">
@@ -3597,6 +3622,55 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
       injectInPlayerQualityControl(vjsPlayer);
       mountCenterPlayerControls(playerEl, vjsPlayer, movie);
       injectBottomControlBarItems(vjsPlayer, movie);
+
+      // CineSubz Standby Overlay Interactivity
+      const standbyOverlay = playerEl.querySelector('#cs-cinesubz-standby-overlay');
+      const mainPlayBtn = playerEl.querySelector('#cs-main-poster-play-btn');
+      const pbarDl = playerEl.querySelector('#pbar-btn-dl');
+      const pbarFs = playerEl.querySelector('#pbar-btn-fs');
+      const pbarSub = playerEl.querySelector('#pbar-btn-sub');
+      const pbarAlert = playerEl.querySelector('#pbar-btn-alert');
+
+      if (mainPlayBtn) {
+        mainPlayBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (standbyOverlay) standbyOverlay.classList.add('hidden');
+          try { vjsPlayer.play().catch(() => {}); } catch(e) {}
+        });
+      }
+      if (pbarDl) {
+        pbarDl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.getElementById('downloads')?.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+      if (pbarFs) {
+        pbarFs.addEventListener('click', (e) => {
+          e.stopPropagation();
+          try {
+            if (vjsPlayer.isFullscreen()) {
+              vjsPlayer.exitFullscreen();
+            } else {
+              vjsPlayer.requestFullscreen();
+            }
+          } catch(e) {}
+        });
+      }
+      if (pbarSub) {
+        pbarSub.addEventListener('click', (e) => {
+          e.stopPropagation();
+          FilmSub.showToast('සිංහල උපසිරැසි (Sinhala Subtitles) Video එකටම Merge කර ඇත', 'info');
+        });
+      }
+      if (pbarAlert) {
+        pbarAlert.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.open('https://t.me/Filmsinhala200Bot?start=report_' + encodeURIComponent(movie.slug || movie.id || ''), '_blank');
+        });
+      }
+      vjsPlayer.on('play', () => {
+        if (standbyOverlay) standbyOverlay.classList.add('hidden');
+      });
       attachPlayerKeyboardShortcuts(vjsPlayer, playerEl);
       attachMobileTouchControls(playerEl, vjsPlayer);
 
@@ -3904,32 +3978,32 @@ function renderPlayerFallback(playerEl, movie) {
     ? 'මෙම වීඩියෝව සූදානම් වෙමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ.'
     : 'High-Speed Stream Server එක සම්බන්ධ කර ගනිමින් පවතී. සුළු මොහොතකින් ස්වයංක්‍රීයව Playback ආරම්භ වේ...';
 
+  const posterUrl = movie.backdrop || movie.poster || '';
+
   playerEl.innerHTML = `
-    <div class="player-iframe-wrap cinema-standby-screen">
-      <div class="cinema-standby-glow"></div>
-      <div class="cinema-standby-spinner">
-        <div class="cinema-spinner-ring"></div>
-        <i class="fa-solid fa-film cinema-spinner-icon"></i>
-      </div>
-      <h3 class="cinema-standby-title">${headingText}</h3>
-      <p class="cinema-standby-desc">
-        ${descText}
-      </p>
-      <div class="cinema-pulse-loader-line">
-        <div class="cinema-pulse-bar"></div>
-      </div>
-      <div class="cinema-standby-actions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        <button id="btn-manual-reconnect" type="button" class="btn-cinema-action">
-          <i class="fa-solid fa-rotate-right"></i> Refresh Player
-        </button>
-        <a href="${FilmSub.escHtml(tgBotUrl)}" target="_blank" rel="noopener" class="btn-cinema-action" style="background:#0088cc;color:#fff;border-color:#0088cc;display:inline-flex;align-items:center;gap:6px">
-          <i class="fa-solid fa-robot"></i> Telegram Bot
-        </a>
-        ${tgChannelUrl ? `
-          <a href="${FilmSub.escHtml(tgChannelUrl)}" target="_blank" rel="noopener" class="btn-cinema-action tg-action" style="display:inline-flex;align-items:center;gap:6px">
-            <i class="fa-brands fa-telegram"></i> Telegram Post
+    <div class="player-iframe-wrap cinema-standby-screen" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:14px;overflow:hidden">
+      ${posterUrl ? `<img src="${FilmSub.escHtml(posterUrl)}" class="cs-standby-backdrop-img" alt="${FilmSub.escHtml(movie.title)}" />` : ''}
+      <div class="cs-standby-vignette"></div>
+      <button type="button" class="cs-cinesubz-play-btn" id="btn-manual-reconnect" aria-label="Play Movie" title="Click to Watch">
+        <i class="fa-solid fa-play"></i>
+      </button>
+      <div class="cs-poster-bottom-bar">
+        <div class="cs-pbar-left">
+          <button type="button" class="cs-pbar-circle-btn" onclick="document.getElementById('downloads')?.scrollIntoView({behavior:'smooth'})" title="Direct Download Options">
+            <i class="fa-solid fa-download"></i>
+          </button>
+          <button type="button" class="cs-pbar-circle-btn" onclick="if(document.fullscreenElement){document.exitFullscreen()}else{document.getElementById('video-player-container')?.requestFullscreen?.()}" title="Fullscreen">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+          <button type="button" class="cs-pbar-circle-btn" onclick="FilmSub.showToast('සිංහල උපසිරැසි (Sinhala Subtitles) Video එකටම Merge කර ඇත', 'info')" title="Sinhala Subtitles">
+            <i class="fa-solid fa-closed-captioning"></i>
+          </button>
+        </div>
+        <div class="cs-pbar-right">
+          <a href="${FilmSub.escHtml(tgBotUrl)}" target="_blank" rel="noopener" class="cs-pbar-circle-btn" title="Telegram Bot">
+            <i class="fa-solid fa-triangle-exclamation"></i>
           </a>
-        ` : ''}
+        </div>
       </div>
     </div>`;
 

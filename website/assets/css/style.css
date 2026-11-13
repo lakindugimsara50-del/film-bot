@@ -5689,3 +5689,279 @@ main > .section:first-of-type {
     padding: 4px 10px !important;
   }
 }
+
+
+/* ============================================================
+   CineSubz-Style Grand Cinema Player & Dynamic Blurred Backdrop
+   ============================================================ */
+
+/* 1. Full Display Fit for Video Player */
+.cs-player-section .cs-container {
+  max-width: 1420px !important;
+  width: 100% !important;
+  padding: 0 24px !important;
+}
+
+.cs-player-card {
+  background: #000000 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 24px 75px rgba(0, 0, 0, 0.95), 0 0 50px rgba(229, 9, 20, 0.18) !important;
+}
+
+.player-container {
+  position: relative !important;
+  width: 100% !important;
+  background: #000000 !important;
+}
+
+.player-iframe-wrap {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 16/9 !important;
+  background: #000000 !important;
+  overflow: hidden !important;
+}
+
+/* Video.js Poster & Video Fit: Cover 100% without letterboxing */
+.video-js .vjs-poster,
+.vjs-poster {
+  background-size: cover !important;
+  background-position: center center !important;
+}
+
+.video-js video {
+  object-fit: cover !important;
+}
+
+/* CineSubz Signature Standby Player Overlay (Clear Movie Backdrop) */
+.cs-cinesubz-standby-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 15 !important;
+  background: #000000 !important;
+  overflow: hidden !important;
+  transition: opacity 0.35s ease, visibility 0.35s ease !important;
+}
+
+.cs-cinesubz-standby-overlay.hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.cs-standby-backdrop-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center 30% !important;
+  display: block !important;
+  transform: scale(1.02) !important;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.cs-cinesubz-standby-overlay:hover .cs-standby-backdrop-img,
+.cinema-standby-screen:hover .cs-standby-backdrop-img {
+  transform: scale(1.04) !important;
+}
+
+.cs-standby-vignette {
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.85) 100%) !important;
+  pointer-events: none !important;
+}
+
+/* CineSubz Signature White Circular Center Play Button */
+.cs-cinesubz-play-btn {
+  width: 88px !important;
+  height: 88px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 3.5px solid rgba(255, 255, 255, 0.95) !important;
+  color: #111111 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 34px !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  box-shadow: 0 0 45px rgba(0, 0, 0, 0.88), 0 0 30px rgba(255, 255, 255, 0.55) !important;
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.25s ease, background 0.25s ease !important;
+  z-index: 18 !important;
+}
+
+.cs-cinesubz-play-btn i {
+  margin-left: 6px !important;
+  color: #111111 !important;
+}
+
+.cs-cinesubz-play-btn:hover {
+  transform: translate(-50%, -50%) scale(1.14) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 55px rgba(229, 9, 20, 0.95), 0 0 40px rgba(255, 255, 255, 0.85) !important;
+}
+
+/* CineSubz Bottom Player Action Controls */
+.cs-poster-bottom-bar {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding: 18px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  z-index: 18 !important;
+  pointer-events: none !important;
+}
+
+.cs-pbar-left,
+.cs-pbar-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  pointer-events: auto !important;
+}
+
+.cs-pbar-circle-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: rgba(12, 13, 18, 0.78) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65) !important;
+  transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.cs-pbar-circle-btn:hover {
+  background: rgba(229, 9, 20, 0.92) !important;
+  border-color: #ffffff !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 0 25px rgba(229, 9, 20, 0.85) !important;
+  color: #ffffff !important;
+}
+
+/* 2. Movie Details Section with Dynamic Blurred Backdrop */
+.cs-movie-details-section {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 50px 0 70px !important;
+  background: transparent !important;
+}
+
+.cs-details-backdrop-glow {
+  position: absolute !important;
+  top: -80px !important;
+  left: -80px !important;
+  right: -80px !important;
+  bottom: -80px !important;
+  background-size: cover !important;
+  background-position: center 25% !important;
+  filter: blur(52px) saturate(2.4) brightness(0.65) !important;
+  opacity: 0.75 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  transform: scale(1.15) !important;
+  transition: background-image 0.6s ease, opacity 0.6s ease !important;
+}
+
+.cs-details-backdrop-glow::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at 25% 35%, rgba(229, 9, 20, 0.25), transparent 75%),
+              linear-gradient(180deg, rgba(8, 9, 14, 0.45) 0%, rgba(8, 9, 14, 0.88) 60%, #08090e 100%) !important;
+  pointer-events: none !important;
+}
+
+/* Frosted Glass Details Card */
+.cs-details-card {
+  position: relative !important;
+  z-index: 2 !important;
+  background: linear-gradient(145deg, rgba(18, 20, 32, 0.82) 0%, rgba(10, 11, 18, 0.94) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 24px !important;
+  padding: 40px 44px !important;
+  display: flex !important;
+  gap: 44px !important;
+  box-shadow: 0 25px 75px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 50px rgba(229, 9, 20, 0.14) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+}
+
+/* Vertical 3D Poster Showcase */
+.cs-poster-wrap {
+  position: relative !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 45px rgba(229, 9, 20, 0.35) !important;
+  border: 2px solid rgba(255, 255, 255, 0.22) !important;
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease !important;
+}
+
+.cs-poster-wrap:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 28px 65px rgba(0, 0, 0, 1), 0 0 60px rgba(229, 9, 20, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.cs-poster-img {
+  width: 100% !important;
+  display: block !important;
+  border-radius: 16px !important;
+  object-fit: cover !important;
+}
+
+/* Quick Download Strip Pills */
+.quick-dl-pill {
+  border-radius: 999px !important;
+  padding: 6px 16px !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .cs-player-section .cs-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .cs-player-card {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+  .cs-cinesubz-play-btn {
+    width: 66px !important;
+    height: 66px !important;
+    font-size: 26px !important;
+  }
+  .cs-cinesubz-play-btn i {
+    margin-left: 4px !important;
+  }
+  .cs-pbar-circle-btn {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+  }
+  .cs-poster-bottom-bar {
+    padding: 12px 14px !important;
+  }
+  .cs-details-card {
+    padding: 22px 16px !important;
+    border-radius: 16px !important;
+    flex-direction: column !important;
+    gap: 22px !important;
+  }
+}

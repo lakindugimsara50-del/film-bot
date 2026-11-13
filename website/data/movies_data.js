@@ -6635,7 +6635,254 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T10:12:02Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "anakapalli-2026",
+      "slug": "anakapalli-2026",
+      "title": "Anakapalli",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.0",
+      "rating": "8.0",
+      "imdb_id": "tt41221277",
+      "tmdb_id": "1690876",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/gwyOrA2t78PT5xrayNRvqZisTpZ.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/gwyOrA2t78PT5xrayNRvqZisTpZ.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tQEWJC6Mnjlltjwgpv8s0BgPOdF.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tQEWJC6Mnjlltjwgpv8s0BgPOdF.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/a4EzLJL6BNU",
+      "trailer_id": "a4EzLJL6BNU",
+      "genres": [
+        "Action",
+        "Drama",
+        "Romance"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "153 min",
+      "description": "In rural Anakapalli, a young man enters the criminal underworld under a feared gangster. When love arrives, he faces a choice between power, loyalty, and his former dreams in this tale of action and destiny.",
+      "director": "Khagesh Tammineni",
+      "cast": [
+        {
+          "name": "Vikram Sahidev",
+          "character": "Surya"
+        },
+        {
+          "name": "Sandhya Vasishta",
+          "character": ""
+        },
+        {
+          "name": "Trinadha Rao Nakkina",
+          "character": ""
+        },
+        {
+          "name": "Tarak Ponnappa",
+          "character": ""
+        },
+        {
+          "name": "Nandini Rai",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjdq9u300afN2HWRquxoafc_vwLJuQACXB8AAlaTuVdW3yJ9AplEYR4E",
+      "message_id": 567,
+      "file_name": "comp_anakapalli-2026_1080p.mp4",
+      "file_size": 2056276837,
+      "drive_file_id": "",
+      "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjdq9u300afN2HWRquxoafc_vwLJuQACXB8AAlaTuVdW3yJ9AplEYR4E",
+          "message_id": 567,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1690876"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt41221277"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt41221277"
+        }
+      ],
+      "qualities": {
+        "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+        "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+        "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/565",
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/566",
+        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2056276837,
+          "url": "https://t.me/c/4325759505/567",
+          "telegram_url": "https://t.me/c/4325759505/567",
+          "direct_url": "/stream/channel/-1004325759505/567?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjdq9u300afN2HWRquxoafc_vwLJuQACXB8AAlaTuVdW3yJ9AplEYR4E",
+          "message_id": 567,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2023062196,
+          "url": "https://t.me/c/4325759505/565",
+          "telegram_url": "https://t.me/c/4325759505/565",
+          "direct_url": "/stream/channel/-1004325759505/565?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjVq9ubvVexqnKqguFwJdhPUuW6X4wACSR8AAlaTuVfQnK8TYnHjYR4E",
+          "message_id": 565,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/565",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1083296708,
+          "url": "https://t.me/c/4325759505/566",
+          "telegram_url": "https://t.me/c/4325759505/566",
+          "direct_url": "/stream/channel/-1004325759505/566?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjZq9udVV4U3MFBkmYfCrQnqUtAmIwACSh8AAlaTuVcfhNVkns7-Oh4E",
+          "message_id": 566,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/566",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2056276837,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anakapalli-2026_1080p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2023062196,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anakapalli-2026_720p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/565",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1083296708,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anakapalli-2026_480p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/566",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "353.0 MB",
+          "size_bytes": 370129830,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anakapalli-2026_360p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjdq9u300afN2HWRquxoafc_vwLJuQACXB8AAlaTuVdW3yJ9AplEYR4E",
+          "message_id": 567,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+          "size_bytes": 2056276837
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjVq9ubvVexqnKqguFwJdhPUuW6X4wACSR8AAlaTuVfQnK8TYnHjYR4E",
+          "message_id": 565,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/565",
+          "size_bytes": 2023062196
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjZq9udVV4U3MFBkmYfCrQnqUtAmIwACSh8AAlaTuVcfhNVkns7-Oh4E",
+          "message_id": 566,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/566",
+          "size_bytes": 1083296708
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/567",
+          "size_bytes": 370129830
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/anakapalli-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=anakapalli-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T11:01:22Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T10:12:03Z"
+  "last_updated": "2026-11-13T11:01:23Z"
 };

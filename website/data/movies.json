@@ -6882,7 +6882,253 @@
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T11:01:22Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-dark-heaven-2026",
+      "slug": "the-dark-heaven-2026",
+      "title": "The Dark Heaven",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt45370533",
+      "tmdb_id": "1618200",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/xFr0Q7j2JmOwBJnvImIgTAWBk4U.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/xFr0Q7j2JmOwBJnvImIgTAWBk4U.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4ercU8wa7OAexszQG3SSNuyB8fy.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4ercU8wa7OAexszQG3SSNuyB8fy.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/9t2-keYiSas",
+      "trailer_id": "9t2-keYiSas",
+      "genres": [
+        "Crime",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "147 min",
+      "description": "In the Hill Village of Mekkarai, Where It is Customary for Men to Die Every Seven Years During the Month of June, a Newly Appointed Police Inspector Arrives to Investigate a Series of Mysterious Murders. As He Digs Deeper Into the Village's Dark Secrets and Long-standing Beliefs, He Finds Himself Trapped in a Web of Crime, Fear, and Hidden Truths.",
+      "director": "Balaaji",
+      "cast": [
+        {
+          "name": "Sidhu Sid",
+          "character": ""
+        },
+        {
+          "name": "Tharsika",
+          "character": ""
+        },
+        {
+          "name": "Riythvika",
+          "character": ""
+        },
+        {
+          "name": "Vela Ramamoorthy",
+          "character": ""
+        },
+        {
+          "name": "Nizhalgal Ravi",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjtq9vlbNZOolsa5KfLqj9JeI9PwVAACdx8AAlaTuVfQA_51POnQyx4E",
+      "message_id": 571,
+      "file_name": "comp_the-dark-heaven-2026_1080p.mp4",
+      "file_size": 2053867751,
+      "drive_file_id": "",
+      "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjtq9vlbNZOolsa5KfLqj9JeI9PwVAACdx8AAlaTuVfQA_51POnQyx4E",
+          "message_id": 571,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1618200"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt45370533"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt45370533"
+        }
+      ],
+      "qualities": {
+        "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+        "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+        "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/570",
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/569",
+        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2053867751,
+          "url": "https://t.me/c/4325759505/571",
+          "telegram_url": "https://t.me/c/4325759505/571",
+          "direct_url": "/stream/channel/-1004325759505/571?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjtq9vlbNZOolsa5KfLqj9JeI9PwVAACdx8AAlaTuVfQA_51POnQyx4E",
+          "message_id": 571,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1812269632,
+          "url": "https://t.me/c/4325759505/570",
+          "telegram_url": "https://t.me/c/4325759505/570",
+          "direct_url": "/stream/channel/-1004325759505/570?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjpq9vTsN_b22hrb-Qqq1KpgIGzduQACch8AAlaTuVfAo3YrPHPeMh4E",
+          "message_id": 570,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/570",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "938.3 MB",
+          "size_bytes": 983884854,
+          "url": "https://t.me/c/4325759505/569",
+          "telegram_url": "https://t.me/c/4325759505/569",
+          "direct_url": "/stream/channel/-1004325759505/569?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjlq9vKxKmFhy7p4SbF7bNXWvCUhxwACaR8AAlaTuVdoZM_IPCldvB4E",
+          "message_id": 569,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/569",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2053867751,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-dark-heaven-2026_1080p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1812269632,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-dark-heaven-2026_720p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/570",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "938.3 MB",
+          "size_bytes": 983884854,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-dark-heaven-2026_480p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/569",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "352.6 MB",
+          "size_bytes": 369696195,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-dark-heaven-2026_360p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjtq9vlbNZOolsa5KfLqj9JeI9PwVAACdx8AAlaTuVfQA_51POnQyx4E",
+          "message_id": 571,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+          "size_bytes": 2053867751
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjpq9vTsN_b22hrb-Qqq1KpgIGzduQACch8AAlaTuVfAo3YrPHPeMh4E",
+          "message_id": 570,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/570",
+          "size_bytes": 1812269632
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAjlq9vKxKmFhy7p4SbF7bNXWvCUhxwACaR8AAlaTuVdoZM_IPCldvB4E",
+          "message_id": 569,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/569",
+          "size_bytes": 983884854
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/571",
+          "size_bytes": 369696195
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-dark-heaven-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-dark-heaven-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T11:49:55Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T11:01:23Z"
+  "last_updated": "2026-11-13T11:49:56Z"
 }

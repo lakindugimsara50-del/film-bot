@@ -8307,7 +8307,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T15:31:12Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "by-any-means-2026",
+      "slug": "by-any-means-2026",
+      "title": "By Any Means",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.6",
+      "rating": "6.6",
+      "imdb_id": "tt34379051",
+      "tmdb_id": "1380417",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/85CvGoeXAcSSWy6So2DRD8ItJAN.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/85CvGoeXAcSSWy6So2DRD8ItJAN.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/nw9Q3idNO8EsTPnvr8vBJTpkWGA.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/nw9Q3idNO8EsTPnvr8vBJTpkWGA.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/fvnyrBnUx4E",
+      "trailer_id": "fvnyrBnUx4E",
+      "genres": [
+        "Thriller",
+        "History",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "107 min",
+      "description": "In 1960s Mississippi, a young Black FBI agent is forced to partner with a notorious mafia hitman to investigate a wave of brutal civil rights murders.",
+      "director": "Elegance Bratton",
+      "cast": [
+        {
+          "name": "Yahya Abdul-Mateen II",
+          "character": "Wayne Strider"
+        },
+        {
+          "name": "Mark Wahlberg",
+          "character": "Gregory Scarpa"
+        },
+        {
+          "name": "Nicole Beharie",
+          "character": "Allison Strider"
+        },
+        {
+          "name": "Josh Lucas",
+          "character": "Special Agent Everett Rhodes"
+        },
+        {
+          "name": "David Strathairn",
+          "character": "Special Agent Roy K. Moore"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlNq9zIRc5slWiCVdPV_30MCfSJt8wACECAAAlaTuVeO-3AmiufXTB4E",
+      "message_id": 595,
+      "file_name": "comp_by-any-means-2026_1080p.mp4",
+      "file_size": 2003696641,
+      "drive_file_id": "",
+      "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlNq9zIRc5slWiCVdPV_30MCfSJt8wACECAAAlaTuVeO-3AmiufXTB4E",
+          "message_id": 595,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1380417"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt34379051"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt34379051"
+        }
+      ],
+      "qualities": {
+        "auto": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+        "1080p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+        "720p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/596",
+        "480p": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/594"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2003696641,
+          "url": "https://t.me/c/4325759505/595",
+          "telegram_url": "https://t.me/c/4325759505/595",
+          "direct_url": "/stream/channel/-1004325759505/595?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlNq9zIRc5slWiCVdPV_30MCfSJt8wACECAAAlaTuVeO-3AmiufXTB4E",
+          "message_id": 595,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1336531578,
+          "url": "https://t.me/c/4325759505/596",
+          "telegram_url": "https://t.me/c/4325759505/596",
+          "direct_url": "/stream/channel/-1004325759505/596?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlRq9zLNoaB_WDYr4hrACsz81CAFggACESAAAlaTuVeOdkzy3ZMPMB4E",
+          "message_id": 596,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/596",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "686.3 MB",
+          "size_bytes": 719636151,
+          "url": "https://t.me/c/4325759505/594",
+          "telegram_url": "https://t.me/c/4325759505/594",
+          "direct_url": "/stream/channel/-1004325759505/594?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlJq9y_Vp5ufycMSmoKf-ZjqBybaMwACDCAAAlaTuVd3-p99tybATB4E",
+          "message_id": 594,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/594",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2003696641,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_by-any-means-2026_1080p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1336531578,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_by-any-means-2026_720p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/596",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "686.3 MB",
+          "size_bytes": 719636151,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_by-any-means-2026_480p",
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/594",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlNq9zIRc5slWiCVdPV_30MCfSJt8wACECAAAlaTuVeO-3AmiufXTB4E",
+          "message_id": 595,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/595",
+          "size_bytes": 2003696641
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlRq9zLNoaB_WDYr4hrACsz81CAFggACESAAAlaTuVeOdkzy3ZMPMB4E",
+          "message_id": 596,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/596",
+          "size_bytes": 1336531578
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAlJq9y_Vp5ufycMSmoKf-ZjqBybaMwACDCAAAlaTuVd3-p99tybATB4E",
+          "message_id": 594,
+          "stream_url": "https://link-charleston-settings-symphony.trycloudflare.com/stream/channel/-1004325759505/594",
+          "size_bytes": 719636151
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/by-any-means-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=by-any-means-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T15:55:06Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T15:31:13Z"
+  "last_updated": "2026-11-13T15:55:07Z"
 };

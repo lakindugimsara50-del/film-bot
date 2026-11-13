@@ -7377,7 +7377,254 @@
       "added_date": "2026-11-13",
       "added_at": "2026-11-13T12:25:05Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "dont-trouble-the-trouble-2026",
+      "slug": "dont-trouble-the-trouble-2026",
+      "title": "Don't Trouble the Trouble",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.8",
+      "rating": "5.8",
+      "imdb_id": "tt31841170",
+      "tmdb_id": "1261763",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/lxgQu74WalgmhWnSEqweyYj8fnc.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/lxgQu74WalgmhWnSEqweyYj8fnc.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/iWVgNbAB4fCqzOPJXNLOZP4zfbK.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/iWVgNbAB4fCqzOPJXNLOZP4zfbK.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/JWrpYyk1hrY",
+      "trailer_id": "JWrpYyk1hrY",
+      "genres": [
+        "Fantasy",
+        "Drama",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "156 min",
+      "description": "Suri, a magician, accidentally makes a young girl vanish with a spell. The girl, revealed to be a genie who grants wishes, explores the city and unleashes her powers when angered.",
+      "director": "Shashank Yeleti",
+      "cast": [
+        {
+          "name": "Fahadh Faasil",
+          "character": "Suri"
+        },
+        {
+          "name": "Ssara Palekar",
+          "character": "Divya"
+        },
+        {
+          "name": "Saurabh Sachdeva",
+          "character": "Prathap"
+        },
+        {
+          "name": "Venkatesh Kakumanu",
+          "character": "Mallesh"
+        },
+        {
+          "name": "Subbaraju",
+          "character": "Krishna"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkJq9wiA2HXPwE4DwScqplho7FKMxQACpR8AAlaTuVfrbnApPtwmrx4E",
+      "message_id": 578,
+      "file_name": "comp_dont-trouble-the-trouble-2026_1080p.mp4",
+      "file_size": 2025232020,
+      "drive_file_id": "",
+      "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkJq9wiA2HXPwE4DwScqplho7FKMxQACpR8AAlaTuVfrbnApPtwmrx4E",
+          "message_id": 578,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1261763"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt31841170"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt31841170"
+        }
+      ],
+      "qualities": {
+        "auto": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+        "1080p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+        "720p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/579",
+        "480p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/577",
+        "360p": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2025232020,
+          "url": "https://t.me/c/4325759505/578",
+          "telegram_url": "https://t.me/c/4325759505/578",
+          "direct_url": "/stream/channel/-1004325759505/578?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkJq9wiA2HXPwE4DwScqplho7FKMxQACpR8AAlaTuVfrbnApPtwmrx4E",
+          "message_id": 578,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1899802744,
+          "url": "https://t.me/c/4325759505/579",
+          "telegram_url": "https://t.me/c/4325759505/579",
+          "direct_url": "/stream/channel/-1004325759505/579?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkNq9wjF0Tv110AbwsmYjML5xnJzcQACph8AAlaTuVeLbuw7X9YoEx4E",
+          "message_id": 579,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/579",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "983.8 MB",
+          "size_bytes": 1031593068,
+          "url": "https://t.me/c/4325759505/577",
+          "telegram_url": "https://t.me/c/4325759505/577",
+          "direct_url": "/stream/channel/-1004325759505/577?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkFq9waAjmcoxrNjrXd2mUZ9on2LrgACoh8AAlaTuVcujOvI3_rc2x4E",
+          "message_id": 577,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/577",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2025232020,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dont-trouble-the-trouble-2026_1080p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1899802744,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dont-trouble-the-trouble-2026_720p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/579",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "983.8 MB",
+          "size_bytes": 1031593068,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dont-trouble-the-trouble-2026_480p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/577",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "360p",
+          "label": "360p Data Saver (Telegram Bot / Cloud)",
+          "size": "347.7 MB",
+          "size_bytes": 364541763,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_dont-trouble-the-trouble-2026_360p",
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkJq9wiA2HXPwE4DwScqplho7FKMxQACpR8AAlaTuVfrbnApPtwmrx4E",
+          "message_id": 578,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+          "size_bytes": 2025232020
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkNq9wjF0Tv110AbwsmYjML5xnJzcQACph8AAlaTuVeLbuw7X9YoEx4E",
+          "message_id": 579,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/579",
+          "size_bytes": 1899802744
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAkFq9waAjmcoxrNjrXd2mUZ9on2LrgACoh8AAlaTuVcujOvI3_rc2x4E",
+          "message_id": 577,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/577",
+          "size_bytes": 1031593068
+        },
+        "360p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "https://faces-fighter-forming-eric.trycloudflare.com/stream/channel/-1004325759505/578",
+          "size_bytes": 364541763
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/dont-trouble-the-trouble-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=dont-trouble-the-trouble-2026",
+      "added_date": "2026-11-13",
+      "added_at": "2026-11-13T12:55:45Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-13T12:25:07Z"
+  "last_updated": "2026-11-13T12:55:46Z"
 }

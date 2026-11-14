@@ -10584,7 +10584,189 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T08:45:39Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "anireekshita-atithigalu-2026",
+      "slug": "anireekshita-atithigalu-2026",
+      "title": "Anireekshita Atithigalu",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "",
+      "tmdb_id": "",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "",
+      "poster_url": "",
+      "backdrop": "",
+      "backdrop_url": "",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "0 min",
+      "description": "",
+      "director": "Unknown",
+      "cast": [],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAn1q-CbvbaJloUcHg8wiWHnKLBZ-fAACaCEAAo6lwVfK_-JyaVUjIh4E",
+      "message_id": 637,
+      "file_name": "comp_anireekshita-atithigalu-2026_1080p.mp4",
+      "file_size": 2028244244,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAn1q-CbvbaJloUcHg8wiWHnKLBZ-fAACaCEAAo6lwVfK_-JyaVUjIh4E",
+          "message_id": 637,
+          "quality": "1080p"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/638",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/636"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2028244244,
+          "url": "https://t.me/c/4325759505/637",
+          "telegram_url": "https://t.me/c/4325759505/637",
+          "direct_url": "/stream/channel/-1004325759505/637?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAn1q-CbvbaJloUcHg8wiWHnKLBZ-fAACaCEAAo6lwVfK_-JyaVUjIh4E",
+          "message_id": 637,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2065211035,
+          "url": "https://t.me/c/4325759505/638",
+          "telegram_url": "https://t.me/c/4325759505/638",
+          "direct_url": "/stream/channel/-1004325759505/638?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAn5q-CcVbf37ypR0D6Be68tFqu1hfAACaSEAAo6lwVftZbTaVuL3-R4E",
+          "message_id": 638,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/638",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1116357488,
+          "url": "https://t.me/c/4325759505/636",
+          "telegram_url": "https://t.me/c/4325759505/636",
+          "direct_url": "/stream/channel/-1004325759505/636?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnxq-CVNreMfTpozfit95V4TJsF5LAACYiEAAo6lwVdxMGv4w3evbR4E",
+          "message_id": 636,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/636",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2028244244,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anireekshita-atithigalu-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2065211035,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anireekshita-atithigalu-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/638",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1116357488,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_anireekshita-atithigalu-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/636",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAn1q-CbvbaJloUcHg8wiWHnKLBZ-fAACaCEAAo6lwVfK_-JyaVUjIh4E",
+          "message_id": 637,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/637",
+          "size_bytes": 2028244244
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAn5q-CcVbf37ypR0D6Be68tFqu1hfAACaSEAAo6lwVftZbTaVuL3-R4E",
+          "message_id": 638,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/638",
+          "size_bytes": 2065211035
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnxq-CVNreMfTpozfit95V4TJsF5LAACYiEAAo6lwVdxMGv4w3evbR4E",
+          "message_id": 636,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/636",
+          "size_bytes": 1116357488
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/anireekshita-atithigalu-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=anireekshita-atithigalu-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T09:17:21Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T08:45:42Z"
+  "last_updated": "2026-11-14T09:17:22Z"
 };

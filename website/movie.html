@@ -36,17 +36,17 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Script Preloading for Instant Player Bootstrap -->
-  <link rel="preload" href="data/movies_data.js?v=20261114_pure_v12" as="script">
-  <link rel="preload" href="data/stream_endpoint.js?v=20261114_pure_v12" as="script">
+  <link rel="preload" href="data/movies_data.js?v=20261114_touch_v13" as="script">
+  <link rel="preload" href="data/stream_endpoint.js?v=20261114_touch_v13" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261114_pure_v12">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_pure_v12">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_pure_v12">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261114_touch_v13">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_touch_v13">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_touch_v13">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -185,7 +185,15 @@
       opacity: 0 !important;
       visibility: hidden !important;
       pointer-events: none !important;
+      display: none !important;
       transform: translate(-50%, -50%) scale(0.92) !important;
+    }
+    .cs-center-btn {
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      cursor: pointer !important;
     }
     .cs-center-btn {
       background: rgba(10, 11, 16, 0.92);
@@ -1002,11 +1010,11 @@
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261114_pure_v12"></script>
-<script src="data/stream_endpoint.js?v=20261114_pure_v12"></script>
-<script src="assets/js/app.js?v=20261114_pure_v12"></script>
-<script src="assets/js/download.js?v=20261114_pure_v12"></script>
-<script src="assets/js/player.js?v=20261114_pure_v12"></script>
-<script src="assets/js/netflix-ui.js?v=20261114_pure_v12"></script>
+<script src="data/movies_data.js?v=20261114_touch_v13"></script>
+<script src="data/stream_endpoint.js?v=20261114_touch_v13"></script>
+<script src="assets/js/app.js?v=20261114_touch_v13"></script>
+<script src="assets/js/download.js?v=20261114_touch_v13"></script>
+<script src="assets/js/player.js?v=20261114_touch_v13"></script>
+<script src="assets/js/netflix-ui.js?v=20261114_touch_v13"></script>
 </body>
 </html>

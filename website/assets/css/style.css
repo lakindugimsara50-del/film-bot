@@ -5739,16 +5739,21 @@ main > .section:first-of-type {
 .cs-cinesubz-standby-overlay {
   position: absolute !important;
   inset: 0 !important;
-  z-index: 15 !important;
+  z-index: 30 !important;
   background: #000000 !important;
   overflow: hidden !important;
-  transition: opacity 0.35s ease, visibility 0.35s ease !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
 }
 
 .cs-cinesubz-standby-overlay.hidden {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+  display: none !important;
+  z-index: -1 !important;
 }
 
 .cs-standby-backdrop-img {
@@ -5758,6 +5763,7 @@ main > .section:first-of-type {
   object-position: center 30% !important;
   display: block !important;
   transform: scale(1.02) !important;
+  pointer-events: none !important;
   transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
@@ -5792,18 +5798,28 @@ main > .section:first-of-type {
   transform: translate(-50%, -50%) !important;
   box-shadow: 0 0 45px rgba(0, 0, 0, 0.88), 0 0 30px rgba(255, 255, 255, 0.55) !important;
   transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.25s ease, background 0.25s ease !important;
-  z-index: 18 !important;
+  z-index: 35 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .cs-cinesubz-play-btn i {
   margin-left: 6px !important;
   color: #111111 !important;
+  pointer-events: none !important;
 }
 
 .cs-cinesubz-play-btn:hover {
   transform: translate(-50%, -50%) scale(1.14) !important;
   background: #ffffff !important;
   box-shadow: 0 0 55px rgba(229, 9, 20, 0.95), 0 0 40px rgba(255, 255, 255, 0.85) !important;
+}
+
+.cs-cinesubz-play-btn:active {
+  transform: translate(-50%, -50%) scale(0.94) !important;
 }
 
 /* CineSubz Bottom Player Action Controls */
@@ -5816,7 +5832,7 @@ main > .section:first-of-type {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  z-index: 18 !important;
+  z-index: 35 !important;
   pointer-events: none !important;
 }
 
@@ -5844,6 +5860,14 @@ main > .section:first-of-type {
   -webkit-backdrop-filter: blur(10px) !important;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65) !important;
   transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.cs-pbar-circle-btn i {
+  pointer-events: none !important;
 }
 
 .cs-pbar-circle-btn:hover {
@@ -5852,6 +5876,23 @@ main > .section:first-of-type {
   transform: scale(1.12) !important;
   box-shadow: 0 0 25px rgba(229, 9, 20, 0.85) !important;
   color: #ffffff !important;
+}
+
+.cs-pbar-circle-btn:active {
+  transform: scale(0.92) !important;
+}
+
+/* Guard: Center player controls hidden while standby screen is visible */
+.cs-cinesubz-standby-overlay:not(.hidden) ~ .video-js .cs-player-center-overlay,
+.cinema-standby-screen ~ .video-js .cs-player-center-overlay {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Ensure Video.js default big play button is never displayed */
+.video-js .vjs-big-play-button {
+  display: none !important;
+  pointer-events: none !important;
 }
 
 /* 2. Movie Details Section with Dynamic Blurred Backdrop */

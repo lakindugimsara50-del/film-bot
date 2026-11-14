@@ -64,6 +64,69 @@ function updateSocialMetaTags(movie) {
 
 'use strict';
 
+/**
+ * Universal Zero-Latency Touch & Click Binder.
+ * Works seamlessly across mobile phones (touch/iOS/Android) and desktop/laptops (mouse/pointer).
+ * Eliminates mobile 300ms tap delay, ignores scroll gestures, prevents synthetic double-events,
+ * and ensures instant 0ms execution.
+ */
+function attachFastAction(el, callback) {
+  if (!el || typeof callback !== 'function') return;
+
+  let startX = 0;
+  let startY = 0;
+  let isScroll = false;
+  let lastTriggerEpoch = 0;
+
+  const run = (e) => {
+    const now = Date.now();
+    if (now - lastTriggerEpoch < 300) {
+      if (e) {
+        try { e.preventDefault(); } catch (err) {}
+        try { e.stopPropagation(); } catch (err) {}
+      }
+      return;
+    }
+    lastTriggerEpoch = now;
+    if (e) {
+      try { e.stopPropagation(); } catch (err) {}
+    }
+    callback(e);
+  };
+
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches[0]) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isScroll = false;
+    }
+  }, { passive: true });
+
+  el.addEventListener('touchmove', (e) => {
+    if (e.touches && e.touches[0]) {
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > 12 || dy > 12) {
+        isScroll = true;
+      }
+    }
+  }, { passive: true });
+
+  el.addEventListener('touchend', (e) => {
+    if (!isScroll) {
+      if (e.cancelable) {
+        try { e.preventDefault(); } catch (err) {}
+      }
+      run(e);
+    }
+  }, { passive: false });
+
+  el.addEventListener('click', (e) => {
+    run(e);
+  });
+}
+
+
 let currentMovie = null;
 let vjsPlayer = null;
 let currentStreamIdx = 0;
@@ -1587,7 +1650,7 @@ function renderServerTabs(movie) {
   tabsEl.innerHTML = tabsHtml;
 
   tabsEl.querySelectorAll('button.server-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
+    attachFastAction(btn, () => {
       const type = btn.dataset.type;
       if (type === 'trailer') {
         if (!isTrailerActive) {
@@ -3082,6 +3145,14 @@ function mountCenterPlayerControls(playerEl, player, movie) {
     playerDom.appendChild(overlay);
   }
 
+  // Guard: If standby screen is active, keep center overlay hidden and inert
+  const currentStandby = playerEl.querySelector('#cs-cinesubz-standby-overlay, .cinema-standby-screen');
+  if (currentStandby && !currentStandby.classList.contains('hidden') && currentStandby.style.display !== 'none') {
+    overlay.classList.add('hidden');
+    overlay.style.display = 'none';
+    overlay.style.pointerEvents = 'none';
+  }
+
   const playBtn = overlay.querySelector('#cs-btn-center-playpause');
   const rewindBtn = overlay.querySelector('#cs-btn-center-rewind');
   const forwardBtn = overlay.querySelector('#cs-btn-center-forward');
@@ -3097,27 +3168,27 @@ function mountCenterPlayerControls(playerEl, player, movie) {
     }
   };
 
-  playBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  attachFastAction(playBtn, (e) => {
     if (!player) return;
     if (player.paused()) {
-      player.play().catch(() => {});
+      try {
+        const p = player.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch (err) {}
     } else {
       player.pause();
     }
     updatePlayState();
   });
 
-  rewindBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  attachFastAction(rewindBtn, (e) => {
     if (!player) return;
     const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
     player.currentTime(Math.max(0, cur - 10));
     showSeekRipple(playerEl, 'backward', 10);
   });
 
-  forwardBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  attachFastAction(forwardBtn, (e) => {
     if (!player) return;
     const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
     const dur = getEffectiveDuration(player, movie);
@@ -3182,8 +3253,7 @@ function injectBottomControlBarItems(player, movie) {
         <path d="M3 3v5h5"/>
         <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
       </svg>`;
-    rewindBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    attachFastAction(rewindBtn, (e) => {
       const cur = typeof player.currentTime === 'function' ? player.currentTime() : 0;
       player.currentTime(Math.max(0, cur - 10));
       showSeekRipple(player.el(), 'backward', 10);
@@ -3200,8 +3270,7 @@ function injectBottomControlBarItems(player, movie) {
         <path d="M21 3v5h-5"/>
         <text x="12" y="15.5" font-size="8.5" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">10</text>
       </svg>`;
-    forwardBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    attachFastAction(forwardBtn, (e) => {
       const cur = typeof player.currentTime === 'function' ? player.currentTime() : 0;
       const dur = getEffectiveDuration(player, movie);
       player.currentTime(Math.min(dur || (cur + 10), cur + 10));
@@ -3388,7 +3457,7 @@ function attachMobileTouchControls(playerEl, player) {
     if (pct < 0.42) zone = 'left';
     else if (pct > 0.58) zone = 'right';
 
-    if (zone !== 'center' && zone === lastTapZone && (now - lastTapEpoch < 420)) {
+    if (zone !== 'center' && zone === lastTapZone && (now - lastTapEpoch < 400)) {
       // Double-tap or rapid multi-tap!
       if (singleTapTimeout) {
         clearTimeout(singleTapTimeout);
@@ -3417,8 +3486,31 @@ function attachMobileTouchControls(playerEl, player) {
 
       lastTapEpoch = now;
       if (e.cancelable) e.preventDefault();
+    } else if (zone === 'center') {
+      // Instant center single-tap: Toggle controls with 0ms delay!
+      lastTapEpoch = now;
+      lastTapZone = 'center';
+      tapCount = 1;
+      const centerOverlay = wrap.querySelector('.cs-player-center-overlay');
+      if (centerOverlay) {
+        if (centerOverlay.classList.contains('hidden') || centerOverlay.style.display === 'none') {
+          centerOverlay.classList.remove('hidden');
+          centerOverlay.style.display = '';
+          centerOverlay.style.pointerEvents = 'auto';
+          if (player && !player.paused()) {
+            setTimeout(() => {
+              if (player && !player.paused()) centerOverlay.classList.add('hidden');
+            }, 3000);
+          }
+        } else {
+          if (player && !player.paused()) {
+            centerOverlay.classList.add('hidden');
+          }
+        }
+      }
+      if (e.cancelable) e.preventDefault();
     } else {
-      // First tap
+      // First tap on side
       lastTapEpoch = now;
       lastTapZone = zone;
       tapCount = 1;
@@ -3428,8 +3520,10 @@ function attachMobileTouchControls(playerEl, player) {
       singleTapTimeout = setTimeout(() => {
         const centerOverlay = wrap.querySelector('.cs-player-center-overlay');
         if (centerOverlay) {
-          if (centerOverlay.classList.contains('hidden')) {
+          if (centerOverlay.classList.contains('hidden') || centerOverlay.style.display === 'none') {
             centerOverlay.classList.remove('hidden');
+            centerOverlay.style.display = '';
+            centerOverlay.style.pointerEvents = 'auto';
             if (player && !player.paused()) {
               setTimeout(() => {
                 if (player && !player.paused()) centerOverlay.classList.add('hidden');
@@ -3444,7 +3538,7 @@ function attachMobileTouchControls(playerEl, player) {
         tapCount = 0;
         lastTapZone = null;
         accumulatedSeek = 0;
-      }, 260);
+      }, 200);
     }
   }, { passive: false });
 }
@@ -3570,8 +3664,104 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
 
   const hideLoader = () => {
     const loader = document.getElementById('super-player-loader');
-    if (loader) loader.classList.add('hidden');
+    if (loader) {
+      loader.classList.add('hidden');
+      loader.style.display = 'none';
+      loader.style.pointerEvents = 'none';
+      loader.style.zIndex = '-1';
+    }
   };
+
+  if (!autoPlay) {
+    hideLoader();
+  }
+
+  // CineSubz Standby Overlay & Immediate Button Interactivity (0ms Latency)
+  const standbyOverlay = playerEl.querySelector('#cs-cinesubz-standby-overlay');
+  const mainPlayBtn = playerEl.querySelector('#cs-main-poster-play-btn');
+  const pbarDl = playerEl.querySelector('#pbar-btn-dl');
+  const pbarFs = playerEl.querySelector('#pbar-btn-fs');
+  const pbarSub = playerEl.querySelector('#pbar-btn-sub');
+  const pbarAlert = playerEl.querySelector('#pbar-btn-alert');
+
+  const executeStartPlay = (e) => {
+    hideLoader();
+    if (standbyOverlay) {
+      standbyOverlay.classList.add('hidden');
+      standbyOverlay.style.display = 'none';
+      standbyOverlay.style.pointerEvents = 'none';
+      standbyOverlay.style.zIndex = '-1';
+    }
+    const centerOverlay = playerEl.querySelector('.cs-player-center-overlay');
+    if (centerOverlay) {
+      centerOverlay.style.display = '';
+      centerOverlay.style.pointerEvents = 'auto';
+    }
+    if (vjsPlayer && typeof vjsPlayer.play === 'function') {
+      try {
+        const p = vjsPlayer.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch (err) {}
+    } else {
+      const v = playerEl.querySelector('video');
+      if (v) {
+        try {
+          const p = v.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch (err) {}
+      }
+    }
+  };
+
+  if (mainPlayBtn) {
+    attachFastAction(mainPlayBtn, executeStartPlay);
+  }
+
+  if (standbyOverlay) {
+    attachFastAction(standbyOverlay, (e) => {
+      if (e && e.target && e.target.closest('.cs-poster-bottom-bar, button, a')) return;
+      executeStartPlay(e);
+    });
+  }
+
+  if (pbarDl) {
+    attachFastAction(pbarDl, (e) => {
+      document.getElementById('downloads')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  if (pbarFs) {
+    attachFastAction(pbarFs, (e) => {
+      try {
+        if (vjsPlayer && typeof vjsPlayer.isFullscreen === 'function') {
+          if (vjsPlayer.isFullscreen()) {
+            vjsPlayer.exitFullscreen();
+          } else {
+            vjsPlayer.requestFullscreen();
+          }
+        } else {
+          const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          } else if (wrap.requestFullscreen) {
+            wrap.requestFullscreen();
+          }
+        }
+      } catch (err) {}
+    });
+  }
+
+  if (pbarSub) {
+    attachFastAction(pbarSub, (e) => {
+      FilmSub.showToast('සිංහල උපසිරැසි (Sinhala Subtitles) Video එකටම Merge කර ඇත', 'info');
+    });
+  }
+
+  if (pbarAlert) {
+    attachFastAction(pbarAlert, (e) => {
+      window.open('https://t.me/Filmsinhala200Bot?start=report_' + encodeURIComponent(movie.slug || movie.id || ''), '_blank');
+    });
+  }
 
   if (typeof videojs !== 'undefined') {
     vjsPlayer = videojs('filmsubPlayer', {
@@ -3623,53 +3813,19 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
       mountCenterPlayerControls(playerEl, vjsPlayer, movie);
       injectBottomControlBarItems(vjsPlayer, movie);
 
-      // CineSubz Standby Overlay Interactivity
-      const standbyOverlay = playerEl.querySelector('#cs-cinesubz-standby-overlay');
-      const mainPlayBtn = playerEl.querySelector('#cs-main-poster-play-btn');
-      const pbarDl = playerEl.querySelector('#pbar-btn-dl');
-      const pbarFs = playerEl.querySelector('#pbar-btn-fs');
-      const pbarSub = playerEl.querySelector('#pbar-btn-sub');
-      const pbarAlert = playerEl.querySelector('#pbar-btn-alert');
-
-      if (mainPlayBtn) {
-        mainPlayBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (standbyOverlay) standbyOverlay.classList.add('hidden');
-          try { vjsPlayer.play().catch(() => {}); } catch(e) {}
-        });
-      }
-      if (pbarDl) {
-        pbarDl.addEventListener('click', (e) => {
-          e.stopPropagation();
-          document.getElementById('downloads')?.scrollIntoView({ behavior: 'smooth' });
-        });
-      }
-      if (pbarFs) {
-        pbarFs.addEventListener('click', (e) => {
-          e.stopPropagation();
-          try {
-            if (vjsPlayer.isFullscreen()) {
-              vjsPlayer.exitFullscreen();
-            } else {
-              vjsPlayer.requestFullscreen();
-            }
-          } catch(e) {}
-        });
-      }
-      if (pbarSub) {
-        pbarSub.addEventListener('click', (e) => {
-          e.stopPropagation();
-          FilmSub.showToast('සිංහල උපසිරැසි (Sinhala Subtitles) Video එකටම Merge කර ඇත', 'info');
-        });
-      }
-      if (pbarAlert) {
-        pbarAlert.addEventListener('click', (e) => {
-          e.stopPropagation();
-          window.open('https://t.me/Filmsinhala200Bot?start=report_' + encodeURIComponent(movie.slug || movie.id || ''), '_blank');
-        });
-      }
       vjsPlayer.on('play', () => {
-        if (standbyOverlay) standbyOverlay.classList.add('hidden');
+        hideLoader();
+        if (standbyOverlay) {
+          standbyOverlay.classList.add('hidden');
+          standbyOverlay.style.display = 'none';
+          standbyOverlay.style.pointerEvents = 'none';
+          standbyOverlay.style.zIndex = '-1';
+        }
+        const centerOverlay = playerEl.querySelector('.cs-player-center-overlay');
+        if (centerOverlay) {
+          centerOverlay.style.display = '';
+          centerOverlay.style.pointerEvents = 'auto';
+        }
       });
       attachPlayerKeyboardShortcuts(vjsPlayer, playerEl);
       attachMobileTouchControls(playerEl, vjsPlayer);
@@ -3989,25 +4145,29 @@ function renderPlayerFallback(playerEl, movie) {
       </button>
       <div class="cs-poster-bottom-bar">
         <div class="cs-pbar-left">
-          <button type="button" class="cs-pbar-circle-btn" onclick="document.getElementById('downloads')?.scrollIntoView({behavior:'smooth'})" title="Direct Download Options">
+          <button type="button" class="cs-pbar-circle-btn" id="fb-pbar-dl" title="Direct Download Options">
             <i class="fa-solid fa-download"></i>
           </button>
-          <button type="button" class="cs-pbar-circle-btn" onclick="if(document.fullscreenElement){document.exitFullscreen()}else{document.getElementById('video-player-container')?.requestFullscreen?.()}" title="Fullscreen">
+          <button type="button" class="cs-pbar-circle-btn" id="fb-pbar-fs" title="Fullscreen">
             <i class="fa-solid fa-expand"></i>
           </button>
-          <button type="button" class="cs-pbar-circle-btn" onclick="FilmSub.showToast('සිංහල උපසිරැසි (Sinhala Subtitles) Video එකටම Merge කර ඇත', 'info')" title="Sinhala Subtitles">
+          <button type="button" class="cs-pbar-circle-btn" id="fb-pbar-sub" title="Sinhala Subtitles">
             <i class="fa-solid fa-closed-captioning"></i>
           </button>
         </div>
         <div class="cs-pbar-right">
-          <a href="${FilmSub.escHtml(tgBotUrl)}" target="_blank" rel="noopener" class="cs-pbar-circle-btn" title="Telegram Bot">
+          <a href="${FilmSub.escHtml(tgBotUrl)}" target="_blank" rel="noopener" class="cs-pbar-circle-btn" id="fb-pbar-alert" title="Telegram Bot">
             <i class="fa-solid fa-triangle-exclamation"></i>
           </a>
         </div>
       </div>
     </div>`;
 
-  const doRetry = async () => {
+  const doRetry = async (e) => {
+    if (e) {
+      try { e.preventDefault(); } catch (err) {}
+      try { e.stopPropagation(); } catch (err) {}
+    }
     if (window.fallbackRetryInterval) {
       clearInterval(window.fallbackRetryInterval);
       window.fallbackRetryInterval = null;
@@ -4044,7 +4204,28 @@ function renderPlayerFallback(playerEl, movie) {
   };
 
   const btnRetry = playerEl.querySelector('#btn-manual-reconnect');
-  if (btnRetry) btnRetry.addEventListener('click', doRetry);
+  if (btnRetry) attachFastAction(btnRetry, doRetry);
+
+  const standbyScreenEl = playerEl.querySelector('.cinema-standby-screen');
+  if (standbyScreenEl) {
+    attachFastAction(standbyScreenEl, (e) => {
+      if (e && e.target && e.target.closest('.cs-poster-bottom-bar, button, a')) return;
+      doRetry(e);
+    });
+  }
+
+  const fbDl = playerEl.querySelector('#fb-pbar-dl');
+  if (fbDl) attachFastAction(fbDl, () => document.getElementById('downloads')?.scrollIntoView({ behavior: 'smooth' }));
+
+  const fbFs = playerEl.querySelector('#fb-pbar-fs');
+  if (fbFs) attachFastAction(fbFs, () => {
+    const wrap = playerEl.querySelector('.player-iframe-wrap') || playerEl;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (wrap.requestFullscreen) wrap.requestFullscreen();
+  });
+
+  const fbSub = playerEl.querySelector('#fb-pbar-sub');
+  if (fbSub) attachFastAction(fbSub, () => FilmSub.showToast('සිංහල උපසිරැසි (Sinhala Subtitles) Video එකටම Merge කර ඇත', 'info'));
 
   const now = Date.now();
   // Prevent infinite refresh loop:
@@ -4605,16 +4786,30 @@ function renderMovieDetails(movie) {
   // 4. Watch Button on Poster
   const posterPlayBtn = document.getElementById('poster-play-btn');
   if (posterPlayBtn) {
-    posterPlayBtn.onclick = (e) => {
-      e.preventDefault();
+    attachFastAction(posterPlayBtn, (e) => {
       const pSec = document.getElementById('player-section');
       if (pSec) {
         pSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-      if (vjsPlayer && typeof vjsPlayer.play === 'function') {
-        try { vjsPlayer.play(); } catch(err) {}
+      const standbyOverlay = document.getElementById('cs-cinesubz-standby-overlay');
+      if (standbyOverlay) {
+        standbyOverlay.classList.add('hidden');
+        standbyOverlay.style.display = 'none';
+        standbyOverlay.style.pointerEvents = 'none';
+        standbyOverlay.style.zIndex = '-1';
       }
-    };
+      const centerOverlay = document.querySelector('.cs-player-center-overlay');
+      if (centerOverlay) {
+        centerOverlay.style.display = '';
+        centerOverlay.style.pointerEvents = 'auto';
+      }
+      if (vjsPlayer && typeof vjsPlayer.play === 'function') {
+        try { vjsPlayer.play().catch(() => {}); } catch(err) {}
+      } else {
+        const v = document.querySelector('#video-player-container video');
+        if (v) try { v.play().catch(() => {}); } catch(err) {}
+      }
+    });
   }
 
   // 5. Title Banner
@@ -4827,8 +5022,7 @@ function renderDownloadSection(movie) {
     }).join('');
 
     grid.querySelectorAll('.btn-direct-dl').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
+      attachFastAction(btn, (e) => {
         const url = btn.dataset.url;
         const quality = btn.dataset.quality;
         if (url && url !== '#') {

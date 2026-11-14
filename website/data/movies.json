@@ -12535,7 +12535,228 @@
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T23:00:21Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "love-in-disguise-2026-s01e02",
+      "slug": "love-in-disguise-2026-s01e02",
+      "title": "Love in Disguise",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt45246384",
+      "tmdb_id": "303745",
+      "type": "series",
+      "season": 1,
+      "episode": 2,
+      "episode_title": "Episode 2",
+      "number_of_seasons": 1,
+      "number_of_episodes": 12,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 12,
+          "poster_url": "https://image.tmdb.org/t/p/w500/c9DEtqCDZBPL9i06WmbDrcndrBy.jpg",
+          "air_date": "2026-10-19"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/c9DEtqCDZBPL9i06WmbDrcndrBy.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/c9DEtqCDZBPL9i06WmbDrcndrBy.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/ob7m6JqZ7jSOocR3VL73VxRC6Is.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/ob7m6JqZ7jSOocR3VL73VxRC6Is.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Q7Xj7sASXSU",
+      "trailer_id": "Q7Xj7sASXSU",
+      "genres": [
+        "Comedy",
+        "Drama",
+        "Crime",
+        "Action & Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "64 min",
+      "description": "Taekang Group's successor, Yoon Yi-jun, is the prime suspect of a shocking murder. To uncover the truth, Kang Jae-hee goes undercover as a male secretary to keep an eye on Yi-jun. The closer they get to what really happened, the closer Yi-jun and Jae-hee become. Will Jae-hee, who is hiding her identity, and Yi-jun, who is hiding a secret, be able to let their true feelings be known to one another?",
+      "director": "Moon Soo-jeong",
+      "cast": [
+        {
+          "name": "Yim Si-wan",
+          "character": "Yoon Yi-jun"
+        },
+        {
+          "name": "Seorina",
+          "character": "Kang Jae-hee"
+        },
+        {
+          "name": "Kim Jung-hyun",
+          "character": "Kim Si-hyeon"
+        },
+        {
+          "name": "Yeon Woo",
+          "character": "Lee Hye-jung"
+        },
+        {
+          "name": "Ryu Seung-soo",
+          "character": "Kang Seok-goo"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAppq-OnzteZ2sjOWVi_dr_OK-wABkPkAAjgjAAKOpclXjwTJRBUZv38eBA",
+      "message_id": 666,
+      "file_name": "fs_love-in-disguise-2026-s01e02_720p.mp4",
+      "file_size": 841512237,
+      "drive_file_id": "",
+      "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAppq-OnzteZ2sjOWVi_dr_OK-wABkPkAAjgjAAKOpclXjwTJRBUZv38eBA",
+          "message_id": 666,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/303745/1/2"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt45246384-1-2"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt45246384&s=1&e=2"
+        }
+      ],
+      "qualities": {
+        "auto": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+        "1080p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+        "720p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+        "480p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/665"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "802.5 MB",
+          "size_bytes": 841512237,
+          "url": "https://t.me/c/4325759505/666",
+          "telegram_url": "https://t.me/c/4325759505/666",
+          "direct_url": "/stream/channel/-1004325759505/666?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAppq-OnzteZ2sjOWVi_dr_OK-wABkPkAAjgjAAKOpclXjwTJRBUZv38eBA",
+          "message_id": 666,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "430.7 MB",
+          "size_bytes": 451591027,
+          "url": "https://t.me/c/4325759505/665",
+          "telegram_url": "https://t.me/c/4325759505/665",
+          "direct_url": "/stream/channel/-1004325759505/665?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAplq-Om16UqKP_N6TzIj0amUB5LtKAACNyMAAo6lyVfHTjBXFaLEWR4E",
+          "message_id": 665,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/665",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "802.5 MB",
+          "size_bytes": 841512237,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-in-disguise-2026-s01e02_1080p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "802.5 MB",
+          "size_bytes": 841512237,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-in-disguise-2026-s01e02_720p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "430.7 MB",
+          "size_bytes": 451591027,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-in-disguise-2026-s01e02_480p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/665",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAppq-OnzteZ2sjOWVi_dr_OK-wABkPkAAjgjAAKOpclXjwTJRBUZv38eBA",
+          "message_id": 666,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/666",
+          "size_bytes": 841512237
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAplq-Om16UqKP_N6TzIj0amUB5LtKAACNyMAAo6lyVfHTjBXFaLEWR4E",
+          "message_id": 665,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/665",
+          "size_bytes": 451591027
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/love-in-disguise-2026-s01e02-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=love-in-disguise-2026-s01e02",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T23:08:46Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T23:00:22Z"
+  "last_updated": "2026-11-14T23:08:47Z"
 }

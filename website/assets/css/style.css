@@ -2490,19 +2490,10 @@ main > .section:first-of-type {
 }
 
 /* ============================================================
-   Player Toolbar & Adaptive Quality Switcher
+   Player Toolbar (Hidden for Ultra-Clean Cinema Screen)
    ============================================================ */
 .player-toolbar {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  flex-wrap: wrap !important;
-  gap: 12px !important;
-  padding: 10px 16px !important;
-  background: rgba(12, 12, 16, 0.95) !important;
-  border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--radius-lg);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: none !important;
 }
 
 .player-left-toolbar, .server-tabs {
@@ -6998,6 +6989,114 @@ body.tg-browser-mode {
   pointer-events: none;
 }
 
+/* Grand Cinematic FILMZILLA Stage Watermark (Active ONLY in Deck Mode) */
+.hero-stage-watermark {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.8s ease;
+  will-change: opacity, transform;
+}
+
+.hero-showcase.is-deck-mode .hero-stage-watermark,
+.hero-showcase.is-receding-mode .hero-stage-watermark {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.hero-showcase.is-expanded-mode .hero-stage-watermark {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -50%) scale(1.12);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.45s ease;
+}
+
+.hero-watermark-glow {
+  position: absolute;
+  width: 480px;
+  height: 240px;
+  background: radial-gradient(ellipse at center, rgba(229, 9, 20, 0.32) 0%, rgba(229, 9, 20, 0.08) 55%, transparent 75%);
+  filter: blur(48px);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: heroWatermarkBreathe 4.5s infinite ease-in-out;
+}
+
+@keyframes heroWatermarkBreathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.16); opacity: 1; filter: blur(56px); }
+}
+
+.hero-watermark-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-watermark-logo {
+  width: clamp(75px, 9vw, 120px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 32px rgba(229, 9, 20, 0.6)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.85));
+  margin-bottom: 10px;
+  animation: heroLogoFloat 5s infinite ease-in-out;
+}
+
+@keyframes heroLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.hero-watermark-brand {
+  font-family: 'Roboto', sans-serif;
+  font-size: clamp(34px, 5.8vw, 72px);
+  font-weight: 900;
+  letter-spacing: clamp(6px, 1.2vw, 14px);
+  text-indent: clamp(6px, 1.2vw, 14px);
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffffff 15%, #dcdcdc 55%, rgba(229, 9, 20, 0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 25px rgba(229, 9, 20, 0.35));
+  line-height: 1.1;
+}
+
+.hero-watermark-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: clamp(9.5px, 1.1vw, 12px);
+  font-weight: 700;
+  letter-spacing: clamp(3px, 0.5vw, 6px);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.hero-watermark-dot {
+  color: var(--accent, #e50914);
+  font-size: 14px;
+}
+
 /* 2. Fullscreen Movie Backdrop Banner (Smooth 60fps hardware-accelerated expansion) */
 .hero-fs-backdrop-wrap {
   position: absolute;
@@ -7595,105 +7694,194 @@ body.tg-browser-mode {
   transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease !important;
 }
 
-/* 5. Navigation Bar & Card View Toggle */
+/* 5. Navigation Bar & Card View Toggle (Hidden for Zero-Clutter Cinema View) */
 .hero-deck-nav-bar {
-  position: absolute;
-  bottom: 24px;
-  right: 44px;
-  z-index: 6;
+  display: none !important;
+}
+
+/* 6. Active Duration Progress Line (Removed per User Request) */
+.hero-fs-progress {
+  display: none !important;
+}
+
+/* ============================================================
+   STREAMING PSYCHOLOGY & USER RETENTION HOOKS
+   ============================================================ */
+/* Netflix Match Percentage Badge */
+.badge-card-match {
+  background: rgba(70, 211, 105, 0.22) !important;
+  color: #46d369 !important;
+  border: 1px solid rgba(70, 211, 105, 0.5) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.3px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  box-shadow: 0 2px 8px rgba(70, 211, 105, 0.25) !important;
+}
+
+/* Poster Action Trailer Button */
+.cs-poster-trailer-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  padding: 10px 18px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-decoration: none !important;
+  width: 100% !important;
+}
+.cs-poster-trailer-btn:hover {
+  background: rgba(229, 9, 20, 0.25) !important;
+  border-color: rgba(229, 9, 20, 0.65) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 18px rgba(229, 9, 20, 0.4) !important;
+}
+
+/* ============================================================
+   CURATED MULTI-ROW MOVIES SHOWCASE & FILTER SYSTEM
+   ============================================================ */
+.movies-showcase-section {
+  position: relative;
+  padding-top: 6px;
+}
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-badge-count {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(229, 9, 20, 0.16);
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  color: #ff3340;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.section-actions {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(12, 12, 18, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 999px;
-  padding: 6px 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
-.hero-deck-status {
-  display: flex;
+.view-switch-btns {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 2px;
+  gap: 2px;
 }
-.hero-deck-label {
+.btn-view-mode {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 5px 12px;
+  border-radius: 16px;
   font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-.hero-deck-counter {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 7px;
-  border-radius: 999px;
-}
-.hero-deck-arrows {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.deck-arrow {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 11px;
+  gap: 5px;
   transition: all 0.2s ease;
 }
-.deck-arrow:hover {
+.btn-view-mode:hover {
+  color: #ffffff;
+}
+.btn-view-mode.active {
   background: var(--accent, #e50914);
-  border-color: var(--accent, #e50914);
-  transform: scale(1.08);
-}
-.deck-toggle-view {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.deck-toggle-view:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(229, 9, 20, 0.45);
 }
 
-/* 6. Active Duration Progress Line */
-.hero-fs-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  z-index: 8;
-  overflow: hidden;
+/* Quick Genre Filter Bar */
+.showcase-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px 0 16px;
+  margin-top: 4px;
 }
-.hero-fs-progress-bar {
-  height: 100%;
-  width: 0%;
-  background: var(--accent, #e50914);
-  box-shadow: 0 0 10px var(--accent-glow, rgba(229, 9, 20, 0.8));
+.showcase-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+.showcase-filter-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+}
+.showcase-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+.showcase-filter-pill.active {
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.12) 100%);
+  border-color: var(--accent, #e50914);
+  color: #ffffff;
+  box-shadow: 0 2px 14px rgba(229, 9, 20, 0.4);
+}
+
+/* Showcase Movie Grid */
+.showcase-movie-grid {
+  min-height: 400px;
+  padding: 8px 0 20px;
+}
+
+/* Load More Button */
+.showcase-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+}
+.btn-load-more-movies {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 12px 32px;
+  border-radius: 30px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+.btn-load-more-movies:hover {
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.12) 100%);
+  border-color: var(--accent, #e50914);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(229, 9, 20, 0.45);
 }
 
 /* ============================================================
@@ -7829,10 +8017,6 @@ body.tg-browser-mode {
     transform: translate3d(0, 0, 180px) scale(1.9) rotateY(0deg);
   }
   .hero-deck-nav-bar {
-    bottom: 12px;
-    right: 18px;
-    left: 18px;
-    justify-content: space-between;
-    padding: 5px 12px;
+    display: none !important;
   }
 }

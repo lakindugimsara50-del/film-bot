@@ -2864,21 +2864,6 @@ function buildSuperLoaderHtml(movie, serverLabel) {
           <div class="netflix-pulse-icon"><i class="fa-solid fa-play"></i></div>
         </div>
         <div class="sp-loader-title">${title}</div>
-        
-        <!-- Live Loading Percentage Display (CineSubz / Netflix VIP) -->
-        <div class="sp-progress-container" id="sp-progress-container">
-          <div class="sp-progress-meta">
-            <span class="sp-progress-status" id="sp-progress-status">⚡ Loading Video Stream...</span>
-            <span class="sp-progress-pct" id="sp-progress-pct">0%</span>
-          </div>
-          <div class="sp-progress-track">
-            <div class="sp-progress-bar" id="sp-progress-bar" style="width: 0%"></div>
-          </div>
-          <div class="sp-progress-sub">
-            <span class="sp-status-pulse-dot"></span>
-            <span id="sp-progress-details">FilmZilla HD • Auto Sinhala Sub</span>
-          </div>
-        </div>
       </div>
     </div>`;
 }
@@ -5193,6 +5178,23 @@ function renderMovieDetails(movie) {
         if (v) try { v.play().catch(() => {}); } catch(err) {}
       }
     });
+  }
+
+  // 4b. Trailer Button on Poster (Luxury cinema action)
+  const posterTrailerBtn = document.getElementById('poster-trailer-btn');
+  if (posterTrailerBtn) {
+    if (movie.trailer_id || movie.trailer_url) {
+      posterTrailerBtn.style.display = 'inline-flex';
+      attachFastAction(posterTrailerBtn, (e) => {
+        const pSec = document.getElementById('player-section');
+        if (pSec) {
+          pSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        loadTrailer(movie);
+      });
+    } else {
+      posterTrailerBtn.style.display = 'none';
+    }
   }
 
   // 5. Title Banner

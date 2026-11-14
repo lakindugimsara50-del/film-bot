@@ -36,17 +36,17 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Script Preloading for Instant Player Bootstrap -->
-  <link rel="preload" href="data/movies_data.js?v=20261114_3d_landscape_v25" as="script">
-  <link rel="preload" href="data/stream_endpoint.js?v=20261114_3d_landscape_v25" as="script">
+  <link rel="preload" href="data/movies_data.js?v=20261115_psychology_cinema_v26" as="script">
+  <link rel="preload" href="data/stream_endpoint.js?v=20261115_psychology_cinema_v26" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261114_3d_landscape_v25">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_3d_landscape_v25">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_3d_landscape_v25">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261115_psychology_cinema_v26">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261115_psychology_cinema_v26">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261115_psychology_cinema_v26">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -740,63 +740,19 @@
   <section class="cs-player-section" id="player-section" aria-label="Online Streaming Player">
     <div class="cs-container">
       <div class="cs-player-card">
-        <!-- Player Controls Header: Clean Mode Bar + Sleek Quality Selector -->
-        <div class="player-toolbar" id="player-toolbar">
-          <div class="server-tabs" id="server-tabs">
-            <!-- Injected dynamically by player.js -->
-            <span class="player-status-badge">
-              <span class="pulse-indicator"></span>
-              <span>Cinema Stream</span>
-            </span>
-          </div>
-
-          <!-- Sleek Quality Dropdown Button -->
-          <div class="player-quality-picker" id="player-quality-picker">
-            <button type="button" class="btn-quality-trigger" id="btn-quality-trigger" aria-haspopup="true" aria-expanded="false" title="Change Video Quality">
-              <span class="quality-trigger-icon"><i class="fa-solid fa-sliders"></i></span>
-              <span class="quality-trigger-label" id="quality-trigger-label">Quality: <strong id="current-quality-name">Auto (HD)</strong></span>
-              <i class="fa-solid fa-chevron-down quality-trigger-arrow"></i>
-            </button>
-            <div class="quality-popup-menu" id="quality-popup-menu" role="menu">
-              <div class="quality-popup-title"><i class="fa-solid fa-video"></i> Video Quality</div>
-              <button type="button" class="q-menu-item active" data-quality="auto">
-                <div class="q-menu-meta">
-                  <span class="q-menu-name"><i class="fa-solid fa-bolt" style="color:var(--accent)"></i> Auto Adaptive</span>
-                  <span class="q-menu-desc">Matches your connection speed</span>
-                </div>
-                <i class="fa-solid fa-check q-check-icon"></i>
-              </button>
-              <button type="button" class="q-menu-item" data-quality="1080p">
-                <div class="q-menu-meta">
-                  <span class="q-menu-name">1080p Full HD</span>
-                  <span class="q-menu-desc">Crystal clear cinema quality</span>
-                </div>
-                <i class="fa-solid fa-check q-check-icon"></i>
-              </button>
-              <button type="button" class="q-menu-item" data-quality="720p">
-                <div class="q-menu-meta">
-                  <span class="q-menu-name">720p HD</span>
-                  <span class="q-menu-desc">Smooth playback • Recommended</span>
-                </div>
-                <i class="fa-solid fa-check q-check-icon"></i>
-              </button>
-              <button type="button" class="q-menu-item" data-quality="480p">
-                <div class="q-menu-meta">
-                  <span class="q-menu-name">480p SD</span>
-                  <span class="q-menu-desc">Standard speed data saver</span>
-                </div>
-                <i class="fa-solid fa-check q-check-icon"></i>
-              </button>
-
-            </div>
-          </div>
+        <!-- Player Toolbar hidden for clean, zero-clutter luxury cinema view -->
+        <div class="player-toolbar" id="player-toolbar" style="display:none !important">
+          <div class="server-tabs" id="server-tabs" style="display:none"></div>
+          <div class="player-quality-picker" id="player-quality-picker" style="display:none"></div>
         </div>
 
-        <!-- Video Player Container -->
+        <!-- Video Player Container (Pure Cinema Frame - Zero Tech Loading Clutter) -->
         <div class="player-container" id="video-player-container">
-          <div style="aspect-ratio:16/9;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;background:#000000">
-            <div class="netflix-pulse-spinner"></div>
-            <span style="font-size:0.85rem;letter-spacing:0.5px;color:rgba(255,255,255,0.7);font-weight:500;">Loading Cinema Stream...</span>
+          <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#000000">
+            <div class="netflix-pulse-spinner">
+              <div class="netflix-pulse-ring"></div>
+              <div class="netflix-pulse-icon"><i class="fa-solid fa-play"></i></div>
+            </div>
           </div>
         </div>
 
@@ -864,6 +820,9 @@
             <a href="#player-section" class="cs-poster-play-btn" id="poster-play-btn">
               <i class="fa-solid fa-play"></i> Watch Movie
             </a>
+            <button type="button" class="cs-poster-trailer-btn" id="poster-trailer-btn">
+              <i class="fa-solid fa-clapperboard"></i> Watch Trailer
+            </button>
             <a href="#downloads" class="cs-poster-dl-btn">
               <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
             </a>
@@ -1027,11 +986,11 @@
 
 <!-- Scripts -->
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="data/movies_data.js?v=20261114_3d_landscape_v25"></script>
-<script src="data/stream_endpoint.js?v=20261114_3d_landscape_v25"></script>
-<script src="assets/js/app.js?v=20261114_3d_landscape_v25"></script>
-<script src="assets/js/download.js?v=20261114_3d_landscape_v25"></script>
-<script src="assets/js/player.js?v=20261114_3d_landscape_v25"></script>
-<script src="assets/js/netflix-ui.js?v=20261114_3d_landscape_v25"></script>
+<script src="data/movies_data.js?v=20261115_psychology_cinema_v26"></script>
+<script src="data/stream_endpoint.js?v=20261115_psychology_cinema_v26"></script>
+<script src="assets/js/app.js?v=20261115_psychology_cinema_v26"></script>
+<script src="assets/js/download.js?v=20261115_psychology_cinema_v26"></script>
+<script src="assets/js/player.js?v=20261115_psychology_cinema_v26"></script>
+<script src="assets/js/netflix-ui.js?v=20261115_psychology_cinema_v26"></script>
 </body>
 </html>

@@ -36,6 +36,7 @@ function renderAllSections() {
     }
   }
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
+  if (document.getElementById('all-movies-grid')) initMoviesShowcaseGrid();
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
   if (document.getElementById('tv-series-track')) renderCarousel('tv-series-track', getAllTVSeries(), { isTrending: false });
   if (document.getElementById('action-track')) renderCarousel('action-track', getMoviesByGenre('action'), { isTrending: false });
@@ -1875,6 +1876,11 @@ function generateMovieCard(movie, opts = {}) {
   // Left badges (Always prominent Full HD / 4K / Quality label)
   const rawQ = formatQualityLabel(movie.quality);
   const qualityBadge = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
+
+  // Streaming Psychology: Netflix Match Score (Dopamine & Confidence Hook)
+  const ratingNum = parseFloat(imdbVal) || 7.8;
+  const matchPct = Math.min(99, Math.max(90, Math.round(ratingNum * 10 + 14)));
+  const matchBadge = `<span class="badge-card-match">${matchPct}% Match</span>`;
   
   // Calculate if movie is New (added within last 21 days)
   const addedAt = movie.added_at || movie.added_date;
@@ -1898,6 +1904,7 @@ function generateMovieCard(movie, opts = {}) {
         <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
         <div class="card-badges-left">
           ${qualityBadge}
+          ${matchBadge}
           ${newBadge}
           ${typeBadge}
         </div>
@@ -2057,6 +2064,107 @@ function renderMovieGrid(containerId, movies) {
     c.style.transitionDelay = `${Math.min(idx * 0.03, 0.45)}s`;
     requestAnimationFrame(() => c.classList.add('is-card-visible'));
   });
+}
+
+// ---- Curated Multi-Row Movie Showcase Engine (3-4 Rows with Instant Filters) ----
+function initMoviesShowcaseGrid() {
+  const grid = document.getElementById('all-movies-grid');
+  if (!grid) return;
+
+  const catalog = groupSeriesCatalog(allMovies);
+  let currentGenre = 'all';
+  let displayedLimit = 18; // 3-4 rows of 6 cards on desktop
+
+  function getFilteredMovies() {
+    if (currentGenre === 'all') {
+      return [...catalog].sort((a, b) => {
+        const yA = Number(a.year) || 0;
+        const yB = Number(b.year) || 0;
+        if (yB !== yA) return yB - yA;
+        const tA = a.added_at ? new Date(a.added_at).getTime() : 0;
+        const tB = b.added_at ? new Date(b.added_at).getTime() : 0;
+        return tB - tA;
+      });
+    }
+    if (currentGenre === 'sinhala') {
+      return getSinhalaFilms();
+    }
+    if (currentGenre === 'top-rated') {
+      return [...catalog].sort((a, b) => {
+        const rA = parseFloat(a.imdb || a.rating || 0);
+        const rB = parseFloat(b.imdb || b.rating || 0);
+        return rB - rA;
+      });
+    }
+    return getMoviesByGenre(currentGenre);
+  }
+
+  function renderShowcase() {
+    const list = getFilteredMovies();
+    const countEl = document.getElementById('movies-showcase-count');
+    if (countEl) countEl.textContent = `${list.length} Films`;
+
+    const visible = list.slice(0, displayedLimit);
+    grid.innerHTML = visible.map(m => generateMovieCard(m)).join('');
+
+    // Smooth staggered reveal
+    grid.querySelectorAll('.movie-card').forEach((c, idx) => {
+      c.style.transitionDelay = `${Math.min(idx * 0.025, 0.35)}s`;
+      requestAnimationFrame(() => c.classList.add('is-card-visible'));
+    });
+
+    const loadMoreWrap = document.getElementById('showcase-load-more-wrap');
+    if (loadMoreWrap) {
+      loadMoreWrap.style.display = displayedLimit >= list.length ? 'none' : 'flex';
+    }
+  }
+
+  // Bind filter pills
+  const pills = document.querySelectorAll('.showcase-filter-pill');
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentGenre = pill.dataset.genre || 'all';
+      displayedLimit = 18;
+      renderShowcase();
+    });
+  });
+
+  // Load more button
+  const loadMoreBtn = document.getElementById('btn-load-more-movies');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      displayedLimit += 12; // Append 2 more full rows
+      renderShowcase();
+    });
+  }
+
+  // Grid / Carousel view switcher
+  const btnGrid = document.getElementById('btn-view-grid');
+  const btnCarousel = document.getElementById('btn-view-carousel');
+  const carouselWrap = document.getElementById('all-movies-carousel-wrap');
+  const loadMoreWrap = document.getElementById('showcase-load-more-wrap');
+
+  if (btnGrid && btnCarousel && carouselWrap) {
+    btnGrid.addEventListener('click', () => {
+      btnGrid.classList.add('active');
+      btnCarousel.classList.remove('active');
+      grid.style.display = 'grid';
+      carouselWrap.style.display = 'none';
+      if (loadMoreWrap) loadMoreWrap.style.display = displayedLimit >= getFilteredMovies().length ? 'none' : 'flex';
+    });
+    btnCarousel.addEventListener('click', () => {
+      btnCarousel.classList.add('active');
+      btnGrid.classList.remove('active');
+      grid.style.display = 'none';
+      carouselWrap.style.display = 'block';
+      if (loadMoreWrap) loadMoreWrap.style.display = 'none';
+      renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
+    });
+  }
+
+  renderShowcase();
 }
 
 // ---- Modern Scroll-Reveal Animation Engine ----

@@ -20,9 +20,9 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261114_3d_landscape_v25">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_3d_landscape_v25">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_3d_landscape_v25">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261115_psychology_cinema_v26">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261115_psychology_cinema_v26">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261115_psychology_cinema_v26">
 </head>
 <body>
 
@@ -116,11 +116,25 @@
 
 <!-- ========== CINEMATIC 3D WIDESCREEN DECK & EXPANDING FULLSCREEN HERO SHOWCASE ========== -->
 <section class="hero-showcase is-deck-mode" id="hero-section" aria-label="Featured Spotlight">
-  <!-- 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) -->
+  <!-- 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - Grand FILMZILLA watermark) -->
   <div class="hero-stage-env" id="hero-stage-env">
     <div class="hero-stage-spotlight"></div>
     <div class="hero-stage-glow" id="hero-stage-glow"></div>
     <div class="hero-stage-floor"></div>
+
+    <!-- Grand Cinematic FILMZILLA Watermark in Deck Mode -->
+    <div class="hero-stage-watermark" id="hero-stage-watermark" aria-hidden="true">
+      <div class="hero-watermark-glow"></div>
+      <div class="hero-watermark-content">
+        <img src="assets/img/filmzilla_logo.png" alt="FilmZilla" class="hero-watermark-logo">
+        <div class="hero-watermark-brand">FILMZILLA</div>
+        <div class="hero-watermark-tagline">
+          <span>SINHALA SUBTITLES CINEMA</span>
+          <span class="hero-watermark-dot">•</span>
+          <span>PREMIUM STREAMING</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 2. Fullscreen Movie Backdrop Banner (Only active when card expands into full size!) -->
@@ -165,24 +179,6 @@
       <!-- 16:9 Landscape cards dynamically injected by JS -->
     </div>
   </div>
-
-  <!-- 5. Floating Navigation Controls & 3D Deck Toggle -->
-  <div class="hero-deck-nav-bar" id="hero-deck-nav-bar">
-    <div class="hero-deck-status">
-      <span class="hero-deck-label"><i class="fa-solid fa-fire" style="color:var(--accent)"></i> Top Spotlight</span>
-      <span class="hero-deck-counter" id="hero-deck-counter">1 / 6</span>
-    </div>
-    <div class="hero-deck-arrows">
-      <button type="button" class="deck-arrow prev" id="hero-deck-prev" aria-label="Previous Movie" title="Previous"><i class="fa-solid fa-chevron-left"></i></button>
-      <button type="button" class="deck-toggle-view" id="hero-deck-toggle" aria-label="Browse 3D Deck" title="Toggle 3D Deck / Banner"><i class="fa-solid fa-layer-group"></i> <span>Cards Deck</span></button>
-      <button type="button" class="deck-arrow next" id="hero-deck-next" aria-label="Next Movie" title="Next"><i class="fa-solid fa-chevron-right"></i></button>
-    </div>
-  </div>
-
-  <!-- 6. Active Duration Progress Indicator -->
-  <div class="hero-fs-progress" id="hero-fs-progress">
-    <div class="hero-fs-progress-bar" id="hero-fs-progress-bar"></div>
-  </div>
 </section>
 
 <!-- ========== 1. TRENDING NOW (Top Row: Compact Carousel on Mobile, CineSubz style) ========== -->
@@ -200,18 +196,57 @@
   </div>
 </section>
 
-<!-- ========== 2. ALL MOVIES (CineSubz 2nd Row: 3-Col compact on mobile) ========== -->
-<section class="section" aria-label="All Movies">
+<!-- ========== 2. ALL MOVIES (Curated 3-4 Row Showcase with Interactive Genre Filters) ========== -->
+<section class="section movies-showcase-section" id="movies-showcase-section" aria-label="All Movies Showcase">
   <div class="section-header">
-    <h2 class="section-title"><i class="fa-solid fa-film" style="color:var(--accent)"></i> All Movies</h2>
-    <a href="search.html?type=movie" class="section-link">VIEW ALL <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a>
+    <div class="section-title-wrap">
+      <h2 class="section-title"><i class="fa-solid fa-film" style="color:var(--accent)"></i> All Movies</h2>
+      <span class="section-badge-count" id="movies-showcase-count">48+ Films</span>
+    </div>
+    <div class="section-actions">
+      <div class="view-switch-btns" role="group" aria-label="View Mode">
+        <button type="button" class="btn-view-mode active" id="btn-view-grid" title="Multi-Row Grid View">
+          <i class="fa-solid fa-table-cells"></i> <span class="view-text">Grid</span>
+        </button>
+        <button type="button" class="btn-view-mode" id="btn-view-carousel" title="Carousel Row View">
+          <i class="fa-solid fa-bars-staggered"></i> <span class="view-text">Row</span>
+        </button>
+      </div>
+      <a href="search.html?type=movie" class="section-link">VIEW ALL <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a>
+    </div>
   </div>
-  <div class="carousel-wrap">
+
+  <!-- Interactive Quick Genre Filter Pills -->
+  <div class="showcase-filter-bar" id="showcase-filter-bar" role="tablist">
+    <button type="button" class="showcase-filter-pill active" data-genre="all"><i class="fa-solid fa-fire"></i> All Movies</button>
+    <button type="button" class="showcase-filter-pill" data-genre="sinhala"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</button>
+    <button type="button" class="showcase-filter-pill" data-genre="top-rated"><i class="fa-solid fa-star"></i> Top Rated</button>
+    <button type="button" class="showcase-filter-pill" data-genre="Action"><i class="fa-solid fa-gun"></i> Action</button>
+    <button type="button" class="showcase-filter-pill" data-genre="Sci-Fi"><i class="fa-solid fa-rocket"></i> Sci-Fi</button>
+    <button type="button" class="showcase-filter-pill" data-genre="Comedy"><i class="fa-solid fa-face-laugh-squint"></i> Comedy</button>
+    <button type="button" class="showcase-filter-pill" data-genre="Drama"><i class="fa-solid fa-masks-theater"></i> Drama</button>
+    <button type="button" class="showcase-filter-pill" data-genre="Horror"><i class="fa-solid fa-skull"></i> Horror</button>
+  </div>
+
+  <!-- Multi-Row Grid Container (Displays 3-4 full rows: 18 to 24 titles by default!) -->
+  <div class="movie-grid showcase-movie-grid" id="all-movies-grid">
+    <!-- Populated dynamically by app.js -->
+  </div>
+
+  <!-- Carousel Wrap (Row view mode) -->
+  <div class="carousel-wrap" id="all-movies-carousel-wrap" style="display:none">
     <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
     <div class="carousel-track compact-track" id="new-releases-track" role="list">
       <!-- Injected by JS -->
     </div>
     <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+
+  <!-- Load More / Expand Button -->
+  <div class="showcase-load-more" id="showcase-load-more-wrap">
+    <button type="button" class="btn-load-more-movies" id="btn-load-more-movies">
+      <i class="fa-solid fa-angles-down"></i> <span>Show More Movies</span>
+    </button>
   </div>
 </section>
 
@@ -414,8 +449,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261114_3d_landscape_v25"></script>
-<script src="assets/js/app.js?v=20261114_3d_landscape_v25"></script>
-<script src="assets/js/netflix-ui.js?v=20261114_3d_landscape_v25"></script>
+<script src="data/movies_data.js?v=20261115_psychology_cinema_v26"></script>
+<script src="assets/js/app.js?v=20261115_psychology_cinema_v26"></script>
+<script src="assets/js/netflix-ui.js?v=20261115_psychology_cinema_v26"></script>
 </body>
 </html>

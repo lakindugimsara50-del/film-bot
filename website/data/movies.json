@@ -10356,7 +10356,235 @@
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T07:52:25Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "jailer-2-2026",
+      "slug": "jailer-2-2026",
+      "title": "Jailer 2",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.0",
+      "rating": "8.0",
+      "imdb_id": "tt33318732",
+      "tmdb_id": "1234139",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/upwdEyhhYZ7pT2hD535fr2MGfpx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/upwdEyhhYZ7pT2hD535fr2MGfpx.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/m0ks2o59mOAz6WdCybJ5FAUNTOU.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/m0ks2o59mOAz6WdCybJ5FAUNTOU.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/3vkHWYL2JmA",
+      "trailer_id": "3vkHWYL2JmA",
+      "genres": [
+        "Action",
+        "Comedy",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "163 min",
+      "description": "When a dangerous syndicate threatens his family, retired jailer Tiger Muthuvel Pandian goes undercover as a driver to battle enemies from the shadows.",
+      "director": "Nelson",
+      "cast": [
+        {
+          "name": "Rajinikanth",
+          "character": "Muthuvel 'Tiger' Pandian"
+        },
+        {
+          "name": "S. J. Suryah",
+          "character": "Bodhi Kalpak"
+        },
+        {
+          "name": "Suraj Venjaramoodu",
+          "character": "Dileep"
+        },
+        {
+          "name": "Ramya Krishnan",
+          "character": "Vijayalakshmi 'Viji' Pandian"
+        },
+        {
+          "name": "Vidya Balan",
+          "character": "Kantha Kalpak"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnlq-Bum6EsHSbY3IseD1zQod7ccqAACSiEAAo6lwVccodhuniQTHB4E",
+      "message_id": 633,
+      "file_name": "comp_jailer-2-2026_1080p.mp4",
+      "file_size": 2058578614,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnlq-Bum6EsHSbY3IseD1zQod7ccqAACSiEAAo6lwVccodhuniQTHB4E",
+          "message_id": 633,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1234139"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt33318732"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt33318732"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/634",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/632"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2058578614,
+          "url": "https://t.me/c/4325759505/633",
+          "telegram_url": "https://t.me/c/4325759505/633",
+          "direct_url": "/stream/channel/-1004325759505/633?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnlq-Bum6EsHSbY3IseD1zQod7ccqAACSiEAAo6lwVccodhuniQTHB4E",
+          "message_id": 633,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1995094667,
+          "url": "https://t.me/c/4325759505/634",
+          "telegram_url": "https://t.me/c/4325759505/634",
+          "direct_url": "/stream/channel/-1004325759505/634?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnpq-B-srElmVa5vkZzFC3YL55lifwACTSEAAo6lwVfDLDprKXZZJB4E",
+          "message_id": 634,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/634",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1152709157,
+          "url": "https://t.me/c/4325759505/632",
+          "telegram_url": "https://t.me/c/4325759505/632",
+          "direct_url": "/stream/channel/-1004325759505/632?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnhq-BkHjCzM-loCIaqnXmL0OGujBgACPyEAAo6lwVcS-lW3qifwKx4E",
+          "message_id": 632,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/632",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2058578614,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_jailer-2-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1995094667,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_jailer-2-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/634",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1152709157,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_jailer-2-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/632",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnlq-Bum6EsHSbY3IseD1zQod7ccqAACSiEAAo6lwVccodhuniQTHB4E",
+          "message_id": 633,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/633",
+          "size_bytes": 2058578614
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnpq-B-srElmVa5vkZzFC3YL55lifwACTSEAAo6lwVfDLDprKXZZJB4E",
+          "message_id": 634,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/634",
+          "size_bytes": 1995094667
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnhq-BkHjCzM-loCIaqnXmL0OGujBgACPyEAAo6lwVcS-lW3qifwKx4E",
+          "message_id": 632,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/632",
+          "size_bytes": 1152709157
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/jailer-2-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=jailer-2-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T08:45:39Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T07:52:26Z"
+  "last_updated": "2026-11-14T08:45:42Z"
 }

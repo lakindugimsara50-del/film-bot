@@ -9675,7 +9675,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T06:34:01Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "heart-of-the-beast-2026",
+      "slug": "heart-of-the-beast-2026",
+      "title": "Heart of the Beast",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.6",
+      "rating": "7.6",
+      "imdb_id": "tt7526136",
+      "tmdb_id": "1263337",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/6sYemVUn79UPKz1ZsSG6kPU4RVy.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/6sYemVUn79UPKz1ZsSG6kPU4RVy.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/6uVRPFflyJpo8Cx872olmlGTWla.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/6uVRPFflyJpo8Cx872olmlGTWla.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/UkMuGKqAux4",
+      "trailer_id": "UkMuGKqAux4",
+      "genres": [
+        "Adventure",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "101 min",
+      "description": "After a harrowing plane crash, Special Forces officer James Belmont and his combat dog, Odin, find themselves stranded deep in the Alaskan wilderness. Together, they are forced into a brutal fight for survival against the elements.",
+      "director": "David Ayer",
+      "cast": [
+        {
+          "name": "Brad Pitt",
+          "character": "James Belmont"
+        },
+        {
+          "name": "J.K. Simmons",
+          "character": "Watkins"
+        },
+        {
+          "name": "Anna Lambe",
+          "character": "Amber"
+        },
+        {
+          "name": "Justin Melnick",
+          "character": "Military Soldier"
+        },
+        {
+          "name": "Shaun DeZern",
+          "character": "Military Soldier"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAm5q-AVqrrFo0zkyZo87O8dBrcn15gAC6SAAAo6lwVeJ4ytcjLMtGR4E",
+      "message_id": 622,
+      "file_name": "comp_heart-of-the-beast-2026_1080p.mp4",
+      "file_size": 1964727006,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAm5q-AVqrrFo0zkyZo87O8dBrcn15gAC6SAAAo6lwVeJ4ytcjLMtGR4E",
+          "message_id": 622,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1263337"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt7526136"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt7526136"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/620",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/621"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1964727006,
+          "url": "https://t.me/c/4325759505/622",
+          "telegram_url": "https://t.me/c/4325759505/622",
+          "direct_url": "/stream/channel/-1004325759505/622?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAm5q-AVqrrFo0zkyZo87O8dBrcn15gAC6SAAAo6lwVeJ4ytcjLMtGR4E",
+          "message_id": 622,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1245596986,
+          "url": "https://t.me/c/4325759505/620",
+          "telegram_url": "https://t.me/c/4325759505/620",
+          "direct_url": "/stream/channel/-1004325759505/620?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmxq-AOxOEFsSp6ypIaT2wnZ04645gAC3CAAAo6lwVfDz6P7gt04Tx4E",
+          "message_id": 620,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/620",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "653.9 MB",
+          "size_bytes": 685681390,
+          "url": "https://t.me/c/4325759505/621",
+          "telegram_url": "https://t.me/c/4325759505/621",
+          "direct_url": "/stream/channel/-1004325759505/621?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAm1q-ARD8tfCCfGM_qtkZnw5gvqy8QAC3SAAAo6lwVdgiBKJLxC25x4E",
+          "message_id": 621,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/621",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1964727006,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_heart-of-the-beast-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1245596986,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_heart-of-the-beast-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/620",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "653.9 MB",
+          "size_bytes": 685681390,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_heart-of-the-beast-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/621",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAm5q-AVqrrFo0zkyZo87O8dBrcn15gAC6SAAAo6lwVeJ4ytcjLMtGR4E",
+          "message_id": 622,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/622",
+          "size_bytes": 1964727006
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmxq-AOxOEFsSp6ypIaT2wnZ04645gAC3CAAAo6lwVfDz6P7gt04Tx4E",
+          "message_id": 620,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/620",
+          "size_bytes": 1245596986
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAm1q-ARD8tfCCfGM_qtkZnw5gvqy8QAC3SAAAo6lwVdgiBKJLxC25x4E",
+          "message_id": 621,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/621",
+          "size_bytes": 685681390
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/heart-of-the-beast-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=heart-of-the-beast-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T06:53:40Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T06:34:02Z"
+  "last_updated": "2026-11-14T06:53:41Z"
 };

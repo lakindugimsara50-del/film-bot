@@ -28,8 +28,12 @@ const HERO_ROTATE_INTERVAL = 6000;
 // ---- Init ----
 function renderAllSections() {
   if (document.getElementById('hero-section')) {
-    renderHero();
-    renderHeroAppleIndicators();
+    if (document.getElementById('hero-deck-stage')) {
+      renderHeroDeck();
+    } else {
+      renderHero();
+      renderHeroAppleIndicators();
+    }
   }
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
@@ -754,7 +758,7 @@ function extractDominantColor(imageUrl, callback) {
 
 function applyDynamicTheme(r, g, b) {
   if (r == null) {
-    // Reset to default red theme
+    // Reset to default Midnight Sapphire theme
     document.documentElement.style.removeProperty('--accent');
     document.documentElement.style.removeProperty('--accent-hover');
     document.documentElement.style.removeProperty('--accent-dark');
@@ -780,8 +784,225 @@ function applyDynamicTheme(r, g, b) {
   document.documentElement.style.setProperty('--hero-bg-tint', heroBgTint);
 }
 
+
+/* ============================================================
+   SERIVIA 3D MULTI-CARD DECK CONTROLLER
+   ============================================================ */
+let heroDeckCards = [];
+let heroDeckCurrent = 0;
+let heroDeckTimer = null;
+let heroDeckTouchStartX = 0;
+let heroDeckTouchStartY = 0;
+
+function renderHeroDeck() {
+  const stage = document.getElementById('hero-deck-stage');
+  const track = document.getElementById('hero-deck-track');
+  if (!stage || !track) return;
+
+  const spotlight = getHeroSpotlightList();
+  if (!spotlight || spotlight.length === 0) return;
+  heroDeckCards = spotlight.slice(0, 7); // Best 5-7 films
+  heroDeckCurrent = Math.min(heroDeckCurrent, heroDeckCards.length - 1);
+
+  // Build deck HTML
+  track.innerHTML = heroDeckCards.map((movie, idx) => {
+    const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+    const genres = Array.isArray(movie.genres) ? movie.genres.slice(0, 3) : [];
+    const genreChips = genres.map(g => `<span class="deck-genre-chip">${FilmSub.escHtml(g)}</span>`).join('');
+    const imdbVal = movie.imdb || movie.rating || '7.5';
+    const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
+    const hasTrailer = Boolean(movie.trailer_id || movie.trailer_url);
+
+    return `
+      <div class="deck-card" data-idx="${idx}">
+        <div class="deck-card-media" style="background-image: url('${FilmSub.escHtml(backdrop)}');">
+          <div class="deck-card-gradient"></div>
+          <div class="deck-card-top-badges">
+            <div class="deck-top-left">
+              <span class="deck-pill deck-pill-quality"><i class="fa-solid fa-film"></i> ${formatQualityLabel(movie.quality)}</span>
+              <span class="deck-pill deck-pill-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>
+            </div>
+            <span class="deck-pill deck-pill-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>
+          </div>
+          <div class="deck-card-info">
+            <div class="deck-genres">${genreChips}</div>
+            <h2 class="deck-card-title">${FilmSub.escHtml(movie.title || '')}</h2>
+            ${movie.title_si ? `<p class="deck-card-title-si">${FilmSub.escHtml(movie.title_si)}</p>` : ''}
+            <p class="deck-card-desc">${FilmSub.escHtml(movie.description || '')}</p>
+            <div class="deck-card-actions">
+              <a href="${movieUrl}" class="deck-btn-watch"><i class="fa-solid fa-play"></i> Watch Now</a>
+              ${hasTrailer ? `<button type="button" class="deck-btn-trailer" data-trailer-idx="${idx}"><i class="fa-solid fa-clapperboard"></i> Trailer</button>` : ''}
+              <a href="${movieUrl}#downloads" class="deck-btn-dl"><i class="fa-solid fa-cloud-arrow-down"></i> Download</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Attach trailer click events
+  track.querySelectorAll('.deck-btn-trailer').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const tIdx = parseInt(btn.dataset.trailerIdx, 10);
+      if (heroDeckCards[tIdx]) openTrailerModal(heroDeckCards[tIdx]);
+    };
+  });
+
+  // Attach card click events (clicking next/prev card brings it to center)
+  track.querySelectorAll('.deck-card').forEach(card => {
+    card.onclick = (e) => {
+      if (e.target.closest('a, button')) return;
+      const cIdx = parseInt(card.dataset.idx, 10);
+      if (cIdx !== heroDeckCurrent) {
+        heroDeckCurrent = cIdx;
+        updateDeckState();
+        restartHeroDeckTimer();
+      }
+    };
+  });
+
+  // Render dots
+  renderDeckDots();
+
+  // Edge Nav
+  const prevBtn = document.getElementById('hero-deck-prev');
+  const nextBtn = document.getElementById('hero-deck-next');
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      const len = heroDeckCards.length;
+      heroDeckCurrent = (heroDeckCurrent - 1 + len) % len;
+      updateDeckState();
+      restartHeroDeckTimer();
+    };
+  }
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      const len = heroDeckCards.length;
+      heroDeckCurrent = (heroDeckCurrent + 1) % len;
+      updateDeckState();
+      restartHeroDeckTimer();
+    };
+  }
+
+  // Touch Swipe for mobile
+  initDeckTouchSwipe(stage);
+
+  // Hover pause
+  stage.onmouseenter = () => { if (heroDeckTimer) clearInterval(heroDeckTimer); };
+  stage.onmouseleave = () => { restartHeroDeckTimer(); };
+
+  // Set initial 3D positions
+  updateDeckState();
+  restartHeroDeckTimer();
+}
+
+function updateDeckState() {
+  const cards = document.querySelectorAll('#hero-deck-track .deck-card');
+  const len = heroDeckCards.length;
+  if (!cards.length || !len) return;
+
+  const cur = heroDeckCurrent;
+  const nextIdx = (cur + 1) % len;
+  const prevIdx = (cur - 1 + len) % len;
+
+  cards.forEach((card, idx) => {
+    card.classList.remove('is-active', 'is-next', 'is-prev', 'is-hidden');
+    if (idx === cur) {
+      card.classList.add('is-active');
+    } else if (idx === nextIdx) {
+      card.classList.add('is-next');
+    } else if (idx === prevIdx) {
+      card.classList.add('is-prev');
+    } else {
+      card.classList.add('is-hidden');
+    }
+  });
+
+  // Update background ambient blur with active card backdrop
+  const activeMovie = heroDeckCards[cur];
+  if (activeMovie) {
+    const bg = activeMovie.backdrop || activeMovie.poster || '';
+    const blurEl = document.getElementById('hero-backdrop-blur');
+    if (blurEl && bg) blurEl.style.backgroundImage = `url('${bg}')`;
+
+    // Dynamic color extraction on active card
+    if (bg && bg.startsWith('http')) {
+      extractDominantColor(bg, (col) => {
+        if (col) applyDynamicTheme(col.r, col.g, col.b);
+        else applyDynamicTheme(null);
+      });
+    }
+  }
+
+  // Update dots
+  const dots = document.querySelectorAll('#hero-deck-dots .deck-dot');
+  dots.forEach((dot, dIdx) => {
+    dot.classList.toggle('active', dIdx === cur);
+  });
+}
+
+function renderDeckDots() {
+  const dotsContainer = document.getElementById('hero-deck-dots');
+  if (!dotsContainer) return;
+  dotsContainer.innerHTML = heroDeckCards.map((_, idx) => `
+    <button type="button" class="deck-dot${idx === heroDeckCurrent ? ' active' : ''}" data-idx="${idx}" aria-label="Slide ${idx + 1}"></button>
+  `).join('');
+
+  dotsContainer.querySelectorAll('.deck-dot').forEach(dot => {
+    dot.onclick = () => {
+      heroDeckCurrent = parseInt(dot.dataset.idx, 10);
+      updateDeckState();
+      restartHeroDeckTimer();
+    };
+  });
+}
+
+function restartHeroDeckTimer() {
+  if (heroDeckTimer) clearInterval(heroDeckTimer);
+  heroDeckTimer = setInterval(() => {
+    const len = heroDeckCards.length;
+    if (len < 2) return;
+    heroDeckCurrent = (heroDeckCurrent + 1) % len;
+    updateDeckState();
+  }, 6000);
+}
+
+function initDeckTouchSwipe(stage) {
+  if (!stage) return;
+  stage.addEventListener('touchstart', (e) => {
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    heroDeckTouchStartX = touch.clientX;
+    heroDeckTouchStartY = touch.clientY;
+  }, { passive: true });
+
+  stage.addEventListener('touchend', (e) => {
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - heroDeckTouchStartX;
+    const dy = touch.clientY - heroDeckTouchStartY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      const len = heroDeckCards.length;
+      if (dx < 0) {
+        // Swipe left -> Next card
+        heroDeckCurrent = (heroDeckCurrent + 1) % len;
+      } else {
+        // Swipe right -> Prev card
+        heroDeckCurrent = (heroDeckCurrent - 1 + len) % len;
+      }
+      updateDeckState();
+      restartHeroDeckTimer();
+    }
+  }, { passive: true });
+}
+
+
+
+
 // ---- Hero ----
 function renderHero(targetMovie, forcedIdx) {
+  if (document.getElementById('hero-deck-stage')) { renderHeroDeck(); return; }
   const heroEl = document.getElementById('hero-section');
   if (!heroEl) return;
 

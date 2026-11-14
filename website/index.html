@@ -20,9 +20,9 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261114_touch_v16">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_touch_v16">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_touch_v16">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261114_touch_v17">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_touch_v17">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_touch_v17">
 </head>
 <body>
 
@@ -116,72 +116,33 @@
 
 <!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
 <!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
-<section class="hero" id="hero-section" aria-label="Featured Movie">
-  <div class="hero-backdrop active" id="hero-backdrop" style="background-image: url('https://image.tmdb.org/t/p/original/15RG8RGQZ5Vopb9EPLdhq74ptLd.jpg'); opacity: 1;"></div>
-  <div class="hero-backdrop-buffer" id="hero-backdrop-buffer"></div>
-  <!-- Apple TV+ Style Background Trailer Player (Data-Aware) -->
-  <div class="hero-video-wrap" id="hero-video-wrap" aria-hidden="true">
-    <iframe id="hero-video-iframe" class="hero-video-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" playsinline></iframe>
-  </div>
-  <div class="hero-gradient"></div>
-  <div class="hero-noise"></div>
+<!-- ========== SERIVIA 3D MULTI-CARD DECK HERO SECTION ========== -->
+<section class="hero-deck-section" id="hero-section" aria-label="Featured Spotlight">
+  <!-- Dynamic atmospheric background glow -->
+  <div class="hero-ambient-glow" id="hero-ambient-glow"></div>
+  <div class="hero-backdrop-blur" id="hero-backdrop-blur"></div>
 
-  <div class="hero-content">
-    <!-- Left Column: Featured Details & Actions -->
-    <div class="hero-info-main">
-      <div class="hero-badge-row">
-        <div class="hero-badge" id="hero-badge"><i class="fa-solid fa-bolt"></i> SPOTLIGHT</div>
+  <!-- 3D Card Stage Viewport -->
+  <div class="hero-deck-stage" id="hero-deck-stage">
+    <div class="hero-deck-track" id="hero-deck-track">
+      <!-- Injected dynamically by app.js: 3D Serivia Deck Cards -->
+      <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#94a3b8">
+        <div class="spinner"></div>
       </div>
-      <h1 class="hero-title" id="hero-title">Sugriva</h1>
-      <p class="hero-title-si" id="hero-title-si">සුග්‍රීව</p>
-      <div class="hero-meta" id="hero-meta">
-        <span class="badge badge-quality"><i class="fa-solid fa-film"></i> Full HD</span>
-        <span class="badge badge-year">2026</span>
-        <span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>
-      </div>
-      <div class="hero-genres" id="hero-genres">
-        <a href="search.html?genre=Action" class="genre-chip">Action</a>
-        <a href="search.html?genre=Drama" class="genre-chip">Drama</a>
-        <a href="search.html?genre=Thriller" class="genre-chip">Thriller</a>
-      </div>
-      <p class="hero-description" id="hero-description">Watch Sugriva (2026) in crystal clear Full HD with Sinhala Subtitles and ultra-fast direct streaming on FilmZilla.</p>
-      <div class="hero-actions">
-        <a href="movie.html?id=sugriva-2026" class="btn btn-primary btn-hero hero-btn-watch" id="hero-watch-btn">
-          <i class="fa-solid fa-play"></i> Watch Now
-        </a>
-        <a href="movie.html?id=sugriva-2026#downloads" class="btn btn-secondary btn-hero hero-btn-download" id="hero-download-btn">
-          <i class="fa-solid fa-cloud-arrow-down"></i> Download
-        </a>
-      </div>
-    </div>
-
-    <!-- Right Column: Movie Poster Panel (Aquaman/CineLand style) -->
-    <div class="hero-poster-panel" id="hero-poster-panel">
-      <img id="hero-poster-thumb"
-           class="hero-poster-img"
-           src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-           alt="Movie Poster"
-           loading="lazy"
-           crossorigin="anonymous">
     </div>
   </div>
 
-  <!-- Apple TV+ Edge Navigation Chevrons -->
-  <button class="hero-edge-nav prev" id="hero-edge-prev" type="button" aria-label="Previous Slide">
+  <!-- Edge Navigation Chevrons -->
+  <button class="hero-deck-nav prev" id="hero-deck-prev" type="button" aria-label="Previous Slide">
     <i class="fa-solid fa-chevron-left"></i>
   </button>
-  <button class="hero-edge-nav next" id="hero-edge-next" type="button" aria-label="Next Slide">
+  <button class="hero-deck-nav next" id="hero-deck-next" type="button" aria-label="Next Slide">
     <i class="fa-solid fa-chevron-right"></i>
   </button>
 
-  <!-- Apple TV+ Floating Sound Button (Bottom Right) -->
-  <button class="hero-sound-btn" id="hero-sound-btn" type="button" aria-label="Toggle Sound" title="Sound On / Off" style="display:none">
-    <i class="fa-solid fa-volume-xmark"></i>
-  </button>
-
-  <!-- Apple TV+ Carousel Progress Pills (Bottom Left) -->
-  <div class="hero-apple-pagination" id="hero-apple-pagination" role="tablist" aria-label="Featured Spotlight">
-    <!-- Injected dynamically by JS -->
+  <!-- Floating Pagination Dots -->
+  <div class="hero-deck-dots" id="hero-deck-dots" role="tablist" aria-label="Spotlight Movies">
+    <!-- Injected dynamically by app.js -->
   </div>
 </section>
 
@@ -414,8 +375,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261114_touch_v16"></script>
-<script src="assets/js/app.js?v=20261114_touch_v16"></script>
-<script src="assets/js/netflix-ui.js?v=20261114_touch_v16"></script>
+<script src="data/movies_data.js?v=20261114_touch_v17"></script>
+<script src="assets/js/app.js?v=20261114_touch_v17"></script>
+<script src="assets/js/netflix-ui.js?v=20261114_touch_v17"></script>
 </body>
 </html>

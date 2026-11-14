@@ -1,3 +1,93 @@
+
+/* ============================================================
+   Dynamic Theme Color Extraction for Movie Pages
+============================================================ */
+function extractDominantColor(imageUrl, callback) {
+  if (!imageUrl || imageUrl.startsWith('data:')) {
+    callback(null);
+    return;
+  }
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    try {
+      const canvas = document.createElement('canvas');
+      const SIZE = 80;
+      canvas.width = SIZE;
+      canvas.height = Math.round(SIZE * img.height / img.width) || SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+      const buckets = {};
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+        if (a < 128) continue;
+        const brightness = (r + g + b) / 3;
+        if (brightness < 30 || brightness > 230) continue;
+        const saturation = Math.max(r,g,b) - Math.min(r,g,b);
+        if (saturation < 35) continue;
+
+        const rq = Math.round(r / 32) * 32;
+        const gq = Math.round(g / 32) * 32;
+        const bq = Math.round(b / 32) * 32;
+        const key = `${rq},${gq},${bq}`;
+        buckets[key] = (buckets[key] || 0) + 1;
+      }
+
+      let best = null, bestCount = 0;
+      for (const key in buckets) {
+        if (buckets[key] > bestCount) {
+          bestCount = buckets[key];
+          best = key;
+        }
+      }
+
+      if (best) {
+        const [r, g, b] = best.split(',').map(Number);
+        const boost = 1.3;
+        const br = Math.min(255, Math.round(r * boost));
+        const bg = Math.min(255, Math.round(g * boost));
+        const bb = Math.min(255, Math.round(b * boost));
+        callback({ r: br, g: bg, b: bb });
+      } else {
+        callback(null);
+      }
+    } catch(e) {
+      callback(null);
+    }
+  };
+  img.onerror = function() { callback(null); };
+  img.src = imageUrl;
+}
+
+function applyDynamicTheme(r, g, b) {
+  if (r == null) {
+    document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--accent-hover');
+    document.documentElement.style.removeProperty('--accent-dark');
+    document.documentElement.style.removeProperty('--accent-glow');
+    document.documentElement.style.removeProperty('--accent-subtle');
+    document.documentElement.style.removeProperty('--hero-glow-color');
+    document.documentElement.style.removeProperty('--hero-bg-tint');
+    return;
+  }
+  const accent = `rgb(${r},${g},${b})`;
+  const accentHover = `rgb(${Math.min(255,r+20)},${Math.min(255,g+20)},${Math.min(255,b+20)})`;
+  const accentDark = `rgb(${Math.round(r*0.7)},${Math.round(g*0.7)},${Math.round(b*0.7)})`;
+  const accentGlow = `rgba(${r},${g},${b},0.55)`;
+  const accentSubtle = `rgba(${r},${g},${b},0.14)`;
+  const heroBgTint = `rgba(${Math.round(r*0.3)},${Math.round(g*0.3)},${Math.round(b*0.3)},0.18)`;
+
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent-hover', accentHover);
+  document.documentElement.style.setProperty('--accent-dark', accentDark);
+  document.documentElement.style.setProperty('--accent-glow', accentGlow);
+  document.documentElement.style.setProperty('--accent-subtle', accentSubtle);
+  document.documentElement.style.setProperty('--hero-glow-color', accentGlow);
+  document.documentElement.style.setProperty('--hero-bg-tint', heroBgTint);
+}
+
 function formatQualityLabel(q) {
   if (!q) return 'Full HD';
   const s = String(q).trim().toLowerCase();
@@ -778,6 +868,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderQuickDownloadStrip(currentMovie);
   renderSeriesSection(currentMovie);
   renderMovieDetails(currentMovie);
+
+  // Dynamic theme extraction for movie detail page
+  const movieThemeImg = currentMovie.poster || currentMovie.backdrop || '';
+  if (movieThemeImg && movieThemeImg.startsWith('http')) {
+    extractDominantColor(movieThemeImg, (color) => {
+      if (color) applyDynamicTheme(color.r, color.g, color.b);
+      else applyDynamicTheme(null);
+    });
+  }
   renderDownloadSection(currentMovie);
   renderRelatedMovies(currentMovie);
   initShareButton(currentMovie);
@@ -5147,35 +5246,64 @@ function renderMovieDetails(movie) {
     }
   }
 
-  // 8. Synopsis Tabs Toggle
+  // 8. Synopsis Tabs Toggle (Smart Sinhala vs English handling)
   const tabSi = document.getElementById('tab-btn-si');
   const tabEn = document.getElementById('tab-btn-en');
   const paneSi = document.getElementById('pane-si');
   const paneEn = document.getElementById('pane-en');
-
-  if (tabSi && tabEn && paneSi && paneEn) {
-    tabSi.onclick = () => {
-      tabSi.classList.add('active');
-      tabEn.classList.remove('active');
-      paneSi.classList.add('active');
-      paneEn.classList.remove('active');
-    };
-    tabEn.onclick = () => {
-      tabEn.classList.add('active');
-      tabSi.classList.remove('active');
-      paneEn.classList.add('active');
-      paneSi.classList.remove('active');
-    };
-  }
-
   const siDescEl = document.getElementById('movie-desc-si');
-  if (siDescEl) {
-    siDescEl.textContent = movie.description_si || movie.storyline_si || movie.storyline || movie.description || 'මෙම චිත්‍රපටය සඳහා සිංහල සාරාංශය ළඟදීම එක් කෙරේ.';
-  }
-
   const enDescEl = document.getElementById('movie-desc-en');
-  if (enDescEl) {
-    enDescEl.textContent = movie.storyline || movie.description || 'No English synopsis available for this title.';
+
+  const rawSi = (movie.description_si || movie.storyline_si || '').trim();
+  const hasGenuineSinhala = Boolean(rawSi && /[඀-෿]/.test(rawSi));
+  const rawEn = (movie.description || movie.storyline || movie.description_en || '').trim();
+
+  if (hasGenuineSinhala) {
+    if (tabSi) {
+      tabSi.style.display = 'inline-flex';
+      tabSi.classList.add('active');
+    }
+    if (tabEn) {
+      tabEn.style.display = 'inline-flex';
+      tabEn.classList.remove('active');
+      tabEn.innerHTML = '<i class="fa-solid fa-globe" style="color:#00a8ff"></i> English Storyline';
+    }
+    if (paneSi) {
+      paneSi.classList.add('active');
+      if (siDescEl) siDescEl.textContent = rawSi;
+    }
+    if (paneEn) {
+      paneEn.classList.remove('active');
+      if (enDescEl) enDescEl.textContent = rawEn || 'No English storyline available for this title.';
+    }
+
+    if (tabSi && tabEn && paneSi && paneEn) {
+      tabSi.onclick = () => {
+        tabSi.classList.add('active');
+        tabEn.classList.remove('active');
+        paneSi.classList.add('active');
+        paneEn.classList.remove('active');
+      };
+      tabEn.onclick = () => {
+        tabEn.classList.add('active');
+        tabSi.classList.remove('active');
+        paneEn.classList.add('active');
+        paneSi.classList.remove('active');
+      };
+    }
+  } else {
+    // No Sinhala translation available: Hide Sinhala tab so English text is never shown under Sinhala heading!
+    if (tabSi) tabSi.style.display = 'none';
+    if (tabEn) {
+      tabEn.style.display = 'inline-flex';
+      tabEn.classList.add('active');
+      tabEn.innerHTML = '<i class="fa-solid fa-film" style="color:var(--accent)"></i> Movie Storyline';
+    }
+    if (paneSi) paneSi.classList.remove('active');
+    if (paneEn) {
+      paneEn.classList.add('active');
+      if (enDescEl) enDescEl.textContent = rawEn || 'No storyline summary available for this title.';
+    }
   }
 
   // 9. Modern Attributes Micro-Cards Grid
@@ -5264,20 +5392,20 @@ function renderDownloadSection(movie) {
       // 1. Direct Download button (clean cinema action)
       if (directUrl) {
         actionBtns += `
-          <button type="button" class="btn-download-primary btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="High Speed Direct Download">
-            <i class="fa-solid fa-download"></i> Direct Download
+          <button type="button" class="btn-dl-sleek btn-dl-direct btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="High Speed Direct Download">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
           </button>`;
       }
 
       // 2. Telegram Cloud button (sleek cyan pill)
       if (tgUrl) {
         actionBtns += `
-          <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-download-secondary btn-tg-dl" title="Save in Telegram Cloud">
+          <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-dl-sleek btn-dl-tg btn-tg-dl" title="Save in Telegram Cloud">
             <i class="fa-brands fa-telegram"></i> Telegram Cloud
           </a>`;
       } else if (!directUrl && dl.url) {
         actionBtns += `
-          <a href="${FilmSub.escHtml(dl.url)}" target="_blank" rel="noopener" class="btn-download-secondary btn-tg-dl">
+          <a href="${FilmSub.escHtml(dl.url)}" target="_blank" rel="noopener" class="btn-dl-sleek btn-dl-tg btn-tg-dl">
             <i class="fa-solid fa-cloud-arrow-down"></i> Download
           </a>`;
       }
@@ -5287,23 +5415,20 @@ function renderDownloadSection(movie) {
       const qIcon = rawQ.includes('1080') ? 'fa-solid fa-crown' : (rawQ.includes('720') ? 'fa-solid fa-bolt' : 'fa-solid fa-film');
 
       return `
-        <div class="cs-pro-dl-card download-card ${isRec ? 'is-recommended' : ''}">
-          <div class="pro-dl-header">
-            <div class="pro-dl-title-wrap">
+        <div class="cs-sleek-dl-card ${isRec ? 'is-recommended' : ''}">
+          <div class="dl-left-meta">
+            <div class="dl-q-badge">
               <i class="${qIcon}" style="color:var(--accent);font-size:16px"></i>
-              <span class="pro-dl-title">${FilmSub.escHtml(qTitle)}</span>
-              ${isRec ? `<span class="pro-dl-rec-badge">RECOMMENDED</span>` : ''}
+              <span class="dl-q-name">${FilmSub.escHtml(qTitle)}</span>
+              ${isRec ? `<span class="dl-rec-pill"><i class="fa-solid fa-crown"></i> RECOMMENDED</span>` : ''}
             </div>
-            ${sz ? `<span class="pro-dl-size">${FilmSub.escHtml(sz)}</span>` : ''}
+            <div class="dl-specs-inline">
+              ${sz ? `<span class="dl-spec-pill dl-size-pill"><i class="fa-solid fa-database"></i> ${FilmSub.escHtml(sz)}</span>` : ''}
+              <span class="dl-spec-pill"><i class="fa-solid fa-circle-check" style="color:#4ade80"></i> ${FilmSub.escHtml(fmt)}</span>
+              <span class="dl-spec-pill dl-sub-pill"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
+            </div>
           </div>
-          <div class="pro-dl-specs-line">
-            <span class="pro-spec-item"><i class="fa-solid fa-bolt" style="color:#4ade80"></i> High-Speed Direct Cloud</span>
-            <span class="pro-spec-dot">•</span>
-            <span class="pro-spec-item">${FilmSub.escHtml(fmt)}</span>
-            <span class="pro-spec-dot">•</span>
-            <span class="pro-spec-item pro-spec-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
-          </div>
-          <div class="pro-dl-actions-row">
+          <div class="dl-right-actions">
             ${actionBtns}
           </div>
         </div>`;

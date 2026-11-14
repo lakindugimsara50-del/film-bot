@@ -6908,6 +6908,52 @@ body.tg-browser-mode {
   justify-content: center;
   user-select: none;
   -webkit-user-select: none;
+
+  /* Continuous 3D Perspective Slot Coordinates (Desktop Default) */
+  --s0-x: -80px;
+  --s0-y: 0px;
+  --s0-z: 60px;
+  --s0-s: 1;
+  --s0-ry: 0deg;
+  --s0-op: 1;
+
+  --s1-x: 0px;
+  --s1-y: 8px;
+  --s1-z: -30px;
+  --s1-s: 0.88;
+  --s1-ry: -12deg;
+  --s1-op: 0.86;
+
+  --s2-x: 75px;
+  --s2-y: 16px;
+  --s2-z: -100px;
+  --s2-s: 0.77;
+  --s2-ry: -18deg;
+  --s2-op: 0.70;
+
+  --s3-x: 145px;
+  --s3-y: 24px;
+  --s3-z: -160px;
+  --s3-s: 0.67;
+  --s3-ry: -22deg;
+  --s3-op: 0.52;
+
+  --s4-x: 205px;
+  --s4-y: 30px;
+  --s4-z: -210px;
+  --s4-s: 0.58;
+  --s4-ry: -26deg;
+  --s4-op: 0.35;
+
+  --s5-x: 255px;
+  --s5-y: 36px;
+  --s5-z: -260px;
+  --s5-s: 0.50;
+  --s5-ry: -30deg;
+  --s5-op: 0.22;
+
+  --sweep-out-x: -140px;
+  --sweep-mid-x: 35px;
 }
 
 /* 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) */
@@ -6952,7 +6998,7 @@ body.tg-browser-mode {
   pointer-events: none;
 }
 
-/* 2. Fullscreen Movie Backdrop Banner (Only active when card expands into full size!) */
+/* 2. Fullscreen Movie Backdrop Banner (Smooth 60fps hardware-accelerated expansion) */
 .hero-fs-backdrop-wrap {
   position: absolute;
   inset: 0;
@@ -6960,40 +7006,28 @@ body.tg-browser-mode {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: scale(1.02);
-  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.75s ease;
+  transform: scale(0.97);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.65s ease;
+  will-change: opacity, transform;
 }
 .hero-showcase.is-expanded-mode .hero-fs-backdrop-wrap {
   opacity: 1;
   visibility: visible;
-  transform: scale(1.02);
+  transform: scale(1);
 }
 .hero-showcase.is-deck-mode .hero-fs-backdrop-wrap {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  transform: scale(0.65) translate3d(-100px, 0, 60px);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.97);
 }
 .hero-showcase.is-receding-mode .hero-fs-backdrop-wrap {
   opacity: 0;
   visibility: visible;
-  animation: heroFsRecedeBackdrop 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes heroFsRecedeBackdrop {
-  0% {
-    transform: scale(1.02);
-    border-radius: 0;
-    opacity: 1;
-  }
-  50% {
-    transform: scale(0.78) translate3d(-50px, 0, 40px);
-    border-radius: 12px;
-    opacity: 0.75;
-  }
-  100% {
-    transform: scale(0.55) translate3d(-100px, 0, 60px);
-    border-radius: 18px;
-    opacity: 0;
-  }
+  transform: scale(0.97);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-bg-layer {
@@ -7002,10 +7036,11 @@ body.tg-browser-mode {
   background-size: cover;
   background-position: center 25%;
   background-repeat: no-repeat;
-  transition: opacity 0.7s ease, transform 6s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   transform: scale(1.02);
   z-index: 0;
   pointer-events: none;
+  will-change: opacity;
 }
 .hero-bg-layer.current {
   opacity: 1;
@@ -7016,10 +7051,10 @@ body.tg-browser-mode {
   z-index: 2;
 }
 .hero-bg-layer.animating {
-  animation: heroBackdropZoomIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: heroBackdropZoomIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @keyframes heroBackdropZoomIn {
-  from { opacity: 0; transform: scale(1.08); }
+  from { opacity: 0; transform: scale(1.06); }
   to   { opacity: 1; transform: scale(1.02); }
 }
 
@@ -7065,21 +7100,22 @@ body.tg-browser-mode {
   padding: 0 44px;
   pointer-events: none;
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(22px);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 .hero-showcase.is-expanded-mode .hero-showcase-container {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
-  transition-delay: 0.15s;
+  transition-delay: 0.18s;
 }
 .hero-showcase.is-deck-mode .hero-showcase-container,
 .hero-showcase.is-receding-mode .hero-showcase-container {
   opacity: 0 !important;
-  transform: translateY(28px);
+  transform: translateY(22px);
   pointer-events: none !important;
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .hero-showcase-main {
@@ -7087,10 +7123,13 @@ body.tg-browser-mode {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  animation: heroInfoSlideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-showcase.is-expanded-mode .hero-showcase-main,
+.hero-showcase-main.hero-info-enter {
+  animation: heroInfoSlideIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes heroInfoSlideIn {
-  from { opacity: 0; transform: translateX(-24px); }
+  from { opacity: 0; transform: translateX(-20px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
@@ -7279,7 +7318,9 @@ body.tg-browser-mode {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 .hero-showcase.is-deck-mode .hero-3d-deck-wrap,
 .hero-showcase.is-receding-mode .hero-3d-deck-wrap {
@@ -7290,7 +7331,8 @@ body.tg-browser-mode {
 .hero-showcase.is-expanded-mode .hero-3d-deck-wrap {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.92);
+  transform: scale(1.03);
+  transition: opacity 0.45s ease 0.15s, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-3d-deck-stage {
@@ -7317,11 +7359,11 @@ body.tg-browser-mode {
   background-color: #121218;
   transform-style: preserve-3d;
   transform-origin: center center;
-  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-              filter 0.75s ease,
-              box-shadow 0.75s ease,
-              border-color 0.75s ease;
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.5s ease,
+              box-shadow 0.5s ease,
+              border-color 0.5s ease;
   will-change: transform, opacity;
   user-select: none;
   -webkit-user-select: none;
@@ -7411,57 +7453,62 @@ body.tg-browser-mode {
   pointer-events: none;
 }
 
-/* 3D Stack Depth Slots - Centered under Stage Spotlight */
+/* 3D Stack Depth Slots - Continuous hardware-accelerated CSS Variables */
 .hero-3d-card.slot-0,
 .hero-3d-card.is-active {
-  transform: translate3d(-100px, 0, 60px) scale(1) rotateY(0deg);
+  transform: translate3d(var(--s0-x), var(--s0-y), var(--s0-z)) scale(var(--s0-s)) rotateY(var(--s0-ry));
   z-index: 20;
-  opacity: 1;
+  opacity: var(--s0-op);
   filter: brightness(1);
   border: 2px solid var(--accent, #e50914);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow, rgba(229, 9, 20, 0.45));
 }
 .hero-3d-card.slot-1 {
-  transform: translate3d(-20px, 10px, -40px) scale(0.88) rotateY(-12deg);
-  z-index: 15;
-  opacity: 0.88;
-  filter: brightness(0.82);
+  transform: translate3d(var(--s1-x), var(--s1-y), var(--s1-z)) scale(var(--s1-s)) rotateY(var(--s1-ry));
+  z-index: 16;
+  opacity: var(--s1-op);
+  filter: brightness(0.85);
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
 }
 .hero-3d-card.slot-2 {
-  transform: translate3d(60px, 20px, -110px) scale(0.77) rotateY(-18deg);
-  z-index: 12;
-  opacity: 0.72;
-  filter: brightness(0.68);
+  transform: translate3d(var(--s2-x), var(--s2-y), var(--s2-z)) scale(var(--s2-s)) rotateY(var(--s2-ry));
+  z-index: 13;
+  opacity: var(--s2-op);
+  filter: brightness(0.72);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
 }
 .hero-3d-card.slot-3 {
-  transform: translate3d(135px, 28px, -170px) scale(0.67) rotateY(-22deg);
-  z-index: 9;
-  opacity: 0.54;
-  filter: brightness(0.55);
+  transform: translate3d(var(--s3-x), var(--s3-y), var(--s3-z)) scale(var(--s3-s)) rotateY(var(--s3-ry));
+  z-index: 10;
+  opacity: var(--s3-op);
+  filter: brightness(0.58);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .hero-3d-card.slot-4 {
-  transform: translate3d(200px, 36px, -230px) scale(0.58) rotateY(-26deg);
-  z-index: 6;
-  opacity: 0.36;
-  filter: brightness(0.44);
+  transform: translate3d(var(--s4-x), var(--s4-y), var(--s4-z)) scale(var(--s4-s)) rotateY(var(--s4-ry));
+  z-index: 7;
+  opacity: var(--s4-op);
+  filter: brightness(0.46);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 .hero-3d-card.slot-5 {
-  transform: translate3d(255px, 42px, -280px) scale(0.50) rotateY(-30deg);
-  z-index: 3;
-  opacity: 0.22;
-  filter: brightness(0.34);
+  transform: translate3d(var(--s5-x), var(--s5-y), var(--s5-z)) scale(var(--s5-s)) rotateY(var(--s5-ry));
+  z-index: 4;
+  opacity: var(--s5-op);
+  filter: brightness(0.35);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 .hero-3d-card.slot-hidden {
-  transform: translate3d(295px, 48px, -330px) scale(0.42);
+  transform: translate3d(calc(var(--s5-x) + 40px), 30px, -200px) scale(0.42) rotateY(-25deg);
   z-index: 1;
   opacity: 0;
+  pointer-events: none;
+}
+
+/* In expanded mode, cards remain in their stable 3D coordinates while deck-wrap gracefully fades */
+.hero-showcase.is-expanded-mode .hero-3d-card {
   pointer-events: none;
 }
 
@@ -7471,65 +7518,52 @@ body.tg-browser-mode {
   border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
-/* 3D Animations:
-   1. Spinning to Fullscreen ("karakavila ekak full size wela display eke penwa")
-   2. Retreating to back ("ara diga hadathi card tika aye awith ara apu card eka pitipassata yanawa penawa")
+/* 3D Rear Shuffle Animation:
+   Old front card visibly sweeps out to the left and glides behind the deck to slot 5.
+   ("ara apu card eka pitipassata yanawa penawa")
 */
-.hero-3d-card.is-spinning-to-fullscreen {
-  animation: cardSpinToFullscreen 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
-  z-index: 50 !important;
+.hero-3d-card.is-shuffling-to-rear,
+.hero-3d-card.is-retreating-to-back {
+  animation: cardShuffleToRear 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  z-index: 35 !important;
+  pointer-events: none !important;
 }
-@keyframes cardSpinToFullscreen {
+@keyframes cardShuffleToRear {
   0% {
-    transform: translate3d(-100px, 0, 60px) scale(1) rotateY(0deg) rotateX(0deg);
+    transform: translate3d(var(--s0-x), var(--s0-y), var(--s0-z)) scale(var(--s0-s)) rotateY(var(--s0-ry));
     opacity: 1;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow);
+    filter: brightness(1);
+    border-color: var(--accent, #e50914);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow, rgba(229, 9, 20, 0.45));
+    z-index: 35;
   }
-  35% {
-    transform: translate3d(-40px, -10px, 140px) scale(1.35) rotateY(-14deg) rotateX(6deg);
-    border-radius: 14px;
-    filter: brightness(1.1);
-    opacity: 1;
+  30% {
+    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -140px)), -8px, 70px) scale(1.02) rotateY(16deg);
+    opacity: 0.95;
+    filter: brightness(0.9);
+    z-index: 35;
   }
-  70% {
-    transform: translate3d(0, 0, 240px) scale(1.9) rotateY(8deg) rotateX(-2deg);
-    border-radius: 8px;
-    filter: brightness(1.12);
-    opacity: 1;
+  65% {
+    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 35px)), 24px, -180px) scale(0.65) rotateY(-18deg);
+    opacity: 0.55;
+    filter: brightness(0.5);
+    z-index: 3;
   }
   100% {
-    transform: translate3d(0, 0, 320px) scale(2.6) rotateY(0deg) rotateX(0deg);
-    border-radius: 0;
-    opacity: 1;
+    transform: translate3d(var(--s5-x), var(--s5-y), var(--s5-z)) scale(var(--s5-s)) rotateY(var(--s5-ry));
+    opacity: var(--s5-op);
+    filter: brightness(0.35);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+    z-index: 3;
   }
 }
 
-.hero-3d-card.is-retreating-to-back {
-  animation: cardSweepToRear 0.90s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
-  z-index: 30 !important;
-}
-@keyframes cardSweepToRear {
-  0% {
-    transform: translate3d(-100px, 0, 60px) scale(1) rotateY(0deg);
-    opacity: 1;
-    z-index: 30;
-  }
-  30% {
-    transform: translate3d(-260px, -15px, 80px) scale(1.05) rotateY(18deg);
-    opacity: 0.95;
-    z-index: 30;
-  }
-  65% {
-    transform: translate3d(100px, 25px, -160px) scale(0.68) rotateY(-16deg);
-    opacity: 0.65;
-    z-index: 2;
-  }
-  100% {
-    transform: translate3d(255px, 42px, -280px) scale(0.50) rotateY(-30deg);
-    opacity: 0.22;
-    z-index: 2;
-  }
+/* Card spin fallback */
+.hero-3d-card.is-spinning-to-fullscreen {
+  transform: translate3d(var(--s0-x), var(--s0-y), 150px) scale(1.42) rotateY(0deg) !important;
+  opacity: 0 !important;
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease !important;
 }
 
 /* 5. Navigation Bar & Card View Toggle */
@@ -7688,6 +7722,51 @@ body.tg-browser-mode {
 /* Responsive: Tablets & Mobile for 3D Widescreen Deck & Expanding Fullscreen */
 @media (max-width: 900px) {
   .hero-showcase {
+    --s0-x: -25px;
+    --s0-y: 0px;
+    --s0-z: 30px;
+    --s0-s: 1;
+    --s0-ry: 0deg;
+    --s0-op: 1;
+
+    --s1-x: 0px;
+    --s1-y: 6px;
+    --s1-z: -20px;
+    --s1-s: 0.89;
+    --s1-ry: -8deg;
+    --s1-op: 0.85;
+
+    --s2-x: 24px;
+    --s2-y: 12px;
+    --s2-z: -55px;
+    --s2-s: 0.79;
+    --s2-ry: -13deg;
+    --s2-op: 0.68;
+
+    --s3-x: 48px;
+    --s3-y: 18px;
+    --s3-z: -90px;
+    --s3-s: 0.70;
+    --s3-ry: -17deg;
+    --s3-op: 0.50;
+
+    --s4-x: 70px;
+    --s4-y: 22px;
+    --s4-z: -120px;
+    --s4-s: 0.62;
+    --s4-ry: -20deg;
+    --s4-op: 0.32;
+
+    --s5-x: 90px;
+    --s5-y: 26px;
+    --s5-z: -145px;
+    --s5-s: 0.55;
+    --s5-ry: -22deg;
+    --s5-op: 0.20;
+
+    --sweep-out-x: -75px;
+    --sweep-mid-x: 15px;
+
     min-height: 520px;
     max-height: none;
     padding: 10px 0 20px;
@@ -7715,58 +7794,6 @@ body.tg-browser-mode {
   .hero-3d-card {
     width: min(290px, 78vw);
     border-radius: 14px;
-  }
-  .hero-3d-card.slot-0,
-  .hero-3d-card.is-active {
-    transform: translate3d(-35px, 0, 25px) scale(1) rotateY(0deg);
-  }
-  .hero-3d-card.slot-1 {
-    transform: translate3d(-10px, 6px, -25px) scale(0.89) rotateY(-8deg);
-  }
-  .hero-3d-card.slot-2 {
-    transform: translate3d(15px, 12px, -60px) scale(0.79) rotateY(-13deg);
-  }
-  .hero-3d-card.slot-3 {
-    transform: translate3d(40px, 18px, -95px) scale(0.70) rotateY(-17deg);
-  }
-  .hero-3d-card.slot-4 {
-    transform: translate3d(65px, 24px, -125px) scale(0.62) rotateY(-20deg);
-  }
-  .hero-3d-card.slot-5 {
-    transform: translate3d(90px, 30px, -150px) scale(0.55) rotateY(-22deg);
-  }
-  @keyframes cardSpinToFullscreen {
-    0% {
-      transform: translate3d(-35px, 0, 25px) scale(1) rotateY(0deg) rotateX(0deg);
-      opacity: 1;
-      border-radius: 14px;
-    }
-    35% {
-      transform: translate3d(-15px, -6px, 70px) scale(1.25) rotateY(-10deg) rotateX(4deg);
-      border-radius: 12px;
-      opacity: 1;
-    }
-    70% {
-      transform: translate3d(0, 0, 130px) scale(1.6) rotateY(6deg) rotateX(-2deg);
-      border-radius: 6px;
-      opacity: 1;
-    }
-    100% {
-      transform: translate3d(0, 0, 190px) scale(2.1) rotateY(0deg) rotateX(0deg);
-      border-radius: 0;
-      opacity: 1;
-    }
-  }
-  @keyframes cardSweepToRear {
-    0% { transform: translate3d(-35px, 0, 25px) scale(1) rotateY(0deg); opacity: 1; z-index: 30; }
-    30% { transform: translate3d(-90px, -8px, 40px) scale(1.03) rotateY(12deg); opacity: 0.95; z-index: 30; }
-    65% { transform: translate3d(45px, 16px, -90px) scale(0.70) rotateY(-12deg); opacity: 0.65; z-index: 2; }
-    100% { transform: translate3d(90px, 30px, -150px) scale(0.55) rotateY(-22deg); opacity: 0.22; z-index: 2; }
-  }
-  @keyframes heroFsRecedeBackdrop {
-    0% { transform: scale(1.02); border-radius: 0; opacity: 1; }
-    50% { transform: scale(0.82) translate3d(-15px, 0, 20px); border-radius: 10px; opacity: 0.75; }
-    100% { transform: scale(0.65) translate3d(-35px, 0, 25px); border-radius: 14px; opacity: 0; }
   }
   .hero-deck-nav-bar {
     bottom: 12px;

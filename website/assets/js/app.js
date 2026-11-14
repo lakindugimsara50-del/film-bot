@@ -787,89 +787,325 @@ function applyDynamicTheme(r, g, b) {
 
 
 /* ============================================================
-   TRUE 3D STACKED CARD DECK HERO BANNER ("3D Pitu Peliya")
+   CINEMATIC 3D WIDESCREEN DECK & EXPANDING FULLSCREEN HERO CONTROLLER
+   ("lap eke diga hadathi card tika 3D pitu peliya & full size display")
    ============================================================ */
 let heroShowcaseMovies = [];
 let heroShowcaseCurrent = 0;
-let heroShowcaseTimer = null;
+let heroCycleTimer = null;
 let isHeroTransitioning = false;
+let heroIsPaused = false;
 let hero3DTouchStartX = 0;
 let hero3DTouchStartY = 0;
+const HERO_FS_DURATION = 5500; // Duration card stays expanded in full size display ("chuttak wela thibila")
 
 function renderHeroShowcase() {
-  const container = document.getElementById('hero-section');
+  const section = document.getElementById('hero-section');
   const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
-  if (!container || !stage) return;
+  if (!section || !stage) return;
 
   const spotlight = getHeroSpotlightList();
   if (!spotlight || spotlight.length === 0) return;
   heroShowcaseMovies = spotlight.slice(0, 6);
   heroShowcaseCurrent = Math.min(heroShowcaseCurrent, heroShowcaseMovies.length - 1);
 
-  // Build the 3D Cards
+  // 1. Build the 16:9 Widescreen Landscape Cards ("lap eke diga athata")
+  stage.innerHTML = buildHero3DCardsHTML();
+
+  // 2. Attach click listeners on each card: clicking any card rotates & expands it into full screen
+  bindHeroCardClicks(stage);
+
+  // 3. Navigation controls (Prev / Next / Toggle Deck)
+  const prevBtn = document.getElementById('hero-deck-prev');
+  const nextBtn = document.getElementById('hero-deck-next');
+  const toggleBtn = document.getElementById('hero-deck-toggle');
+
+  if (prevBtn) {
+    prevBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (isHeroTransitioning) return;
+      const len = heroShowcaseMovies.length;
+      const prevIdx = (heroShowcaseCurrent - 1 + len) % len;
+      selectHeroMovieAndExpand(prevIdx);
+    };
+  }
+
+  if (nextBtn) {
+    nextBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (isHeroTransitioning) return;
+      cycleHeroShowcaseNext();
+    };
+  }
+
+  if (toggleBtn) {
+    toggleBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleHeroDeckView();
+    };
+  }
+
+  // 4. Hover pause: when user hovers over hero, pause auto-rotation to allow reading synopsis
+  section.onmouseenter = () => {
+    heroIsPaused = true;
+    pauseProgressBar();
+  };
+  section.onmouseleave = () => {
+    heroIsPaused = false;
+    resumeProgressBar();
+    scheduleNextHeroCycle();
+  };
+
+  // 5. Mobile Touch Swipe support
+  initHero3DTouchSwipe(stage);
+
+  // 6. Initial expansion of spotlight movie 0 into full screen
+  expandHeroFrontCard(heroShowcaseCurrent, false);
+}
+
+function buildHero3DCardsHTML() {
   const total = heroShowcaseMovies.length;
-  stage.innerHTML = heroShowcaseMovies.map((movie, idx) => {
-    const poster = movie.poster || movie.poster_url || movie.backdrop || movie.backdrop_url || SITE_CONFIG.defaultPoster;
+  return heroShowcaseMovies.map((movie, idx) => {
+    const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
     const rel = (idx - heroShowcaseCurrent + total) % total;
     const slotClass = rel < 6 ? `slot-${rel}` : 'slot-hidden';
     const yr = movie.year || '';
     const qLabel = formatQualityLabel(movie.quality);
+    const rating = movie.imdb || movie.rating || '8.2';
 
     return `
       <div class="hero-3d-card ${slotClass}${rel === 0 ? ' is-active' : ''}" data-idx="${idx}">
         <div class="hero-3d-card-inner">
-          <img src="${FilmSub.escHtml(poster)}" class="hero-3d-card-img" alt="${FilmSub.escHtml(movie.title)}" loading="lazy">
+          <img src="${FilmSub.escHtml(backdrop)}" class="hero-3d-card-img" alt="${FilmSub.escHtml(movie.title || '')}" loading="lazy">
           <div class="hero-3d-card-grad"></div>
-          <span class="hero-3d-card-badge">${idx + 1}</span>
+          <div class="hero-3d-card-top-row">
+            <span class="hero-3d-card-badge">${idx + 1}</span>
+            <span class="hero-3d-card-quality">${FilmSub.escHtml(qLabel)}</span>
+          </div>
           <div class="hero-3d-card-info">
             <span class="hero-3d-card-title">${FilmSub.escHtml(movie.title || '')}</span>
-            <span class="hero-3d-card-meta">${FilmSub.escHtml(yr ? yr + ' • ' + qLabel : qLabel)}</span>
+            <span class="hero-3d-card-meta">${FilmSub.escHtml(yr ? yr + ' • ' : '')}<i class="fa-solid fa-star" style="color:#f5c518"></i> ${FilmSub.escHtml(String(rating))}</span>
           </div>
-          <div class="hero-3d-card-progress"></div>
+          <div class="hero-3d-card-shine"></div>
         </div>
       </div>
     `;
   }).join('');
+}
 
-  // Attach card click handlers: clicking any card immediately transitions that card to the front!
+function bindHeroCardClicks(stage) {
+  if (!stage) return;
   stage.querySelectorAll('.hero-3d-card').forEach(card => {
     card.onclick = () => {
       if (isHeroTransitioning) return;
       const targetIdx = parseInt(card.dataset.idx, 10);
-      if (targetIdx !== heroShowcaseCurrent) {
-        goToHeroIndex(targetIdx);
-      }
+      selectHeroMovieAndExpand(targetIdx);
     };
   });
+}
 
-  // Edge navigation arrows
-  const prevBtn = document.getElementById('hero-deck-prev');
-  const nextBtn = document.getElementById('hero-deck-next');
-  if (prevBtn) {
-    prevBtn.onclick = () => {
-      if (isHeroTransitioning) return;
-      const len = heroShowcaseMovies.length;
-      goToHeroIndex((heroShowcaseCurrent - 1 + len) % len);
-    };
+function assignHeroSlotClasses() {
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (!stage) return;
+  const len = heroShowcaseMovies.length;
+  stage.querySelectorAll('.hero-3d-card').forEach(card => {
+    const cIdx = parseInt(card.dataset.idx, 10);
+    const rel = (cIdx - heroShowcaseCurrent + len) % len;
+    card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
+  });
+}
+
+function updateHeroNavCounter() {
+  const counter = document.getElementById('hero-deck-counter');
+  if (counter && heroShowcaseMovies.length > 0) {
+    counter.textContent = `${heroShowcaseCurrent + 1} / ${heroShowcaseMovies.length}`;
   }
-  if (nextBtn) {
-    nextBtn.onclick = () => {
-      if (isHeroTransitioning) return;
-      const len = heroShowcaseMovies.length;
-      goToHeroIndex((heroShowcaseCurrent + 1) % len);
-    };
+}
+
+function expandHeroFrontCard(targetIdx, animate = true) {
+  const section = document.getElementById('hero-section');
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (!section || !stage) return;
+
+  if (typeof targetIdx === 'number') {
+    heroShowcaseCurrent = targetIdx;
+  }
+  const movie = heroShowcaseMovies[heroShowcaseCurrent];
+  if (!movie) return;
+
+  updateHeroContent(movie);
+  updateHeroNavCounter();
+  assignHeroSlotClasses();
+
+  const frontCard = stage.querySelector(`.hero-3d-card[data-idx="${heroShowcaseCurrent}"]`);
+
+  if (animate) {
+    isHeroTransitioning = true;
+    clearTimeout(heroCycleTimer);
+    stopProgressBar();
+
+    // 1. Front card executes 3D rotation & expansion ("lassana animation ekakin karakavila full size wela")
+    if (frontCard) {
+      frontCard.classList.remove('is-retreating-to-back');
+      frontCard.classList.add('is-spinning-to-fullscreen');
+    }
+
+    // 2. Mid-expansion: transition section to full-screen mode
+    setTimeout(() => {
+      section.classList.remove('is-deck-mode');
+      section.classList.add('is-expanded-mode');
+      startProgressBar();
+    }, 420);
+
+    // 3. Complete expansion
+    setTimeout(() => {
+      if (frontCard) {
+        frontCard.classList.remove('is-spinning-to-fullscreen');
+      }
+      assignHeroSlotClasses();
+      isHeroTransitioning = false;
+      scheduleNextHeroCycle();
+    }, 850);
+  } else {
+    // Initial display without delay
+    section.classList.remove('is-deck-mode');
+    section.classList.add('is-expanded-mode');
+    startProgressBar();
+    scheduleNextHeroCycle();
+  }
+}
+
+function cycleHeroShowcaseNext() {
+  if (isHeroTransitioning || heroIsPaused) return;
+  const section = document.getElementById('hero-section');
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (!section || !stage) return;
+
+  const len = heroShowcaseMovies.length;
+  if (len < 2) return;
+
+  clearTimeout(heroCycleTimer);
+  stopProgressBar();
+  isHeroTransitioning = true;
+
+  const oldIdx = heroShowcaseCurrent;
+  const nextIdx = (oldIdx + 1) % len;
+  heroShowcaseCurrent = nextIdx;
+
+  const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
+
+  // Step 1: Fullscreen exits with animation; 3D deck view appears on dark stage (No poster in background!)
+  // ("aye full screen ain wenawa lassana animation ekakin ara diga hadathi card tika aye awith")
+  section.classList.remove('is-expanded-mode');
+  section.classList.add('is-deck-mode');
+
+  // Step 2: The card that was just full-screen visibly sweeps around to the back of the 3D stack
+  // ("ara apu card eka pitipassata yanawa penawa")
+  if (oldCard) {
+    oldCard.className = 'hero-3d-card is-retreating-to-back';
   }
 
-  // Hover pause
-  container.onmouseenter = () => { if (heroShowcaseTimer) clearInterval(heroShowcaseTimer); };
-  container.onmouseleave = () => { restartHeroShowcaseTimer(); };
+  // Step 3: Advance all other cards in the 3D deck forward
+  stage.querySelectorAll('.hero-3d-card').forEach(card => {
+    const cIdx = parseInt(card.dataset.idx, 10);
+    if (cIdx !== oldIdx) {
+      const rel = (cIdx - nextIdx + len) % len;
+      card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
+    }
+  });
 
-  // Mobile Touch Swipe support
-  initHero3DTouchSwipe(stage);
+  // Step 4: After 850ms, old card has reached the rear slot of the deck
+  setTimeout(() => {
+    assignHeroSlotClasses();
 
-  // Initial update
-  updateHeroContent(false);
-  restartHeroShowcaseTimer();
+    // Step 5: Brief beat in 3D deck view (~350ms) so user clearly sees the deck and new front card
+    setTimeout(() => {
+      // Step 6: Next front card rotates in 3D and comes forward to full screen!
+      // ("aye issaraha thiyana card eka lassana animation ekakin issarahata awith full screen wenawa")
+      expandHeroFrontCard(nextIdx, true);
+    }, 350);
+  }, 850);
+}
+
+function selectHeroMovieAndExpand(targetIdx) {
+  if (isHeroTransitioning) return;
+  const len = heroShowcaseMovies.length;
+  if (targetIdx < 0 || targetIdx >= len) return;
+
+  clearTimeout(heroCycleTimer);
+  stopProgressBar();
+
+  const section = document.getElementById('hero-section');
+  if (section && section.classList.contains('is-expanded-mode') && targetIdx === heroShowcaseCurrent) {
+    return; // Already viewing this movie full-screen
+  }
+
+  heroShowcaseCurrent = targetIdx;
+  assignHeroSlotClasses();
+  expandHeroFrontCard(targetIdx, true);
+}
+
+function toggleHeroDeckView() {
+  if (isHeroTransitioning) return;
+  const section = document.getElementById('hero-section');
+  if (!section) return;
+
+  if (section.classList.contains('is-expanded-mode')) {
+    // Manually switch from full screen to 3D deck view
+    clearTimeout(heroCycleTimer);
+    stopProgressBar();
+    section.classList.remove('is-expanded-mode');
+    section.classList.add('is-deck-mode');
+    assignHeroSlotClasses();
+  } else {
+    // Expand front card to full screen
+    expandHeroFrontCard(heroShowcaseCurrent, true);
+  }
+}
+
+function scheduleNextHeroCycle() {
+  clearTimeout(heroCycleTimer);
+  heroCycleTimer = setTimeout(() => {
+    // If modal is open or paused, recheck
+    const modal = document.getElementById('trailer-modal');
+    if ((modal && modal.style.display === 'flex') || heroIsPaused) {
+      scheduleNextHeroCycle();
+      return;
+    }
+    cycleHeroShowcaseNext();
+  }, HERO_FS_DURATION);
+}
+
+function startProgressBar() {
+  const bar = document.getElementById('hero-fs-progress-bar');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  void bar.offsetWidth;
+  bar.style.transition = `width ${HERO_FS_DURATION}ms linear`;
+  bar.style.width = '100%';
+}
+
+function stopProgressBar() {
+  const bar = document.getElementById('hero-fs-progress-bar');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+}
+
+function pauseProgressBar() {
+  const bar = document.getElementById('hero-fs-progress-bar');
+  if (!bar) return;
+  const computed = window.getComputedStyle(bar).width;
+  bar.style.transition = 'none';
+  bar.style.width = computed;
+}
+
+function resumeProgressBar() {
+  const bar = document.getElementById('hero-fs-progress-bar');
+  if (!bar) return;
+  bar.style.transition = `width 3500ms linear`;
+  bar.style.width = '100%';
 }
 
 function initHero3DTouchSwipe(stage) {
@@ -890,121 +1126,24 @@ function initHero3DTouchSwipe(stage) {
       const len = heroShowcaseMovies.length;
       if (len < 2 || isHeroTransitioning) return;
       if (dx < 0) {
-        // Swipe Left -> Next card
-        goToHeroIndex((heroShowcaseCurrent + 1) % len);
+        // Swipe Left -> Next movie
+        cycleHeroShowcaseNext();
       } else {
-        // Swipe Right -> Prev card
-        goToHeroIndex((heroShowcaseCurrent - 1 + len) % len);
+        // Swipe Right -> Prev movie
+        const prevIdx = (heroShowcaseCurrent - 1 + len) % len;
+        selectHeroMovieAndExpand(prevIdx);
       }
     }
   }, { passive: true });
 }
 
-function goToHeroIndex(targetIdx) {
-  if (isHeroTransitioning || targetIdx === heroShowcaseCurrent) return;
-  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
-  if (!stage) return;
-
-  isHeroTransitioning = true;
-  const len = heroShowcaseMovies.length;
-  const oldIdx = heroShowcaseCurrent;
-  heroShowcaseCurrent = targetIdx;
-
-  const cards = stage.querySelectorAll('.hero-3d-card');
-  const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
-  const newCard = stage.querySelector(`.hero-3d-card[data-idx="${targetIdx}"]`);
-
-  const isNext = targetIdx === (oldIdx + 1) % len;
-
-  // Concurrently crossfade backdrop & update left text info
-  updateHeroContent(true);
-
-  if (isNext) {
-    // 1. Current front card shrinks and sweeps around to the rear of the 3D stack ("3d pitu peliye pitipassata yanawa")
-    if (oldCard) {
-      oldCard.className = 'hero-3d-card is-retreating';
-    }
-
-    // 2. Front waiting card expands into full active display ("loku wela full display wenawa")
-    if (newCard) {
-      newCard.className = 'hero-3d-card is-expanding';
-    }
-
-    // 3. Concurrently advance all other cards in the 3D stack so the entire deck steps forward together!
-    cards.forEach(card => {
-      const cIdx = parseInt(card.dataset.idx, 10);
-      if (cIdx !== oldIdx && cIdx !== targetIdx) {
-        const rel = (cIdx - targetIdx + len) % len;
-        card.className = `hero-3d-card slot-${Math.min(rel, 5)}`;
-      }
-    });
-
-    // 4. After 750ms animation finishes, assign definitive stable slot classes
-    setTimeout(() => {
-      cards.forEach(card => {
-        const cIdx = parseInt(card.dataset.idx, 10);
-        const rel = (cIdx - heroShowcaseCurrent + len) % len;
-        card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
-        if (rel === 0) {
-          const p = card.querySelector('.hero-3d-card-progress');
-          if (p) {
-            p.style.animation = 'none';
-            void p.offsetWidth;
-            p.style.animation = '';
-          }
-        }
-      });
-      isHeroTransitioning = false;
-    }, 750);
-  } else {
-    // Non-adjacent or backward jump: smoothly transition all cards with 3D CSS transforms
-    cards.forEach(card => {
-      const cIdx = parseInt(card.dataset.idx, 10);
-      const rel = (cIdx - targetIdx + len) % len;
-      card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
-      if (rel === 0) {
-        const p = card.querySelector('.hero-3d-card-progress');
-        if (p) {
-          p.style.animation = 'none';
-          void p.offsetWidth;
-          p.style.animation = '';
-        }
-      }
-    });
-
-    setTimeout(() => {
-      isHeroTransitioning = false;
-    }, 750);
-  }
-
-  restartHeroShowcaseTimer();
-}
-
-function updateHeroContent(animate = true) {
-  const movie = heroShowcaseMovies[heroShowcaseCurrent];
+function updateHeroContent(movie) {
   if (!movie) return;
-
-  const bgCurrent = document.getElementById('hero-bg-current');
-  const bgNext = document.getElementById('hero-bg-next');
   const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
 
-  if (bgCurrent && bgNext) {
-    if (animate) {
-      bgNext.style.backgroundImage = `url('${backdrop}')`;
-      bgNext.classList.remove('animating');
-      void bgNext.offsetWidth;
-      bgNext.classList.add('animating');
-      bgNext.style.opacity = '1';
-
-      setTimeout(() => {
-        bgCurrent.style.backgroundImage = `url('${backdrop}')`;
-        bgNext.style.opacity = '0';
-        bgNext.classList.remove('animating');
-      }, 700);
-    } else {
-      bgCurrent.style.backgroundImage = `url('${backdrop}')`;
-      bgCurrent.style.opacity = '1';
-    }
+  const bgCurrent = document.getElementById('hero-bg-current');
+  if (bgCurrent) {
+    bgCurrent.style.backgroundImage = `url('${backdrop}')`;
   }
 
   // Update text & details
@@ -1023,7 +1162,7 @@ function updateHeroContent(animate = true) {
     genresEl.innerHTML = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${FilmSub.escHtml(g)}</a>`).join('');
   }
 
-  // Clean Typography Metadata Line (No bulky rainbow boxes!)
+  // Typography Metadata Line
   const metaEl = document.getElementById('hero-fs-meta');
   if (metaEl) {
     const yr = movie.year ? `<span class="hero-meta-item">${FilmSub.escHtml(String(movie.year))}</span>` : '';
@@ -1035,7 +1174,7 @@ function updateHeroContent(animate = true) {
     metaEl.innerHTML = items.join('<span class="hero-meta-dot">•</span>');
   }
 
-  // Buttons
+  // Action Buttons
   const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
   const watchBtn = document.getElementById('hero-fs-watch-btn');
   if (watchBtn) watchBtn.href = movieUrl;
@@ -1056,7 +1195,7 @@ function updateHeroContent(animate = true) {
     }
   }
 
-  // Re-trigger left text slide animation
+  // Trigger smooth slide animation on main content text
   const mainInfo = document.querySelector('.hero-showcase-main');
   if (mainInfo) {
     mainInfo.style.animation = 'none';
@@ -1071,20 +1210,6 @@ function updateHeroContent(animate = true) {
       else applyDynamicTheme(null);
     });
   }
-}
-
-function restartHeroShowcaseTimer() {
-  if (heroShowcaseTimer) clearInterval(heroShowcaseTimer);
-  heroShowcaseTimer = setInterval(() => {
-    // If trailer modal is open, pause auto-rotation
-    const modal = document.getElementById('trailer-modal');
-    if (modal && modal.style.display === 'flex') return;
-
-    const len = heroShowcaseMovies.length;
-    if (len < 2 || isHeroTransitioning) return;
-    const nextIdx = (heroShowcaseCurrent + 1) % len;
-    goToHeroIndex(nextIdx);
-  }, 5500);
 }
 
 

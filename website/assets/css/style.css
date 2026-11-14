@@ -6892,27 +6892,90 @@ body.tg-browser-mode {
 
 
 /* ============================================================
-   CINELAND / NETFLIX FULLSCREEN SHOWCASE WITH CARDS DECK ROW
+   CINEMATIC 3D WIDESCREEN DECK & EXPANDING FULLSCREEN HERO
+   ("lap eke diga hadathi card tika 3D pitu peliya & full size display")
    ============================================================ */
 .hero-showcase {
   position: relative;
   width: 100%;
   min-height: 84vh;
-  max-height: 860px;
+  max-height: 880px;
   overflow: hidden;
   margin-top: var(--header-h);
-  background-color: #08080a;
+  background-color: #08080c;
   display: flex;
-  align-items: flex-end;
-  padding: 0 0 45px 0;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* Fullscreen Background Layers with Crossfade & Scale Animation */
+/* 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) */
+.hero-stage-env {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, #181827 0%, #0c0c14 52%, #050508 100%);
+  overflow: hidden;
+}
+.hero-stage-spotlight {
+  position: absolute;
+  top: -25%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75vw;
+  height: 70vh;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 70%);
+  filter: blur(55px);
+  pointer-events: none;
+}
+.hero-stage-glow {
+  position: absolute;
+  top: 18%;
+  left: 28%;
+  width: 48vw;
+  height: 48vh;
+  background: radial-gradient(circle, var(--accent-glow, rgba(229, 9, 20, 0.35)) 0%, transparent 65%);
+  filter: blur(95px);
+  opacity: 0.65;
+  transition: background 1.2s ease;
+  pointer-events: none;
+}
+.hero-stage-floor {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(0deg, #08080c 0%, rgba(8, 8, 12, 0.75) 45%, transparent 100%);
+  pointer-events: none;
+}
+
+/* 2. Fullscreen Movie Backdrop Banner (Only active when card expands into full size!) */
+.hero-fs-backdrop-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.75s ease;
+}
+.hero-showcase.is-expanded-mode .hero-fs-backdrop-wrap {
+  opacity: 1;
+  visibility: visible;
+}
+.hero-showcase.is-deck-mode .hero-fs-backdrop-wrap {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 .hero-bg-layer {
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center 20%;
+  background-position: center 25%;
   background-repeat: no-repeat;
   transition: opacity 0.7s ease, transform 6s cubic-bezier(0.25, 1, 0.5, 1);
   transform: scale(1.02);
@@ -6939,14 +7002,14 @@ body.tg-browser-mode {
 .hero-vignette-left {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(8, 8, 10, 0.95) 0%, rgba(8, 8, 10, 0.75) 30%, rgba(8, 8, 10, 0.25) 55%, transparent 75%);
+  background: linear-gradient(90deg, rgba(8, 8, 12, 0.96) 0%, rgba(8, 8, 12, 0.82) 32%, rgba(8, 8, 12, 0.28) 60%, transparent 80%);
   z-index: 3;
   pointer-events: none;
 }
 .hero-vignette-bottom {
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, #08080a 0%, rgba(8, 8, 10, 0.8) 18%, transparent 45%);
+  background: linear-gradient(0deg, #08080c 0%, rgba(8, 8, 12, 0.85) 20%, transparent 45%);
   z-index: 3;
   pointer-events: none;
 }
@@ -6964,31 +7027,43 @@ body.tg-browser-mode {
   transition: background 1.2s ease;
 }
 
-/* Container */
+/* 3. Fullscreen Movie Details Overlay */
 .hero-showcase-container {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 45px;
   z-index: 4;
   width: 100%;
   max-width: 1540px;
   margin: 0 auto;
-  padding: 0 40px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 36px;
+  padding: 0 44px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-showcase.is-expanded-mode .hero-showcase-container {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition-delay: 0.15s;
+}
+.hero-showcase.is-deck-mode .hero-showcase-container {
+  opacity: 0 !important;
+  transform: translateY(28px);
+  pointer-events: none !important;
 }
 
-/* Main Left Info */
 .hero-showcase-main {
-  flex: 1;
-  max-width: 600px;
+  max-width: 620px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   animation: heroInfoSlideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes heroInfoSlideIn {
-  from { opacity: 0; transform: translateX(-28px); }
+  from { opacity: 0; transform: translateX(-24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
@@ -6996,7 +7071,7 @@ body.tg-browser-mode {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--accent);
+  background: var(--accent, #e50914);
   color: #ffffff;
   font-size: 11px;
   font-weight: 800;
@@ -7007,7 +7082,6 @@ body.tg-browser-mode {
   width: fit-content;
   box-shadow: 0 4px 16px var(--accent-glow);
 }
-
 .hero-fs-title {
   font-size: clamp(28px, 4vw, 48px);
   font-weight: 900;
@@ -7015,9 +7089,8 @@ body.tg-browser-mode {
   line-height: 1.15;
   margin: 0;
   letter-spacing: -0.4px;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.95);
 }
-
 .hero-fs-title-si {
   font-size: 15px;
   font-weight: 700;
@@ -7026,7 +7099,6 @@ body.tg-browser-mode {
   margin: 0;
   text-shadow: 0 0 14px rgba(255, 193, 7, 0.35);
 }
-
 .hero-fs-meta {
   display: flex;
   align-items: center;
@@ -7066,7 +7138,6 @@ body.tg-browser-mode {
 .hero-meta-item {
   color: #e2e8f0;
 }
-
 .hero-fs-genres {
   display: flex;
   align-items: center;
@@ -7089,7 +7160,6 @@ body.tg-browser-mode {
   color: #ffffff;
   border-color: var(--accent);
 }
-
 .hero-fs-desc {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.82);
@@ -7101,7 +7171,6 @@ body.tg-browser-mode {
   overflow: hidden;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
-
 .hero-fs-actions {
   display: flex;
   align-items: center;
@@ -7132,7 +7201,6 @@ body.tg-browser-mode {
   transform: translateY(-2px) scale(1.03);
   color: #ffffff;
 }
-
 .btn-hero-trailer {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
@@ -7154,7 +7222,6 @@ body.tg-browser-mode {
   border-color: #ffffff;
   transform: translateY(-2px);
 }
-
 .btn-hero-download {
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
@@ -7175,88 +7242,48 @@ body.tg-browser-mode {
   transform: translateY(-2px);
 }
 
-/* ============================================================
-   TRUE 3D STACK / CARD DECK HERO BANNER ("3D Pitu Peliya")
-   ============================================================ */
-.hero-3d-deck-wrap,
-.hero-cards-deck-wrap {
-  flex-shrink: 0;
-  width: clamp(340px, 44vw, 560px);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.hero-3d-deck-header,
-.hero-cards-deck-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-.hero-deck-label {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.hero-deck-arrows {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.deck-arrow {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #ffffff;
+/* 4. 3D Widescreen Landscape Cards Deck ("lap eke diga hadathi card tika 3D pitu peliya") */
+.hero-3d-deck-wrap {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.22s ease;
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.deck-arrow:hover {
-  background: var(--accent, #e50914);
-  border-color: var(--accent, #e50914);
-  transform: scale(1.08);
+.hero-showcase.is-deck-mode .hero-3d-deck-wrap {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+.hero-showcase.is-expanded-mode .hero-3d-deck-wrap {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
 }
 
-/* 3D Card Deck Stage Viewport */
-.hero-3d-deck-stage,
-.hero-cards-deck {
+.hero-3d-deck-stage {
   position: relative;
   width: 100%;
   height: 340px;
-  perspective: 1200px;
-  perspective-origin: 30% 50%;
+  perspective: 1400px;
+  perspective-origin: 32% 50%;
   transform-style: preserve-3d;
-  display: block;
-  overflow: visible;
-  padding: 10px 0;
-  scrollbar-width: none;
-}
-.hero-3d-deck-stage::-webkit-scrollbar,
-.hero-cards-deck::-webkit-scrollbar {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Individual 3D Card */
-.hero-3d-card,
-.hero-row-card {
+/* 16:9 Landscape Widescreen Card ("lap eke diga athata") */
+.hero-3d-card {
   position: absolute;
-  top: 10px;
-  left: 20px;
-  width: 210px;
-  height: 310px;
-  border-radius: 16px;
+  width: clamp(340px, 36vw, 480px);
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 18px;
   overflow: hidden;
   cursor: pointer;
   background-color: #121218;
@@ -7270,8 +7297,8 @@ body.tg-browser-mode {
   will-change: transform, opacity;
   user-select: none;
   -webkit-user-select: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
-
 .hero-3d-card-inner {
   position: relative;
   width: 100%;
@@ -7279,213 +7306,300 @@ body.tg-browser-mode {
   border-radius: inherit;
   overflow: hidden;
 }
-
-.hero-3d-card-img,
-.row-card-img {
+.hero-3d-card-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 25%;
   display: block;
 }
-
-.hero-3d-card-grad,
-.row-card-grad {
+.hero-3d-card-grad {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, transparent 40%, rgba(8, 8, 10, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(8, 8, 12, 0.95) 100%);
   pointer-events: none;
 }
-
-.hero-3d-card-badge,
-.row-card-idx {
+.hero-3d-card-top-row {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 3;
+}
+.hero-3d-card-badge {
   background: rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #ffffff;
   font-size: 11px;
   font-weight: 800;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 6px;
-  backdrop-filter: blur(6px);
-  z-index: 3;
+  backdrop-filter: blur(8px);
 }
-
+.hero-3d-card-quality {
+  background: var(--accent, #e50914);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px var(--accent-glow);
+}
 .hero-3d-card-info {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
   display: flex;
   flex-direction: column;
   gap: 3px;
   z-index: 3;
 }
-
-.hero-3d-card-title,
-.row-card-title {
-  font-size: 13.5px;
+.hero-3d-card-title {
+  font-size: 15px;
   font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
 }
-
 .hero-3d-card-meta {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-
-/* Card Progress Bar on Active Front Card */
-.hero-3d-card-progress,
-.row-card-progress {
+.hero-3d-card-shine {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  width: 0%;
-  background: var(--accent, #e50914);
-  box-shadow: 0 0 10px var(--accent-glow, rgba(229, 9, 20, 0.8));
-  z-index: 4;
-}
-.hero-3d-card.slot-0 .hero-3d-card-progress,
-.hero-3d-card.is-active .hero-3d-card-progress,
-.hero-row-card.is-active .row-card-progress {
-  animation: cardProgressFill 5.5s linear forwards;
-}
-@keyframes cardProgressFill {
-  from { width: 0%; }
-  to   { width: 100%; }
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  pointer-events: none;
 }
 
-/* ============================================================
-   3D STACK DEPTH POSITIONS (One Behind Another in 3D Space)
-   ============================================================ */
-/* Slot 0: Active Card in Full Display (Prominent Front View - "Loku wela full display") */
+/* 3D Stack Depth Slots */
 .hero-3d-card.slot-0,
 .hero-3d-card.is-active {
-  transform: translate3d(0, 0, 50px) scale(1.14) rotateY(0deg);
+  transform: translate3d(0, 0, 50px) scale(1) rotateY(0deg);
   z-index: 20;
   opacity: 1;
   filter: brightness(1);
   border: 2px solid var(--accent, #e50914);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow, rgba(229, 9, 20, 0.45));
 }
-
-/* Slot 1: First Card Stacked Behind */
 .hero-3d-card.slot-1 {
-  transform: translate3d(70px, 12px, -50px) scale(0.88) rotateY(-10deg);
+  transform: translate3d(85px, 12px, -60px) scale(0.88) rotateY(-14deg);
   z-index: 15;
   opacity: 0.88;
-  filter: brightness(0.85);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  filter: brightness(0.82);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
 }
-
-/* Slot 2: Second Card Stacked Behind */
 .hero-3d-card.slot-2 {
-  transform: translate3d(135px, 22px, -120px) scale(0.76) rotateY(-16deg);
+  transform: translate3d(165px, 24px, -130px) scale(0.77) rotateY(-20deg);
   z-index: 12;
-  opacity: 0.70;
-  filter: brightness(0.72);
+  opacity: 0.72;
+  filter: brightness(0.68);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
 }
-
-/* Slot 3: Third Card Stacked Behind */
 .hero-3d-card.slot-3 {
-  transform: translate3d(195px, 32px, -190px) scale(0.66) rotateY(-22deg);
+  transform: translate3d(235px, 34px, -200px) scale(0.67) rotateY(-25deg);
   z-index: 9;
-  opacity: 0.52;
-  filter: brightness(0.58);
+  opacity: 0.54;
+  filter: brightness(0.55);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
 }
-
-/* Slot 4: Fourth Card Stacked Behind */
 .hero-3d-card.slot-4 {
-  transform: translate3d(250px, 42px, -260px) scale(0.57) rotateY(-26deg);
+  transform: translate3d(295px, 44px, -270px) scale(0.58) rotateY(-29deg);
   z-index: 6;
   opacity: 0.36;
-  filter: brightness(0.46);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  filter: brightness(0.44);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
-/* Slot 5: Tail Card in the 3D Stack */
 .hero-3d-card.slot-5 {
-  transform: translate3d(300px, 50px, -330px) scale(0.48) rotateY(-30deg);
+  transform: translate3d(345px, 52px, -340px) scale(0.50) rotateY(-33deg);
   z-index: 3;
   opacity: 0.22;
-  filter: brightness(0.35);
+  filter: brightness(0.34);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
-
-/* Hidden Card (beyond slot 5) */
 .hero-3d-card.slot-hidden {
-  transform: translate3d(340px, 58px, -400px) scale(0.40);
+  transform: translate3d(385px, 60px, -410px) scale(0.42);
   z-index: 1;
   opacity: 0;
   pointer-events: none;
 }
 
-/* Hover effect on stacked cards */
 .hero-3d-card:not(.slot-0):hover {
   filter: brightness(1.1) !important;
   opacity: 0.95 !important;
   border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
-/* ============================================================
-   CYCLING 3D CARD ANIMATIONS:
-   Front card shrinks & sweeps to the rear of the 3D stack,
-   while top card from stack expands to full display.
-   ============================================================ */
-.hero-3d-card.is-retreating {
-  animation: cardSendToBack 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+/* 3D Animations:
+   1. Spinning to Fullscreen ("karakavila ekak full size wela display eke penwa")
+   2. Retreating to back ("ara diga hadathi card tika aye awith ara apu card eka pitipassata yanawa penawa")
+*/
+.hero-3d-card.is-spinning-to-fullscreen {
+  animation: cardSpinToFullscreen 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  z-index: 50 !important;
 }
-@keyframes cardSendToBack {
+@keyframes cardSpinToFullscreen {
   0% {
-    transform: translate3d(0, 0, 50px) scale(1.14) rotateY(0deg);
+    transform: translate3d(0, 0, 50px) scale(1) rotateY(0deg);
     opacity: 1;
-    z-index: 25;
+    border-radius: 18px;
   }
   35% {
-    transform: translate3d(-100px, -15px, 60px) scale(1.02) rotateY(16deg);
-    opacity: 0.95;
-    z-index: 25;
+    transform: translate3d(-50px, -15px, 120px) scale(1.35) rotateY(180deg);
+    border-radius: 14px;
+    filter: brightness(1.1);
   }
-  70% {
-    transform: translate3d(210px, 35px, -220px) scale(0.62) rotateY(-22deg);
-    opacity: 0.45;
-    z-index: 3;
+  75% {
+    transform: translate3d(0, 0, 240px) scale(1.9) rotateY(360deg);
+    border-radius: 8px;
+    filter: brightness(1.15);
   }
   100% {
-    transform: translate3d(300px, 50px, -330px) scale(0.48) rotateY(-30deg);
-    opacity: 0.22;
-    z-index: 3;
+    transform: translate3d(0, 0, 320px) scale(2.6) rotateY(360deg);
+    border-radius: 0;
+    opacity: 0;
   }
 }
 
-.hero-3d-card.is-expanding {
-  animation: cardGrowToFront 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+.hero-3d-card.is-retreating-to-back {
+  animation: cardSweepToRear 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+  z-index: 30 !important;
 }
-@keyframes cardGrowToFront {
+@keyframes cardSweepToRear {
   0% {
-    transform: translate3d(70px, 12px, -50px) scale(0.88) rotateY(-10deg);
-    opacity: 0.88;
-    filter: brightness(0.85);
-    z-index: 15;
+    transform: translate3d(0, 0, 240px) scale(2.0) rotateY(0deg);
+    opacity: 0.95;
+    z-index: 30;
+  }
+  30% {
+    transform: translate3d(-140px, -20px, 100px) scale(1.15) rotateY(20deg);
+    opacity: 0.95;
+    z-index: 30;
+  }
+  65% {
+    transform: translate3d(240px, 35px, -240px) scale(0.64) rotateY(-24deg);
+    opacity: 0.55;
+    z-index: 2;
   }
   100% {
-    transform: translate3d(0, 0, 50px) scale(1.14) rotateY(0deg);
-    opacity: 1;
-    filter: brightness(1);
-    z-index: 20;
+    transform: translate3d(345px, 52px, -340px) scale(0.50) rotateY(-33deg);
+    opacity: 0.22;
+    z-index: 2;
   }
+}
+
+/* 5. Navigation Bar & Card View Toggle */
+.hero-deck-nav-bar {
+  position: absolute;
+  bottom: 24px;
+  right: 44px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(12, 12, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+.hero-deck-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-deck-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-deck-counter {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.hero-deck-arrows {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.deck-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+}
+.deck-arrow:hover {
+  background: var(--accent, #e50914);
+  border-color: var(--accent, #e50914);
+  transform: scale(1.08);
+}
+.deck-toggle-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.deck-toggle-view:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #ffffff;
+}
+
+/* 6. Active Duration Progress Line */
+.hero-fs-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 8;
+  overflow: hidden;
+}
+.hero-fs-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent, #e50914);
+  box-shadow: 0 0 10px var(--accent-glow, rgba(229, 9, 20, 0.8));
 }
 
 /* ============================================================
@@ -7540,69 +7654,66 @@ body.tg-browser-mode {
   }
 }
 
-/* Responsive: Tablets & Mobile */
+/* Responsive: Tablets & Mobile for 3D Widescreen Deck & Expanding Fullscreen */
 @media (max-width: 900px) {
   .hero-showcase {
-    min-height: auto;
-    padding: 24px 0 36px;
+    min-height: 520px;
+    max-height: none;
+    padding: 10px 0 20px;
   }
   .hero-showcase-container {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 0 20px;
-    gap: 28px;
-  }
-  .hero-showcase-main {
-    max-width: 100%;
+    bottom: 55px;
+    padding: 0 18px;
   }
   .hero-fs-title {
-    font-size: 26px;
+    font-size: clamp(24px, 6vw, 32px);
   }
   .hero-fs-desc {
     -webkit-line-clamp: 2;
+    font-size: 13px;
   }
-  .hero-3d-deck-wrap,
-  .hero-cards-deck-wrap {
-    width: 100%;
+  .hero-3d-deck-wrap {
+    max-width: 100%;
+    height: 280px;
   }
-  .hero-3d-deck-stage,
-  .hero-cards-deck {
-    height: 270px;
+  .hero-3d-deck-stage {
+    height: 260px;
     perspective-origin: 35% 50%;
   }
-  .hero-3d-card,
-  .hero-row-card {
-    width: 160px;
-    height: 235px;
-    left: 10px;
+  .hero-3d-card {
+    width: min(310px, 82vw);
+    border-radius: 14px;
   }
   .hero-3d-card.slot-0,
   .hero-3d-card.is-active {
-    transform: translate3d(0, 0, 30px) scale(1.10) rotateY(0deg);
+    transform: translate3d(0, 0, 30px) scale(1) rotateY(0deg);
   }
   .hero-3d-card.slot-1 {
-    transform: translate3d(45px, 8px, -35px) scale(0.88) rotateY(-8deg);
+    transform: translate3d(45px, 8px, -40px) scale(0.88) rotateY(-10deg);
   }
   .hero-3d-card.slot-2 {
-    transform: translate3d(85px, 16px, -80px) scale(0.76) rotateY(-14deg);
+    transform: translate3d(90px, 16px, -85px) scale(0.77) rotateY(-15deg);
   }
   .hero-3d-card.slot-3 {
-    transform: translate3d(120px, 24px, -125px) scale(0.66) rotateY(-18deg);
+    transform: translate3d(130px, 24px, -130px) scale(0.67) rotateY(-19deg);
   }
   .hero-3d-card.slot-4 {
-    transform: translate3d(150px, 32px, -165px) scale(0.57) rotateY(-22deg);
+    transform: translate3d(165px, 30px, -170px) scale(0.58) rotateY(-22deg);
   }
   .hero-3d-card.slot-5 {
-    transform: translate3d(175px, 38px, -200px) scale(0.48) rotateY(-25deg);
+    transform: translate3d(195px, 36px, -210px) scale(0.50) rotateY(-25deg);
   }
-  @keyframes cardSendToBack {
-    0% { transform: translate3d(0, 0, 30px) scale(1.10) rotateY(0deg); opacity: 1; z-index: 25; }
-    35% { transform: translate3d(-60px, -10px, 40px) scale(1.0) rotateY(14deg); opacity: 0.95; z-index: 25; }
-    70% { transform: translate3d(130px, 28px, -150px) scale(0.62) rotateY(-20deg); opacity: 0.45; z-index: 3; }
-    100% { transform: translate3d(175px, 38px, -200px) scale(0.48) rotateY(-25deg); opacity: 0.22; z-index: 3; }
+  @keyframes cardSweepToRear {
+    0% { transform: translate3d(0, 0, 140px) scale(1.6) rotateY(0deg); opacity: 0.95; z-index: 25; }
+    30% { transform: translate3d(-70px, -10px, 50px) scale(1.05) rotateY(16deg); opacity: 0.95; z-index: 25; }
+    65% { transform: translate3d(140px, 26px, -140px) scale(0.64) rotateY(-18deg); opacity: 0.50; z-index: 2; }
+    100% { transform: translate3d(195px, 36px, -210px) scale(0.50) rotateY(-25deg); opacity: 0.22; z-index: 2; }
   }
-  @keyframes cardGrowToFront {
-    0% { transform: translate3d(45px, 8px, -35px) scale(0.88) rotateY(-8deg); opacity: 0.88; filter: brightness(0.85); z-index: 15; }
-    100% { transform: translate3d(0, 0, 30px) scale(1.10) rotateY(0deg); opacity: 1; filter: brightness(1); z-index: 20; }
+  .hero-deck-nav-bar {
+    bottom: 12px;
+    right: 18px;
+    left: 18px;
+    justify-content: space-between;
+    padding: 5px 12px;
   }
 }

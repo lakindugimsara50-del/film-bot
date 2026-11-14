@@ -20,9 +20,9 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261114_touch_v20">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_touch_v20">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_touch_v20">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261114_3d_landscape_v21">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_3d_landscape_v21">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_3d_landscape_v21">
 </head>
 <body>
 
@@ -114,23 +114,27 @@
   </a>
 </nav>
 
-<!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
-<!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
-<!-- ========== SERIVIA 3D MULTI-CARD DECK HERO SECTION ========== -->
-<!-- ========== FULLSCREEN GRAND CINEMA SHOWCASE WITH ANIMATED CARDS DECK ROW ========== -->
-<section class="hero-showcase" id="hero-section" aria-label="Featured Spotlight">
-  <!-- Fullscreen Animated Backdrop Layers -->
-  <div class="hero-bg-layer current" id="hero-bg-current"></div>
-  <div class="hero-bg-layer next" id="hero-bg-next"></div>
+<!-- ========== CINEMATIC 3D WIDESCREEN DECK & EXPANDING FULLSCREEN HERO SHOWCASE ========== -->
+<section class="hero-showcase is-deck-mode" id="hero-section" aria-label="Featured Spotlight">
+  <!-- 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) -->
+  <div class="hero-stage-env" id="hero-stage-env">
+    <div class="hero-stage-spotlight"></div>
+    <div class="hero-stage-glow" id="hero-stage-glow"></div>
+    <div class="hero-stage-floor"></div>
+  </div>
 
-  <!-- Cinematic Vignettes -->
-  <div class="hero-vignette-left"></div>
-  <div class="hero-vignette-bottom"></div>
-  <div class="hero-ambient-glow" id="hero-ambient-glow"></div>
+  <!-- 2. Fullscreen Movie Backdrop Banner (Only active when card expands into full size!) -->
+  <div class="hero-fs-backdrop-wrap" id="hero-fs-backdrop-wrap">
+    <div class="hero-bg-layer current" id="hero-bg-current"></div>
+    <div class="hero-bg-layer next" id="hero-bg-next"></div>
+    <div class="hero-vignette-left"></div>
+    <div class="hero-vignette-bottom"></div>
+    <div class="hero-ambient-glow" id="hero-ambient-glow"></div>
+  </div>
 
-  <!-- Main Hero Content Overlay -->
-  <div class="hero-showcase-container">
-    <div class="hero-showcase-main">
+  <!-- 3. Fullscreen Movie Details Overlay (Spotlight, Title, Synopsis, Watch/Trailer/Download) -->
+  <div class="hero-showcase-container" id="hero-showcase-container">
+    <div class="hero-showcase-main" id="hero-showcase-main">
       <div class="hero-fs-badge" id="hero-fs-badge">
         <i class="fa-solid fa-bolt"></i> SPOTLIGHT
       </div>
@@ -153,18 +157,31 @@
         </a>
       </div>
     </div>
+  </div>
 
-    <!-- 3D Stack / Card Deck Showcase ("3D Pitu Peliya") -->
-    <div class="hero-3d-deck-wrap" id="hero-3d-deck-wrap">
-      <div class="hero-3d-deck-header">
-        <span class="hero-deck-label"><i class="fa-solid fa-fire" style="color:var(--accent)"></i> Top Spotlight</span>
-        <div class="hero-deck-arrows">
-          <button type="button" class="deck-arrow prev" id="hero-deck-prev" aria-label="Previous Movie"><i class="fa-solid fa-chevron-left"></i></button>
-          <button type="button" class="deck-arrow next" id="hero-deck-next" aria-label="Next Movie"><i class="fa-solid fa-chevron-right"></i></button>
-        </div>
-      </div>
-      <div class="hero-3d-deck-stage" id="hero-3d-deck-stage"></div>
+  <!-- 4. 3D Widescreen Landscape Cards Deck ("lap eke diga hadathi card tika 3D pitu peliya") -->
+  <div class="hero-3d-deck-wrap" id="hero-3d-deck-wrap">
+    <div class="hero-3d-deck-stage" id="hero-3d-deck-stage">
+      <!-- 16:9 Landscape cards dynamically injected by JS -->
     </div>
+  </div>
+
+  <!-- 5. Floating Navigation Controls & 3D Deck Toggle -->
+  <div class="hero-deck-nav-bar" id="hero-deck-nav-bar">
+    <div class="hero-deck-status">
+      <span class="hero-deck-label"><i class="fa-solid fa-fire" style="color:var(--accent)"></i> Top Spotlight</span>
+      <span class="hero-deck-counter" id="hero-deck-counter">1 / 6</span>
+    </div>
+    <div class="hero-deck-arrows">
+      <button type="button" class="deck-arrow prev" id="hero-deck-prev" aria-label="Previous Movie" title="Previous"><i class="fa-solid fa-chevron-left"></i></button>
+      <button type="button" class="deck-toggle-view" id="hero-deck-toggle" aria-label="Browse 3D Deck" title="Toggle 3D Deck / Banner"><i class="fa-solid fa-layer-group"></i> <span>Cards Deck</span></button>
+      <button type="button" class="deck-arrow next" id="hero-deck-next" aria-label="Next Movie" title="Next"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <!-- 6. Active Duration Progress Indicator -->
+  <div class="hero-fs-progress" id="hero-fs-progress">
+    <div class="hero-fs-progress-bar" id="hero-fs-progress-bar"></div>
   </div>
 </section>
 
@@ -397,8 +414,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261114_touch_v20"></script>
-<script src="assets/js/app.js?v=20261114_touch_v20"></script>
-<script src="assets/js/netflix-ui.js?v=20261114_touch_v20"></script>
+<script src="data/movies_data.js?v=20261114_3d_landscape_v21"></script>
+<script src="assets/js/app.js?v=20261114_3d_landscape_v21"></script>
+<script src="assets/js/netflix-ui.js?v=20261114_3d_landscape_v21"></script>
 </body>
 </html>

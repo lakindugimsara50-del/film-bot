@@ -3863,16 +3863,22 @@ main > .section:first-of-type {
   color: #fff !important;
 }
 .vjs-super-quality-badge {
-  background: rgba(229, 9, 20, 0.9);
-  color: #fff;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+}
+.vjs-super-quality-btn:hover .vjs-super-quality-badge {
+  background: var(--accent, #e50914) !important;
+  border-color: var(--accent, #e50914) !important;
 }
 .vjs-super-quality-menu {
   position: absolute;
@@ -5671,7 +5677,14 @@ main > .section:first-of-type {
   gap: 6px !important;
 }
 
-.cs-title-sub > span:not(:empty) + span:not(:empty)::before {
+.cs-title-sub .cs-title-dot {
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-size: 11px !important;
+  user-select: none !important;
+  display: inline-block !important;
+}
+
+.cs-title-sub > span:not(.cs-title-dot):not(:empty) + span:not(.cs-title-dot):not(:empty)::before {
   content: "•";
   margin-right: 12px;
   color: rgba(255, 255, 255, 0.25);
@@ -5690,15 +5703,13 @@ main > .section:first-of-type {
 }
 
 .cs-title-sub .badge-imdb,
+.cs-title-sub .cs-header-imdb,
 #cs-header-imdb {
   color: #f5c518 !important;
 }
 
 .cs-title-sub .cs-sub-badge {
   color: #4ade80 !important;
-}
-.cs-title-sub .cs-sub-badge::before {
-  display: none !important;
 }
 
 /* 3. Player Toolbar — Sleek Integrated Cinema Bar */
@@ -5856,12 +5867,17 @@ main > .section:first-of-type {
     border-radius: 8px !important;
   }
   .cs-title-sub .cs-sub-badge,
-  .cs-title-sub .cs-header-quality,
   .cs-title-sub .cs-header-year,
   .cs-title-sub .badge-imdb,
   #cs-header-imdb {
-    font-size: 11px !important;
-    padding: 4px 10px !important;
+    font-size: 11.5px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+  .cs-title-sub .cs-header-quality {
+    font-size: 10.5px !important;
+    padding: 1px 6px !important;
   }
 }
 
@@ -7339,7 +7355,7 @@ body.tg-browser-mode {
 .hero-3d-card.slot-0 .hero-3d-card-progress,
 .hero-3d-card.is-active .hero-3d-card-progress,
 .hero-row-card.is-active .row-card-progress {
-  animation: cardProgressFill 6s linear forwards;
+  animation: cardProgressFill 5.5s linear forwards;
 }
 @keyframes cardProgressFill {
   from { width: 0%; }
@@ -7349,59 +7365,68 @@ body.tg-browser-mode {
 /* ============================================================
    3D STACK DEPTH POSITIONS (One Behind Another in 3D Space)
    ============================================================ */
-/* Slot 0: Active Card in Full Display (Prominent Front View) */
+/* Slot 0: Active Card in Full Display (Prominent Front View - "Loku wela full display") */
 .hero-3d-card.slot-0,
 .hero-3d-card.is-active {
-  transform: translate3d(0, 0, 0) scale(1.05) rotateY(0deg);
-  z-index: 10;
+  transform: translate3d(0, 0, 50px) scale(1.14) rotateY(0deg);
+  z-index: 20;
   opacity: 1;
   filter: brightness(1);
   border: 2px solid var(--accent, #e50914);
-  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.9), 0 0 28px var(--accent-glow, rgba(229, 9, 20, 0.45));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow, rgba(229, 9, 20, 0.45));
 }
 
 /* Slot 1: First Card Stacked Behind */
 .hero-3d-card.slot-1 {
-  transform: translate3d(60px, 10px, -60px) scale(0.92) rotateY(-8deg);
-  z-index: 8;
-  opacity: 0.85;
+  transform: translate3d(70px, 12px, -50px) scale(0.88) rotateY(-10deg);
+  z-index: 15;
+  opacity: 0.88;
   filter: brightness(0.85);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
 }
 
 /* Slot 2: Second Card Stacked Behind */
 .hero-3d-card.slot-2 {
-  transform: translate3d(115px, 20px, -120px) scale(0.83) rotateY(-14deg);
-  z-index: 6;
-  opacity: 0.65;
-  filter: brightness(0.7);
+  transform: translate3d(135px, 22px, -120px) scale(0.76) rotateY(-16deg);
+  z-index: 12;
+  opacity: 0.70;
+  filter: brightness(0.72);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
 }
 
 /* Slot 3: Third Card Stacked Behind */
 .hero-3d-card.slot-3 {
-  transform: translate3d(165px, 30px, -180px) scale(0.74) rotateY(-18deg);
-  z-index: 4;
-  opacity: 0.45;
-  filter: brightness(0.55);
+  transform: translate3d(195px, 32px, -190px) scale(0.66) rotateY(-22deg);
+  z-index: 9;
+  opacity: 0.52;
+  filter: brightness(0.58);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
 }
 
-/* Slot 4: Tail Card in the 3D Stack */
+/* Slot 4: Fourth Card Stacked Behind */
 .hero-3d-card.slot-4 {
-  transform: translate3d(210px, 40px, -240px) scale(0.65) rotateY(-22deg);
-  z-index: 2;
-  opacity: 0.25;
-  filter: brightness(0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  transform: translate3d(250px, 42px, -260px) scale(0.57) rotateY(-26deg);
+  z-index: 6;
+  opacity: 0.36;
+  filter: brightness(0.46);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Hidden Card (beyond slot 4) */
+/* Slot 5: Tail Card in the 3D Stack */
+.hero-3d-card.slot-5 {
+  transform: translate3d(300px, 50px, -330px) scale(0.48) rotateY(-30deg);
+  z-index: 3;
+  opacity: 0.22;
+  filter: brightness(0.35);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Hidden Card (beyond slot 5) */
 .hero-3d-card.slot-hidden {
-  transform: translate3d(240px, 50px, -300px) scale(0.55);
+  transform: translate3d(340px, 58px, -400px) scale(0.40);
   z-index: 1;
   opacity: 0;
   pointer-events: none;
@@ -7416,7 +7441,7 @@ body.tg-browser-mode {
 
 /* ============================================================
    CYCLING 3D CARD ANIMATIONS:
-   Front card shrinks & travels to the back of the 3D stack,
+   Front card shrinks & sweeps to the rear of the 3D stack,
    while top card from stack expands to full display.
    ============================================================ */
 .hero-3d-card.is-retreating {
@@ -7424,24 +7449,24 @@ body.tg-browser-mode {
 }
 @keyframes cardSendToBack {
   0% {
-    transform: translate3d(0, 0, 0) scale(1.05) rotateY(0deg);
+    transform: translate3d(0, 0, 50px) scale(1.14) rotateY(0deg);
     opacity: 1;
-    z-index: 15;
+    z-index: 25;
   }
-  32% {
-    transform: translate3d(-95px, -15px, 45px) scale(1.0) rotateY(16deg);
+  35% {
+    transform: translate3d(-100px, -15px, 60px) scale(1.02) rotateY(16deg);
     opacity: 0.95;
-    z-index: 15;
+    z-index: 25;
   }
-  68% {
-    transform: translate3d(170px, 30px, -200px) scale(0.7) rotateY(-20deg);
+  70% {
+    transform: translate3d(210px, 35px, -220px) scale(0.62) rotateY(-22deg);
     opacity: 0.45;
-    z-index: 2;
+    z-index: 3;
   }
   100% {
-    transform: translate3d(210px, 40px, -240px) scale(0.65) rotateY(-22deg);
-    opacity: 0.25;
-    z-index: 2;
+    transform: translate3d(300px, 50px, -330px) scale(0.48) rotateY(-30deg);
+    opacity: 0.22;
+    z-index: 3;
   }
 }
 
@@ -7450,16 +7475,16 @@ body.tg-browser-mode {
 }
 @keyframes cardGrowToFront {
   0% {
-    transform: translate3d(60px, 10px, -60px) scale(0.92) rotateY(-8deg);
-    opacity: 0.85;
+    transform: translate3d(70px, 12px, -50px) scale(0.88) rotateY(-10deg);
+    opacity: 0.88;
     filter: brightness(0.85);
-    z-index: 8;
+    z-index: 15;
   }
   100% {
-    transform: translate3d(0, 0, 0) scale(1.05) rotateY(0deg);
+    transform: translate3d(0, 0, 50px) scale(1.14) rotateY(0deg);
     opacity: 1;
     filter: brightness(1);
-    z-index: 10;
+    z-index: 20;
   }
 }
 
@@ -7482,7 +7507,7 @@ body.tg-browser-mode {
 
 .movie-card {
   opacity: 0;
-  transform: translateY(20px) scale(0.97);
+  transform: translateY(22px) scale(0.97);
   transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
               transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.25s ease,
@@ -7493,6 +7518,14 @@ body.tg-browser-mode {
 .movie-card.is-card-visible {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+/* Live search overlay cards and modal cards are always immediately visible */
+.search-results-live .movie-card,
+.modal .movie-card {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
 /* Fallback for reduced motion */
@@ -7545,28 +7578,31 @@ body.tg-browser-mode {
   }
   .hero-3d-card.slot-0,
   .hero-3d-card.is-active {
-    transform: translate3d(0, 0, 0) scale(1.03) rotateY(0deg);
+    transform: translate3d(0, 0, 30px) scale(1.10) rotateY(0deg);
   }
   .hero-3d-card.slot-1 {
-    transform: translate3d(40px, 8px, -45px) scale(0.9) rotateY(-8deg);
+    transform: translate3d(45px, 8px, -35px) scale(0.88) rotateY(-8deg);
   }
   .hero-3d-card.slot-2 {
-    transform: translate3d(78px, 16px, -90px) scale(0.8) rotateY(-14deg);
+    transform: translate3d(85px, 16px, -80px) scale(0.76) rotateY(-14deg);
   }
   .hero-3d-card.slot-3 {
-    transform: translate3d(112px, 24px, -135px) scale(0.7) rotateY(-18deg);
+    transform: translate3d(120px, 24px, -125px) scale(0.66) rotateY(-18deg);
   }
   .hero-3d-card.slot-4 {
-    transform: translate3d(142px, 32px, -180px) scale(0.6) rotateY(-22deg);
+    transform: translate3d(150px, 32px, -165px) scale(0.57) rotateY(-22deg);
+  }
+  .hero-3d-card.slot-5 {
+    transform: translate3d(175px, 38px, -200px) scale(0.48) rotateY(-25deg);
   }
   @keyframes cardSendToBack {
-    0% { transform: translate3d(0, 0, 0) scale(1.03) rotateY(0deg); opacity: 1; z-index: 15; }
-    32% { transform: translate3d(-65px, -10px, 30px) scale(0.98) rotateY(15deg); opacity: 0.95; z-index: 15; }
-    68% { transform: translate3d(115px, 24px, -140px) scale(0.68) rotateY(-20deg); opacity: 0.45; z-index: 2; }
-    100% { transform: translate3d(142px, 32px, -180px) scale(0.6) rotateY(-22deg); opacity: 0.25; z-index: 2; }
+    0% { transform: translate3d(0, 0, 30px) scale(1.10) rotateY(0deg); opacity: 1; z-index: 25; }
+    35% { transform: translate3d(-60px, -10px, 40px) scale(1.0) rotateY(14deg); opacity: 0.95; z-index: 25; }
+    70% { transform: translate3d(130px, 28px, -150px) scale(0.62) rotateY(-20deg); opacity: 0.45; z-index: 3; }
+    100% { transform: translate3d(175px, 38px, -200px) scale(0.48) rotateY(-25deg); opacity: 0.22; z-index: 3; }
   }
   @keyframes cardGrowToFront {
-    0% { transform: translate3d(40px, 8px, -45px) scale(0.9) rotateY(-8deg); opacity: 0.85; filter: brightness(0.85); z-index: 8; }
-    100% { transform: translate3d(0, 0, 0) scale(1.03) rotateY(0deg); opacity: 1; filter: brightness(1); z-index: 10; }
+    0% { transform: translate3d(45px, 8px, -35px) scale(0.88) rotateY(-8deg); opacity: 0.88; filter: brightness(0.85); z-index: 15; }
+    100% { transform: translate3d(0, 0, 30px) scale(1.10) rotateY(0deg); opacity: 1; filter: brightness(1); z-index: 20; }
   }
 }

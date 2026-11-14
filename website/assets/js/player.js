@@ -880,6 +880,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDownloadSection(currentMovie);
   renderRelatedMovies(currentMovie);
   initShareButton(currentMovie);
+  if (window.FilmSub && typeof window.FilmSub.initScrollReveal === 'function') {
+    try { window.FilmSub.initScrollReveal(); } catch (e) {}
+  }
 
   // Background non-blocking subtitle parser & sync
   loadParsedSubtitles(currentMovie).then(() => {
@@ -1715,22 +1718,15 @@ function renderPageHeader(movie) {
     }
   }
 
-  const qualEl = document.getElementById('cs-header-quality');
-  if (qualEl) {
-    if (isSeries) {
-      qualEl.textContent = `S${String(sNum).padStart(2, '0')} E${String(eNum).padStart(2, '0')} HD`;
-    } else {
-      qualEl.textContent = movie.quality ? `${movie.quality} WEB-DL` : 'HD WEB-DL';
-    }
-  }
-
-  const yearEl = document.getElementById('cs-header-year');
-  if (yearEl) yearEl.textContent = movie.year || '';
-
-  const imdbEl = document.getElementById('cs-header-imdb');
-  if (imdbEl && movie.imdb) {
-    imdbEl.style.display = 'inline-flex';
-    imdbEl.innerHTML = `<i class="fa-solid fa-star"></i> ${esc(movie.imdb)} / 10`;
+  const subWrap = document.getElementById('cs-title-sub');
+  if (subWrap) {
+    const yr = movie.year ? `<span class="cs-header-year" id="cs-header-year">${esc(movie.year)}</span>` : '';
+    const qText = isSeries ? `S${String(sNum).padStart(2, '0')} E${String(eNum).padStart(2, '0')} HD` : (movie.quality ? `${esc(movie.quality)} WEB-DL` : 'HD WEB-DL');
+    const qual = `<span class="cs-header-quality" id="cs-header-quality">${qText}</span>`;
+    const imdb = (movie.imdb && movie.imdb !== '0.0') ? `<span class="badge-imdb cs-header-imdb" id="cs-header-imdb"><i class="fa-solid fa-star"></i> ${esc(movie.imdb)} / 10</span>` : '';
+    const sub = `<span class="cs-sub-badge" id="cs-sub-badge"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</span>`;
+    const items = [yr, qual, imdb, sub].filter(Boolean);
+    subWrap.innerHTML = items.join('<span class="cs-title-dot">•</span>');
   }
 }
 
@@ -5474,6 +5470,10 @@ function renderRelatedMovies(movie) {
     return;
   }
   grid.innerHTML = related.map(m => FilmSub.generateMovieCard(m)).join('');
+  grid.querySelectorAll('.movie-card').forEach((c, idx) => {
+    c.style.transitionDelay = `${Math.min(idx * 0.04, 0.45)}s`;
+    requestAnimationFrame(() => c.classList.add('is-card-visible'));
+  });
 }
 
 function initShareButton(movie) {

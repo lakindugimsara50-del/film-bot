@@ -869,8 +869,12 @@ def register(app: Client) -> None:
             import httpx
             from services.cinesubz_crawler import HEADERS
             async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as hc:
-                found_new = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "movies")
-                found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "tvshows")
+                found_new = await cinesubz_crawler.check_and_enqueue_new_releases(
+                    hc, "movies", client=client, admin_chat_id=user_id, standalone=True
+                )
+                found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(
+                    hc, "tvshows", client=client, admin_chat_id=user_id, standalone=True
+                )
             tot = len(found_new) + len(found_tv)
             if tot > 0:
                 await st_msg.edit_text(
@@ -1074,8 +1078,12 @@ def register(app: Client) -> None:
             import httpx
             from services.cinesubz_crawler import HEADERS
             async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as hc:
-                found_new = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "movies")
-                found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "tvshows")
+                found_new = await cinesubz_crawler.check_and_enqueue_new_releases(
+                    hc, "movies", client=client, admin_chat_id=user_id, standalone=True
+                )
+                found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(
+                    hc, "tvshows", client=client, admin_chat_id=user_id, standalone=True
+                )
             tot = len(found_new) + len(found_tv)
             if tot > 0:
                 await query.message.reply_text(

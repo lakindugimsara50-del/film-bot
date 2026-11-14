@@ -811,7 +811,7 @@ function renderHeroShowcase() {
   stage.innerHTML = heroShowcaseMovies.map((movie, idx) => {
     const poster = movie.poster || movie.poster_url || movie.backdrop || movie.backdrop_url || SITE_CONFIG.defaultPoster;
     const rel = (idx - heroShowcaseCurrent + total) % total;
-    const slotClass = rel < 5 ? `slot-${rel}` : 'slot-hidden';
+    const slotClass = rel < 6 ? `slot-${rel}` : 'slot-hidden';
     const yr = movie.year || '';
     const qLabel = formatQualityLabel(movie.quality);
 
@@ -914,27 +914,54 @@ function goToHeroIndex(targetIdx) {
   const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
   const newCard = stage.querySelector(`.hero-3d-card[data-idx="${targetIdx}"]`);
 
-  // 1. Current front card shrinks and loops to back of the 3D stack ("3d pitu peliye pitipassata yanawa")
-  if (oldCard) {
-    oldCard.classList.remove('slot-0', 'is-active');
-    oldCard.classList.add('is-retreating');
-  }
+  const isNext = targetIdx === (oldIdx + 1) % len;
 
-  // 2. Target card expands up to full front display ("animation ekakin loku wela full display wenawa")
-  if (newCard) {
-    newCard.classList.remove('slot-1', 'slot-2', 'slot-3', 'slot-4', 'slot-hidden');
-    newCard.classList.add('is-expanding');
-  }
-
-  // 3. Concurrently crossfade backdrop & update left text info
+  // Concurrently crossfade backdrop & update left text info
   updateHeroContent(true);
 
-  // 4. After 750ms animation finishes, assign definitive slot classes
-  setTimeout(() => {
+  if (isNext) {
+    // 1. Current front card shrinks and sweeps around to the rear of the 3D stack ("3d pitu peliye pitipassata yanawa")
+    if (oldCard) {
+      oldCard.className = 'hero-3d-card is-retreating';
+    }
+
+    // 2. Front waiting card expands into full active display ("loku wela full display wenawa")
+    if (newCard) {
+      newCard.className = 'hero-3d-card is-expanding';
+    }
+
+    // 3. Concurrently advance all other cards in the 3D stack so the entire deck steps forward together!
     cards.forEach(card => {
       const cIdx = parseInt(card.dataset.idx, 10);
-      const rel = (cIdx - heroShowcaseCurrent + len) % len;
-      card.className = `hero-3d-card ${rel < 5 ? 'slot-' + rel : 'slot-hidden'}${rel === 0 ? ' is-active' : ''}`;
+      if (cIdx !== oldIdx && cIdx !== targetIdx) {
+        const rel = (cIdx - targetIdx + len) % len;
+        card.className = `hero-3d-card slot-${Math.min(rel, 5)}`;
+      }
+    });
+
+    // 4. After 750ms animation finishes, assign definitive stable slot classes
+    setTimeout(() => {
+      cards.forEach(card => {
+        const cIdx = parseInt(card.dataset.idx, 10);
+        const rel = (cIdx - heroShowcaseCurrent + len) % len;
+        card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
+        if (rel === 0) {
+          const p = card.querySelector('.hero-3d-card-progress');
+          if (p) {
+            p.style.animation = 'none';
+            void p.offsetWidth;
+            p.style.animation = '';
+          }
+        }
+      });
+      isHeroTransitioning = false;
+    }, 750);
+  } else {
+    // Non-adjacent or backward jump: smoothly transition all cards with 3D CSS transforms
+    cards.forEach(card => {
+      const cIdx = parseInt(card.dataset.idx, 10);
+      const rel = (cIdx - targetIdx + len) % len;
+      card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
       if (rel === 0) {
         const p = card.querySelector('.hero-3d-card-progress');
         if (p) {
@@ -944,8 +971,11 @@ function goToHeroIndex(targetIdx) {
         }
       }
     });
-    isHeroTransitioning = false;
-  }, 750);
+
+    setTimeout(() => {
+      isHeroTransitioning = false;
+    }, 750);
+  }
 
   restartHeroShowcaseTimer();
 }
@@ -1054,7 +1084,7 @@ function restartHeroShowcaseTimer() {
     if (len < 2 || isHeroTransitioning) return;
     const nextIdx = (heroShowcaseCurrent + 1) % len;
     goToHeroIndex(nextIdx);
-  }, 6000);
+  }, 5500);
 }
 
 
@@ -1132,13 +1162,12 @@ function renderHero(targetMovie, forcedIdx) {
   }
 
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
+  const yr = movie.year ? `<span class="hero-meta-item">${movie.year}</span>` : '';
+  const qLabel = `<span class="hero-meta-quality">${formatQualityLabel(movie.quality)}</span>`;
   const imdbVal = movie.imdb || movie.rating || '';
-  const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
-  const quality = `<span class="badge badge-quality"><i class="fa-solid fa-film"></i> ${formatQualityLabel(movie.quality)}</span>`;
-  const year = movie.year ? `<span class="badge badge-year">${movie.year}</span>` : '';
-  const durationVal = movie.duration ? (typeof movie.duration === 'number' ? `${movie.duration} min` : movie.duration) : '';
-  const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${durationVal}</span>` : '';
-  const subBadge = `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
+  const imdb = (imdbVal && imdbVal !== '0.0') ? `<span class="hero-meta-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
+  const sub = `<span class="hero-meta-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</span>`;
+  const items = [yr, qLabel, imdb, sub].filter(Boolean);
   const genreChips = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${g}</a>`).join('');
 
   const badgeEl = document.getElementById('hero-badge');
@@ -1151,7 +1180,7 @@ function renderHero(targetMovie, forcedIdx) {
   if (titleSiEl) titleSiEl.textContent = movie.title_si || '';
 
   const metaEl = document.getElementById('hero-meta');
-  if (metaEl) metaEl.innerHTML = `${imdb}${quality}${year}${duration}${subBadge}`;
+  if (metaEl) metaEl.innerHTML = items.join('<span class="hero-meta-dot">•</span>');
 
   const genresEl = document.getElementById('hero-genres');
   if (genresEl) genresEl.innerHTML = genreChips;
@@ -1651,6 +1680,7 @@ function initSearchOverlay() {
         liveResults.innerHTML = `<div class="search-no-results"><i class="fa-solid fa-film"></i> No results for "<strong>${escHtml(q)}</strong>"</div>`;
       } else {
         liveResults.innerHTML = results.map(m => generateMovieCard(m)).join('');
+        liveResults.querySelectorAll('.movie-card').forEach(c => c.classList.add('is-card-visible'));
       }
     }, 250));
 
@@ -1687,7 +1717,7 @@ function renderMovieGrid(containerId, movies) {
 
 // ---- Modern Scroll-Reveal Animation Engine ----
 function initScrollReveal() {
-  const sections = document.querySelectorAll('.section, .cs-details-section, .cs-downloads-section, .cs-related-section');
+  const sections = document.querySelectorAll('.section, .cs-player-section, .cs-movie-details-section, .cs-downloads-section, .cs-related-section, .cs-series-section');
   if (!sections.length) return;
 
   if (typeof IntersectionObserver === 'undefined') {
@@ -1937,6 +1967,7 @@ window.FilmZilla = window.FilmSub = {
   generateMovieCard,
   renderMovieGrid,
   renderCarousel,
+  initScrollReveal,
   escHtml,
   showToast,
   trackView,

@@ -369,3 +369,108 @@ async def test_crawl_command_handler_dispatch():
                 status_msg=msg_50.reply_text.return_value,
                 single_page_only=False,
             )
+
+
+@pytest.mark.asyncio
+async def test_check_and_enqueue_new_releases_standalone():
+    """Verify check_and_enqueue_new_releases detects and enqueues new uploads in standalone mode."""
+    crawler = CineSubzCrawler()
+    crawler._is_running = False
+
+    mock_client = MagicMock()
+    mock_sent_msg = MagicMock()
+    mock_client.send_message = AsyncMock(return_value=mock_sent_msg)
+
+    fake_page_items = [
+        {"clean_title": "Sugriva", "year": 2026, "url": "https://cinesubz.co/movies/sugriva-2026/", "is_series": False},  # Already in catalog
+        {"clean_title": "Ramayana", "year": 2026, "url": "https://cinesubz.co/movies/ramayana-2026/", "is_series": False}, # Missing!
+    ]
+
+    mock_hc = MagicMock()
+
+    with patch("services.cinesubz_crawler.scrape_cinesubz_page", AsyncMock(return_value=fake_page_items)), \
+         patch("services.cinesubz_crawler.queue_service.add_to_queue", AsyncMock(return_value=1)) as mock_add_queue:
+
+        new_items = await crawler.check_and_enqueue_new_releases(
+            http_client=mock_hc,
+            section="movies",
+            client=mock_client,
+            admin_chat_id=123456,
+            standalone=True,
+        )
+
+        assert len(new_items) == 1
+        assert new_items[0]["clean_title"] == "Ramayana"
+        assert mock_client.send_message.called
+        assert mock_add_queue.called
+        call_kwargs = mock_add_queue.call_args[1]
+        assert "Ramayana" in call_kwargs["query_text"]
+        assert "--strict-cinesubz" in call_kwargs["query_text"]
+        assert call_kwargs["user_id"] == 123456
+
+        # Second call: Ramayana is now in _enqueued_titles_or_urls, so it must be skipped
+        new_items_2 = await crawler.check_and_enqueue_new_releases(
+            http_client=mock_hc,
+            section="movies",
+            client=mock_client,
+            admin_chat_id=123456,
+            standalone=True,
+        )
+        assert len(new_items_2) == 0
+
+
+@pytest.mark.asyncio
+async def test_check_and_enqueue_new_tv_releases_standalone():
+    """Verify check_and_enqueue_new_releases handles new TV episodes in standalone mode."""
+    crawler = CineSubzCrawler()
+    crawler._is_running = False
+
+    mock_client = MagicMock()
+    mock_sent_msg = MagicMock()
+    mock_client.send_message = AsyncMock(return_value=mock_sent_msg)
+
+    fake_tv_shows = [
+        {"clean_title": "Game of Thrones", "year": 2011, "url": "https://cinesubz.co/tvshows/got/", "is_series": True},
+    ]
+    fake_episodes = [
+        {"url": "https://cinesubz.co/episodes/got-1x1/", "season": 1, "episode": 1, "label": "S01E01"},
+    ]
+
+    mock_hc = MagicMock()
+
+    with patch("services.cinesubz_crawler.scrape_cinesubz_page", AsyncMock(return_value=fake_tv_shows)), \
+         patch("services.cinesubz_crawler.scrape_cinesubz_tvshow_episodes", AsyncMock(return_value=fake_episodes)), \
+         patch("services.cinesubz_crawler.queue_service.add_to_queue", AsyncMock(return_value=1)) as mock_add_queue:
+
+        new_items = await crawler.check_and_enqueue_new_releases(
+            http_client=mock_hc,
+            section="tvshows",
+            client=mock_client,
+            admin_chat_id=98765,
+            standalone=True,
+        )
+
+        assert len(new_items) == 1
+        assert "Game of Thrones S01E01" in new_items[0]["title"]
+        assert mock_add_queue.called
+        call_kwargs = mock_add_queue.call_args[1]
+        assert "Game of Thrones S01E01" in call_kwargs["title_hint"]
+
+
+@pytest.mark.asyncio
+async def test_crawler_resume_wrap_around_when_past_max_pages():
+    """Verify that if all pages were traversed (current_page > max_pages), resume wraps back to page 1."""
+    crawler = CineSubzCrawler()
+    crawler.current_movie_page = 229
+    crawler.max_movie_pages = 228
+    crawler.direction = "forward"
+
+    mock_client = MagicMock()
+
+    with patch.object(crawler, "_crawler_worker", AsyncMock()):
+        ok, msg = await crawler.start(mock_client, 12345, mode="movies", start_page=229, resume=True)
+        assert ok is True
+        assert crawler.current_movie_page == 1
+        assert "නැවතුණු තැනින් (Page 1)" in msg
+        crawler.stop()
+

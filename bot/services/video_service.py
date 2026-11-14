@@ -105,12 +105,18 @@ class GPUDevicePool:
         if not devs:
             devs = [0]
         # Multi-quality (1080p, 720p, 480p) simultaneous hardware encoding:
-        # Dual/Multi GPU (e.g. Kaggle Dual T4): allocate 2 concurrent NVENC slots per physical GPU ([0, 1, 0, 1] = 4 slots)!
-        # Single GPU (e.g. Colab / Kaggle 1x T4): allocate 3 concurrent NVENC slots ([dev, dev, dev]) so 1080p, 720p, 480p all encode concurrently.
-        # Dedicated 1-job-per-physical-GPU pipeline:
-        # Guarantees full 750-1000+ FPS per video on Tesla T4 with zero chip splitting or memory contention.
-        # Dual GPU (Kaggle Dual T4): [0, 1] (each GPU encodes 1 video simultaneously at peak 750+ FPS).
-        # Single GPU (Colab / Kaggle 1x T4): [0] (sequential GPU encoding at peak 750-1000+ FPS).
+        # Guarantee all 3 qualities (1080p, 720p, 480p) encode simultaneously in parallel!
+        if len(devs) >= 2:
+            # Dual/Multi GPU (e.g. Kaggle Dual T4): allocate 2 concurrent NVENC slots per physical GPU
+            # [devs[0], devs[1], devs[0], devs[1]] = 4 concurrent slots!
+            # 1080p -> GPU 0, 720p -> GPU 1, 480p -> GPU 0. All 3 run simultaneously!
+            return [devs[0], devs[1], devs[0], devs[1]]
+        elif len(devs) == 1:
+            # Single GPU (e.g. Colab / Kaggle 1x T4): allocate 3 concurrent NVENC slots on the single GPU
+            # [devs[0], devs[0], devs[0]] = 3 concurrent slots!
+            # All 3 qualities encode concurrently on the NVENC engine without queuing.
+            d = devs[0]
+            return [d, d, d]
         return list(devs)
 
     async def _ensure_queue(self):
@@ -1347,7 +1353,7 @@ async def compress_video(
     nvenc_enc_opts = []
     if hw_enc == "h264_nvenc":
         # Ultra-fast High-Throughput NVENC hardware encoding (750-1000+ fps on Tesla T4)
-        nvenc_preset = "p1" if _on_colab else "fast"
+        nvenc_preset = "p1"
         nvenc_enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
@@ -2465,7 +2471,7 @@ async def prepend_filmzilla_intro(
     hw_enc = detect_hw_encoder(exe)
 
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p1" if _on_colab else "fast"
+        nvenc_preset = "p1"
         hw_opts = ["-hwaccel", "cuda"]
         enc_opts = [
             "-c:v", "h264_nvenc",
@@ -3072,7 +3078,7 @@ async def cover_cinesubz_watermark(
 
     hw_enc = detect_hw_encoder(ffmpeg_bin)
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p1" if _on_colab else "fast"
+        nvenc_preset = "p1"
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
@@ -3744,7 +3750,7 @@ async def generate_multi_quality_variants_ram(
                     "-disposition:s:0", "default",
                 ])
             if use_hw == "h264_nvenc":
-                nvenc_preset = "p1" if _on_colab else "fast"
+                nvenc_preset = "p1"
                 c.extend([
                     "-c:v", "h264_nvenc",
                     "-preset", nvenc_preset,

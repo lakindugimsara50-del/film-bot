@@ -4733,6 +4733,15 @@ function renderDownloadSection(movie) {
   const grid = document.getElementById('download-grid');
   if (!grid) return;
 
+  const dlSec = document.getElementById('downloads');
+  const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || '';
+  if (dlSec && backdrop) {
+    dlSec.style.setProperty('--movie-backdrop-url', `url('${backdrop}')`);
+    dlSec.style.backgroundImage = `linear-gradient(180deg, rgba(8,9,13,0.96) 0%, rgba(8,9,13,0.72) 45%, rgba(8,9,13,0.96) 100%), url('${backdrop}')`;
+    dlSec.style.backgroundSize = 'cover';
+    dlSec.style.backgroundPosition = 'center 75%';
+  }
+
   if (movie.telegram_status === 'queued' || movie.telegram_status === 'uploading') {
     grid.innerHTML = `
       <div class="cs-dl-card cinema-standby-card" style="text-align: center; padding: 32px 20px; grid-column: 1 / -1;">
@@ -4795,21 +4804,23 @@ function renderDownloadSection(movie) {
       const qIcon = rawQ.includes('1080') ? 'fa-solid fa-crown' : (rawQ.includes('720') ? 'fa-solid fa-bolt' : 'fa-solid fa-film');
 
       return `
-        <div class="cs-dl-card download-card ${isRec ? 'recommended-dl-card' : ''}">
-          ${recRibbon}
-          <div class="cs-dl-top">
-            <div class="cs-dl-quality">
-              <i class="${qIcon}" style="color:var(--accent)"></i>
-              <span>${FilmSub.escHtml(qTitle)}</span>
+        <div class="cs-pro-dl-card download-card ${isRec ? 'is-recommended' : ''}">
+          <div class="pro-dl-header">
+            <div class="pro-dl-title-wrap">
+              <i class="${qIcon}" style="color:var(--accent);font-size:16px"></i>
+              <span class="pro-dl-title">${FilmSub.escHtml(qTitle)}</span>
+              ${isRec ? `<span class="pro-dl-rec-badge">RECOMMENDED</span>` : ''}
             </div>
-            ${sz ? `<div class="cs-dl-size-badge"><i class="fa-solid fa-database" style="font-size:10px;margin-right:4px"></i>${FilmSub.escHtml(sz)}</div>` : ''}
+            ${sz ? `<span class="pro-dl-size">${FilmSub.escHtml(sz)}</span>` : ''}
           </div>
-          <div class="cs-dl-specs">
-            <span class="dl-spec-chip chip-cloud"><i class="fa-solid fa-bolt"></i> High-Speed Cloud</span>
-            <span class="dl-spec-chip chip-fmt"><i class="fa-solid fa-file-video"></i> ${FilmSub.escHtml(fmt)}</span>
-            <span class="dl-spec-chip chip-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub Merged</span>
+          <div class="pro-dl-specs-line">
+            <span class="pro-spec-item"><i class="fa-solid fa-bolt" style="color:#4ade80"></i> High-Speed Direct Cloud</span>
+            <span class="pro-spec-dot">•</span>
+            <span class="pro-spec-item">${FilmSub.escHtml(fmt)}</span>
+            <span class="pro-spec-dot">•</span>
+            <span class="pro-spec-item pro-spec-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
           </div>
-          <div class="cs-dl-actions">
+          <div class="pro-dl-actions-row">
             ${actionBtns}
           </div>
         </div>`;

@@ -6317,3 +6317,236 @@ main > .section:first-of-type {
     margin: 0 auto !important;
   }
 }
+
+
+/* ============================================================
+   Studio-Grade Download Deck (Pure Professional / Zero Cartoon)
+   ============================================================ */
+.cs-downloads-section {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 44px 0 60px !important;
+  background: #08090d !important;
+}
+
+.cs-downloads-section::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: var(--movie-backdrop-url, none) !important;
+  background-size: cover !important;
+  background-position: center 75% !important;
+  filter: blur(35px) brightness(0.28) saturate(1.8) !important;
+  opacity: 0.65 !important;
+  transform: scale(1.1) !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.cs-downloads-section::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at 30% 50%, rgba(229, 9, 20, 0.08), transparent 70%),
+              linear-gradient(180deg, #08090d 0%, rgba(8, 9, 13, 0.85) 40%, rgba(8, 9, 13, 0.95) 100%) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.cs-downloads-section .cs-container {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.cs-dl-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)) !important;
+  gap: 20px !important;
+  margin-top: 24px !important;
+}
+
+.cs-pro-dl-card {
+  background: linear-gradient(145deg, rgba(20, 22, 32, 0.78) 0%, rgba(12, 14, 20, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 22px 20px !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  position: relative !important;
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.cs-pro-dl-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(229, 9, 20, 0.45) !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(229, 9, 20, 0.15) !important;
+}
+
+.cs-pro-dl-card.is-recommended {
+  border: 1.5px solid rgba(229, 9, 20, 0.38) !important;
+  background: linear-gradient(145deg, rgba(26, 20, 28, 0.85) 0%, rgba(13, 13, 20, 0.94) 100%) !important;
+}
+
+.pro-dl-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+.pro-dl-title-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.pro-dl-title {
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.2px !important;
+}
+
+.pro-dl-rec-badge {
+  background: rgba(229, 9, 20, 0.16) !important;
+  border: 1px solid rgba(229, 9, 20, 0.4) !important;
+  color: #ff3b49 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.5px !important;
+}
+
+.pro-dl-size {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #cbd5e1 !important;
+  padding: 3px 10px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+/* Specs: Seamless Single Line (No Clashing Colored Boxes) */
+.pro-dl-specs-line {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+  font-size: 12.5px !important;
+  color: #94a3b8 !important;
+  line-height: 1.4 !important;
+}
+
+.pro-spec-item {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+.pro-spec-sub {
+  color: #f87171 !important;
+  font-weight: 600 !important;
+}
+
+.pro-spec-dot {
+  color: rgba(255, 255, 255, 0.2) !important;
+  font-size: 12px !important;
+  margin: 0 1px !important;
+}
+
+.pro-dl-actions-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
+}
+
+.pro-dl-actions-row .btn-download-primary,
+.pro-dl-actions-row .btn-direct-dl {
+  background: linear-gradient(135deg, #e50914 0%, #b81d24 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 10px !important;
+  padding: 11px 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(229, 9, 20, 0.4) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.pro-dl-actions-row .btn-download-primary:hover,
+.pro-dl-actions-row .btn-direct-dl:hover {
+  background: #ff0f1f !important;
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6) !important;
+  transform: translateY(-2px) !important;
+  color: #ffffff !important;
+}
+
+.pro-dl-actions-row .btn-download-secondary,
+.pro-dl-actions-row .btn-tg-dl {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  padding: 11px 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.pro-dl-actions-row .btn-download-secondary:hover,
+.pro-dl-actions-row .btn-tg-dl:hover {
+  background: rgba(0, 136, 204, 0.2) !important;
+  border-color: #0088cc !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Telegram Promo Box: Luxury Dark Glass */
+.cs-tg-banner {
+  background: linear-gradient(135deg, rgba(0, 136, 204, 0.12) 0%, rgba(12, 14, 20, 0.9) 100%) !important;
+  border: 1px solid rgba(0, 136, 204, 0.22) !important;
+  border-radius: 16px !important;
+  padding: 24px 28px !important;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.cs-tg-join-btn {
+  background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 16px rgba(0, 136, 204, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.cs-tg-join-btn:hover {
+  background: #0099e6 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 136, 204, 0.6) !important;
+}

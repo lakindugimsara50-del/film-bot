@@ -682,6 +682,104 @@ function ensureHeroDOMStructure(heroEl) {
   }
 }
 
+
+/* ============================================================
+   Dynamic Theme Color Extraction — Canvas API
+   Extracts dominant color from movie poster/backdrop and
+   applies it as the site accent color for immersive theming.
+   Avatar (blue) -> blue theme, red movie -> red theme, etc.
+============================================================ */
+function extractDominantColor(imageUrl, callback) {
+  if (!imageUrl || imageUrl.startsWith('data:')) {
+    callback(null);
+    return;
+  }
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    try {
+      const canvas = document.createElement('canvas');
+      const SIZE = 80; // Sample small version for speed
+      canvas.width = SIZE;
+      canvas.height = Math.round(SIZE * img.height / img.width) || SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+      // Collect color buckets (ignore very dark + very gray pixels)
+      const buckets = {};
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+        if (a < 128) continue; // skip transparent
+        const brightness = (r + g + b) / 3;
+        if (brightness < 30 || brightness > 230) continue; // skip near black/white
+        const saturation = Math.max(r,g,b) - Math.min(r,g,b);
+        if (saturation < 35) continue; // skip gray
+
+        // Quantize to buckets of 32 for grouping
+        const rq = Math.round(r / 32) * 32;
+        const gq = Math.round(g / 32) * 32;
+        const bq = Math.round(b / 32) * 32;
+        const key = `${rq},${gq},${bq}`;
+        buckets[key] = (buckets[key] || 0) + 1;
+      }
+
+      // Find most common bucket
+      let best = null, bestCount = 0;
+      for (const key in buckets) {
+        if (buckets[key] > bestCount) {
+          bestCount = buckets[key];
+          best = key;
+        }
+      }
+
+      if (best) {
+        const [r, g, b] = best.split(',').map(Number);
+        // Boost saturation and ensure minimum brightness
+        const boost = 1.3;
+        const br = Math.min(255, Math.round(r * boost));
+        const bg = Math.min(255, Math.round(g * boost));
+        const bb = Math.min(255, Math.round(b * boost));
+        callback({ r: br, g: bg, b: bb });
+      } else {
+        callback(null);
+      }
+    } catch(e) {
+      callback(null);
+    }
+  };
+  img.onerror = function() { callback(null); };
+  img.src = imageUrl;
+}
+
+function applyDynamicTheme(r, g, b) {
+  if (r == null) {
+    // Reset to default red theme
+    document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--accent-hover');
+    document.documentElement.style.removeProperty('--accent-dark');
+    document.documentElement.style.removeProperty('--accent-glow');
+    document.documentElement.style.removeProperty('--accent-subtle');
+    document.documentElement.style.removeProperty('--hero-glow-color');
+    document.documentElement.style.removeProperty('--hero-bg-tint');
+    return;
+  }
+  const accent = `rgb(${r},${g},${b})`;
+  const accentHover = `rgb(${Math.min(255,r+20)},${Math.min(255,g+20)},${Math.min(255,b+20)})`;
+  const accentDark = `rgb(${Math.round(r*0.7)},${Math.round(g*0.7)},${Math.round(b*0.7)})`;
+  const accentGlow = `rgba(${r},${g},${b},0.55)`;
+  const accentSubtle = `rgba(${r},${g},${b},0.14)`;
+  const heroBgTint = `rgba(${Math.round(r*0.3)},${Math.round(g*0.3)},${Math.round(b*0.3)},0.18)`;
+
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent-hover', accentHover);
+  document.documentElement.style.setProperty('--accent-dark', accentDark);
+  document.documentElement.style.setProperty('--accent-glow', accentGlow);
+  document.documentElement.style.setProperty('--accent-subtle', accentSubtle);
+  document.documentElement.style.setProperty('--hero-glow-color', accentGlow);
+  document.documentElement.style.setProperty('--hero-bg-tint', heroBgTint);
+}
+
 // ---- Hero ----
 function renderHero(targetMovie, forcedIdx) {
   const heroEl = document.getElementById('hero-section');
@@ -725,6 +823,33 @@ function renderHero(targetMovie, forcedIdx) {
   } else if (backdropEl) {
     backdropEl.style.backgroundImage = `url('${backdrop}')`;
     backdropEl.style.opacity = '1';
+  }
+
+  // Dynamic theme color extraction from poster
+  const colorSrc = movie.poster || movie.poster_url || movie.backdrop || backdrop;
+  if (colorSrc && colorSrc.startsWith('http')) {
+    extractDominantColor(colorSrc, function(color) {
+      if (color) {
+        applyDynamicTheme(color.r, color.g, color.b);
+        // Also update hero poster thumbnail
+        const heroPosterEl = document.getElementById('hero-poster-thumb');
+        if (heroPosterEl) heroPosterEl.src = colorSrc;
+      } else {
+        applyDynamicTheme(null);
+      }
+    });
+  } else {
+    applyDynamicTheme(null);
+  }
+
+  // Update hero right poster
+  const heroPosterEl = document.getElementById('hero-poster-thumb');
+  if (heroPosterEl) {
+    const posterSrc = movie.poster || movie.poster_url || '';
+    if (posterSrc) {
+      heroPosterEl.src = posterSrc;
+      heroPosterEl.style.display = '';
+    }
   }
 
   const genres = Array.isArray(movie.genres) ? movie.genres : [];

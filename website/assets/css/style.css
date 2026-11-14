@@ -212,14 +212,26 @@ ul { list-style: none; }
 /* === HERO === */
 .hero {
   position: relative;
-  min-height: 74vh;
-  max-height: 680px;
+  min-height: 92vh;
+  max-height: 100vh;
   display: flex;
   align-items: flex-end;
   padding-bottom: 30px;
   overflow: hidden;
   margin-top: var(--header-h);
   background-color: #07090d;
+  /* Dynamic hero background tint from movie color */
+  transition: --hero-bg-tint 0.8s ease;
+}
+/* Dynamic colored ambient glow on hero based on movie palette */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--hero-bg-tint, transparent);
+  pointer-events: none;
+  z-index: 1;
+  transition: background 1.2s ease;
 }
 .hero-backdrop {
   position: absolute; inset: 0;
@@ -261,10 +273,11 @@ ul { list-style: none; }
   width: 100%;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-start;
-  padding: 0 40px;
+  justify-content: space-between;
+  padding: 0 40px 0 48px;
   max-width: 100%;
   margin: 0;
+  gap: 20px;
 }
 .hero-info-main {
   flex: 0 0 auto;
@@ -549,6 +562,94 @@ ul { list-style: none; }
   background: #ffffff;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
 }
+
+/* === HERO POSTER PANEL (Right side — Aquaman/CineLand style) === */
+.hero-poster-panel {
+  flex-shrink: 0;
+  width: clamp(160px, 18vw, 280px);
+  margin-bottom: 20px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* Slide in from right */
+  animation: hero-poster-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes hero-poster-in {
+  from { opacity: 0; transform: translateX(40px) scale(0.92); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.hero-poster-img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.9),
+    0 0 0 2px rgba(255,255,255,0.1),
+    0 0 40px var(--accent-glow, rgba(229,9,20,0.4));
+  transition: box-shadow 0.8s ease, transform 0.4s ease;
+}
+.hero-poster-img:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:
+    0 32px 70px rgba(0,0,0,0.95),
+    0 0 0 2px rgba(255,255,255,0.18),
+    0 0 55px var(--accent-glow, rgba(229,9,20,0.6));
+}
+
+/* hero-info-main: wider, more content visible */
+.hero-info-main {
+  flex: 1;
+  max-width: 520px;
+  margin-bottom: 0px;
+  animation: hero-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Dynamic accent glow on Watch Now button */
+.hero-btn-watch {
+  background: var(--accent) !important;
+  box-shadow: 0 6px 24px var(--accent-glow, rgba(229,9,20,0.5)) !important;
+  animation: hero-watch-pulse-dynamic 3s ease infinite;
+}
+@keyframes hero-watch-pulse-dynamic {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow, rgba(229,9,20,0.4)), 0 6px 20px var(--accent-glow, rgba(229,9,20,0.4)); }
+  50% { box-shadow: 0 0 0 10px transparent, 0 6px 20px var(--accent-glow, rgba(229,9,20,0.4)); }
+}
+
+/* Hero badge: use dynamic accent */
+.hero-badge {
+  background: var(--accent) !important;
+  box-shadow: 0 4px 16px var(--accent-glow, rgba(229,9,20,0.55)) !important;
+}
+
+/* Hero dots: use dynamic accent when active */
+.hero-apple-dot.active {
+  background: var(--accent, #ffffff) !important;
+  box-shadow: 0 0 10px var(--accent-glow, rgba(255,255,255,0.9)) !important;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* Mobile: hide poster panel on small screens */
+@media (max-width: 768px) {
+  .hero-poster-panel {
+    display: none;
+  }
+  .hero-info-main {
+    max-width: 100%;
+  }
+  .hero-content {
+    padding: 0 20px;
+    padding-bottom: 50px;
+  }
+}
+@media (max-width: 1024px) {
+  .hero-poster-panel {
+    width: clamp(130px, 15vw, 200px);
+  }
+}
+
 
 /* Buffer backdrop for smooth crossfade */
 .hero-backdrop-buffer {

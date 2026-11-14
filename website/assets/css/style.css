@@ -7006,10 +7006,10 @@ body.tg-browser-mode {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: scale(0.97);
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+  transform: scale(1.05);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.65s ease;
+              visibility 0.7s ease;
   will-change: opacity, transform;
 }
 .hero-showcase.is-expanded-mode .hero-fs-backdrop-wrap {
@@ -7020,12 +7020,12 @@ body.tg-browser-mode {
 .hero-showcase.is-deck-mode .hero-fs-backdrop-wrap {
   opacity: 0;
   visibility: hidden;
-  transform: scale(0.97);
+  transform: scale(1.05);
 }
 .hero-showcase.is-receding-mode .hero-fs-backdrop-wrap {
   opacity: 0;
   visibility: visible;
-  transform: scale(0.97);
+  transform: scale(0.96);
   transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -7507,9 +7507,38 @@ body.tg-browser-mode {
   pointer-events: none;
 }
 
-/* In expanded mode, cards remain in their stable 3D coordinates while deck-wrap gracefully fades */
-.hero-showcase.is-expanded-mode .hero-3d-card {
+/* In expanded mode, front card blooms forward in 3D into Fullscreen */
+.hero-showcase.is-expanded-mode .hero-3d-card.slot-0,
+.hero-showcase.is-expanded-mode .hero-3d-card.is-active {
+  transform: translate3d(0, 0, 260px) scale(2.2) rotateY(0deg);
+  opacity: 0;
+  border-color: transparent;
+  box-shadow: none;
   pointer-events: none;
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+.hero-showcase.is-expanded-mode .hero-3d-card:not(.slot-0) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+/* Card inner badges and info cleanly fade during 3D expansion */
+.hero-showcase.is-expanded-mode .hero-3d-card .hero-3d-card-top-row,
+.hero-showcase.is-expanded-mode .hero-3d-card .hero-3d-card-info,
+.hero-showcase.is-expanded-mode .hero-3d-card .hero-3d-card-shine {
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.hero-3d-card .hero-3d-card-top-row,
+.hero-3d-card .hero-3d-card-info,
+.hero-3d-card .hero-3d-card-shine {
+  transition: opacity 0.35s ease 0.25s;
 }
 
 .hero-3d-card:not(.slot-0):hover {
@@ -7794,6 +7823,10 @@ body.tg-browser-mode {
   .hero-3d-card {
     width: min(290px, 78vw);
     border-radius: 14px;
+  }
+  .hero-showcase.is-expanded-mode .hero-3d-card.slot-0,
+  .hero-showcase.is-expanded-mode .hero-3d-card.is-active {
+    transform: translate3d(0, 0, 180px) scale(1.9) rotateY(0deg);
   }
   .hero-deck-nav-bar {
     bottom: 12px;

@@ -808,6 +808,7 @@ const HERO_EXPAND_MS = 700;           // Forward 3D bloom into Fullscreen
 
 // States: 'FULLSCREEN' | 'RECEDING' | 'SHUFFLING' | 'PAUSED_DECK' | 'EXPANDING' | 'MANUAL_DECK'
 let heroCurrentState = 'DECK';
+let heroShowcaseInitialized = false;
 
 function clearAllHeroTimers() {
   if (heroCycleTimer) {
@@ -832,8 +833,20 @@ function renderHeroShowcase() {
 
   const spotlight = getHeroSpotlightList();
   if (!spotlight || spotlight.length === 0) return;
-  heroShowcaseMovies = spotlight.slice(0, 6);
+  const newSpotlight = spotlight.slice(0, 6);
+
+  // If already initialized and identical movies, do not tear down the running DOM or animation!
+  if (heroShowcaseInitialized && heroShowcaseMovies.length > 0 && stage.children.length > 0) {
+    const oldIds = heroShowcaseMovies.map(m => m.slug || m.id || m.title).join('|');
+    const newIds = newSpotlight.map(m => m.slug || m.id || m.title).join('|');
+    if (oldIds === newIds) {
+      return;
+    }
+  }
+
+  heroShowcaseMovies = newSpotlight;
   heroShowcaseCurrent = Math.min(heroShowcaseCurrent, heroShowcaseMovies.length - 1);
+  heroShowcaseInitialized = true;
 
   // 1. Build the 16:9 Widescreen Landscape Cards ("lap eke diga athata")
   stage.innerHTML = buildHero3DCardsHTML();
@@ -867,14 +880,27 @@ function renderHeroShowcase() {
     };
   }
 
-  // 4. Hover pause: Only on devices with actual mouse pointer! Never blocks on touch screens!
-  section.onmouseenter = () => {
+  // 4. Hover pause: ONLY pause when mouse hovers over action buttons or nav controls!
+  // NEVER pause on the general hero background so auto-play never freezes unexpectedly on desktops!
+  const actionButtons = section.querySelector('.hero-fs-actions');
+  const deckNavBar = document.getElementById('hero-deck-nav-bar');
+  let hoverResumeTimer = null;
+
+  const handleInteractiveHoverEnter = () => {
     if (isTouchDevice()) return;
     heroIsPaused = true;
     pauseProgressBar();
+    if (hoverResumeTimer) clearTimeout(hoverResumeTimer);
+    // Safety auto-resume after 12s so it never gets permanently stuck
+    hoverResumeTimer = setTimeout(() => {
+      heroIsPaused = false;
+      resumeProgressBar();
+    }, 12000);
   };
-  section.onmouseleave = () => {
+
+  const handleInteractiveHoverLeave = () => {
     if (isTouchDevice()) return;
+    if (hoverResumeTimer) clearTimeout(hoverResumeTimer);
     heroIsPaused = false;
     resumeProgressBar();
     if (heroCurrentState === 'FULLSCREEN') {
@@ -884,6 +910,17 @@ function renderHeroShowcase() {
       scheduleCycleAfter(800, heroCycleToken);
     }
   };
+
+  if (actionButtons) {
+    actionButtons.onmouseenter = handleInteractiveHoverEnter;
+    actionButtons.onmouseleave = handleInteractiveHoverLeave;
+  }
+  if (deckNavBar) {
+    deckNavBar.onmouseenter = handleInteractiveHoverEnter;
+    deckNavBar.onmouseleave = handleInteractiveHoverLeave;
+  }
+  section.onmouseenter = null;
+  section.onmouseleave = null;
 
   // 5. Mobile Touch Swipe support
   initHero3DTouchSwipe(stage);
@@ -1304,9 +1341,27 @@ function updateHeroContent(movie) {
   if (!movie) return;
   const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
 
+  // Double-buffered smooth backdrop crossfade
   const bgCurrent = document.getElementById('hero-bg-current');
-  if (bgCurrent) {
-    bgCurrent.style.backgroundImage = `url('${backdrop}')`;
+  const bgNext = document.getElementById('hero-bg-next');
+  if (bgCurrent && bgNext) {
+    const currentBg = bgCurrent.style.backgroundImage || '';
+    const targetBg = `url("${backdrop}")`;
+    if (!currentBg || currentBg === 'none' || bgCurrent.style.opacity === '0') {
+      bgCurrent.style.backgroundImage = targetBg;
+      bgCurrent.style.opacity = '1';
+      bgNext.style.opacity = '0';
+    } else if (!currentBg.includes(backdrop)) {
+      bgNext.style.backgroundImage = targetBg;
+      bgNext.style.opacity = '1';
+      setTimeout(() => {
+        bgCurrent.style.backgroundImage = targetBg;
+        bgCurrent.style.opacity = '1';
+        bgNext.style.opacity = '0';
+      }, 650);
+    }
+  } else if (bgCurrent) {
+    bgCurrent.style.backgroundImage = `url("${backdrop}")`;
   }
 
   // Update text & details

@@ -549,6 +549,31 @@ function findEpisodeEntry(movieOrTitle, season, episode) {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
+  /* ===== Telegram In-App Browser Detection ===== */
+  (function() {
+    try {
+      var ua = navigator.userAgent || '';
+      var isTgBrowser = /Telegram/i.test(ua) || typeof window.TelegramWebviewProxy !== 'undefined';
+      if (!isTgBrowser) return;
+      document.body.classList.add('tg-browser-mode');
+      var banner = document.createElement('div');
+      banner.className = 'tg-browser-banner';
+      banner.id = 'tg-browser-banner';
+      banner.innerHTML =
+        '<span class="tg-banner-text">' +
+          '<i class="fa-brands fa-telegram"></i>' +
+          '<span>Telegram browser eke video play nowane. Chrome/Safari wala open karanna.</span>' +
+        '</span>' +
+        '<button type="button" class="btn-tg-open-browser" onclick="window.open(location.href,\'_blank\');return false;">' +
+          'Open in Browser' +
+        '</button>' +
+        '<button type="button" class="btn-tg-dismiss" onclick="this.closest(\'.tg-browser-banner\').remove();document.body.classList.remove(\'tg-browser-mode\');">' +
+          'X' +
+        '</button>';
+      document.body.insertBefore(banner, document.body.firstChild);
+    } catch(e) {}
+  })();
+
   const slug = getSlugFromURL();
   if (!slug) {
     showError('Movie not found. Please go back and try again.');
@@ -3565,6 +3590,79 @@ function attachMobileTouchControls(playerEl, player) {
   let singleTapTimeout = null;
   let accumulatedSeek = 0;
   let seekResetTimeout = null;
+
+  /* === Hold-to-Speed (Long Press = 2x) === */
+  let longPressTimer = null;
+  let speedBoostActive = false;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchMoved = false;
+
+  // Create speed badge element
+  let speedBadgeEl = wrap.querySelector('.fs-speed-badge');
+  if (!speedBadgeEl) {
+    speedBadgeEl = document.createElement('div');
+    speedBadgeEl.className = 'fs-speed-badge';
+    speedBadgeEl.innerHTML = '<span class="fs-speed-icon"><i class="fa-solid fa-forward-fast"></i></span> 2x';
+    wrap.appendChild(speedBadgeEl);
+  }
+
+  const activateSpeedBoost = () => {
+    if (speedBoostActive) return;
+    speedBoostActive = true;
+    if (player && typeof player.playbackRate === 'function') player.playbackRate(2);
+    speedBadgeEl.classList.add('active');
+  };
+
+  const deactivateSpeedBoost = () => {
+    if (!speedBoostActive) return;
+    speedBoostActive = false;
+    if (player && typeof player.playbackRate === 'function') player.playbackRate(1);
+    speedBadgeEl.classList.remove('active');
+  };
+
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.vjs-control-bar, .cs-player-center-overlay, .vjs-menu, button, a, input, select')) return;
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchMoved = false;
+
+    // Only trigger long-press on right zone (potential fast-forward zone)
+    const rect = wrap.getBoundingClientRect();
+    const pct = (touch.clientX - rect.left) / rect.width;
+    if (pct > 0.42) { // right 58% of screen (not just the left rewind zone)
+      if (longPressTimer) clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(() => {
+        if (!touchMoved) {
+          activateSpeedBoost();
+        }
+      }, 350);
+    }
+  }, { passive: true });
+
+  wrap.addEventListener('touchmove', (e) => {
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    const dx = Math.abs(touch.clientX - touchStartX);
+    const dy = Math.abs(touch.clientY - touchStartY);
+    if (dx > 12 || dy > 12) {
+      touchMoved = true;
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      if (speedBoostActive) deactivateSpeedBoost();
+    }
+  }, { passive: true });
+
+  wrap.addEventListener('touchend', (e) => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    if (speedBoostActive) deactivateSpeedBoost();
+  }, { passive: true });
+
+  wrap.addEventListener('touchcancel', () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    if (speedBoostActive) deactivateSpeedBoost();
+  }, { passive: true });
 
   wrap.addEventListener('touchend', (e) => {
     if (e.target.closest('.vjs-control-bar, .cs-player-center-overlay, .vjs-menu, button, a, input, select')) return;

@@ -1,12 +1,13 @@
 {
   "mode": "movies",
+  "direction": "forward",
   "current_movie_page": 1,
-  "max_movie_pages": 0,
-  "current_tv_page": 0,
-  "max_tv_pages": 0,
+  "max_movie_pages": 228,
+  "current_tv_page": 1,
+  "max_tv_pages": 20,
   "total_scraped": 50,
   "total_skipped": 0,
   "total_queued": 0,
-  "last_completed_item": "None",
-  "updated_at": 1794151607.8327053
+  "last_completed_item": "Anireekshita Atithigalu (2026)",
+  "updated_at": 1794652600.6792314
 }

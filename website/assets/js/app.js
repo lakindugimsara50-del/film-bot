@@ -28,7 +28,7 @@ const HERO_ROTATE_INTERVAL = 6000;
 // ---- Init ----
 function renderAllSections() {
   if (document.getElementById('hero-section')) {
-    if (document.getElementById('hero-cards-deck')) {
+    if (document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck')) {
       renderHeroShowcase();
     } else {
       renderHero();
@@ -47,6 +47,7 @@ function renderAllSections() {
   setupCarouselArrows();
   initHighlightPopup();
   initTrailerModalListeners();
+  initScrollReveal();
 }
 
 function initApp() {
@@ -786,65 +787,76 @@ function applyDynamicTheme(r, g, b) {
 
 
 /* ============================================================
-   FULLSCREEN GRAND CINEMA SHOWCASE WITH ANIMATED CARDS DECK ROW
+   TRUE 3D STACKED CARD DECK HERO BANNER ("3D Pitu Peliya")
    ============================================================ */
 let heroShowcaseMovies = [];
 let heroShowcaseCurrent = 0;
 let heroShowcaseTimer = null;
+let isHeroTransitioning = false;
+let hero3DTouchStartX = 0;
+let hero3DTouchStartY = 0;
 
 function renderHeroShowcase() {
   const container = document.getElementById('hero-section');
-  const deckContainer = document.getElementById('hero-cards-deck');
-  if (!container || !deckContainer) return;
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (!container || !stage) return;
 
   const spotlight = getHeroSpotlightList();
   if (!spotlight || spotlight.length === 0) return;
-  heroShowcaseMovies = spotlight.slice(0, 7);
+  heroShowcaseMovies = spotlight.slice(0, 6);
   heroShowcaseCurrent = Math.min(heroShowcaseCurrent, heroShowcaseMovies.length - 1);
 
-  // Render the bottom cards row ("pitu peliya")
-  deckContainer.innerHTML = heroShowcaseMovies.map((movie, idx) => {
+  // Build the 3D Cards
+  const total = heroShowcaseMovies.length;
+  stage.innerHTML = heroShowcaseMovies.map((movie, idx) => {
     const poster = movie.poster || movie.poster_url || movie.backdrop || movie.backdrop_url || SITE_CONFIG.defaultPoster;
+    const rel = (idx - heroShowcaseCurrent + total) % total;
+    const slotClass = rel < 5 ? `slot-${rel}` : 'slot-hidden';
+    const yr = movie.year || '';
+    const qLabel = formatQualityLabel(movie.quality);
+
     return `
-      <div class="hero-row-card${idx === heroShowcaseCurrent ? ' is-active' : ''}" data-idx="${idx}">
-        <img src="${FilmSub.escHtml(poster)}" class="row-card-img" alt="${FilmSub.escHtml(movie.title)}" loading="lazy">
-        <div class="row-card-grad"></div>
-        <span class="row-card-idx">${idx + 1}</span>
-        <span class="row-card-title">${FilmSub.escHtml(movie.title || '')}</span>
-        <div class="row-card-progress"></div>
+      <div class="hero-3d-card ${slotClass}${rel === 0 ? ' is-active' : ''}" data-idx="${idx}">
+        <div class="hero-3d-card-inner">
+          <img src="${FilmSub.escHtml(poster)}" class="hero-3d-card-img" alt="${FilmSub.escHtml(movie.title)}" loading="lazy">
+          <div class="hero-3d-card-grad"></div>
+          <span class="hero-3d-card-badge">${idx + 1}</span>
+          <div class="hero-3d-card-info">
+            <span class="hero-3d-card-title">${FilmSub.escHtml(movie.title || '')}</span>
+            <span class="hero-3d-card-meta">${FilmSub.escHtml(yr ? yr + ' • ' + qLabel : qLabel)}</span>
+          </div>
+          <div class="hero-3d-card-progress"></div>
+        </div>
       </div>
     `;
   }).join('');
 
-  // Attach card click handlers: clicking any card in the row immediately zooms it to full screen!
-  deckContainer.querySelectorAll('.hero-row-card').forEach(card => {
+  // Attach card click handlers: clicking any card immediately transitions that card to the front!
+  stage.querySelectorAll('.hero-3d-card').forEach(card => {
     card.onclick = () => {
-      const idx = parseInt(card.dataset.idx, 10);
-      if (idx !== heroShowcaseCurrent) {
-        heroShowcaseCurrent = idx;
-        updateHeroShowcase(true);
-        restartHeroShowcaseTimer();
+      if (isHeroTransitioning) return;
+      const targetIdx = parseInt(card.dataset.idx, 10);
+      if (targetIdx !== heroShowcaseCurrent) {
+        goToHeroIndex(targetIdx);
       }
     };
   });
 
-  // Edge nav buttons
+  // Edge navigation arrows
   const prevBtn = document.getElementById('hero-deck-prev');
   const nextBtn = document.getElementById('hero-deck-next');
   if (prevBtn) {
     prevBtn.onclick = () => {
+      if (isHeroTransitioning) return;
       const len = heroShowcaseMovies.length;
-      heroShowcaseCurrent = (heroShowcaseCurrent - 1 + len) % len;
-      updateHeroShowcase(true);
-      restartHeroShowcaseTimer();
+      goToHeroIndex((heroShowcaseCurrent - 1 + len) % len);
     };
   }
   if (nextBtn) {
     nextBtn.onclick = () => {
+      if (isHeroTransitioning) return;
       const len = heroShowcaseMovies.length;
-      heroShowcaseCurrent = (heroShowcaseCurrent + 1) % len;
-      updateHeroShowcase(true);
-      restartHeroShowcaseTimer();
+      goToHeroIndex((heroShowcaseCurrent + 1) % len);
     };
   }
 
@@ -852,12 +864,93 @@ function renderHeroShowcase() {
   container.onmouseenter = () => { if (heroShowcaseTimer) clearInterval(heroShowcaseTimer); };
   container.onmouseleave = () => { restartHeroShowcaseTimer(); };
 
+  // Mobile Touch Swipe support
+  initHero3DTouchSwipe(stage);
+
   // Initial update
-  updateHeroShowcase(false);
+  updateHeroContent(false);
   restartHeroShowcaseTimer();
 }
 
-function updateHeroShowcase(animate = true) {
+function initHero3DTouchSwipe(stage) {
+  if (!stage || stage._swipeBound) return;
+  stage._swipeBound = true;
+
+  stage.addEventListener('touchstart', (e) => {
+    if (!e.touches || !e.touches[0]) return;
+    hero3DTouchStartX = e.touches[0].clientX;
+    hero3DTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  stage.addEventListener('touchend', (e) => {
+    if (!e.changedTouches || !e.changedTouches[0]) return;
+    const dx = e.changedTouches[0].clientX - hero3DTouchStartX;
+    const dy = e.changedTouches[0].clientY - hero3DTouchStartY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      const len = heroShowcaseMovies.length;
+      if (len < 2 || isHeroTransitioning) return;
+      if (dx < 0) {
+        // Swipe Left -> Next card
+        goToHeroIndex((heroShowcaseCurrent + 1) % len);
+      } else {
+        // Swipe Right -> Prev card
+        goToHeroIndex((heroShowcaseCurrent - 1 + len) % len);
+      }
+    }
+  }, { passive: true });
+}
+
+function goToHeroIndex(targetIdx) {
+  if (isHeroTransitioning || targetIdx === heroShowcaseCurrent) return;
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (!stage) return;
+
+  isHeroTransitioning = true;
+  const len = heroShowcaseMovies.length;
+  const oldIdx = heroShowcaseCurrent;
+  heroShowcaseCurrent = targetIdx;
+
+  const cards = stage.querySelectorAll('.hero-3d-card');
+  const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
+  const newCard = stage.querySelector(`.hero-3d-card[data-idx="${targetIdx}"]`);
+
+  // 1. Current front card shrinks and loops to back of the 3D stack ("3d pitu peliye pitipassata yanawa")
+  if (oldCard) {
+    oldCard.classList.remove('slot-0', 'is-active');
+    oldCard.classList.add('is-retreating');
+  }
+
+  // 2. Target card expands up to full front display ("animation ekakin loku wela full display wenawa")
+  if (newCard) {
+    newCard.classList.remove('slot-1', 'slot-2', 'slot-3', 'slot-4', 'slot-hidden');
+    newCard.classList.add('is-expanding');
+  }
+
+  // 3. Concurrently crossfade backdrop & update left text info
+  updateHeroContent(true);
+
+  // 4. After 750ms animation finishes, assign definitive slot classes
+  setTimeout(() => {
+    cards.forEach(card => {
+      const cIdx = parseInt(card.dataset.idx, 10);
+      const rel = (cIdx - heroShowcaseCurrent + len) % len;
+      card.className = `hero-3d-card ${rel < 5 ? 'slot-' + rel : 'slot-hidden'}${rel === 0 ? ' is-active' : ''}`;
+      if (rel === 0) {
+        const p = card.querySelector('.hero-3d-card-progress');
+        if (p) {
+          p.style.animation = 'none';
+          void p.offsetWidth;
+          p.style.animation = '';
+        }
+      }
+    });
+    isHeroTransitioning = false;
+  }, 750);
+
+  restartHeroShowcaseTimer();
+}
+
+function updateHeroContent(animate = true) {
   const movie = heroShowcaseMovies[heroShowcaseCurrent];
   if (!movie) return;
 
@@ -869,7 +962,7 @@ function updateHeroShowcase(animate = true) {
     if (animate) {
       bgNext.style.backgroundImage = `url('${backdrop}')`;
       bgNext.classList.remove('animating');
-      void bgNext.offsetWidth; // reflow
+      void bgNext.offsetWidth;
       bgNext.classList.add('animating');
       bgNext.style.opacity = '1';
 
@@ -900,14 +993,16 @@ function updateHeroShowcase(animate = true) {
     genresEl.innerHTML = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${FilmSub.escHtml(g)}</a>`).join('');
   }
 
+  // Clean Typography Metadata Line (No bulky rainbow boxes!)
   const metaEl = document.getElementById('hero-fs-meta');
   if (metaEl) {
+    const yr = movie.year ? `<span class="hero-meta-item">${FilmSub.escHtml(String(movie.year))}</span>` : '';
+    const qLabel = `<span class="hero-meta-quality">${FilmSub.escHtml(formatQualityLabel(movie.quality))}</span>`;
     const imdbVal = movie.imdb || movie.rating || '';
-    const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
-    const qLabel = `<span class="badge badge-quality"><i class="fa-solid fa-film"></i> ${formatQualityLabel(movie.quality)}</span>`;
-    const yr = movie.year ? `<span class="badge badge-year">${movie.year}</span>` : '';
-    const sub = `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
-    metaEl.innerHTML = `${qLabel}${imdb}${yr}${sub}`;
+    const imdb = imdbVal ? `<span class="hero-meta-imdb"><i class="fa-solid fa-star"></i> ${FilmSub.escHtml(String(imdbVal))}</span>` : '';
+    const sub = `<span class="hero-meta-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි</span>`;
+    const items = [yr, qLabel, imdb, sub].filter(Boolean);
+    metaEl.innerHTML = items.join('<span class="hero-meta-dot">•</span>');
   }
 
   // Buttons
@@ -931,29 +1026,13 @@ function updateHeroShowcase(animate = true) {
     }
   }
 
-  // Re-trigger text slide animation
+  // Re-trigger left text slide animation
   const mainInfo = document.querySelector('.hero-showcase-main');
   if (mainInfo) {
     mainInfo.style.animation = 'none';
     void mainInfo.offsetWidth;
     mainInfo.style.animation = '';
   }
-
-  // Update card row active states
-  const cards = document.querySelectorAll('.hero-cards-deck .hero-row-card');
-  cards.forEach((card, idx) => {
-    const isActive = (idx === heroShowcaseCurrent);
-    card.classList.toggle('is-active', isActive);
-    if (isActive) {
-      card.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-      const p = card.querySelector('.row-card-progress');
-      if (p) {
-        p.style.animation = 'none';
-        void p.offsetWidth;
-        p.style.animation = '';
-      }
-    }
-  });
 
   // Dynamic theme extraction from backdrop
   if (backdrop && backdrop.startsWith('http')) {
@@ -967,10 +1046,14 @@ function updateHeroShowcase(animate = true) {
 function restartHeroShowcaseTimer() {
   if (heroShowcaseTimer) clearInterval(heroShowcaseTimer);
   heroShowcaseTimer = setInterval(() => {
+    // If trailer modal is open, pause auto-rotation
+    const modal = document.getElementById('trailer-modal');
+    if (modal && modal.style.display === 'flex') return;
+
     const len = heroShowcaseMovies.length;
-    if (len < 2) return;
-    heroShowcaseCurrent = (heroShowcaseCurrent + 1) % len;
-    updateHeroShowcase(true);
+    if (len < 2 || isHeroTransitioning) return;
+    const nextIdx = (heroShowcaseCurrent + 1) % len;
+    goToHeroIndex(nextIdx);
   }, 6000);
 }
 
@@ -1465,6 +1548,13 @@ function renderCarousel(trackId, movies, opts = {}) {
     return;
   }
   track.innerHTML = movies.map((m, idx) => generateMovieCard(m, { isTrending, rank: isTrending ? (idx + 1) : null })).join('');
+  const parentSec = track.closest('.section');
+  if (parentSec && parentSec.classList.contains('is-visible')) {
+    track.querySelectorAll('.movie-card').forEach((c, idx) => {
+      c.style.transitionDelay = `${Math.min(idx * 0.04, 0.4)}s`;
+      c.classList.add('is-card-visible');
+    });
+  }
 }
 
 // ---- Skeletons ----
@@ -1589,6 +1679,46 @@ function renderMovieGrid(containerId, movies) {
     return;
   }
   el.innerHTML = grouped.map(m => generateMovieCard(m)).join('');
+  el.querySelectorAll('.movie-card').forEach((c, idx) => {
+    c.style.transitionDelay = `${Math.min(idx * 0.03, 0.45)}s`;
+    requestAnimationFrame(() => c.classList.add('is-card-visible'));
+  });
+}
+
+// ---- Modern Scroll-Reveal Animation Engine ----
+function initScrollReveal() {
+  const sections = document.querySelectorAll('.section, .cs-details-section, .cs-downloads-section, .cs-related-section');
+  if (!sections.length) return;
+
+  if (typeof IntersectionObserver === 'undefined') {
+    sections.forEach(s => s.classList.add('is-visible'));
+    document.querySelectorAll('.movie-card').forEach(c => c.classList.add('is-card-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+
+        const cards = entry.target.querySelectorAll('.movie-card');
+        cards.forEach((c, idx) => {
+          c.style.transitionDelay = `${Math.min(idx * 0.04, 0.4)}s`;
+          c.classList.add('is-card-visible');
+        });
+
+        obs.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.08,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  sections.forEach(sec => {
+    sec.classList.add('scroll-reveal-section');
+    observer.observe(sec);
+  });
 }
 
 // ---- View Counter ----

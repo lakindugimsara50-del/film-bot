@@ -5640,88 +5640,130 @@ main > .section:first-of-type {
   transform: translateY(-2px) !important;
 }
 
-/* 2. Unified Movie Title Metadata Badges */
+/* 2. Unified Movie Title Metadata — Clean Typography & Decluttering */
 .cs-title-sub {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   flex-wrap: wrap !important;
-  margin-top: 10px !important;
+  margin-top: 8px !important;
+  font-size: 13.5px !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
 }
 
-.cs-title-sub .cs-sub-badge {
-  background: rgba(229, 9, 20, 0.16) !important;
-  color: #ff3b49 !important;
-  border: 1px solid rgba(229, 9, 20, 0.45) !important;
-  border-radius: 999px !important;
-  padding: 5px 14px !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
+.cs-title-sub .cs-sub-badge,
+.cs-title-sub .cs-header-quality,
+.cs-title-sub .cs-header-year,
+.cs-title-sub .badge-imdb,
+#cs-header-imdb {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #cbd5e1 !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.cs-title-sub > span:not(:empty) + span:not(:empty)::before {
+  content: "•";
+  margin-right: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 11px;
 }
 
 .cs-title-sub .cs-header-quality {
-  background: rgba(0, 192, 255, 0.14) !important;
-  color: #38bdf8 !important;
-  border: 1px solid rgba(0, 192, 255, 0.4) !important;
-  border-radius: 999px !important;
-  padding: 5px 14px !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-}
-
-.cs-title-sub .cs-header-year {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #e2e8f0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  border-radius: 999px !important;
-  padding: 5px 14px !important;
-  font-size: 12.5px !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 4px !important;
+  padding: 1px 7px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff !important;
+  letter-spacing: 0.5px !important;
 }
 
 .cs-title-sub .badge-imdb,
 #cs-header-imdb {
-  background: linear-gradient(135deg, rgba(245, 197, 24, 0.22) 0%, rgba(245, 197, 24, 0.08) 100%) !important;
   color: #f5c518 !important;
-  border: 1px solid rgba(245, 197, 24, 0.5) !important;
-  border-radius: 999px !important;
-  padding: 5px 14px !important;
-  font-size: 12.5px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.3px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  text-shadow: 0 0 10px rgba(245, 197, 24, 0.35) !important;
 }
 
-/* 3. Player Toolbar Rounding & Polish */
+.cs-title-sub .cs-sub-badge {
+  color: #4ade80 !important;
+}
+.cs-title-sub .cs-sub-badge::before {
+  display: none !important;
+}
+
+/* 3. Player Toolbar — Sleek Integrated Cinema Bar */
+.player-toolbar {
+  background: rgba(14, 15, 20, 0.85) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 8px 16px !important;
+}
+
 .server-tab {
-  border-radius: 999px !important;
-  padding: 6px 16px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #cbd5e1 !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+.server-tab:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+.server-tab.active {
+  background: var(--accent, #e50914) !important;
+  border-color: var(--accent, #e50914) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(229, 9, 20, 0.35) !important;
 }
 
 .player-status-badge {
-  border-radius: 999px !important;
-  padding: 5px 13px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 4px 8px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+.player-status-badge .pulse-indicator {
+  width: 7px !important;
+  height: 7px !important;
+  background: #22c55e !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important;
 }
 
 .btn-quality-trigger {
-  border-radius: 999px !important;
-  padding: 6px 15px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  color: #cbd5e1 !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+.btn-quality-trigger:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* 4. High-Contrast Solid Center Player Controls */
@@ -6099,10 +6141,10 @@ main > .section:first-of-type {
   object-fit: cover !important;
 }
 
-/* Quick Download Strip Pills */
+/* Quick Download Strip Pills — Sleek Modern Badges */
 .quick-dl-pill {
-  border-radius: 999px !important;
-  padding: 6px 16px !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
 }
 
 /* Mobile Responsiveness */
@@ -6972,38 +7014,41 @@ body.tg-browser-mode {
 .hero-fs-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin: 2px 0;
+  margin: 4px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
 }
-.hero-fs-meta .badge {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+.hero-meta-dot {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+}
+.hero-meta-quality {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 11.5px;
   font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+.hero-meta-imdb {
+  color: #f5c518;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.hero-meta-sub {
+  color: #4ade80;
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
-.hero-fs-meta .badge-quality {
-  background: var(--accent);
-  color: #ffffff;
-  box-shadow: 0 2px 10px var(--accent-glow);
-}
-.hero-fs-meta .badge-imdb {
-  background: rgba(245, 197, 24, 0.2);
-  color: #f5c518;
-  border: 1px solid rgba(245, 197, 24, 0.4);
-}
-.hero-fs-meta .badge-year {
-  background: rgba(255, 255, 255, 0.08);
+.hero-meta-item {
   color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-.hero-fs-meta .badge-sub {
-  background: rgba(74, 222, 128, 0.18);
-  color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.35);
 }
 
 .hero-fs-genres {
@@ -7115,27 +7160,30 @@ body.tg-browser-mode {
 }
 
 /* ============================================================
-   BOTTOM "PITU PELIYA" - ANIMATED CARDS ROW (CINELAND STYLE)
+   TRUE 3D STACK / CARD DECK HERO BANNER ("3D Pitu Peliya")
    ============================================================ */
+.hero-3d-deck-wrap,
 .hero-cards-deck-wrap {
   flex-shrink: 0;
-  width: clamp(320px, 42vw, 620px);
+  width: clamp(340px, 44vw, 560px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
+.hero-3d-deck-header,
 .hero-cards-deck-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 4px;
 }
 .hero-deck-label {
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.75);
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -7146,70 +7194,77 @@ body.tg-browser-mode {
   gap: 8px;
 }
 .deck-arrow {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
 }
 .deck-arrow:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  transform: scale(1.1);
+  background: var(--accent, #e50914);
+  border-color: var(--accent, #e50914);
+  transform: scale(1.08);
 }
 
-/* The Horizontal Row of Cards ("Pitu Peliya") */
+/* 3D Card Deck Stage Viewport */
+.hero-3d-deck-stage,
 .hero-cards-deck {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 8px 4px 14px;
+  position: relative;
+  width: 100%;
+  height: 340px;
+  perspective: 1200px;
+  perspective-origin: 30% 50%;
+  transform-style: preserve-3d;
+  display: block;
+  overflow: visible;
+  padding: 10px 0;
   scrollbar-width: none;
 }
+.hero-3d-deck-stage::-webkit-scrollbar,
 .hero-cards-deck::-webkit-scrollbar {
   display: none;
 }
 
+/* Individual 3D Card */
+.hero-3d-card,
 .hero-row-card {
-  flex: 0 0 115px;
-  height: 165px;
-  border-radius: 12px;
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  width: 210px;
+  height: 310px;
+  border-radius: 16px;
   overflow: hidden;
-  position: relative;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.12);
   background-color: #121218;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
-  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1),
-              border-color 0.35s ease,
-              box-shadow 0.35s ease,
-              opacity 0.35s ease;
-  opacity: 0.65;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.75s ease,
+              box-shadow 0.75s ease,
+              border-color 0.75s ease;
+  will-change: transform, opacity;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.hero-row-card:hover {
-  opacity: 0.95;
-  transform: translateY(-4px) scale(1.03);
-  border-color: rgba(255, 255, 255, 0.3);
+.hero-3d-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
 }
 
-/* Active card in the row */
-.hero-row-card.is-active {
-  opacity: 1;
-  transform: translateY(-8px) scale(1.08);
-  border: 2px solid var(--accent);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9), 0 0 25px var(--accent-glow);
-  z-index: 5;
-}
-
+.hero-3d-card-img,
 .row-card-img {
   width: 100%;
   height: 100%;
@@ -7217,51 +7272,72 @@ body.tg-browser-mode {
   display: block;
 }
 
+.hero-3d-card-grad,
 .row-card-grad {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(8, 8, 10, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, transparent 40%, rgba(8, 8, 10, 0.95) 100%);
   pointer-events: none;
 }
 
-.row-card-title {
+.hero-3d-card-badge,
+.row-card-idx {
   position: absolute;
-  bottom: 8px;
-  left: 6px;
-  right: 6px;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+  z-index: 3;
+}
+
+.hero-3d-card-info {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 3;
+}
+
+.hero-3d-card-title,
+.row-card-title {
+  font-size: 13.5px;
+  font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 }
 
-.row-card-idx {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 4px;
+.hero-3d-card-meta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
 }
 
-/* Active Card Progress Bar */
+/* Card Progress Bar on Active Front Card */
+.hero-3d-card-progress,
 .row-card-progress {
   position: absolute;
   bottom: 0;
   left: 0;
   height: 3px;
   width: 0%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
-  transition: width 0.1s linear;
+  background: var(--accent, #e50914);
+  box-shadow: 0 0 10px var(--accent-glow, rgba(229, 9, 20, 0.8));
+  z-index: 4;
 }
+.hero-3d-card.slot-0 .hero-3d-card-progress,
+.hero-3d-card.is-active .hero-3d-card-progress,
 .hero-row-card.is-active .row-card-progress {
   animation: cardProgressFill 6s linear forwards;
 }
@@ -7270,17 +7346,178 @@ body.tg-browser-mode {
   to   { width: 100%; }
 }
 
-/* Mobile Responsive */
+/* ============================================================
+   3D STACK DEPTH POSITIONS (One Behind Another in 3D Space)
+   ============================================================ */
+/* Slot 0: Active Card in Full Display (Prominent Front View) */
+.hero-3d-card.slot-0,
+.hero-3d-card.is-active {
+  transform: translate3d(0, 0, 0) scale(1.05) rotateY(0deg);
+  z-index: 10;
+  opacity: 1;
+  filter: brightness(1);
+  border: 2px solid var(--accent, #e50914);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.9), 0 0 28px var(--accent-glow, rgba(229, 9, 20, 0.45));
+}
+
+/* Slot 1: First Card Stacked Behind */
+.hero-3d-card.slot-1 {
+  transform: translate3d(60px, 10px, -60px) scale(0.92) rotateY(-8deg);
+  z-index: 8;
+  opacity: 0.85;
+  filter: brightness(0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75);
+}
+
+/* Slot 2: Second Card Stacked Behind */
+.hero-3d-card.slot-2 {
+  transform: translate3d(115px, 20px, -120px) scale(0.83) rotateY(-14deg);
+  z-index: 6;
+  opacity: 0.65;
+  filter: brightness(0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65);
+}
+
+/* Slot 3: Third Card Stacked Behind */
+.hero-3d-card.slot-3 {
+  transform: translate3d(165px, 30px, -180px) scale(0.74) rotateY(-18deg);
+  z-index: 4;
+  opacity: 0.45;
+  filter: brightness(0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+/* Slot 4: Tail Card in the 3D Stack */
+.hero-3d-card.slot-4 {
+  transform: translate3d(210px, 40px, -240px) scale(0.65) rotateY(-22deg);
+  z-index: 2;
+  opacity: 0.25;
+  filter: brightness(0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Hidden Card (beyond slot 4) */
+.hero-3d-card.slot-hidden {
+  transform: translate3d(240px, 50px, -300px) scale(0.55);
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Hover effect on stacked cards */
+.hero-3d-card:not(.slot-0):hover {
+  filter: brightness(1.1) !important;
+  opacity: 0.95 !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* ============================================================
+   CYCLING 3D CARD ANIMATIONS:
+   Front card shrinks & travels to the back of the 3D stack,
+   while top card from stack expands to full display.
+   ============================================================ */
+.hero-3d-card.is-retreating {
+  animation: cardSendToBack 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+}
+@keyframes cardSendToBack {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05) rotateY(0deg);
+    opacity: 1;
+    z-index: 15;
+  }
+  32% {
+    transform: translate3d(-95px, -15px, 45px) scale(1.0) rotateY(16deg);
+    opacity: 0.95;
+    z-index: 15;
+  }
+  68% {
+    transform: translate3d(170px, 30px, -200px) scale(0.7) rotateY(-20deg);
+    opacity: 0.45;
+    z-index: 2;
+  }
+  100% {
+    transform: translate3d(210px, 40px, -240px) scale(0.65) rotateY(-22deg);
+    opacity: 0.25;
+    z-index: 2;
+  }
+}
+
+.hero-3d-card.is-expanding {
+  animation: cardGrowToFront 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+}
+@keyframes cardGrowToFront {
+  0% {
+    transform: translate3d(60px, 10px, -60px) scale(0.92) rotateY(-8deg);
+    opacity: 0.85;
+    filter: brightness(0.85);
+    z-index: 8;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05) rotateY(0deg);
+    opacity: 1;
+    filter: brightness(1);
+    z-index: 10;
+  }
+}
+
+/* ============================================================
+   MODERN SCROLL-REVEAL ANIMATIONS FOR MOVIE CATALOG
+   ("yatata yanakota animation walin eke thiyana ewa lassanata penna")
+   ============================================================ */
+.scroll-reveal-section {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.movie-card {
+  opacity: 0;
+  transform: translateY(20px) scale(0.97);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+  will-change: opacity, transform;
+}
+
+.movie-card.is-card-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Fallback for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-section {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .movie-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Responsive: Tablets & Mobile */
 @media (max-width: 900px) {
   .hero-showcase {
     min-height: auto;
-    padding: 24px 0 32px;
+    padding: 24px 0 36px;
   }
   .hero-showcase-container {
     flex-direction: column;
     align-items: stretch;
     padding: 0 20px;
-    gap: 24px;
+    gap: 28px;
   }
   .hero-showcase-main {
     max-width: 100%;
@@ -7291,11 +7528,45 @@ body.tg-browser-mode {
   .hero-fs-desc {
     -webkit-line-clamp: 2;
   }
+  .hero-3d-deck-wrap,
   .hero-cards-deck-wrap {
     width: 100%;
   }
+  .hero-3d-deck-stage,
+  .hero-cards-deck {
+    height: 270px;
+    perspective-origin: 35% 50%;
+  }
+  .hero-3d-card,
   .hero-row-card {
-    flex: 0 0 95px;
-    height: 140px;
+    width: 160px;
+    height: 235px;
+    left: 10px;
+  }
+  .hero-3d-card.slot-0,
+  .hero-3d-card.is-active {
+    transform: translate3d(0, 0, 0) scale(1.03) rotateY(0deg);
+  }
+  .hero-3d-card.slot-1 {
+    transform: translate3d(40px, 8px, -45px) scale(0.9) rotateY(-8deg);
+  }
+  .hero-3d-card.slot-2 {
+    transform: translate3d(78px, 16px, -90px) scale(0.8) rotateY(-14deg);
+  }
+  .hero-3d-card.slot-3 {
+    transform: translate3d(112px, 24px, -135px) scale(0.7) rotateY(-18deg);
+  }
+  .hero-3d-card.slot-4 {
+    transform: translate3d(142px, 32px, -180px) scale(0.6) rotateY(-22deg);
+  }
+  @keyframes cardSendToBack {
+    0% { transform: translate3d(0, 0, 0) scale(1.03) rotateY(0deg); opacity: 1; z-index: 15; }
+    32% { transform: translate3d(-65px, -10px, 30px) scale(0.98) rotateY(15deg); opacity: 0.95; z-index: 15; }
+    68% { transform: translate3d(115px, 24px, -140px) scale(0.68) rotateY(-20deg); opacity: 0.45; z-index: 2; }
+    100% { transform: translate3d(142px, 32px, -180px) scale(0.6) rotateY(-22deg); opacity: 0.25; z-index: 2; }
+  }
+  @keyframes cardGrowToFront {
+    0% { transform: translate3d(40px, 8px, -45px) scale(0.9) rotateY(-8deg); opacity: 0.85; filter: brightness(0.85); z-index: 8; }
+    100% { transform: translate3d(0, 0, 0) scale(1.03) rotateY(0deg); opacity: 1; filter: brightness(1); z-index: 10; }
   }
 }

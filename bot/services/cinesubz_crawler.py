@@ -147,8 +147,8 @@ async def get_cinesubz_max_pages(client: httpx.AsyncClient, section: str = "movi
                 log.debug("[CineSubzCrawler] Max page detection attempt %d for %s on %s: %s", attempt + 1, section, base, exc)
                 await asyncio.sleep(1.0)
 
-    # Robust default: CineSubz has 480+ movie pages and 45+ TV show pages
-    return 480 if section == "movies" else 45
+    # Robust default: CineSubz has 228 movie pages and 20 TV show pages
+    return 228 if section == "movies" else 20
 
 
 async def scrape_cinesubz_page(
@@ -345,6 +345,7 @@ class CineSubzCrawler:
         self._status_msg: Optional[Message] = None
 
         self.mode: str = "movies"  # "movies", "tvshows", "all"
+        self.direction: str = "forward"  # "forward" (1 -> max, Newest ➔ Oldest), "reverse" (max -> 1, Oldest ➔ Newest)
         self.current_movie_page: int = 0
         self.max_movie_pages: int = 0
         self.current_tv_page: int = 0
@@ -355,6 +356,8 @@ class CineSubzCrawler:
         self.current_item_name: str = "None"
         self.status_detail: str = "Idle"
         self.started_at: float = 0.0
+        self.last_new_release_check: float = 0.0
+        self._enqueued_titles_or_urls: Set[str] = set()
 
         self.load_state()
 
@@ -381,6 +384,7 @@ class CineSubzCrawler:
 
         if best_data:
             self.mode = best_data.get("mode", "movies")
+            self.direction = best_data.get("direction", "forward")
             self.current_movie_page = int(best_data.get("current_movie_page", 0) or 0)
             self.max_movie_pages = int(best_data.get("max_movie_pages", 0) or 0)
             self.current_tv_page = int(best_data.get("current_tv_page", 0) or 0)
@@ -389,13 +393,14 @@ class CineSubzCrawler:
             self.total_skipped = int(best_data.get("total_skipped", 0) or 0)
             self.total_queued = int(best_data.get("total_queued", 0) or 0)
             self.last_completed_item = str(best_data.get("last_completed_item", "None"))
-            log.info("[CineSubzCrawler] Loaded state: Movie page %d/%d, TV page %d/%d (Last: %s)",
-                     self.current_movie_page, self.max_movie_pages, self.current_tv_page, self.max_tv_pages, self.last_completed_item)
+            log.info("[CineSubzCrawler] Loaded state: Movie page %d/%d, TV page %d/%d, Dir: %s (Last: %s)",
+                     self.current_movie_page, self.max_movie_pages, self.current_tv_page, self.max_tv_pages, self.direction, self.last_completed_item)
 
     def save_state(self) -> None:
         """Save persistent crawler state to disk and all cloud backups."""
         data = {
             "mode": self.mode,
+            "direction": getattr(self, "direction", "forward"),
             "current_movie_page": self.current_movie_page,
             "max_movie_pages": self.max_movie_pages,
             "current_tv_page": self.current_tv_page,
@@ -426,6 +431,7 @@ class CineSubzCrawler:
         status_msg: Optional[Message] = None,
         resume: bool = False,
         single_page_only: bool = False,
+        direction: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """Start the background crawler loop."""
         if self._is_running:
@@ -436,9 +442,12 @@ class CineSubzCrawler:
         self._admin_chat_id = admin_chat_id
         self._status_msg = status_msg
         self.mode = mode.lower()
+        if direction:
+            self.direction = direction.lower()
         self.started_at = time.time()
         self.status_detail = "Initializing..."
         self.single_page_only = single_page_only
+        self._enqueued_titles_or_urls.clear()
 
         if start_page is not None and start_page > 0:
             # Target specific page requested (e.g. /crawl 1, /crawl 50)
@@ -453,27 +462,32 @@ class CineSubzCrawler:
                 self.load_state()
             if self.mode != mode.lower() and mode.lower() in ("movies", "tvshows", "all"):
                 self.mode = mode.lower()
-            # If current_movie_page <= 0 after resume, safely initialize from oldest page
-            if self.mode in ("movies", "all") and self.current_movie_page <= 0:
+            # If current_movie_page <= 0 after resume, safely initialize
+            if self.mode in ("movies", "all"):
                 if self.max_movie_pages <= 0:
                     try:
                         async with httpx.AsyncClient(headers=HEADERS, timeout=10.0, follow_redirects=True, verify=False) as hc:
                             self.max_movie_pages = await get_cinesubz_max_pages(hc, "movies")
                     except Exception:
                         pass
-                if self.max_movie_pages > 0:
-                    self.current_movie_page = self.max_movie_pages
-            if self.mode in ("tvshows", "all") and self.current_tv_page <= 0:
+                if self.current_movie_page <= 0:
+                    self.current_movie_page = self.max_movie_pages if self.direction == "reverse" else 1
+                elif self.direction == "forward" and self.max_movie_pages > 0 and self.current_movie_page > self.max_movie_pages:
+                    self.current_movie_page = 1
+
+            if self.mode in ("tvshows", "all"):
                 if self.max_tv_pages <= 0:
                     try:
                         async with httpx.AsyncClient(headers=HEADERS, timeout=10.0, follow_redirects=True, verify=False) as hc:
                             self.max_tv_pages = await get_cinesubz_max_pages(hc, "tvshows")
                     except Exception:
                         pass
-                if self.max_tv_pages > 0:
-                    self.current_tv_page = self.max_tv_pages
+                if self.current_tv_page <= 0:
+                    self.current_tv_page = self.max_tv_pages if self.direction == "reverse" else 1
+                elif self.direction == "forward" and self.max_tv_pages > 0 and self.current_tv_page > self.max_tv_pages:
+                    self.current_tv_page = 1
         else:
-            # Fresh start requested (/crawl start): reset progress to start from the very beginning (Oldest -> Newest)
+            # Fresh start requested (/crawl start): reset progress to start from the beginning
             if self.mode in ("movies", "all"):
                 self.current_movie_page = 0
             if self.mode in ("tvshows", "all"):
@@ -484,8 +498,8 @@ class CineSubzCrawler:
             self.save_state()
 
         self._worker_task = asyncio.create_task(self._crawler_worker())
-        log.info("[CineSubzCrawler] Started crawler in mode '%s' (start_page=%s, resume=%s, single_page_only=%s)",
-                 self.mode, start_page, resume, single_page_only)
+        log.info("[CineSubzCrawler] Started crawler in mode '%s' (dir=%s, start_page=%s, resume=%s, single_page_only=%s)",
+                 self.mode, self.direction, start_page, resume, single_page_only)
 
         if start_page is not None and start_page > 0:
             target_str = f"Page {start_page}" + (" [Single Page Only]" if single_page_only else "")
@@ -495,7 +509,8 @@ class CineSubzCrawler:
             p_disp = f"Page {r_page}" if r_page > 0 else "Auto (Oldest)"
             return True, f"🔄 <b>CineSubz Harvester නැවතුණු තැනින් ({p_disp}) ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b>"
         else:
-            return True, f"🚀 <b>CineSubz Auto-Harvester මුල සිටම ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b> (Oldest ➔ Newest)"
+            dir_tag = "Newest ➔ Oldest" if self.direction == "forward" else "Oldest ➔ Newest"
+            return True, f"🚀 <b>CineSubz Auto-Harvester මුල සිටම ආරම්භ විය!</b>\n📊 Mode: <b>{self.mode.upper()}</b> ({dir_tag})"
 
     def stop(self) -> bool:
         """Stop the crawler gracefully."""
@@ -513,12 +528,13 @@ class CineSubzCrawler:
         """Format human-readable crawler status."""
         st_icon = "🟢 <b>ක්‍රියාත්මකයි (Running)</b>" if self._is_running else "🔴 <b>නැවතී ඇත (Stopped/Idle)</b>"
         page_info = ""
+        dir_lbl = "Newest ➔ Oldest" if getattr(self, "direction", "forward") == "forward" else "Oldest ➔ 1"
         if self.mode in ("movies", "all"):
-            m_curr = self.current_movie_page or self.max_movie_pages
-            page_info += f"• <b>චිත්‍රපට පිටුව:</b> Page {m_curr} / {self.max_movie_pages} (Oldest ➔ 1)\n"
+            m_curr = self.current_movie_page or self.max_movie_pages or 1
+            page_info += f"• <b>චිත්‍රපට පිටුව:</b> Page {m_curr} / {self.max_movie_pages} ({dir_lbl})\n"
         if self.mode in ("tvshows", "all"):
-            tv_curr = self.current_tv_page or self.max_tv_pages
-            page_info += f"• <b>TV Series පිටුව:</b> Page {tv_curr} / {self.max_tv_pages} (Oldest ➔ 1)\n"
+            tv_curr = self.current_tv_page or self.max_tv_pages or 1
+            page_info += f"• <b>TV Series පිටුව:</b> Page {tv_curr} / {self.max_tv_pages} ({dir_lbl})\n"
 
         return (
             f"🕷 <b>CineSubz Auto-Harvester / Crawler</b>\n\n"
@@ -532,8 +548,157 @@ class CineSubzCrawler:
             f"  • Scraped: <b>{self.total_scraped}</b>\n"
             f"  • Skipped (Already on Site): <b>{self.total_skipped}</b>\n"
             f"  • Enqueued for Leech: <b>{self.total_queued}</b>\n\n"
-            f"💡 <i>නැවැත්වීමට: <code>/crawl stop</code> | නැවත පටන් ගැනීමට: <code>/crawl resume</code></i>"
+            f"💡 <i>නැවැත්වීමට: <code>/crawl stop</code> | නැවත පටන් ගැනීමට: <code>/crawl resume</code> | අලුත් නිකුතු: <code>/crawl check</code></i>"
         )
+
+    async def _update_status_msg(self) -> None:
+        """Edit status message if available."""
+        if self._status_msg:
+            try:
+                await self._status_msg.edit_text(self.get_status_text(), parse_mode=ParseMode.HTML)
+            except Exception:
+                pass
+
+    async def check_and_enqueue_new_releases(
+        self,
+        http_client: httpx.AsyncClient,
+        section: str = "movies",
+    ) -> List[Dict[str, Any]]:
+        """
+        Scan Page 1 of CineSubz for newly uploaded releases that do not yet exist
+        in website/data/movies.json, and immediately enqueue them for leeching.
+        """
+        new_items: List[Dict[str, Any]] = []
+        try:
+            items = await scrape_cinesubz_page(http_client, 1, section)
+            if not items:
+                return []
+
+            fresh_catalog = load_website_catalog()
+            for item in items:
+                if not self._is_running:
+                    break
+
+                item_label = f"{item['clean_title']} ({item['year']})" if item['year'] else item['clean_title']
+
+                if section == "tvshows" or item.get("is_series"):
+                    episodes = await scrape_cinesubz_tvshow_episodes(http_client, item["url"])
+                    for ep in episodes:
+                        s_num, e_num = ep["season"], ep["episode"]
+                        ep_tag = f"{item['clean_title']} {ep['label']}"
+                        fresh_catalog = load_website_catalog()
+                        if is_item_in_catalog(item, fresh_catalog, season=s_num, episode=e_num):
+                            continue
+
+                        ep_norm = normalize_title(ep_tag)
+                        if ep_norm in self._enqueued_titles_or_urls:
+                            continue
+                        self._enqueued_titles_or_urls.add(ep_norm)
+
+                        log.info("[CineSubzCrawler] 🚨 New TV episode detected on Page 1: %s", ep_tag)
+                        new_items.append({"title": ep_tag, "url": ep.get("url") or item.get("url")})
+                        self.total_queued += 1
+                        self.current_item_name = ep_tag
+                        self.status_detail = f"🚨 New Upload: {ep_tag}"
+                        await self._update_status_msg()
+
+                        ep_url = ep.get("url") or ""
+                        ep_query = f"{ep_url} {item['clean_title']} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz" if ep_url else f"{item['clean_title']} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz"
+
+                        leech_status_msg = None
+                        if self._client and self._admin_chat_id:
+                            try:
+                                leech_status_msg = await self._client.send_message(
+                                    chat_id=self._admin_chat_id,
+                                    text=f"🚨 <b>CineSubz New TV Episode Detected!</b>\n"
+                                         f"📺 <b>{ep_tag}</b> පෝලිමට එක්කරමින් පවතී...",
+                                    parse_mode=ParseMode.HTML,
+                                )
+                            except Exception:
+                                pass
+
+                        if self._client and leech_status_msg:
+                            await queue_service.add_to_queue(
+                                client=self._client,
+                                status_msg=leech_status_msg,
+                                user_id=self._admin_chat_id,
+                                query_text=ep_query,
+                                title_hint=ep_tag,
+                                auto_publish=True,
+                            )
+
+                        while self._is_running and not queue_service.can_accept_next():
+                            is_busy = queue_service.is_user_busy(self._admin_chat_id)
+                            if not is_busy:
+                                break
+                            await asyncio.sleep(4.0)
+
+                        self.last_completed_item = ep_tag
+                        self.save_state()
+                        await self._update_status_msg()
+                else:
+                    fresh_catalog = load_website_catalog()
+                    if is_item_in_catalog(item, fresh_catalog):
+                        continue
+
+                    t_norm = normalize_title(item["clean_title"])
+                    if t_norm in self._enqueued_titles_or_urls:
+                        continue
+                    if item.get("url") and item["url"] in self._enqueued_titles_or_urls:
+                        continue
+                    self._enqueued_titles_or_urls.add(t_norm)
+                    if item.get("url"):
+                        self._enqueued_titles_or_urls.add(item["url"])
+
+                    log.info("[CineSubzCrawler] 🚨 New movie release detected on Page 1: %s", item_label)
+                    new_items.append(item)
+                    self.total_queued += 1
+                    self.current_item_name = item_label
+                    self.status_detail = f"🚨 New Upload: {item_label}"
+                    await self._update_status_msg()
+
+                    item_url = item.get("url") or ""
+                    if item_url:
+                        q_text = f"{item_url} {item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item_url} {item['clean_title']} --auto --strict-cinesubz"
+                    else:
+                        q_text = f"{item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item['clean_title']} --auto --strict-cinesubz"
+
+                    leech_status_msg = None
+                    if self._client and self._admin_chat_id:
+                        try:
+                            leech_status_msg = await self._client.send_message(
+                                chat_id=self._admin_chat_id,
+                                text=f"🚨 <b>CineSubz New Upload Detected!</b>\n"
+                                     f"🎬 <b>{item_label}</b> පෝලිමට එක්කරමින් පවතී...",
+                                parse_mode=ParseMode.HTML,
+                            )
+                        except Exception as s_err:
+                            log.debug("[CineSubzCrawler] New upload msg note: %s", s_err)
+
+                    if self._client and leech_status_msg:
+                        await queue_service.add_to_queue(
+                            client=self._client,
+                            status_msg=leech_status_msg,
+                            user_id=self._admin_chat_id,
+                            query_text=q_text,
+                            title_hint=item_label,
+                            auto_publish=True,
+                            imdb_id=item.get("imdb_id", ""),
+                        )
+
+                    while self._is_running and not queue_service.can_accept_next():
+                        is_busy = queue_service.is_user_busy(self._admin_chat_id)
+                        if not is_busy:
+                            break
+                        await asyncio.sleep(4.0)
+
+                    self.last_completed_item = item_label
+                    self.save_state()
+                    await self._update_status_msg()
+        except Exception as exc:
+            log.warning("[CineSubzCrawler] Error in check_and_enqueue_new_releases for %s: %s", section, exc)
+
+        return new_items
 
     async def _update_status_msg(self) -> None:
         """Edit status message if available."""
@@ -553,24 +718,52 @@ class CineSubzCrawler:
                         self.status_detail = "Detecting movie pages..."
                         await self._update_status_msg()
                         self.max_movie_pages = await get_cinesubz_max_pages(http_client, "movies")
+                        if self.max_movie_pages <= 0:
+                            self.max_movie_pages = 228
                     if self.current_movie_page <= 0:
-                        self.current_movie_page = self.max_movie_pages
+                        self.current_movie_page = self.max_movie_pages if getattr(self, "direction", "forward") == "reverse" else 1
 
                 if self.mode in ("tvshows", "all"):
                     if self.max_tv_pages <= 0:
                         self.status_detail = "Detecting TV show pages..."
                         await self._update_status_msg()
                         self.max_tv_pages = await get_cinesubz_max_pages(http_client, "tvshows")
+                        if self.max_tv_pages <= 0:
+                            self.max_tv_pages = 20
                     if self.current_tv_page <= 0:
-                        self.current_tv_page = self.max_tv_pages
+                        self.current_tv_page = self.max_tv_pages if getattr(self, "direction", "forward") == "reverse" else 1
 
                 self.save_state()
 
-                # 2. Crawl Movies (Oldest to Newest)
+                # 2. Crawl Movies
                 if self.mode in ("movies", "all"):
-                    log.info("[CineSubzCrawler] Starting movie crawl from page %d down to 1...", self.current_movie_page)
-                    while self._is_running and self.current_movie_page >= 1:
+                    log.info("[CineSubzCrawler] Starting movie crawl (dir=%s, start_page=%d, max_pages=%d)...",
+                             self.direction, self.current_movie_page, self.max_movie_pages)
+
+                    # Scan Page 1 for newly uploaded movies first
+                    try:
+                        await self.check_and_enqueue_new_releases(http_client, "movies")
+                        self.last_new_release_check = time.time()
+                    except Exception as cr_err:
+                        log.debug("[CineSubzCrawler] Initial new release check note: %s", cr_err)
+
+                    while self._is_running:
                         p = self.current_movie_page
+                        if self.direction == "forward":
+                            if p > self.max_movie_pages:
+                                break
+                        else:
+                            if p < 1:
+                                break
+
+                        # Check Page 1 for new releases periodically (every 45s if p > 1)
+                        if p > 1 and (time.time() - self.last_new_release_check > 45.0):
+                            self.last_new_release_check = time.time()
+                            try:
+                                await self.check_and_enqueue_new_releases(http_client, "movies")
+                            except Exception as pr_err:
+                                log.debug("[CineSubzCrawler] Periodic new release check note: %s", pr_err)
+
                         self.status_detail = f"Scraping movies page {p}/{self.max_movie_pages}..."
                         await self._update_status_msg()
 
@@ -580,13 +773,16 @@ class CineSubzCrawler:
                             await asyncio.sleep(4.0)
                             items = await scrape_cinesubz_page(http_client, p, "movies")
                             if not items:
-                                log.warning("[CineSubzCrawler] Page %d still empty. Decrementing page...", p)
-                                self.current_movie_page -= 1
+                                log.warning("[CineSubzCrawler] Page %d still empty. Advancing page...", p)
+                                if self.direction == "forward":
+                                    self.current_movie_page += 1
+                                else:
+                                    self.current_movie_page -= 1
                                 self.save_state()
                                 continue
 
-                        # Process items on this page (oldest first within page is bottom-up, or in order)
-                        for item in reversed(items):
+                        page_items = items if self.direction == "forward" else list(reversed(items))
+                        for item in page_items:
                             if not self._is_running:
                                 break
 
@@ -600,8 +796,20 @@ class CineSubzCrawler:
                                 self.total_skipped += 1
                                 log.info("[CineSubzCrawler] [SKIP - Already on site] %s", item_label)
                                 self.status_detail = f"Skipping {item_label} (Already on site)"
-                                await asyncio.sleep(0.5)
+                                await asyncio.sleep(0.1)
                                 continue
+
+                            # Prevent duplicate enqueuing
+                            t_norm = normalize_title(item["clean_title"])
+                            if t_norm in self._enqueued_titles_or_urls:
+                                self.total_skipped += 1
+                                continue
+                            if item.get("url") and item["url"] in self._enqueued_titles_or_urls:
+                                self.total_skipped += 1
+                                continue
+                            self._enqueued_titles_or_urls.add(t_norm)
+                            if item.get("url"):
+                                self._enqueued_titles_or_urls.add(item["url"])
 
                             # Item is MISSING from our site!
                             self.total_queued += 1
@@ -642,7 +850,6 @@ class CineSubzCrawler:
                                 )
 
                             # Pipelined waiting: wait until queue pipeline has capacity for next download
-                            # Enables Movie N+1 to download in background while Movie N is encoding & uploading!
                             log.info("[CineSubzCrawler] Waiting for pipeline slot before next item (current: '%s')...", item_label)
                             wait_ticks = 0
                             max_idle_safeguard_ticks = 720  # 60 minutes
@@ -668,26 +875,68 @@ class CineSubzCrawler:
                             self.last_completed_item = item_label
                             self.save_state()
                             await self._update_status_msg()
-                            await asyncio.sleep(2.0)
+                            await asyncio.sleep(1.0)
 
-                        self.current_movie_page -= 1
-                        self.save_state()
-                        await asyncio.sleep(2.0)
                         if getattr(self, "single_page_only", False):
                             log.info("[CineSubzCrawler] Single movie page %d complete. Stopping crawler.", p)
                             self.status_detail = f"Page {p} completed!"
                             break
 
-                # 3. Crawl TV Series (Oldest to Newest)
+                        if self.direction == "forward":
+                            self.current_movie_page += 1
+                        else:
+                            self.current_movie_page -= 1
+                        self.save_state()
+                        await asyncio.sleep(1.0)
+
+                # 3. Crawl TV Series
                 if self.mode in ("tvshows", "all") and self._is_running:
-                    log.info("[CineSubzCrawler] Starting TV Series crawl from page %d down to 1...", self.current_tv_page)
-                    while self._is_running and self.current_tv_page >= 1:
+                    log.info("[CineSubzCrawler] Starting TV Series crawl (dir=%s, start_page=%d, max_pages=%d)...",
+                             self.direction, self.current_tv_page, self.max_tv_pages)
+
+                    # Initial scan of Page 1 for new TV series episodes
+                    try:
+                        await self.check_and_enqueue_new_releases(http_client, "tvshows")
+                        self.last_new_release_check = time.time()
+                    except Exception as cr_tv_err:
+                        log.debug("[CineSubzCrawler] Initial TV new release check note: %s", cr_tv_err)
+
+                    while self._is_running:
                         p = self.current_tv_page
+                        if self.direction == "forward":
+                            if p > self.max_tv_pages:
+                                break
+                        else:
+                            if p < 1:
+                                break
+
+                        # Check Page 1 for new TV episodes periodically during crawl
+                        if p > 1 and (time.time() - self.last_new_release_check > 45.0):
+                            self.last_new_release_check = time.time()
+                            try:
+                                await self.check_and_enqueue_new_releases(http_client, "tvshows")
+                            except Exception as pr_tv_err:
+                                log.debug("[CineSubzCrawler] Periodic TV new release check note: %s", pr_tv_err)
+
                         self.status_detail = f"Scraping TV shows page {p}/{self.max_tv_pages}..."
                         await self._update_status_msg()
 
                         tv_shows = await scrape_cinesubz_page(http_client, p, "tvshows")
-                        for show in reversed(tv_shows):
+                        if not tv_shows:
+                            log.warning("[CineSubzCrawler] TV Page %d returned 0 items. Retrying in 4s...", p)
+                            await asyncio.sleep(4.0)
+                            tv_shows = await scrape_cinesubz_page(http_client, p, "tvshows")
+                            if not tv_shows:
+                                log.warning("[CineSubzCrawler] TV Page %d still empty. Advancing page...", p)
+                                if self.direction == "forward":
+                                    self.current_tv_page += 1
+                                else:
+                                    self.current_tv_page -= 1
+                                self.save_state()
+                                continue
+
+                        page_shows = tv_shows if self.direction == "forward" else list(reversed(tv_shows))
+                        for show in page_shows:
                             if not self._is_running:
                                 break
 
@@ -712,6 +961,12 @@ class CineSubzCrawler:
                                     self.total_skipped += 1
                                     log.info("[CineSubzCrawler] [SKIP - Already on site] %s", ep_tag)
                                     continue
+
+                                ep_norm = normalize_title(ep_tag)
+                                if ep_norm in self._enqueued_titles_or_urls:
+                                    self.total_skipped += 1
+                                    continue
+                                self._enqueued_titles_or_urls.add(ep_norm)
 
                                 # Episode is MISSING from our site!
                                 self.total_queued += 1
@@ -747,7 +1002,7 @@ class CineSubzCrawler:
                                         auto_publish=True,
                                     )
 
-                                # Pipelined waiting: wait until queue pipeline has capacity for next episode
+                                # Pipelined waiting
                                 wait_ticks_tv = 0
                                 max_idle_safeguard_tv = 720  # 60 minutes
                                 while self._is_running and not queue_service.can_accept_next():
@@ -772,15 +1027,19 @@ class CineSubzCrawler:
                                 self.last_completed_item = ep_tag
                                 self.save_state()
                                 await self._update_status_msg()
-                                await asyncio.sleep(2.0)
+                                await asyncio.sleep(1.0)
 
-                        self.current_tv_page -= 1
-                        self.save_state()
-                        await asyncio.sleep(2.0)
                         if getattr(self, "single_page_only", False):
                             log.info("[CineSubzCrawler] Single TV page %d complete. Stopping crawler.", p)
                             self.status_detail = f"TV Page {p} completed!"
                             break
+
+                        if self.direction == "forward":
+                            self.current_tv_page += 1
+                        else:
+                            self.current_tv_page -= 1
+                        self.save_state()
+                        await asyncio.sleep(1.0)
 
                 self._is_running = False
                 self.status_detail = "Completed all pages!"
@@ -788,9 +1047,10 @@ class CineSubzCrawler:
                 await self._update_status_msg()
                 if self._client and self._admin_chat_id:
                     try:
+                        pages_desc = f"පිටු {self.max_movie_pages}ම" if self.max_movie_pages else "සියලුම පිටු"
                         await self._client.send_message(
                             chat_id=self._admin_chat_id,
-                            text="🎉 <b>CineSubz Auto-Harvester සාර්ථකව අවසන් විය!</b>\nසියලුම පැරණි චිත්‍රපට සහ කතා මාලා පරික්ෂා කර වෙබ් අඩවියට එක් කරන ලදී.",
+                            text=f"🎉 <b>CineSubz Auto-Harvester සාර්ථකව අවසන් විය!</b>\nසියලුම චිත්‍රපට සහ කතා මාලා ({pages_desc}) පරික්ෂා කර වෙබ් අඩවියට එක් කරන ලදී.",
                             parse_mode=ParseMode.HTML,
                         )
                     except Exception:

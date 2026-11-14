@@ -840,15 +840,18 @@ def register(app: Client) -> None:
                 InlineKeyboardButton("🌐 Crawl All (All Movies ➔ Series)", callback_data="crawl:all"),
             ],
             [
-                InlineKeyboardButton("🎬 All Movies (Oldest ➔ New)", callback_data="crawl:movies"),
-                InlineKeyboardButton("📺 All TV Series (Oldest ➔ New)", callback_data="crawl:series"),
+                InlineKeyboardButton("🎬 All Movies (Newest ➔ Oldest)", callback_data="crawl:movies"),
+                InlineKeyboardButton("📺 All TV Series (Newest ➔ Oldest)", callback_data="crawl:series"),
             ],
             [
+                InlineKeyboardButton("🆕 Check New Uploads", callback_data="crawl:new"),
                 InlineKeyboardButton("🔄 Resume (නැවතුණු තැන සිට)", callback_data="crawl:resume"),
-                InlineKeyboardButton("🛑 Stop (නවත්වන්න)", callback_data="crawl:stop"),
             ],
             [
+                InlineKeyboardButton("🛑 Stop (නවත්වන්න)", callback_data="crawl:stop"),
                 InlineKeyboardButton("📊 Status (තත්ත්වය)", callback_data="crawl:status"),
+            ],
+            [
                 InlineKeyboardButton("🧹 Reset State", callback_data="crawl:reset"),
             ],
         ])
@@ -859,6 +862,28 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
                 reply_markup=crawl_kb,
             )
+            return
+
+        if subcmd in ("check", "checknew", "latest", "recent", "scan"):
+            st_msg = await message.reply_text("🔍 <b>CineSubz නව නිකුතු පරික්ෂා කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+            import httpx
+            from services.cinesubz_crawler import HEADERS
+            async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as hc:
+                found_new = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "movies")
+                found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "tvshows")
+            tot = len(found_new) + len(found_tv)
+            if tot > 0:
+                await st_msg.edit_text(
+                    f"🎉 <b>නව නිකුතුවන් {tot}ක් සොයාගෙන පෝලිමට (Queue) එක් කරන ලදී!</b>\n\n{cinesubz_crawler.get_status_text()}",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=crawl_kb,
+                )
+            else:
+                await st_msg.edit_text(
+                    f"✅ <b>අලුත් නිකුතු නොමැත.</b> CineSubz මුල් පිටුවේ සියලුම චිත්‍රපට දැනටමත් අපගේ වෙබ් අඩවියේ ඇත.\n\n{cinesubz_crawler.get_status_text()}",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=crawl_kb,
+                )
             return
 
         if subcmd in ("stop", "pause", "cancel"):
@@ -890,9 +915,9 @@ def register(app: Client) -> None:
             return
 
         # Explicit commands parsing:
-        # A) /crawl start -> Fresh start from the beginning (Page max down to 1)
+        # A) /crawl start -> Fresh start from Page 1 (Newest ➔ Oldest across all pages)
         # B) /crawl resume / resum -> Resume from exactly where it was stopped
-        # C) /crawl <number> (e.g. /crawl 1, /crawl 50) -> Download films of that specific page
+        # C) /crawl <number> (e.g. /crawl 1, /crawl 50) -> Download films of that page (or all pages if 'all' specified)
 
         is_resume = False
         is_start_fresh = False
@@ -907,7 +932,16 @@ def register(app: Client) -> None:
             start_page = int(subcmd)
         elif subcmd in ("resume", "resum", "continue"):
             is_resume = True
-        elif subcmd in ("start", "begin", "new", "fresh"):
+        elif subcmd in ("start", "begin", "fresh"):
+            is_start_fresh = True
+        elif subcmd in ("all", "both"):
+            mode = "all"
+            is_start_fresh = True
+        elif subcmd in ("movies", "movie"):
+            mode = "movies"
+            is_start_fresh = True
+        elif subcmd in ("tvshows", "tvshow", "series"):
+            mode = "tvshows"
             is_start_fresh = True
 
         for a in (args[1:] if (start_page is not None or is_resume or is_start_fresh) else args):
@@ -922,13 +956,16 @@ def register(app: Client) -> None:
                 mode = "all"
             elif al in ("resume", "resum", "continue"):
                 is_resume = True
-            elif al in ("start", "begin", "new", "fresh"):
+            elif al in ("start", "begin", "fresh"):
                 is_start_fresh = True
             elif al in ("only", "single"):
                 single_page = True
 
         if subcmd == "page" and len(tokens) > 2 and tokens[2].isdigit():
             start_page = int(tokens[2])
+
+        is_all_explicit = any(x.lower() in ("all", "full", "+", "continue") for x in tokens[2:]) if len(tokens) > 2 else False
+        single_page_only = single_page or (start_page == 1 and not is_all_explicit)
 
         if is_resume:
             cinesubz_crawler.load_state()
@@ -951,9 +988,12 @@ def register(app: Client) -> None:
                 resume=True,
             )
         elif start_page is not None and start_page > 0:
+            hint_txt = ""
+            if single_page_only:
+                hint_txt = f"\n💡 <i>සියලුම පිටු බාගත කිරීමට: <code>/crawl start</code> හෝ <code>/crawl {start_page} all</code> භාවිතා කරන්න.</i>"
             st_msg = await message.reply_text(
                 f"🎯 <b>CineSubz Harvester [Page {start_page}] ආරම්භ කරමින් පවතී...</b>\n"
-                f"🎬 Page {start_page} හි ඇති සියලුම චිත්‍රපට පරීක්ෂා කර බාගත කරනු ලැබේ.",
+                f"🎬 Page {start_page} හි ඇති සියලුම චිත්‍රපට පරීක්ෂා කර බාගත කරනු ලැබේ.{hint_txt}",
                 parse_mode=ParseMode.HTML,
                 reply_markup=crawl_kb,
             )
@@ -964,7 +1004,7 @@ def register(app: Client) -> None:
                 mode=mode,
                 start_page=start_page,
                 status_msg=st_msg,
-                single_page_only=single_page or (start_page == 1),
+                single_page_only=single_page_only,
             )
         else:
             st_msg = await message.reply_text(
@@ -999,16 +1039,19 @@ def register(app: Client) -> None:
 
         crawl_kb = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🎬 Crawl Movies", callback_data="crawl:movies"),
-                InlineKeyboardButton("📺 Crawl TV Series", callback_data="crawl:series"),
+                InlineKeyboardButton("🌐 Crawl All (All Movies ➔ Series)", callback_data="crawl:all"),
             ],
             [
-                InlineKeyboardButton("🌐 Crawl All", callback_data="crawl:all"),
-                InlineKeyboardButton("📊 Status", callback_data="crawl:status"),
+                InlineKeyboardButton("🎬 All Movies (Newest ➔ Oldest)", callback_data="crawl:movies"),
+                InlineKeyboardButton("📺 All TV Series (Newest ➔ Oldest)", callback_data="crawl:series"),
             ],
             [
+                InlineKeyboardButton("🆕 Check New Uploads", callback_data="crawl:new"),
                 InlineKeyboardButton("🔄 Resume", callback_data="crawl:resume"),
+            ],
+            [
                 InlineKeyboardButton("🛑 Stop", callback_data="crawl:stop"),
+                InlineKeyboardButton("📊 Status", callback_data="crawl:status"),
             ],
         ])
 
@@ -1016,6 +1059,34 @@ def register(app: Client) -> None:
 
         if action == "status":
             await query.answer("📊 Status updated")
+            try:
+                await query.message.edit_text(
+                    cinesubz_crawler.get_status_text(),
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=crawl_kb,
+                )
+            except Exception:
+                pass
+            return
+
+        if action == "new":
+            await query.answer("🔍 Checking Page 1 for new uploads...")
+            import httpx
+            from services.cinesubz_crawler import HEADERS
+            async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as hc:
+                found_new = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "movies")
+                found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(hc, "tvshows")
+            tot = len(found_new) + len(found_tv)
+            if tot > 0:
+                await query.message.reply_text(
+                    f"🎉 <b>නව නිකුතුවන් {tot}ක් සොයාගෙන පෝලිමට (Queue) එක් කරන ලදී!</b>",
+                    parse_mode=ParseMode.HTML,
+                )
+            else:
+                await query.message.reply_text(
+                    "✅ <b>අලුත් නිකුතු නොමැත.</b> CineSubz මුල් පිටුවේ සියලුම චිත්‍රපට දැනටමත් අපගේ වෙබ් අඩවියේ ඇත.",
+                    parse_mode=ParseMode.HTML,
+                )
             try:
                 await query.message.edit_text(
                     cinesubz_crawler.get_status_text(),

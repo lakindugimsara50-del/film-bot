@@ -9219,7 +9219,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T05:02:38Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "yezhu-kadal-yezhu-malai-2026",
+      "slug": "yezhu-kadal-yezhu-malai-2026",
+      "title": "Yezhu Kadal Yezhu Malai",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "4.5",
+      "rating": "4.5",
+      "imdb_id": "tt22754948",
+      "tmdb_id": "954445",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/djuJg2xIlQflpljmFme4ampp2IV.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/djuJg2xIlQflpljmFme4ampp2IV.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/yz4iCqP2gyNhpnHar5NULeCQrbH.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/yz4iCqP2gyNhpnHar5NULeCQrbH.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/g50_PECZ17o",
+      "trailer_id": "g50_PECZ17o",
+      "genres": [
+        "Drama",
+        "Romance",
+        "Fantasy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "137 min",
+      "description": "Caught between family duty and romantic love, a young man faces an impossible choice.",
+      "director": "Ram",
+      "cast": [
+        {
+          "name": "Nivin Pauly",
+          "character": ""
+        },
+        {
+          "name": "Anjali",
+          "character": ""
+        },
+        {
+          "name": "Soori",
+          "character": ""
+        },
+        {
+          "name": "Ravi Mariya",
+          "character": ""
+        },
+        {
+          "name": "N. Azhagamperumal",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmZq9_ejflNQIme84gOEhXyOv7PDTAACtSAAAo6lwVfk2-lFdw98Ax4E",
+      "message_id": 614,
+      "file_name": "comp_yezhu-kadal-yezhu-malai-2026_1080p.mp4",
+      "file_size": 2046928596,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmZq9_ejflNQIme84gOEhXyOv7PDTAACtSAAAo6lwVfk2-lFdw98Ax4E",
+          "message_id": 614,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/954445"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt22754948"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt22754948"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/613",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/612"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2046928596,
+          "url": "https://t.me/c/4325759505/614",
+          "telegram_url": "https://t.me/c/4325759505/614",
+          "direct_url": "/stream/channel/-1004325759505/614?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmZq9_ejflNQIme84gOEhXyOv7PDTAACtSAAAo6lwVfk2-lFdw98Ax4E",
+          "message_id": 614,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1665192490,
+          "url": "https://t.me/c/4325759505/613",
+          "telegram_url": "https://t.me/c/4325759505/613",
+          "direct_url": "/stream/channel/-1004325759505/613?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmVq9-8tx003Kn81AgR54ne7K48AAaYAAlogAAJWk8FXnft1eyEtqhMeBA",
+          "message_id": 613,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/613",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "850.1 MB",
+          "size_bytes": 891346857,
+          "url": "https://t.me/c/4325759505/612",
+          "telegram_url": "https://t.me/c/4325759505/612",
+          "direct_url": "/stream/channel/-1004325759505/612?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmRq9-6gIzC8dztSdpIN7ZT_t-nFxgACWSAAAlaTwVc7Nqi2ukUQfh4E",
+          "message_id": 612,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/612",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2046928596,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_yezhu-kadal-yezhu-malai-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1665192490,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_yezhu-kadal-yezhu-malai-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/613",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "850.1 MB",
+          "size_bytes": 891346857,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_yezhu-kadal-yezhu-malai-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/612",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmZq9_ejflNQIme84gOEhXyOv7PDTAACtSAAAo6lwVfk2-lFdw98Ax4E",
+          "message_id": 614,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/614",
+          "size_bytes": 2046928596
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmVq9-8tx003Kn81AgR54ne7K48AAaYAAlogAAJWk8FXnft1eyEtqhMeBA",
+          "message_id": 613,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/613",
+          "size_bytes": 1665192490
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmRq9-6gIzC8dztSdpIN7ZT_t-nFxgACWSAAAlaTwVc7Nqi2ukUQfh4E",
+          "message_id": 612,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/612",
+          "size_bytes": 891346857
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/yezhu-kadal-yezhu-malai-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=yezhu-kadal-yezhu-malai-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T05:54:51Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T05:02:39Z"
+  "last_updated": "2026-11-14T05:54:52Z"
 };

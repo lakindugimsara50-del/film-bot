@@ -9902,7 +9902,235 @@
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T06:53:40Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-odyssey-2026",
+      "slug": "the-odyssey-2026",
+      "title": "The Odyssey",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.0",
+      "rating": "8.0",
+      "imdb_id": "tt33764258",
+      "tmdb_id": "1368337",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/AyIZ9tiiN8I",
+      "trailer_id": "AyIZ9tiiN8I",
+      "genres": [
+        "Adventure",
+        "Action",
+        "Fantasy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "173 min",
+      "description": "Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War. Throughout his voyage, he is forced to confront the whims of gods, mythological monsters, and trials that stretch both his cunning and his humanity to the breaking point.",
+      "director": "Christopher Nolan",
+      "cast": [
+        {
+          "name": "Matt Damon",
+          "character": "Odysseus"
+        },
+        {
+          "name": "Tom Holland",
+          "character": "Telemachus"
+        },
+        {
+          "name": "Anne Hathaway",
+          "character": "Penelope"
+        },
+        {
+          "name": "Robert Pattinson",
+          "character": "Antinous"
+        },
+        {
+          "name": "Himesh Patel",
+          "character": "Eurylochus"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnJq-A3buLGlGFptUbWPTRK20aCFWAACCiEAAo6lwVf05B3sauWugh4E",
+      "message_id": 626,
+      "file_name": "comp_the-odyssey-2026_1080p.mp4",
+      "file_size": 2041245674,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnJq-A3buLGlGFptUbWPTRK20aCFWAACCiEAAo6lwVf05B3sauWugh4E",
+          "message_id": 626,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1368337"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt33764258"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt33764258"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/625",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/624"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2041245674,
+          "url": "https://t.me/c/4325759505/626",
+          "telegram_url": "https://t.me/c/4325759505/626",
+          "direct_url": "/stream/channel/-1004325759505/626?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnJq-A3buLGlGFptUbWPTRK20aCFWAACCiEAAo6lwVf05B3sauWugh4E",
+          "message_id": 626,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2018553149,
+          "url": "https://t.me/c/4325759505/625",
+          "telegram_url": "https://t.me/c/4325759505/625",
+          "direct_url": "/stream/channel/-1004325759505/625?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnFq-A2idyoYM56FMRnC33JzY1gMxQACCCEAAo6lwVdoqPsIohcp5x4E",
+          "message_id": 625,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/625",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1208878298,
+          "url": "https://t.me/c/4325759505/624",
+          "telegram_url": "https://t.me/c/4325759505/624",
+          "direct_url": "/stream/channel/-1004325759505/624?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnBq-AtOONsBsOnn3GKORdumEvL-PQACASEAAo6lwVeXsfBI8nscZh4E",
+          "message_id": 624,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/624",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2041245674,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-odyssey-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2018553149,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-odyssey-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/625",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1208878298,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-odyssey-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/624",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnJq-A3buLGlGFptUbWPTRK20aCFWAACCiEAAo6lwVf05B3sauWugh4E",
+          "message_id": 626,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/626",
+          "size_bytes": 2041245674
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnFq-A2idyoYM56FMRnC33JzY1gMxQACCCEAAo6lwVdoqPsIohcp5x4E",
+          "message_id": 625,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/625",
+          "size_bytes": 2018553149
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnBq-AtOONsBsOnn3GKORdumEvL-PQACASEAAo6lwVeXsfBI8nscZh4E",
+          "message_id": 624,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/624",
+          "size_bytes": 1208878298
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-odyssey-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-odyssey-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T07:29:39Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T06:53:41Z"
+  "last_updated": "2026-11-14T07:29:40Z"
 }

@@ -10994,7 +10994,227 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T22:04:56Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "summer-vacation-2026-s01e01",
+      "slug": "summer-vacation-2026-s01e01",
+      "title": "Summer Vacation",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt47596978",
+      "tmdb_id": "335951",
+      "type": "series",
+      "season": 1,
+      "episode": 1,
+      "episode_title": "Kim Ha-yeon B",
+      "number_of_seasons": 1,
+      "number_of_episodes": 10,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 10,
+          "poster_url": "https://image.tmdb.org/t/p/w500/n6di6hbhC2vQZmFOrfieQLHU8MI.jpg",
+          "air_date": "2026-10-26"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/ru4oyTVoPVQZPUE5rI3YPMgLHBY.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/ru4oyTVoPVQZPUE5rI3YPMgLHBY.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tXSbEP4vGLOBpJtFg2Vsmm6aStx.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tXSbEP4vGLOBpJtFg2Vsmm6aStx.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/xCBMuV6c2xo",
+      "trailer_id": "xCBMuV6c2xo",
+      "genres": [
+        "Drama",
+        "Sci-Fi & Fantasy",
+        "Mystery"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "61 min",
+      "description": "An ordinary teen girl longs for something new – will meeting a handsome boy in a countryside village change her life?",
+      "director": "Unknown",
+      "cast": [
+        {
+          "name": "Cho Yi-hyun",
+          "character": "Kim Ha-yeon"
+        },
+        {
+          "name": "Jung Jin-young",
+          "character": "Jo Yu-gyeom"
+        },
+        {
+          "name": "Ryu Hae-jun",
+          "character": "Kim Jeong-yeon"
+        },
+        {
+          "name": "Hong Ye-ji",
+          "character": "Seong Sae-ryeong"
+        },
+        {
+          "name": "Seo Ji-young",
+          "character": "Yu-gyeom's mother"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoVq-NzXx_wFu1mv5F42KvTcjbVMhwACKCMAAo6lyVcxaJm1GQxjZR4E",
+      "message_id": 645,
+      "file_name": "fs_summer-vacation-2026-s01e01_720p.mp4",
+      "file_size": 769004174,
+      "drive_file_id": "",
+      "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoVq-NzXx_wFu1mv5F42KvTcjbVMhwACKCMAAo6lyVcxaJm1GQxjZR4E",
+          "message_id": 645,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/335951/1/1"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt47596978-1-1"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt47596978&s=1&e=1"
+        }
+      ],
+      "qualities": {
+        "auto": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+        "1080p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+        "720p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+        "480p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/644"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "733.4 MB",
+          "size_bytes": 769004174,
+          "url": "https://t.me/c/4325759505/645",
+          "telegram_url": "https://t.me/c/4325759505/645",
+          "direct_url": "/stream/channel/-1004325759505/645?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoVq-NzXx_wFu1mv5F42KvTcjbVMhwACKCMAAo6lyVcxaJm1GQxjZR4E",
+          "message_id": 645,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "398.3 MB",
+          "size_bytes": 417667937,
+          "url": "https://t.me/c/4325759505/644",
+          "telegram_url": "https://t.me/c/4325759505/644",
+          "direct_url": "/stream/channel/-1004325759505/644?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoRq-NyK5WiP245NPYkw3tiTmcxKDwACJyMAAo6lyVeyJ4hCPuSueR4E",
+          "message_id": 644,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/644",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "733.4 MB",
+          "size_bytes": 769004174,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_summer-vacation-2026-s01e01_1080p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "733.4 MB",
+          "size_bytes": 769004174,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_summer-vacation-2026-s01e01_720p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "398.3 MB",
+          "size_bytes": 417667937,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_summer-vacation-2026-s01e01_480p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/644",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoVq-NzXx_wFu1mv5F42KvTcjbVMhwACKCMAAo6lyVcxaJm1GQxjZR4E",
+          "message_id": 645,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/645",
+          "size_bytes": 769004174
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoRq-NyK5WiP245NPYkw3tiTmcxKDwACJyMAAo6lyVeyJ4hCPuSueR4E",
+          "message_id": 644,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/644",
+          "size_bytes": 417667937
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/summer-vacation-2026-s01e01-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=summer-vacation-2026-s01e01",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T22:12:52Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T22:04:58Z"
+  "last_updated": "2026-11-14T22:12:53Z"
 };

@@ -2067,16 +2067,17 @@ function renderMovieGrid(containerId, movies) {
 }
 
 // ---- Curated Multi-Row Movie Showcase Engine (3-4 Rows with Instant Filters) ----
+let showcaseCurrentGenre = 'all';
+let showcaseDisplayedLimit = 18; // 3-4 rows of 6 cards on desktop
+let showcaseEventsBound = false;
+
 function initMoviesShowcaseGrid() {
   const grid = document.getElementById('all-movies-grid');
   if (!grid) return;
 
-  const catalog = groupSeriesCatalog(allMovies);
-  let currentGenre = 'all';
-  let displayedLimit = 18; // 3-4 rows of 6 cards on desktop
-
   function getFilteredMovies() {
-    if (currentGenre === 'all') {
+    const catalog = groupSeriesCatalog(allMovies);
+    if (showcaseCurrentGenre === 'all') {
       return [...catalog].sort((a, b) => {
         const yA = Number(a.year) || 0;
         const yB = Number(b.year) || 0;
@@ -2086,17 +2087,17 @@ function initMoviesShowcaseGrid() {
         return tB - tA;
       });
     }
-    if (currentGenre === 'sinhala') {
+    if (showcaseCurrentGenre === 'sinhala') {
       return getSinhalaFilms();
     }
-    if (currentGenre === 'top-rated') {
+    if (showcaseCurrentGenre === 'top-rated') {
       return [...catalog].sort((a, b) => {
         const rA = parseFloat(a.imdb || a.rating || 0);
         const rB = parseFloat(b.imdb || b.rating || 0);
         return rB - rA;
       });
     }
-    return getMoviesByGenre(currentGenre);
+    return getMoviesByGenre(showcaseCurrentGenre);
   }
 
   function renderShowcase() {
@@ -2104,7 +2105,7 @@ function initMoviesShowcaseGrid() {
     const countEl = document.getElementById('movies-showcase-count');
     if (countEl) countEl.textContent = `${list.length} Films`;
 
-    const visible = list.slice(0, displayedLimit);
+    const visible = list.slice(0, showcaseDisplayedLimit);
     grid.innerHTML = visible.map(m => generateMovieCard(m)).join('');
 
     // Smooth staggered reveal
@@ -2115,53 +2116,58 @@ function initMoviesShowcaseGrid() {
 
     const loadMoreWrap = document.getElementById('showcase-load-more-wrap');
     if (loadMoreWrap) {
-      loadMoreWrap.style.display = displayedLimit >= list.length ? 'none' : 'flex';
+      loadMoreWrap.style.display = showcaseDisplayedLimit >= list.length ? 'none' : 'flex';
     }
   }
 
-  // Bind filter pills
-  const pills = document.querySelectorAll('.showcase-filter-pill');
-  pills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      pills.forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      currentGenre = pill.dataset.genre || 'all';
-      displayedLimit = 18;
-      renderShowcase();
-    });
-  });
+  // Ensure event listeners are attached only once to prevent duplicate handler firing
+  if (!showcaseEventsBound) {
+    showcaseEventsBound = true;
 
-  // Load more button
-  const loadMoreBtn = document.getElementById('btn-load-more-movies');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', () => {
-      displayedLimit += 12; // Append 2 more full rows
-      renderShowcase();
+    // Bind filter pills
+    const pills = document.querySelectorAll('.showcase-filter-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        showcaseCurrentGenre = pill.dataset.genre || 'all';
+        showcaseDisplayedLimit = 18;
+        renderShowcase();
+      });
     });
-  }
 
-  // Grid / Carousel view switcher
-  const btnGrid = document.getElementById('btn-view-grid');
-  const btnCarousel = document.getElementById('btn-view-carousel');
-  const carouselWrap = document.getElementById('all-movies-carousel-wrap');
-  const loadMoreWrap = document.getElementById('showcase-load-more-wrap');
+    // Load more button
+    const loadMoreBtn = document.getElementById('btn-load-more-movies');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        showcaseDisplayedLimit += 12; // Append 2 more full rows
+        renderShowcase();
+      });
+    }
 
-  if (btnGrid && btnCarousel && carouselWrap) {
-    btnGrid.addEventListener('click', () => {
-      btnGrid.classList.add('active');
-      btnCarousel.classList.remove('active');
-      grid.style.display = 'grid';
-      carouselWrap.style.display = 'none';
-      if (loadMoreWrap) loadMoreWrap.style.display = displayedLimit >= getFilteredMovies().length ? 'none' : 'flex';
-    });
-    btnCarousel.addEventListener('click', () => {
-      btnCarousel.classList.add('active');
-      btnGrid.classList.remove('active');
-      grid.style.display = 'none';
-      carouselWrap.style.display = 'block';
-      if (loadMoreWrap) loadMoreWrap.style.display = 'none';
-      renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
-    });
+    // Grid / Carousel view switcher
+    const btnGrid = document.getElementById('btn-view-grid');
+    const btnCarousel = document.getElementById('btn-view-carousel');
+    const carouselWrap = document.getElementById('all-movies-carousel-wrap');
+    const loadMoreWrap = document.getElementById('showcase-load-more-wrap');
+
+    if (btnGrid && btnCarousel && carouselWrap) {
+      btnGrid.addEventListener('click', () => {
+        btnGrid.classList.add('active');
+        btnCarousel.classList.remove('active');
+        grid.style.display = 'grid';
+        carouselWrap.style.display = 'none';
+        if (loadMoreWrap) loadMoreWrap.style.display = showcaseDisplayedLimit >= getFilteredMovies().length ? 'none' : 'flex';
+      });
+      btnCarousel.addEventListener('click', () => {
+        btnCarousel.classList.add('active');
+        btnGrid.classList.remove('active');
+        grid.style.display = 'none';
+        carouselWrap.style.display = 'block';
+        if (loadMoreWrap) loadMoreWrap.style.display = 'none';
+        renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
+      });
+    }
   }
 
   renderShowcase();

@@ -4789,6 +4789,14 @@ function loadTrailer(movie) {
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;aspect-ratio:16/9;width:100%;background:#000000 !important;border-radius:8px;overflow:hidden">
       ${buildSuperLoaderHtml(movie, '🎬 Official Trailer')}
+      <div class="trailer-floating-bar" style="position:absolute;top:14px;left:14px;z-index:10;display:flex;align-items:center;gap:10px;pointer-events:auto">
+        <span style="background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.22);color:#ffffff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;gap:6px">
+          <i class="fa-solid fa-clapperboard" style="color:var(--accent)"></i> Official Trailer
+        </span>
+        <button type="button" id="trailer-switch-to-movie-btn" style="background:linear-gradient(135deg, #e50914 0%, #ff2036 100%);border:none;color:#ffffff;font-size:12px;font-weight:800;padding:6px 16px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 14px rgba(229,9,20,0.6);transition:all 0.2s">
+          <i class="fa-solid fa-play"></i> Watch Movie
+        </button>
+      </div>
       <iframe id="player-trailer-iframe"
               src="${trailerSrc}"
               title="${FilmSub.escHtml(movie.title)} Official Trailer"
@@ -4801,6 +4809,14 @@ function loadTrailer(movie) {
               style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;background:#000000 !important;opacity:0;transition:opacity 0.35s ease">
       </iframe>
     </div>`;
+
+  const switchMovieBtn = document.getElementById('trailer-switch-to-movie-btn');
+  if (switchMovieBtn) {
+    switchMovieBtn.onclick = (e) => {
+      e.stopPropagation();
+      loadStream(movie, currentStreamIdx, true);
+    };
+  }
 
   const trailerIframe = document.getElementById('player-trailer-iframe');
   const loaderEl = document.getElementById('super-player-loader');
@@ -5171,11 +5187,19 @@ function renderMovieDetails(movie) {
         centerOverlay.style.display = '';
         centerOverlay.style.pointerEvents = 'auto';
       }
+      if (isTrailerActive) {
+        loadStream(movie, currentStreamIdx, true);
+        return;
+      }
       if (vjsPlayer && typeof vjsPlayer.play === 'function') {
         try { vjsPlayer.play().catch(() => {}); } catch(err) {}
       } else {
         const v = document.querySelector('#video-player-container video');
-        if (v) try { v.play().catch(() => {}); } catch(err) {}
+        if (v) {
+          try { v.play().catch(() => {}); } catch(err) {}
+        } else {
+          loadStream(movie, currentStreamIdx, true);
+        }
       }
     });
   }

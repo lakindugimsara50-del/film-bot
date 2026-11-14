@@ -1640,6 +1640,7 @@ main > .section:first-of-type {
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 6px 20px rgba(229, 9, 20, 0.55);
   transition: all 0.22s ease;
+  animation: heroWatchPulse 3.5s ease infinite;
 }
 .cs-poster-play-btn:hover {
   background: linear-gradient(135deg, #ff1a27 0%, #ff3b49 100%);
@@ -6992,9 +6993,10 @@ body.tg-browser-mode {
 /* Grand Cinematic FILMZILLA Stage Watermark (Active ONLY in Deck Mode) */
 .hero-stage-watermark {
   position: absolute;
-  top: 36%;
+  top: 28%;
   left: 50%;
   transform: translate(-50%, -50%) scale(1);
+  transform-origin: center center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8018,5 +8020,26 @@ body.tg-browser-mode {
   }
   .hero-deck-nav-bar {
     display: none !important;
+  }
+  .hero-stage-watermark {
+    top: 24%;
+  }
+  .hero-watermark-logo {
+    width: clamp(52px, 13vw, 75px);
+    margin-bottom: 6px;
+  }
+  .hero-watermark-brand {
+    font-size: clamp(26px, 7vw, 40px);
+    letter-spacing: clamp(4px, 1vw, 8px);
+    text-indent: clamp(4px, 1vw, 8px);
+  }
+  .hero-watermark-tagline {
+    font-size: 8.5px;
+    letter-spacing: 2px;
+    gap: 6px;
+  }
+  .badge-card-match {
+    font-size: 8.5px !important;
+    padding: 1.5px 5px !important;
   }
 }

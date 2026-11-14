@@ -12094,7 +12094,227 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T22:44:02Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-perfect-lie-2026-s01e02",
+      "slug": "the-perfect-lie-2026-s01e02",
+      "title": "The Perfect Lie",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt47657141",
+      "tmdb_id": "307478",
+      "type": "series",
+      "season": 1,
+      "episode": 2,
+      "episode_title": "That Night",
+      "number_of_seasons": 1,
+      "number_of_episodes": 12,
+      "seasons": [
+        {
+          "season_number": 1,
+          "name": "Season 1",
+          "episode_count": 12,
+          "poster_url": "https://image.tmdb.org/t/p/w500/thXJkiBByDitV7iFSv1hU1sg7ij.jpg",
+          "air_date": "2026-10-30"
+        }
+      ],
+      "poster": "https://image.tmdb.org/t/p/w500/thXJkiBByDitV7iFSv1hU1sg7ij.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/thXJkiBByDitV7iFSv1hU1sg7ij.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/5V7scQ0nVkNcz8dcHRfZIiHECcc.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/5V7scQ0nVkNcz8dcHRfZIiHECcc.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/5J6ZiYIyIiA",
+      "trailer_id": "5J6ZiYIyIiA",
+      "genres": [
+        "Drama",
+        "Crime",
+        "Mystery"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "720p",
+      "duration": "65 min",
+      "description": "After a heart-fluttering date, Joonho, a heart surgeon with a perfect smile, and Jisun, a free-spirited teacher-librarian, share a special night. The next day, they meet at a police station with completely different memories. A shocking polygraph result turns their lives upside down.",
+      "director": "Baek Jae-young",
+      "cast": [
+        {
+          "name": "Yoo Yeon-seok",
+          "character": "Min Jun-ho"
+        },
+        {
+          "name": "Seo Hyun-jin",
+          "character": "Kang Ji-seon"
+        },
+        {
+          "name": "Ok Ja-yeon",
+          "character": "Lee Hwa-yeong"
+        },
+        {
+          "name": "Kim Ji-hyun",
+          "character": "Kang Ji-eun"
+        },
+        {
+          "name": "Lee Chun-hee",
+          "character": "Kim Hyeong-su"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACApRq-OYAAbCnSlrGuHzaKtRRU2glY0AAAjMjAAKOpclX9rYUMqclWH4eBA",
+      "message_id": 660,
+      "file_name": "fs_the-perfect-lie-2026-s01e02_720p.mp4",
+      "file_size": 794181605,
+      "drive_file_id": "",
+      "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACApRq-OYAAbCnSlrGuHzaKtRRU2glY0AAAjMjAAKOpclX9rYUMqclWH4eBA",
+          "message_id": 660,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/tv/307478/1/2"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/tv/imdb/tt47657141-1-2"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embedtv/tt47657141&s=1&e=2"
+        }
+      ],
+      "qualities": {
+        "auto": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+        "1080p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+        "720p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+        "480p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/659"
+      },
+      "downloads": [
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "757.4 MB",
+          "size_bytes": 794181605,
+          "url": "https://t.me/c/4325759505/660",
+          "telegram_url": "https://t.me/c/4325759505/660",
+          "direct_url": "/stream/channel/-1004325759505/660?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACApRq-OYAAbCnSlrGuHzaKtRRU2glY0AAAjMjAAKOpclX9rYUMqclWH4eBA",
+          "message_id": 660,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "396.9 MB",
+          "size_bytes": 416171849,
+          "url": "https://t.me/c/4325759505/659",
+          "telegram_url": "https://t.me/c/4325759505/659",
+          "direct_url": "/stream/channel/-1004325759505/659?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACApNq-OXGR9-oS66PHLuenn7go9wq-QACMiMAAo6lyVf3w2j4ttK8OR4E",
+          "message_id": 659,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/659",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "757.4 MB",
+          "size_bytes": 794181605,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-perfect-lie-2026-s01e02_1080p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "757.4 MB",
+          "size_bytes": 794181605,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-perfect-lie-2026-s01e02_720p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "396.9 MB",
+          "size_bytes": 416171849,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-perfect-lie-2026-s01e02_480p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/659",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "",
+          "message_id": 0,
+          "stream_url": "",
+          "size_bytes": 0
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACApRq-OYAAbCnSlrGuHzaKtRRU2glY0AAAjMjAAKOpclX9rYUMqclWH4eBA",
+          "message_id": 660,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/660",
+          "size_bytes": 794181605
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACApNq-OXGR9-oS66PHLuenn7go9wq-QACMiMAAo6lyVf3w2j4ttK8OR4E",
+          "message_id": 659,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/659",
+          "size_bytes": 416171849
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-perfect-lie-2026-s01e02-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-perfect-lie-2026-s01e02",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T22:51:55Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T22:44:02Z"
+  "last_updated": "2026-11-14T22:51:55Z"
 };

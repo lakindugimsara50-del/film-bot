@@ -10766,7 +10766,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T09:17:21Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "ramayana-rise-of-a-legend-2026",
+      "slug": "ramayana-rise-of-a-legend-2026",
+      "title": "Ramayana: Rise of a Legend",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt27988879",
+      "tmdb_id": "656908",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/vBQ7wks68OhJKlb3RnXSl2yXBXK.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/vBQ7wks68OhJKlb3RnXSl2yXBXK.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/yHVZncPRZr63mezRX20IyKLrSkv.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/yHVZncPRZr63mezRX20IyKLrSkv.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/AYkPRN874m8",
+      "trailer_id": "AYkPRN874m8",
+      "genres": [
+        "Fantasy",
+        "Action",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "201 min",
+      "description": "An ancient epic follows a young prince and princess whose marriage and subsequent exile mark the beginning of a legendary journey. Their story of love, duty and destiny sets the stage for greater challenges ahead.",
+      "director": "Nitesh Tiwari",
+      "cast": [
+        {
+          "name": "Ranbir Kapoor",
+          "character": "Prince Rama / Parashurama"
+        },
+        {
+          "name": "Yash",
+          "character": "Ravana"
+        },
+        {
+          "name": "Sai Pallavi",
+          "character": "Sita"
+        },
+        {
+          "name": "Ravi Dubey",
+          "character": "Lakshmana"
+        },
+        {
+          "name": "Arun Govil",
+          "character": "King Dashrath"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoJq-Nr87A2LSpMAAUL95g9F0OyuVosAAiYjAAKOpclX8AABJ43ViODLHgQ",
+      "message_id": 642,
+      "file_name": "comp_ramayana-rise-of-a-legend-2026_1080p.mp4",
+      "file_size": 2062181285,
+      "drive_file_id": "",
+      "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoJq-Nr87A2LSpMAAUL95g9F0OyuVosAAiYjAAKOpclX8AABJ43ViODLHgQ",
+          "message_id": 642,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/656908"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt27988879"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt27988879"
+        }
+      ],
+      "qualities": {
+        "auto": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+        "1080p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+        "720p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/640",
+        "480p": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/641"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2062181285,
+          "url": "https://t.me/c/4325759505/642",
+          "telegram_url": "https://t.me/c/4325759505/642",
+          "direct_url": "/stream/channel/-1004325759505/642?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoJq-Nr87A2LSpMAAUL95g9F0OyuVosAAiYjAAKOpclX8AABJ43ViODLHgQ",
+          "message_id": 642,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2045494354,
+          "url": "https://t.me/c/4325759505/640",
+          "telegram_url": "https://t.me/c/4325759505/640",
+          "direct_url": "/stream/channel/-1004325759505/640?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoBq-NdD0qdYYPgX5L3I6e8FWh5bVAACJCMAAo6lyVdLeQ0ESQvBHR4E",
+          "message_id": 640,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/640",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1304913211,
+          "url": "https://t.me/c/4325759505/641",
+          "telegram_url": "https://t.me/c/4325759505/641",
+          "direct_url": "/stream/channel/-1004325759505/641?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoFq-NdvzrTDcF7zC_EsjnQ9uXDzQQACJSMAAo6lyVewx3UE7jU1jR4E",
+          "message_id": 641,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/641",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2062181285,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ramayana-rise-of-a-legend-2026_1080p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2045494354,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ramayana-rise-of-a-legend-2026_720p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/640",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1304913211,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ramayana-rise-of-a-legend-2026_480p",
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/641",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoJq-Nr87A2LSpMAAUL95g9F0OyuVosAAiYjAAKOpclX8AABJ43ViODLHgQ",
+          "message_id": 642,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/642",
+          "size_bytes": 2062181285
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoBq-NdD0qdYYPgX5L3I6e8FWh5bVAACJCMAAo6lyVdLeQ0ESQvBHR4E",
+          "message_id": 640,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/640",
+          "size_bytes": 2045494354
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAoFq-NdvzrTDcF7zC_EsjnQ9uXDzQQACJSMAAo6lyVewx3UE7jU1jR4E",
+          "message_id": 641,
+          "stream_url": "https://distributed-scale-interested-saints.trycloudflare.com/stream/channel/-1004325759505/641",
+          "size_bytes": 1304913211
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ramayana-rise-of-a-legend-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=ramayana-rise-of-a-legend-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T22:04:56Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T09:17:22Z"
+  "last_updated": "2026-11-14T22:04:58Z"
 };

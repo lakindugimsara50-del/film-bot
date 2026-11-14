@@ -10130,7 +10130,233 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T07:29:39Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "other-mommy-2026",
+      "slug": "other-mommy-2026",
+      "title": "Other Mommy",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.2",
+      "rating": "6.2",
+      "imdb_id": "tt36586020",
+      "tmdb_id": "1400837",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/fGRNCssTRrhYZxNzykGGCoMsAVq.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/fGRNCssTRrhYZxNzykGGCoMsAVq.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/ncm7djsVTHQQMX2HEbEVxMUFchG.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/ncm7djsVTHQQMX2HEbEVxMUFchG.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/-mnTITqqiT0",
+      "trailer_id": "-mnTITqqiT0",
+      "genres": [
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "93 min",
+      "description": "Young Bela forms a relationship with a sinister entity in her home that looks uncannily like her own mother, drawing her into a terrifying and increasingly dark world.",
+      "director": "Rob Savage",
+      "cast": [
+        {
+          "name": "Jessica Chastain",
+          "character": "Ursula Martin / Other Mommy"
+        },
+        {
+          "name": "Arabella Olivia Clark",
+          "character": "Isabela \"Bela\" Martin"
+        },
+        {
+          "name": "Jay Duplass",
+          "character": "Russell \"Russ\" Martin"
+        },
+        {
+          "name": "Karen Allen",
+          "character": "Ruth Martin"
+        },
+        {
+          "name": "Arian Moayed",
+          "character": "Frank"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnVq-BJVxkICLTkoT-0wrnm32n4AAagAAiMhAAKOpcFXclYAAcOLSfWHHgQ",
+      "message_id": 629,
+      "file_name": "comp_other-mommy-2026_1080p.mp4",
+      "file_size": 1979003365,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnVq-BJVxkICLTkoT-0wrnm32n4AAagAAiMhAAKOpcFXclYAAcOLSfWHHgQ",
+          "message_id": 629,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1400837"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36586020"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36586020"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/630",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/628"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1979003365,
+          "url": "https://t.me/c/4325759505/629",
+          "telegram_url": "https://t.me/c/4325759505/629",
+          "direct_url": "/stream/channel/-1004325759505/629?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnVq-BJVxkICLTkoT-0wrnm32n4AAagAAiMhAAKOpcFXclYAAcOLSfWHHgQ",
+          "message_id": 629,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1169257998,
+          "url": "https://t.me/c/4325759505/630",
+          "telegram_url": "https://t.me/c/4325759505/630",
+          "direct_url": "/stream/channel/-1004325759505/630?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnZq-BMuOj4PdUtYHu-alKI-aAqOqwACKyEAAo6lwVcHD-b50kXiZx4E",
+          "message_id": 630,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/630",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "597.0 MB",
+          "size_bytes": 626041531,
+          "url": "https://t.me/c/4325759505/628",
+          "telegram_url": "https://t.me/c/4325759505/628",
+          "direct_url": "/stream/channel/-1004325759505/628?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnRq-BEOAAGuxKWK5wtAK-F_BRP8hlUAAhYhAAKOpcFXyHtHbEjCyJYeBA",
+          "message_id": 628,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/628",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1979003365,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_other-mommy-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1169257998,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_other-mommy-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/630",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "597.0 MB",
+          "size_bytes": 626041531,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_other-mommy-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/628",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnVq-BJVxkICLTkoT-0wrnm32n4AAagAAiMhAAKOpcFXclYAAcOLSfWHHgQ",
+          "message_id": 629,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/629",
+          "size_bytes": 1979003365
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnZq-BMuOj4PdUtYHu-alKI-aAqOqwACKyEAAo6lwVcHD-b50kXiZx4E",
+          "message_id": 630,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/630",
+          "size_bytes": 1169257998
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAnRq-BEOAAGuxKWK5wtAK-F_BRP8hlUAAhYhAAKOpcFXyHtHbEjCyJYeBA",
+          "message_id": 628,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/628",
+          "size_bytes": 626041531
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/other-mommy-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=other-mommy-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T07:52:25Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T07:29:40Z"
+  "last_updated": "2026-11-14T07:52:26Z"
 };

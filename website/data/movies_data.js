@@ -9447,7 +9447,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-14",
       "added_at": "2026-11-14T05:54:51Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "resident-evil-2026",
+      "slug": "resident-evil-2026",
+      "title": "Resident Evil",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt35538033",
+      "tmdb_id": "1423191",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/gAgWJhUSQWCgtKR8170nMkYlBda.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/gAgWJhUSQWCgtKR8170nMkYlBda.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/8R79AZjX1Bt4219Ub3CrRMsPQsW.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/8R79AZjX1Bt4219Ub3CrRMsPQsW.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/mNd1gb19A-c",
+      "trailer_id": "mNd1gb19A-c",
+      "genres": [
+        "Horror",
+        "Science Fiction",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "94 min",
+      "description": "Medical courier Bryan unwittingly finds himself fighting for survival as one fateful, horrifying night collapses around him in chaos.",
+      "director": "Zach Cregger",
+      "cast": [
+        {
+          "name": "Austin Abrams",
+          "character": "Bryan"
+        },
+        {
+          "name": "Paul Walter Hauser",
+          "character": "Paul"
+        },
+        {
+          "name": "Kali Reis",
+          "character": "Maxine"
+        },
+        {
+          "name": "Zach Cherry",
+          "character": "Carl"
+        },
+        {
+          "name": "Johnno Wilson",
+          "character": "Officer Wilson"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmpq-AABz5-4MMV9dyte_caxGN4WkKsAAtcgAAKOpcFXXaKNJ6g1mF8eBA",
+      "message_id": 618,
+      "file_name": "comp_resident-evil-2026_1080p.mp4",
+      "file_size": 1999055876,
+      "drive_file_id": "",
+      "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmpq-AABz5-4MMV9dyte_caxGN4WkKsAAtcgAAKOpcFXXaKNJ6g1mF8eBA",
+          "message_id": 618,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1423191"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35538033"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35538033"
+        }
+      ],
+      "qualities": {
+        "auto": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+        "1080p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+        "720p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/617",
+        "480p": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/616"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1999055876,
+          "url": "https://t.me/c/4325759505/618",
+          "telegram_url": "https://t.me/c/4325759505/618",
+          "direct_url": "/stream/channel/-1004325759505/618?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmpq-AABz5-4MMV9dyte_caxGN4WkKsAAtcgAAKOpcFXXaKNJ6g1mF8eBA",
+          "message_id": 618,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1185990087,
+          "url": "https://t.me/c/4325759505/617",
+          "telegram_url": "https://t.me/c/4325759505/617",
+          "direct_url": "/stream/channel/-1004325759505/617?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmlq9_vO8n1XuG-iVnsdPmIs4TrYvgACwiAAAo6lwVevFKiFrtYMJR4E",
+          "message_id": 617,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/617",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "605.5 MB",
+          "size_bytes": 634920210,
+          "url": "https://t.me/c/4325759505/616",
+          "telegram_url": "https://t.me/c/4325759505/616",
+          "direct_url": "/stream/channel/-1004325759505/616?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmhq9_rlCKI4RkkcKOIcDNwxXqHTIAACvSAAAo6lwVcD1vJsFQ5UJR4E",
+          "message_id": 616,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/616",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1999055876,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_resident-evil-2026_1080p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1185990087,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_resident-evil-2026_720p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/617",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "605.5 MB",
+          "size_bytes": 634920210,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_resident-evil-2026_480p",
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/616",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmpq-AABz5-4MMV9dyte_caxGN4WkKsAAtcgAAKOpcFXXaKNJ6g1mF8eBA",
+          "message_id": 618,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/618",
+          "size_bytes": 1999055876
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmlq9_vO8n1XuG-iVnsdPmIs4TrYvgACwiAAAo6lwVevFKiFrtYMJR4E",
+          "message_id": 617,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/617",
+          "size_bytes": 1185990087
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAmhq9_rlCKI4RkkcKOIcDNwxXqHTIAACvSAAAo6lwVcD1vJsFQ5UJR4E",
+          "message_id": 616,
+          "stream_url": "https://incidents-img-msie-receive.trycloudflare.com/stream/channel/-1004325759505/616",
+          "size_bytes": 634920210
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/resident-evil-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=resident-evil-2026",
+      "added_date": "2026-11-14",
+      "added_at": "2026-11-14T06:34:01Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-14T05:54:52Z"
+  "last_updated": "2026-11-14T06:34:02Z"
 };

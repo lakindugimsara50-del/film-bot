@@ -20,9 +20,9 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261114_touch_v17">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_touch_v17">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_touch_v17">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261114_touch_v18">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261114_touch_v18">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261114_touch_v18">
 </head>
 <body>
 
@@ -117,32 +117,54 @@
 <!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
 <!-- ========== GRAND NETFLIX CINEMA HERO BILLBOARD ========== -->
 <!-- ========== SERIVIA 3D MULTI-CARD DECK HERO SECTION ========== -->
-<section class="hero-deck-section" id="hero-section" aria-label="Featured Spotlight">
-  <!-- Dynamic atmospheric background glow -->
-  <div class="hero-ambient-glow" id="hero-ambient-glow"></div>
-  <div class="hero-backdrop-blur" id="hero-backdrop-blur"></div>
+<!-- ========== FULLSCREEN GRAND CINEMA SHOWCASE WITH ANIMATED CARDS DECK ROW ========== -->
+<section class="hero-showcase" id="hero-section" aria-label="Featured Spotlight">
+  <!-- Fullscreen Animated Backdrop Layers -->
+  <div class="hero-bg-layer current" id="hero-bg-current"></div>
+  <div class="hero-bg-layer next" id="hero-bg-next"></div>
 
-  <!-- 3D Card Stage Viewport -->
-  <div class="hero-deck-stage" id="hero-deck-stage">
-    <div class="hero-deck-track" id="hero-deck-track">
-      <!-- Injected dynamically by app.js: 3D Serivia Deck Cards -->
-      <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#94a3b8">
-        <div class="spinner"></div>
+  <!-- Cinematic Vignettes -->
+  <div class="hero-vignette-left"></div>
+  <div class="hero-vignette-bottom"></div>
+  <div class="hero-ambient-glow" id="hero-ambient-glow"></div>
+
+  <!-- Main Hero Content Overlay -->
+  <div class="hero-showcase-container">
+    <div class="hero-showcase-main">
+      <div class="hero-fs-badge" id="hero-fs-badge">
+        <i class="fa-solid fa-bolt"></i> SPOTLIGHT
+      </div>
+      <h1 class="hero-fs-title" id="hero-fs-title">Loading...</h1>
+      <p class="hero-fs-title-si" id="hero-fs-title-si"></p>
+      
+      <div class="hero-fs-meta" id="hero-fs-meta"></div>
+      <div class="hero-fs-genres" id="hero-fs-genres"></div>
+      <p class="hero-fs-desc" id="hero-fs-desc"></p>
+
+      <div class="hero-fs-actions">
+        <a href="#" class="btn-hero-watch" id="hero-fs-watch-btn">
+          <i class="fa-solid fa-play"></i> Watch Now
+        </a>
+        <button type="button" class="btn-hero-trailer" id="hero-fs-trailer-btn" style="display:none">
+          <i class="fa-solid fa-clapperboard"></i> Trailer
+        </button>
+        <a href="#" class="btn-hero-download" id="hero-fs-download-btn">
+          <i class="fa-solid fa-cloud-arrow-down"></i> Download
+        </a>
       </div>
     </div>
-  </div>
 
-  <!-- Edge Navigation Chevrons -->
-  <button class="hero-deck-nav prev" id="hero-deck-prev" type="button" aria-label="Previous Slide">
-    <i class="fa-solid fa-chevron-left"></i>
-  </button>
-  <button class="hero-deck-nav next" id="hero-deck-next" type="button" aria-label="Next Slide">
-    <i class="fa-solid fa-chevron-right"></i>
-  </button>
-
-  <!-- Floating Pagination Dots -->
-  <div class="hero-deck-dots" id="hero-deck-dots" role="tablist" aria-label="Spotlight Movies">
-    <!-- Injected dynamically by app.js -->
+    <!-- Bottom "Pitu Peliya" - Animated Cards Row (Zooming in/out deck) -->
+    <div class="hero-cards-deck-wrap">
+      <div class="hero-cards-deck-header">
+        <span class="hero-deck-label"><i class="fa-solid fa-fire" style="color:var(--accent)"></i> Top Spotlight</span>
+        <div class="hero-deck-arrows">
+          <button type="button" class="deck-arrow prev" id="hero-deck-prev" aria-label="Previous Movie"><i class="fa-solid fa-chevron-left"></i></button>
+          <button type="button" class="deck-arrow next" id="hero-deck-next" aria-label="Next Movie"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="hero-cards-deck" id="hero-cards-deck"></div>
+    </div>
   </div>
 </section>
 
@@ -375,8 +397,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="data/movies_data.js?v=20261114_touch_v17"></script>
-<script src="assets/js/app.js?v=20261114_touch_v17"></script>
-<script src="assets/js/netflix-ui.js?v=20261114_touch_v17"></script>
+<script src="data/movies_data.js?v=20261114_touch_v18"></script>
+<script src="assets/js/app.js?v=20261114_touch_v18"></script>
+<script src="assets/js/netflix-ui.js?v=20261114_touch_v18"></script>
 </body>
 </html>

@@ -28,8 +28,8 @@ const HERO_ROTATE_INTERVAL = 6000;
 // ---- Init ----
 function renderAllSections() {
   if (document.getElementById('hero-section')) {
-    if (document.getElementById('hero-deck-stage')) {
-      renderHeroDeck();
+    if (document.getElementById('hero-cards-deck')) {
+      renderHeroShowcase();
     } else {
       renderHero();
       renderHeroAppleIndicators();
@@ -758,7 +758,7 @@ function extractDominantColor(imageUrl, callback) {
 
 function applyDynamicTheme(r, g, b) {
   if (r == null) {
-    // Reset to default Midnight Sapphire theme
+    // Reset to default Netflix Red theme
     document.documentElement.style.removeProperty('--accent');
     document.documentElement.style.removeProperty('--accent-hover');
     document.documentElement.style.removeProperty('--accent-dark');
@@ -786,218 +786,193 @@ function applyDynamicTheme(r, g, b) {
 
 
 /* ============================================================
-   SERIVIA 3D MULTI-CARD DECK CONTROLLER
+   FULLSCREEN GRAND CINEMA SHOWCASE WITH ANIMATED CARDS DECK ROW
    ============================================================ */
-let heroDeckCards = [];
-let heroDeckCurrent = 0;
-let heroDeckTimer = null;
-let heroDeckTouchStartX = 0;
-let heroDeckTouchStartY = 0;
+let heroShowcaseMovies = [];
+let heroShowcaseCurrent = 0;
+let heroShowcaseTimer = null;
 
-function renderHeroDeck() {
-  const stage = document.getElementById('hero-deck-stage');
-  const track = document.getElementById('hero-deck-track');
-  if (!stage || !track) return;
+function renderHeroShowcase() {
+  const container = document.getElementById('hero-section');
+  const deckContainer = document.getElementById('hero-cards-deck');
+  if (!container || !deckContainer) return;
 
   const spotlight = getHeroSpotlightList();
   if (!spotlight || spotlight.length === 0) return;
-  heroDeckCards = spotlight.slice(0, 7); // Best 5-7 films
-  heroDeckCurrent = Math.min(heroDeckCurrent, heroDeckCards.length - 1);
+  heroShowcaseMovies = spotlight.slice(0, 7);
+  heroShowcaseCurrent = Math.min(heroShowcaseCurrent, heroShowcaseMovies.length - 1);
 
-  // Build deck HTML
-  track.innerHTML = heroDeckCards.map((movie, idx) => {
-    const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
-    const genres = Array.isArray(movie.genres) ? movie.genres.slice(0, 3) : [];
-    const genreChips = genres.map(g => `<span class="deck-genre-chip">${FilmSub.escHtml(g)}</span>`).join('');
-    const imdbVal = movie.imdb || movie.rating || '7.5';
-    const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
-    const hasTrailer = Boolean(movie.trailer_id || movie.trailer_url);
-
+  // Render the bottom cards row ("pitu peliya")
+  deckContainer.innerHTML = heroShowcaseMovies.map((movie, idx) => {
+    const poster = movie.poster || movie.poster_url || movie.backdrop || movie.backdrop_url || SITE_CONFIG.defaultPoster;
     return `
-      <div class="deck-card" data-idx="${idx}">
-        <div class="deck-card-media" style="background-image: url('${FilmSub.escHtml(backdrop)}');">
-          <div class="deck-card-gradient"></div>
-          <div class="deck-card-top-badges">
-            <div class="deck-top-left">
-              <span class="deck-pill deck-pill-quality"><i class="fa-solid fa-film"></i> ${formatQualityLabel(movie.quality)}</span>
-              <span class="deck-pill deck-pill-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>
-            </div>
-            <span class="deck-pill deck-pill-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>
-          </div>
-          <div class="deck-card-info">
-            <div class="deck-genres">${genreChips}</div>
-            <h2 class="deck-card-title">${FilmSub.escHtml(movie.title || '')}</h2>
-            ${movie.title_si ? `<p class="deck-card-title-si">${FilmSub.escHtml(movie.title_si)}</p>` : ''}
-            <p class="deck-card-desc">${FilmSub.escHtml(movie.description || '')}</p>
-            <div class="deck-card-actions">
-              <a href="${movieUrl}" class="deck-btn-watch"><i class="fa-solid fa-play"></i> Watch Now</a>
-              ${hasTrailer ? `<button type="button" class="deck-btn-trailer" data-trailer-idx="${idx}"><i class="fa-solid fa-clapperboard"></i> Trailer</button>` : ''}
-              <a href="${movieUrl}#downloads" class="deck-btn-dl"><i class="fa-solid fa-cloud-arrow-down"></i> Download</a>
-            </div>
-          </div>
-        </div>
+      <div class="hero-row-card${idx === heroShowcaseCurrent ? ' is-active' : ''}" data-idx="${idx}">
+        <img src="${FilmSub.escHtml(poster)}" class="row-card-img" alt="${FilmSub.escHtml(movie.title)}" loading="lazy">
+        <div class="row-card-grad"></div>
+        <span class="row-card-idx">${idx + 1}</span>
+        <span class="row-card-title">${FilmSub.escHtml(movie.title || '')}</span>
+        <div class="row-card-progress"></div>
       </div>
     `;
   }).join('');
 
-  // Attach trailer click events
-  track.querySelectorAll('.deck-btn-trailer').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const tIdx = parseInt(btn.dataset.trailerIdx, 10);
-      if (heroDeckCards[tIdx]) openTrailerModal(heroDeckCards[tIdx]);
-    };
-  });
-
-  // Attach card click events (clicking next/prev card brings it to center)
-  track.querySelectorAll('.deck-card').forEach(card => {
-    card.onclick = (e) => {
-      if (e.target.closest('a, button')) return;
-      const cIdx = parseInt(card.dataset.idx, 10);
-      if (cIdx !== heroDeckCurrent) {
-        heroDeckCurrent = cIdx;
-        updateDeckState();
-        restartHeroDeckTimer();
+  // Attach card click handlers: clicking any card in the row immediately zooms it to full screen!
+  deckContainer.querySelectorAll('.hero-row-card').forEach(card => {
+    card.onclick = () => {
+      const idx = parseInt(card.dataset.idx, 10);
+      if (idx !== heroShowcaseCurrent) {
+        heroShowcaseCurrent = idx;
+        updateHeroShowcase(true);
+        restartHeroShowcaseTimer();
       }
     };
   });
 
-  // Render dots
-  renderDeckDots();
-
-  // Edge Nav
+  // Edge nav buttons
   const prevBtn = document.getElementById('hero-deck-prev');
   const nextBtn = document.getElementById('hero-deck-next');
   if (prevBtn) {
     prevBtn.onclick = () => {
-      const len = heroDeckCards.length;
-      heroDeckCurrent = (heroDeckCurrent - 1 + len) % len;
-      updateDeckState();
-      restartHeroDeckTimer();
+      const len = heroShowcaseMovies.length;
+      heroShowcaseCurrent = (heroShowcaseCurrent - 1 + len) % len;
+      updateHeroShowcase(true);
+      restartHeroShowcaseTimer();
     };
   }
   if (nextBtn) {
     nextBtn.onclick = () => {
-      const len = heroDeckCards.length;
-      heroDeckCurrent = (heroDeckCurrent + 1) % len;
-      updateDeckState();
-      restartHeroDeckTimer();
+      const len = heroShowcaseMovies.length;
+      heroShowcaseCurrent = (heroShowcaseCurrent + 1) % len;
+      updateHeroShowcase(true);
+      restartHeroShowcaseTimer();
     };
   }
-
-  // Touch Swipe for mobile
-  initDeckTouchSwipe(stage);
 
   // Hover pause
-  stage.onmouseenter = () => { if (heroDeckTimer) clearInterval(heroDeckTimer); };
-  stage.onmouseleave = () => { restartHeroDeckTimer(); };
+  container.onmouseenter = () => { if (heroShowcaseTimer) clearInterval(heroShowcaseTimer); };
+  container.onmouseleave = () => { restartHeroShowcaseTimer(); };
 
-  // Set initial 3D positions
-  updateDeckState();
-  restartHeroDeckTimer();
+  // Initial update
+  updateHeroShowcase(false);
+  restartHeroShowcaseTimer();
 }
 
-function updateDeckState() {
-  const cards = document.querySelectorAll('#hero-deck-track .deck-card');
-  const len = heroDeckCards.length;
-  if (!cards.length || !len) return;
+function updateHeroShowcase(animate = true) {
+  const movie = heroShowcaseMovies[heroShowcaseCurrent];
+  if (!movie) return;
 
-  const cur = heroDeckCurrent;
-  const nextIdx = (cur + 1) % len;
-  const prevIdx = (cur - 1 + len) % len;
+  const bgCurrent = document.getElementById('hero-bg-current');
+  const bgNext = document.getElementById('hero-bg-next');
+  const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
 
-  cards.forEach((card, idx) => {
-    card.classList.remove('is-active', 'is-next', 'is-prev', 'is-hidden');
-    if (idx === cur) {
-      card.classList.add('is-active');
-    } else if (idx === nextIdx) {
-      card.classList.add('is-next');
-    } else if (idx === prevIdx) {
-      card.classList.add('is-prev');
+  if (bgCurrent && bgNext) {
+    if (animate) {
+      bgNext.style.backgroundImage = `url('${backdrop}')`;
+      bgNext.classList.remove('animating');
+      void bgNext.offsetWidth; // reflow
+      bgNext.classList.add('animating');
+      bgNext.style.opacity = '1';
+
+      setTimeout(() => {
+        bgCurrent.style.backgroundImage = `url('${backdrop}')`;
+        bgNext.style.opacity = '0';
+        bgNext.classList.remove('animating');
+      }, 700);
     } else {
-      card.classList.add('is-hidden');
-    }
-  });
-
-  // Update background ambient blur with active card backdrop
-  const activeMovie = heroDeckCards[cur];
-  if (activeMovie) {
-    const bg = activeMovie.backdrop || activeMovie.poster || '';
-    const blurEl = document.getElementById('hero-backdrop-blur');
-    if (blurEl && bg) blurEl.style.backgroundImage = `url('${bg}')`;
-
-    // Dynamic color extraction on active card
-    if (bg && bg.startsWith('http')) {
-      extractDominantColor(bg, (col) => {
-        if (col) applyDynamicTheme(col.r, col.g, col.b);
-        else applyDynamicTheme(null);
-      });
+      bgCurrent.style.backgroundImage = `url('${backdrop}')`;
+      bgCurrent.style.opacity = '1';
     }
   }
 
-  // Update dots
-  const dots = document.querySelectorAll('#hero-deck-dots .deck-dot');
-  dots.forEach((dot, dIdx) => {
-    dot.classList.toggle('active', dIdx === cur);
+  // Update text & details
+  const titleEl = document.getElementById('hero-fs-title');
+  if (titleEl) titleEl.textContent = movie.title || '';
+
+  const titleSiEl = document.getElementById('hero-fs-title-si');
+  if (titleSiEl) titleSiEl.textContent = movie.title_si || '';
+
+  const descEl = document.getElementById('hero-fs-desc');
+  if (descEl) descEl.textContent = movie.description || '';
+
+  const genres = Array.isArray(movie.genres) ? movie.genres.slice(0, 4) : [];
+  const genresEl = document.getElementById('hero-fs-genres');
+  if (genresEl) {
+    genresEl.innerHTML = genres.map(g => `<a href="search.html?genre=${encodeURIComponent(g)}" class="genre-chip">${FilmSub.escHtml(g)}</a>`).join('');
+  }
+
+  const metaEl = document.getElementById('hero-fs-meta');
+  if (metaEl) {
+    const imdbVal = movie.imdb || movie.rating || '';
+    const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
+    const qLabel = `<span class="badge badge-quality"><i class="fa-solid fa-film"></i> ${formatQualityLabel(movie.quality)}</span>`;
+    const yr = movie.year ? `<span class="badge badge-year">${movie.year}</span>` : '';
+    const sub = `<span class="badge badge-sub"><i class="fa-solid fa-closed-captioning"></i> සිංහල Sub</span>`;
+    metaEl.innerHTML = `${qLabel}${imdb}${yr}${sub}`;
+  }
+
+  // Buttons
+  const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
+  const watchBtn = document.getElementById('hero-fs-watch-btn');
+  if (watchBtn) watchBtn.href = movieUrl;
+
+  const dlBtn = document.getElementById('hero-fs-download-btn');
+  if (dlBtn) dlBtn.href = `${movieUrl}#downloads`;
+
+  const trailerBtn = document.getElementById('hero-fs-trailer-btn');
+  if (trailerBtn) {
+    if (movie.trailer_id || movie.trailer_url) {
+      trailerBtn.style.display = 'inline-flex';
+      trailerBtn.onclick = (e) => {
+        e.preventDefault();
+        openTrailerModal(movie);
+      };
+    } else {
+      trailerBtn.style.display = 'none';
+    }
+  }
+
+  // Re-trigger text slide animation
+  const mainInfo = document.querySelector('.hero-showcase-main');
+  if (mainInfo) {
+    mainInfo.style.animation = 'none';
+    void mainInfo.offsetWidth;
+    mainInfo.style.animation = '';
+  }
+
+  // Update card row active states
+  const cards = document.querySelectorAll('.hero-cards-deck .hero-row-card');
+  cards.forEach((card, idx) => {
+    const isActive = (idx === heroShowcaseCurrent);
+    card.classList.toggle('is-active', isActive);
+    if (isActive) {
+      card.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+      const p = card.querySelector('.row-card-progress');
+      if (p) {
+        p.style.animation = 'none';
+        void p.offsetWidth;
+        p.style.animation = '';
+      }
+    }
   });
+
+  // Dynamic theme extraction from backdrop
+  if (backdrop && backdrop.startsWith('http')) {
+    extractDominantColor(backdrop, (col) => {
+      if (col) applyDynamicTheme(col.r, col.g, col.b);
+      else applyDynamicTheme(null);
+    });
+  }
 }
 
-function renderDeckDots() {
-  const dotsContainer = document.getElementById('hero-deck-dots');
-  if (!dotsContainer) return;
-  dotsContainer.innerHTML = heroDeckCards.map((_, idx) => `
-    <button type="button" class="deck-dot${idx === heroDeckCurrent ? ' active' : ''}" data-idx="${idx}" aria-label="Slide ${idx + 1}"></button>
-  `).join('');
-
-  dotsContainer.querySelectorAll('.deck-dot').forEach(dot => {
-    dot.onclick = () => {
-      heroDeckCurrent = parseInt(dot.dataset.idx, 10);
-      updateDeckState();
-      restartHeroDeckTimer();
-    };
-  });
-}
-
-function restartHeroDeckTimer() {
-  if (heroDeckTimer) clearInterval(heroDeckTimer);
-  heroDeckTimer = setInterval(() => {
-    const len = heroDeckCards.length;
+function restartHeroShowcaseTimer() {
+  if (heroShowcaseTimer) clearInterval(heroShowcaseTimer);
+  heroShowcaseTimer = setInterval(() => {
+    const len = heroShowcaseMovies.length;
     if (len < 2) return;
-    heroDeckCurrent = (heroDeckCurrent + 1) % len;
-    updateDeckState();
+    heroShowcaseCurrent = (heroShowcaseCurrent + 1) % len;
+    updateHeroShowcase(true);
   }, 6000);
 }
-
-function initDeckTouchSwipe(stage) {
-  if (!stage) return;
-  stage.addEventListener('touchstart', (e) => {
-    const touch = e.touches && e.touches[0];
-    if (!touch) return;
-    heroDeckTouchStartX = touch.clientX;
-    heroDeckTouchStartY = touch.clientY;
-  }, { passive: true });
-
-  stage.addEventListener('touchend', (e) => {
-    const touch = e.changedTouches && e.changedTouches[0];
-    if (!touch) return;
-    const dx = touch.clientX - heroDeckTouchStartX;
-    const dy = touch.clientY - heroDeckTouchStartY;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-      const len = heroDeckCards.length;
-      if (dx < 0) {
-        // Swipe left -> Next card
-        heroDeckCurrent = (heroDeckCurrent + 1) % len;
-      } else {
-        // Swipe right -> Prev card
-        heroDeckCurrent = (heroDeckCurrent - 1 + len) % len;
-      }
-      updateDeckState();
-      restartHeroDeckTimer();
-    }
-  }, { passive: true });
-}
-
-
 
 
 // ---- Hero ----

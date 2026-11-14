@@ -6960,15 +6960,40 @@ body.tg-browser-mode {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.75s ease;
+  transform: scale(1.02);
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.75s ease;
 }
 .hero-showcase.is-expanded-mode .hero-fs-backdrop-wrap {
   opacity: 1;
   visibility: visible;
+  transform: scale(1.02);
 }
 .hero-showcase.is-deck-mode .hero-fs-backdrop-wrap {
   opacity: 0 !important;
   visibility: hidden !important;
+  transform: scale(0.65) translate3d(-100px, 0, 60px);
+}
+.hero-showcase.is-receding-mode .hero-fs-backdrop-wrap {
+  opacity: 0;
+  visibility: visible;
+  animation: heroFsRecedeBackdrop 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes heroFsRecedeBackdrop {
+  0% {
+    transform: scale(1.02);
+    border-radius: 0;
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.78) translate3d(-50px, 0, 40px);
+    border-radius: 12px;
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(0.55) translate3d(-100px, 0, 60px);
+    border-radius: 18px;
+    opacity: 0;
+  }
 }
 
 .hero-bg-layer {
@@ -7049,10 +7074,12 @@ body.tg-browser-mode {
   pointer-events: auto;
   transition-delay: 0.15s;
 }
-.hero-showcase.is-deck-mode .hero-showcase-container {
+.hero-showcase.is-deck-mode .hero-showcase-container,
+.hero-showcase.is-receding-mode .hero-showcase-container {
   opacity: 0 !important;
   transform: translateY(28px);
   pointer-events: none !important;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 .hero-showcase-main {
@@ -7254,7 +7281,8 @@ body.tg-browser-mode {
   justify-content: center;
   transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.hero-showcase.is-deck-mode .hero-3d-deck-wrap {
+.hero-showcase.is-deck-mode .hero-3d-deck-wrap,
+.hero-showcase.is-receding-mode .hero-3d-deck-wrap {
   opacity: 1;
   pointer-events: auto;
   transform: scale(1);
@@ -7268,9 +7296,9 @@ body.tg-browser-mode {
 .hero-3d-deck-stage {
   position: relative;
   width: 100%;
-  height: 340px;
-  perspective: 1400px;
-  perspective-origin: 32% 50%;
+  height: 350px;
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
   transform-style: preserve-3d;
   display: flex;
   align-items: center;
@@ -7316,7 +7344,7 @@ body.tg-browser-mode {
 .hero-3d-card-grad {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(8, 8, 12, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, transparent 40%, rgba(8, 8, 12, 0.95) 100%);
   pointer-events: none;
 }
 .hero-3d-card-top-row {
@@ -7383,10 +7411,10 @@ body.tg-browser-mode {
   pointer-events: none;
 }
 
-/* 3D Stack Depth Slots */
+/* 3D Stack Depth Slots - Centered under Stage Spotlight */
 .hero-3d-card.slot-0,
 .hero-3d-card.is-active {
-  transform: translate3d(0, 0, 50px) scale(1) rotateY(0deg);
+  transform: translate3d(-100px, 0, 60px) scale(1) rotateY(0deg);
   z-index: 20;
   opacity: 1;
   filter: brightness(1);
@@ -7394,7 +7422,7 @@ body.tg-browser-mode {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow, rgba(229, 9, 20, 0.45));
 }
 .hero-3d-card.slot-1 {
-  transform: translate3d(85px, 12px, -60px) scale(0.88) rotateY(-14deg);
+  transform: translate3d(-20px, 10px, -40px) scale(0.88) rotateY(-12deg);
   z-index: 15;
   opacity: 0.88;
   filter: brightness(0.82);
@@ -7402,7 +7430,7 @@ body.tg-browser-mode {
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
 }
 .hero-3d-card.slot-2 {
-  transform: translate3d(165px, 24px, -130px) scale(0.77) rotateY(-20deg);
+  transform: translate3d(60px, 20px, -110px) scale(0.77) rotateY(-18deg);
   z-index: 12;
   opacity: 0.72;
   filter: brightness(0.68);
@@ -7410,28 +7438,28 @@ body.tg-browser-mode {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
 }
 .hero-3d-card.slot-3 {
-  transform: translate3d(235px, 34px, -200px) scale(0.67) rotateY(-25deg);
+  transform: translate3d(135px, 28px, -170px) scale(0.67) rotateY(-22deg);
   z-index: 9;
   opacity: 0.54;
   filter: brightness(0.55);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .hero-3d-card.slot-4 {
-  transform: translate3d(295px, 44px, -270px) scale(0.58) rotateY(-29deg);
+  transform: translate3d(200px, 36px, -230px) scale(0.58) rotateY(-26deg);
   z-index: 6;
   opacity: 0.36;
   filter: brightness(0.44);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 .hero-3d-card.slot-5 {
-  transform: translate3d(345px, 52px, -340px) scale(0.50) rotateY(-33deg);
+  transform: translate3d(255px, 42px, -280px) scale(0.50) rotateY(-30deg);
   z-index: 3;
   opacity: 0.22;
   filter: brightness(0.34);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 .hero-3d-card.slot-hidden {
-  transform: translate3d(385px, 60px, -410px) scale(0.42);
+  transform: translate3d(295px, 48px, -330px) scale(0.42);
   z-index: 1;
   opacity: 0;
   pointer-events: none;
@@ -7453,49 +7481,52 @@ body.tg-browser-mode {
 }
 @keyframes cardSpinToFullscreen {
   0% {
-    transform: translate3d(0, 0, 50px) scale(1) rotateY(0deg);
+    transform: translate3d(-100px, 0, 60px) scale(1) rotateY(0deg) rotateX(0deg);
     opacity: 1;
     border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 32px var(--accent-glow);
   }
   35% {
-    transform: translate3d(-50px, -15px, 120px) scale(1.35) rotateY(180deg);
+    transform: translate3d(-40px, -10px, 140px) scale(1.35) rotateY(-14deg) rotateX(6deg);
     border-radius: 14px;
     filter: brightness(1.1);
+    opacity: 1;
   }
-  75% {
-    transform: translate3d(0, 0, 240px) scale(1.9) rotateY(360deg);
+  70% {
+    transform: translate3d(0, 0, 240px) scale(1.9) rotateY(8deg) rotateX(-2deg);
     border-radius: 8px;
-    filter: brightness(1.15);
+    filter: brightness(1.12);
+    opacity: 1;
   }
   100% {
-    transform: translate3d(0, 0, 320px) scale(2.6) rotateY(360deg);
+    transform: translate3d(0, 0, 320px) scale(2.6) rotateY(0deg) rotateX(0deg);
     border-radius: 0;
-    opacity: 0;
+    opacity: 1;
   }
 }
 
 .hero-3d-card.is-retreating-to-back {
-  animation: cardSweepToRear 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+  animation: cardSweepToRear 0.90s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
   z-index: 30 !important;
 }
 @keyframes cardSweepToRear {
   0% {
-    transform: translate3d(0, 0, 240px) scale(2.0) rotateY(0deg);
-    opacity: 0.95;
+    transform: translate3d(-100px, 0, 60px) scale(1) rotateY(0deg);
+    opacity: 1;
     z-index: 30;
   }
   30% {
-    transform: translate3d(-140px, -20px, 100px) scale(1.15) rotateY(20deg);
+    transform: translate3d(-260px, -15px, 80px) scale(1.05) rotateY(18deg);
     opacity: 0.95;
     z-index: 30;
   }
   65% {
-    transform: translate3d(240px, 35px, -240px) scale(0.64) rotateY(-24deg);
-    opacity: 0.55;
+    transform: translate3d(100px, 25px, -160px) scale(0.68) rotateY(-16deg);
+    opacity: 0.65;
     z-index: 2;
   }
   100% {
-    transform: translate3d(345px, 52px, -340px) scale(0.50) rotateY(-33deg);
+    transform: translate3d(255px, 42px, -280px) scale(0.50) rotateY(-30deg);
     opacity: 0.22;
     z-index: 2;
   }
@@ -7678,36 +7709,64 @@ body.tg-browser-mode {
   }
   .hero-3d-deck-stage {
     height: 260px;
-    perspective-origin: 35% 50%;
+    perspective: 900px;
+    perspective-origin: 50% 50%;
   }
   .hero-3d-card {
-    width: min(310px, 82vw);
+    width: min(290px, 78vw);
     border-radius: 14px;
   }
   .hero-3d-card.slot-0,
   .hero-3d-card.is-active {
-    transform: translate3d(0, 0, 30px) scale(1) rotateY(0deg);
+    transform: translate3d(-35px, 0, 25px) scale(1) rotateY(0deg);
   }
   .hero-3d-card.slot-1 {
-    transform: translate3d(45px, 8px, -40px) scale(0.88) rotateY(-10deg);
+    transform: translate3d(-10px, 6px, -25px) scale(0.89) rotateY(-8deg);
   }
   .hero-3d-card.slot-2 {
-    transform: translate3d(90px, 16px, -85px) scale(0.77) rotateY(-15deg);
+    transform: translate3d(15px, 12px, -60px) scale(0.79) rotateY(-13deg);
   }
   .hero-3d-card.slot-3 {
-    transform: translate3d(130px, 24px, -130px) scale(0.67) rotateY(-19deg);
+    transform: translate3d(40px, 18px, -95px) scale(0.70) rotateY(-17deg);
   }
   .hero-3d-card.slot-4 {
-    transform: translate3d(165px, 30px, -170px) scale(0.58) rotateY(-22deg);
+    transform: translate3d(65px, 24px, -125px) scale(0.62) rotateY(-20deg);
   }
   .hero-3d-card.slot-5 {
-    transform: translate3d(195px, 36px, -210px) scale(0.50) rotateY(-25deg);
+    transform: translate3d(90px, 30px, -150px) scale(0.55) rotateY(-22deg);
+  }
+  @keyframes cardSpinToFullscreen {
+    0% {
+      transform: translate3d(-35px, 0, 25px) scale(1) rotateY(0deg) rotateX(0deg);
+      opacity: 1;
+      border-radius: 14px;
+    }
+    35% {
+      transform: translate3d(-15px, -6px, 70px) scale(1.25) rotateY(-10deg) rotateX(4deg);
+      border-radius: 12px;
+      opacity: 1;
+    }
+    70% {
+      transform: translate3d(0, 0, 130px) scale(1.6) rotateY(6deg) rotateX(-2deg);
+      border-radius: 6px;
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(0, 0, 190px) scale(2.1) rotateY(0deg) rotateX(0deg);
+      border-radius: 0;
+      opacity: 1;
+    }
   }
   @keyframes cardSweepToRear {
-    0% { transform: translate3d(0, 0, 140px) scale(1.6) rotateY(0deg); opacity: 0.95; z-index: 25; }
-    30% { transform: translate3d(-70px, -10px, 50px) scale(1.05) rotateY(16deg); opacity: 0.95; z-index: 25; }
-    65% { transform: translate3d(140px, 26px, -140px) scale(0.64) rotateY(-18deg); opacity: 0.50; z-index: 2; }
-    100% { transform: translate3d(195px, 36px, -210px) scale(0.50) rotateY(-25deg); opacity: 0.22; z-index: 2; }
+    0% { transform: translate3d(-35px, 0, 25px) scale(1) rotateY(0deg); opacity: 1; z-index: 30; }
+    30% { transform: translate3d(-90px, -8px, 40px) scale(1.03) rotateY(12deg); opacity: 0.95; z-index: 30; }
+    65% { transform: translate3d(45px, 16px, -90px) scale(0.70) rotateY(-12deg); opacity: 0.65; z-index: 2; }
+    100% { transform: translate3d(90px, 30px, -150px) scale(0.55) rotateY(-22deg); opacity: 0.22; z-index: 2; }
+  }
+  @keyframes heroFsRecedeBackdrop {
+    0% { transform: scale(1.02); border-radius: 0; opacity: 1; }
+    50% { transform: scale(0.82) translate3d(-15px, 0, 20px); border-radius: 10px; opacity: 0.75; }
+    100% { transform: scale(0.65) translate3d(-35px, 0, 25px); border-radius: 14px; opacity: 0; }
   }
   .hero-deck-nav-bar {
     bottom: 12px;

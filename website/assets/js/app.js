@@ -859,8 +859,32 @@ function renderHeroShowcase() {
   // 5. Mobile Touch Swipe support
   initHero3DTouchSwipe(stage);
 
-  // 6. Initial expansion of spotlight movie 0 into full screen
-  expandHeroFrontCard(heroShowcaseCurrent, false);
+  // 6. Initial State: Start on dark cinema stage in Deck Mode ("back ground eke poster eka na e welawata")
+  // User clearly sees the 3D widescreen landscape cards, then after an initial beat, front card expands!
+  section.classList.remove('is-expanded-mode', 'is-receding-mode');
+  section.classList.add('is-deck-mode');
+  assignHeroSlotClasses();
+  updateHeroNavCounter();
+  updateDeckToggleBtn('deck');
+
+  // After 900ms viewing of the 3D landscape card deck, expand the front spotlight card into full size!
+  setTimeout(() => {
+    if (!section.classList.contains('is-expanded-mode')) {
+      expandHeroFrontCard(heroShowcaseCurrent, true);
+    }
+  }, 900);
+}
+
+function updateDeckToggleBtn(mode) {
+  const toggleBtn = document.getElementById('hero-deck-toggle');
+  if (!toggleBtn) return;
+  if (mode === 'expanded') {
+    toggleBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i> <span>Cards Deck</span>';
+    toggleBtn.setAttribute('title', 'Switch to 3D Cards Deck');
+  } else {
+    toggleBtn.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Full Screen</span>';
+    toggleBtn.setAttribute('title', 'Expand to Full Screen');
+  }
 }
 
 function buildHero3DCardsHTML() {
@@ -933,7 +957,6 @@ function expandHeroFrontCard(targetIdx, animate = true) {
   const movie = heroShowcaseMovies[heroShowcaseCurrent];
   if (!movie) return;
 
-  updateHeroContent(movie);
   updateHeroNavCounter();
   assignHeroSlotClasses();
 
@@ -944,20 +967,23 @@ function expandHeroFrontCard(targetIdx, animate = true) {
     clearTimeout(heroCycleTimer);
     stopProgressBar();
 
-    // 1. Front card executes 3D rotation & expansion ("lassana animation ekakin karakavila full size wela")
+    // 1. Front card executes 3D rotation & expansion ("lassana animation ekakin karakavila ekak full size wela display eke penwa")
     if (frontCard) {
       frontCard.classList.remove('is-retreating-to-back');
+      void frontCard.offsetWidth;
       frontCard.classList.add('is-spinning-to-fullscreen');
     }
 
-    // 2. Mid-expansion: transition section to full-screen mode
+    // 2. Mid-expansion (~420ms): update backdrop and details, transition section to full-screen mode
     setTimeout(() => {
-      section.classList.remove('is-deck-mode');
+      updateHeroContent(movie);
+      section.classList.remove('is-deck-mode', 'is-receding-mode');
       section.classList.add('is-expanded-mode');
+      updateDeckToggleBtn('expanded');
       startProgressBar();
     }, 420);
 
-    // 3. Complete expansion
+    // 3. Complete expansion (~850ms)
     setTimeout(() => {
       if (frontCard) {
         frontCard.classList.remove('is-spinning-to-fullscreen');
@@ -967,9 +993,10 @@ function expandHeroFrontCard(targetIdx, animate = true) {
       scheduleNextHeroCycle();
     }, 850);
   } else {
-    // Initial display without delay
-    section.classList.remove('is-deck-mode');
+    updateHeroContent(movie);
+    section.classList.remove('is-deck-mode', 'is-receding-mode');
     section.classList.add('is-expanded-mode');
+    updateDeckToggleBtn('expanded');
     startProgressBar();
     scheduleNextHeroCycle();
   }
@@ -990,41 +1017,50 @@ function cycleHeroShowcaseNext() {
 
   const oldIdx = heroShowcaseCurrent;
   const nextIdx = (oldIdx + 1) % len;
-  heroShowcaseCurrent = nextIdx;
 
   const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
 
-  // Step 1: Fullscreen exits with animation; 3D deck view appears on dark stage (No poster in background!)
+  // Phase 1: Fullscreen recedes with smooth 3D animation into front card position on dark stage
   // ("aye full screen ain wenawa lassana animation ekakin ara diga hadathi card tika aye awith")
   section.classList.remove('is-expanded-mode');
-  section.classList.add('is-deck-mode');
+  section.classList.add('is-receding-mode');
+  updateDeckToggleBtn('deck');
 
-  // Step 2: The card that was just full-screen visibly sweeps around to the back of the 3D stack
-  // ("ara apu card eka pitipassata yanawa penawa")
-  if (oldCard) {
-    oldCard.className = 'hero-3d-card is-retreating-to-back';
-  }
-
-  // Step 3: Advance all other cards in the 3D deck forward
-  stage.querySelectorAll('.hero-3d-card').forEach(card => {
-    const cIdx = parseInt(card.dataset.idx, 10);
-    if (cIdx !== oldIdx) {
-      const rel = (cIdx - nextIdx + len) % len;
-      card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
-    }
-  });
-
-  // Step 4: After 850ms, old card has reached the rear slot of the deck
+  // Phase 2: After 700ms receding completes, cleanly enter is-deck-mode where 3D deck is fully visible
   setTimeout(() => {
-    assignHeroSlotClasses();
+    section.classList.remove('is-receding-mode');
+    section.classList.add('is-deck-mode');
 
-    // Step 5: Brief beat in 3D deck view (~350ms) so user clearly sees the deck and new front card
+    // Phase 3: The card that was just full-screen visibly sweeps in 3D around to the back of the stack
+    // ("ara apu card eka pitipassata yanawa penawa")
+    if (oldCard) {
+      oldCard.className = 'hero-3d-card is-retreating-to-back';
+    }
+
+    // Simultaneously, advance all other cards forward in the 3D stack
+    stage.querySelectorAll('.hero-3d-card').forEach(card => {
+      const cIdx = parseInt(card.dataset.idx, 10);
+      if (cIdx !== oldIdx) {
+        const rel = (cIdx - nextIdx + len) % len;
+        card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
+      }
+    });
+
+    // Phase 4: After 900ms sweep completes, assign stable slot positions
     setTimeout(() => {
-      // Step 6: Next front card rotates in 3D and comes forward to full screen!
-      // ("aye issaraha thiyana card eka lassana animation ekakin issarahata awith full screen wenawa")
-      expandHeroFrontCard(nextIdx, true);
-    }, 350);
-  }, 850);
+      heroShowcaseCurrent = nextIdx;
+      assignHeroSlotClasses();
+      updateHeroNavCounter();
+
+      // Phase 5: Generous pause in 3D deck view (700ms) so user clearly sees the deck and new front card!
+      // ("ara diga hadathi card tika aye awith ara apu card eka pitipassata yanawa penawa aye issaraha thiyana card eka...")
+      setTimeout(() => {
+        // Phase 6: Next front card rotates in 3D and comes forward into full size!
+        // ("aye issaraha thiyana card eka lassana animation ekakin issarahata awith full screen wenawa")
+        expandHeroFrontCard(nextIdx, true);
+      }, 700);
+    }, 900);
+  }, 700);
 }
 
 function selectHeroMovieAndExpand(targetIdx) {
@@ -1051,14 +1087,22 @@ function toggleHeroDeckView() {
   if (!section) return;
 
   if (section.classList.contains('is-expanded-mode')) {
-    // Manually switch from full screen to 3D deck view
+    // Manually switch from full screen to 3D deck view: recede gracefully and stop auto-cycle
     clearTimeout(heroCycleTimer);
     stopProgressBar();
+    isHeroTransitioning = true;
     section.classList.remove('is-expanded-mode');
-    section.classList.add('is-deck-mode');
-    assignHeroSlotClasses();
+    section.classList.add('is-receding-mode');
+    updateDeckToggleBtn('deck');
+
+    setTimeout(() => {
+      section.classList.remove('is-receding-mode');
+      section.classList.add('is-deck-mode');
+      assignHeroSlotClasses();
+      isHeroTransitioning = false;
+    }, 700);
   } else {
-    // Expand front card to full screen
+    // Expand front card to full screen and resume auto-cycle
     expandHeroFrontCard(heroShowcaseCurrent, true);
   }
 }

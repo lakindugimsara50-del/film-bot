@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://wrestling-rome-routes-will.trycloudflare.com",
+  "stream_base_url": "https://incidents-img-msie-receive.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-13T19:56:06.616351+00:00",
+  "updated_at": "2026-11-14T04:07:41.463112+00:00",
   "status": "online"
 };

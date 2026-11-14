@@ -106,7 +106,7 @@ function attachFastAction(el, callback) {
     if (e.touches && e.touches[0]) {
       const dx = Math.abs(e.touches[0].clientX - startX);
       const dy = Math.abs(e.touches[0].clientY - startY);
-      if (dx > 12 || dy > 12) {
+      if (dx > 25 || dy > 25) {
         isScroll = true;
       }
     }
@@ -3145,40 +3145,158 @@ function mountCenterPlayerControls(playerEl, player, movie) {
     playerDom.appendChild(overlay);
   }
 
-  // Guard: If standby screen is active, keep center overlay hidden and inert
-  const currentStandby = playerEl.querySelector('#cs-cinesubz-standby-overlay, .cinema-standby-screen');
-  if (currentStandby && !currentStandby.classList.contains('hidden') && currentStandby.style.display !== 'none') {
-    overlay.classList.add('hidden');
-    overlay.style.display = 'none';
-    overlay.style.pointerEvents = 'none';
-  }
+  // Prevent clicks and touches on overlay buttons from bubbling up to Video.js container
+  ['click', 'pointerdown', 'mousedown', 'mouseup'].forEach(evt => {
+    overlay.addEventListener(evt, (e) => {
+      e.stopPropagation();
+    });
+  });
 
   const playBtn = overlay.querySelector('#cs-btn-center-playpause');
   const rewindBtn = overlay.querySelector('#cs-btn-center-rewind');
   const forwardBtn = overlay.querySelector('#cs-btn-center-forward');
   const playIcon = overlay.querySelector('#cs-center-play-icon');
 
-  const updatePlayState = () => {
-    if (!player || !playIcon) return;
-    if (player.paused()) {
-      playIcon.className = 'fa-solid fa-play';
-      overlay.classList.remove('hidden');
-    } else {
-      playIcon.className = 'fa-solid fa-pause';
+  const currentStandby = playerEl.querySelector('#cs-cinesubz-standby-overlay, .cinema-standby-screen');
+  const isStandbyActive = currentStandby && !currentStandby.classList.contains('hidden') && currentStandby.style.display !== 'none';
+  if (isStandbyActive) {
+    overlay.classList.add('hidden');
+    overlay.style.display = 'none';
+    overlay.style.pointerEvents = 'none';
+  }
+
+  let isPlayPending = false;
+  let hideTimer = null;
+
+  const startHideTimer = () => {
+    if (hideTimer) clearTimeout(hideTimer);
+    if (player && !player.paused()) {
+      hideTimer = setTimeout(() => {
+        if (player && !player.paused()) {
+          overlay.classList.add('hidden');
+        }
+      }, 2500);
     }
+  };
+
+  const showOverlay = () => {
+    const standby = playerEl.querySelector('#cs-cinesubz-standby-overlay, .cinema-standby-screen');
+    if (standby && !standby.classList.contains('hidden') && standby.style.display !== 'none') {
+      return;
+    }
+    overlay.classList.remove('hidden');
+    overlay.style.display = '';
+    overlay.style.pointerEvents = 'auto';
+    startHideTimer();
+  };
+
+  const setButtonLoading = () => {
+    if (playBtn) playBtn.classList.add('is-loading');
+    if (playIcon) playIcon.className = 'fa-solid fa-circle-notch fa-spin';
+  };
+
+  const setButtonPlaying = () => {
+    isPlayPending = false;
+    if (playBtn) playBtn.classList.remove('is-loading');
+    if (playIcon) playIcon.className = 'fa-solid fa-pause';
+    startHideTimer();
+  };
+
+  const setButtonPaused = () => {
+    isPlayPending = false;
+    if (playBtn) playBtn.classList.remove('is-loading');
+    if (playIcon) playIcon.className = 'fa-solid fa-play';
+    showOverlay();
+  };
+
+  const executePlay = () => {
+    if (isPlayPending) return;
+    isPlayPending = true;
+    setButtonLoading();
+
+    const standby = playerEl.querySelector('#cs-cinesubz-standby-overlay, .cinema-standby-screen');
+    if (standby) {
+      standby.classList.add('hidden');
+      standby.style.display = 'none';
+      standby.style.pointerEvents = 'none';
+      standby.style.zIndex = '-1';
+    }
+
+    const v = playerEl.querySelector('video') || (player && player.tech_ && player.tech_.el_);
+
+    const onPlaySuccess = () => {
+      setButtonPlaying();
+    };
+
+    const onPlayFail = (err) => {
+      console.warn('[FilmSub Center] player.play() rejected, attempting native video.play:', err);
+      if (v && typeof v.play === 'function') {
+        try {
+          const pNative = v.play();
+          if (pNative && typeof pNative.then === 'function') {
+            pNative.then(onPlaySuccess).catch((errNative) => {
+              console.error('[FilmSub Center] Native video.play() failed:', errNative);
+              setButtonPaused();
+            });
+            return;
+          }
+          onPlaySuccess();
+          return;
+        } catch (e) {
+          console.error('[FilmSub Center] Native video.play() threw:', e);
+        }
+      }
+      setButtonPaused();
+    };
+
+    if (player && typeof player.play === 'function') {
+      try {
+        const p = player.play();
+        if (p && typeof p.then === 'function') {
+          p.then(onPlaySuccess).catch(onPlayFail);
+        } else {
+          onPlaySuccess();
+        }
+      } catch (err) {
+        onPlayFail(err);
+      }
+    } else if (v && typeof v.play === 'function') {
+      try {
+        const p = v.play();
+        if (p && typeof p.then === 'function') {
+          p.then(onPlaySuccess).catch(onPlayFail);
+        } else {
+          onPlaySuccess();
+        }
+      } catch (err) {
+        onPlayFail(err);
+      }
+    } else {
+      setButtonPaused();
+    }
+  };
+
+  const executePause = () => {
+    isPlayPending = false;
+    if (player && typeof player.pause === 'function') {
+      try { player.pause(); } catch (e) {}
+    } else {
+      const v = playerEl.querySelector('video') || (player && player.tech_ && player.tech_.el_);
+      if (v && typeof v.pause === 'function') {
+        try { v.pause(); } catch (e) {}
+      }
+    }
+    setButtonPaused();
   };
 
   attachFastAction(playBtn, (e) => {
     if (!player) return;
+    if (isPlayPending) return;
     if (player.paused()) {
-      try {
-        const p = player.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch (err) {}
+      executePlay();
     } else {
-      player.pause();
+      executePause();
     }
-    updatePlayState();
   });
 
   attachFastAction(rewindBtn, (e) => {
@@ -3186,6 +3304,7 @@ function mountCenterPlayerControls(playerEl, player, movie) {
     const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
     player.currentTime(Math.max(0, cur - 10));
     showSeekRipple(playerEl, 'backward', 10);
+    showOverlay();
   });
 
   attachFastAction(forwardBtn, (e) => {
@@ -3194,27 +3313,25 @@ function mountCenterPlayerControls(playerEl, player, movie) {
     const dur = getEffectiveDuration(player, movie);
     player.currentTime(Math.min(dur || (cur + 10), cur + 10));
     showSeekRipple(playerEl, 'forward', 10);
+    showOverlay();
   });
 
-  player.on('play', updatePlayState);
-  player.on('pause', updatePlayState);
+  player.on('play', setButtonPlaying);
+  player.on('playing', setButtonPlaying);
+  player.on('pause', setButtonPaused);
+  player.on('waiting', () => {
+    if (player && !player.paused()) {
+      setButtonLoading();
+    }
+  });
   player.on('ended', () => {
+    isPlayPending = false;
+    if (playBtn) playBtn.classList.remove('is-loading');
     if (playIcon) playIcon.className = 'fa-solid fa-rotate-right';
     overlay.classList.remove('hidden');
+    overlay.style.display = '';
+    overlay.style.pointerEvents = 'auto';
   });
-
-  let hideTimer = null;
-  const showOverlay = () => {
-    overlay.classList.remove('hidden');
-    if (hideTimer) clearTimeout(hideTimer);
-    if (player && !player.paused()) {
-      hideTimer = setTimeout(() => {
-        if (player && !player.paused()) {
-          overlay.classList.add('hidden');
-        }
-      }, 2800);
-    }
-  };
 
   playerDom.addEventListener('pointermove', showOverlay, { passive: true });
   playerDom.addEventListener('touchstart', showOverlay, { passive: true });
@@ -3224,7 +3341,13 @@ function mountCenterPlayerControls(playerEl, player, movie) {
     }
   });
 
-  updatePlayState();
+  if (!isStandbyActive) {
+    if (player.paused()) {
+      setButtonPaused();
+    } else {
+      setButtonPlaying();
+    }
+  }
 }
 
 /**
@@ -3686,6 +3809,11 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
 
   const executeStartPlay = (e) => {
     hideLoader();
+    if (mainPlayBtn) {
+      mainPlayBtn.classList.add('is-loading');
+      const icon = mainPlayBtn.querySelector('i');
+      if (icon) icon.className = 'fa-solid fa-circle-notch fa-spin';
+    }
     if (standbyOverlay) {
       standbyOverlay.classList.add('hidden');
       standbyOverlay.style.display = 'none';
@@ -3694,21 +3822,83 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
     }
     const centerOverlay = playerEl.querySelector('.cs-player-center-overlay');
     if (centerOverlay) {
+      centerOverlay.classList.remove('hidden');
       centerOverlay.style.display = '';
       centerOverlay.style.pointerEvents = 'auto';
+      const cPlayBtn = centerOverlay.querySelector('#cs-btn-center-playpause');
+      const cPlayIcon = centerOverlay.querySelector('#cs-center-play-icon');
+      if (cPlayBtn && cPlayIcon) {
+        cPlayBtn.classList.add('is-loading');
+        cPlayIcon.className = 'fa-solid fa-circle-notch fa-spin';
+      }
     }
+
+    const v = playerEl.querySelector('video') || (vjsPlayer && vjsPlayer.tech_ && vjsPlayer.tech_.el_);
+
+    const onPlaySuccess = () => {
+      if (mainPlayBtn) mainPlayBtn.classList.remove('is-loading');
+      if (centerOverlay) {
+        const cPlayBtn = centerOverlay.querySelector('#cs-btn-center-playpause');
+        const cPlayIcon = centerOverlay.querySelector('#cs-center-play-icon');
+        if (cPlayBtn) cPlayBtn.classList.remove('is-loading');
+        if (cPlayIcon) cPlayIcon.className = 'fa-solid fa-pause';
+      }
+    };
+
+    const onPlayFail = (err) => {
+      console.warn('[FilmSub Standby] VJS play rejected, trying native video fallback:', err);
+      if (v && typeof v.play === 'function') {
+        try {
+          const pNative = v.play();
+          if (pNative && typeof pNative.then === 'function') {
+            pNative.then(onPlaySuccess).catch((errNative) => {
+              console.error('[FilmSub Standby] Native video fallback also failed:', errNative);
+              if (mainPlayBtn) mainPlayBtn.classList.remove('is-loading');
+              if (centerOverlay) {
+                const cPlayBtn = centerOverlay.querySelector('#cs-btn-center-playpause');
+                const cPlayIcon = centerOverlay.querySelector('#cs-center-play-icon');
+                if (cPlayBtn) cPlayBtn.classList.remove('is-loading');
+                if (cPlayIcon) cPlayIcon.className = 'fa-solid fa-play';
+              }
+            });
+            return;
+          }
+          onPlaySuccess();
+          return;
+        } catch (e) {
+          console.error('[FilmSub Standby] Native video fallback threw:', e);
+        }
+      }
+      if (mainPlayBtn) mainPlayBtn.classList.remove('is-loading');
+      if (centerOverlay) {
+        const cPlayBtn = centerOverlay.querySelector('#cs-btn-center-playpause');
+        const cPlayIcon = centerOverlay.querySelector('#cs-center-play-icon');
+        if (cPlayBtn) cPlayBtn.classList.remove('is-loading');
+        if (cPlayIcon) cPlayIcon.className = 'fa-solid fa-play';
+      }
+    };
+
     if (vjsPlayer && typeof vjsPlayer.play === 'function') {
       try {
         const p = vjsPlayer.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch (err) {}
-    } else {
-      const v = playerEl.querySelector('video');
-      if (v) {
-        try {
-          const p = v.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch (err) {}
+        if (p && typeof p.then === 'function') {
+          p.then(onPlaySuccess).catch(onPlayFail);
+        } else {
+          onPlaySuccess();
+        }
+      } catch (err) {
+        onPlayFail(err);
+      }
+    } else if (v && typeof v.play === 'function') {
+      try {
+        const p = v.play();
+        if (p && typeof p.then === 'function') {
+          p.then(onPlaySuccess).catch(onPlayFail);
+        } else {
+          onPlaySuccess();
+        }
+      } catch (err) {
+        onPlayFail(err);
       }
     }
   };

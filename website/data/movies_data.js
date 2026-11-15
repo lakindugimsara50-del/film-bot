@@ -16151,7 +16151,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T15:35:21Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "buddy-2026",
+      "slug": "buddy-2026",
+      "title": "Buddy",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.8",
+      "rating": "6.8",
+      "imdb_id": "tt37281055",
+      "tmdb_id": "1514026",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/1BdZbNvl1SfrrX8J9X5tQzN6Ivu.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/1BdZbNvl1SfrrX8J9X5tQzN6Ivu.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/sMmG82PtjK8A9rVc34gwKQtCm3A.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/sMmG82PtjK8A9rVc34gwKQtCm3A.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/acPJ1EUhA5M",
+      "trailer_id": "acPJ1EUhA5M",
+      "genres": [
+        "Horror",
+        "Comedy",
+        "Fantasy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "96 min",
+      "description": "Inside the colorful world of \"It's Buddy!\", a group of children spend their days singing, dancing, and helping Buddy - bright orange unicorn - spread happiness. But when one child refuses to play along, Buddy is not pleased and cracks begin to appear in this seemingly perfect world.",
+      "director": "Casper Kelly",
+      "cast": [
+        {
+          "name": "Keegan-Michael Key",
+          "character": "Buddy / Dark Buddy (voice)"
+        },
+        {
+          "name": "Delaney Quinn",
+          "character": "Freddy"
+        },
+        {
+          "name": "Tristan Borders",
+          "character": "Oliver"
+        },
+        {
+          "name": "Madison Skyy Polan",
+          "character": "Hannah"
+        },
+        {
+          "name": "Caleb Williams",
+          "character": "Wade"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtpq-dUPSBQ8_KjpAcYvsYmCYe7_UgACJyMAAo6l0VcvFxoL96Q99x4E",
+      "message_id": 730,
+      "file_name": "comp_buddy-2026_1080p.mp4",
+      "file_size": 2017405772,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtpq-dUPSBQ8_KjpAcYvsYmCYe7_UgACJyMAAo6l0VcvFxoL96Q99x4E",
+          "message_id": 730,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1514026"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt37281055"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt37281055"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/729",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/728"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2017405772,
+          "url": "https://t.me/c/4325759505/730",
+          "telegram_url": "https://t.me/c/4325759505/730",
+          "direct_url": "/stream/channel/-1004325759505/730?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtpq-dUPSBQ8_KjpAcYvsYmCYe7_UgACJyMAAo6l0VcvFxoL96Q99x4E",
+          "message_id": 730,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1228726000,
+          "url": "https://t.me/c/4325759505/729",
+          "telegram_url": "https://t.me/c/4325759505/729",
+          "direct_url": "/stream/channel/-1004325759505/729?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtlq-dTJhi9saX-j4ytDn8frMDVhpQACJCMAAo6l0Vd2nJzuJJsSlx4E",
+          "message_id": 729,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/729",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "629.8 MB",
+          "size_bytes": 660393090,
+          "url": "https://t.me/c/4325759505/728",
+          "telegram_url": "https://t.me/c/4325759505/728",
+          "direct_url": "/stream/channel/-1004325759505/728?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAthq-dQRyMEDYqEjxrsR6hTNInzrBAACHyMAAo6l0VdpgMAc2U2bdR4E",
+          "message_id": 728,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/728",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2017405772,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_buddy-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1228726000,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_buddy-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/729",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "629.8 MB",
+          "size_bytes": 660393090,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_buddy-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/728",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtpq-dUPSBQ8_KjpAcYvsYmCYe7_UgACJyMAAo6l0VcvFxoL96Q99x4E",
+          "message_id": 730,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/730",
+          "size_bytes": 2017405772
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtlq-dTJhi9saX-j4ytDn8frMDVhpQACJCMAAo6l0Vd2nJzuJJsSlx4E",
+          "message_id": 729,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/729",
+          "size_bytes": 1228726000
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAthq-dQRyMEDYqEjxrsR6hTNInzrBAACHyMAAo6l0VdpgMAc2U2bdR4E",
+          "message_id": 728,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/728",
+          "size_bytes": 660393090
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/buddy-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=buddy-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T15:51:55Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T15:35:22Z"
+  "last_updated": "2026-11-15T15:51:57Z"
 };

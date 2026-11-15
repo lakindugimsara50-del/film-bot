@@ -15705,7 +15705,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T14:58:59Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "reporting-live-2026",
+      "slug": "reporting-live-2026",
+      "title": "Reporting Live",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.3",
+      "rating": "7.3",
+      "imdb_id": "tt47657999",
+      "tmdb_id": "1389172",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/xVabS4lTi6IMscr2FOucxydE6ZD.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/xVabS4lTi6IMscr2FOucxydE6ZD.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/faJB8DXU0LXwq5ebMLj5drz8S4N.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/faJB8DXU0LXwq5ebMLj5drz8S4N.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/GgGNG9XEJds",
+      "trailer_id": "GgGNG9XEJds",
+      "genres": [
+        "Crime",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "116 min",
+      "description": "A young reporter and her reluctant cameraman chase a story, only to get entangled in an illegal sand-mining racket run by a ruthless syndicate.",
+      "director": "Dhruv Tripathi",
+      "cast": [
+        {
+          "name": "Parineeti Chopra",
+          "character": "Sandhya"
+        },
+        {
+          "name": "Deven Bhojani",
+          "character": "Vinod"
+        },
+        {
+          "name": "Adil Hussain",
+          "character": ""
+        },
+        {
+          "name": "Shekhar Suman",
+          "character": ""
+        },
+        {
+          "name": "Amol Palekar",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtFq-c0MySz_4ypZeLeMbbnzhl30SwACESMAAo6l0Vc8hYKBZv93bh4E",
+      "message_id": 721,
+      "file_name": "comp_reporting-live-2026_1080p.mp4",
+      "file_size": 2026596239,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtFq-c0MySz_4ypZeLeMbbnzhl30SwACESMAAo6l0Vc8hYKBZv93bh4E",
+          "message_id": 721,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1389172"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt47657999"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt47657999"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/722",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/720"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2026596239,
+          "url": "https://t.me/c/4325759505/721",
+          "telegram_url": "https://t.me/c/4325759505/721",
+          "direct_url": "/stream/channel/-1004325759505/721?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtFq-c0MySz_4ypZeLeMbbnzhl30SwACESMAAo6l0Vc8hYKBZv93bh4E",
+          "message_id": 721,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1494281145,
+          "url": "https://t.me/c/4325759505/722",
+          "telegram_url": "https://t.me/c/4325759505/722",
+          "direct_url": "/stream/channel/-1004325759505/722?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtJq-c0XmHKqUTDFnf_1TUUvOILMRwACEiMAAo6l0VfTIksFBi6sRh4E",
+          "message_id": 722,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/722",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "768.5 MB",
+          "size_bytes": 805847112,
+          "url": "https://t.me/c/4325759505/720",
+          "telegram_url": "https://t.me/c/4325759505/720",
+          "direct_url": "/stream/channel/-1004325759505/720?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtBq-cxlR0BKp0AidKNBxYfvMXn0XwACECMAAo6l0VcLbXVFGofrpR4E",
+          "message_id": 720,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/720",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2026596239,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_reporting-live-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1494281145,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_reporting-live-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/722",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "768.5 MB",
+          "size_bytes": 805847112,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_reporting-live-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/720",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtFq-c0MySz_4ypZeLeMbbnzhl30SwACESMAAo6l0Vc8hYKBZv93bh4E",
+          "message_id": 721,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/721",
+          "size_bytes": 2026596239
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtJq-c0XmHKqUTDFnf_1TUUvOILMRwACEiMAAo6l0VfTIksFBi6sRh4E",
+          "message_id": 722,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/722",
+          "size_bytes": 1494281145
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtBq-cxlR0BKp0AidKNBxYfvMXn0XwACECMAAo6l0VcLbXVFGofrpR4E",
+          "message_id": 720,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/720",
+          "size_bytes": 805847112
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/reporting-live-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=reporting-live-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T15:17:55Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T14:59:00Z"
+  "last_updated": "2026-11-15T15:17:57Z"
 };

@@ -14796,7 +14796,234 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T12:52:42Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-love-hypothesis-2026",
+      "slug": "the-love-hypothesis-2026",
+      "title": "The Love Hypothesis",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.8",
+      "rating": "7.8",
+      "imdb_id": "tt22526100",
+      "tmdb_id": "1032863",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/vfZxVHextAGC70zrNhS8lsROqP1.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/vfZxVHextAGC70zrNhS8lsROqP1.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/o7Oy9Gbx1CCyaweL8xUhtMW4Puq.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/o7Oy9Gbx1CCyaweL8xUhtMW4Puq.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/xwdamnfS6IM",
+      "trailer_id": "xwdamnfS6IM",
+      "genres": [
+        "Romance",
+        "Comedy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "112 min",
+      "description": "Olive Smith, a biology PhD candidate, and Dr. Adam Carlsen, a hotshot professor and well-known tyrant, enter into a fake relationship, seeing each of their carefully calculated theories on love get thrown into chaos.",
+      "director": "Claire Scanlon",
+      "cast": [
+        {
+          "name": "Lili Reinhart",
+          "character": "Olive Smith"
+        },
+        {
+          "name": "Tom Bateman",
+          "character": "Dr. Adam Carlsen"
+        },
+        {
+          "name": "Rachel Marsh",
+          "character": "Anh Pham"
+        },
+        {
+          "name": "Jaboukie Young-White",
+          "character": "Malcolm Browne"
+        },
+        {
+          "name": "Nicholas Duvernay",
+          "character": "Jeremy Langley"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsBq-a9o0YS94rXW_4QV1tHzGqi_XAAC8CQAAo6lyVfGq6XXFDE7NR4E",
+      "message_id": 704,
+      "file_name": "comp_the-love-hypothesis-2026_1080p.mp4",
+      "file_size": 1988500015,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsBq-a9o0YS94rXW_4QV1tHzGqi_XAAC8CQAAo6lyVfGq6XXFDE7NR4E",
+          "message_id": 704,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1032863"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt22526100"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt22526100"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/706",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/705"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1988500015,
+          "url": "https://t.me/c/4325759505/704",
+          "telegram_url": "https://t.me/c/4325759505/704",
+          "direct_url": "/stream/channel/-1004325759505/704?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsBq-a9o0YS94rXW_4QV1tHzGqi_XAAC8CQAAo6lyVfGq6XXFDE7NR4E",
+          "message_id": 704,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1415840007,
+          "url": "https://t.me/c/4325759505/706",
+          "telegram_url": "https://t.me/c/4325759505/706",
+          "direct_url": "/stream/channel/-1004325759505/706?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsJq-bM7jWi-P8ARUZQTFSQy_qoRBAAC9yQAAo6lyVesgknm6PqBqh4E",
+          "message_id": 706,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/706",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "735.5 MB",
+          "size_bytes": 771278348,
+          "url": "https://t.me/c/4325759505/705",
+          "telegram_url": "https://t.me/c/4325759505/705",
+          "direct_url": "/stream/channel/-1004325759505/705?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsFq-a_wsJV9xsVz2etR8Jlo8nTnQwAC9CQAAo6lyVfeGyMV4h07eR4E",
+          "message_id": 705,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/705",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1988500015,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-love-hypothesis-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1415840007,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-love-hypothesis-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/706",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "735.5 MB",
+          "size_bytes": 771278348,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-love-hypothesis-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/705",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsBq-a9o0YS94rXW_4QV1tHzGqi_XAAC8CQAAo6lyVfGq6XXFDE7NR4E",
+          "message_id": 704,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/704",
+          "size_bytes": 1988500015
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsJq-bM7jWi-P8ARUZQTFSQy_qoRBAAC9yQAAo6lyVesgknm6PqBqh4E",
+          "message_id": 706,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/706",
+          "size_bytes": 1415840007
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsFq-a_wsJV9xsVz2etR8Jlo8nTnQwAC9CQAAo6lyVfeGyMV4h07eR4E",
+          "message_id": 705,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/705",
+          "size_bytes": 771278348
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-love-hypothesis-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-love-hypothesis-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T13:27:40Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T12:52:44Z"
+  "last_updated": "2026-11-15T13:27:42Z"
 }

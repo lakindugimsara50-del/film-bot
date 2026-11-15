@@ -929,6 +929,9 @@ function renderHeroShowcase() {
   // 6. Tab Visibility API: pause timers when backgrounded, safely resume without desync
   initHeroVisibilityHandler();
 
+  // 6b. Spatial 3D Parallax: subtle dynamic depth response to cursor position in deck view
+  initHero3DParallax(section, stage);
+
   // 7. Initial State: Start on dark cinema stage in Deck Mode ("back ground eke poster eka na e welawata")
   section.classList.remove('is-expanded-mode', 'is-receding-mode');
   section.classList.add('is-deck-mode');
@@ -1335,6 +1338,58 @@ function initHeroVisibilityHandler() {
         }, 500);
       }
     }
+  });
+}
+
+let heroParallaxBound = false;
+function initHero3DParallax(section, stage) {
+  if (heroParallaxBound || !section || !stage) return;
+  heroParallaxBound = true;
+
+  const watermark = document.getElementById('hero-stage-watermark');
+  let rafId = null;
+  let targetRotX = 0;
+  let targetRotY = 0;
+  let currentRotX = 0;
+  let currentRotY = 0;
+
+  const updateTilt = () => {
+    currentRotX += (targetRotX - currentRotX) * 0.12;
+    currentRotY += (targetRotY - currentRotY) * 0.12;
+
+    if (section.classList.contains('is-deck-mode') || section.classList.contains('is-receding-mode')) {
+      stage.style.transform = `rotateX(${currentRotX.toFixed(2)}deg) rotateY(${currentRotY.toFixed(2)}deg)`;
+      if (watermark) {
+        watermark.style.transform = `translate(-50%, -50%) rotateY(${(currentRotY * 0.5).toFixed(2)}deg)`;
+      }
+    } else {
+      stage.style.transform = '';
+      if (watermark) {
+        watermark.style.transform = '';
+      }
+    }
+
+    if (Math.abs(targetRotX - currentRotX) > 0.04 || Math.abs(targetRotY - currentRotY) > 0.04) {
+      rafId = requestAnimationFrame(updateTilt);
+    } else {
+      rafId = null;
+    }
+  };
+
+  section.addEventListener('mousemove', (e) => {
+    if (isTouchDevice() || !section.classList.contains('is-deck-mode')) return;
+    const rect = section.getBoundingClientRect();
+    const nx = (e.clientX - rect.left) / rect.width - 0.5;
+    const ny = (e.clientY - rect.top) / rect.height - 0.5;
+    targetRotY = nx * 8;
+    targetRotX = -ny * 5;
+    if (!rafId) rafId = requestAnimationFrame(updateTilt);
+  }, { passive: true });
+
+  section.addEventListener('mouseleave', () => {
+    targetRotX = 0;
+    targetRotY = 0;
+    if (!rafId) rafId = requestAnimationFrame(updateTilt);
   });
 }
 

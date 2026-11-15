@@ -17516,7 +17516,234 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T19:48:04Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "daayra-2026",
+      "slug": "daayra-2026",
+      "title": "Daayra",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "4.0",
+      "rating": "4.0",
+      "imdb_id": "tt32634611",
+      "tmdb_id": "1215889",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/eAsR8oCZGCOqaxDVt0c0WrRFjrn.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/eAsR8oCZGCOqaxDVt0c0WrRFjrn.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/rbwmf04kpX1o3zbbOS6Y7woF2Ku.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/rbwmf04kpX1o3zbbOS6Y7woF2Ku.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/nb4Qb89zgmU",
+      "trailer_id": "nb4Qb89zgmU",
+      "genres": [
+        "Crime",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "141 min",
+      "description": "Raman, who has had a shady record with staged encounters and police brutality, finds himself cornered as Ajooni challenges him on every step.",
+      "director": "Meghna Gulzar",
+      "cast": [
+        {
+          "name": "Kareena Kapoor Khan",
+          "character": "DCP Ajooni Kohli"
+        },
+        {
+          "name": "Prithviraj Sukumaran",
+          "character": "DCP Raman Kumar"
+        },
+        {
+          "name": "Pragati Mishra",
+          "character": "Ragini Pujari"
+        },
+        {
+          "name": "Prammod Sanghi",
+          "character": "Abhinandan Basu"
+        },
+        {
+          "name": "Sumali Khaniwale",
+          "character": "NGO Head"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvJq-hacx78W9g0XFdNohTbRjmBP2wACxiEAAqHv0VcMPlYoH64vMR4E",
+      "message_id": 754,
+      "file_name": "comp_daayra-2026_1080p.mp4",
+      "file_size": 2026854303,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvJq-hacx78W9g0XFdNohTbRjmBP2wACxiEAAqHv0VcMPlYoH64vMR4E",
+          "message_id": 754,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1215889"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32634611"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32634611"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/752",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/753"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2026854303,
+          "url": "https://t.me/c/4325759505/754",
+          "telegram_url": "https://t.me/c/4325759505/754",
+          "direct_url": "/stream/channel/-1004325759505/754?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvJq-hacx78W9g0XFdNohTbRjmBP2wACxiEAAqHv0VcMPlYoH64vMR4E",
+          "message_id": 754,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1708112161,
+          "url": "https://t.me/c/4325759505/752",
+          "telegram_url": "https://t.me/c/4325759505/752",
+          "direct_url": "/stream/channel/-1004325759505/752?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvBq-hD9ooq_ZJJ4zSx5MjqgpFpTYQACxCEAAqHv0VcPjBhUpHGXQR4E",
+          "message_id": 752,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/752",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "898.2 MB",
+          "size_bytes": 941785345,
+          "url": "https://t.me/c/4325759505/753",
+          "telegram_url": "https://t.me/c/4325759505/753",
+          "direct_url": "/stream/channel/-1004325759505/753?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvFq-hJ9fmQAAf5jpl_2h7-VsBqdIDQAAsUhAAKh79FXJiIQ2MgcQ4geBA",
+          "message_id": 753,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/753",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2026854303,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_daayra-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1708112161,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_daayra-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/752",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "898.2 MB",
+          "size_bytes": 941785345,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_daayra-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/753",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvJq-hacx78W9g0XFdNohTbRjmBP2wACxiEAAqHv0VcMPlYoH64vMR4E",
+          "message_id": 754,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/754",
+          "size_bytes": 2026854303
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvBq-hD9ooq_ZJJ4zSx5MjqgpFpTYQACxCEAAqHv0VcPjBhUpHGXQR4E",
+          "message_id": 752,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/752",
+          "size_bytes": 1708112161
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvFq-hJ9fmQAAf5jpl_2h7-VsBqdIDQAAsUhAAKh79FXJiIQ2MgcQ4geBA",
+          "message_id": 753,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/753",
+          "size_bytes": 941785345
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/daayra-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=daayra-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T20:31:38Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T19:48:06Z"
+  "last_updated": "2026-11-15T20:31:40Z"
 }

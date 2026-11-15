@@ -13657,7 +13657,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T07:54:07Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "after-impact-2026",
+      "slug": "after-impact-2026",
+      "title": "After Impact",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.7",
+      "rating": "5.7",
+      "imdb_id": "tt36809539",
+      "tmdb_id": "1751701",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/yzDuAQCY2n6zzOlBkn6JzhLhY3k.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/yzDuAQCY2n6zzOlBkn6JzhLhY3k.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/k22XyPbce7zvzzf5OnT4uaY8ZD1.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/k22XyPbce7zvzzf5OnT4uaY8ZD1.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Af8D6sRDyxo",
+      "trailer_id": "Af8D6sRDyxo",
+      "genres": [
+        "Science Fiction",
+        "Drama",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "95 min",
+      "description": "After losing his father, Ethan Nichols inherits one of the largest greenhouses in the country, just as the world faces a devastating threat from an approaching asteroid. As society begins to unravel, Ethan grapples with personal betrayal, overwhelming loneliness, and the growing fear that survival may come at the cost of his humanity. Seeking refuge in his family’s bunker, Ethan endures the harsh aftermath of the impact, wrestling with physical injury and emotional despair. When a faint voice crackles over his radio, Ethan discovers he's not as alone as he believed.",
+      "director": "Michiel Rensen, Liam Carter",
+      "cast": [
+        {
+          "name": "Michiel Rensen",
+          "character": "Ethan"
+        },
+        {
+          "name": "Maxie Li",
+          "character": "Jessie"
+        },
+        {
+          "name": "Riki Antonievich",
+          "character": "Jack"
+        },
+        {
+          "name": "Will Clague",
+          "character": "Connor"
+        },
+        {
+          "name": "Stephanie Ramlose",
+          "character": "Elle"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqtq-Wh5Njcqr7HghlyyeMQbAt3bYwACbiQAAo6lyVcFrPSBfaC8KB4E",
+      "message_id": 683,
+      "file_name": "comp_after-impact-2026_1080p.mp4",
+      "file_size": 1914217585,
+      "drive_file_id": "",
+      "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqtq-Wh5Njcqr7HghlyyeMQbAt3bYwACbiQAAo6lyVcFrPSBfaC8KB4E",
+          "message_id": 683,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1751701"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36809539"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36809539"
+        }
+      ],
+      "qualities": {
+        "auto": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+        "1080p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+        "720p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/685",
+        "480p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/684"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1914217585,
+          "url": "https://t.me/c/4325759505/683",
+          "telegram_url": "https://t.me/c/4325759505/683",
+          "direct_url": "/stream/channel/-1004325759505/683?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqtq-Wh5Njcqr7HghlyyeMQbAt3bYwACbiQAAo6lyVcFrPSBfaC8KB4E",
+          "message_id": 683,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1173805510,
+          "url": "https://t.me/c/4325759505/685",
+          "telegram_url": "https://t.me/c/4325759505/685",
+          "direct_url": "/stream/channel/-1004325759505/685?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAq1q-WuIZBX85fAcCpUfw44Rspc5cAACdCQAAo6lyVfEMabr6DAZih4E",
+          "message_id": 685,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/685",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "613.0 MB",
+          "size_bytes": 642818714,
+          "url": "https://t.me/c/4325759505/684",
+          "telegram_url": "https://t.me/c/4325759505/684",
+          "direct_url": "/stream/channel/-1004325759505/684?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqxq-WkC1dTbQ6T3Hzilh5s1T37gIAACbyQAAo6lyVdBSY3dms4mph4E",
+          "message_id": 684,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/684",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1914217585,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026_1080p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1173805510,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026_720p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/685",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "613.0 MB",
+          "size_bytes": 642818714,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_after-impact-2026_480p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/684",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqtq-Wh5Njcqr7HghlyyeMQbAt3bYwACbiQAAo6lyVcFrPSBfaC8KB4E",
+          "message_id": 683,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/683",
+          "size_bytes": 1914217585
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAq1q-WuIZBX85fAcCpUfw44Rspc5cAACdCQAAo6lyVfEMabr6DAZih4E",
+          "message_id": 685,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/685",
+          "size_bytes": 1173805510
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqxq-WkC1dTbQ6T3Hzilh5s1T37gIAACbyQAAo6lyVdBSY3dms4mph4E",
+          "message_id": 684,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/684",
+          "size_bytes": 642818714
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/after-impact-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=after-impact-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T08:21:39Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T07:54:08Z"
+  "last_updated": "2026-11-15T08:21:40Z"
 };

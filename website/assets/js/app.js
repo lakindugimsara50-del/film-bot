@@ -1123,6 +1123,11 @@ function advanceHeroShowcase(token) {
 
   heroCurrentState = 'RETREATING';
 
+  // Reset any residual spatial parallax tilt so retreat begins from zero-tilt alignment
+  stage.style.transform = '';
+  const watermark = document.getElementById('hero-stage-watermark');
+  if (watermark) watermark.style.transform = '';
+
   // 1. Unified Graceful 3D Retreat & Simultaneous Stack Advance:
   // Fullscreen recedes while the old spotlight card glides along the continuous 3D arc to the rear
   // AND all other cards simultaneously step forward into their new 3D slots in perfect unison.
@@ -1398,24 +1403,34 @@ function updateHeroContent(movie) {
   if (!movie) return;
   const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
 
-  // Double-buffered smooth backdrop crossfade
+  // Pre-buffered smooth backdrop crossfade
   const bgCurrent = document.getElementById('hero-bg-current');
   const bgNext = document.getElementById('hero-bg-next');
+  const section = document.getElementById('hero-section');
+  const isAlreadyExpanded = section && section.classList.contains('is-expanded-mode');
+
   if (bgCurrent && bgNext) {
-    const currentBg = bgCurrent.style.backgroundImage || '';
     const targetBg = `url("${backdrop}")`;
-    if (!currentBg || currentBg === 'none' || bgCurrent.style.opacity === '0') {
+    if (!isAlreadyExpanded) {
+      // In deck/receding mode: immediately set primary background so it blossoms in full synchronization with the 3D card bloom
       bgCurrent.style.backgroundImage = targetBg;
       bgCurrent.style.opacity = '1';
       bgNext.style.opacity = '0';
-    } else if (!currentBg.includes(backdrop)) {
-      bgNext.style.backgroundImage = targetBg;
-      bgNext.style.opacity = '1';
-      setTimeout(() => {
+    } else {
+      const currentBg = bgCurrent.style.backgroundImage || '';
+      if (!currentBg || currentBg === 'none' || bgCurrent.style.opacity === '0') {
         bgCurrent.style.backgroundImage = targetBg;
         bgCurrent.style.opacity = '1';
         bgNext.style.opacity = '0';
-      }, 650);
+      } else if (!currentBg.includes(backdrop)) {
+        bgNext.style.backgroundImage = targetBg;
+        bgNext.style.opacity = '1';
+        setTimeout(() => {
+          bgCurrent.style.backgroundImage = targetBg;
+          bgCurrent.style.opacity = '1';
+          bgNext.style.opacity = '0';
+        }, 650);
+      }
     }
   } else if (bgCurrent) {
     bgCurrent.style.backgroundImage = `url("${backdrop}")`;

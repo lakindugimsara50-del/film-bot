@@ -7227,6 +7227,10 @@ body.tg-browser-mode {
 
   --sweep-out-x: -175px;
   --sweep-mid-x: 40px;
+
+  /* Expansion / Receding Unified 3D Morph Dimensions */
+  --hero-expand-z: 240px;
+  --hero-expand-scale: 2.1;
 }
 
 /* 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) */
@@ -7367,17 +7371,17 @@ body.tg-browser-mode {
   flex-direction: column;
   padding: clamp(14px, 1.8vw, 24px) clamp(22px, 2.5vw, 40px);
   border-radius: clamp(24px, 3.2vw, 38px);
-  background: linear-gradient(175deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 48%, rgba(12, 12, 18, 0.5) 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  border-top: 2.5px solid rgba(255, 255, 255, 0.72);
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 48%, rgba(12, 12, 18, 0.52) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-top: 2.8px solid rgba(255, 255, 255, 0.82);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(24px) saturate(210%);
-  -webkit-backdrop-filter: blur(24px) saturate(210%);
+  backdrop-filter: blur(28px) saturate(220%);
+  -webkit-backdrop-filter: blur(28px) saturate(220%);
   box-shadow:
-    inset 0 2.5px 3.5px rgba(255, 255, 255, 0.52),
-    inset 0 -2.5px 4.5px rgba(0, 0, 0, 0.48),
+    inset 0 3px 4px rgba(255, 255, 255, 0.62),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.52),
     0 24px 60px -10px rgba(0, 0, 0, 0.88),
-    0 0 45px rgba(229, 9, 20, 0.22);
+    0 0 50px rgba(229, 9, 20, 0.25);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -7393,10 +7397,10 @@ body.tg-browser-mode {
 .hero-watermark-bubble-glare {
   position: absolute;
   top: 0;
-  left: 8%;
-  right: 8%;
-  height: 48%;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0.12) 48%, transparent 80%);
+  left: 6%;
+  right: 6%;
+  height: 52%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.15) 50%, transparent 80%);
   border-radius: 999px;
   pointer-events: none;
   filter: blur(1.5px);
@@ -7413,11 +7417,10 @@ body.tg-browser-mode {
   background: linear-gradient(
     175deg,
     #ffffff 0%,
-    #f8fafc 16%,
-    rgba(255, 255, 255, 0.95) 32%,
-    rgba(224, 238, 255, 0.85) 48%,
-    rgba(148, 175, 220, 0.7) 64%,
-    rgba(240, 245, 255, 0.9) 82%,
+    rgba(255, 255, 255, 0.96) 18%,
+    rgba(235, 245, 255, 0.88) 38%,
+    rgba(165, 195, 245, 0.75) 60%,
+    rgba(240, 248, 255, 0.92) 82%,
     #ffffff 100%
   );
   -webkit-background-clip: text;
@@ -7426,12 +7429,24 @@ body.tg-browser-mode {
     drop-shadow(0 -2px 2px rgba(255, 255, 255, 0.95))
     drop-shadow(0 2px 4px rgba(0, 0, 0, 0.72))
     drop-shadow(0 14px 32px rgba(0, 0, 0, 0.92))
-    drop-shadow(0 0 35px rgba(255, 255, 255, 0.28))
-    drop-shadow(0 0 65px rgba(229, 9, 20, 0.38));
+    drop-shadow(0 0 35px rgba(255, 255, 255, 0.32))
+    drop-shadow(0 0 65px rgba(229, 9, 20, 0.42));
   position: relative;
   display: inline-block;
   user-select: none;
   animation: heroWordWaterSheen 7s ease-in-out infinite;
+}
+
+/* Liquid Water Gloss Caustic Highlight Overlay */
+.hero-watermark-word::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 28%, transparent 55%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  pointer-events: none;
+  filter: drop-shadow(0 -1.5px 1.5px rgba(255, 255, 255, 0.95));
 }
 
 @keyframes heroWordWaterSheen {
@@ -7939,9 +7954,9 @@ body.tg-browser-mode {
   transform: scale(1);
 }
 .hero-showcase.is-expanded-mode .hero-3d-deck-wrap {
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
-  transform: scale(1.04);
+  transform: scale(1);
 }
 
 .hero-3d-deck-stage {
@@ -8150,7 +8165,7 @@ body.tg-browser-mode {
 /* In expanded mode, front card blooms forward in 3D into Fullscreen */
 .hero-showcase.is-expanded-mode .hero-3d-card.slot-0,
 .hero-showcase.is-expanded-mode .hero-3d-card.is-active {
-  transform: translate3d(0, 0, 240px) scale(2.1) rotateY(0deg);
+  transform: translate3d(0, 0, var(--hero-expand-z, 240px)) scale(var(--hero-expand-scale, 2.1)) rotateY(0deg) rotateX(0deg);
   opacity: 0;
   border-color: transparent;
   box-shadow: none;
@@ -8175,6 +8190,14 @@ body.tg-browser-mode {
   transition: opacity 0.2s ease;
 }
 
+/* While card retreats from full screen, keep inner badges/info hidden so large card stays clean */
+.hero-3d-card.is-retreating-to-back .hero-3d-card-top-row,
+.hero-3d-card.is-retreating-to-back .hero-3d-card-info,
+.hero-3d-card.is-retreating-to-back .hero-3d-card-shine {
+  opacity: 0 !important;
+  transition: opacity 0.2s ease !important;
+}
+
 .hero-3d-card .hero-3d-card-top-row,
 .hero-3d-card .hero-3d-card-info,
 .hero-3d-card .hero-3d-card-shine {
@@ -8188,8 +8211,8 @@ body.tg-browser-mode {
 }
 
 /* 3D Rear Shuffle & Retreat Animation:
-   Old front card visibly sweeps out in a single continuous 3D arc and glides behind the deck to slot 5.
-   ("ara apu card eka pitipassata yanawa penawa")
+   Old front card visibly sweeps out in a single continuous 3D arc from the full screen position and glides behind the deck to slot 5.
+   ("saha lokuwata thibila card tike pitipassata yana eka smooth na transsion ek..ek lassanata smooth karanna")
 */
 .hero-3d-card.is-shuffling-to-rear,
 .hero-3d-card.is-retreating-to-back {
@@ -8200,31 +8223,29 @@ body.tg-browser-mode {
 
 @keyframes cardRetreatToBack {
   0% {
-    transform: translate3d(var(--s0-x), var(--s0-y), calc(var(--s0-z) + 40px)) scale(calc(var(--s0-s) * 1.12)) rotateY(var(--s0-ry)) rotateX(2deg);
+    transform: translate3d(0, 0, var(--hero-expand-z, 240px)) scale(var(--hero-expand-scale, 2.1)) rotateY(0deg) rotateX(0deg);
     opacity: 1;
-    filter: brightness(1.04);
-    border-color: rgba(255, 255, 255, 0.25);
+    filter: brightness(1.0);
+    border-color: transparent;
+    border-top-color: transparent;
+    box-shadow: none;
+    z-index: 35;
+  }
+  30% {
+    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -12px, 135px) scale(1.06) rotateY(16deg) rotateX(2.5deg);
+    opacity: 0.98;
+    filter: brightness(0.96);
+    border-color: rgba(255, 255, 255, 0.28);
     border-top-color: rgba(255, 255, 255, 0.85);
     box-shadow:
       inset 0 2px 2px rgba(255, 255, 255, 0.55),
-      0 42px 90px -12px rgba(0, 0, 0, 0.98),
-      0 24px 60px -8px rgba(229, 9, 20, 0.32);
+      0 40px 90px -10px rgba(0, 0, 0, 0.96),
+      0 18px 45px rgba(229, 9, 20, 0.28);
     z-index: 35;
   }
-  35% {
-    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -10px, 120px) scale(1.04) rotateY(16deg) rotateX(2.5deg);
-    opacity: 0.96;
-    filter: brightness(0.92);
-    border-color: rgba(255, 255, 255, 0.35);
-    border-top-color: rgba(255, 255, 255, 0.9);
-    box-shadow:
-      inset 0 2px 2px rgba(255, 255, 255, 0.6),
-      0 36px 80px rgba(0, 0, 0, 0.95);
-    z-index: 35;
-  }
-  70% {
+  68% {
     transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 28px, -270px) scale(0.58) rotateY(-28deg);
-    opacity: 0.52;
+    opacity: 0.55;
     filter: brightness(0.46);
     z-index: 3;
   }
@@ -8555,6 +8576,9 @@ body.tg-browser-mode {
     --sweep-out-x: -80px;
     --sweep-mid-x: 18px;
 
+    --hero-expand-z: 180px;
+    --hero-expand-scale: 1.9;
+
     min-height: 520px;
     max-height: none;
     padding: 10px 0 20px;
@@ -8585,7 +8609,7 @@ body.tg-browser-mode {
   }
   .hero-showcase.is-expanded-mode .hero-3d-card.slot-0,
   .hero-showcase.is-expanded-mode .hero-3d-card.is-active {
-    transform: translate3d(0, 0, 180px) scale(1.9) rotateY(0deg);
+    transform: translate3d(0, 0, var(--hero-expand-z)) scale(var(--hero-expand-scale)) rotateY(0deg) rotateX(0deg);
   }
   .hero-deck-nav-bar {
     display: none !important;

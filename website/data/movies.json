@@ -15250,7 +15250,235 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T14:04:20Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "hope-2026",
+      "slug": "hope-2026",
+      "title": "Hope",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.8",
+      "rating": "6.8",
+      "imdb_id": "tt27369017",
+      "tmdb_id": "1058424",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/6VY1ZKgpsc8CfGsQcCGiYEgHdH0.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/6VY1ZKgpsc8CfGsQcCGiYEgHdH0.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/j96rurZqmBjyY37Fncl3IB0qJNe.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/j96rurZqmBjyY37Fncl3IB0qJNe.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/OFaJzL83y0Q",
+      "trailer_id": "OFaJzL83y0Q",
+      "genres": [
+        "Science Fiction",
+        "Mystery",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "157 min",
+      "description": "In the remote South Korean village of Hope Harbor, police chief Bum-seok and officer Sung-ae are called to investigate a mysterious creature wreaking havoc on the community. But all is not as it seems, and perceptions can be misleading. What begins as ignorance plants the seed of disaster, escalating through human conflict into a tragedy of cosmic proportions.",
+      "director": "Na Hong-jin",
+      "cast": [
+        {
+          "name": "Hwang Jung-min",
+          "character": "Go Bum-seok"
+        },
+        {
+          "name": "Zo In-sung",
+          "character": "Go Sung-ki"
+        },
+        {
+          "name": "Hoyeon",
+          "character": "Lim Sung-ae"
+        },
+        {
+          "name": "Alicia Vikander",
+          "character": "J'aur"
+        },
+        {
+          "name": "Michael Fassbender",
+          "character": "Ma'veyyo"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAslq-cEhE5nT7eOu51P7rasp-BIhjwACESUAAo6lyVcB2qWSCbT1Ih4E",
+      "message_id": 713,
+      "file_name": "comp_hope-2026_1080p.mp4",
+      "file_size": 2046474026,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAslq-cEhE5nT7eOu51P7rasp-BIhjwACESUAAo6lyVcB2qWSCbT1Ih4E",
+          "message_id": 713,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1058424"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt27369017"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt27369017"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/714",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/712"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2046474026,
+          "url": "https://t.me/c/4325759505/713",
+          "telegram_url": "https://t.me/c/4325759505/713",
+          "direct_url": "/stream/channel/-1004325759505/713?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAslq-cEhE5nT7eOu51P7rasp-BIhjwACESUAAo6lyVcB2qWSCbT1Ih4E",
+          "message_id": 713,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2010733660,
+          "url": "https://t.me/c/4325759505/714",
+          "telegram_url": "https://t.me/c/4325759505/714",
+          "direct_url": "/stream/channel/-1004325759505/714?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAspq-cPLFW-rgSsumz3YamIaPJWxBAACEyUAAo6lyVfhGbb9DKrskx4E",
+          "message_id": 714,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/714",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1080195400,
+          "url": "https://t.me/c/4325759505/712",
+          "telegram_url": "https://t.me/c/4325759505/712",
+          "direct_url": "/stream/channel/-1004325759505/712?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAshq-cCdmm9m2HN5tasI9Iz0f036GAACDyUAAo6lyVdtQbuSzz4c_x4E",
+          "message_id": 712,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/712",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2046474026,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hope-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2010733660,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hope-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/714",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1080195400,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_hope-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/712",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAslq-cEhE5nT7eOu51P7rasp-BIhjwACESUAAo6lyVcB2qWSCbT1Ih4E",
+          "message_id": 713,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/713",
+          "size_bytes": 2046474026
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAspq-cPLFW-rgSsumz3YamIaPJWxBAACEyUAAo6lyVfhGbb9DKrskx4E",
+          "message_id": 714,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/714",
+          "size_bytes": 2010733660
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAshq-cCdmm9m2HN5tasI9Iz0f036GAACDyUAAo6lyVdtQbuSzz4c_x4E",
+          "message_id": 712,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/712",
+          "size_bytes": 1080195400
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/hope-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=hope-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T14:38:06Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T14:04:22Z"
+  "last_updated": "2026-11-15T14:38:08Z"
 }

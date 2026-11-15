@@ -14567,7 +14567,236 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T12:21:36Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "arco-2025",
+      "slug": "arco-2025",
+      "title": "Arco",
+      "title_si": "",
+      "year": 2025,
+      "imdb": "N/A",
+      "rating": "N/A",
+      "imdb_id": "tt14883538",
+      "tmdb_id": "804370",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/mWlvHFxTDhq9O5WSOHywa32QIez.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/mWlvHFxTDhq9O5WSOHywa32QIez.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/7qSUxLjtgU97nSGNzvw8rdNJ0FT.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/7qSUxLjtgU97nSGNzvw8rdNJ0FT.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/j7Tpaj-Iet8",
+      "trailer_id": "j7Tpaj-Iet8",
+      "genres": [
+        "Adventure",
+        "Animation",
+        "Family",
+        "Science Fiction"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "89 min",
+      "description": "Ten-year-old Arco lives in a far future. During his first flight in his rainbow suit, he loses control and falls into the past. Iris, a girl his age from 2075, comes to his rescue and tries by any means to help send him back to his own era.",
+      "director": "Ugo Bienvenu",
+      "cast": [
+        {
+          "name": "Margot Ringard Oldra",
+          "character": "Iris (voice)"
+        },
+        {
+          "name": "Oscar Tresanini",
+          "character": "Arco (voice)"
+        },
+        {
+          "name": "Nathanaël Perrot",
+          "character": "Clifford (voice)"
+        },
+        {
+          "name": "Alma Jodorowsky",
+          "character": "Jeanne / Mikki (voice)"
+        },
+        {
+          "name": "Swann Arlaud",
+          "character": "Tom / Mikki  (voice)"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAr5q-asMlMo2SOBft8vngtSE9kiuEwAC6SQAAo6lyVcoFi8xYfY08h4E",
+      "message_id": 702,
+      "file_name": "comp_arco-2025_1080p.mp4",
+      "file_size": 2030853018,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAr5q-asMlMo2SOBft8vngtSE9kiuEwAC6SQAAo6lyVcoFi8xYfY08h4E",
+          "message_id": 702,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/804370"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt14883538"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt14883538"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/701",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/700"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2030853018,
+          "url": "https://t.me/c/4325759505/702",
+          "telegram_url": "https://t.me/c/4325759505/702",
+          "direct_url": "/stream/channel/-1004325759505/702?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAr5q-asMlMo2SOBft8vngtSE9kiuEwAC6SQAAo6lyVcoFi8xYfY08h4E",
+          "message_id": 702,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1145655826,
+          "url": "https://t.me/c/4325759505/701",
+          "telegram_url": "https://t.me/c/4325759505/701",
+          "direct_url": "/stream/channel/-1004325759505/701?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAr1q-apj0RhtIKt-_Px6GGqt-me8aQAC5iQAAo6lyVfofFxwLK8spB4E",
+          "message_id": 701,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/701",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "579.8 MB",
+          "size_bytes": 607943200,
+          "url": "https://t.me/c/4325759505/700",
+          "telegram_url": "https://t.me/c/4325759505/700",
+          "direct_url": "/stream/channel/-1004325759505/700?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArxq-aeikJ1zf9LwSfVHR-djiGhlGAAC4yQAAo6lyVccwr7OSeLeGh4E",
+          "message_id": 700,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/700",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2030853018,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_arco-2025_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1145655826,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_arco-2025_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/701",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "579.8 MB",
+          "size_bytes": 607943200,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_arco-2025_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/700",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAr5q-asMlMo2SOBft8vngtSE9kiuEwAC6SQAAo6lyVcoFi8xYfY08h4E",
+          "message_id": 702,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/702",
+          "size_bytes": 2030853018
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAr1q-apj0RhtIKt-_Px6GGqt-me8aQAC5iQAAo6lyVfofFxwLK8spB4E",
+          "message_id": 701,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/701",
+          "size_bytes": 1145655826
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArxq-aeikJ1zf9LwSfVHR-djiGhlGAAC4yQAAo6lyVccwr7OSeLeGh4E",
+          "message_id": 700,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/700",
+          "size_bytes": 607943200
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/arco-2025-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=arco-2025",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T12:52:42Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T12:21:37Z"
+  "last_updated": "2026-11-15T12:52:44Z"
 };

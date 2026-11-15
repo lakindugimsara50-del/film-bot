@@ -7271,8 +7271,8 @@ body.tg-browser-mode {
   pointer-events: none;
 }
 
-/* Grand Cinematic 3D FILMZILLA Stage Watermark (Flanking Both Sides of Compact Card Deck)
-   "filmzilla kiyana ek alokuwata danna card podi unam depaththen pena vidiyata saha ekath lassanata 3d karala" */
+/* Grand Cinematic 3D Liquid Water Bubble FILMZILLA Stage Watermark (Flanking Both Sides of Compact Card Deck)
+   "filmzilla kiyala thiyana ekath bubble karanna" - Apple iOS 18 / VisionOS Liquid Water Bubble System */
 .hero-stage-watermark {
   position: absolute;
   top: 50%;
@@ -7287,9 +7287,9 @@ body.tg-browser-mode {
   user-select: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.85s ease;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.75s ease;
   will-change: opacity, transform;
 }
 
@@ -7303,10 +7303,10 @@ body.tg-browser-mode {
 .hero-showcase.is-expanded-mode .hero-stage-watermark {
   opacity: 0;
   visibility: hidden;
-  transform: translate(-50%, -50%) scale(1.12);
-  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.45s ease;
+  transform: translate(-50%, -50%) scale(1.08);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.55s ease;
 }
 
 .hero-watermark-glow {
@@ -7314,18 +7314,18 @@ body.tg-browser-mode {
   top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(94vw, 1280px);
+  width: min(94vw, 1300px);
   height: 420px;
-  background: radial-gradient(ellipse at 50% 50%, rgba(229, 9, 20, 0.22) 0%, rgba(229, 9, 20, 0.06) 46%, transparent 75%);
-  filter: blur(68px);
+  background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.12) 0%, rgba(229, 9, 20, 0.28) 32%, rgba(229, 9, 20, 0.08) 56%, transparent 75%);
+  filter: blur(72px);
   border-radius: 50%;
   pointer-events: none;
   animation: heroWatermarkBreathe 6s infinite ease-in-out;
 }
 
 @keyframes heroWatermarkBreathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.75; }
-  50%      { transform: translate(-50%, -50%) scale(1.14); opacity: 0.95; filter: blur(78px); }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 1; filter: blur(82px); }
 }
 
 .hero-watermark-backdrop {
@@ -7337,7 +7337,7 @@ body.tg-browser-mode {
   width: 100%;
 }
 
-/* Flanking 3D Words: "FILM" (left) and "ZILLA" (right) - Grand Titanium Chrome */
+/* Flanking 3D Liquid Bubble Pods: "FILM" (left) and "ZILLA" (right) */
 .hero-watermark-flank {
   display: flex;
   flex-direction: column;
@@ -7360,37 +7360,97 @@ body.tg-browser-mode {
   transform-origin: center left;
 }
 
+/* Apple iOS 18 / VisionOS Liquid Water Bubble Glass Pod Capsule */
+.hero-watermark-bubble-pod {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(14px, 1.8vw, 24px) clamp(22px, 2.5vw, 40px);
+  border-radius: clamp(24px, 3.2vw, 38px);
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 48%, rgba(12, 12, 18, 0.5) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-top: 2.5px solid rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(210%);
+  -webkit-backdrop-filter: blur(24px) saturate(210%);
+  box-shadow:
+    inset 0 2.5px 3.5px rgba(255, 255, 255, 0.52),
+    inset 0 -2.5px 4.5px rgba(0, 0, 0, 0.48),
+    0 24px 60px -10px rgba(0, 0, 0, 0.88),
+    0 0 45px rgba(229, 9, 20, 0.22);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hero-watermark-flank.flank-left .hero-watermark-bubble-pod {
+  align-items: flex-start;
+}
+.hero-watermark-flank.flank-right .hero-watermark-bubble-pod {
+  align-items: flex-end;
+}
+
+/* Top Specular Glare Arc on Bubble Pod */
+.hero-watermark-bubble-glare {
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 48%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0.12) 48%, transparent 80%);
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(1.5px);
+}
+
+/* Liquid Water Bubble Refractive Typography */
 .hero-watermark-word {
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: clamp(68px, 10.2vw, 160px);
+  font-size: clamp(62px, 9.6vw, 150px);
   font-weight: 950;
-  line-height: 0.90;
-  letter-spacing: clamp(4px, 0.9vw, 14px);
+  line-height: 0.88;
+  letter-spacing: clamp(4px, 0.8vw, 12px);
   text-transform: uppercase;
   background: linear-gradient(
     175deg,
     #ffffff 0%,
-    #f8fafc 12%,
-    #e2e8f0 26%,
-    #cbd5e1 38%,
-    #94a3b8 52%,
-    #64748b 68%,
-    #334155 82%,
-    #1e293b 92%,
-    #0f172a 100%
+    #f8fafc 16%,
+    rgba(255, 255, 255, 0.95) 32%,
+    rgba(224, 238, 255, 0.85) 48%,
+    rgba(148, 175, 220, 0.7) 64%,
+    rgba(240, 245, 255, 0.9) 82%,
+    #ffffff 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter:
-    drop-shadow(0 -1.5px 1.5px rgba(255, 255, 255, 0.82))
-    drop-shadow(1px 2px 0px rgba(148, 163, 184, 0.38))
+    drop-shadow(0 -2px 2px rgba(255, 255, 255, 0.95))
     drop-shadow(0 2px 4px rgba(0, 0, 0, 0.72))
-    drop-shadow(0 10px 26px rgba(0, 0, 0, 0.88))
-    drop-shadow(0 24px 55px rgba(0, 0, 0, 0.96))
-    drop-shadow(0 0 50px rgba(229, 9, 20, 0.24));
+    drop-shadow(0 14px 32px rgba(0, 0, 0, 0.92))
+    drop-shadow(0 0 35px rgba(255, 255, 255, 0.28))
+    drop-shadow(0 0 65px rgba(229, 9, 20, 0.38));
   position: relative;
   display: inline-block;
   user-select: none;
+  animation: heroWordWaterSheen 7s ease-in-out infinite;
+}
+
+@keyframes heroWordWaterSheen {
+  0%, 100% {
+    filter:
+      drop-shadow(0 -2px 2px rgba(255, 255, 255, 0.95))
+      drop-shadow(0 2px 4px rgba(0, 0, 0, 0.72))
+      drop-shadow(0 14px 32px rgba(0, 0, 0, 0.92))
+      drop-shadow(0 0 35px rgba(255, 255, 255, 0.28))
+      drop-shadow(0 0 65px rgba(229, 9, 20, 0.38));
+  }
+  50% {
+    filter:
+      drop-shadow(0 -2.5px 3px rgba(255, 255, 255, 1))
+      drop-shadow(0 2px 5px rgba(0, 0, 0, 0.8))
+      drop-shadow(0 18px 38px rgba(0, 0, 0, 0.96))
+      drop-shadow(0 0 45px rgba(255, 255, 255, 0.42))
+      drop-shadow(0 0 80px rgba(229, 9, 20, 0.52));
+  }
 }
 
 .hero-watermark-subline {
@@ -7398,21 +7458,26 @@ body.tg-browser-mode {
   font-weight: 800;
   letter-spacing: clamp(3px, 0.5vw, 6px);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  background: linear-gradient(175deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.45);
-  padding: 3.5px 14px;
+  color: #ffffff;
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 55%, rgba(0, 0, 0, 0.32) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1.8px solid rgba(255, 255, 255, 0.75);
+  padding: 4px 15px;
   border-radius: 999px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.28), 0 6px 18px rgba(0, 0, 0, 0.65);
-  margin-top: 8px;
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.48),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 22px rgba(0, 0, 0, 0.65);
+  margin-top: 10px;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
-/* Center Crest: 3D Emblem, Halo & Tagline - Elevated majestically above card deck */
+/* Center Crest: 3D Emblem Floating Liquid Bubble Orb & Tagline */
 .hero-watermark-center {
   position: absolute;
   top: -152px;
@@ -7431,15 +7496,29 @@ body.tg-browser-mode {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: clamp(82px, 9.2vw, 112px);
+  height: clamp(82px, 9.2vw, 112px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.1) 40%, rgba(12, 12, 18, 0.68) 82%);
+  border: 1.5px solid rgba(255, 255, 255, 0.24);
+  border-top: 2.8px solid rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(210%);
+  -webkit-backdrop-filter: blur(24px) saturate(210%);
+  box-shadow:
+    inset 0 3.5px 5px rgba(255, 255, 255, 0.7),
+    inset 0 -3.5px 6px rgba(0, 0, 0, 0.55),
+    0 20px 50px rgba(0, 0, 0, 0.9),
+    0 0 60px rgba(229, 9, 20, 0.45);
 }
 
 .hero-watermark-logo {
-  width: clamp(56px, 7vw, 88px);
+  width: clamp(48px, 5.8vw, 68px);
   height: auto;
   object-fit: contain;
   filter:
-    drop-shadow(0 0 24px rgba(229, 9, 20, 0.5))
-    drop-shadow(0 8px 20px rgba(0, 0, 0, 0.85));
+    drop-shadow(0 0 24px rgba(229, 9, 20, 0.6))
+    drop-shadow(0 8px 18px rgba(0, 0, 0, 0.9));
   animation: heroLogoFloat 6s ease-in-out infinite;
   position: relative;
   z-index: 2;
@@ -7455,10 +7534,10 @@ body.tg-browser-mode {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 140%;
-  height: 140%;
-  background: radial-gradient(circle, rgba(229, 9, 20, 0.35) 0%, transparent 68%);
-  filter: blur(20px);
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(229, 9, 20, 0.42) 0%, rgba(255, 255, 255, 0.15) 30%, transparent 68%);
+  filter: blur(22px);
   border-radius: 50%;
   pointer-events: none;
   z-index: 1;
@@ -7468,20 +7547,23 @@ body.tg-browser-mode {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 7px;
+  margin-top: 10px;
   font-size: clamp(9px, 1.05vw, 12px);
   font-weight: 700;
   letter-spacing: clamp(2.5px, 0.4vw, 5px);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.45);
-  padding: 3.5px 15px;
+  color: #ffffff;
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 55%, rgba(0, 0, 0, 0.35) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1.8px solid rgba(255, 255, 255, 0.72);
+  padding: 4px 16px;
   border-radius: 999px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28), 0 4px 16px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.45),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.6);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
 }
@@ -7499,10 +7581,10 @@ body.tg-browser-mode {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: scale(1.05);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.7s ease;
+  transform: scale(0.96);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.75s ease;
   will-change: opacity, transform;
 }
 .hero-showcase.is-expanded-mode .hero-fs-backdrop-wrap {
@@ -7513,14 +7595,14 @@ body.tg-browser-mode {
 .hero-showcase.is-deck-mode .hero-fs-backdrop-wrap {
   opacity: 0;
   visibility: hidden;
-  transform: scale(1.05);
+  transform: scale(0.96);
 }
 .hero-showcase.is-receding-mode .hero-fs-backdrop-wrap {
   opacity: 0;
   visibility: visible;
   transform: scale(0.96);
-  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-bg-layer {
@@ -7593,22 +7675,22 @@ body.tg-browser-mode {
   padding: 0 44px;
   pointer-events: none;
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(20px);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 .hero-showcase.is-expanded-mode .hero-showcase-container {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
-  transition-delay: 0.18s;
+  transition-delay: 0.12s;
 }
 .hero-showcase.is-deck-mode .hero-showcase-container,
 .hero-showcase.is-receding-mode .hero-showcase-container {
   opacity: 0 !important;
-  transform: translateY(22px);
+  transform: translateY(20px);
   pointer-events: none !important;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.35s ease, transform 0.4s ease;
 }
 
 .hero-showcase-main {
@@ -7846,8 +7928,8 @@ body.tg-browser-mode {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 .hero-showcase.is-deck-mode .hero-3d-deck-wrap,
@@ -7859,8 +7941,7 @@ body.tg-browser-mode {
 .hero-showcase.is-expanded-mode .hero-3d-deck-wrap {
   opacity: 0;
   pointer-events: none;
-  transform: scale(1.03);
-  transition: opacity 0.45s ease 0.15s, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(1.04);
 }
 
 .hero-3d-deck-stage {
@@ -7889,8 +7970,8 @@ body.tg-browser-mode {
   background-color: #121218;
   transform-style: preserve-3d;
   transform-origin: center center;
-  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
               filter 0.5s ease,
               box-shadow 0.5s ease,
               border-color 0.5s ease;
@@ -8069,7 +8150,7 @@ body.tg-browser-mode {
 /* In expanded mode, front card blooms forward in 3D into Fullscreen */
 .hero-showcase.is-expanded-mode .hero-3d-card.slot-0,
 .hero-showcase.is-expanded-mode .hero-3d-card.is-active {
-  transform: translate3d(0, 0, 260px) scale(2.2) rotateY(0deg);
+  transform: translate3d(0, 0, 240px) scale(2.1) rotateY(0deg);
   opacity: 0;
   border-color: transparent;
   box-shadow: none;
@@ -8091,7 +8172,7 @@ body.tg-browser-mode {
 .hero-showcase.is-expanded-mode .hero-3d-card .hero-3d-card-info,
 .hero-showcase.is-expanded-mode .hero-3d-card .hero-3d-card-shine {
   opacity: 0;
-  transition: opacity 0.22s ease;
+  transition: opacity 0.2s ease;
 }
 
 .hero-3d-card .hero-3d-card-top-row,
@@ -8106,37 +8187,43 @@ body.tg-browser-mode {
   border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
-/* 3D Rear Shuffle Animation:
-   Old front card visibly sweeps out to the left and glides behind the deck to slot 5.
+/* 3D Rear Shuffle & Retreat Animation:
+   Old front card visibly sweeps out in a single continuous 3D arc and glides behind the deck to slot 5.
    ("ara apu card eka pitipassata yanawa penawa")
 */
 .hero-3d-card.is-shuffling-to-rear,
 .hero-3d-card.is-retreating-to-back {
-  animation: cardShuffleToRear 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: cardRetreatToBack 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
   z-index: 35 !important;
   pointer-events: none !important;
 }
-@keyframes cardShuffleToRear {
+
+@keyframes cardRetreatToBack {
   0% {
-    transform: translate3d(var(--s0-x), var(--s0-y), var(--s0-z)) scale(var(--s0-s)) rotateY(var(--s0-ry)) rotateX(2deg);
+    transform: translate3d(var(--s0-x), var(--s0-y), calc(var(--s0-z) + 40px)) scale(calc(var(--s0-s) * 1.12)) rotateY(var(--s0-ry)) rotateX(2deg);
     opacity: 1;
-    filter: brightness(1.02);
-    border-color: rgba(255, 255, 255, 0.22);
-    border-top-color: rgba(255, 255, 255, 0.75);
-    box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.52), 0 42px 90px -12px rgba(0, 0, 0, 0.98), 0 24px 60px -8px rgba(229, 9, 20, 0.28);
+    filter: brightness(1.04);
+    border-color: rgba(255, 255, 255, 0.25);
+    border-top-color: rgba(255, 255, 255, 0.85);
+    box-shadow:
+      inset 0 2px 2px rgba(255, 255, 255, 0.55),
+      0 42px 90px -12px rgba(0, 0, 0, 0.98),
+      0 24px 60px -8px rgba(229, 9, 20, 0.32);
     z-index: 35;
   }
-  32% {
-    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -12px, 140px) scale(1.06) rotateY(18deg) rotateX(3deg);
+  35% {
+    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -10px, 120px) scale(1.04) rotateY(16deg) rotateX(2.5deg);
     opacity: 0.96;
     filter: brightness(0.92);
     border-color: rgba(255, 255, 255, 0.35);
     border-top-color: rgba(255, 255, 255, 0.9);
-    box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.6), 0 36px 80px rgba(0, 0, 0, 0.95);
+    box-shadow:
+      inset 0 2px 2px rgba(255, 255, 255, 0.6),
+      0 36px 80px rgba(0, 0, 0, 0.95);
     z-index: 35;
   }
-  68% {
-    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 30px, -260px) scale(0.60) rotateY(-26deg);
+  70% {
+    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 28px, -270px) scale(0.58) rotateY(-28deg);
     opacity: 0.52;
     filter: brightness(0.46);
     z-index: 3;
@@ -8505,13 +8592,13 @@ body.tg-browser-mode {
   }
   .hero-stage-watermark {
     top: calc(50% - 138px);
-    padding: 0 14px;
+    padding: 0 10px;
   }
   .hero-watermark-backdrop {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(8px, 3vw, 16px);
+    gap: clamp(6px, 2.5vw, 14px);
     position: relative;
   }
   .hero-watermark-flank.flank-left {
@@ -8526,15 +8613,18 @@ body.tg-browser-mode {
     text-align: left;
     flex: 0 1 auto;
   }
+  .hero-watermark-bubble-pod {
+    padding: 6px 12px;
+    border-radius: 16px;
+  }
   .hero-watermark-word {
-    font-size: clamp(24px, 6.2vw, 40px);
-    letter-spacing: clamp(2px, 0.8vw, 4.5px);
+    font-size: clamp(20px, 5.5vw, 36px);
+    letter-spacing: clamp(1.6px, 0.5vw, 3.2px);
     line-height: 1;
     filter:
-      drop-shadow(0 -1px 1px rgba(255, 255, 255, 0.75))
-      drop-shadow(1px 1.5px 0px rgba(148, 163, 184, 0.35))
-      drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9))
-      drop-shadow(0 0 24px rgba(229, 9, 20, 0.35));
+      drop-shadow(0 -1px 1px rgba(255, 255, 255, 0.85))
+      drop-shadow(0 2px 4px rgba(0, 0, 0, 0.85))
+      drop-shadow(0 0 20px rgba(229, 9, 20, 0.4));
   }
   .hero-watermark-subline {
     display: none;
@@ -8542,11 +8632,15 @@ body.tg-browser-mode {
   .hero-watermark-center {
     position: static;
     transform: none;
-    padding: 0 4px;
+    padding: 0 2px;
     flex-shrink: 0;
   }
+  .hero-watermark-emblem-wrap {
+    width: clamp(44px, 11vw, 56px);
+    height: clamp(44px, 11vw, 56px);
+  }
   .hero-watermark-logo {
-    width: clamp(32px, 8vw, 44px);
+    width: clamp(26px, 6.5vw, 34px);
     margin-bottom: 0;
   }
   .hero-watermark-tagline {

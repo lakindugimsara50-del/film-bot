@@ -802,12 +802,11 @@ let hero3DTouchStartX = 0;
 let hero3DTouchStartY = 0;
 
 const HERO_FS_DURATION = 5000;        // Display time in Fullscreen ("chuttak wela thibila")
-const HERO_RECEDE_MS = 650;           // Smooth contraction back to 3D deck view
-const HERO_SHUFFLE_MS = 750;          // Visible rear sweep along outer 3D curve in unison
-const HERO_DECK_PAUSE_MS = 2200;      // Appreciation beat in 3D deck view (shows 3D typography & card depth)
-const HERO_EXPAND_MS = 700;           // Forward 3D bloom into Fullscreen
+const HERO_RETREAT_MS = 850;          // Unified fluid 3D retreat arc & simultaneous card step forward
+const HERO_DECK_PAUSE_MS = 2000;      // Appreciation beat in 3D deck view (shows 3D typography & card depth)
+const HERO_EXPAND_MS = 750;           // Forward 3D bloom into Fullscreen
 
-// States: 'FULLSCREEN' | 'RECEDING' | 'SHUFFLING' | 'PAUSED_DECK' | 'EXPANDING' | 'MANUAL_DECK'
+// States: 'FULLSCREEN' | 'RETREATING' | 'PAUSED_DECK' | 'EXPANDING' | 'MANUAL_DECK'
 let heroCurrentState = 'DECK';
 let heroShowcaseInitialized = false;
 
@@ -1063,6 +1062,10 @@ function expandHeroCard(targetIdx, autoAdvance = true) {
     section.classList.remove('is-deck-mode', 'is-receding-mode');
     section.classList.add('is-expanded-mode');
   }
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (stage) stage.style.transform = '';
+  const watermark = document.getElementById('hero-stage-watermark');
+  if (watermark) watermark.style.transform = '';
   updateDeckToggleBtn('expanded');
 
   // Preload upcoming next movie backdrop
@@ -1118,57 +1121,49 @@ function advanceHeroShowcase(token) {
   const nextIdx = (oldIdx + 1) % len;
   const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
 
-  heroCurrentState = 'RECEDING';
+  heroCurrentState = 'RETREATING';
 
-  // Phase 1: Fullscreen recedes with smooth 3D contraction into card deck
-  // ("aye full screen ain wenawa lassana animation ekakin ara diga hadathi card tika aye awith")
+  // 1. Unified Graceful 3D Retreat & Simultaneous Stack Advance:
+  // Fullscreen recedes while the old spotlight card glides along the continuous 3D arc to the rear
+  // AND all other cards simultaneously step forward into their new 3D slots in perfect unison.
+  // ZERO snapping, ZERO multi-step delays.
   section.classList.remove('is-expanded-mode');
   section.classList.add('is-receding-mode');
   updateDeckToggleBtn('deck');
 
-  // Phase 2: After receding completes (650ms), 3D deck is fully visible on dark stage
+  if (oldCard) {
+    oldCard.className = 'hero-3d-card is-retreating-to-back';
+  }
+
+  // Simultaneously, advance all other cards forward in 3D unison
+  stage.querySelectorAll('.hero-3d-card').forEach(card => {
+    const cIdx = parseInt(card.dataset.idx, 10);
+    if (cIdx !== oldIdx) {
+      const rel = (cIdx - nextIdx + len) % len;
+      card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
+    }
+  });
+
+  // 2. Once the retreat arc and slot advance completes (850ms), settle deck
   setHeroTimeout(() => {
     if (currentToken !== heroCycleToken) return;
     section.classList.remove('is-receding-mode');
     section.classList.add('is-deck-mode');
-    heroCurrentState = 'SHUFFLING';
+    heroShowcaseCurrent = nextIdx;
+    assignHeroSlotClasses();
+    updateHeroNavCounter();
+    heroCurrentState = 'PAUSED_DECK';
 
-    // Phase 3: The old card visibly sweeps around along the outer 3D curve to the back of the deck
-    // ("ara apu card eka pitipassata yanawa penawa")
-    if (oldCard) {
-      oldCard.className = 'hero-3d-card is-shuffling-to-rear';
-    }
+    // Preload next movie image into cache
+    preloadHeroImage((nextIdx + 1) % len);
 
-    // Simultaneously, advance all other cards forward in 3D unison
-    stage.querySelectorAll('.hero-3d-card').forEach(card => {
-      const cIdx = parseInt(card.dataset.idx, 10);
-      if (cIdx !== oldIdx) {
-        const rel = (cIdx - nextIdx + len) % len;
-        card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
-      }
-    });
-
-    // Phase 4: After rear sweep completes (750ms), settle deck
+    // 3. Appreciation pause in 3D deck view (shows liquid bubble FILMZILLA & 3D card depth)
     setHeroTimeout(() => {
       if (currentToken !== heroCycleToken) return;
-      heroShowcaseCurrent = nextIdx;
-      assignHeroSlotClasses();
-      updateHeroNavCounter();
-      heroCurrentState = 'PAUSED_DECK';
-
-      // Preload next movie image
-      preloadHeroImage((nextIdx + 1) % len);
-
-      // Phase 5: Brief appreciation beat in 3D deck view (600ms) so user clearly sees the new card in spotlight
-      // ("ara diga hadathi card tika aye awith ara apu card eka pitipassata yanawa penawa aye issaraha thiyana card eka...")
-      setHeroTimeout(() => {
-        if (currentToken !== heroCycleToken) return;
-        // Phase 6: Next front card rotates in 3D and blossoms into full screen!
-        // ("aye issaraha thiyana card eka lassana animation ekakin issarahata awith full screen wenawa")
-        expandHeroCard(nextIdx, true);
-      }, HERO_DECK_PAUSE_MS);
-    }, HERO_SHUFFLE_MS);
-  }, HERO_RECEDE_MS);
+      // 4. Next front card blossoms forward into full screen!
+      expandHeroCard(nextIdx, true);
+    }, HERO_DECK_PAUSE_MS);
+  }, HERO_RETREAT_MS);
 }
 
 function cycleHeroShowcaseNext() {
@@ -1223,7 +1218,7 @@ function toggleHeroDeckView() {
     const currentToken = ++heroCycleToken;
     clearAllHeroTimers();
     stopProgressBar();
-    heroCurrentState = 'RECEDING';
+    heroCurrentState = 'RETREATING';
 
     section.classList.remove('is-expanded-mode');
     section.classList.add('is-receding-mode');
@@ -1235,7 +1230,7 @@ function toggleHeroDeckView() {
       section.classList.add('is-deck-mode');
       assignHeroSlotClasses();
       heroCurrentState = 'MANUAL_DECK';
-    }, HERO_RECEDE_MS);
+    }, HERO_RETREAT_MS);
   } else {
     // Expand front card into full screen and resume continuous cycle
     expandHeroCard(heroShowcaseCurrent, true);

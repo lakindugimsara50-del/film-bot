@@ -15478,7 +15478,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T14:38:06Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-fix-2026",
+      "slug": "the-fix-2026",
+      "title": "The Fix",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.8",
+      "rating": "5.8",
+      "imdb_id": "tt9601292",
+      "tmdb_id": "1228834",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/jlP8XDjZN89GrpM3je5Uf8Grqx8.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/jlP8XDjZN89GrpM3je5Uf8Grqx8.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/dJTWIecL2vxsCRl5G0lRhPsfrhc.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/dJTWIecL2vxsCRl5G0lRhPsfrhc.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/l5Luvr9TRRc",
+      "trailer_id": "l5Luvr9TRRc",
+      "genres": [
+        "Action",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "142 min",
+      "description": "Disillusioned by the end of the war in Afghanistan, a group of disgraced, war-torn ex-CIA operatives set out to Tehran to take down a life-changing score.",
+      "director": "Guy Moshe",
+      "cast": [
+        {
+          "name": "Zachary Levi",
+          "character": "Tucker"
+        },
+        {
+          "name": "Liam Neeson",
+          "character": "Larry"
+        },
+        {
+          "name": "Wes Chatham",
+          "character": "Alex"
+        },
+        {
+          "name": "Titus Welliver",
+          "character": "James"
+        },
+        {
+          "name": "Navid Negahban",
+          "character": "Qasim"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAs1q-ch94TqCPWlJIwxmL1BUoCMi2wACCyMAAo6l0VcMRJQ2J4_Ngx4E",
+      "message_id": 717,
+      "file_name": "comp_the-fix-2026_1080p.mp4",
+      "file_size": 2057688549,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAs1q-ch94TqCPWlJIwxmL1BUoCMi2wACCyMAAo6l0VcMRJQ2J4_Ngx4E",
+          "message_id": 717,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1228834"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt9601292"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt9601292"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/718",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/716"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2057688549,
+          "url": "https://t.me/c/4325759505/717",
+          "telegram_url": "https://t.me/c/4325759505/717",
+          "direct_url": "/stream/channel/-1004325759505/717?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAs1q-ch94TqCPWlJIwxmL1BUoCMi2wACCyMAAo6l0VcMRJQ2J4_Ngx4E",
+          "message_id": 717,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1859544431,
+          "url": "https://t.me/c/4325759505/718",
+          "telegram_url": "https://t.me/c/4325759505/718",
+          "direct_url": "/stream/channel/-1004325759505/718?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAs5q-cinP0zBefz5idJgzx-cmattUQACDCMAAo6l0VfcImwgHfACyx4E",
+          "message_id": 718,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/718",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "947.4 MB",
+          "size_bytes": 993461888,
+          "url": "https://t.me/c/4325759505/716",
+          "telegram_url": "https://t.me/c/4325759505/716",
+          "direct_url": "/stream/channel/-1004325759505/716?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsxq-cfqJJ-6hVEx_SZTEHxMntNInwACCiMAAo6l0VfAJ-TkM2o7KR4E",
+          "message_id": 716,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/716",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2057688549,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-fix-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1859544431,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-fix-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/718",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "947.4 MB",
+          "size_bytes": 993461888,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-fix-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/716",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAs1q-ch94TqCPWlJIwxmL1BUoCMi2wACCyMAAo6l0VcMRJQ2J4_Ngx4E",
+          "message_id": 717,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/717",
+          "size_bytes": 2057688549
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAs5q-cinP0zBefz5idJgzx-cmattUQACDCMAAo6l0VfcImwgHfACyx4E",
+          "message_id": 718,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/718",
+          "size_bytes": 1859544431
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsxq-cfqJJ-6hVEx_SZTEHxMntNInwACCiMAAo6l0VfAJ-TkM2o7KR4E",
+          "message_id": 716,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/716",
+          "size_bytes": 993461888
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-fix-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-fix-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T14:58:59Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T14:38:08Z"
+  "last_updated": "2026-11-15T14:59:00Z"
 };

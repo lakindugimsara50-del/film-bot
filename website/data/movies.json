@@ -16837,7 +16837,233 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T17:02:37Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "vigilante-2026",
+      "slug": "vigilante-2026",
+      "title": "Vigilante",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "1.0",
+      "rating": "1.0",
+      "imdb_id": "tt39715022",
+      "tmdb_id": "1635521",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/7BreFvMuYYCEiqgGr7hXv7X3jmq.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/7BreFvMuYYCEiqgGr7hXv7X3jmq.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/8BXX7ZYNM5xxha5kmFS6A6FpqTA.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/8BXX7ZYNM5xxha5kmFS6A6FpqTA.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/22Mu4G3p3RE",
+      "trailer_id": "22Mu4G3p3RE",
+      "genres": [
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "96 min",
+      "description": "Rider by day, vigilante by night. A grieving father seeking justice takes matters into his own hands to avenge his son's death and save the city from a crime ring.",
+      "director": "Christian Paolo Lat",
+      "cast": [
+        {
+          "name": "Diego Loyzaga",
+          "character": ""
+        },
+        {
+          "name": "Robb Guinto",
+          "character": ""
+        },
+        {
+          "name": "Vince Rillon",
+          "character": ""
+        },
+        {
+          "name": "Archie Adamos",
+          "character": ""
+        },
+        {
+          "name": "Raffy Tejada",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuZq-fG2BnPOwbwkmxrFU7w49atOnwACTCMAAo6l0VfdjTwoyqG0zB4E",
+      "message_id": 742,
+      "file_name": "comp_vigilante-2026_1080p.mp4",
+      "file_size": 1929662224,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuZq-fG2BnPOwbwkmxrFU7w49atOnwACTCMAAo6l0VfdjTwoyqG0zB4E",
+          "message_id": 742,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1635521"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt39715022"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt39715022"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/740",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/741"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1929662224,
+          "url": "https://t.me/c/4325759505/742",
+          "telegram_url": "https://t.me/c/4325759505/742",
+          "direct_url": "/stream/channel/-1004325759505/742?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuZq-fG2BnPOwbwkmxrFU7w49atOnwACTCMAAo6l0VfdjTwoyqG0zB4E",
+          "message_id": 742,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1146830314,
+          "url": "https://t.me/c/4325759505/740",
+          "telegram_url": "https://t.me/c/4325759505/740",
+          "direct_url": "/stream/channel/-1004325759505/740?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuRq-eihu0yWPSPzOiswOaiH-Fl_fAACRyMAAo6l0VfLiwaRY1pkth4E",
+          "message_id": 740,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/740",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "597.3 MB",
+          "size_bytes": 626329590,
+          "url": "https://t.me/c/4325759505/741",
+          "telegram_url": "https://t.me/c/4325759505/741",
+          "direct_url": "/stream/channel/-1004325759505/741?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuVq-emJsugq500Vw2ezJidHm-09ZwACSCMAAo6l0Ve5OnV1gdAbfR4E",
+          "message_id": 741,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/741",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1929662224,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_vigilante-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1146830314,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_vigilante-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/740",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "597.3 MB",
+          "size_bytes": 626329590,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_vigilante-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/741",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuZq-fG2BnPOwbwkmxrFU7w49atOnwACTCMAAo6l0VfdjTwoyqG0zB4E",
+          "message_id": 742,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/742",
+          "size_bytes": 1929662224
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuRq-eihu0yWPSPzOiswOaiH-Fl_fAACRyMAAo6l0VfLiwaRY1pkth4E",
+          "message_id": 740,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/740",
+          "size_bytes": 1146830314
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuVq-emJsugq500Vw2ezJidHm-09ZwACSCMAAo6l0Ve5OnV1gdAbfR4E",
+          "message_id": 741,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/741",
+          "size_bytes": 626329590
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/vigilante-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=vigilante-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T17:54:15Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T17:02:38Z"
+  "last_updated": "2026-11-15T17:54:17Z"
 }

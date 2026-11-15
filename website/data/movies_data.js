@@ -17971,7 +17971,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T20:48:52Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "nooru-kodi-vaanavil-2026",
+      "slug": "nooru-kodi-vaanavil-2026",
+      "title": "Nooru Kodi Vaanavil",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt18933846",
+      "tmdb_id": "926867",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/gSJodOp12s5qFU3pO9Cz1sjQSYZ.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/gSJodOp12s5qFU3pO9Cz1sjQSYZ.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/oiFiQY14r8mcqCfNmnaPLBzdbnJ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/oiFiQY14r8mcqCfNmnaPLBzdbnJ.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/QS16VwlYU5w",
+      "trailer_id": "QS16VwlYU5w",
+      "genres": [
+        "Romance",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "118 min",
+      "description": "Vino and Fenny's lives intertwine in a poignant tale of love, hope, and heartbreak.",
+      "director": "Sasi",
+      "cast": [
+        {
+          "name": "Harish Kalyan",
+          "character": ""
+        },
+        {
+          "name": "Siddhi Idnani",
+          "character": "Fenny"
+        },
+        {
+          "name": "Kovai Sarala",
+          "character": ""
+        },
+        {
+          "name": "Thambi Ramaiah",
+          "character": ""
+        },
+        {
+          "name": "Chinni Jayanth",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvhq-h6lHEPyGrfUyA6rVyDgvPRz8wACyyEAAqHv0VeMo4t_W34q_B4E",
+      "message_id": 760,
+      "file_name": "comp_nooru-kodi-vaanavil-2026_1080p.mp4",
+      "file_size": 2026524646,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvhq-h6lHEPyGrfUyA6rVyDgvPRz8wACyyEAAqHv0VeMo4t_W34q_B4E",
+          "message_id": 760,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/926867"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt18933846"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt18933846"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/762",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/761"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2026524646,
+          "url": "https://t.me/c/4325759505/760",
+          "telegram_url": "https://t.me/c/4325759505/760",
+          "direct_url": "/stream/channel/-1004325759505/760?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvhq-h6lHEPyGrfUyA6rVyDgvPRz8wACyyEAAqHv0VeMo4t_W34q_B4E",
+          "message_id": 760,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1498683584,
+          "url": "https://t.me/c/4325759505/762",
+          "telegram_url": "https://t.me/c/4325759505/762",
+          "direct_url": "/stream/channel/-1004325759505/762?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvpq-iQimcQ41hO1HjROktwLGeNoLwACziEAAqHv0Vd1OOiu3WI8jh4E",
+          "message_id": 762,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/762",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "773.7 MB",
+          "size_bytes": 811276429,
+          "url": "https://t.me/c/4325759505/761",
+          "telegram_url": "https://t.me/c/4325759505/761",
+          "direct_url": "/stream/channel/-1004325759505/761?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvlq-h_NWxsbe7gtt9bp8ct0zy7zFwACzCEAAqHv0VdVhGShDfARPh4E",
+          "message_id": 761,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/761",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2026524646,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_nooru-kodi-vaanavil-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1498683584,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_nooru-kodi-vaanavil-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/762",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "773.7 MB",
+          "size_bytes": 811276429,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_nooru-kodi-vaanavil-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/761",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvhq-h6lHEPyGrfUyA6rVyDgvPRz8wACyyEAAqHv0VeMo4t_W34q_B4E",
+          "message_id": 760,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/760",
+          "size_bytes": 2026524646
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvpq-iQimcQ41hO1HjROktwLGeNoLwACziEAAqHv0Vd1OOiu3WI8jh4E",
+          "message_id": 762,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/762",
+          "size_bytes": 1498683584
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvlq-h_NWxsbe7gtt9bp8ct0zy7zFwACzCEAAqHv0VdVhGShDfARPh4E",
+          "message_id": 761,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/761",
+          "size_bytes": 811276429
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/nooru-kodi-vaanavil-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=nooru-kodi-vaanavil-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T21:29:21Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T20:48:53Z"
+  "last_updated": "2026-11-15T21:29:23Z"
 };

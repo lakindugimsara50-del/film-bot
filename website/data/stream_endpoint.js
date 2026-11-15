@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://land-rebel-assists-surplus.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-15T06:01:48.745891+00:00",
+  "updated_at": "2026-11-15T06:02:04.355120+00:00",
   "status": "online"
 };

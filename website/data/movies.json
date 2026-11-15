@@ -18198,7 +18198,235 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T21:29:21Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-third-murder-2026",
+      "slug": "the-third-murder-2026",
+      "title": "The Third Murder",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.0",
+      "rating": "8.0",
+      "imdb_id": "tt27512908",
+      "tmdb_id": "922673",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/jNKwDvLdx81UqY4KVl0KybtSTqo.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/jNKwDvLdx81UqY4KVl0KybtSTqo.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/7UDUfWg5l3gvwO12yYLrPwGOals.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/7UDUfWg5l3gvwO12yYLrPwGOals.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/OPBSJ1LWsEg",
+      "trailer_id": "OPBSJ1LWsEg",
+      "genres": [
+        "Crime",
+        "Thriller",
+        "Mystery"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "124 min",
+      "description": "When businessman Boban is murdered in the same manner as drug peddler Justin, DYSP Christy brings in ex-cop Swamy, an expert in serial killer cases. Their investigation leads to Aditya, a troubled teenager caught in conflict with his eccentric father, as hidden motives emerge and a deadly hunt begins to stop a third murder.",
+      "director": "Sunil Ibrahim",
+      "cast": [
+        {
+          "name": "Vinay Forrt",
+          "character": "Vinayan"
+        },
+        {
+          "name": "Saiju Kurup",
+          "character": "Christy"
+        },
+        {
+          "name": "Indrans",
+          "character": "Swamy"
+        },
+        {
+          "name": "Ananya",
+          "character": ""
+        },
+        {
+          "name": "Leona Lishoy",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAv1q-ihC3BFs-CIJtiT0WNasbDHgugAC0CEAAqHv0VeItJgnnpw6xR4E",
+      "message_id": 765,
+      "file_name": "comp_the-third-murder-2026_1080p.mp4",
+      "file_size": 2004240852,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAv1q-ihC3BFs-CIJtiT0WNasbDHgugAC0CEAAqHv0VeItJgnnpw6xR4E",
+          "message_id": 765,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/922673"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt27512908"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt27512908"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/766",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/764"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2004240852,
+          "url": "https://t.me/c/4325759505/765",
+          "telegram_url": "https://t.me/c/4325759505/765",
+          "direct_url": "/stream/channel/-1004325759505/765?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAv1q-ihC3BFs-CIJtiT0WNasbDHgugAC0CEAAqHv0VeItJgnnpw6xR4E",
+          "message_id": 765,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1476896557,
+          "url": "https://t.me/c/4325759505/766",
+          "telegram_url": "https://t.me/c/4325759505/766",
+          "direct_url": "/stream/channel/-1004325759505/766?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAv5q-i2ea9IK6TDvSYdxIt2lcGjShgAC0iEAAqHv0VfyCEz674AEMR4E",
+          "message_id": 766,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/766",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "766.2 MB",
+          "size_bytes": 803396522,
+          "url": "https://t.me/c/4325759505/764",
+          "telegram_url": "https://t.me/c/4325759505/764",
+          "direct_url": "/stream/channel/-1004325759505/764?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvxq-ifBZ3BoKYjXWcE4atz5-M45BwACzyEAAqHv0Vep3p4ouboT1B4E",
+          "message_id": 764,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/764",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2004240852,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-third-murder-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1476896557,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-third-murder-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/766",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "766.2 MB",
+          "size_bytes": 803396522,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-third-murder-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/764",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAv1q-ihC3BFs-CIJtiT0WNasbDHgugAC0CEAAqHv0VeItJgnnpw6xR4E",
+          "message_id": 765,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/765",
+          "size_bytes": 2004240852
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAv5q-i2ea9IK6TDvSYdxIt2lcGjShgAC0iEAAqHv0VfyCEz674AEMR4E",
+          "message_id": 766,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/766",
+          "size_bytes": 1476896557
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvxq-ifBZ3BoKYjXWcE4atz5-M45BwACzyEAAqHv0Vep3p4ouboT1B4E",
+          "message_id": 764,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/764",
+          "size_bytes": 803396522
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-third-murder-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-third-murder-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T22:09:51Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T21:29:23Z"
+  "last_updated": "2026-11-15T22:09:53Z"
 }

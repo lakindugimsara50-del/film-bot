@@ -13430,7 +13430,234 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T07:21:35Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "love-of-your-life-2026",
+      "slug": "love-of-your-life-2026",
+      "title": "Love of Your Life",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.7",
+      "rating": "6.7",
+      "imdb_id": "tt34384900",
+      "tmdb_id": "1381078",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/dL3Tcv4FU2K85bgnGRBgLjFSrLr.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/dL3Tcv4FU2K85bgnGRBgLjFSrLr.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4hneB0UFKOZAGJHqJ3VhDcG72uH.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4hneB0UFKOZAGJHqJ3VhDcG72uH.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/HzGx48E64Xg",
+      "trailer_id": "HzGx48E64Xg",
+      "genres": [
+        "Romance",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "109 min",
+      "description": "After a chance encounter sparks a sweeping romance, Maya's future is suddenly upended, sending her on an unexpected journey to love and live again.",
+      "director": "Rachel Morrison",
+      "cast": [
+        {
+          "name": "Margaret Qualley",
+          "character": "Maya"
+        },
+        {
+          "name": "Gabriel Basso",
+          "character": "Charlie"
+        },
+        {
+          "name": "Aaron Pierre",
+          "character": "Felix"
+        },
+        {
+          "name": "Patrick Schwarzenegger",
+          "character": "Jason"
+        },
+        {
+          "name": "Catherine Keener",
+          "character": "Ruth"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqdq-WFR8MBuLZytPAnA587qyAxfIAACXiQAAo6lyVdhitPN_IPESB4E",
+      "message_id": 679,
+      "file_name": "comp_love-of-your-life-2026_1080p.mp4",
+      "file_size": 1990199791,
+      "drive_file_id": "",
+      "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqdq-WFR8MBuLZytPAnA587qyAxfIAACXiQAAo6lyVdhitPN_IPESB4E",
+          "message_id": 679,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1381078"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt34384900"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt34384900"
+        }
+      ],
+      "qualities": {
+        "auto": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+        "1080p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+        "720p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/681",
+        "480p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/680"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1990199791,
+          "url": "https://t.me/c/4325759505/679",
+          "telegram_url": "https://t.me/c/4325759505/679",
+          "direct_url": "/stream/channel/-1004325759505/679?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqdq-WFR8MBuLZytPAnA587qyAxfIAACXiQAAo6lyVdhitPN_IPESB4E",
+          "message_id": 679,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1370861764,
+          "url": "https://t.me/c/4325759505/681",
+          "telegram_url": "https://t.me/c/4325759505/681",
+          "direct_url": "/stream/channel/-1004325759505/681?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqlq-WUUmCIYQxCytkra7-bxC-c1TAACbCQAAo6lyVfKsIZV0AABLrIeBA",
+          "message_id": 681,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/681",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "700.2 MB",
+          "size_bytes": 734235369,
+          "url": "https://t.me/c/4325759505/680",
+          "telegram_url": "https://t.me/c/4325759505/680",
+          "direct_url": "/stream/channel/-1004325759505/680?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqhq-WIMpz7xpeQQEkHzt07n0ldKYwACXyQAAo6lyVcSpcAwQ3VkOh4E",
+          "message_id": 680,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/680",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1990199791,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-of-your-life-2026_1080p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1370861764,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-of-your-life-2026_720p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/681",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "700.2 MB",
+          "size_bytes": 734235369,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-of-your-life-2026_480p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/680",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqdq-WFR8MBuLZytPAnA587qyAxfIAACXiQAAo6lyVdhitPN_IPESB4E",
+          "message_id": 679,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/679",
+          "size_bytes": 1990199791
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqlq-WUUmCIYQxCytkra7-bxC-c1TAACbCQAAo6lyVfKsIZV0AABLrIeBA",
+          "message_id": 681,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/681",
+          "size_bytes": 1370861764
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqhq-WIMpz7xpeQQEkHzt07n0ldKYwACXyQAAo6lyVcSpcAwQ3VkOh4E",
+          "message_id": 680,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/680",
+          "size_bytes": 734235369
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/love-of-your-life-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=love-of-your-life-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T07:54:07Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T07:21:36Z"
+  "last_updated": "2026-11-15T07:54:08Z"
 }

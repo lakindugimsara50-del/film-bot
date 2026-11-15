@@ -13204,7 +13204,233 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T06:40:41Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "love-action-drama-2019",
+      "slug": "love-action-drama-2019",
+      "title": "Love Action Drama",
+      "title_si": "",
+      "year": 2019,
+      "imdb": "6.1",
+      "rating": "6.1",
+      "imdb_id": "tt7117870",
+      "tmdb_id": "624582",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/mVqV88crk9evENJB0DeVQzIL94v.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/mVqV88crk9evENJB0DeVQzIL94v.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/r4Ob1Z58KUvwMVNtfGhQEKix1e7.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/r4Ob1Z58KUvwMVNtfGhQEKix1e7.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Comedy"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "142 min",
+      "description": "Dineshan is in love with Shoba, but she insists he give up smoking and drinking before marriage. It’s easier said than done, but will love triumph?",
+      "director": "Dhyan Sreenivasan",
+      "cast": [
+        {
+          "name": "Nivin Pauly",
+          "character": "Dineshan"
+        },
+        {
+          "name": "Nayanthara",
+          "character": "Shobha"
+        },
+        {
+          "name": "Durga Krishna",
+          "character": "Swathi"
+        },
+        {
+          "name": "Aju Varghese",
+          "character": "Sagar"
+        },
+        {
+          "name": "Basil Joseph",
+          "character": "DJ Brijesh"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqNq-VhYdIrsQcg7cegkJLZTYqOrqwACSiQAAo6lyVeuP1dmZ9OmJx4E",
+      "message_id": 675,
+      "file_name": "comp_love-action-drama-2019_1080p.mp4",
+      "file_size": 2060774972,
+      "drive_file_id": "",
+      "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqNq-VhYdIrsQcg7cegkJLZTYqOrqwACSiQAAo6lyVeuP1dmZ9OmJx4E",
+          "message_id": 675,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/624582"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt7117870"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt7117870"
+        }
+      ],
+      "qualities": {
+        "auto": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+        "1080p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+        "720p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/677",
+        "480p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/676"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2060774972,
+          "url": "https://t.me/c/4325759505/675",
+          "telegram_url": "https://t.me/c/4325759505/675",
+          "direct_url": "/stream/channel/-1004325759505/675?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqNq-VhYdIrsQcg7cegkJLZTYqOrqwACSiQAAo6lyVeuP1dmZ9OmJx4E",
+          "message_id": 675,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1785253601,
+          "url": "https://t.me/c/4325759505/677",
+          "telegram_url": "https://t.me/c/4325759505/677",
+          "direct_url": "/stream/channel/-1004325759505/677?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqVq-V10AsWTg904E1MjxoQFV51xIAACTyQAAo6lyVfUvtTtkN5B-x4E",
+          "message_id": 677,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/677",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "914.4 MB",
+          "size_bytes": 958830592,
+          "url": "https://t.me/c/4325759505/676",
+          "telegram_url": "https://t.me/c/4325759505/676",
+          "direct_url": "/stream/channel/-1004325759505/676?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqRq-VmVG9cq1Qk1JXuaY-flsJmZHAACTCQAAo6lyVfh2OsmAAG_AngeBA",
+          "message_id": 676,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/676",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2060774972,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-action-drama-2019_1080p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1785253601,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-action-drama-2019_720p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/677",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "914.4 MB",
+          "size_bytes": 958830592,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_love-action-drama-2019_480p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/676",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqNq-VhYdIrsQcg7cegkJLZTYqOrqwACSiQAAo6lyVeuP1dmZ9OmJx4E",
+          "message_id": 675,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/675",
+          "size_bytes": 2060774972
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqVq-V10AsWTg904E1MjxoQFV51xIAACTyQAAo6lyVfUvtTtkN5B-x4E",
+          "message_id": 677,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/677",
+          "size_bytes": 1785253601
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAqRq-VmVG9cq1Qk1JXuaY-flsJmZHAACTCQAAo6lyVfh2OsmAAG_AngeBA",
+          "message_id": 676,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/676",
+          "size_bytes": 958830592
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/love-action-drama-2019-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=love-action-drama-2019",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T07:21:35Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T06:40:43Z"
+  "last_updated": "2026-11-15T07:21:36Z"
 };

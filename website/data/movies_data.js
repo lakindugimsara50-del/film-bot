@@ -17290,7 +17290,233 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T18:53:56Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "last-man-in-tower-2026",
+      "slug": "last-man-in-tower-2026",
+      "title": "Last Man in Tower",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.7",
+      "rating": "6.7",
+      "imdb_id": "tt36267730",
+      "tmdb_id": "1574560",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/8PHu0eeZABZCT0HrX79UoDAHivi.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/8PHu0eeZABZCT0HrX79UoDAHivi.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/lXzc4ZQXjGSPcnZzGq8uVpqd2xJ.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/lXzc4ZQXjGSPcnZzGq8uVpqd2xJ.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/q_rQBuliB9E",
+      "trailer_id": "q_rQBuliB9E",
+      "genres": [
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "97 min",
+      "description": "Masterji is a retired schoolteacher whose refusal to go along with those around him places him in direct conflict with his own community. His act of quiet resistance ripples outward, throwing into relief the choices and compromises of neighbors – including Mrs. Puri – as an offer of change tests what each of them is willing to hold on to.",
+      "director": "Ben Rekhi",
+      "cast": [
+        {
+          "name": "Manoj Bajpayee",
+          "character": "Yogesh 'Masterji' Mishra"
+        },
+        {
+          "name": "Divya Dutta",
+          "character": "Sangeeta 'Mrs. Puri'"
+        },
+        {
+          "name": "Boman Irani",
+          "character": "Dharmen Shah"
+        },
+        {
+          "name": "Harish Khanna",
+          "character": "Mr. Kothari"
+        },
+        {
+          "name": "Sukant Goel",
+          "character": "Gaurav Mishra"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAu5q-gxnAjuLJq_LoUvV9kRzkYkuGwACwSEAAqHv0Vcl3PS5cFRrlx4E",
+      "message_id": 750,
+      "file_name": "comp_last-man-in-tower-2026_1080p.mp4",
+      "file_size": 1965482534,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAu5q-gxnAjuLJq_LoUvV9kRzkYkuGwACwSEAAqHv0Vcl3PS5cFRrlx4E",
+          "message_id": 750,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1574560"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36267730"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36267730"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/748",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/749"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1965482534,
+          "url": "https://t.me/c/4325759505/750",
+          "telegram_url": "https://t.me/c/4325759505/750",
+          "direct_url": "/stream/channel/-1004325759505/750?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAu5q-gxnAjuLJq_LoUvV9kRzkYkuGwACwSEAAqHv0Vcl3PS5cFRrlx4E",
+          "message_id": 750,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1176533783,
+          "url": "https://t.me/c/4325759505/748",
+          "telegram_url": "https://t.me/c/4325759505/748",
+          "direct_url": "/stream/channel/-1004325759505/748?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuxq-gLUGoYvAVxTkfwAAVPUZ6H9Im4AArwhAAKh79FXGa6zF8SQOTgeBA",
+          "message_id": 748,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/748",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "608.1 MB",
+          "size_bytes": 637642107,
+          "url": "https://t.me/c/4325759505/749",
+          "telegram_url": "https://t.me/c/4325759505/749",
+          "direct_url": "/stream/channel/-1004325759505/749?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAu1q-gPMM6uZBQ5H-ZHJZLOS1zohLAACvSEAAqHv0VfU6Mp8ZVZZLR4E",
+          "message_id": 749,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/749",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1965482534,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_last-man-in-tower-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1176533783,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_last-man-in-tower-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/748",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "608.1 MB",
+          "size_bytes": 637642107,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_last-man-in-tower-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/749",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAu5q-gxnAjuLJq_LoUvV9kRzkYkuGwACwSEAAqHv0Vcl3PS5cFRrlx4E",
+          "message_id": 750,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/750",
+          "size_bytes": 1965482534
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuxq-gLUGoYvAVxTkfwAAVPUZ6H9Im4AArwhAAKh79FXGa6zF8SQOTgeBA",
+          "message_id": 748,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/748",
+          "size_bytes": 1176533783
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAu1q-gPMM6uZBQ5H-ZHJZLOS1zohLAACvSEAAqHv0VfU6Mp8ZVZZLR4E",
+          "message_id": 749,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/749",
+          "size_bytes": 637642107
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/last-man-in-tower-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=last-man-in-tower-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T19:48:04Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T18:53:58Z"
+  "last_updated": "2026-11-15T19:48:06Z"
 };

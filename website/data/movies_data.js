@@ -14340,7 +14340,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T11:33:10Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "aasha-2026",
+      "slug": "aasha-2026",
+      "title": "Aasha",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.5",
+      "rating": "7.5",
+      "imdb_id": "tt37894980",
+      "tmdb_id": "1513475",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/dZyMVwRhI0Y1ANDRM4sAk7P4hYC.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/dZyMVwRhI0Y1ANDRM4sAk7P4hYC.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tkRcmn2ZpXq3k6JEeilgVXGAVJ0.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tkRcmn2ZpXq3k6JEeilgVXGAVJ0.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/EYSBA1cwBes",
+      "trailer_id": "EYSBA1cwBes",
+      "genres": [
+        "Thriller",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "127 min",
+      "description": "Follows a stubborn, short-tempered widow named Aasha who gets into a tense altercation with a volatile man named Jeemon following a minor road accident.",
+      "director": "Safar Sanal",
+      "cast": [
+        {
+          "name": "Urvashi",
+          "character": "Aasha"
+        },
+        {
+          "name": "Joju George",
+          "character": "Jeemon"
+        },
+        {
+          "name": "Aishwarya Lekshmi",
+          "character": "Anagha"
+        },
+        {
+          "name": "Vijayaraghavan",
+          "character": "Santhosh"
+        },
+        {
+          "name": "Ramesh Girija",
+          "character": "Asif"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACArpq-aPD8sXcXfL0TsVdpYE0sYeXbwAC3yQAAo6lyVetw0iBAcHAvB4E",
+      "message_id": 698,
+      "file_name": "comp_aasha-2026_1080p.mp4",
+      "file_size": 1960975132,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArpq-aPD8sXcXfL0TsVdpYE0sYeXbwAC3yQAAo6lyVetw0iBAcHAvB4E",
+          "message_id": 698,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1513475"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt37894980"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt37894980"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/697",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/696"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1960975132,
+          "url": "https://t.me/c/4325759505/698",
+          "telegram_url": "https://t.me/c/4325759505/698",
+          "direct_url": "/stream/channel/-1004325759505/698?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArpq-aPD8sXcXfL0TsVdpYE0sYeXbwAC3yQAAo6lyVetw0iBAcHAvB4E",
+          "message_id": 698,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1500190448,
+          "url": "https://t.me/c/4325759505/697",
+          "telegram_url": "https://t.me/c/4325759505/697",
+          "direct_url": "/stream/channel/-1004325759505/697?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArlq-aCmw4Ei2l07S1AAAf8JP4IffRQAAtEkAAKOpclXKLIbH-9_guceBA",
+          "message_id": 697,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/697",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "776.4 MB",
+          "size_bytes": 814093428,
+          "url": "https://t.me/c/4325759505/696",
+          "telegram_url": "https://t.me/c/4325759505/696",
+          "direct_url": "/stream/channel/-1004325759505/696?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArhq-Z1hA_9_UyN9QsQsMgomv_kU-gACwCQAAo6lyVc-jHl7K9ZF_R4E",
+          "message_id": 696,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/696",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1960975132,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_aasha-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1500190448,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_aasha-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/697",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "776.4 MB",
+          "size_bytes": 814093428,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_aasha-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/696",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArpq-aPD8sXcXfL0TsVdpYE0sYeXbwAC3yQAAo6lyVetw0iBAcHAvB4E",
+          "message_id": 698,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/698",
+          "size_bytes": 1960975132
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArlq-aCmw4Ei2l07S1AAAf8JP4IffRQAAtEkAAKOpclXKLIbH-9_guceBA",
+          "message_id": 697,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/697",
+          "size_bytes": 1500190448
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArhq-Z1hA_9_UyN9QsQsMgomv_kU-gACwCQAAo6lyVc-jHl7K9ZF_R4E",
+          "message_id": 696,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/696",
+          "size_bytes": 814093428
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/aasha-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=aasha-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T12:21:36Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T11:33:13Z"
+  "last_updated": "2026-11-15T12:21:37Z"
 };

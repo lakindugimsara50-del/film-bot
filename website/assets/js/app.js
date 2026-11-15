@@ -804,7 +804,7 @@ let hero3DTouchStartY = 0;
 const HERO_FS_DURATION = 5000;        // Display time in Fullscreen ("chuttak wela thibila")
 const HERO_RECEDE_MS = 650;           // Smooth contraction back to 3D deck view
 const HERO_SHUFFLE_MS = 750;          // Visible rear sweep along outer 3D curve in unison
-const HERO_DECK_PAUSE_MS = 600;       // Appreciation beat in 3D deck view
+const HERO_DECK_PAUSE_MS = 2200;      // Appreciation beat in 3D deck view (shows 3D typography & card depth)
 const HERO_EXPAND_MS = 700;           // Forward 3D bloom into Fullscreen
 
 // States: 'FULLSCREEN' | 'RECEDING' | 'SHUFFLING' | 'PAUSED_DECK' | 'EXPANDING' | 'MANUAL_DECK'
@@ -943,13 +943,19 @@ function renderHeroShowcase() {
   // Preload next backdrop image into cache
   preloadHeroImage(1);
 
-  // After 800ms viewing of the 3D landscape card deck, smoothly expand front spotlight card into full size!
-  const startToken = ++heroCycleToken;
-  setHeroTimeout(() => {
-    if (startToken === heroCycleToken && heroCurrentState === 'DECK') {
-      expandHeroCard(heroShowcaseCurrent, true);
-    }
-  }, 800);
+  // If ?mode=deck is passed in URL, remain permanently in 3D deck mode for testing/visual inspection
+  const urlParams = new URLSearchParams(window.location.search);
+  const stayDeckMode = urlParams.get('mode') === 'deck' || urlParams.get('deck') === '1';
+
+  // After 2800ms viewing of the 3D landscape card deck & majestic FILMZILLA wings, smoothly expand front spotlight card into full size!
+  if (!stayDeckMode) {
+    const startToken = ++heroCycleToken;
+    setHeroTimeout(() => {
+      if (startToken === heroCycleToken && heroCurrentState === 'DECK') {
+        expandHeroCard(heroShowcaseCurrent, true);
+      }
+    }, 2800);
+  }
 }
 
 function updateDeckToggleBtn(mode) {

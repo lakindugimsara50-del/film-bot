@@ -50,6 +50,7 @@ ul { list-style: none; }
 .site-header {
   position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; z-index: 99999 !important;
   width: 100% !important; height: var(--header-h) !important; display: flex !important; align-items: center !important;
+  justify-content: space-between !important;
   padding: 0 24px !important;
   background: linear-gradient(180deg, rgba(8, 8, 12, 0.88) 0%, rgba(12, 12, 18, 0.78) 100%) !important;
   backdrop-filter: blur(28px) saturate(200%) !important;
@@ -119,16 +120,16 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
-  margin-left: 20px;
-  background: rgba(255, 255, 255, 0.04);
+  flex: 0 1 auto;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.05);
   padding: 4px 6px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.12), 0 8px 24px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.18), inset 0 -1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.5);
   width: fit-content;
 }
 .primary-nav a, .nav-dropdown > button {
@@ -942,15 +943,17 @@ main > .section:first-of-type {
   padding: 16px 12px;
 }
 
-/* === NETFLIX CINEMA MOVIE CARD === */
+/* === APPLE LIQUID WATER BUBBLE CINEMA MOVIE CARD === */
 .movie-card {
   position: relative;
-  border-radius: 8px;
+  border-radius: 14px;
   overflow: hidden;
-  background: #141414;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.6);
   cursor: pointer;
-  transition: transform 0.28s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.28s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
   display: block;
   width: 172px;
@@ -960,9 +963,13 @@ main > .section:first-of-type {
   width: auto;
 }
 .movie-card:hover {
-  transform: translateY(-6px) scale(1.06);
-  border-color: rgba(229, 9, 20, 0.65);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.95), 0 0 24px rgba(229, 9, 20, 0.35);
+  transform: translateY(-6px) scale(1.05);
+  border-color: rgba(255, 255, 255, 0.28);
+  border-top-color: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.4),
+    0 20px 45px rgba(0, 0, 0, 0.95),
+    0 10px 28px rgba(229, 9, 20, 0.22);
   z-index: 10;
 }
 
@@ -7039,50 +7046,50 @@ body.tg-browser-mode {
   -webkit-user-select: none;
 
   /* Continuous 3D Perspective Slot Coordinates (Desktop Default) - Amplified Deep 3D Perspective */
-  --s0-x: -95px;
+  --s0-x: -75px;
   --s0-y: 0px;
-  --s0-z: 95px;
-  --s0-s: 1.02;
+  --s0-z: 110px;
+  --s0-s: 1.03;
   --s0-ry: -5deg;
   --s0-op: 1;
 
-  --s1-x: 18px;
-  --s1-y: 12px;
-  --s1-z: -25px;
-  --s1-s: 0.88;
-  --s1-ry: -18deg;
-  --s1-op: 0.88;
+  --s1-x: 0px;
+  --s1-y: 8px;
+  --s1-z: 0px;
+  --s1-s: 0.90;
+  --s1-ry: -15deg;
+  --s1-op: 0.90;
 
-  --s2-x: 110px;
-  --s2-y: 22px;
-  --s2-z: -120px;
-  --s2-s: 0.77;
-  --s2-ry: -25deg;
-  --s2-op: 0.72;
+  --s2-x: 65px;
+  --s2-y: 16px;
+  --s2-z: -105px;
+  --s2-s: 0.79;
+  --s2-ry: -23deg;
+  --s2-op: 0.76;
 
-  --s3-x: 195px;
-  --s3-y: 32px;
-  --s3-z: -200px;
-  --s3-s: 0.66;
-  --s3-ry: -30deg;
-  --s3-op: 0.54;
+  --s3-x: 120px;
+  --s3-y: 23px;
+  --s3-z: -190px;
+  --s3-s: 0.69;
+  --s3-ry: -28deg;
+  --s3-op: 0.58;
 
-  --s4-x: 265px;
-  --s4-y: 40px;
-  --s4-z: -265px;
-  --s4-s: 0.56;
-  --s4-ry: -34deg;
-  --s4-op: 0.36;
+  --s4-x: 165px;
+  --s4-y: 29px;
+  --s4-z: -260px;
+  --s4-s: 0.59;
+  --s4-ry: -32deg;
+  --s4-op: 0.38;
 
-  --s5-x: 320px;
-  --s5-y: 46px;
-  --s5-z: -320px;
-  --s5-s: 0.47;
-  --s5-ry: -38deg;
-  --s5-op: 0.22;
+  --s5-x: 205px;
+  --s5-y: 34px;
+  --s5-z: -315px;
+  --s5-s: 0.50;
+  --s5-ry: -35deg;
+  --s5-op: 0.20;
 
   --sweep-out-x: -160px;
-  --sweep-mid-x: 40px;
+  --sweep-mid-x: 35px;
 }
 
 /* 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) */
@@ -7131,13 +7138,13 @@ body.tg-browser-mode {
    "filmzilla kiyana ek alokuwata danna card podi unam depaththen pena vidiyata saha ekath lassanata 3d karala" */
 .hero-stage-watermark {
   position: absolute;
-  top: 32%;
+  top: 30%;
   left: 50%;
   transform: translate(-50%, -50%) scale(1);
   transform-origin: center center;
   width: 100%;
-  max-width: 1560px;
-  padding: 0 clamp(16px, 3.5vw, 64px);
+  max-width: 100vw;
+  padding: 0 clamp(16px, 2.5vw, 42px);
   z-index: 1;
   pointer-events: none;
   user-select: none;
@@ -7167,13 +7174,13 @@ body.tg-browser-mode {
 
 .hero-watermark-glow {
   position: absolute;
-  top: 50%;
+  top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(92vw, 1150px);
-  height: 380px;
-  background: radial-gradient(ellipse at 50% 50%, rgba(229, 9, 20, 0.28) 0%, rgba(229, 9, 20, 0.08) 46%, transparent 75%);
-  filter: blur(64px);
+  width: min(94vw, 1280px);
+  height: 420px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(229, 9, 20, 0.22) 0%, rgba(229, 9, 20, 0.06) 46%, transparent 75%);
+  filter: blur(68px);
   border-radius: 50%;
   pointer-events: none;
   animation: heroWatermarkBreathe 6s infinite ease-in-out;
@@ -7181,7 +7188,7 @@ body.tg-browser-mode {
 
 @keyframes heroWatermarkBreathe {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.75; }
-  50%      { transform: translate(-50%, -50%) scale(1.14); opacity: 0.95; filter: blur(76px); }
+  50%      { transform: translate(-50%, -50%) scale(1.14); opacity: 0.95; filter: blur(78px); }
 }
 
 .hero-watermark-backdrop {
@@ -7193,11 +7200,11 @@ body.tg-browser-mode {
   width: 100%;
 }
 
-/* Flanking 3D Words: "FILM" (left) and "ZILLA" (right) */
+/* Flanking 3D Words: "FILM" (left) and "ZILLA" (right) - Grand Titanium Chrome */
 .hero-watermark-flank {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 1 auto;
   transform-style: preserve-3d;
   will-change: transform;
 }
@@ -7205,63 +7212,76 @@ body.tg-browser-mode {
 .hero-watermark-flank.flank-left {
   align-items: flex-start;
   text-align: left;
-  transform: perspective(1000px) rotateY(12deg);
+  transform: perspective(1400px) rotateY(18deg) rotateX(2deg);
 }
 
 .hero-watermark-flank.flank-right {
   align-items: flex-end;
   text-align: right;
-  transform: perspective(1000px) rotateY(-12deg);
+  transform: perspective(1400px) rotateY(-18deg) rotateX(2deg);
 }
 
 .hero-watermark-word {
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: clamp(48px, 6.8vw, 102px);
+  font-size: clamp(58px, 8.8vw, 138px);
   font-weight: 950;
-  line-height: 0.95;
-  letter-spacing: clamp(6px, 1.2vw, 18px);
+  line-height: 0.92;
+  letter-spacing: clamp(4px, 0.8vw, 12px);
   text-transform: uppercase;
   background: linear-gradient(
     180deg,
     #ffffff 0%,
-    #e8ecf2 22%,
-    #9aa5b6 48%,
-    #475569 74%,
-    #1e293b 90%,
-    rgba(229, 9, 20, 0.85) 100%
+    #f8fafc 14%,
+    #e2e8f0 32%,
+    #94a3b8 56%,
+    #475569 78%,
+    #1e293b 94%,
+    #0f172a 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter:
-    drop-shadow(0 2px 0 rgba(255, 255, 255, 0.4))
-    drop-shadow(0 4px 3px rgba(15, 23, 42, 0.7))
-    drop-shadow(0 10px 24px rgba(0, 0, 0, 0.95))
-    drop-shadow(0 0 38px rgba(229, 9, 20, 0.35));
+    drop-shadow(0 -1.5px 1.5px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 8px 24px rgba(0, 0, 0, 0.85))
+    drop-shadow(0 18px 45px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 42px rgba(229, 9, 20, 0.28));
   position: relative;
   display: inline-block;
   user-select: none;
 }
 
 .hero-watermark-subline {
-  font-size: clamp(8.5px, 0.95vw, 11px);
+  font-size: clamp(9px, 0.95vw, 11.5px);
   font-weight: 800;
-  letter-spacing: clamp(3px, 0.5vw, 6px);
+  letter-spacing: clamp(3px, 0.5vw, 5.5px);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
-  margin-top: 6px;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 3px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 4px 14px rgba(0, 0, 0, 0.6);
+  margin-top: 8px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  display: inline-block;
 }
 
-/* Center Crest: 3D Emblem, Halo & Tagline */
+/* Center Crest: 3D Emblem, Halo & Tagline - Elevated majestically above card deck */
 .hero-watermark-center {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  padding: 0 clamp(10px, 2vw, 24px);
-  transform: translateY(-44px);
   z-index: 3;
+  pointer-events: none;
 }
 
 .hero-watermark-emblem-wrap {
@@ -7272,12 +7292,12 @@ body.tg-browser-mode {
 }
 
 .hero-watermark-logo {
-  width: clamp(75px, 9vw, 115px);
+  width: clamp(56px, 7vw, 88px);
   height: auto;
   object-fit: contain;
   filter:
-    drop-shadow(0 0 32px rgba(229, 9, 20, 0.75))
-    drop-shadow(0 10px 24px rgba(0, 0, 0, 0.9));
+    drop-shadow(0 0 24px rgba(229, 9, 20, 0.5))
+    drop-shadow(0 8px 20px rgba(0, 0, 0, 0.85));
   animation: heroLogoFloat 6s ease-in-out infinite;
   position: relative;
   z-index: 2;
@@ -7306,20 +7326,20 @@ body.tg-browser-mode {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 7px;
   font-size: clamp(9px, 1.05vw, 12px);
   font-weight: 700;
   letter-spacing: clamp(2.5px, 0.4vw, 5px);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top: 1px solid rgba(255, 255, 255, 0.28);
-  padding: 3px 14px;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.45);
+  padding: 3.5px 15px;
   border-radius: 999px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28), 0 4px 16px rgba(0, 0, 0, 0.55);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
 }
@@ -7705,8 +7725,8 @@ body.tg-browser-mode {
   position: relative;
   width: 100%;
   height: 360px;
-  perspective: 1050px;
-  perspective-origin: 50% 46%;
+  perspective: 1400px;
+  perspective-origin: 50% 48%;
   transform-style: preserve-3d;
   display: flex;
   align-items: center;
@@ -7718,7 +7738,7 @@ body.tg-browser-mode {
 /* 16:9 Landscape Widescreen Card with Apple iOS 18 Liquid Water Bubble Design */
 .hero-3d-card {
   position: absolute;
-  width: clamp(340px, 36vw, 490px);
+  width: clamp(300px, 31vw, 420px);
   aspect-ratio: 16 / 9;
   height: auto;
   border-radius: 20px;
@@ -7826,8 +7846,12 @@ body.tg-browser-mode {
 .hero-3d-card-shine {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 40%, transparent 65%);
+  background:
+    radial-gradient(ellipse at 30% 16%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.08) 36%, transparent 68%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.04) 38%, transparent 62%);
   pointer-events: none;
+  border-radius: inherit;
+  z-index: 2;
 }
 
 /* 3D Stack Depth Slots - Continuous hardware-accelerated CSS Variables */
@@ -7837,43 +7861,46 @@ body.tg-browser-mode {
   z-index: 20;
   opacity: var(--s0-op);
   filter: brightness(1);
-  border: 2px solid rgba(229, 9, 20, 0.95);
-  border-top: 2px solid rgba(255, 120, 130, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.26);
+  border-top: 2px solid rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
-    0 34px 80px -10px rgba(0, 0, 0, 0.98),
-    0 16px 42px -6px rgba(229, 9, 20, 0.55),
-    inset 0 2px 2px rgba(255, 255, 255, 0.45),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.6);
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 3px 0 rgba(0, 0, 0, 0.55),
+    0 38px 85px -12px rgba(0, 0, 0, 0.98),
+    0 16px 36px -6px rgba(0, 0, 0, 0.85),
+    0 22px 55px -8px rgba(229, 9, 20, 0.24);
 }
 .hero-3d-card.slot-1 {
   transform: translate3d(var(--s1-x), var(--s1-y), var(--s1-z)) scale(var(--s1-s)) rotateY(var(--s1-ry));
   z-index: 16;
   opacity: var(--s1-op);
-  filter: brightness(0.85);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.42);
+  filter: brightness(0.86);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-top: 1.8px solid rgba(255, 255, 255, 0.55);
   box-shadow:
-    0 22px 52px rgba(0, 0, 0, 0.88),
-    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.32);
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.36),
+    0 24px 56px rgba(0, 0, 0, 0.9);
 }
 .hero-3d-card.slot-2 {
   transform: translate3d(var(--s2-x), var(--s2-y), var(--s2-z)) scale(var(--s2-s)) rotateY(var(--s2-ry));
   z-index: 13;
   opacity: var(--s2-op);
   filter: brightness(0.72);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-top: 1px solid rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.42);
   box-shadow:
-    0 16px 38px rgba(0, 0, 0, 0.78),
-    inset 0 1px 1px rgba(255, 255, 255, 0.22);
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    0 18px 42px rgba(0, 0, 0, 0.82);
 }
 .hero-3d-card.slot-3 {
   transform: translate3d(var(--s3-x), var(--s3-y), var(--s3-z)) scale(var(--s3-s)) rotateY(var(--s3-ry));
   z-index: 10;
   opacity: var(--s3-op);
   filter: brightness(0.58);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1.2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.72);
 }
 .hero-3d-card.slot-4 {
   transform: translate3d(var(--s4-x), var(--s4-y), var(--s4-z)) scale(var(--s4-s)) rotateY(var(--s4-ry));
@@ -7952,18 +7979,22 @@ body.tg-browser-mode {
     transform: translate3d(var(--s0-x), var(--s0-y), var(--s0-z)) scale(var(--s0-s)) rotateY(var(--s0-ry));
     opacity: 1;
     filter: brightness(1);
-    border-color: rgba(229, 9, 20, 0.95);
-    box-shadow: 0 34px 80px -10px rgba(0, 0, 0, 0.98), 0 16px 42px -6px rgba(229, 9, 20, 0.55);
+    border-color: rgba(255, 255, 255, 0.26);
+    border-top-color: rgba(255, 255, 255, 0.85);
+    box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 38px 85px -12px rgba(0, 0, 0, 0.98), 0 22px 55px -8px rgba(229, 9, 20, 0.24);
     z-index: 35;
   }
   32% {
-    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -160px)), -10px, 110px) scale(1.05) rotateY(18deg);
+    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -160px)), -10px, 120px) scale(1.05) rotateY(18deg);
     opacity: 0.96;
     filter: brightness(0.92);
+    border-color: rgba(255, 255, 255, 0.35);
+    border-top-color: rgba(255, 255, 255, 0.9);
+    box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.6), 0 34px 75px rgba(0, 0, 0, 0.95);
     z-index: 35;
   }
   68% {
-    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 28px, -220px) scale(0.62) rotateY(-24deg);
+    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 28px, -230px) scale(0.62) rotateY(-24deg);
     opacity: 0.52;
     filter: brightness(0.46);
     z-index: 3;
@@ -8115,30 +8146,39 @@ body.tg-browser-mode {
 .showcase-filter-pill {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.78);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 12.5px;
   font-weight: 700;
-  padding: 7px 16px;
-  border-radius: 20px;
+  padding: 7px 18px;
+  border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 .showcase-filter-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.24);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.35), 0 6px 18px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px);
 }
 .showcase-filter-pill.active {
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.12) 100%);
-  border-color: var(--accent, #e50914);
+  background: linear-gradient(175deg, rgba(255, 70, 80, 0.38) 0%, rgba(229, 9, 20, 0.25) 55%, rgba(160, 0, 10, 0.38) 100%);
+  border: 1px solid rgba(255, 120, 130, 0.45);
+  border-top: 1.5px solid rgba(255, 220, 225, 0.8);
   color: #ffffff;
-  box-shadow: 0 2px 14px rgba(229, 9, 20, 0.4);
+  box-shadow:
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.35),
+    0 6px 20px rgba(229, 9, 20, 0.45);
 }
 
 /* Showcase Movie Grid */
@@ -8312,43 +8352,52 @@ body.tg-browser-mode {
     display: none !important;
   }
   .hero-stage-watermark {
-    top: 22%;
-    padding: 0 16px;
+    top: 18%;
+    padding: 0 12px;
   }
   .hero-watermark-backdrop {
+    display: flex;
+    align-items: center;
     justify-content: center;
-    gap: clamp(8px, 3.5vw, 20px);
+    gap: clamp(6px, 2.5vw, 14px);
+    position: relative;
   }
   .hero-watermark-flank.flank-left {
     transform: none;
     align-items: flex-end;
     text-align: right;
+    flex: 0 1 auto;
   }
   .hero-watermark-flank.flank-right {
     transform: none;
     align-items: flex-start;
     text-align: left;
+    flex: 0 1 auto;
   }
   .hero-watermark-word {
-    font-size: clamp(26px, 6.5vw, 38px);
-    letter-spacing: clamp(3px, 1vw, 6px);
+    font-size: clamp(20px, 5.2vw, 34px);
+    letter-spacing: clamp(1.5px, 0.6vw, 3.5px);
+    line-height: 1;
+    filter:
+      drop-shadow(0 -1px 1px rgba(255, 255, 255, 0.7))
+      drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9))
+      drop-shadow(0 0 20px rgba(229, 9, 20, 0.35));
   }
   .hero-watermark-subline {
     display: none;
   }
   .hero-watermark-center {
-    transform: translateY(0);
-    padding: 0 4px;
+    position: static;
+    transform: none;
+    padding: 0 2px;
+    flex-shrink: 0;
   }
   .hero-watermark-logo {
-    width: clamp(48px, 12vw, 68px);
-    margin-bottom: 4px;
+    width: clamp(26px, 7vw, 36px);
+    margin-bottom: 0;
   }
   .hero-watermark-tagline {
-    font-size: 8.5px;
-    letter-spacing: 1.5px;
-    padding: 2px 8px;
-    gap: 5px;
+    display: none;
   }
   .badge-card-match {
     font-size: 8.5px !important;

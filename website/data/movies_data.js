@@ -13885,7 +13885,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T08:21:39Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "sacrifice-2026",
+      "slug": "sacrifice-2026",
+      "title": "Sacrifice",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.5",
+      "rating": "5.5",
+      "imdb_id": "tt32268992",
+      "tmdb_id": "1284186",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/aq09lGYP1rK0tzse4dJRvYK87od.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/aq09lGYP1rK0tzse4dJRvYK87od.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/12kgv64tdeBHGCtTsZAb7nNaJX5.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/12kgv64tdeBHGCtTsZAb7nNaJX5.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/u5qW1gMMSVI",
+      "trailer_id": "u5qW1gMMSVI",
+      "genres": [
+        "Adventure",
+        "Comedy",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "100 min",
+      "description": "At a glitzy Greek island charity gala, a down-on-his-luck movie star lands the heroic role of a lifetime when a volcanic doomsday cult takes him hostage.",
+      "director": "Romain Gavras",
+      "cast": [
+        {
+          "name": "Chris Evans",
+          "character": "Mike Tyler"
+        },
+        {
+          "name": "Anya Taylor-Joy",
+          "character": "Joan"
+        },
+        {
+          "name": "Vincent Cassel",
+          "character": "Ben Bracken"
+        },
+        {
+          "name": "Salma Hayek Pinault",
+          "character": "Gloria Bracken"
+        },
+        {
+          "name": "John Malkovich",
+          "character": "Gunnar"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAq9q-W7unZ2CXJq4eBRMHI3_crv68wACfCQAAo6lyVcUuoxnFOAJux4E",
+      "message_id": 687,
+      "file_name": "comp_sacrifice-2026_1080p.mp4",
+      "file_size": 1985732926,
+      "drive_file_id": "",
+      "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAq9q-W7unZ2CXJq4eBRMHI3_crv68wACfCQAAo6lyVcUuoxnFOAJux4E",
+          "message_id": 687,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1284186"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32268992"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32268992"
+        }
+      ],
+      "qualities": {
+        "auto": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+        "1080p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+        "720p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/689",
+        "480p": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/688"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1985732926,
+          "url": "https://t.me/c/4325759505/687",
+          "telegram_url": "https://t.me/c/4325759505/687",
+          "direct_url": "/stream/channel/-1004325759505/687?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAq9q-W7unZ2CXJq4eBRMHI3_crv68wACfCQAAo6lyVcUuoxnFOAJux4E",
+          "message_id": 687,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1244893629,
+          "url": "https://t.me/c/4325759505/689",
+          "telegram_url": "https://t.me/c/4325759505/689",
+          "direct_url": "/stream/channel/-1004325759505/689?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArFq-XJ8P1mjoPgromMnC9qsxv-jfgACfyQAAo6lyVejwHeSGPHpFx4E",
+          "message_id": 689,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/689",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "642.0 MB",
+          "size_bytes": 673137207,
+          "url": "https://t.me/c/4325759505/688",
+          "telegram_url": "https://t.me/c/4325759505/688",
+          "direct_url": "/stream/channel/-1004325759505/688?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArBq-W-5RVixQ24q5UEE5o-dKc5BdwACfSQAAo6lyVdOZrQW8PeOpB4E",
+          "message_id": 688,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/688",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1985732926,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sacrifice-2026_1080p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1244893629,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sacrifice-2026_720p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/689",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "642.0 MB",
+          "size_bytes": 673137207,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_sacrifice-2026_480p",
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/688",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAq9q-W7unZ2CXJq4eBRMHI3_crv68wACfCQAAo6lyVcUuoxnFOAJux4E",
+          "message_id": 687,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/687",
+          "size_bytes": 1985732926
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArFq-XJ8P1mjoPgromMnC9qsxv-jfgACfyQAAo6lyVejwHeSGPHpFx4E",
+          "message_id": 689,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/689",
+          "size_bytes": 1244893629
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArBq-W-5RVixQ24q5UEE5o-dKc5BdwACfSQAAo6lyVdOZrQW8PeOpB4E",
+          "message_id": 688,
+          "stream_url": "https://land-rebel-assists-surplus.trycloudflare.com/stream/channel/-1004325759505/688",
+          "size_bytes": 673137207
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/sacrifice-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=sacrifice-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T08:51:19Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T08:21:40Z"
+  "last_updated": "2026-11-15T08:51:19Z"
 };

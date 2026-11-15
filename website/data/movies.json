@@ -17743,7 +17743,235 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T20:31:38Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "model-citizen-2026",
+      "slug": "model-citizen-2026",
+      "title": "Model Citizen",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.1",
+      "rating": "6.1",
+      "imdb_id": "tt13884466",
+      "tmdb_id": "1792170",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/7SE0LBwgqiqZzkm9gKVbBAbcNQL.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/7SE0LBwgqiqZzkm9gKVbBAbcNQL.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/mC5Y5jmodmTp7T7eyQ8tTBnQRg5.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/mC5Y5jmodmTp7T7eyQ8tTBnQRg5.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/VczwWXoMKL0",
+      "trailer_id": "VczwWXoMKL0",
+      "genres": [
+        "Crime",
+        "Science Fiction",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "93 min",
+      "description": "With his memories gone and his past a blur, ex-cop Steven Bay seeks treatment for his amnesia while working on an isolated farm. Instead, he's met with rising hostility, strange surveillance, and instincts he can’t fully control. When the pressure becomes unbearable, Bay begins a desperate hunt for the truth behind his fractured reality.",
+      "director": "Tag Mendillo",
+      "cast": [
+        {
+          "name": "Aaron Eckhart",
+          "character": "Steven Bay / John Locke"
+        },
+        {
+          "name": "Emmanuelle Chriqui",
+          "character": "Gretchen"
+        },
+        {
+          "name": "Paul Braunstein",
+          "character": "O'Neill"
+        },
+        {
+          "name": "David Hewlett",
+          "character": "Dr. Harris"
+        },
+        {
+          "name": "Sebastian Pigott",
+          "character": "Jellef"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvVq-hnL5SrUEBMZ_TVs49MrtcK23QACyCEAAqHv0VeGyIGbYJV5hB4E",
+      "message_id": 757,
+      "file_name": "comp_model-citizen-2026_1080p.mp4",
+      "file_size": 1987355165,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvVq-hnL5SrUEBMZ_TVs49MrtcK23QACyCEAAqHv0VeGyIGbYJV5hB4E",
+          "message_id": 757,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1792170"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt13884466"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt13884466"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/756",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/758"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1987355165,
+          "url": "https://t.me/c/4325759505/757",
+          "telegram_url": "https://t.me/c/4325759505/757",
+          "direct_url": "/stream/channel/-1004325759505/757?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvVq-hnL5SrUEBMZ_TVs49MrtcK23QACyCEAAqHv0VeGyIGbYJV5hB4E",
+          "message_id": 757,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1177776068,
+          "url": "https://t.me/c/4325759505/756",
+          "telegram_url": "https://t.me/c/4325759505/756",
+          "direct_url": "/stream/channel/-1004325759505/756?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvRq-hmdR-VgJ5Brk12kwelP3LzJ_wACxyEAAqHv0VfG6PfEbybNJR4E",
+          "message_id": 756,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/756",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "605.0 MB",
+          "size_bytes": 634431465,
+          "url": "https://t.me/c/4325759505/758",
+          "telegram_url": "https://t.me/c/4325759505/758",
+          "direct_url": "/stream/channel/-1004325759505/758?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvZq-hqldP5NMnXi3mHcRG6daCZ5XwACyiEAAqHv0VcGKlaIR5V0Rh4E",
+          "message_id": 758,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/758",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1987355165,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_model-citizen-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1177776068,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_model-citizen-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/756",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "605.0 MB",
+          "size_bytes": 634431465,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_model-citizen-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/758",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvVq-hnL5SrUEBMZ_TVs49MrtcK23QACyCEAAqHv0VeGyIGbYJV5hB4E",
+          "message_id": 757,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/757",
+          "size_bytes": 1987355165
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvRq-hmdR-VgJ5Brk12kwelP3LzJ_wACxyEAAqHv0VfG6PfEbybNJR4E",
+          "message_id": 756,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/756",
+          "size_bytes": 1177776068
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAvZq-hqldP5NMnXi3mHcRG6daCZ5XwACyiEAAqHv0VcGKlaIR5V0Rh4E",
+          "message_id": 758,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/758",
+          "size_bytes": 634431465
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/model-citizen-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=model-citizen-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T20:48:52Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T20:31:40Z"
+  "last_updated": "2026-11-15T20:48:53Z"
 }

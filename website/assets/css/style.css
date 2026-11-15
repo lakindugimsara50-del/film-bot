@@ -4865,18 +4865,27 @@ main > .section:first-of-type {
   position: relative !important;
   top: auto !important;
   left: auto !important;
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.95) 0%, rgba(184, 29, 36, 0.95) 100%) !important;
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.28) 0%, rgba(229, 9, 20, 0.42) 55%, rgba(160, 4, 12, 0.65) 100%) !important;
   color: #ffffff !important;
-  font-size: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-top: 1.2px solid rgba(255, 255, 255, 0.85) !important;
+  font-size: 9.5px !important;
   font-weight: 800 !important;
-  padding: 3px 8px !important;
-  border-radius: 6px !important;
-  letter-spacing: 0.6px !important;
+  padding: 2.5px 8px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow:
+    inset 0 1px 1.2px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 3px 10px rgba(0, 0, 0, 0.45),
+    0 0 12px rgba(229, 9, 20, 0.3) !important;
   line-height: 1.2 !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  z-index: 5 !important;
 }
 
 .badge-card-new {
@@ -5310,8 +5319,8 @@ main > .section:first-of-type {
   }
   .badge-top-left {
     font-size: 8px !important;
-    padding: 2px 4px !important;
-    border-radius: 4px !important;
+    padding: 1.5px 6px !important;
+    border-radius: 999px !important;
     letter-spacing: 0.4px !important;
   }
   .badge-card-new {
@@ -8279,20 +8288,9 @@ body.tg-browser-mode {
 /* ============================================================
    STREAMING PSYCHOLOGY & USER RETENTION HOOKS
    ============================================================ */
-/* Netflix Match Percentage Badge (Apple Water Bubble Design) */
+/* Netflix Match Percentage Badge (Removed per user request) */
 .badge-card-match {
-  background: linear-gradient(175deg, rgba(74, 222, 128, 0.32) 0%, rgba(34, 197, 94, 0.16) 100%) !important;
-  color: #4ade80 !important;
-  border: 1px solid rgba(74, 222, 128, 0.45) !important;
-  border-top: 1px solid rgba(187, 247, 208, 0.75) !important;
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  padding: 2.5px 8px !important;
-  border-radius: 999px !important;
-  letter-spacing: 0.4px !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 3px 10px rgba(34, 197, 94, 0.3) !important;
+  display: none !important;
 }
 
 /* Poster Action Trailer Button (Apple Liquid Glass Pill) */
@@ -8477,35 +8475,46 @@ body.tg-browser-mode {
 }
 
 /* ============================================================
-   MODERN SCROLL-REVEAL ANIMATIONS FOR MOVIE CATALOG
-   ("yatata yanakota animation walin eke thiyana ewa lassanata penna")
+   ZERO-LAG NATURAL 60FPS CATALOG & SCROLL SUPPRESSION
    ============================================================ */
 .scroll-reveal-section {
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto !important;
 }
 
 .scroll-reveal-section.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 .movie-card {
-  opacity: 0;
-  transform: translateY(22px) scale(0.97);
-  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.25s ease,
-              border-color 0.25s ease;
-  will-change: opacity, transform;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+  will-change: auto !important;
 }
 
 .movie-card.is-card-visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Ensure poster images render immediately and cleanly without blur or fade delay */
+.card-poster img {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Scroll suppression: disable pointer events on movie cards and hide popups during window scrolling */
+body.is-window-scrolling .cs-highlight-popup {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+body.is-window-scrolling .movie-card {
+  pointer-events: none !important;
 }
 
 /* Live search overlay cards and modal cards are always immediately visible */
@@ -8528,7 +8537,7 @@ body.tg-browser-mode {
   }
 }
 
-/* Responsive: Tablets & Mobile for 3D Widescreen Deck & Expanding Fullscreen */
+/* Responsive: Tablets (max-width: 900px) */
 @media (max-width: 900px) {
   .hero-showcase {
     --s0-x: -30px;
@@ -8584,7 +8593,7 @@ body.tg-browser-mode {
     padding: 10px 0 20px;
   }
   .hero-showcase-container {
-    bottom: 55px;
+    bottom: 45px;
     padding: 0 18px;
   }
   .hero-fs-title {
@@ -8671,7 +8680,204 @@ body.tg-browser-mode {
     display: none;
   }
   .badge-card-match {
-    font-size: 8.5px !important;
-    padding: 1.5px 5px !important;
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   PIXEL-PERFECT MOBILE RESPONSIVE (Phones: max-width: 600px)
+   - Zero horizontal clipping
+   - Hero banner 100% visible without dark curtain crop
+   - 3D Deck fits perfectly within screen boundaries
+   - Zero-lag butter-smooth performance
+   ============================================================ */
+@media (max-width: 600px) {
+  .hero-showcase {
+    --s0-x: -10px;
+    --s0-y: 0px;
+    --s0-z: 25px;
+    --s0-s: 1.0;
+    --s0-ry: -5deg;
+    --s0-op: 1;
+
+    --s1-x: 10px;
+    --s1-y: 5px;
+    --s1-z: -12px;
+    --s1-s: 0.88;
+    --s1-ry: -9deg;
+    --s1-op: 0.85;
+
+    --s2-x: 26px;
+    --s2-y: 10px;
+    --s2-z: -42px;
+    --s2-s: 0.78;
+    --s2-ry: -14deg;
+    --s2-op: 0.65;
+
+    --s3-x: 40px;
+    --s3-y: 14px;
+    --s3-z: -72px;
+    --s3-s: 0.68;
+    --s3-ry: -18deg;
+    --s3-op: 0.45;
+
+    --s4-x: 52px;
+    --s4-y: 18px;
+    --s4-z: -98px;
+    --s4-s: 0.58;
+    --s4-ry: -20deg;
+    --s4-op: 0.25;
+
+    --s5-x: 62px;
+    --s5-y: 21px;
+    --s5-z: -120px;
+    --s5-s: 0.50;
+    --s5-ry: -22deg;
+    --s5-op: 0.12;
+
+    --sweep-out-x: -55px;
+    --sweep-mid-x: 12px;
+
+    --hero-expand-z: 140px;
+    --hero-expand-scale: 1.6;
+
+    min-height: 480px;
+    max-height: 560px;
+    height: 74vh;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* Fix Mobile Hero Banner Cut-off / Half-Visible:
+     Replace the desktop 90-degree dark left curtain with a soft top-to-bottom vignette
+     so the movie artwork is brightly and fully visible across the mobile phone screen */
+  .hero-bg-layer {
+    background-position: center top !important;
+    background-size: cover !important;
+  }
+  .hero-vignette-left {
+    background: linear-gradient(180deg, rgba(8, 8, 12, 0.15) 0%, rgba(8, 8, 12, 0.45) 50%, rgba(8, 8, 12, 0.95) 100%) !important;
+  }
+  .hero-vignette-bottom {
+    background: linear-gradient(0deg, #08080c 0%, rgba(8, 8, 12, 0.88) 25%, transparent 60%) !important;
+  }
+
+  .hero-showcase-container {
+    bottom: 22px;
+    padding: 0 16px;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 5;
+  }
+  .hero-showcase-main {
+    max-width: 100%;
+    gap: 6px;
+  }
+  .hero-fs-badge {
+    font-size: 10px;
+    padding: 2.5px 10px;
+    letter-spacing: 0.8px;
+  }
+  .hero-fs-title {
+    font-size: clamp(20px, 5.5vw, 25px);
+    line-height: 1.2;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+  .hero-fs-title-si {
+    font-size: 13px;
+    margin: 0;
+  }
+  .hero-fs-meta {
+    font-size: 12px;
+    gap: 6px;
+    margin: 2px 0;
+  }
+  .hero-fs-genres {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .hero-fs-desc {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+    line-height: 1.4;
+    margin-bottom: 3px;
+  }
+  .hero-fs-actions {
+    gap: 8px;
+    flex-wrap: nowrap;
+    margin-top: 4px;
+  }
+  .btn-hero-watch,
+  .btn-hero-download,
+  .btn-hero-trailer {
+    padding: 8px 14px;
+    font-size: 12.5px;
+    border-radius: 999px;
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* 3D Deck on Mobile */
+  .hero-3d-deck-wrap {
+    max-width: 100%;
+    height: 230px;
+  }
+  .hero-3d-deck-stage {
+    height: 220px;
+    perspective: 750px;
+    perspective-origin: 50% 50%;
+  }
+  .hero-3d-card {
+    width: min(240px, 70vw);
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+  }
+
+  /* Watermark Sculpture on Mobile */
+  .hero-stage-watermark {
+    top: calc(50% - 100px);
+    padding: 0 4px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .hero-watermark-backdrop {
+    gap: 3px;
+    width: 100%;
+    justify-content: center;
+  }
+  .hero-watermark-bubble-pod {
+    padding: 3.5px 7px;
+    border-radius: 12px;
+  }
+  .hero-watermark-word {
+    font-size: clamp(15px, 4.5vw, 20px);
+    letter-spacing: 0.8px;
+  }
+  .hero-watermark-emblem-wrap {
+    width: 32px;
+    height: 32px;
+  }
+  .hero-watermark-logo {
+    width: 18px;
+  }
+  .hero-watermark-subline {
+    display: none;
+  }
+  .hero-watermark-tagline {
+    display: none;
+  }
+
+  /* Badge styling on mobile: clean unobscured poster */
+  .badge-card-match {
+    display: none !important;
+  }
+  .badge-top-left {
+    font-size: 8px !important;
+    padding: 1.5px 6px !important;
+    border-radius: 999px !important;
+    letter-spacing: 0.3px !important;
   }
 }

@@ -24,68 +24,18 @@
   }
 
   /* =============================================
-     2. SECTION SCROLL FADE-IN (Intersection Observer)
+     2. SECTION SCROLL FADE-IN (Instant Zero-Lag)
      ============================================= */
   function initSectionAnimations() {
     const sections = document.querySelectorAll('.section');
-    if (!sections.length) return;
-
-    // Skip if user prefers reduced motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      sections.forEach(s => s.classList.add('in-view'));
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in-view');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {
-      rootMargin: '0px 0px -60px 0px',
-      threshold: 0.08
-    });
-
-    sections.forEach(s => observer.observe(s));
+    sections.forEach(s => s.classList.add('in-view'));
   }
 
   /* =============================================
-     3. MOVIE CARD SCROLL ENTRANCE ANIMATION
+     3. MOVIE CARD SCROLL ENTRANCE (Instant Zero-Lag)
      ============================================= */
   function initCardEntranceAnimation() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {
-      rootMargin: '0px 0px -20px 0px',
-      threshold: 0.05
-    });
-
-    // Observe existing cards
-    document.querySelectorAll('.movie-card').forEach(card => observer.observe(card));
-
-    // Re-observe dynamically added cards
-    const mutObs = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === 1) {
-            if (node.classList && node.classList.contains('movie-card')) {
-              observer.observe(node);
-            }
-            node.querySelectorAll && node.querySelectorAll('.movie-card').forEach(c => observer.observe(c));
-          }
-        });
-      });
-    });
-    mutObs.observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll('.movie-card').forEach(card => card.classList.add('visible'));
   }
 
   /* =============================================
@@ -100,46 +50,8 @@
      5. CARD RIBBONS (NEW / HOT BADGES)
      ============================================= */
   function injectCardRibbons() {
-    // Run once on load and again on DOM mutations
-    function processCards() {
-      document.querySelectorAll('.movie-card:not([data-ribbon-done])').forEach(card => {
-        card.setAttribute('data-ribbon-done', '1');
-
-        const slug = card.dataset.slug || '';
-        const allM = window.FilmSub ? window.FilmSub.allMovies() : [];
-        const movie = allM.find(m => (m.slug || m.id) === slug);
-        if (!movie) return;
-
-        const poster = card.querySelector('.card-poster');
-        if (!poster) return;
-
-        // "NEW" ribbon handled natively in app.js inside .card-badges-left (avoids covering IMDb rating)
-
-        // "HOT" badge handled natively in app.js inside .card-badges-left
-
-        // Sinhala subtitle highlight stripe on hover
-        const hasSub = (Array.isArray(movie.subtitles) && movie.subtitles.length > 0) || movie.subtitle_url || movie.has_sinhala_sub;
-        if (hasSub && !poster.querySelector('.card-sub-highlight')) {
-          const subStripe = document.createElement('div');
-          subStripe.className = 'card-sub-highlight';
-          subStripe.innerHTML = '<i class="fa-solid fa-closed-captioning"></i> සිංහල';
-          poster.appendChild(subStripe);
-        }
-      });
-    }
-
-    // Wait for FilmSub data
-    const checkReady = () => {
-      if (window.FilmSub && window.FilmSub.allMovies().length > 0) {
-        processCards();
-        // Watch for new cards
-        new MutationObserver(() => processCards())
-          .observe(document.body, { childList: true, subtree: true });
-      } else {
-        setTimeout(checkReady, 400);
-      }
-    };
-    checkReady();
+    // Badges natively generated in app.js inside .card-badges-left
+    return;
   }
 
   /* =============================================
@@ -190,76 +102,11 @@
   }
 
   /* =============================================
-     8. ENHANCED HIGHLIGHT POPUP – ADD MATCH SCORE
+     8. ENHANCED HIGHLIGHT POPUP (Clean Netflix Style)
      ============================================= */
   function upgradeHighlightPopup() {
-    // Intercept popup creation to add extra elements
-    const originalInit = window._originalHighlightPopupInit;
-
-    // Observe popup for content changes
-    const popup = document.getElementById('cs-highlight-popup');
-    if (!popup) {
-      setTimeout(upgradeHighlightPopup, 500);
-      return;
-    }
-
-    const mutObs = new MutationObserver(() => {
-      if (!popup.classList.contains('active')) return;
-
-      // Add match score if not already added
-      const body = popup.querySelector('.cs-popup-body');
-      if (!body || body.querySelector('.cs-popup-match')) return;
-
-      const movie = getCurrentPopupMovie();
-      if (!movie) return;
-
-      // Calculate a "match score" based on IMDB
-      const imdb = parseFloat(movie.imdb || movie.rating || '0');
-      const matchPct = imdb > 0 ? Math.min(99, Math.round(imdb * 10 + 5)) : 0;
-
-      if (matchPct > 0) {
-        const matchEl = document.createElement('div');
-        matchEl.className = 'cs-popup-match';
-        matchEl.innerHTML = `<i class="fa-solid fa-thumbs-up"></i>${matchPct}% Match`;
-
-        const metaEl = body.querySelector('.cs-popup-meta');
-        if (metaEl) metaEl.prepend(matchEl);
-
-        // Add match bar
-        const barEl = document.createElement('div');
-        barEl.className = 'cs-popup-match-bar';
-        barEl.innerHTML = `<div class="cs-popup-match-bar-fill" style="width:${matchPct}%"></div>`;
-        if (metaEl) metaEl.after(barEl);
-      }
-
-      // Add play overlay on banner
-      const banner = popup.querySelector('.cs-popup-banner');
-      if (banner && !banner.querySelector('.cs-popup-play-overlay')) {
-        const overlay = document.createElement('div');
-        overlay.className = 'cs-popup-play-overlay';
-        overlay.innerHTML = '<div class="cs-popup-play-icon"><i class="fa-solid fa-play"></i></div>';
-        banner.appendChild(overlay);
-
-        // Click overlay navigates to movie
-        const watchBtn = popup.querySelector('.cs-popup-btn-watch');
-        overlay.addEventListener('click', () => { if (watchBtn) watchBtn.click(); });
-      }
-
-      // Add view count (simulated from localStorage)
-      const actionsEl = body.querySelector('.cs-popup-actions');
-      if (actionsEl && movie && !body.querySelector('.cs-popup-view-count')) {
-        const slug = movie.slug || movie.id || '';
-        const views = parseInt(localStorage.getItem(`view_${slug}`) || '0', 10);
-        if (views > 0) {
-          const viewEl = document.createElement('div');
-          viewEl.className = 'cs-popup-view-count';
-          viewEl.innerHTML = `<i class="fa-solid fa-eye"></i>${views.toLocaleString()} views`;
-          actionsEl.before(viewEl);
-        }
-      }
-    });
-
-    mutObs.observe(popup, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    // Popup creation and hover-intent handled natively in app.js
+    return;
   }
 
   function getCurrentPopupMovie() {
@@ -357,35 +204,11 @@
   }
 
   /* =============================================
-     14. SMOOTH IMAGE LOAD (blur-up effect)
+     14. SMOOTH IMAGE LOAD (Disabled for Zero-Lag Low-Data Performance)
      ============================================= */
   function initImageBlurUp() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    document.querySelectorAll('.card-poster img, .hero-poster-mini').forEach(img => {
-      if (img.complete) return;
-      img.style.filter = 'blur(8px)';
-      img.style.transition = 'filter 0.4s ease';
-      img.addEventListener('load', () => {
-        img.style.filter = 'blur(0)';
-      }, { once: true });
-    });
-
-    // Also handle dynamically added images
-    new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType !== 1) return;
-          const imgs = node.tagName === 'IMG' ? [node] : [...(node.querySelectorAll?.('.card-poster img') || [])];
-          imgs.forEach(img => {
-            if (img.complete) return;
-            img.style.filter = 'blur(8px)';
-            img.style.transition = 'filter 0.4s ease';
-            img.addEventListener('load', () => { img.style.filter = 'blur(0)'; }, { once: true });
-          });
-        });
-      });
-    }).observe(document.body, { childList: true, subtree: true });
+    // Disabled to prevent blurry images and eliminate heavy MutationObserver on document.body
+    return;
   }
 
   /* =============================================

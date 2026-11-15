@@ -89,13 +89,14 @@ function applyDynamicTheme(r, g, b) {
 }
 
 function formatQualityLabel(q) {
-  if (!q) return 'Full HD';
+  if (!q) return 'WEB-DL';
   const s = String(q).trim().toLowerCase();
   if (s.includes('2160') || s.includes('4k')) return '4K UHD';
-  if (s.includes('1080') || s.includes('fhd')) return 'Full HD';
+  if (s.includes('1080') || s.includes('fhd') || s.includes('full hd')) return 'WEB-DL';
+  if (s.includes('web-dl') || s.includes('webdl') || s.includes('web')) return 'WEB-DL';
   if (s.includes('720') || s.includes('hd')) return 'HD';
   if (s.includes('480') || s.includes('sd')) return 'SD';
-  return 'Full HD';
+  return 'WEB-DL';
 }
 
 

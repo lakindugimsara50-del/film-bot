@@ -214,28 +214,13 @@ img {
   opacity: 1;
 }
 
-/* Smooth card entrance animation */
-@keyframes card-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Zero-Lag Instant Movie Card Visibility */
+.movie-card.visible,
+.movie-card {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
 }
-.movie-card.visible {
-  animation: card-fade-in 0.5s var(--ease-smooth) both;
-}
-
-/* Staggered animation delay for cards in view */
-.movie-card:nth-child(1) { animation-delay: 0ms; }
-.movie-card:nth-child(2) { animation-delay: 60ms; }
-.movie-card:nth-child(3) { animation-delay: 120ms; }
-.movie-card:nth-child(4) { animation-delay: 180ms; }
-.movie-card:nth-child(5) { animation-delay: 240ms; }
-.movie-card:nth-child(6) { animation-delay: 300ms; }
 
 /* Red glow ring on hover */
 .movie-card::after {

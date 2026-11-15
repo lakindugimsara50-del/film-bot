@@ -1923,15 +1923,16 @@ function initHeroTouchSwipe() {
   });
 }
 
-// ---- Format Quality Label (e.g. 1080p -> Full HD) ----
+// ---- Format Quality Label (e.g. 1080p -> WEB-DL) ----
 function formatQualityLabel(q) {
-  if (!q) return 'Full HD';
+  if (!q) return 'WEB-DL';
   const s = String(q).trim().toLowerCase();
   if (s.includes('2160') || s.includes('4k')) return '4K UHD';
-  if (s.includes('1080') || s.includes('fhd')) return 'Full HD';
+  if (s.includes('1080') || s.includes('fhd') || s.includes('full hd')) return 'WEB-DL';
+  if (s.includes('web-dl') || s.includes('webdl') || s.includes('web')) return 'WEB-DL';
   if (s.includes('720') || s.includes('hd')) return 'HD';
   if (s.includes('480') || s.includes('sd')) return 'SD';
-  return 'Full HD';
+  return 'WEB-DL';
 }
 
 // ---- Generate Movie Card (Netflix Cinema Style) ----
@@ -1944,14 +1945,9 @@ function generateMovieCard(movie, opts = {}) {
   const imdbVal = movie.imdb || movie.rating || '';
   const imdb = (imdbVal && imdbVal !== '0.0') ? `<span class="badge-top-right"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
   
-  // Left badges (Always prominent Full HD / 4K / Quality label)
+  // Left badges (Quality label in sleek liquid water bubble pill design)
   const rawQ = formatQualityLabel(movie.quality);
   const qualityBadge = `<span class="badge-top-left">${escHtml(rawQ)}</span>`;
-
-  // Streaming Psychology: Netflix Match Score (Dopamine & Confidence Hook)
-  const ratingNum = parseFloat(imdbVal) || 7.8;
-  const matchPct = Math.min(99, Math.max(90, Math.round(ratingNum * 10 + 14)));
-  const matchBadge = `<span class="badge-card-match">${matchPct}% Match</span>`;
   
   // Calculate if movie is New (added within last 21 days)
   const addedAt = movie.added_at || movie.added_date;
@@ -1965,7 +1961,7 @@ function generateMovieCard(movie, opts = {}) {
   const isSeries = movie.type === 'series' || (Array.isArray(movie.seasons) && movie.seasons.length > 0) || Boolean(movie.season);
   const typeBadge = isSeries ? `<span class="badge-card-type"><i class="fa-solid fa-tv"></i> TV</span>` : '';
   const url = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
-  const cardClass = isTrending ? 'movie-card trending-card' : 'movie-card';
+  const cardClass = isTrending ? 'movie-card trending-card is-card-visible visible' : 'movie-card is-card-visible visible';
 
   return `
     <a href="${url}" class="${cardClass}" data-slug="${escHtml(movie.slug || movie.id || '')}" title="${escHtml(movie.title || '')}">
@@ -1975,7 +1971,6 @@ function generateMovieCard(movie, opts = {}) {
         <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
         <div class="card-badges-left">
           ${qualityBadge}
-          ${matchBadge}
           ${newBadge}
           ${typeBadge}
         </div>
@@ -2244,39 +2239,12 @@ function initMoviesShowcaseGrid() {
   renderShowcase();
 }
 
-// ---- Modern Scroll-Reveal Animation Engine ----
+// ---- Instant Zero-Lag Catalog Reveal Engine ----
 function initScrollReveal() {
   const sections = document.querySelectorAll('.section, .cs-player-section, .cs-movie-details-section, .cs-downloads-section, .cs-related-section, .cs-series-section');
-  if (!sections.length) return;
-
-  if (typeof IntersectionObserver === 'undefined') {
-    sections.forEach(s => s.classList.add('is-visible'));
-    document.querySelectorAll('.movie-card').forEach(c => c.classList.add('is-card-visible'));
-    return;
-  }
-
-  const observer = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-
-        const cards = entry.target.querySelectorAll('.movie-card');
-        cards.forEach((c, idx) => {
-          c.style.transitionDelay = `${Math.min(idx * 0.04, 0.4)}s`;
-          c.classList.add('is-card-visible');
-        });
-
-        obs.unobserve(entry.target);
-      }
-    });
-  }, {
-    threshold: 0.08,
-    rootMargin: '0px 0px -40px 0px'
-  });
-
-  sections.forEach(sec => {
-    sec.classList.add('scroll-reveal-section');
-    observer.observe(sec);
+  sections.forEach(s => s.classList.add('is-visible', 'in-view'));
+  document.querySelectorAll('.movie-card').forEach(c => {
+    c.classList.add('is-card-visible', 'visible');
   });
 }
 
@@ -2336,6 +2304,8 @@ function initHighlightPopup() {
   let showTimer = null;
   let hideTimer = null;
   let activeCard = null;
+  let isScrolling = false;
+  let scrollTimeout = null;
 
   const hidePopup = () => {
     if (showTimer) { clearTimeout(showTimer); showTimer = null; }
@@ -2351,6 +2321,8 @@ function initHighlightPopup() {
   popup.addEventListener('mouseleave', hidePopup);
 
   document.addEventListener('mouseover', (e) => {
+    // Suppress hover popups while scrolling
+    if (isScrolling) return;
     const card = e.target.closest('.movie-card');
     if (!card) return;
     if (card === activeCard && popup.classList.contains('active')) return;
@@ -2358,7 +2330,9 @@ function initHighlightPopup() {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     if (showTimer) clearTimeout(showTimer);
 
+    // Enforce sustained hover intent delay (~450ms) so popups ONLY appear when cursor is stationary
     showTimer = setTimeout(() => {
+      if (isScrolling) return;
       const slug = card.dataset.slug;
       if (!slug) return;
       const movie = findMovieBySlug(slug) || allMovies.find(m => (m.slug || m.id) === slug);
@@ -2369,7 +2343,7 @@ function initHighlightPopup() {
       const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
       const imdbVal = movie.imdb || movie.rating || '';
       const imdb = imdbVal ? `<span class="badge badge-imdb"><i class="fa-solid fa-star"></i> ${imdbVal}</span>` : '';
-      const quality = movie.quality ? `<span class="badge badge-quality">${escHtml(movie.quality)}</span>` : '<span class="badge badge-quality"><i class="fa-solid fa-film"></i> Full HD</span>';
+      const quality = movie.quality ? `<span class="badge badge-quality">${escHtml(movie.quality)}</span>` : '<span class="badge badge-quality"><i class="fa-solid fa-film"></i> WEB-DL</span>';
       const year = movie.year ? `<span class="badge badge-year">${escHtml(movie.year)}</span>` : '';
       const durationVal = movie.duration ? (typeof movie.duration === 'number' ? `${movie.duration} min` : movie.duration) : '';
       const duration = durationVal ? `<span class="badge badge-duration"><i class="fa-regular fa-clock"></i> ${escHtml(durationVal)}</span>` : '';
@@ -2441,7 +2415,7 @@ function initHighlightPopup() {
       popup.style.left = `${Math.round(left)}px`;
       popup.style.top = `${Math.round(top)}px`;
       popup.classList.add('active');
-    }, 180);
+    }, 450);
   });
 
   document.addEventListener('mouseout', (e) => {
@@ -2453,12 +2427,26 @@ function initHighlightPopup() {
     hidePopup();
   });
 
-  window.addEventListener('scroll', () => {
+  // Scroll suppression: immediately cancel show timer and dismiss active popup during scroll
+  const onWindowScroll = () => {
+    isScrolling = true;
+    document.body.classList.add('is-window-scrolling');
+    if (showTimer) {
+      clearTimeout(showTimer);
+      showTimer = null;
+    }
     if (popup.classList.contains('active')) {
       popup.classList.remove('active');
       activeCard = null;
     }
-  }, { passive: true });
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      isScrolling = false;
+      document.body.classList.remove('is-window-scrolling');
+    }, 200);
+  };
+
+  window.addEventListener('scroll', onWindowScroll, { passive: true });
 }
 
 // ---- Mobile Bottom Navigation Bar Support ----

@@ -17063,7 +17063,234 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T17:54:15Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "maremma-2026",
+      "slug": "maremma-2026",
+      "title": "Maremma",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt37537243",
+      "tmdb_id": "1604274",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/gMN8kkciIx3abnABV3KJy6DnDgN.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/gMN8kkciIx3abnABV3KJy6DnDgN.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/qsnsKf59pYN3GzfQRqvNjE8tcdz.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/qsnsKf59pYN3GzfQRqvNjE8tcdz.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/cq6FkXNvsmk",
+      "trailer_id": "cq6FkXNvsmk",
+      "genres": [
+        "Action",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "135 min",
+      "description": "In a village bound by ancient traditions, the Maremma Goddess festival is a time of both reverence and fear. Every 12 years, a male bull is sacrificed to the deity, yet with each ceremony, calamity befalls the villagers. Despite their efforts, the elders fail to prevent disaster. Determined to break the cycle, they enact a new decree: any household whose bull bears a male calf in the next 100 days must offer it to the goddess. As the deadline approaches, the fate of the village hangs in the balance, and the true test of their resolve begins.",
+      "director": "Manchala Nagaraj",
+      "cast": [
+        {
+          "name": "Maadhav Bhupathiraju",
+          "character": ""
+        },
+        {
+          "name": "Deepa Balu",
+          "character": ""
+        },
+        {
+          "name": "Vikas Vasistha",
+          "character": ""
+        },
+        {
+          "name": "V. S. Roopa Lakshmi",
+          "character": ""
+        },
+        {
+          "name": "Dayanand Reddy",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAupq-f_C63BL_VaB9WNizyss8HFtSQACuSEAAqHv0VdihR6zDVioQB4E",
+      "message_id": 746,
+      "file_name": "comp_maremma-2026_1080p.mp4",
+      "file_size": 2040012371,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAupq-f_C63BL_VaB9WNizyss8HFtSQACuSEAAqHv0VdihR6zDVioQB4E",
+          "message_id": 746,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1604274"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt37537243"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt37537243"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/744",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/745"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2040012371,
+          "url": "https://t.me/c/4325759505/746",
+          "telegram_url": "https://t.me/c/4325759505/746",
+          "direct_url": "/stream/channel/-1004325759505/746?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAupq-f_C63BL_VaB9WNizyss8HFtSQACuSEAAqHv0VdihR6zDVioQB4E",
+          "message_id": 746,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1732976797,
+          "url": "https://t.me/c/4325759505/744",
+          "telegram_url": "https://t.me/c/4325759505/744",
+          "direct_url": "/stream/channel/-1004325759505/744?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuhq-fYvK-0qjaAwo9HgXlZc5zQsQAACsyEAAqHv0Vc8xFw-QF0HHx4E",
+          "message_id": 744,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/744",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "885.8 MB",
+          "size_bytes": 928878432,
+          "url": "https://t.me/c/4325759505/745",
+          "telegram_url": "https://t.me/c/4325759505/745",
+          "direct_url": "/stream/channel/-1004325759505/745?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAulq-fejlGZ3rKflszBl6I6mr7lBYwACtSEAAqHv0VeIPQ3BuZH86B4E",
+          "message_id": 745,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/745",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2040012371,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1732976797,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/744",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "885.8 MB",
+          "size_bytes": 928878432,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_maremma-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/745",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAupq-f_C63BL_VaB9WNizyss8HFtSQACuSEAAqHv0VdihR6zDVioQB4E",
+          "message_id": 746,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/746",
+          "size_bytes": 2040012371
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAuhq-fYvK-0qjaAwo9HgXlZc5zQsQAACsyEAAqHv0Vc8xFw-QF0HHx4E",
+          "message_id": 744,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/744",
+          "size_bytes": 1732976797
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAulq-fejlGZ3rKflszBl6I6mr7lBYwACtSEAAqHv0VeIPQ3BuZH86B4E",
+          "message_id": 745,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/745",
+          "size_bytes": 928878432
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/maremma-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=maremma-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T18:53:56Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T17:54:17Z"
+  "last_updated": "2026-11-15T18:53:58Z"
 }

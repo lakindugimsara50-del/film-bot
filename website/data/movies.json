@@ -15023,7 +15023,234 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T13:27:40Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "enna-vilai-2026",
+      "slug": "enna-vilai-2026",
+      "title": "Enna Vilai",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.0",
+      "rating": "7.0",
+      "imdb_id": "tt33095205",
+      "tmdb_id": "1686999",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/NkklX4xp3BlLmlMT0LXehkStJZ.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/NkklX4xp3BlLmlMT0LXehkStJZ.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/80DEQikGK5bSlbyBbNWV9ieVy6g.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/80DEQikGK5bSlbyBbNWV9ieVy6g.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/wl4mqPQCBnU",
+      "trailer_id": "wl4mqPQCBnU",
+      "genres": [
+        "Drama",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "141 min",
+      "description": "A humble fisherman from Rameswaram lives a quiet life with his family until he finds a gold pendant washed ashore. What initially seems like a blessing soon turns into a nightmare when false accusations threaten his peace and dignity, forcing him to stand up against a powerful system.",
+      "director": "Sajeev Pazhoor",
+      "cast": [
+        {
+          "name": "Karunas",
+          "character": "Thavasimuthu"
+        },
+        {
+          "name": "Nimisha Sajayan",
+          "character": "Kanchana"
+        },
+        {
+          "name": "Vijayalakshmi Veeramani",
+          "character": "Palamma"
+        },
+        {
+          "name": "Kamalesh Jegan",
+          "character": "Bharathi"
+        },
+        {
+          "name": "Shashaa Shivakumar",
+          "character": "Manimegalai"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsVq-bd5LkIP9sEpxCUNOsw2nD8pDAACASUAAo6lyVfr2SBU8a7qRR4E",
+      "message_id": 709,
+      "file_name": "comp_enna-vilai-2026_1080p.mp4",
+      "file_size": 2031522437,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsVq-bd5LkIP9sEpxCUNOsw2nD8pDAACASUAAo6lyVfr2SBU8a7qRR4E",
+          "message_id": 709,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1686999"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt33095205"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt33095205"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/710",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/708"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2031522437,
+          "url": "https://t.me/c/4325759505/709",
+          "telegram_url": "https://t.me/c/4325759505/709",
+          "direct_url": "/stream/channel/-1004325759505/709?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsVq-bd5LkIP9sEpxCUNOsw2nD8pDAACASUAAo6lyVfr2SBU8a7qRR4E",
+          "message_id": 709,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.4 GB",
+          "size_bytes": 1500190853,
+          "url": "https://t.me/c/4325759505/710",
+          "telegram_url": "https://t.me/c/4325759505/710",
+          "direct_url": "/stream/channel/-1004325759505/710?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsZq-bvYKWN-kGXBGfLijS3vKqT_BgACCiUAAo6lyVdVvinILmMTNh4E",
+          "message_id": 710,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/710",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "777.3 MB",
+          "size_bytes": 815045638,
+          "url": "https://t.me/c/4325759505/708",
+          "telegram_url": "https://t.me/c/4325759505/708",
+          "direct_url": "/stream/channel/-1004325759505/708?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsRq-bbkttnrb0Hrnws5dqEJsIzMfwAC_yQAAo6lyVfMuV2McrE5ih4E",
+          "message_id": 708,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/708",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2031522437,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enna-vilai-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.4 GB",
+          "size_bytes": 1500190853,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enna-vilai-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/710",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "777.3 MB",
+          "size_bytes": 815045638,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_enna-vilai-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/708",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsVq-bd5LkIP9sEpxCUNOsw2nD8pDAACASUAAo6lyVfr2SBU8a7qRR4E",
+          "message_id": 709,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/709",
+          "size_bytes": 2031522437
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsZq-bvYKWN-kGXBGfLijS3vKqT_BgACCiUAAo6lyVdVvinILmMTNh4E",
+          "message_id": 710,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/710",
+          "size_bytes": 1500190853
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAsRq-bbkttnrb0Hrnws5dqEJsIzMfwAC_yQAAo6lyVfMuV2McrE5ih4E",
+          "message_id": 708,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/708",
+          "size_bytes": 815045638
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/enna-vilai-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=enna-vilai-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T14:04:20Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T13:27:42Z"
+  "last_updated": "2026-11-15T14:04:22Z"
 }

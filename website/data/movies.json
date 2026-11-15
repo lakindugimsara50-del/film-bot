@@ -16379,7 +16379,236 @@
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T15:51:55Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "animals-2026",
+      "slug": "animals-2026",
+      "title": "Animals",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.9",
+      "rating": "6.9",
+      "imdb_id": "tt31049299",
+      "tmdb_id": "1236045",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/iISM36voS1E8gX9BM0DVK0kgi3E.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/iISM36voS1E8gX9BM0DVK0kgi3E.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/5yzM78Tp8nYwSCQtyRcmnHmCn5C.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/5yzM78Tp8nYwSCQtyRcmnHmCn5C.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/ZkN2M4ODdys",
+      "trailer_id": "ZkN2M4ODdys",
+      "genres": [
+        "Thriller",
+        "Drama",
+        "Action",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "106 min",
+      "description": "When the son of an L.A. mayoral candidate is kidnapped, he and his wife have a few hours to come up with the ransom payment. With most of their money spent on his political campaign, they have to get their hands dirty and expose a side of their lives they never intended to see the light of day.",
+      "director": "Ben Affleck",
+      "cast": [
+        {
+          "name": "Ben Affleck",
+          "character": "Mark Kimball"
+        },
+        {
+          "name": "Kerry Washington",
+          "character": "Abigail Kimball"
+        },
+        {
+          "name": "Gillian Anderson",
+          "character": "Dayle Burton"
+        },
+        {
+          "name": "Steven Yeun",
+          "character": "Sam Allison"
+        },
+        {
+          "name": "Adriana Paz",
+          "character": "Cecilia Trujillo"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAt5q-djXe_7vtKFow-JO3gM813gUtQACNSMAAo6l0Vdcym1neO15TB4E",
+      "message_id": 734,
+      "file_name": "comp_animals-2026_1080p.mp4",
+      "file_size": 2008003059,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAt5q-djXe_7vtKFow-JO3gM813gUtQACNSMAAo6l0Vdcym1neO15TB4E",
+          "message_id": 734,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1236045"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt31049299"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt31049299"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/733",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/732"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2008003059,
+          "url": "https://t.me/c/4325759505/734",
+          "telegram_url": "https://t.me/c/4325759505/734",
+          "direct_url": "/stream/channel/-1004325759505/734?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAt5q-djXe_7vtKFow-JO3gM813gUtQACNSMAAo6l0Vdcym1neO15TB4E",
+          "message_id": 734,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1337438506,
+          "url": "https://t.me/c/4325759505/733",
+          "telegram_url": "https://t.me/c/4325759505/733",
+          "direct_url": "/stream/channel/-1004325759505/733?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAt1q-dixxvLzLu8UhdkhlSZGxDl5ZwACNCMAAo6l0Vfj19P16pqO2B4E",
+          "message_id": 733,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/733",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "692.7 MB",
+          "size_bytes": 726347220,
+          "url": "https://t.me/c/4325759505/732",
+          "telegram_url": "https://t.me/c/4325759505/732",
+          "direct_url": "/stream/channel/-1004325759505/732?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtxq-dgt-VFt4tO3G3dnw4jJwKmbgQACMSMAAo6l0VdVUwABR7qVXtEeBA",
+          "message_id": 732,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/732",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2008003059,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_animals-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1337438506,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_animals-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/733",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "692.7 MB",
+          "size_bytes": 726347220,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_animals-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/732",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAt5q-djXe_7vtKFow-JO3gM813gUtQACNSMAAo6l0Vdcym1neO15TB4E",
+          "message_id": 734,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/734",
+          "size_bytes": 2008003059
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAt1q-dixxvLzLu8UhdkhlSZGxDl5ZwACNCMAAo6l0Vfj19P16pqO2B4E",
+          "message_id": 733,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/733",
+          "size_bytes": 1337438506
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAtxq-dgt-VFt4tO3G3dnw4jJwKmbgQACMSMAAo6l0VdVUwABR7qVXtEeBA",
+          "message_id": 732,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/732",
+          "size_bytes": 726347220
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/animals-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=animals-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T16:08:03Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T15:51:57Z"
+  "last_updated": "2026-11-15T16:08:05Z"
 }

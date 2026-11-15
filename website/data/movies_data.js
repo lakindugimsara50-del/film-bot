@@ -14113,7 +14113,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T08:51:19Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "its-a-medical-miracle-2026",
+      "slug": "its-a-medical-miracle-2026",
+      "title": "It's a Medical Miracle",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.0",
+      "rating": "5.0",
+      "imdb_id": "tt35963439",
+      "tmdb_id": "1422822",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/tT9VKxtyyb5uFsxZhdnvE1GVZJd.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/tT9VKxtyyb5uFsxZhdnvE1GVZJd.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/vhmUAwPtqZI4wVsQHmTJNR8bRK6.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/vhmUAwPtqZI4wVsQHmTJNR8bRK6.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/wK2CU6znTDw",
+      "trailer_id": "wK2CU6znTDw",
+      "genres": [
+        "Fantasy",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "137 min",
+      "description": "A young man declared brain-dead suddenly awakens with the ability to hear everything. Seeking the nurse whose voice saved him, he's drawn into a dark game of masks, memories, and revenge where every sound may be a clue or a trap.",
+      "director": "Shyamin Gireesh",
+      "cast": [
+        {
+          "name": "Sangeeth Prathap",
+          "character": "Ruben"
+        },
+        {
+          "name": "Sharafudheen",
+          "character": "Sooraj"
+        },
+        {
+          "name": "Akhila Bhargavan",
+          "character": "Susanna"
+        },
+        {
+          "name": "Anand Manmadhan",
+          "character": "Rameshan"
+        },
+        {
+          "name": "Kiran Peethambaran",
+          "character": "Antony"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACArZq-ZhpxBxoRHJyu4_qJDfYpPZmWAACuSQAAo6lyVdWEW4QmYoMvR4E",
+      "message_id": 694,
+      "file_name": "comp_its-a-medical-miracle-2026_1080p.mp4",
+      "file_size": 2030983479,
+      "drive_file_id": "",
+      "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArZq-ZhpxBxoRHJyu4_qJDfYpPZmWAACuSQAAo6lyVdWEW4QmYoMvR4E",
+          "message_id": 694,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1422822"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35963439"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35963439"
+        }
+      ],
+      "qualities": {
+        "auto": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+        "1080p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+        "720p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/693",
+        "480p": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/692"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2030983479,
+          "url": "https://t.me/c/4325759505/694",
+          "telegram_url": "https://t.me/c/4325759505/694",
+          "direct_url": "/stream/channel/-1004325759505/694?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArZq-ZhpxBxoRHJyu4_qJDfYpPZmWAACuSQAAo6lyVdWEW4QmYoMvR4E",
+          "message_id": 694,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1762478799,
+          "url": "https://t.me/c/4325759505/693",
+          "telegram_url": "https://t.me/c/4325759505/693",
+          "direct_url": "/stream/channel/-1004325759505/693?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArVq-ZVsoU4z1mlZC4QV8y6liwgnngACtiQAAo6lyVdR6YtDoLLSuB4E",
+          "message_id": 693,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/693",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "910.2 MB",
+          "size_bytes": 954418162,
+          "url": "https://t.me/c/4325759505/692",
+          "telegram_url": "https://t.me/c/4325759505/692",
+          "direct_url": "/stream/channel/-1004325759505/692?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArRq-ZG1krbgpCW8LFzUeJl0Cp3d9wACsSQAAo6lyVeBEIw58kJcbx4E",
+          "message_id": 692,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/692",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2030983479,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_its-a-medical-miracle-2026_1080p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1762478799,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_its-a-medical-miracle-2026_720p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/693",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "910.2 MB",
+          "size_bytes": 954418162,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_its-a-medical-miracle-2026_480p",
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/692",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArZq-ZhpxBxoRHJyu4_qJDfYpPZmWAACuSQAAo6lyVdWEW4QmYoMvR4E",
+          "message_id": 694,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/694",
+          "size_bytes": 2030983479
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArVq-ZVsoU4z1mlZC4QV8y6liwgnngACtiQAAo6lyVdR6YtDoLLSuB4E",
+          "message_id": 693,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/693",
+          "size_bytes": 1762478799
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACArRq-ZG1krbgpCW8LFzUeJl0Cp3d9wACsSQAAo6lyVeBEIw58kJcbx4E",
+          "message_id": 692,
+          "stream_url": "https://order-elements-repeat-ada.trycloudflare.com/stream/channel/-1004325759505/692",
+          "size_bytes": 954418162
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/its-a-medical-miracle-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=its-a-medical-miracle-2026",
+      "added_date": "2026-11-15",
+      "added_at": "2026-11-15T11:33:10Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T08:51:19Z"
+  "last_updated": "2026-11-15T11:33:13Z"
 };

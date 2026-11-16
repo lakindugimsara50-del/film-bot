@@ -18426,7 +18426,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-15",
       "added_at": "2026-11-15T22:09:51Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "avengers-endgame-2026",
+      "slug": "avengers-endgame-2026",
+      "title": "Avengers: Endgame",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.2",
+      "rating": "8.2",
+      "imdb_id": "tt4154796",
+      "tmdb_id": "299534",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/jtDv3lCnST0fZRvdYFwR5CVwK2x.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/jtDv3lCnST0fZRvdYFwR5CVwK2x.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/L2NAh3CIdig",
+      "trailer_id": "L2NAh3CIdig",
+      "genres": [
+        "Adventure",
+        "Science Fiction",
+        "Action"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "181 min",
+      "description": "After the devastating events of Avengers: Infinity War, the universe is in ruins due to the efforts of the Mad Titan, Thanos. With the help of remaining allies, the Avengers must assemble once more in order to undo Thanos' actions and restore order to the universe once and for all, no matter what consequences may be in store.",
+      "director": "Anthony Russo, Joe Russo",
+      "cast": [
+        {
+          "name": "Robert Downey Jr.",
+          "character": "Tony Stark / Iron Man"
+        },
+        {
+          "name": "Chris Evans",
+          "character": "Steve Rogers / Captain America"
+        },
+        {
+          "name": "Mark Ruffalo",
+          "character": "Bruce Banner / Hulk"
+        },
+        {
+          "name": "Chris Hemsworth",
+          "character": "Thor"
+        },
+        {
+          "name": "Scarlett Johansson",
+          "character": "Natasha Romanoff / Black Widow"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwNq-sSEaoMLbfFfAgYoyi9Bvs6MsgAC4B4AAqHv2VdI4rr4aiqIih4E",
+      "message_id": 771,
+      "file_name": "comp_avengers-endgame-2026_1080p.mp4",
+      "file_size": 2059477912,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwNq-sSEaoMLbfFfAgYoyi9Bvs6MsgAC4B4AAqHv2VdI4rr4aiqIih4E",
+          "message_id": 771,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/299534"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt4154796"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt4154796"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/772",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/770"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2059477912,
+          "url": "https://t.me/c/4325759505/771",
+          "telegram_url": "https://t.me/c/4325759505/771",
+          "direct_url": "/stream/channel/-1004325759505/771?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwNq-sSEaoMLbfFfAgYoyi9Bvs6MsgAC4B4AAqHv2VdI4rr4aiqIih4E",
+          "message_id": 771,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2048372755,
+          "url": "https://t.me/c/4325759505/772",
+          "telegram_url": "https://t.me/c/4325759505/772",
+          "direct_url": "/stream/channel/-1004325759505/772?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwRq-saYYopz6phjM-K7_rMvQm6neQAC4h4AAqHv2VfKeaQLRotx8x4E",
+          "message_id": 772,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/772",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1318549736,
+          "url": "https://t.me/c/4325759505/770",
+          "telegram_url": "https://t.me/c/4325759505/770",
+          "direct_url": "/stream/channel/-1004325759505/770?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwJq-sO4AVm_SxQ7rriJhj-t4G2SDQAC3R4AAqHv2VfOIZ933kScNx4E",
+          "message_id": 770,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/770",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2059477912,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_avengers-endgame-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2048372755,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_avengers-endgame-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/772",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1318549736,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_avengers-endgame-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/770",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwNq-sSEaoMLbfFfAgYoyi9Bvs6MsgAC4B4AAqHv2VdI4rr4aiqIih4E",
+          "message_id": 771,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/771",
+          "size_bytes": 2059477912
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwRq-saYYopz6phjM-K7_rMvQm6neQAC4h4AAqHv2VfKeaQLRotx8x4E",
+          "message_id": 772,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/772",
+          "size_bytes": 2048372755
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwJq-sO4AVm_SxQ7rriJhj-t4G2SDQAC3R4AAqHv2VfOIZ933kScNx4E",
+          "message_id": 770,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/770",
+          "size_bytes": 1318549736
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/avengers-endgame-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=avengers-endgame-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T09:02:29Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-15T22:09:53Z"
+  "last_updated": "2026-11-16T09:02:32Z"
 };

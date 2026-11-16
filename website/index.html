@@ -80,6 +80,59 @@
     <button class="icon-btn" id="search-open-btn" title="Search (Ctrl+K)" type="button">
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>
+    <button class="icon-btn queue-btn" id="header-watchlater-btn" title="Watch Later Queue" type="button" style="position:relative">
+      <i class="fa-regular fa-clock"></i>
+      <span class="header-badge-count" id="header-watchlater-count" style="display:none">0</span>
+    </button>
+    <!-- User Account Pill & Frosted Glass Drawer -->
+    <div class="user-profile-menu-wrap" id="user-profile-menu-wrap">
+      <button type="button" class="user-profile-pill" id="user-profile-pill" aria-label="User Account" aria-expanded="false">
+        <img src="" alt="Profile" class="user-avatar-img" id="user-avatar-img">
+        <span class="user-greeting-name" id="user-greeting-name">Loading...</span>
+        <i class="fa-solid fa-chevron-down user-pill-arrow"></i>
+      </button>
+
+      <!-- Frosted Glass Account Dropdown -->
+      <div class="user-dropdown-drawer" id="user-dropdown-drawer" role="menu">
+        <div class="user-drawer-header">
+          <img src="" alt="Profile" class="user-drawer-avatar" id="user-drawer-avatar">
+          <div class="user-drawer-info">
+            <h4 class="user-drawer-name" id="user-drawer-name">User</h4>
+            <p class="user-drawer-status" id="user-drawer-status">Guest Account</p>
+          </div>
+        </div>
+        <div class="user-drawer-links">
+          <a href="#continue-watching-section" class="user-drawer-link" id="link-drawer-continue">
+            <i class="fa-solid fa-play" style="color:var(--accent)"></i>
+            <span>Continue Watching</span>
+            <span class="user-drawer-badge" id="badge-drawer-continue">0</span>
+          </a>
+          <button type="button" class="user-drawer-link" id="btn-drawer-favorites">
+            <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+            <span>My Favorites</span>
+            <span class="user-drawer-badge" id="badge-drawer-favorites">0</span>
+          </button>
+          <button type="button" class="user-drawer-link" id="btn-drawer-watchlater">
+            <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+            <span>Watch Later</span>
+            <span class="user-drawer-badge" id="badge-drawer-watchlater">0</span>
+          </button>
+          <button type="button" class="user-drawer-link" id="btn-drawer-history">
+            <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+            <span>Watch History</span>
+            <span class="user-drawer-badge" id="badge-drawer-history">0</span>
+          </button>
+        </div>
+        <div class="user-drawer-footer">
+          <button type="button" class="btn-drawer-signin" id="btn-drawer-signin">
+            <i class="fa-brands fa-google"></i> Sign In / Edit Profile
+          </button>
+          <button type="button" class="btn-drawer-signout" id="btn-drawer-signout" style="display:none">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
     <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="tg-btn">
       <i class="fa-brands fa-telegram"></i>
       <span>Telegram</span>
@@ -205,6 +258,28 @@
   </div>
 </section>
 
+<!-- ========== 0. CONTINUE WATCHING (Instant Resume Shelf) ========== -->
+<section class="section continue-watching-section" id="continue-watching-section" style="display:none" aria-label="Continue Watching">
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <h2 class="section-title"><i class="fa-solid fa-play" style="color:var(--accent)"></i> Continue Watching</h2>
+      <span class="section-badge-count" id="continue-watching-count">0</span>
+    </div>
+    <div class="section-actions">
+      <button type="button" class="section-link-btn" id="btn-clear-continue" style="background:none;border:none;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:4px;">
+        <i class="fa-solid fa-trash-can"></i> Clear
+      </button>
+    </div>
+  </div>
+  <div class="carousel-wrap">
+    <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="carousel-track continue-track" id="continue-track" role="list">
+      <!-- Dynamically populated by app.js / user-state.js -->
+    </div>
+    <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</section>
+
 <!-- ========== 1. TRENDING NOW (Top Row: Compact Carousel on Mobile, CineSubz style) ========== -->
 <section class="section trending-section" id="trending-section" aria-label="Trending Now">
   <div class="section-header">
@@ -245,6 +320,7 @@
     <button type="button" class="showcase-filter-pill active" data-genre="all"><i class="fa-solid fa-fire"></i> All Movies</button>
     <button type="button" class="showcase-filter-pill" data-genre="sinhala"><i class="fa-solid fa-closed-captioning"></i> Sinhala Subtitles</button>
     <button type="button" class="showcase-filter-pill" data-genre="top-rated"><i class="fa-solid fa-star"></i> Top Rated</button>
+    <button type="button" class="showcase-filter-pill" data-genre="favorites"><i class="fa-solid fa-heart" style="color:#ff3366"></i> My Favorites</button>
     <button type="button" class="showcase-filter-pill" data-genre="Action"><i class="fa-solid fa-gun"></i> Action</button>
     <button type="button" class="showcase-filter-pill" data-genre="Sci-Fi"><i class="fa-solid fa-rocket"></i> Sci-Fi</button>
     <button type="button" class="showcase-filter-pill" data-genre="Comedy"><i class="fa-solid fa-face-laugh-squint"></i> Comedy</button>
@@ -473,6 +549,8 @@
 </nav>
 
 <!-- Scripts -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="assets/js/user-state.js?v=20261117_user_state_v1"></script>
 <script src="data/movies_data.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/app.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/netflix-ui.js?v=20261116_modern_top10_spotlight_v40"></script>

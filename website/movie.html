@@ -683,6 +683,59 @@
     <button class="icon-btn" id="search-open-btn" title="Search" type="button">
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>
+    <button class="icon-btn queue-btn" id="header-watchlater-btn" title="Watch Later Queue" type="button" style="position:relative">
+      <i class="fa-regular fa-clock"></i>
+      <span class="header-badge-count" id="header-watchlater-count" style="display:none">0</span>
+    </button>
+    <!-- User Account Pill & Frosted Glass Drawer -->
+    <div class="user-profile-menu-wrap" id="user-profile-menu-wrap">
+      <button type="button" class="user-profile-pill" id="user-profile-pill" aria-label="User Account" aria-expanded="false">
+        <img src="" alt="Profile" class="user-avatar-img" id="user-avatar-img">
+        <span class="user-greeting-name" id="user-greeting-name">Loading...</span>
+        <i class="fa-solid fa-chevron-down user-pill-arrow"></i>
+      </button>
+
+      <!-- Frosted Glass Account Dropdown -->
+      <div class="user-dropdown-drawer" id="user-dropdown-drawer" role="menu">
+        <div class="user-drawer-header">
+          <img src="" alt="Profile" class="user-drawer-avatar" id="user-drawer-avatar">
+          <div class="user-drawer-info">
+            <h4 class="user-drawer-name" id="user-drawer-name">User</h4>
+            <p class="user-drawer-status" id="user-drawer-status">Guest Account</p>
+          </div>
+        </div>
+        <div class="user-drawer-links">
+          <a href="index.html#continue-watching-section" class="user-drawer-link" id="link-drawer-continue">
+            <i class="fa-solid fa-play" style="color:var(--accent)"></i>
+            <span>Continue Watching</span>
+            <span class="user-drawer-badge" id="badge-drawer-continue">0</span>
+          </a>
+          <button type="button" class="user-drawer-link" id="btn-drawer-favorites">
+            <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+            <span>My Favorites</span>
+            <span class="user-drawer-badge" id="badge-drawer-favorites">0</span>
+          </button>
+          <button type="button" class="user-drawer-link" id="btn-drawer-watchlater">
+            <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+            <span>Watch Later</span>
+            <span class="user-drawer-badge" id="badge-drawer-watchlater">0</span>
+          </button>
+          <button type="button" class="user-drawer-link" id="btn-drawer-history">
+            <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+            <span>Watch History</span>
+            <span class="user-drawer-badge" id="badge-drawer-history">0</span>
+          </button>
+        </div>
+        <div class="user-drawer-footer">
+          <button type="button" class="btn-drawer-signin" id="btn-drawer-signin">
+            <i class="fa-brands fa-google"></i> Sign In / Edit Profile
+          </button>
+          <button type="button" class="btn-drawer-signout" id="btn-drawer-signout" style="display:none">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
     <a href="https://t.me/YourChannel" target="_blank" rel="noopener" class="tg-btn">
       <i class="fa-brands fa-telegram"></i><span>Telegram</span>
     </a>
@@ -820,6 +873,14 @@
             <a href="#player-section" class="cs-poster-play-btn" id="poster-play-btn">
               <i class="fa-solid fa-play"></i> Watch Movie
             </a>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%">
+              <button class="btn btn-secondary btn-sm cs-btn-fav" id="movie-fav-btn" type="button" style="justify-content:center;gap:6px">
+                <i class="fa-regular fa-heart"></i> <span>Favorite</span>
+              </button>
+              <button class="btn btn-secondary btn-sm cs-btn-later" id="movie-later-btn" type="button" style="justify-content:center;gap:6px">
+                <i class="fa-regular fa-clock"></i> <span>Watch Later</span>
+              </button>
+            </div>
             <button type="button" class="cs-poster-trailer-btn" id="poster-trailer-btn">
               <i class="fa-solid fa-clapperboard"></i> Watch Trailer
             </button>
@@ -985,7 +1046,9 @@
 </nav>
 
 <!-- Scripts -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<script src="assets/js/user-state.js?v=20261117_user_state_v1"></script>
 <script src="data/movies_data.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="data/stream_endpoint.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/app.js?v=20261116_silky_60fps_hero_transition_v35"></script>

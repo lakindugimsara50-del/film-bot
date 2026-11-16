@@ -2534,6 +2534,15 @@ function attachAdaptiveStallMonitor(player) {
     if (now - lastBufferCheck < 5000) return;
     lastBufferCheck = now;
 
+    // Save progress to FilmZilla User State
+    if (window.FilmSubUser && currentMovie) {
+      const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+      const dur = typeof player.duration === 'function' ? player.duration() : 0;
+      if (curT > 10) {
+        window.FilmSubUser.ContinueWatching.saveProgress(currentMovie, curT, dur);
+      }
+    }
+
     // Progressive MP4 playback:
     // CRITICAL: NEVER proactively step down during active playback!
     // As long as the video is playing without stalling, DO NOT abort the media stream!
@@ -4178,6 +4187,25 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         }
       } catch (e) {}
 
+      // Auto-Resume from FilmZilla Continue Watching State
+      if (window.FilmSubUser && movie) {
+        const mId = movie.id || movie.slug;
+        const progress = window.FilmSubUser.ContinueWatching.getProgress(mId);
+        if (progress && progress.currentTime > 15 && progress.percentage < 93) {
+          const resumeT = progress.currentTime;
+          vjsPlayer.one('canplay', () => {
+            try {
+              vjsPlayer.currentTime(resumeT);
+              const min = Math.floor(resumeT / 60);
+              const sec = Math.floor(resumeT % 60);
+              if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+                FilmSub.showToast(`Resumed playback from ${min}:${sec < 10 ? '0' : ''}${sec} ⏯️`, 'info');
+              }
+            } catch (_) {}
+          });
+        }
+      }
+
       injectInPlayerQualityControl(vjsPlayer);
       mountCenterPlayerControls(playerEl, vjsPlayer, movie);
       injectBottomControlBarItems(vjsPlayer, movie);
@@ -5358,6 +5386,45 @@ function renderMovieDetails(movie) {
         <span class="cs-pro-credit-label">Subtitles</span>
         <span class="cs-pro-credit-val" style="color:#ff4d5a;font-weight:700">FilmZilla Official Sinhala (Merged)</span>
       </div>`;
+  }
+
+  // Wire Detail Page Action Buttons (Favorite & Watch Later)
+  if (window.FilmSubUser) {
+    const favBtn = document.getElementById('movie-fav-btn');
+    const laterBtn = document.getElementById('movie-later-btn');
+    const mId = movie.id || movie.slug;
+
+    if (favBtn && !favBtn._bound) {
+      favBtn._bound = true;
+      const isFav = window.FilmSubUser.Favorites.has(mId);
+      favBtn.classList.toggle('active', isFav);
+      favBtn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:#ff3366"></i> <span>${isFav ? 'Favorited' : 'Favorite'}</span>`;
+
+      favBtn.addEventListener('click', () => {
+        const added = window.FilmSubUser.Favorites.toggle(movie);
+        favBtn.classList.toggle('active', added);
+        favBtn.innerHTML = `<i class="${added ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:#ff3366"></i> <span>${added ? 'Favorited' : 'Favorite'}</span>`;
+        if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+          FilmSub.showToast(added ? 'Added to Favorites ❤️' : 'Removed from Favorites', 'info');
+        }
+      });
+    }
+
+    if (laterBtn && !laterBtn._bound) {
+      laterBtn._bound = true;
+      const isLater = window.FilmSubUser.WatchLater.has(mId);
+      laterBtn.classList.toggle('active', isLater);
+      laterBtn.innerHTML = `<i class="${isLater ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:#00b4d8"></i> <span>${isLater ? 'In Queue' : 'Watch Later'}</span>`;
+
+      laterBtn.addEventListener('click', () => {
+        const added = window.FilmSubUser.WatchLater.toggle(movie);
+        laterBtn.classList.toggle('active', added);
+        laterBtn.innerHTML = `<i class="${added ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:#00b4d8"></i> <span>${added ? 'In Queue' : 'Watch Later'}</span>`;
+        if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+          FilmSub.showToast(added ? 'Saved to Watch Later ⏱️' : 'Removed from Watch Later', 'info');
+        }
+      });
+    }
   }
 }
 

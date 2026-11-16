@@ -35,6 +35,7 @@ function renderAllSections() {
       renderHeroAppleIndicators();
     }
   }
+  if (document.getElementById('continue-track')) renderContinueWatchingShelf();
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
   if (document.getElementById('all-movies-grid')) initMoviesShowcaseGrid();
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
@@ -62,6 +63,7 @@ function initApp() {
 
   // 2. Init header, search, nav with safe isolation
   try { initHeader(); } catch (e) { console.error('initHeader error:', e); }
+  try { initUserUI(); } catch (e) { console.error('initUserUI error:', e); }
   try { initSearchOverlay(); } catch (e) { console.error('initSearchOverlay error:', e); }
   try { initMobileBottomNav(); } catch (e) { console.error('initMobileBottomNav error:', e); }
 
@@ -2052,12 +2054,24 @@ function generateMovieCard(movie, opts = {}) {
   const url = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(movie.slug || movie.id)}`;
   const cardClass = isTrending ? 'movie-card trending-card is-card-visible visible' : 'movie-card is-card-visible visible';
 
+  const mId = movie.id || movie.slug || '';
+  const isFav = window.FilmSubUser ? window.FilmSubUser.Favorites.has(mId) : false;
+  const isLater = window.FilmSubUser ? window.FilmSubUser.WatchLater.has(mId) : false;
+
   return `
     <a href="${url}" class="${cardClass}" data-slug="${escHtml(movie.slug || movie.id || '')}" title="${escHtml(movie.title || '')}">
       <div class="card-poster">
         <img src="${escHtml(poster)}" alt="${escHtml(movie.title || '')}" loading="lazy" decoding="async"
              onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
         <div class="card-hover-play"><i class="fa-solid fa-play"></i></div>
+        <div class="card-quick-actions">
+          <button type="button" class="btn-card-action fav ${isFav ? 'active' : ''}" data-movie-id="${escHtml(mId)}" title="${isFav ? 'Remove Favorite' : 'Add to Favorites'}">
+            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+          </button>
+          <button type="button" class="btn-card-action later ${isLater ? 'active' : ''}" data-movie-id="${escHtml(mId)}" title="${isLater ? 'Remove Watch Later' : 'Watch Later'}">
+            <i class="${isLater ? 'fa-solid' : 'fa-regular'} fa-clock"></i>
+          </button>
+        </div>
         <div class="card-badges-left">
           ${qualityBadge}
           ${newBadge}
@@ -2140,6 +2154,329 @@ function initHeader() {
       });
     });
   }
+}
+
+// ---- Continue Watching Shelf (Auto-Resume) ----
+function renderContinueWatchingShelf() {
+  const section = document.getElementById('continue-watching-section');
+  const track = document.getElementById('continue-track');
+  const countBadge = document.getElementById('continue-watching-count');
+  if (!section || !track || !window.FilmSubUser) return;
+
+  const items = window.FilmSubUser.ContinueWatching.getAll();
+  if (!items || items.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  if (countBadge) countBadge.textContent = `${items.length} Item${items.length > 1 ? 's' : ''}`;
+
+  track.innerHTML = items.map(item => {
+    const url = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(item.slug || item.id)}&resume=true`;
+    const backdrop = item.backdrop || item.poster || SITE_CONFIG.defaultBackdrop;
+    const durSec = item.duration || 7200;
+    const remainingMin = Math.max(1, Math.round((durSec - (item.currentTime || 0)) / 60));
+    const subText = item.season ? `Season ${item.season} • Episode ${item.episode || 1}` : `${remainingMin} min left`;
+
+    return `
+      <div class="continue-card-wrap" style="flex:0 0 280px;max-width:280px;">
+        <a href="${url}" class="continue-card" data-movie-id="${escHtml(item.id || item.slug)}" title="Resume ${escHtml(item.title)}">
+          <img src="${escHtml(backdrop)}" alt="${escHtml(item.title)}" class="continue-card-img" loading="lazy"
+               onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultBackdrop;">
+          <div class="continue-card-vignette"></div>
+          <div class="continue-card-badge">
+            <i class="fa-solid fa-clock"></i> ${subText}
+          </div>
+          <button type="button" class="continue-card-remove-btn" title="Remove from Continue Watching" data-remove-id="${escHtml(item.id || item.slug)}">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="continue-card-play-hover">
+            <i class="fa-solid fa-play"></i>
+          </div>
+          <div class="continue-card-body">
+            <h4 class="continue-card-title">${escHtml(item.title)}</h4>
+            <span class="continue-card-sub">${item.year ? item.year : ''} • ${Math.round(item.percentage)}% watched</span>
+          </div>
+          <div class="continue-card-progress-bar">
+            <div class="continue-card-progress-fill" style="width:${Math.min(100, Math.max(4, item.percentage))}%"></div>
+          </div>
+        </a>
+      </div>
+    `;
+  }).join('');
+
+  // Wire remove buttons
+  track.querySelectorAll('.continue-card-remove-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.dataset.removeId;
+      if (id && window.FilmSubUser) {
+        window.FilmSubUser.ContinueWatching.remove(id);
+        renderContinueWatchingShelf();
+      }
+    });
+  });
+
+  // Wire clear all button
+  const clearBtn = document.getElementById('btn-clear-continue');
+  if (clearBtn && !clearBtn._bound) {
+    clearBtn._bound = true;
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Clear all Continue Watching items?')) {
+        window.FilmSubUser.ContinueWatching.clear();
+        renderContinueWatchingShelf();
+      }
+    });
+  }
+}
+
+// ---- User Profile, Dropdown & Lists Manager ----
+function initUserUI() {
+  if (!window.FilmSubUser) return;
+
+  const profilePill = document.getElementById('user-profile-pill');
+  const profileDrawer = document.getElementById('user-dropdown-drawer');
+  const greetingName = document.getElementById('user-greeting-name');
+  const avatarImg = document.getElementById('user-avatar-img');
+  const drawerAvatar = document.getElementById('user-drawer-avatar');
+  const drawerName = document.getElementById('user-drawer-name');
+  const drawerStatus = document.getElementById('user-drawer-status');
+  const badgeContinue = document.getElementById('badge-drawer-continue');
+  const badgeFavorites = document.getElementById('badge-drawer-favorites');
+  const badgeWatchlater = document.getElementById('badge-drawer-watchlater');
+  const badgeHistory = document.getElementById('badge-drawer-history');
+  const headerLaterBadge = document.getElementById('header-watchlater-count');
+  const btnSignIn = document.getElementById('btn-drawer-signin');
+  const btnSignOut = document.getElementById('btn-drawer-signout');
+
+  function updateUI() {
+    const profile = window.FilmSubUser.Profile.get();
+    const favCount = window.FilmSubUser.Favorites.count();
+    const laterCount = window.FilmSubUser.WatchLater.count();
+    const continueCount = window.FilmSubUser.ContinueWatching.getAll().length;
+    const historyCount = window.FilmSubUser.WatchHistory.getAll().length;
+
+    if (greetingName) greetingName.textContent = `Hello, ${profile.given_name || 'Friend'} 👋`;
+    if (avatarImg) avatarImg.src = profile.picture || '';
+    if (drawerAvatar) drawerAvatar.src = profile.picture || '';
+    if (drawerName) drawerName.textContent = profile.name || 'User';
+    if (drawerStatus) drawerStatus.textContent = profile.isGuest ? 'Guest Profile (Local)' : 'Google Verified Account';
+
+    if (badgeContinue) badgeContinue.textContent = continueCount;
+    if (badgeFavorites) badgeFavorites.textContent = favCount;
+    if (badgeWatchlater) badgeWatchlater.textContent = laterCount;
+    if (badgeHistory) badgeHistory.textContent = historyCount;
+
+    if (headerLaterBadge) {
+      if (laterCount > 0) {
+        headerLaterBadge.textContent = laterCount > 99 ? '99+' : laterCount;
+        headerLaterBadge.style.display = 'flex';
+      } else {
+        headerLaterBadge.style.display = 'none';
+      }
+    }
+
+    if (btnSignIn && btnSignOut) {
+      if (profile.isGuest) {
+        btnSignIn.style.display = 'flex';
+        btnSignIn.innerHTML = '<i class="fa-brands fa-google"></i> Sign In / Edit Profile';
+        btnSignOut.style.display = 'none';
+      } else {
+        btnSignIn.style.display = 'none';
+        btnSignOut.style.display = 'flex';
+      }
+    }
+  }
+
+  updateUI();
+
+  // Toggle drawer
+  if (profilePill && profileDrawer && !profilePill._bound) {
+    profilePill._bound = true;
+    profilePill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = profileDrawer.classList.toggle('open');
+      profilePill.classList.toggle('active', open);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!profileDrawer.contains(e.target) && !profilePill.contains(e.target)) {
+        profileDrawer.classList.remove('open');
+        profilePill.classList.remove('active');
+      }
+    });
+  }
+
+  // Header Watch Later button click
+  const headerLaterBtn = document.getElementById('header-watchlater-btn');
+  if (headerLaterBtn && !headerLaterBtn._bound) {
+    headerLaterBtn._bound = true;
+    headerLaterBtn.addEventListener('click', () => {
+      openUserListModal('watchlater');
+    });
+  }
+
+  // Drawer buttons
+  const btnDrawerFav = document.getElementById('btn-drawer-favorites');
+  if (btnDrawerFav && !btnDrawerFav._bound) {
+    btnDrawerFav._bound = true;
+    btnDrawerFav.addEventListener('click', () => {
+      if (profileDrawer) profileDrawer.classList.remove('open');
+      openUserListModal('favorites');
+    });
+  }
+
+  const btnDrawerLater = document.getElementById('btn-drawer-watchlater');
+  if (btnDrawerLater && !btnDrawerLater._bound) {
+    btnDrawerLater._bound = true;
+    btnDrawerLater.addEventListener('click', () => {
+      if (profileDrawer) profileDrawer.classList.remove('open');
+      openUserListModal('watchlater');
+    });
+  }
+
+  const btnDrawerHist = document.getElementById('btn-drawer-history');
+  if (btnDrawerHist && !btnDrawerHist._bound) {
+    btnDrawerHist._bound = true;
+    btnDrawerHist.addEventListener('click', () => {
+      if (profileDrawer) profileDrawer.classList.remove('open');
+      openUserListModal('history');
+    });
+  }
+
+  // Sign in / Edit profile
+  if (btnSignIn && !btnSignIn._bound) {
+    btnSignIn._bound = true;
+    btnSignIn.addEventListener('click', () => {
+      const current = window.FilmSubUser.Profile.get();
+      const name = prompt('Enter your name / nickname for your profile:', current.isGuest ? (current.name.startsWith('Guest #') ? '' : current.name) : current.name);
+      if (name && name.trim()) {
+        window.FilmSubUser.Profile.setCustomName(name.trim());
+        if (typeof showToast === 'function') showToast(`Profile updated to "${name.trim()}"! 👋`);
+      }
+    });
+  }
+
+  // Sign out
+  if (btnSignOut && !btnSignOut._bound) {
+    btnSignOut._bound = true;
+    btnSignOut.addEventListener('click', () => {
+      window.FilmSubUser.Profile.signOut();
+      if (typeof showToast === 'function') showToast('Signed out. Switched to Guest Profile.');
+    });
+  }
+
+  // Setup Delegated Click Listener for Card Quick Actions (❤️ Favorite & ⏱️ Watch Later)
+  if (!window._cardActionBound) {
+    window._cardActionBound = true;
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-card-action');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const movieId = btn.dataset.movieId;
+      if (!movieId || !window.FilmSubUser) return;
+      const movie = (allMovies || []).find(m => (m.id === movieId || m.slug === movieId)) || { id: movieId, title: 'Movie' };
+
+      if (btn.classList.contains('fav')) {
+        const isAdded = window.FilmSubUser.Favorites.toggle(movie);
+        btn.classList.toggle('active', isAdded);
+        btn.classList.add('burst');
+        setTimeout(() => btn.classList.remove('burst'), 400);
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        if (typeof showToast === 'function') showToast(isAdded ? `Added to Favorites ❤️` : `Removed from Favorites`);
+      } else if (btn.classList.contains('later')) {
+        const isAdded = window.FilmSubUser.WatchLater.toggle(movie);
+        btn.classList.toggle('active', isAdded);
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = isAdded ? 'fa-solid fa-clock' : 'fa-regular fa-clock';
+        if (typeof showToast === 'function') showToast(isAdded ? `Saved to Watch Later ⏱️` : `Removed from Watch Later`);
+      }
+    });
+  }
+
+  // Listen to state changes
+  window.addEventListener('fz:state-changed', updateUI);
+  window.addEventListener('fz:continue-changed', renderContinueWatchingShelf);
+}
+
+// ---- Open User List Modal (Favorites, Watch Later, History) ----
+function openUserListModal(type = 'favorites') {
+  let modal = document.getElementById('user-list-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'user-list-modal';
+    modal.className = 'user-list-modal-backdrop';
+    modal.innerHTML = `
+      <div class="user-list-modal-dialog">
+        <div class="user-list-modal-header">
+          <h3 id="user-list-modal-title"><i class="fa-solid fa-heart" style="color:#ff3366"></i> My Favorites</h3>
+          <button type="button" class="user-list-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="user-list-modal-body" id="user-list-modal-body">
+          <!-- Dynamically injected items -->
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('.user-list-modal-close').addEventListener('click', () => {
+      modal.classList.remove('open');
+    });
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('open');
+    });
+  }
+
+  const titleEl = document.getElementById('user-list-modal-title');
+  const bodyEl = document.getElementById('user-list-modal-body');
+  if (!titleEl || !bodyEl || !window.FilmSubUser) return;
+
+  let items = [];
+  if (type === 'favorites') {
+    titleEl.innerHTML = '<i class="fa-solid fa-heart" style="color:#ff3366"></i> My Favorites';
+    items = window.FilmSubUser.Favorites.getAll();
+  } else if (type === 'watchlater') {
+    titleEl.innerHTML = '<i class="fa-solid fa-clock" style="color:#00b4d8"></i> Watch Later Queue';
+    items = window.FilmSubUser.WatchLater.getAll();
+  } else if (type === 'history') {
+    titleEl.innerHTML = '<i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i> Watch History';
+    items = window.FilmSubUser.WatchHistory.getAll();
+  }
+
+  if (items.length === 0) {
+    bodyEl.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:var(--text3)">
+        <i class="fa-solid fa-film" style="font-size:36px;margin-bottom:12px;opacity:0.4"></i>
+        <p style="font-size:14px;color:#94a3b8">No movies saved in this list yet.</p>
+        <p style="font-size:12px;margin-top:6px;color:#64748b">Tap the ❤️ or ⏱️ button on any movie card to add it here!</p>
+      </div>
+    `;
+  } else {
+    bodyEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;max-height:65vh;overflow-y:auto;padding-right:6px">
+        ${items.map(m => `
+          <a href="${SITE_CONFIG.moviePage}?id=${encodeURIComponent(m.slug || m.id)}" class="user-modal-item-card" style="display:flex;flex-direction:column;gap:6px;text-decoration:none;border-radius:8px;overflow:hidden;background:#14141a;border:1px solid rgba(255,255,255,0.08);transition:transform 0.2s ease">
+            <div style="aspect-ratio:2/3;position:relative;background:#000">
+              <img src="${m.poster || SITE_CONFIG.defaultPoster}" alt="${m.title}" style="width:100%;height:100%;object-fit:cover" loading="lazy"
+                   onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
+              <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.75);color:#f5c518;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px">★ ${m.rating || '0.0'}</span>
+            </div>
+            <div style="padding:4px 8px 8px">
+              <p style="font-size:12px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(m.title)}</p>
+              <p style="font-size:10px;color:#94a3b8">${m.year || ''}</p>
+            </div>
+          </a>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  modal.classList.add('open');
 }
 
 // ---- Search Overlay ----
@@ -2251,6 +2588,11 @@ function initMoviesShowcaseGrid() {
         const rB = parseFloat(b.imdb || b.rating || 0);
         return rB - rA;
       });
+    }
+    if (showcaseCurrentGenre === 'favorites') {
+      const favList = window.FilmSubUser ? window.FilmSubUser.Favorites.getAll() : [];
+      const favIds = new Set(favList.map(f => f.id || f.slug));
+      return catalog.filter(m => favIds.has(m.id) || favIds.has(m.slug));
     }
     return getMoviesByGenre(showcaseCurrentGenre);
   }

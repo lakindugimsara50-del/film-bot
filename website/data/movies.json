@@ -20472,7 +20472,235 @@
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T11:33:13Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "redline-2009",
+      "slug": "redline-2009",
+      "title": "Redline",
+      "title_si": "",
+      "year": 2009,
+      "imdb": "7.6",
+      "rating": "7.6",
+      "imdb_id": "tt1483797",
+      "tmdb_id": "71883",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/yUkH0y9OsY7J08Dvfzi1P0di559.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/yUkH0y9OsY7J08Dvfzi1P0di559.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/hpiEAclfvNJOYPEIhmVewK3n77c.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/hpiEAclfvNJOYPEIhmVewK3n77c.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/R2H_FsmxWzc",
+      "trailer_id": "R2H_FsmxWzc",
+      "genres": [
+        "Animation",
+        "Action",
+        "Science Fiction"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "102 min",
+      "description": "A daredevil driver is determined to compete in Redline, the most popular race in the galaxy. The race only occurs every five years, but in order to participate he must overcome the mafia, the government and even love.",
+      "director": "Takeshi Koike",
+      "cast": [
+        {
+          "name": "Takuya Kimura",
+          "character": "JP (voice)"
+        },
+        {
+          "name": "Yu Aoi",
+          "character": "Sonoshee McLaren (voice)"
+        },
+        {
+          "name": "Takeshi Aono",
+          "character": "Old Man Mole (voice)"
+        },
+        {
+          "name": "Kohsei Hirota",
+          "character": "Roboworld President (voice)"
+        },
+        {
+          "name": "Unsho Ishizuka",
+          "character": "Colonel Volton (voice)"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyhq-u3AY3XTFAX7K5lGGbp8XP3wkAACYR8AAqHv2VeV7raKkcIa-h4E",
+      "message_id": 808,
+      "file_name": "comp_redline-2009_1080p.mp4",
+      "file_size": 1993799040,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyhq-u3AY3XTFAX7K5lGGbp8XP3wkAACYR8AAqHv2VeV7raKkcIa-h4E",
+          "message_id": 808,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/71883"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt1483797"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt1483797"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/807",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/806"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 1993799040,
+          "url": "https://t.me/c/4325759505/808",
+          "telegram_url": "https://t.me/c/4325759505/808",
+          "direct_url": "/stream/channel/-1004325759505/808?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyhq-u3AY3XTFAX7K5lGGbp8XP3wkAACYR8AAqHv2VeV7raKkcIa-h4E",
+          "message_id": 808,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1310329390,
+          "url": "https://t.me/c/4325759505/807",
+          "telegram_url": "https://t.me/c/4325759505/807",
+          "direct_url": "/stream/channel/-1004325759505/807?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAydq-u19NOg6CqWxYQyeeZnLgmCFOQACYB8AAqHv2VeOPssW1GhwEx4E",
+          "message_id": 807,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/807",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "678.7 MB",
+          "size_bytes": 711689280,
+          "url": "https://t.me/c/4325759505/806",
+          "telegram_url": "https://t.me/c/4325759505/806",
+          "direct_url": "/stream/channel/-1004325759505/806?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyZq-u0KiUdRCYNbNCxndCeWEnovbAACXh8AAqHv2Vcsp-0lVRyxyR4E",
+          "message_id": 806,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/806",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 1993799040,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_redline-2009_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1310329390,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_redline-2009_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/807",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "678.7 MB",
+          "size_bytes": 711689280,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_redline-2009_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/806",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyhq-u3AY3XTFAX7K5lGGbp8XP3wkAACYR8AAqHv2VeV7raKkcIa-h4E",
+          "message_id": 808,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/808",
+          "size_bytes": 1993799040
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAydq-u19NOg6CqWxYQyeeZnLgmCFOQACYB8AAqHv2VeOPssW1GhwEx4E",
+          "message_id": 807,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/807",
+          "size_bytes": 1310329390
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyZq-u0KiUdRCYNbNCxndCeWEnovbAACXh8AAqHv2Vcsp-0lVRyxyR4E",
+          "message_id": 806,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/806",
+          "size_bytes": 711689280
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/redline-2009-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=redline-2009",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T11:49:34Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T11:33:15Z"
+  "last_updated": "2026-11-16T11:49:35Z"
 }

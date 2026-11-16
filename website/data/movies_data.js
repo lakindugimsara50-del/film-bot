@@ -18882,7 +18882,233 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T09:19:46Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-mummy-bride-of-the-dead-2026",
+      "slug": "the-mummy-bride-of-the-dead-2026",
+      "title": "The Mummy: Bride of the Dead",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "3.3",
+      "rating": "3.3",
+      "imdb_id": "tt11100168",
+      "tmdb_id": "1662599",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/cgGC1l5ZnpDyHzR5WWY94KxBGgI.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/cgGC1l5ZnpDyHzR5WWY94KxBGgI.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/lAOxpKM3Go7PfuckuA5VOEb5OXi.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/lAOxpKM3Go7PfuckuA5VOEb5OXi.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/TBIuNurnOn8",
+      "trailer_id": "TBIuNurnOn8",
+      "genres": [
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "95 min",
+      "description": "An Egyptologist in possession of a haunted Bride of the Dead amulet is the target of a tech billionaire who believes the ancient Egyptian mummy artifact holds forbidden magic that could awaken a deadly mummy curse and unlock eternal life.",
+      "director": "Maurice Chauvet",
+      "cast": [
+        {
+          "name": "Jon Jacobs",
+          "character": "Robert Corwin"
+        },
+        {
+          "name": "Lisa Zane",
+          "character": "Charlotte Grove"
+        },
+        {
+          "name": "Apoorva Mittra",
+          "character": "Ara"
+        },
+        {
+          "name": "Siena Goines",
+          "character": "Elizabeth Corwin"
+        },
+        {
+          "name": "Sheba Jade",
+          "character": "Isabel Corwin"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwxq-s4KYNl2WoMPWxIdHWqr-P1uFwAC-R4AAqHv2VdlXlJErEjZ_B4E",
+      "message_id": 780,
+      "file_name": "comp_the-mummy-bride-of-the-dead-2026_1080p.mp4",
+      "file_size": 1887368604,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwxq-s4KYNl2WoMPWxIdHWqr-P1uFwAC-R4AAqHv2VdlXlJErEjZ_B4E",
+          "message_id": 780,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1662599"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt11100168"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt11100168"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/779",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/778"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1887368604,
+          "url": "https://t.me/c/4325759505/780",
+          "telegram_url": "https://t.me/c/4325759505/780",
+          "direct_url": "/stream/channel/-1004325759505/780?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwxq-s4KYNl2WoMPWxIdHWqr-P1uFwAC-R4AAqHv2VdlXlJErEjZ_B4E",
+          "message_id": 780,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1146390187,
+          "url": "https://t.me/c/4325759505/779",
+          "telegram_url": "https://t.me/c/4325759505/779",
+          "direct_url": "/stream/channel/-1004325759505/779?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwtq-s3OTUB0scJieYBNCJUMUTskZAAC-B4AAqHv2Vfb0Q3n2m-Qrx4E",
+          "message_id": 779,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/779",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "601.7 MB",
+          "size_bytes": 630953333,
+          "url": "https://t.me/c/4325759505/778",
+          "telegram_url": "https://t.me/c/4325759505/778",
+          "direct_url": "/stream/channel/-1004325759505/778?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwpq-s1S3yAq9WP5hcaR4wnNGCplTQAC9h4AAqHv2VdFmd7kN3rlwx4E",
+          "message_id": 778,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/778",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1887368604,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-mummy-bride-of-the-dead-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1146390187,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-mummy-bride-of-the-dead-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/779",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "601.7 MB",
+          "size_bytes": 630953333,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-mummy-bride-of-the-dead-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/778",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwxq-s4KYNl2WoMPWxIdHWqr-P1uFwAC-R4AAqHv2VdlXlJErEjZ_B4E",
+          "message_id": 780,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/780",
+          "size_bytes": 1887368604
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwtq-s3OTUB0scJieYBNCJUMUTskZAAC-B4AAqHv2Vfb0Q3n2m-Qrx4E",
+          "message_id": 779,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/779",
+          "size_bytes": 1146390187
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwpq-s1S3yAq9WP5hcaR4wnNGCplTQAC9h4AAqHv2VdFmd7kN3rlwx4E",
+          "message_id": 778,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/778",
+          "size_bytes": 630953333
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-mummy-bride-of-the-dead-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-mummy-bride-of-the-dead-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T09:34:17Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T09:19:48Z"
+  "last_updated": "2026-11-16T09:34:19Z"
 };

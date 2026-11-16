@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://promotes-psychological-prefix-century.trycloudflare.com",
+  "stream_base_url": "https://moon-consequence-dramatically-printing.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-16T17:21:56.360964+00:00",
+  "updated_at": "2026-11-16T17:22:51.558621+00:00",
   "status": "online"
 };

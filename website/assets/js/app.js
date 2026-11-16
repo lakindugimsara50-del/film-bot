@@ -231,6 +231,12 @@ function _getMovieTimestamp(m) {
   return new Date(yr, 0, 1).getTime();
 }
 
+function _getMovieRating(m) {
+  if (!m) return 0;
+  const r = parseFloat(m.imdb || m.rating || 0);
+  return isNaN(r) ? 0 : r;
+}
+
 // ---- Data Helpers ----
 function getFeatured() {
   const spotlight = getHeroSpotlightList();
@@ -626,31 +632,34 @@ function getHeroSpotlightList() {
   const eligible = catalog.filter(m => Boolean(m.backdrop || m.backdrop_url || m.poster || m.poster_url));
   const pool = eligible.length > 0 ? eligible : [...catalog];
 
-  // 2. Score movies so that NEWLY ADDED / UPLOADED FILMS ALWAYS take the top spot on Hero Banner!
-  const scored = pool.map((m, idx) => {
+  // 2. Select recent arrivals (newest ~40 movies) to focus on "aluthin apu"
+  const sortedByDate = [...pool].sort((a, b) => _getMovieTimestamp(b) - _getMovieTimestamp(a));
+  const recentPool = sortedByDate.slice(0, 40);
+
+  // 3. Score recent arrivals balancing newness and high ratings ("rate samanyen wadi hodama 10k")
+  const scored = recentPool.map((m, idx) => {
     const time = _getMovieTimestamp(m);
-    const yr = Number(m.year) || 2024;
+    const timeHours = time / (1000 * 3600);
+    const rating = _getMovieRating(m);
     const hasBackdrop = Boolean(m.backdrop || m.backdrop_url);
     const hasTrailer = Boolean(m.trailer_url || m.trailer_id);
 
-    // Primary score: Unix timestamp in seconds (1 sec = 1 pt).
-    // Newly added films naturally get millions more points than older films!
-    let score = Math.floor(time / 1000);
+    // Rating boost: high rated movies (7.0 - 8.5+) rise to the top of the spotlight
+    let ratingScore = rating * 6;
+    if (rating >= 8.0) ratingScore += 16;
+    else if (rating >= 7.0) ratingScore += 10;
+    else if (rating >= 6.0) ratingScore += 4;
+    else if (rating < 5.0 && rating > 0) ratingScore -= 30; // penalize low rated
 
-    // Tie-breaker 1: Higher index in array indicates more recently appended movie
-    score += idx * 10;
-
-    // Tie-breaker 2: Release year bonus
-    score += (yr - 2020) * 3600;
-
-    // Quality bonus: High-res Backdrop for Grand Cinema view (1-day equivalent bonus)
-    if (hasBackdrop) score += 86400;
-    if (hasTrailer) score += 3600;
+    let score = timeHours + ratingScore;
+    if (hasBackdrop) score += 6;
+    if (hasTrailer) score += 2;
+    if (m.featured) score += 12;
 
     return { movie: m, score };
   });
 
-  // Sort by score descending (Highest score = newest & best)
+  // Sort by score descending (Highest score = newest & highest rated)
   scored.sort((a, b) => b.score - a.score);
 
   const merged = [];
@@ -662,7 +671,19 @@ function getHeroSpotlightList() {
       seenTitles.add(rawTitle);
       merged.push(m);
     }
-    if (merged.length >= 6) break;
+    if (merged.length >= 10) break;
+  }
+
+  // Fallback: If less than 10, fill from recent arrivals
+  if (merged.length < 10) {
+    for (const m of sortedByDate) {
+      const rawTitle = (m.title || '').split(' - Season')[0].trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (rawTitle && !seenTitles.has(rawTitle)) {
+        seenTitles.add(rawTitle);
+        merged.push(m);
+      }
+      if (merged.length >= 10) break;
+    }
   }
 
   return merged;
@@ -863,7 +884,7 @@ function renderHeroShowcase() {
 
   const spotlight = getHeroSpotlightList();
   if (!spotlight || spotlight.length === 0) return;
-  const newSpotlight = spotlight.slice(0, 6);
+  const newSpotlight = spotlight.slice(0, 10);
 
   // If already initialized and identical movies, do not tear down the running DOM or animation!
   if (heroShowcaseInitialized && heroShowcaseMovies.length > 0 && stage.children.length > 0) {
@@ -1048,7 +1069,8 @@ function assignHeroSlotClasses() {
     card.classList.remove('is-shuffling-to-rear', 'is-retreating-to-back', 'is-spinning-to-fullscreen');
     const cIdx = parseInt(card.dataset.idx, 10);
     const rel = (cIdx - heroShowcaseCurrent + len) % len;
-    card.className = `hero-3d-card slot-${Math.min(rel, 5)}${rel === 0 ? ' is-active' : ''}`;
+    const slotClass = rel < 6 ? `slot-${rel}` : 'slot-hidden';
+    card.className = `hero-3d-card ${slotClass}${rel === 0 ? ' is-active' : ''}`;
   });
 }
 

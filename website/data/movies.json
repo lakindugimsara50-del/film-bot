@@ -20019,7 +20019,233 @@
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T10:56:06Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "ormayil-oru-shishiram-2019",
+      "slug": "ormayil-oru-shishiram-2019",
+      "title": "Ormayil Oru Shishiram",
+      "title_si": "",
+      "year": 2019,
+      "imdb": "5.8",
+      "rating": "5.8",
+      "imdb_id": "tt9010832",
+      "tmdb_id": "616758",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/wwmJgw0bnMzl4HMuxRpcwvbUbpW.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/wwmJgw0bnMzl4HMuxRpcwvbUbpW.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/nZIzSsteqeZeYTPF0ycVvG4zrp1.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/nZIzSsteqeZeYTPF0ycVvG4zrp1.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Romance"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "133 min",
+      "description": "Nithin, a struggling filmmaker is reminiscing his first and unrequited love, Varsha through the days of his plus two classes. This is their coming-of-age story of romance.",
+      "director": "Vivek Aryan",
+      "cast": [
+        {
+          "name": "Deepak Parambol",
+          "character": "Nithin"
+        },
+        {
+          "name": "Anaswara Ponnambath",
+          "character": "Varsha"
+        },
+        {
+          "name": "Maala Parvathi",
+          "character": "Ramani"
+        },
+        {
+          "name": "Alencier Ley Lopez",
+          "character": "Mohanan"
+        },
+        {
+          "name": "Ashokan",
+          "character": "Rajendran"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyBq-uWfrkMmfrCcWctRVIrJ35WI5AACTR8AAqHv2VdglHrKVIT2BB4E",
+      "message_id": 800,
+      "file_name": "comp_ormayil-oru-shishiram-2019_1080p.mp4",
+      "file_size": 2032424622,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyBq-uWfrkMmfrCcWctRVIrJ35WI5AACTR8AAqHv2VdglHrKVIT2BB4E",
+          "message_id": 800,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/616758"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt9010832"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt9010832"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/799",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/798"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2032424622,
+          "url": "https://t.me/c/4325759505/800",
+          "telegram_url": "https://t.me/c/4325759505/800",
+          "direct_url": "/stream/channel/-1004325759505/800?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyBq-uWfrkMmfrCcWctRVIrJ35WI5AACTR8AAqHv2VdglHrKVIT2BB4E",
+          "message_id": 800,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1702831842,
+          "url": "https://t.me/c/4325759505/799",
+          "telegram_url": "https://t.me/c/4325759505/799",
+          "direct_url": "/stream/channel/-1004325759505/799?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAx9q-uV4qwO_WMDTAi29Ar4i5TZDegACSx8AAqHv2VeaMXVBoiKbgB4E",
+          "message_id": 799,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/799",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "873.3 MB",
+          "size_bytes": 915698357,
+          "url": "https://t.me/c/4325759505/798",
+          "telegram_url": "https://t.me/c/4325759505/798",
+          "direct_url": "/stream/channel/-1004325759505/798?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAx5q-uUGidcwy5I246nZca2nl6CszgACSR8AAqHv2Vdtkc2hRPW3WR4E",
+          "message_id": 798,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/798",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2032424622,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ormayil-oru-shishiram-2019_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1702831842,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ormayil-oru-shishiram-2019_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/799",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "873.3 MB",
+          "size_bytes": 915698357,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_ormayil-oru-shishiram-2019_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/798",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyBq-uWfrkMmfrCcWctRVIrJ35WI5AACTR8AAqHv2VdglHrKVIT2BB4E",
+          "message_id": 800,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/800",
+          "size_bytes": 2032424622
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAx9q-uV4qwO_WMDTAi29Ar4i5TZDegACSx8AAqHv2VeaMXVBoiKbgB4E",
+          "message_id": 799,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/799",
+          "size_bytes": 1702831842
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAx5q-uUGidcwy5I246nZca2nl6CszgACSR8AAqHv2Vdtkc2hRPW3WR4E",
+          "message_id": 798,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/798",
+          "size_bytes": 915698357
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/ormayil-oru-shishiram-2019-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=ormayil-oru-shishiram-2019",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T11:14:52Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T10:56:08Z"
+  "last_updated": "2026-11-16T11:14:54Z"
 }

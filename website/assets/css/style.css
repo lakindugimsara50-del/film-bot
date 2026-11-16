@@ -7311,15 +7311,18 @@ body.tg-browser-mode {
   opacity: 1;
   visibility: visible;
   transform: translate(-50%, -50%) scale(1);
+  transition: opacity 0.88s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.88s cubic-bezier(0.2, 0.9, 0.3, 1),
+              visibility 0.88s ease;
 }
 
 .hero-showcase.is-expanded-mode .hero-stage-watermark {
   opacity: 0;
   visibility: hidden;
   transform: translate(-50%, -50%) scale(1.08);
-  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.55s ease;
+  transition: opacity 0.65s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.82s cubic-bezier(0.2, 0.9, 0.3, 1),
+              visibility 0.65s ease;
 }
 
 .hero-watermark-glow {
@@ -7606,9 +7609,9 @@ body.tg-browser-mode {
   opacity: 0;
   visibility: hidden;
   transform: scale(0.96);
-  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.75s ease;
+  transition: opacity 0.82s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.88s cubic-bezier(0.2, 0.9, 0.3, 1),
+              visibility 0.82s ease;
   will-change: opacity, transform;
 }
 .hero-showcase.is-expanded-mode .hero-fs-backdrop-wrap {
@@ -7625,8 +7628,8 @@ body.tg-browser-mode {
   opacity: 0;
   visibility: visible;
   transform: scale(0.96);
-  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.82s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.88s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 .hero-bg-layer {
@@ -7994,8 +7997,8 @@ body.tg-browser-mode {
   background-color: #121218;
   transform-style: preserve-3d;
   transform-origin: center center;
-  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+  transition: transform 0.88s cubic-bezier(0.2, 0.9, 0.3, 1),
+              opacity 0.88s cubic-bezier(0.2, 0.9, 0.3, 1),
               filter 0.5s ease,
               box-shadow 0.5s ease,
               border-color 0.5s ease;
@@ -8179,16 +8182,16 @@ body.tg-browser-mode {
   border-color: transparent;
   box-shadow: none;
   pointer-events: none;
-  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease,
-              box-shadow 0.3s ease;
+  transition: transform 0.82s cubic-bezier(0.2, 0.9, 0.3, 1),
+              opacity 0.72s cubic-bezier(0.2, 0.9, 0.3, 1),
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
 }
 
 .hero-showcase.is-expanded-mode .hero-3d-card:not(.slot-0) {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.55s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 /* Card inner badges and info cleanly fade during 3D expansion */
@@ -8221,50 +8224,62 @@ body.tg-browser-mode {
 
 /* 3D Rear Shuffle & Retreat Animation:
    Old front card visibly sweeps out in a single continuous 3D arc from the full screen position and glides behind the deck to slot 5.
+   Zero snapping, zero opacity flash, natural depth order.
    ("saha lokuwata thibila card tike pitipassata yana eka smooth na transsion ek..ek lassanata smooth karanna")
 */
 .hero-3d-card.is-shuffling-to-rear,
 .hero-3d-card.is-retreating-to-back {
-  animation: cardRetreatToBack 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  z-index: 35 !important;
+  animation: cardRetreatToBack 0.88s cubic-bezier(0.2, 0.9, 0.3, 1) forwards !important;
   pointer-events: none !important;
 }
 
 @keyframes cardRetreatToBack {
   0% {
     transform: translate3d(0, 0, var(--hero-expand-z, 240px)) scale(var(--hero-expand-scale, 2.1)) rotateY(0deg) rotateX(0deg);
-    opacity: 1;
+    opacity: 0;
     filter: brightness(1.0);
     border-color: transparent;
     border-top-color: transparent;
     box-shadow: none;
-    z-index: 35;
+    z-index: 30;
   }
-  30% {
-    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -12px, 135px) scale(1.06) rotateY(16deg) rotateX(2.5deg);
-    opacity: 0.98;
-    filter: brightness(0.96);
-    border-color: rgba(255, 255, 255, 0.28);
-    border-top-color: rgba(255, 255, 255, 0.85);
+  14% {
+    transform: translate3d(calc(var(--sweep-out-x, -175px) * 0.38), -6px, 160px) scale(1.48) rotateY(7deg) rotateX(1.5deg);
+    opacity: 0.96;
+    filter: brightness(0.98);
+    border-color: rgba(255, 255, 255, 0.22);
+    border-top-color: rgba(255, 255, 255, 0.7);
     box-shadow:
-      inset 0 2px 2px rgba(255, 255, 255, 0.55),
-      0 40px 90px -10px rgba(0, 0, 0, 0.96),
-      0 18px 45px rgba(229, 9, 20, 0.28);
-    z-index: 35;
+      inset 0 2px 2px rgba(255, 255, 255, 0.5),
+      0 28px 65px rgba(0, 0, 0, 0.88);
+    z-index: 30;
+  }
+  38% {
+    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -12px, 100px) scale(1.04) rotateY(18deg) rotateX(2.5deg);
+    opacity: 0.94;
+    filter: brightness(0.92);
+    border-color: rgba(255, 255, 255, 0.26);
+    border-top-color: rgba(255, 255, 255, 0.82);
+    box-shadow:
+      inset 0 2px 2px rgba(255, 255, 255, 0.45),
+      0 35px 80px rgba(0, 0, 0, 0.92);
+    z-index: 25;
   }
   68% {
-    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 28px, -270px) scale(0.58) rotateY(-28deg);
+    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 24px, -230px) scale(0.62) rotateY(-26deg) rotateX(0deg);
     opacity: 0.55;
-    filter: brightness(0.46);
-    z-index: 3;
+    filter: brightness(0.48);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    z-index: 4;
   }
   100% {
-    transform: translate3d(var(--s5-x), var(--s5-y), var(--s5-z)) scale(var(--s5-s)) rotateY(var(--s5-ry));
+    transform: translate3d(var(--s5-x), var(--s5-y), var(--s5-z)) scale(var(--s5-s)) rotateY(var(--s5-ry)) rotateX(0deg);
     opacity: var(--s5-op);
     filter: brightness(0.32);
     border: 1px solid rgba(255, 255, 255, 0.04);
     box-shadow: none;
-    z-index: 3;
+    z-index: 4;
   }
 }
 

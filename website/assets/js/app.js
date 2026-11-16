@@ -802,9 +802,9 @@ let hero3DTouchStartX = 0;
 let hero3DTouchStartY = 0;
 
 const HERO_FS_DURATION = 5000;        // Display time in Fullscreen ("chuttak wela thibila")
-const HERO_RETREAT_MS = 850;          // Unified fluid 3D retreat arc & simultaneous card step forward
-const HERO_DECK_PAUSE_MS = 2000;      // Appreciation beat in 3D deck view (shows 3D typography & card depth)
-const HERO_EXPAND_MS = 750;           // Forward 3D bloom into Fullscreen
+const HERO_RETREAT_MS = 880;          // Unified fluid 3D retreat arc & simultaneous card step forward
+const HERO_DECK_PAUSE_MS = 1800;      // Appreciation beat in 3D deck view (shows 3D typography & card depth)
+const HERO_EXPAND_MS = 820;           // Forward 3D bloom into Fullscreen
 
 // States: 'FULLSCREEN' | 'RETREATING' | 'PAUSED_DECK' | 'EXPANDING' | 'MANUAL_DECK'
 let heroCurrentState = 'DECK';
@@ -1037,6 +1037,9 @@ function preloadHeroImage(idx) {
     const img = new Image();
     img.decoding = 'async';
     img.src = src;
+    if (img.decode) {
+      img.decode().catch(() => {});
+    }
   }
 }
 

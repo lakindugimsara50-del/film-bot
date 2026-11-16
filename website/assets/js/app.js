@@ -931,30 +931,31 @@ function renderHeroShowcase() {
   // 6b. Spatial 3D Parallax: subtle dynamic depth response to cursor position in deck view
   initHero3DParallax(section, stage);
 
-  // 7. Initial State: Start on dark cinema stage in Deck Mode ("back ground eke poster eka na e welawata")
-  section.classList.remove('is-expanded-mode', 'is-receding-mode');
-  section.classList.add('is-deck-mode');
-  assignHeroSlotClasses();
-  updateHeroNavCounter();
-  updateDeckToggleBtn('deck');
-  heroCurrentState = 'DECK';
-
-  // Preload next backdrop image into cache
-  preloadHeroImage(1);
-
-  // If ?mode=deck is passed in URL, remain permanently in 3D deck mode for testing/visual inspection
+  // 7. Initial State: Start directly in majestic Fullscreen Cinema Mode (like Netflix / Apple TV+)
   const urlParams = new URLSearchParams(window.location.search);
   const stayDeckMode = urlParams.get('mode') === 'deck' || urlParams.get('deck') === '1';
 
-  // After 2800ms viewing of the 3D landscape card deck & majestic FILMZILLA wings, smoothly expand front spotlight card into full size!
-  if (!stayDeckMode) {
-    const startToken = ++heroCycleToken;
-    setHeroTimeout(() => {
-      if (startToken === heroCycleToken && heroCurrentState === 'DECK') {
-        expandHeroCard(heroShowcaseCurrent, true);
-      }
-    }, 2800);
+  if (stayDeckMode) {
+    section.classList.remove('is-expanded-mode', 'is-receding-mode');
+    section.classList.add('is-deck-mode');
+    assignHeroSlotClasses();
+    updateHeroNavCounter();
+    updateDeckToggleBtn('deck');
+    heroCurrentState = 'DECK';
+  } else {
+    section.classList.remove('is-deck-mode', 'is-receding-mode');
+    section.classList.add('is-expanded-mode');
+    updateHeroContent(heroShowcaseMovies[heroShowcaseCurrent]);
+    assignHeroSlotClasses();
+    updateHeroNavCounter();
+    updateDeckToggleBtn('expanded');
+    heroCurrentState = 'FULLSCREEN';
+    startProgressBar(HERO_FS_DURATION);
+    scheduleCycleAfter(HERO_FS_DURATION, ++heroCycleToken);
   }
+
+  // Preload next backdrop image into cache
+  preloadHeroImage(1);
 }
 
 function updateDeckToggleBtn(mode) {
@@ -1114,14 +1115,40 @@ function advanceHeroShowcase(token) {
   stopProgressBar();
 
   const section = document.getElementById('hero-section');
-  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
-  if (!section || !stage) return;
+  if (!section) return;
 
   const len = heroShowcaseMovies.length;
   if (len < 2) return;
 
+  const nextIdx = (heroShowcaseCurrent + 1) % len;
+
+  // CINEMATIC FULLSCREEN VIDEO CROSSFADE:
+  // When in Fullscreen mode, smoothly crossfade directly to the next movie!
+  // Never shrink down to a small card or pop a small card in the user's face!
+  if (section.classList.contains('is-expanded-mode')) {
+    heroShowcaseCurrent = nextIdx;
+    const nextMovie = heroShowcaseMovies[nextIdx];
+    updateHeroContent(nextMovie);
+    assignHeroSlotClasses();
+    updateHeroNavCounter();
+    preloadHeroImage((nextIdx + 1) % len);
+
+    const mainEl = document.querySelector('.hero-showcase-main');
+    if (mainEl) {
+      mainEl.classList.remove('hero-info-enter');
+      void mainEl.offsetWidth;
+      mainEl.classList.add('hero-info-enter');
+    }
+
+    startProgressBar(HERO_FS_DURATION);
+    scheduleCycleAfter(HERO_FS_DURATION, currentToken);
+    return;
+  }
+
+  const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
+  if (!stage) return;
+
   const oldIdx = heroShowcaseCurrent;
-  const nextIdx = (oldIdx + 1) % len;
   const oldCard = stage.querySelector(`.hero-3d-card[data-idx="${oldIdx}"]`);
 
   heroCurrentState = 'RETREATING';
@@ -1131,10 +1158,6 @@ function advanceHeroShowcase(token) {
   const watermark = document.getElementById('hero-stage-watermark');
   if (watermark) watermark.style.transform = '';
 
-  // 1. Unified Graceful 3D Retreat & Simultaneous Stack Advance:
-  // Fullscreen recedes while the old spotlight card glides along the continuous 3D arc to the rear
-  // AND all other cards simultaneously step forward into their new 3D slots in perfect unison.
-  // ZERO snapping, ZERO multi-step delays.
   section.classList.remove('is-expanded-mode');
   section.classList.add('is-receding-mode');
   updateDeckToggleBtn('deck');
@@ -1152,7 +1175,7 @@ function advanceHeroShowcase(token) {
     }
   });
 
-  // 2. Once the retreat arc and slot advance completes (850ms), settle deck
+  // Once the retreat arc and slot advance completes, settle deck
   setHeroTimeout(() => {
     if (currentToken !== heroCycleToken) return;
     section.classList.remove('is-receding-mode');
@@ -1165,12 +1188,8 @@ function advanceHeroShowcase(token) {
     // Preload next movie image into cache
     preloadHeroImage((nextIdx + 1) % len);
 
-    // 3. Appreciation pause in 3D deck view (shows liquid bubble FILMZILLA & 3D card depth)
-    setHeroTimeout(() => {
-      if (currentToken !== heroCycleToken) return;
-      // 4. Next front card blossoms forward into full screen!
-      expandHeroCard(nextIdx, true);
-    }, HERO_DECK_PAUSE_MS);
+    // Continue deck rotation
+    scheduleCycleAfter(3500, currentToken);
   }, HERO_RETREAT_MS);
 }
 

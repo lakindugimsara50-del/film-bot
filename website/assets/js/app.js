@@ -632,39 +632,52 @@ function getHeroSpotlightList() {
   const eligible = catalog.filter(m => Boolean(m.backdrop || m.backdrop_url || m.poster || m.poster_url));
   const pool = eligible.length > 0 ? eligible : [...catalog];
 
-  // 2. Select recent arrivals (newest ~40 movies) to focus on "aluthin apu"
+  // 2. Select recent arrivals (newest ~45 movies) to focus on "aluthin apu"
   const sortedByDate = [...pool].sort((a, b) => _getMovieTimestamp(b) - _getMovieTimestamp(a));
-  const recentPool = sortedByDate.slice(0, 40);
+  const recentPool = sortedByDate.slice(0, 45);
 
-  // 3. Score recent arrivals balancing newness and high ratings ("rate samanyen wadi hodama 10k")
+  const currentYear = new Date().getFullYear() || 2026;
+  const minReleaseYear = currentYear - 2; // e.g. 2024 or newer - exclude old classics from 1961, 2009, etc.
+
+  // 3. Score recent arrivals balancing recent release year and high ratings ("rating wadi saha me lagadi release karapuwa")
   const scored = recentPool.map((m, idx) => {
     const time = _getMovieTimestamp(m);
     const timeHours = time / (1000 * 3600);
     const rating = _getMovieRating(m);
+    const yr = Number(m.year) || currentYear;
     const hasBackdrop = Boolean(m.backdrop || m.backdrop_url);
     const hasTrailer = Boolean(m.trailer_url || m.trailer_id);
 
-    // Rating boost: high rated movies (7.0 - 8.5+) rise to the top of the spotlight
-    let ratingScore = rating * 6;
-    if (rating >= 8.0) ratingScore += 16;
-    else if (rating >= 7.0) ratingScore += 10;
-    else if (rating >= 6.0) ratingScore += 4;
-    else if (rating < 5.0 && rating > 0) ratingScore -= 30; // penalize low rated
+    // Release Year score: Prioritize recent release years (2026 > 2025 > 2024), disqualify old release years
+    let yearScore = 0;
+    if (yr < minReleaseYear) {
+      yearScore = -10000; // exclude old classics (e.g. 1961, 2009) from hero spotlight
+    } else {
+      yearScore = (yr - minReleaseYear) * 20;
+    }
 
-    let score = timeHours + ratingScore;
-    if (hasBackdrop) score += 6;
-    if (hasTrailer) score += 2;
-    if (m.featured) score += 12;
+    // Rating score: high rated movies (7.0 - 8.5+) rise to the top of the spotlight
+    let ratingScore = rating * 8;
+    if (rating >= 8.0) ratingScore += 24;
+    else if (rating >= 7.0) ratingScore += 16;
+    else if (rating >= 6.0) ratingScore += 8;
+    else if (rating > 0 && rating < 6.0) ratingScore -= 40; // penalize low rated (e.g. 3.3, 4.5)
+
+    let score = timeHours + yearScore + ratingScore;
+    if (hasBackdrop) score += 12;
+    if (hasTrailer) score += 4;
+    if (m.featured) score += 16;
 
     return { movie: m, score };
   });
 
-  // Sort by score descending (Highest score = newest & highest rated)
+  // Sort by score descending (Highest score = newest release & highest rated)
   scored.sort((a, b) => b.score - a.score);
 
   const merged = [];
   const seenTitles = new Set();
   for (const item of scored) {
+    if (item.score < -5000) continue; // skip heavily penalized old classics
     const m = item.movie;
     const rawTitle = (m.title || '').split(' - Season')[0].trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     if (rawTitle && !seenTitles.has(rawTitle)) {
@@ -674,9 +687,11 @@ function getHeroSpotlightList() {
     if (merged.length >= 10) break;
   }
 
-  // Fallback: If less than 10, fill from recent arrivals
+  // Fallback: If less than 10, fill from recent releases (>= minReleaseYear)
   if (merged.length < 10) {
     for (const m of sortedByDate) {
+      const yr = Number(m.year) || currentYear;
+      if (yr < minReleaseYear) continue;
       const rawTitle = (m.title || '').split(' - Season')[0].trim().toLowerCase().replace(/[^a-z0-9]/g, '');
       if (rawTitle && !seenTitles.has(rawTitle)) {
         seenTitles.add(rawTitle);

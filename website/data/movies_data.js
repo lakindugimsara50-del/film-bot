@@ -20700,7 +20700,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T11:49:34Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "judgment-at-nuremberg-1961",
+      "slug": "judgment-at-nuremberg-1961",
+      "title": "Judgment at Nuremberg",
+      "title_si": "",
+      "year": 1961,
+      "imdb": "8.0",
+      "rating": "8.0",
+      "imdb_id": "tt0055031",
+      "tmdb_id": "821",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/b6vYatvui1EXeFYfpDX4rcbueuP.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/b6vYatvui1EXeFYfpDX4rcbueuP.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/tcyL1OCnkkxotZhRaErfgOT83si.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/tcyL1OCnkkxotZhRaErfgOT83si.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/T3taV43-lGc",
+      "trailer_id": "T3taV43-lGc",
+      "genres": [
+        "Drama",
+        "History"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "191 min",
+      "description": "In 1947, four German judges who served on the bench during the Nazi regime face a military tribunal to answer charges of crimes against humanity. Chief Justice Haywood hears evidence and testimony not only from lead defendant Ernst Janning and his defense attorney Hans Rolfe, but also from the widow of a Nazi general, an idealistic U.S. Army captain and reluctant witness Irene Wallner.",
+      "director": "Stanley Kramer",
+      "cast": [
+        {
+          "name": "Spencer Tracy",
+          "character": "Dan Haywood"
+        },
+        {
+          "name": "Richard Widmark",
+          "character": "Tad Lawson"
+        },
+        {
+          "name": "Maximilian Schell",
+          "character": "Hans Rolfe"
+        },
+        {
+          "name": "Burt Lancaster",
+          "character": "Ernst Janning"
+        },
+        {
+          "name": "Marlene Dietrich",
+          "character": "Mrs. Bertholt"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAytq-vTCe_XK1A9CBTNRfkjd5kkx5QACcx8AAqHv2VfpcyQ3uaXSsh4E",
+      "message_id": 811,
+      "file_name": "comp_judgment-at-nuremberg-1961_1080p.mp4",
+      "file_size": 2063210240,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAytq-vTCe_XK1A9CBTNRfkjd5kkx5QACcx8AAqHv2VfpcyQ3uaXSsh4E",
+          "message_id": 811,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/821"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt0055031"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt0055031"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/812",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/810"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2063210240,
+          "url": "https://t.me/c/4325759505/811",
+          "telegram_url": "https://t.me/c/4325759505/811",
+          "direct_url": "/stream/channel/-1004325759505/811?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAytq-vTCe_XK1A9CBTNRfkjd5kkx5QACcx8AAqHv2VfpcyQ3uaXSsh4E",
+          "message_id": 811,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2061897239,
+          "url": "https://t.me/c/4325759505/812",
+          "telegram_url": "https://t.me/c/4325759505/812",
+          "direct_url": "/stream/channel/-1004325759505/812?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyxq-vcjQa3frmQfDzSLfmIEx5XzmwACex8AAqHv2VfNwdliPVSLax4E",
+          "message_id": 812,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/812",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1267710150,
+          "url": "https://t.me/c/4325759505/810",
+          "telegram_url": "https://t.me/c/4325759505/810",
+          "direct_url": "/stream/channel/-1004325759505/810?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAypq-vOAifc_p2cAAXguXIIFPqZbIK4AAm8fAAKh79lX28vBrHxF_-8eBA",
+          "message_id": 810,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/810",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2063210240,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_judgment-at-nuremberg-1961_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2061897239,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_judgment-at-nuremberg-1961_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/812",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1267710150,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_judgment-at-nuremberg-1961_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/810",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAytq-vTCe_XK1A9CBTNRfkjd5kkx5QACcx8AAqHv2VfpcyQ3uaXSsh4E",
+          "message_id": 811,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/811",
+          "size_bytes": 2063210240
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyxq-vcjQa3frmQfDzSLfmIEx5XzmwACex8AAqHv2VfNwdliPVSLax4E",
+          "message_id": 812,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/812",
+          "size_bytes": 2061897239
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAypq-vOAifc_p2cAAXguXIIFPqZbIK4AAm8fAAKh79lX28vBrHxF_-8eBA",
+          "message_id": 810,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/810",
+          "size_bytes": 1267710150
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/judgment-at-nuremberg-1961-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=judgment-at-nuremberg-1961",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T12:29:37Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T11:49:35Z"
+  "last_updated": "2026-11-16T12:29:39Z"
 };

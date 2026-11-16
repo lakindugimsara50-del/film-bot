@@ -7234,12 +7234,12 @@ body.tg-browser-mode {
   --s5-ry: -39deg;
   --s5-op: 0.20;
 
-  --sweep-out-x: -175px;
-  --sweep-mid-x: 40px;
+  --sweep-out-x: -65px;
+  --sweep-mid-x: 20px;
 
   /* Expansion / Receding Unified 3D Morph Dimensions */
-  --hero-expand-z: 240px;
-  --hero-expand-scale: 2.1;
+  --hero-expand-z: 140px;
+  --hero-expand-scale: 1.45;
 }
 
 /* 1. Dark Cinema Stage Atmosphere (Active in 3D Card Stack view - No poster in background!) */
@@ -7627,8 +7627,8 @@ body.tg-browser-mode {
 .hero-showcase.is-receding-mode .hero-fs-backdrop-wrap {
   opacity: 0;
   visibility: visible;
-  transform: scale(0.96);
-  transition: opacity 0.82s cubic-bezier(0.2, 0.9, 0.3, 1),
+  transform: scale(0.97);
+  transition: opacity 0.45s ease 0.08s,
               transform 0.88s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
@@ -8177,13 +8177,13 @@ body.tg-browser-mode {
 /* In expanded mode, front card blooms forward in 3D into Fullscreen */
 .hero-showcase.is-expanded-mode .hero-3d-card.slot-0,
 .hero-showcase.is-expanded-mode .hero-3d-card.is-active {
-  transform: translate3d(0, 0, var(--hero-expand-z, 240px)) scale(var(--hero-expand-scale, 2.1)) rotateY(0deg) rotateX(0deg);
+  transform: translate3d(0, 0, var(--hero-expand-z, 140px)) scale(var(--hero-expand-scale, 1.45)) rotateY(0deg) rotateX(0deg);
   opacity: 0;
   border-color: transparent;
   box-shadow: none;
   pointer-events: none;
   transition: transform 0.82s cubic-bezier(0.2, 0.9, 0.3, 1),
-              opacity 0.72s cubic-bezier(0.2, 0.9, 0.3, 1),
+              opacity 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) 0.32s,
               border-color 0.35s ease,
               box-shadow 0.35s ease;
 }
@@ -8191,7 +8191,7 @@ body.tg-browser-mode {
 .hero-showcase.is-expanded-mode .hero-3d-card:not(.slot-0) {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.55s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: opacity 0.5s ease;
 }
 
 /* Card inner badges and info cleanly fade during 3D expansion */
@@ -8235,41 +8235,37 @@ body.tg-browser-mode {
 
 @keyframes cardRetreatToBack {
   0% {
-    transform: translate3d(0, 0, var(--hero-expand-z, 240px)) scale(var(--hero-expand-scale, 2.1)) rotateY(0deg) rotateX(0deg);
+    transform: translate3d(0, 0, var(--hero-expand-z, 140px)) scale(var(--hero-expand-scale, 1.45)) rotateY(0deg) rotateX(0deg);
     opacity: 0;
     filter: brightness(1.0);
-    border-color: transparent;
-    border-top-color: transparent;
-    box-shadow: none;
-    z-index: 30;
+    border-color: rgba(255, 255, 255, 0.22);
+    border-top-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+    z-index: 25;
   }
-  14% {
-    transform: translate3d(calc(var(--sweep-out-x, -175px) * 0.38), -6px, 160px) scale(1.48) rotateY(7deg) rotateX(1.5deg);
-    opacity: 0.96;
+  20% {
+    transform: translate3d(calc(var(--sweep-out-x, -65px) * 0.32), -4px, 120px) scale(1.30) rotateY(4deg) rotateX(1deg);
+    opacity: 0.98;
     filter: brightness(0.98);
     border-color: rgba(255, 255, 255, 0.22);
     border-top-color: rgba(255, 255, 255, 0.7);
-    box-shadow:
-      inset 0 2px 2px rgba(255, 255, 255, 0.5),
-      0 28px 65px rgba(0, 0, 0, 0.88);
-    z-index: 30;
-  }
-  38% {
-    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -175px)), -12px, 100px) scale(1.04) rotateY(18deg) rotateX(2.5deg);
-    opacity: 0.94;
-    filter: brightness(0.92);
-    border-color: rgba(255, 255, 255, 0.26);
-    border-top-color: rgba(255, 255, 255, 0.82);
-    box-shadow:
-      inset 0 2px 2px rgba(255, 255, 255, 0.45),
-      0 35px 80px rgba(0, 0, 0, 0.92);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
     z-index: 25;
   }
-  68% {
-    transform: translate3d(calc(var(--s5-x) - var(--sweep-mid-x, 40px)), 24px, -230px) scale(0.62) rotateY(-26deg) rotateX(0deg);
-    opacity: 0.55;
-    filter: brightness(0.48);
-    border-color: rgba(255, 255, 255, 0.1);
+  48% {
+    transform: translate3d(calc(var(--s0-x) + var(--sweep-out-x, -65px)), -8px, 80px) scale(1.0) rotateY(12deg) rotateX(2deg);
+    opacity: 0.94;
+    filter: brightness(0.90);
+    border-color: rgba(255, 255, 255, 0.20);
+    border-top-color: rgba(255, 255, 255, 0.60);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+    z-index: 25;
+  }
+  76% {
+    transform: translate3d(calc(var(--s5-x) - 25px), 22px, -220px) scale(0.60) rotateY(-26deg) rotateX(0deg);
+    opacity: 0.50;
+    filter: brightness(0.50);
+    border-color: rgba(255, 255, 255, 0.08);
     box-shadow: none;
     z-index: 4;
   }
@@ -8597,11 +8593,11 @@ body.is-window-scrolling .movie-card {
     --s5-ry: -26deg;
     --s5-op: 0.18;
 
-    --sweep-out-x: -80px;
-    --sweep-mid-x: 18px;
+    --sweep-out-x: -50px;
+    --sweep-mid-x: 15px;
 
-    --hero-expand-z: 180px;
-    --hero-expand-scale: 1.9;
+    --hero-expand-z: 110px;
+    --hero-expand-scale: 1.35;
 
     min-height: 520px;
     max-height: none;
@@ -8750,11 +8746,11 @@ body.is-window-scrolling .movie-card {
     --s5-ry: -22deg;
     --s5-op: 0.12;
 
-    --sweep-out-x: -55px;
-    --sweep-mid-x: 12px;
+    --sweep-out-x: -35px;
+    --sweep-mid-x: 10px;
 
-    --hero-expand-z: 140px;
-    --hero-expand-scale: 1.6;
+    --hero-expand-z: 80px;
+    --hero-expand-scale: 1.25;
 
     min-height: 480px;
     max-height: 560px;

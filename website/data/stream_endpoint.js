@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://cal-benjamin-valid-nat.trycloudflare.com",
+  "stream_base_url": "https://jeans-whole-queue-ridge.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-16T17:18:15.088082+00:00",
+  "updated_at": "2026-11-16T17:19:10.739422+00:00",
   "status": "online"
 };

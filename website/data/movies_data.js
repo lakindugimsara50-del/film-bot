@@ -19336,7 +19336,234 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T09:52:06Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "epic-first-semester-2026",
+      "slug": "epic-first-semester-2026",
+      "title": "Epic - First Semester",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.5",
+      "rating": "5.5",
+      "imdb_id": "tt35448218",
+      "tmdb_id": "1408158",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/pXf3VlwaCgxvS7kvQlQ3QBwjZpy.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/pXf3VlwaCgxvS7kvQlQ3QBwjZpy.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/5V1EhtFaeGfn8lRozOKDaCKGQWf.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/5V1EhtFaeGfn8lRozOKDaCKGQWf.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/uuPuy3HbJ08",
+      "trailer_id": "uuPuy3HbJ08",
+      "genres": [
+        "Romance",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "150 min",
+      "description": "Far from home, Aditya wrestles with family expectations, cultural differences and loneliness while studying in London – until he meets the lively Kadali.",
+      "director": "Aditya Hasan",
+      "cast": [
+        {
+          "name": "Anand Deverakonda",
+          "character": "Aditya"
+        },
+        {
+          "name": "Vaishnavi Chaitanya",
+          "character": "Kadali"
+        },
+        {
+          "name": "Sivaji Sontineni",
+          "character": "Chandra Sekhar"
+        },
+        {
+          "name": "Vasuki Anand",
+          "character": "Shobha Rani"
+        },
+        {
+          "name": "Kalyan Shankar",
+          "character": "Sinjith"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxRq-tcxNF1jgucxHhUsZv3kkn2bagACIB8AAqHv2VcIdKs9GN20iR4E",
+      "message_id": 788,
+      "file_name": "comp_epic-first-semester-2026_1080p.mp4",
+      "file_size": 2066303473,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxRq-tcxNF1jgucxHhUsZv3kkn2bagACIB8AAqHv2VcIdKs9GN20iR4E",
+          "message_id": 788,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1408158"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35448218"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35448218"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/787",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/786"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2066303473,
+          "url": "https://t.me/c/4325759505/788",
+          "telegram_url": "https://t.me/c/4325759505/788",
+          "direct_url": "/stream/channel/-1004325759505/788?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxRq-tcxNF1jgucxHhUsZv3kkn2bagACIB8AAqHv2VcIdKs9GN20iR4E",
+          "message_id": 788,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1898776831,
+          "url": "https://t.me/c/4325759505/787",
+          "telegram_url": "https://t.me/c/4325759505/787",
+          "direct_url": "/stream/channel/-1004325759505/787?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxNq-tcl2I3LAgxTdCmv4bSpOH7p7QACHx8AAqHv2VeBvLA4_IlgiB4E",
+          "message_id": 787,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/787",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "968.5 MB",
+          "size_bytes": 1015586445,
+          "url": "https://t.me/c/4325759505/786",
+          "telegram_url": "https://t.me/c/4325759505/786",
+          "direct_url": "/stream/channel/-1004325759505/786?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxJq-taLkDroH7NOv45Y_8K56MeZ5gACHB8AAqHv2VdWfmSD4s0hrR4E",
+          "message_id": 786,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/786",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2066303473,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_epic-first-semester-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1898776831,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_epic-first-semester-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/787",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "968.5 MB",
+          "size_bytes": 1015586445,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_epic-first-semester-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/786",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxRq-tcxNF1jgucxHhUsZv3kkn2bagACIB8AAqHv2VcIdKs9GN20iR4E",
+          "message_id": 788,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/788",
+          "size_bytes": 2066303473
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxNq-tcl2I3LAgxTdCmv4bSpOH7p7QACHx8AAqHv2VeBvLA4_IlgiB4E",
+          "message_id": 787,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/787",
+          "size_bytes": 1898776831
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxJq-taLkDroH7NOv45Y_8K56MeZ5gACHB8AAqHv2VdWfmSD4s0hrR4E",
+          "message_id": 786,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/786",
+          "size_bytes": 1015586445
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/epic-first-semester-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=epic-first-semester-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T10:13:08Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T09:52:08Z"
+  "last_updated": "2026-11-16T10:13:10Z"
 };

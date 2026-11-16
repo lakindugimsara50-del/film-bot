@@ -18654,7 +18654,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T09:02:29Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "your-mother-your-mother-your-mother-2026",
+      "slug": "your-mother-your-mother-your-mother-2026",
+      "title": "Your Mother Your Mother Your Mother",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "6.7",
+      "rating": "6.7",
+      "imdb_id": "tt35856037",
+      "tmdb_id": "1437396",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/4KaPZSKnInnArErTTgy9Oy14leR.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/4KaPZSKnInnArErTTgy9Oy14leR.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/45Mbs6dmn2W0hvuyxXPDkKREHpP.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/45Mbs6dmn2W0hvuyxXPDkKREHpP.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/uEcoV-ngH38",
+      "trailer_id": "uEcoV-ngH38",
+      "genres": [
+        "Drama",
+        "Crime",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "112 min",
+      "description": "Latif, a devoutly religious hitman, struggles to balance work, faith and fatherhood. When his wife dies, he embarks on a desperate journey across Houston to protect his children, confronting the forces closing in around him – and the beliefs threatening to unravel within.",
+      "director": "Bassam Tariq",
+      "cast": [
+        {
+          "name": "Mahershala Ali",
+          "character": "Latif"
+        },
+        {
+          "name": "John Cho",
+          "character": "Pastor Kwan"
+        },
+        {
+          "name": "Giancarlo Esposito",
+          "character": "Abdul Malik"
+        },
+        {
+          "name": "Abubakr Ali",
+          "character": "Hatty"
+        },
+        {
+          "name": "Laith Nakli",
+          "character": "Mike Mahmoudi"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwhq-sqmq36enxqdyoMeTiE2qu2sTAAC8B4AAqHv2Vc8GOxtqR8hpR4E",
+      "message_id": 776,
+      "file_name": "comp_your-mother-your-mother-your-mother-2026_1080p.mp4",
+      "file_size": 2018813149,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwhq-sqmq36enxqdyoMeTiE2qu2sTAAC8B4AAqHv2Vc8GOxtqR8hpR4E",
+          "message_id": 776,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1437396"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35856037"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35856037"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/775",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/774"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2018813149,
+          "url": "https://t.me/c/4325759505/776",
+          "telegram_url": "https://t.me/c/4325759505/776",
+          "direct_url": "/stream/channel/-1004325759505/776?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwhq-sqmq36enxqdyoMeTiE2qu2sTAAC8B4AAqHv2Vc8GOxtqR8hpR4E",
+          "message_id": 776,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.3 GB",
+          "size_bytes": 1426771659,
+          "url": "https://t.me/c/4325759505/775",
+          "telegram_url": "https://t.me/c/4325759505/775",
+          "direct_url": "/stream/channel/-1004325759505/775?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwdq-sqECldZfKro6mjxpPBhPaRiiAAC7x4AAqHv2VcnkwTWK4pzix4E",
+          "message_id": 775,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/775",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "743.3 MB",
+          "size_bytes": 779382732,
+          "url": "https://t.me/c/4325759505/774",
+          "telegram_url": "https://t.me/c/4325759505/774",
+          "direct_url": "/stream/channel/-1004325759505/774?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwZq-snuFw4QHznrZj1_A6NlSz0piAAC7R4AAqHv2VezvXutQjX25x4E",
+          "message_id": 774,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/774",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2018813149,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_your-mother-your-mother-your-mother-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.3 GB",
+          "size_bytes": 1426771659,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_your-mother-your-mother-your-mother-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/775",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "743.3 MB",
+          "size_bytes": 779382732,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_your-mother-your-mother-your-mother-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/774",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwhq-sqmq36enxqdyoMeTiE2qu2sTAAC8B4AAqHv2Vc8GOxtqR8hpR4E",
+          "message_id": 776,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/776",
+          "size_bytes": 2018813149
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwdq-sqECldZfKro6mjxpPBhPaRiiAAC7x4AAqHv2VcnkwTWK4pzix4E",
+          "message_id": 775,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/775",
+          "size_bytes": 1426771659
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAwZq-snuFw4QHznrZj1_A6NlSz0piAAC7R4AAqHv2VezvXutQjX25x4E",
+          "message_id": 774,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/774",
+          "size_bytes": 779382732
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/your-mother-your-mother-your-mother-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=your-mother-your-mother-your-mother-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T09:19:46Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T09:02:32Z"
+  "last_updated": "2026-11-16T09:19:48Z"
 };

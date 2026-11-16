@@ -9466,3 +9466,412 @@ body.is-window-scrolling .movie-card {
   border-color: rgba(229, 9, 20, 0.4) !important;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
 }
+
+
+/* ============================================================
+   FilmZilla – Phase 2: For You, Cinema Roulette, PiP & Emoji Reactions
+   ============================================================ */
+
+/* --- 1. Floating 3D Cinema Roulette FAB (Surprise Me) --- */
+.fab-roulette {
+  position: fixed;
+  bottom: 84px;
+  right: 24px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.55), 0 8px 24px rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 99990;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: roulette-fab-pulse 3s infinite ease-in-out;
+}
+
+.fab-roulette:hover {
+  transform: scale(1.15) rotate(15deg);
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.85), 0 12px 30px rgba(0, 0, 0, 0.8);
+}
+
+.fab-roulette-tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  background: rgba(14, 14, 20, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(8px);
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.fab-roulette:hover .fab-roulette-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes roulette-fab-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.4), 0 8px 24px rgba(0, 0, 0, 0.7); }
+  50% { box-shadow: 0 0 32px rgba(245, 158, 11, 0.75), 0 10px 28px rgba(0, 0, 0, 0.8); }
+}
+
+@media (max-width: 768px) {
+  .fab-roulette {
+    bottom: 76px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+}
+
+/* --- 2. Cinema Roulette Modal (Slot-Machine Reel Spin) --- */
+.roulette-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+  padding: 16px;
+}
+
+.roulette-modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.roulette-modal-dialog {
+  background: rgba(16, 16, 24, 0.96);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.3), 0 32px 80px rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: center;
+  transform: scale(0.92);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.roulette-modal-backdrop.open .roulette-modal-dialog {
+  transform: scale(1);
+}
+
+.roulette-modal-header {
+  padding: 20px 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.roulette-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roulette-modal-body {
+  padding: 12px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.roulette-reel-box {
+  width: 220px;
+  aspect-ratio: 2 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  background: #000;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+  transition: all 0.3s ease;
+}
+
+.roulette-reel-box.winner {
+  border-color: #f59e0b;
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.7);
+  animation: reel-winner-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes reel-winner-pop {
+  0% { transform: scale(0.9); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.roulette-reel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.1s linear;
+}
+
+.roulette-movie-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 54px;
+}
+
+.roulette-movie-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.roulette-movie-meta {
+  font-size: 13px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.roulette-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-roulette-spin {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-roulette-spin:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-roulette-watch {
+  flex: 1.3;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-roulette-watch:hover {
+  background: #f40612;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(229, 9, 20, 0.65);
+}
+
+/* --- 3. Live Quick Emoji Reactions (Under Player) --- */
+.cs-reaction-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(14, 14, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  position: relative;
+}
+
+.cs-reaction-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.cs-reaction-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cs-react-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.cs-react-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px) scale(1.04);
+}
+
+.cs-react-btn.active {
+  background: rgba(229, 9, 20, 0.2);
+  border-color: rgba(229, 9, 20, 0.5);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(229, 9, 20, 0.4);
+}
+
+.react-emoji {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.cs-react-btn:hover .react-emoji {
+  transform: scale(1.25);
+}
+
+.react-count {
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: 700;
+}
+
+/* Floating Emoji Animation (TikTok / Twitch Style) */
+.floating-emoji {
+  position: absolute;
+  font-size: 28px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: floatUpAndFade 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes floatUpAndFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.6);
+  }
+  30% {
+    transform: translateY(-50px) scale(1.3) rotate(-10deg);
+  }
+  70% {
+    opacity: 0.9;
+    transform: translateY(-140px) scale(1.1) rotate(15deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-220px) scale(0.8) rotate(-5deg);
+  }
+}
+
+/* --- 4. Movie Request Modal --- */
+.request-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+  padding: 16px;
+}
+
+.request-modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.request-modal-dialog {
+  background: rgba(14, 14, 20, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: scale(0.95);
+  transition: transform 0.25s ease;
+}
+
+.request-modal-backdrop.open .request-modal-dialog {
+  transform: scale(1);
+}
+
+.request-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.request-input-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+}
+
+.request-input-group input,
+.request-input-group select,
+.request-input-group textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.request-input-group input:focus,
+.request-input-group select:focus,
+.request-input-group textarea:focus {
+  border-color: var(--accent, #e50914);
+}

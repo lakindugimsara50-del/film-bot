@@ -3570,6 +3570,31 @@ function injectBottomControlBarItems(player, movie) {
     cbEl.insertBefore(rateBtn, fsToggle);
   }
 
+  // 5. Picture-in-Picture (PiP) Button
+  if (!cbEl.querySelector('.vjs-pip-btn')) {
+    const pipBtn = document.createElement('button');
+    pipBtn.type = 'button';
+    pipBtn.className = 'vjs-control vjs-button vjs-pip-btn';
+    pipBtn.setAttribute('title', 'Picture-in-Picture (P)');
+    pipBtn.setAttribute('aria-label', 'Picture-in-Picture');
+    pipBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:7px">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor" fill-opacity="0.3"/>
+      </svg>`;
+    attachFastAction(pipBtn, () => {
+      const vEl = player.tech_ && player.tech_.el_ ? player.tech_.el_ : player.el().querySelector('video');
+      if (window.FilmZillaRoulette && typeof window.FilmZillaRoulette.togglePiP === 'function') {
+        window.FilmZillaRoulette.togglePiP(vEl);
+      } else if (vEl && document.pictureInPictureEnabled) {
+        if (document.pictureInPictureElement) document.exitPictureInPicture();
+        else vEl.requestPictureInPicture();
+      }
+    });
+    if (fsToggle) cbEl.insertBefore(pipBtn, fsToggle);
+    else cbEl.appendChild(pipBtn);
+  }
+
   // Live time updater
   const curTimeEl = timeWrap.querySelector('#vjs-cur-time');
   const durTimeEl = timeWrap.querySelector('#vjs-dur-time');
@@ -3650,6 +3675,16 @@ function attachPlayerKeyboardShortcuts(player, playerEl) {
       case 'M':
         e.preventDefault();
         player.muted(!player.muted());
+        break;
+      case 'p':
+      case 'P':
+        e.preventDefault();
+        {
+          const vEl = player.tech_ && player.tech_.el_ ? player.tech_.el_ : player.el().querySelector('video');
+          if (window.FilmZillaRoulette && typeof window.FilmZillaRoulette.togglePiP === 'function') {
+            window.FilmZillaRoulette.togglePiP(vEl);
+          }
+        }
         break;
       case 'ArrowUp':
         e.preventDefault();
@@ -4209,6 +4244,11 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
       injectInPlayerQualityControl(vjsPlayer);
       mountCenterPlayerControls(playerEl, vjsPlayer, movie);
       injectBottomControlBarItems(vjsPlayer, movie);
+
+      // Bind Watch Party Synchronizer to Video.js player
+      if (window.FilmZillaWatchParty && typeof window.FilmZillaWatchParty.bindPlayer === 'function') {
+        window.FilmZillaWatchParty.bindPlayer(vjsPlayer);
+      }
 
       vjsPlayer.on('play', () => {
         hideLoader();
@@ -5425,6 +5465,37 @@ function renderMovieDetails(movie) {
         }
       });
     }
+  }
+
+  // Wire Live Emoji Reactions
+  const mId = movie.id || movie.slug;
+  if (window.FilmZillaRoulette && typeof window.FilmZillaRoulette.initReactions === 'function') {
+    window.FilmZillaRoulette.initReactions(mId);
+  }
+
+  // Wire Watch Party Trigger Button
+  const wpTrigger = document.getElementById('btn-watch-party-trigger');
+  if (wpTrigger && !wpTrigger._bound) {
+    wpTrigger._bound = true;
+    wpTrigger.addEventListener('click', () => {
+      if (window.FilmZillaWatchParty && typeof window.FilmZillaWatchParty.createRoom === 'function') {
+        window.FilmZillaWatchParty.createRoom();
+      }
+    });
+  }
+
+  // Wire PiP Trigger Button
+  const pipTrigger = document.getElementById('btn-pip-trigger');
+  if (pipTrigger && !pipTrigger._bound) {
+    pipTrigger._bound = true;
+    pipTrigger.addEventListener('click', () => {
+      const vEl = (vjsPlayer && vjsPlayer.tech_ && vjsPlayer.tech_.el_) 
+        ? vjsPlayer.tech_.el_ 
+        : document.querySelector('.player-container video');
+      if (window.FilmZillaRoulette && typeof window.FilmZillaRoulette.togglePiP === 'function') {
+        window.FilmZillaRoulette.togglePiP(vEl);
+      }
+    });
   }
 }
 

@@ -295,6 +295,23 @@
   </div>
 </section>
 
+<!-- ========== 1.5 FOR YOU RECOMMENDATIONS (Personalized Algorithmic Shelf) ========== -->
+<section class="section for-you-section" id="for-you-section" aria-label="Personalized Recommendations" style="display:none">
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <h2 class="section-title" id="for-you-title"><i class="fa-solid fa-bullseye" style="color:var(--accent)"></i> Top Picks For You</h2>
+      <span class="section-badge-count" id="for-you-count">Curated</span>
+    </div>
+  </div>
+  <div class="carousel-wrap">
+    <button class="carousel-arrow left" type="button" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="carousel-track for-you-track" id="for-you-track" role="list">
+      <!-- Injected by app.js -->
+    </div>
+    <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</section>
+
 <!-- ========== 2. ALL MOVIES (Curated 3-4 Row Showcase with Interactive Genre Filters) ========== -->
 <section class="section movies-showcase-section" id="movies-showcase-section" aria-label="All Movies Showcase">
   <div class="section-header">
@@ -548,9 +565,16 @@
   <a href="https://t.me/Filmsinhala200Bot" target="_blank" rel="noopener"><i class="fa-brands fa-telegram"></i><span>Telegram</span></a>
 </nav>
 
+<!-- Floating 3D Cinema Roulette FAB (Surprise Me) -->
+<button type="button" class="fab-roulette" id="fab-roulette" title="Surprise Me (Cinema Roulette)" aria-label="Surprise Me">
+  <i class="fa-solid fa-dice"></i>
+  <span class="fab-roulette-tooltip">Surprise Me!</span>
+</button>
+
 <!-- Scripts -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="assets/js/user-state.js?v=20261117_user_state_v1"></script>
+<script src="assets/js/roulette.js?v=20261117_roulette_v1"></script>
 <script src="data/movies_data.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/app.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/netflix-ui.js?v=20261116_modern_top10_spotlight_v40"></script>

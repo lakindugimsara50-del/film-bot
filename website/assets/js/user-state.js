@@ -95,9 +95,13 @@
           given_name: `Guest #${randId}`,
           email: '',
           picture: _createGuestAvatar(`G${randId}`),
+          avatar: _createGuestAvatar(`G${randId}`),
           createdAt: Date.now()
         };
         _set(STORAGE_KEYS.PROFILE, profile);
+      }
+      if (profile && !profile.avatar && profile.picture) {
+        profile.avatar = profile.picture;
       }
       return profile;
     },
@@ -380,7 +384,8 @@
         duration: Math.round(duration || 0),
         isCompleted: Boolean(isCompleted),
         genres: Array.isArray(movie.genres) ? movie.genres : [],
-        watchedAt: Date.now()
+        watchedAt: Date.now(),
+        timestamp: Date.now()
       };
 
       list.unshift(entry);
@@ -484,8 +489,9 @@
       enrolled.forEach(sub => {
         const found = allMoviesList.find(m => m.id === sub.id || m.slug === sub.slug);
         if (found) {
+          const q = (found.quality || '').toLowerCase();
           const qualityUpgraded = (sub.currentQuality.toLowerCase().includes('cam') || sub.currentQuality === '480p') &&
-                                  (found.quality === '1080p' || found.quality === '720p' || found.quality === 'HD');
+                                  (q.includes('1080p') || q.includes('720p') || q.includes('hd') || q.includes('web-dl') || q.includes('bluray'));
           const subAdded = !sub.hasSinhalaSub && Boolean(found.has_sinhala_sub);
 
           if (qualityUpgraded || subAdded) {
@@ -515,14 +521,27 @@
   };
 
   // Expose as global FilmZilla User API
+  Favorites.getCount = () => Favorites.count();
+  WatchLater.getCount = () => WatchLater.count();
+  Affinity.get = () => Affinity.getScores();
+  Radar.track = (movie) => Radar.toggle(movie);
+  Radar.checkUpgrade = (movie) => {
+    const res = Radar.checkUpdates([movie]);
+    return { upgraded: res.length > 0, details: res[0] || null };
+  };
+
   window.FilmSubUser = window.FZUser = {
     Profile,
     Favorites,
     WatchLater,
     ContinueWatching,
     WatchHistory,
+    History: WatchHistory,
     Affinity,
     Radar,
+    ReleaseRadar: Radar,
+    getUser: () => Profile.get(),
+    getGenreAffinity: () => Affinity.get(),
     STORAGE_KEYS
   };
 

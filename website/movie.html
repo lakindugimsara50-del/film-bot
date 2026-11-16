@@ -47,6 +47,7 @@
   <link rel="stylesheet" href="assets/css/style.css?v=20261116_netflix_cinematic_hero_v37">
   <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261116_silky_60fps_hero_transition_v35">
   <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261116_silky_60fps_hero_transition_v35">
+  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261117_watch_party_v1">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -819,6 +820,37 @@
             <!-- Populated dynamically by player.js with 1080p, 720p, 480p -->
           </div>
         </div>
+
+        <!-- Live Quick Emoji Reactions & Watch Party Action Bar -->
+        <div class="cs-player-engagement-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 18px;background:rgba(20,20,25,0.7);border-top:1px solid rgba(255,255,255,0.08);border-radius:0 0 14px 14px">
+          <div class="cs-reaction-bar" id="cs-reaction-bar">
+            <span style="font-size:12px;font-weight:700;color:#94a3b8;margin-right:4px">Reaction:</span>
+            <button type="button" class="cs-react-btn" data-reaction="fire" title="Masterpiece!">
+              <span class="react-emoji">🔥</span>
+              <span class="react-count" id="count-fire">0</span>
+            </button>
+            <button type="button" class="cs-react-btn" data-reaction="mindblown" title="Mind Blown!">
+              <span class="react-emoji">🤯</span>
+              <span class="react-count" id="count-mindblown">0</span>
+            </button>
+            <button type="button" class="cs-react-btn" data-reaction="popcorn" title="Fun Watch!">
+              <span class="react-emoji">🍿</span>
+              <span class="react-count" id="count-popcorn">0</span>
+            </button>
+            <button type="button" class="cs-react-btn" data-reaction="sleep" title="Boring">
+              <span class="react-emoji">😴</span>
+              <span class="react-count" id="count-sleep">0</span>
+            </button>
+          </div>
+          <div class="cs-player-engagement-actions" style="display:flex;align-items:center;gap:10px">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-watch-party-trigger" style="font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg, rgba(138,43,226,0.3) 0%, rgba(229,9,20,0.3) 100%);border:1px solid rgba(138,43,226,0.6);color:#fff">
+              <i class="fa-solid fa-users-viewfinder" style="color:#c084fc"></i> Start Watch Party
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-pip-trigger" style="font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px" title="Picture-in-Picture">
+              <i class="fa-solid fa-clone"></i> PiP
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1047,12 +1079,15 @@
 
 <!-- Scripts -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 <script src="assets/js/user-state.js?v=20261117_user_state_v1"></script>
 <script src="data/movies_data.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="data/stream_endpoint.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/app.js?v=20261116_silky_60fps_hero_transition_v35"></script>
 <script src="assets/js/download.js?v=20261116_silky_60fps_hero_transition_v35"></script>
+<script src="assets/js/roulette.js?v=20261117_roulette_v1"></script>
+<script src="assets/js/watch-party.js?v=20261117_watch_party_v1"></script>
 <script src="assets/js/player.js?v=20261116_silky_60fps_hero_transition_v35"></script>
 <script src="assets/js/netflix-ui.js?v=20261116_silky_60fps_hero_transition_v35"></script>
 </body>

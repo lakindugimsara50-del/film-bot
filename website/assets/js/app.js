@@ -37,6 +37,7 @@ function renderAllSections() {
   }
   if (document.getElementById('continue-track')) renderContinueWatchingShelf();
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
+  if (document.getElementById('for-you-track')) renderForYouShelf();
   if (document.getElementById('all-movies-grid')) initMoviesShowcaseGrid();
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
   if (document.getElementById('tv-series-track')) renderCarousel('tv-series-track', getAllTVSeries(), { isTrending: false });
@@ -2230,6 +2231,46 @@ function renderContinueWatchingShelf() {
       }
     });
   }
+}
+
+// ---- Personalized Recommendations Shelf ("For You") ----
+function renderForYouShelf() {
+  const section = document.getElementById('for-you-section');
+  const track = document.getElementById('for-you-track');
+  const titleEl = document.getElementById('for-you-title');
+  if (!section || !track) return;
+
+  const allM = (typeof allMovies !== 'undefined' && allMovies.length > 0) ? allMovies : (window.FILMSUB_DATA?.movies || []);
+  if (!allM || allM.length === 0) return;
+
+  let topGenres = [];
+  if (window.FilmSubUser && typeof window.FilmSubUser.Affinity?.getTopGenres === 'function') {
+    topGenres = window.FilmSubUser.Affinity.getTopGenres(2);
+  }
+
+  // Fallback to Action & Sci-Fi if user is fresh
+  if (!topGenres || topGenres.length === 0) {
+    topGenres = ['action', 'sci-fi'];
+  }
+
+  const matched = allM.filter(m => {
+    if (!m || !Array.isArray(m.genres)) return false;
+    return m.genres.some(g => topGenres.includes(String(g).toLowerCase()));
+  });
+
+  const catalog = groupSeriesCatalog(matched.length > 5 ? matched : allM).slice(0, 10);
+  if (catalog.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  if (titleEl) {
+    const formattedGenres = topGenres.map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(' & ');
+    titleEl.innerHTML = `<i class="fa-solid fa-bullseye" style="color:var(--accent)"></i> Top Picks For You (${formattedGenres})`;
+  }
+
+  track.innerHTML = catalog.map(m => generateMovieCard(m)).join('');
 }
 
 // ---- User Profile, Dropdown & Lists Manager ----

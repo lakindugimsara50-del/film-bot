@@ -21607,7 +21607,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T13:24:28Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "onslaught-2026",
+      "slug": "onslaught-2026",
+      "title": "Onslaught",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.6",
+      "rating": "5.6",
+      "imdb_id": "tt32268691",
+      "tmdb_id": "1284046",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/eAs7G3yFaULpfwfVdGvPo5HmFJS.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/eAs7G3yFaULpfwfVdGvPo5HmFJS.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/pmPXXniQlb4EdYY0gVZO90rf54F.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/pmPXXniQlb4EdYY0gVZO90rf54F.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/AMLCbpM1fRQ",
+      "trailer_id": "AMLCbpM1fRQ",
+      "genres": [
+        "Action",
+        "Thriller",
+        "Horror"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "92 min",
+      "description": "When a rogue squad of genetically engineered super soldiers break loose in the desert, a badass Army sniper must unleash hell to protect her young daughter.",
+      "director": "Adam Wingard",
+      "cast": [
+        {
+          "name": "Adria Arjona",
+          "character": "Celeste"
+        },
+        {
+          "name": "Dan Stevens",
+          "character": "Hans Kammler"
+        },
+        {
+          "name": "Eric Wareheim",
+          "character": "Kovacks"
+        },
+        {
+          "name": "Reginald VelJohnson",
+          "character": "Josiah"
+        },
+        {
+          "name": "Michael Biehn",
+          "character": "Baylor"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzxq-wd8JFOz-GmSyFe6W9_au4-bRwACHCAAAqHv2Vfq3aDCGj6kBx4E",
+      "message_id": 828,
+      "file_name": "comp_onslaught-2026_1080p.mp4",
+      "file_size": 2024811323,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzxq-wd8JFOz-GmSyFe6W9_au4-bRwACHCAAAqHv2Vfq3aDCGj6kBx4E",
+          "message_id": 828,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1284046"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32268691"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32268691"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/827",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/826"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2024811323,
+          "url": "https://t.me/c/4325759505/828",
+          "telegram_url": "https://t.me/c/4325759505/828",
+          "direct_url": "/stream/channel/-1004325759505/828?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzxq-wd8JFOz-GmSyFe6W9_au4-bRwACHCAAAqHv2Vfq3aDCGj6kBx4E",
+          "message_id": 828,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1195190713,
+          "url": "https://t.me/c/4325759505/827",
+          "telegram_url": "https://t.me/c/4325759505/827",
+          "direct_url": "/stream/channel/-1004325759505/827?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAztq-wcglh1DfdB9-UxRlwj5AAHZs8YAAhcgAAKh79lXijaSUZd0WZAeBA",
+          "message_id": 827,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/827",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "610.3 MB",
+          "size_bytes": 639938883,
+          "url": "https://t.me/c/4325759505/826",
+          "telegram_url": "https://t.me/c/4325759505/826",
+          "direct_url": "/stream/channel/-1004325759505/826?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzpq-wbK3ufM_HQ_9t6mVdg8bJxRXwACESAAAqHv2VcUZkzO8ezIXh4E",
+          "message_id": 826,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/826",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2024811323,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_onslaught-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1195190713,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_onslaught-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/827",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "610.3 MB",
+          "size_bytes": 639938883,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_onslaught-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/826",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzxq-wd8JFOz-GmSyFe6W9_au4-bRwACHCAAAqHv2Vfq3aDCGj6kBx4E",
+          "message_id": 828,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/828",
+          "size_bytes": 2024811323
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAztq-wcglh1DfdB9-UxRlwj5AAHZs8YAAhcgAAKh79lXijaSUZd0WZAeBA",
+          "message_id": 827,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/827",
+          "size_bytes": 1195190713
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzpq-wbK3ufM_HQ_9t6mVdg8bJxRXwACESAAAqHv2VcUZkzO8ezIXh4E",
+          "message_id": 826,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/826",
+          "size_bytes": 639938883
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/onslaught-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=onslaught-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T13:39:22Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T13:24:30Z"
+  "last_updated": "2026-11-16T13:39:24Z"
 };

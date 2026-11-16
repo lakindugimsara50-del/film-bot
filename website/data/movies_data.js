@@ -21835,7 +21835,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T13:39:22Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "spider-man-brand-new-day-2026",
+      "slug": "spider-man-brand-new-day-2026",
+      "title": "Spider-Man: Brand New Day",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "8.5",
+      "rating": "8.5",
+      "imdb_id": "tt22084616",
+      "tmdb_id": "969681",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/bjiS5ipwxb9JFy3XRRN4OAilSeX.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/bjiS5ipwxb9JFy3XRRN4OAilSeX.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4tjxYg2AbOzzG9G1YuiT2NzYhlH.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4tjxYg2AbOzzG9G1YuiT2NzYhlH.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/P3uI5sLosKU",
+      "trailer_id": "P3uI5sLosKU",
+      "genres": [
+        "Science Fiction",
+        "Action",
+        "Adventure"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "145 min",
+      "description": "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation might also be the only thing that can stop a shocking new threat to the city and those he loves - a powerful villain no one can even see.",
+      "director": "Destin Daniel Cretton",
+      "cast": [
+        {
+          "name": "Tom Holland",
+          "character": "Peter Parker / Spider-Man"
+        },
+        {
+          "name": "Sadie Sink",
+          "character": "Jean Grey"
+        },
+        {
+          "name": "Tramell Tillman",
+          "character": "William 'Bill' Metzger"
+        },
+        {
+          "name": "Zendaya",
+          "character": "MJ"
+        },
+        {
+          "name": "Jacob Batalon",
+          "character": "Ned Leeds"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0Bq-wxLo_earHpz_HT1kSYO3JiGsgACayAAAqHv2VdY93GLqZDlox4E",
+      "message_id": 832,
+      "file_name": "comp_spider-man-brand-new-day-2026_1080p.mp4",
+      "file_size": 2052518971,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0Bq-wxLo_earHpz_HT1kSYO3JiGsgACayAAAqHv2VdY93GLqZDlox4E",
+          "message_id": 832,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/969681"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt22084616"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt22084616"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/831",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/830"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2052518971,
+          "url": "https://t.me/c/4325759505/832",
+          "telegram_url": "https://t.me/c/4325759505/832",
+          "direct_url": "/stream/channel/-1004325759505/832?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0Bq-wxLo_earHpz_HT1kSYO3JiGsgACayAAAqHv2VdY93GLqZDlox4E",
+          "message_id": 832,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1859977737,
+          "url": "https://t.me/c/4325759505/831",
+          "telegram_url": "https://t.me/c/4325759505/831",
+          "direct_url": "/stream/channel/-1004325759505/831?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAz9q-wwKyCjQoRqj6MY-z5GP15FmIgACaCAAAqHv2VcYqktgVgiWjh4E",
+          "message_id": 831,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/831",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "957.4 MB",
+          "size_bytes": 1003913284,
+          "url": "https://t.me/c/4325759505/830",
+          "telegram_url": "https://t.me/c/4325759505/830",
+          "direct_url": "/stream/channel/-1004325759505/830?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAz5q-wucdrlRY0RaX97KiB9M7ULcfAACYCAAAqHv2VfRiu58pRnnyx4E",
+          "message_id": 830,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/830",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2052518971,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1859977737,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/831",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "957.4 MB",
+          "size_bytes": 1003913284,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_spider-man-brand-new-day-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/830",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0Bq-wxLo_earHpz_HT1kSYO3JiGsgACayAAAqHv2VdY93GLqZDlox4E",
+          "message_id": 832,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/832",
+          "size_bytes": 2052518971
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAz9q-wwKyCjQoRqj6MY-z5GP15FmIgACaCAAAqHv2VcYqktgVgiWjh4E",
+          "message_id": 831,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/831",
+          "size_bytes": 1859977737
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAz5q-wucdrlRY0RaX97KiB9M7ULcfAACYCAAAqHv2VfRiu58pRnnyx4E",
+          "message_id": 830,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/830",
+          "size_bytes": 1003913284
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/spider-man-brand-new-day-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=spider-man-brand-new-day-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T13:59:49Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T13:39:24Z"
+  "last_updated": "2026-11-16T13:59:51Z"
 };

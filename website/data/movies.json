@@ -20245,7 +20245,234 @@
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T11:14:52Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-india-story-2026",
+      "slug": "the-india-story-2026",
+      "title": "The India Story",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "0.0",
+      "rating": "0.0",
+      "imdb_id": "tt35323618",
+      "tmdb_id": "1682974",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/ocasYrRgkfKBdabKNPl8ttZuu7x.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/ocasYrRgkfKBdabKNPl8ttZuu7x.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4TtfVgg7GHiYFtlIiEjZ3JHTz4S.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4TtfVgg7GHiYFtlIiEjZ3JHTz4S.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Pci6yErjwt0",
+      "trailer_id": "Pci6yErjwt0",
+      "genres": [
+        "Drama",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "130 min",
+      "description": "A community confronts the devastating impact of pesticide contamination as industrial negligence threatens public health. The fight for accountability exposes systemic failures in regulatory oversight and corporate responsibility.",
+      "director": "Chettan D K",
+      "cast": [
+        {
+          "name": "Kajal Aggarwal",
+          "character": ""
+        },
+        {
+          "name": "Shreyas Talpade",
+          "character": ""
+        },
+        {
+          "name": "Murali Sharma",
+          "character": ""
+        },
+        {
+          "name": "Manish Wadhwa",
+          "character": ""
+        },
+        {
+          "name": "Sham Mashalkar",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyRq-unthFXXFJjHv3f8ZSax3FlO6AACWh8AAqHv2Vfecbxqtdxtwx4E",
+      "message_id": 804,
+      "file_name": "comp_the-india-story-2026_1080p.mp4",
+      "file_size": 2043528276,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyRq-unthFXXFJjHv3f8ZSax3FlO6AACWh8AAqHv2Vfecbxqtdxtwx4E",
+          "message_id": 804,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1682974"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt35323618"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt35323618"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/803",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/802"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2043528276,
+          "url": "https://t.me/c/4325759505/804",
+          "telegram_url": "https://t.me/c/4325759505/804",
+          "direct_url": "/stream/channel/-1004325759505/804?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyRq-unthFXXFJjHv3f8ZSax3FlO6AACWh8AAqHv2Vfecbxqtdxtwx4E",
+          "message_id": 804,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.6 GB",
+          "size_bytes": 1665119211,
+          "url": "https://t.me/c/4325759505/803",
+          "telegram_url": "https://t.me/c/4325759505/803",
+          "direct_url": "/stream/channel/-1004325759505/803?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyNq-um4iHA_oJT-eJL7P8Zf4ynHoQACWR8AAqHv2VezUVOBkfqQ-x4E",
+          "message_id": 803,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/803",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "845.8 MB",
+          "size_bytes": 886861225,
+          "url": "https://t.me/c/4325759505/802",
+          "telegram_url": "https://t.me/c/4325759505/802",
+          "direct_url": "/stream/channel/-1004325759505/802?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyJq-uk0bA1byPL3e2etoSmvAAG6q-oAAlcfAAKh79lX9qOtAr3KaKYeBA",
+          "message_id": 802,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/802",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2043528276,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-india-story-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.6 GB",
+          "size_bytes": 1665119211,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-india-story-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/803",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "845.8 MB",
+          "size_bytes": 886861225,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-india-story-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/802",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyRq-unthFXXFJjHv3f8ZSax3FlO6AACWh8AAqHv2Vfecbxqtdxtwx4E",
+          "message_id": 804,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/804",
+          "size_bytes": 2043528276
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyNq-um4iHA_oJT-eJL7P8Zf4ynHoQACWR8AAqHv2VezUVOBkfqQ-x4E",
+          "message_id": 803,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/803",
+          "size_bytes": 1665119211
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAyJq-uk0bA1byPL3e2etoSmvAAG6q-oAAlcfAAKh79lX9qOtAr3KaKYeBA",
+          "message_id": 802,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/802",
+          "size_bytes": 886861225
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-india-story-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-india-story-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T11:33:13Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T11:14:54Z"
+  "last_updated": "2026-11-16T11:33:15Z"
 }

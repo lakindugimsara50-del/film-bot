@@ -806,6 +806,11 @@
 
           <!-- Video Player Container (Pure Cinema Frame - Zero Tech Loading Clutter) -->
           <div class="player-container" id="video-player-container">
+            <!-- Floating PiP Corner Button inside the Video Player Frame -->
+            <button type="button" class="cs-video-pip-corner-btn" id="cs-video-pip-corner-btn" title="Pop out into Picture-in-Picture (P)">
+              <i class="fa-solid fa-clone"></i>
+              <span>PiP</span>
+            </button>
             <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#000000">
               <div class="netflix-pulse-spinner">
                 <div class="netflix-pulse-ring"></div>
@@ -827,23 +832,27 @@
 
               <div class="cs-bar-divider"></div>
 
-              <!-- Compact Horizontal Live Emoji Reactions Capsule -->
+              <!-- Compact Horizontal Live Emoji Reactions Capsule with 3D Glossy Emojis -->
               <div class="cs-reactions-capsule" id="cs-reaction-bar" title="Live Quick Reactions">
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="fire" title="Masterpiece 🔥">
-                  <span class="react-emoji">🔥</span>
+                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" alt="Fire" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-fire">0</span>
                 </button>
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="mindblown" title="Mind Blown 🤯">
-                  <span class="react-emoji">🤯</span>
+                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-mindblown">0</span>
                 </button>
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="popcorn" title="Fun Watch 🍿">
-                  <span class="react-emoji">🍿</span>
+                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Popcorn" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-popcorn">0</span>
                 </button>
-                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="sleep" title="Boring 😴">
-                  <span class="react-emoji">😴</span>
-                  <span class="react-count" id="count-sleep">0</span>
+                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="angry" title="Angry / Intense 😡">
+                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Angry%20face/3D/angry_face_3d.png" alt="Angry" class="react-3d-emoji" loading="lazy">
+                  <span class="react-count" id="count-angry">0</span>
+                </button>
+                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="heart" title="Love it ❤️">
+                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" alt="Love" class="react-3d-emoji" loading="lazy">
+                  <span class="react-count" id="count-heart">0</span>
                 </button>
               </div>
             </div>
@@ -864,12 +873,6 @@
               <button type="button" class="cs-bar-btn cs-btn-later" id="movie-later-btn" title="Save to Watch Later">
                 <i class="fa-regular fa-clock" style="color:#00b4d8"></i>
                 <span>Watch Later</span>
-              </button>
-
-              <!-- Picture-in-Picture (PiP) Button -->
-              <button type="button" class="cs-bar-btn" id="btn-pip-trigger" title="Picture-in-Picture (P)">
-                <i class="fa-solid fa-clone"></i>
-                <span>PiP</span>
               </button>
 
               <!-- Share Button -->

@@ -2360,6 +2360,16 @@ function initUserUI() {
   }
 
   // Drawer buttons
+  const linkDrawerCont = document.getElementById('link-drawer-continue');
+  if (linkDrawerCont && !linkDrawerCont._bound) {
+    linkDrawerCont._bound = true;
+    linkDrawerCont.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (profileDrawer) profileDrawer.classList.remove('open');
+      openUserListModal('continue');
+    });
+  }
+
   const btnDrawerFav = document.getElementById('btn-drawer-favorites');
   if (btnDrawerFav && !btnDrawerFav._bound) {
     btnDrawerFav._bound = true;
@@ -2445,78 +2455,324 @@ function initUserUI() {
   window.addEventListener('fz:continue-changed', renderContinueWatchingShelf);
 }
 
-// ---- Open User List Modal (Favorites, Watch Later, History) ----
-function openUserListModal(type = 'favorites') {
+// ---- World-Class VIP Cinema Collection Hub (User Profile & Library Modal) ----
+function formatVipTime(sec) {
+  if (!sec || isNaN(sec)) return '0:00';
+  sec = Math.round(sec);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    return `${h}h ${rm}m`;
+  }
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function openUserListModal(initialTab = 'favorites') {
   let modal = document.getElementById('user-list-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'user-list-modal';
     modal.className = 'user-list-modal-backdrop';
     modal.innerHTML = `
-      <div class="user-list-modal-dialog">
-        <div class="user-list-modal-header">
-          <h3 id="user-list-modal-title"><i class="fa-solid fa-heart" style="color:#ff3366"></i> My Favorites</h3>
-          <button type="button" class="user-list-modal-close" aria-label="Close">&times;</button>
+      <div class="user-list-modal-dialog vip-cinema-hub-dialog">
+        <!-- VIP Cinema Pass Banner Header -->
+        <div class="vip-hub-header">
+          <div class="vip-hub-profile-row">
+            <div class="vip-hub-avatar-wrap">
+              <img src="" alt="User" class="vip-hub-avatar" id="vip-hub-avatar">
+              <span class="vip-hub-halo"></span>
+            </div>
+            <div class="vip-hub-meta">
+              <div class="vip-hub-name-wrap">
+                <h3 class="vip-hub-name" id="vip-hub-name">Loading...</h3>
+                <button type="button" class="vip-hub-edit-btn" id="vip-hub-edit-btn" title="Edit Profile Name">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
+              <div class="vip-hub-badge-row">
+                <span class="vip-hub-badge vip-gold" id="vip-hub-status-badge">
+                  <i class="fa-solid fa-crown"></i> VIP Cinema Pass
+                </span>
+                <span class="vip-hub-badge vip-sync" id="vip-hub-sync-badge">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Local & Synced
+                </span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="user-list-modal-close" id="vip-hub-close-btn" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <div class="user-list-modal-body" id="user-list-modal-body">
+
+        <!-- Real-Time Cinema Navigation Tabs -->
+        <div class="vip-hub-tabs-nav" id="vip-hub-tabs-nav" role="tablist">
+          <button type="button" class="vip-tab-btn" data-tab="favorites" role="tab">
+            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" class="tab-3d-icon" alt="Heart">
+            <span>Favorites</span>
+            <span class="vip-tab-count" id="vip-count-favorites">0</span>
+          </button>
+          <button type="button" class="vip-tab-btn" data-tab="watchlater" role="tab">
+            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" class="tab-3d-icon" alt="Watch Later">
+            <span>Watch Later</span>
+            <span class="vip-tab-count" id="vip-count-watchlater">0</span>
+          </button>
+          <button type="button" class="vip-tab-btn" data-tab="continue" role="tab">
+            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" class="tab-3d-icon" alt="Continue">
+            <span>Continue Watching</span>
+            <span class="vip-tab-count" id="vip-count-continue">0</span>
+          </button>
+          <button type="button" class="vip-tab-btn" data-tab="history" role="tab">
+            <i class="fa-solid fa-clock-rotate-left tab-history-icon"></i>
+            <span>History</span>
+            <span class="vip-tab-count" id="vip-count-history">0</span>
+          </button>
+        </div>
+
+        <!-- Tab Toolbar (Counter & Clear Action) -->
+        <div class="vip-hub-toolbar">
+          <div class="vip-hub-toolbar-info" id="vip-hub-toolbar-info">Showing collection</div>
+          <div class="vip-hub-toolbar-actions">
+            <button type="button" class="vip-clear-btn" id="vip-hub-clear-btn" style="display:none">
+              <i class="fa-solid fa-trash-can"></i> Clear List
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Collection Grid / List Body -->
+        <div class="user-list-modal-body vip-hub-body" id="user-list-modal-body">
           <!-- Dynamically injected items -->
         </div>
       </div>
     `;
     document.body.appendChild(modal);
 
-    modal.querySelector('.user-list-modal-close').addEventListener('click', () => {
+    // Close handlers
+    modal.querySelector('#vip-hub-close-btn').addEventListener('click', () => {
       modal.classList.remove('open');
     });
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('open');
     });
+
+    // Wire edit nickname button
+    modal.querySelector('#vip-hub-edit-btn').addEventListener('click', () => {
+      const current = window.FilmSubUser.Profile.get();
+      const newName = prompt('Enter custom profile name / nickname:', current.isGuest ? (current.name.startsWith('Guest #') ? '' : current.name) : current.name);
+      if (newName && newName.trim()) {
+        window.FilmSubUser.Profile.setCustomName(newName.trim());
+        if (typeof showToast === 'function') showToast(`Profile name updated to "${newName.trim()}"! 👋`);
+        renderVipHeader();
+      }
+    });
+
+    // Tab buttons click
+    modal.querySelectorAll('.vip-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        switchVipTab(tab);
+      });
+    });
+
+    // Clear list action
+    modal.querySelector('#vip-hub-clear-btn').addEventListener('click', () => {
+      const activeTab = modal.dataset.currentTab || 'favorites';
+      if (activeTab === 'history') {
+        if (confirm('Clear all your watch history?')) {
+          window.FilmSubUser.WatchHistory.clear();
+          switchVipTab('history');
+          if (typeof showToast === 'function') showToast('Watch history cleared! 🧹');
+        }
+      } else if (activeTab === 'continue') {
+        if (confirm('Clear all continue watching progress?')) {
+          window.FilmSubUser.ContinueWatching.clear();
+          switchVipTab('continue');
+          if (typeof showToast === 'function') showToast('Continue watching progress cleared! 🧹');
+        }
+      } else if (activeTab === 'favorites') {
+        if (confirm('Clear your favorites list?')) {
+          window.FilmSubUser.Favorites.clear();
+          switchVipTab('favorites');
+          if (typeof showToast === 'function') showToast('Favorites list cleared! 🧹');
+        }
+      } else if (activeTab === 'watchlater') {
+        if (confirm('Clear your watch later queue?')) {
+          window.FilmSubUser.WatchLater.clear();
+          switchVipTab('watchlater');
+          if (typeof showToast === 'function') showToast('Watch later queue cleared! 🧹');
+        }
+      }
+    });
   }
 
-  const titleEl = document.getElementById('user-list-modal-title');
-  const bodyEl = document.getElementById('user-list-modal-body');
-  if (!titleEl || !bodyEl || !window.FilmSubUser) return;
+  function renderVipHeader() {
+    if (!window.FilmSubUser) return;
+    const profile = window.FilmSubUser.Profile.get();
+    const avatarEl = document.getElementById('vip-hub-avatar');
+    const nameEl = document.getElementById('vip-hub-name');
+    const statusBadge = document.getElementById('vip-hub-status-badge');
+    const syncBadge = document.getElementById('vip-hub-sync-badge');
 
-  let items = [];
-  if (type === 'favorites') {
-    titleEl.innerHTML = '<i class="fa-solid fa-heart" style="color:#ff3366"></i> My Favorites';
-    items = window.FilmSubUser.Favorites.getAll();
-  } else if (type === 'watchlater') {
-    titleEl.innerHTML = '<i class="fa-solid fa-clock" style="color:#00b4d8"></i> Watch Later Queue';
-    items = window.FilmSubUser.WatchLater.getAll();
-  } else if (type === 'history') {
-    titleEl.innerHTML = '<i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i> Watch History';
-    items = window.FilmSubUser.WatchHistory.getAll();
+    if (avatarEl) avatarEl.src = profile.picture || '';
+    if (nameEl) nameEl.textContent = profile.name || 'Cinema Fan';
+
+    if (statusBadge) {
+      statusBadge.innerHTML = profile.isGuest 
+        ? '<i class="fa-solid fa-crown" style="color:#ffd700"></i> VIP Guest Cinema Pass' 
+        : '<i class="fa-brands fa-google" style="color:#4285f4"></i> Verified Google Member';
+    }
+
+    if (syncBadge) {
+      syncBadge.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#10b981"></i> Cloud Synced';
+    }
+
+    // Update Tab Counters
+    const favCount = window.FilmSubUser.Favorites.count();
+    const laterCount = window.FilmSubUser.WatchLater.count();
+    const contCount = window.FilmSubUser.ContinueWatching.getAll().length;
+    const histCount = window.FilmSubUser.WatchHistory.getAll().length;
+
+    const cfEl = document.getElementById('vip-count-favorites');
+    const clEl = document.getElementById('vip-count-watchlater');
+    const ccEl = document.getElementById('vip-count-continue');
+    const chEl = document.getElementById('vip-count-history');
+
+    if (cfEl) cfEl.textContent = favCount;
+    if (clEl) clEl.textContent = laterCount;
+    if (ccEl) ccEl.textContent = contCount;
+    if (chEl) chEl.textContent = histCount;
   }
 
-  if (items.length === 0) {
+  function switchVipTab(tab) {
+    modal.dataset.currentTab = tab;
+    modal.querySelectorAll('.vip-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+
+    renderVipHeader();
+
+    const bodyEl = document.getElementById('user-list-modal-body');
+    const toolbarInfo = document.getElementById('vip-hub-toolbar-info');
+    const clearBtn = document.getElementById('vip-hub-clear-btn');
+    if (!bodyEl) return;
+
+    let items = [];
+    let emptyTitle = 'No movies saved here yet';
+    let emptySub = 'Explore movies and tap the button to add them!';
+
+    if (tab === 'favorites') {
+      items = window.FilmSubUser.Favorites.getAll();
+      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> Favorite Movies in collection</span>`;
+      emptyTitle = 'කැමතිම චිත්‍රපට තවම නැත';
+      emptySub = 'චිත්‍රපටයක ඇති ❤️ Heart අයිකනය ඔබා මෙහි සුරැකීමට හැකිය.';
+      if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+    } else if (tab === 'watchlater') {
+      items = window.FilmSubUser.WatchLater.getAll();
+      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> Movies queued for later</span>`;
+      emptyTitle = 'පස්සේ බලන්න දැමූ චිත්‍රපට තවම නැත';
+      emptySub = 'චිත්‍රපටයක ඇති ⏱️ Watch Later ඔබා විවේකීව නැරඹීමට මෙහි සුරකින්න.';
+      if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+    } else if (tab === 'continue') {
+      items = window.FilmSubUser.ContinueWatching.getAll();
+      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> In-Progress Movies</span>`;
+      emptyTitle = 'නැවතු තැනින් නැවත බලන්න තවම චිත්‍රපට නැත';
+      emptySub = 'ඔබ නරඹමින් සිටි චිත්‍රපට නැවතු වෙලාවේ සිටම මෙතැනින් Play කළ හැක.';
+      if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+    } else if (tab === 'history') {
+      items = window.FilmSubUser.WatchHistory.getAll();
+      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> Watched Movies in history</span>`;
+      emptyTitle = 'Watch History හිස්ව ඇත';
+      emptySub = 'ඔබ නරඹන සියලුම චිත්‍රපට වෙලාවත් සමග පිළිවෙළට මෙහි සටහන් වේ.';
+      if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+    }
+
+    if (!items || items.length === 0) {
+      bodyEl.innerHTML = `
+        <div class="vip-hub-empty-state">
+          <div class="vip-empty-icon-box">
+            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Empty" class="vip-empty-3d-img">
+          </div>
+          <h4 class="vip-empty-title">${emptyTitle}</h4>
+          <p class="vip-empty-sub">${emptySub}</p>
+          <button type="button" class="vip-empty-browse-btn" onclick="document.getElementById('user-list-modal').classList.remove('open'); window.scrollTo({top: 600, behavior: 'smooth'});">
+            <i class="fa-solid fa-compass"></i> Explore Trending Movies
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    // Render Luxury Collection Cards
     bodyEl.innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:var(--text3)">
-        <i class="fa-solid fa-film" style="font-size:36px;margin-bottom:12px;opacity:0.4"></i>
-        <p style="font-size:14px;color:#94a3b8">No movies saved in this list yet.</p>
-        <p style="font-size:12px;margin-top:6px;color:#64748b">Tap the ❤️ or ⏱️ button on any movie card to add it here!</p>
+      <div class="vip-hub-cards-grid">
+        ${items.map(m => {
+          const movieId = m.id || m.slug;
+          const movieUrl = `${SITE_CONFIG.moviePage}?id=${encodeURIComponent(m.slug || m.id)}${m.currentTime ? `&resume=${m.currentTime}` : ''}`;
+          const isContinue = tab === 'continue';
+          const pct = isContinue && m.duration ? Math.min(100, Math.round((m.currentTime / m.duration) * 100)) : 0;
+          const timeLabel = isContinue && m.currentTime ? `${formatVipTime(m.currentTime)} / ${formatVipTime(m.duration)}` : '';
+
+          return `
+            <div class="vip-card-item" data-movie-id="${movieId}">
+              <a href="${movieUrl}" class="vip-card-poster-wrap">
+                <img src="${m.poster || SITE_CONFIG.defaultPoster}" alt="${m.title}" class="vip-card-poster" loading="lazy"
+                     onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
+                <span class="vip-card-rating">★ ${m.rating || '0.0'}</span>
+                ${isContinue ? `<div class="vip-card-progress-bar"><div class="vip-card-progress-fill" style="width:${pct}%"></div></div>` : ''}
+              </a>
+              <div class="vip-card-details">
+                <a href="${movieUrl}" class="vip-card-title" title="${escHtml(m.title)}">${escHtml(m.title)}</a>
+                <div class="vip-card-subinfo">
+                  <span class="vip-card-year">${m.year || 'Movie'}</span>
+                  ${timeLabel ? `<span class="vip-card-time-badge">${timeLabel} (${pct}%)</span>` : ''}
+                </div>
+                <div class="vip-card-actions-row">
+                  <a href="${movieUrl}" class="vip-card-watch-btn">
+                    <i class="fa-solid fa-play"></i> ${isContinue ? 'Resume' : 'Watch'}
+                  </a>
+                  <button type="button" class="vip-card-remove-btn" title="Remove from list" data-action-remove="${tab}" data-movie-id="${movieId}">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
-  } else {
-    bodyEl.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;max-height:65vh;overflow-y:auto;padding-right:6px">
-        ${items.map(m => `
-          <a href="${SITE_CONFIG.moviePage}?id=${encodeURIComponent(m.slug || m.id)}" class="user-modal-item-card" style="display:flex;flex-direction:column;gap:6px;text-decoration:none;border-radius:8px;overflow:hidden;background:#14141a;border:1px solid rgba(255,255,255,0.08);transition:transform 0.2s ease">
-            <div style="aspect-ratio:2/3;position:relative;background:#000">
-              <img src="${m.poster || SITE_CONFIG.defaultPoster}" alt="${m.title}" style="width:100%;height:100%;object-fit:cover" loading="lazy"
-                   onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
-              <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.75);color:#f5c518;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px">★ ${m.rating || '0.0'}</span>
-            </div>
-            <div style="padding:4px 8px 8px">
-              <p style="font-size:12px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(m.title)}</p>
-              <p style="font-size:10px;color:#94a3b8">${m.year || ''}</p>
-            </div>
-          </a>
-        `).join('')}
-      </div>
-    `;
+
+    // Wire Remove Buttons on cards
+    bodyEl.querySelectorAll('[data-action-remove]').forEach(rmBtn => {
+      rmBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rmTab = rmBtn.dataset.actionRemove;
+        const mId = rmBtn.dataset.movieId;
+        if (!mId || !window.FilmSubUser) return;
+
+        if (rmTab === 'favorites') {
+          window.FilmSubUser.Favorites.remove(mId);
+          if (typeof showToast === 'function') showToast('Removed from Favorites ❤️');
+        } else if (rmTab === 'watchlater') {
+          window.FilmSubUser.WatchLater.remove(mId);
+          if (typeof showToast === 'function') showToast('Removed from Watch Later ⏱️');
+        } else if (rmTab === 'continue') {
+          window.FilmSubUser.ContinueWatching.remove(mId);
+          if (typeof showToast === 'function') showToast('Removed from Continue Watching ⏯️');
+        } else if (rmTab === 'history') {
+          window.FilmSubUser.WatchHistory.remove(mId);
+          if (typeof showToast === 'function') showToast('Removed from Watch History 📜');
+        }
+
+        switchVipTab(rmTab);
+      });
+    });
   }
 
+  // Open & switch to requested tab
+  renderVipHeader();
+  switchVipTab(initialTab);
   modal.classList.add('open');
 }
 

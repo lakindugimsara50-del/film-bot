@@ -167,7 +167,7 @@ assert(indexHtml.includes('id="for-you-section"'), 'index.html must have for you
 assert(indexHtml.includes('id="fab-roulette"'), 'index.html must have fab roulette');
 assert(movieHtml.includes('id="cs-reaction-bar"'), 'movie.html must have reaction bar');
 assert(movieHtml.includes('id="btn-watch-party-trigger"'), 'movie.html must have watch party button');
-assert(movieHtml.includes('id="btn-pip-trigger"'), 'movie.html must have pip button');
+assert(movieHtml.includes('id="cs-video-pip-corner-btn"') || movieHtml.includes('id="btn-pip-trigger"'), 'movie.html must have pip button');
 assert(movieHtml.includes('watch-party.css'), 'movie.html must include watch-party.css');
 assert(movieHtml.includes('watch-party.js'), 'movie.html must include watch-party.js');
 

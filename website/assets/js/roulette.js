@@ -125,6 +125,16 @@
   // ---------------------------------------------------------------------
   // 2. Live Quick Emoji Reactions (Under Player)
   // ---------------------------------------------------------------------
+  const FLUENT_3D_EMOJIS = {
+    fire: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png',
+    mindblown: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png',
+    popcorn: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png',
+    angry: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Angry%20face/3D/angry_face_3d.png',
+    heart: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png',
+    laugh: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png',
+    sleep: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sleeping%20face/3D/sleeping_face_3d.png'
+  };
+
   function initLiveReactions(movieId) {
     const container = document.getElementById('cs-reaction-bar');
     if (!container || !movieId) return;
@@ -144,11 +154,13 @@
       fire: (savedState.fire ? 1 : 0) + baseCount * 3,
       mindblown: (savedState.mindblown ? 1 : 0) + Math.round(baseCount * 1.8),
       popcorn: (savedState.popcorn ? 1 : 0) + Math.round(baseCount * 2.4),
+      angry: (savedState.angry ? 1 : 0) + Math.round(baseCount * 0.9),
+      heart: (savedState.heart ? 1 : 0) + Math.round(baseCount * 2.8),
       sleep: (savedState.sleep ? 1 : 0) + Math.round(baseCount * 0.15)
     };
 
     // Update UI counters
-    ['fire', 'mindblown', 'popcorn', 'sleep'].forEach(type => {
+    ['fire', 'mindblown', 'popcorn', 'angry', 'heart', 'sleep'].forEach(type => {
       const el = document.getElementById(`count-${type}`);
       if (el) el.textContent = counts[type];
       const btn = container.querySelector(`[data-reaction="${type}"]`);
@@ -178,25 +190,39 @@
         } catch (_) {}
 
         if (newActive) {
-          // Spawn floating emoji animation
-          spawnFloatingEmoji(btn, btn.querySelector('.react-emoji')?.textContent || '🔥');
+          // Spawn luxury 3D multi-particle stream animation
+          spawnFloatingEmoji(btn, type);
         }
       });
     });
   }
 
-  function spawnFloatingEmoji(anchorBtn, emojiText) {
-    const rect = anchorBtn.getBoundingClientRect();
-    const floater = document.createElement('span');
-    floater.className = 'floating-emoji';
-    floater.textContent = emojiText;
-    floater.style.left = `${rect.left + rect.width / 2 - 14}px`;
-    floater.style.top = `${rect.top - 10}px`;
-    document.body.appendChild(floater);
+  function spawnFloatingEmoji(anchorBtn, type = 'fire') {
+    const rect = anchorBtn ? anchorBtn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 30 };
+    const src = FLUENT_3D_EMOJIS[type] || FLUENT_3D_EMOJIS.fire;
 
-    setTimeout(() => {
-      if (floater.parentNode) floater.parentNode.removeChild(floater);
-    }, 1500);
+    // Spawn 3 organic particles with randomized sway and scale
+    for (let i = 0; i < 3; i++) {
+      const particle = document.createElement('img');
+      particle.className = 'floating-3d-particle';
+      particle.src = src;
+      particle.alt = type;
+      
+      const randX = (Math.random() - 0.5) * 70; // -35px to +35px
+      const randRot = (Math.random() - 0.5) * 50; // -25deg to +25deg
+      const delay = i * 85;
+
+      particle.style.setProperty('--rand-x', `${randX}px`);
+      particle.style.setProperty('--rand-rot', `${randRot}deg`);
+      particle.style.left = `${rect.left + rect.width / 2 - 19}px`;
+      particle.style.top = `${rect.top - 15}px`;
+      particle.style.animationDelay = `${delay}ms`;
+
+      document.body.appendChild(particle);
+      setTimeout(() => {
+        if (particle.parentNode) particle.parentNode.removeChild(particle);
+      }, 1800 + delay);
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -298,6 +324,9 @@
   // 4. Native Picture-in-Picture (PiP) Mode
   // ---------------------------------------------------------------------
   async function togglePictureInPicture(videoEl) {
+    if (!videoEl) {
+      videoEl = document.querySelector('.player-container video') || document.querySelector('video');
+    }
     if (!videoEl) return;
     try {
       if (document.pictureInPictureElement) {
@@ -305,19 +334,41 @@
       } else if (document.pictureInPictureEnabled) {
         await videoEl.requestPictureInPicture();
       } else {
-        alert('Picture-in-Picture is not supported in this browser.');
+        if (typeof showToast === 'function') {
+          showToast('Picture-in-Picture is not supported in this browser.');
+        } else {
+          alert('Picture-in-Picture is not supported in this browser.');
+        }
       }
     } catch (err) {
       console.warn('PiP error:', err);
     }
   }
 
-  // Initialize global FAB listeners on DOMContentLoaded
+  // Initialize global listeners on DOMContentLoaded
   document.addEventListener('DOMContentLoaded', () => {
     const fabRoulette = document.getElementById('fab-roulette');
     if (fabRoulette) {
       fabRoulette.addEventListener('click', openRouletteModal);
     }
+
+    // Delegated click listener for PiP corner button
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#cs-video-pip-corner-btn, #btn-pip-trigger');
+      if (btn) {
+        e.preventDefault();
+        togglePictureInPicture();
+      }
+    });
+
+    // Keyboard shortcut 'P' for PiP
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'p' || e.key === 'P') {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || (document.activeElement && document.activeElement.isContentEditable)) return;
+        togglePictureInPicture();
+      }
+    });
   });
 
   // Expose Global Discovery API

@@ -217,6 +217,18 @@
 
     count() {
       return this.getAll().length;
+    },
+
+    remove(movieId) {
+      if (!movieId) return;
+      let list = this.getAll().filter(item => item.id !== movieId && item.slug !== movieId);
+      _set(STORAGE_KEYS.FAVORITES, list);
+      _emit('fz:favorites-changed', { movieId, isAdded: false, count: list.length, list });
+    },
+
+    clear() {
+      _set(STORAGE_KEYS.FAVORITES, []);
+      _emit('fz:favorites-changed', { count: 0, list: [] });
     }
   };
 
@@ -270,6 +282,18 @@
 
     count() {
       return this.getAll().length;
+    },
+
+    remove(movieId) {
+      if (!movieId) return;
+      let list = this.getAll().filter(item => item.id !== movieId && item.slug !== movieId);
+      _set(STORAGE_KEYS.WATCH_LATER, list);
+      _emit('fz:watchlater-changed', { movieId, isAdded: false, count: list.length, list });
+    },
+
+    clear() {
+      _set(STORAGE_KEYS.WATCH_LATER, []);
+      _emit('fz:watchlater-changed', { count: 0, list: [] });
     }
   };
 

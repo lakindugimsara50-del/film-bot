@@ -5486,11 +5486,11 @@ function renderMovieDetails(movie) {
     });
   }
 
-  // Wire PiP Trigger Button
-  const pipTrigger = document.getElementById('btn-pip-trigger');
-  if (pipTrigger && !pipTrigger._bound) {
-    pipTrigger._bound = true;
-    pipTrigger.addEventListener('click', () => {
+  // Wire In-Video PiP Corner Button & PiP Triggers
+  const pipCornerBtn = document.getElementById('cs-video-pip-corner-btn') || document.getElementById('btn-pip-trigger');
+  if (pipCornerBtn && !pipCornerBtn._bound) {
+    pipCornerBtn._bound = true;
+    pipCornerBtn.addEventListener('click', () => {
       const vEl = (vjsPlayer && vjsPlayer.tech_ && vjsPlayer.tech_.el_) 
         ? vjsPlayer.tech_.el_ 
         : document.querySelector('.player-container video');

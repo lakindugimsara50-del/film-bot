@@ -574,134 +574,162 @@ class CineSubzCrawler:
         client: Optional[Client] = None,
         admin_chat_id: Optional[int] = None,
         standalone: bool = False,
+        up_to_page: int = 1,
     ) -> List[Dict[str, Any]]:
         """
-        Scan Page 1 of CineSubz for newly uploaded releases that do not yet exist
+        Scan pages 1 through `up_to_page` of CineSubz for releases that do not yet exist
         in website/data/movies.json, and immediately enqueue them for leeching.
+        Ensures zero items are missed due to CineSubz page shifts or failed previous items.
         """
         eff_client = client or self._client
         eff_admin_chat_id = admin_chat_id or self._admin_chat_id
         new_items: List[Dict[str, Any]] = []
 
-        try:
-            items = await scrape_cinesubz_page(http_client, 1, section)
-            if not items:
-                return []
+        max_target = max(1, up_to_page)
+        for page_num in range(1, max_target + 1):
+            if not self._is_running and not standalone:
+                break
+            try:
+                items = await scrape_cinesubz_page(http_client, page_num, section)
+                if not items:
+                    continue
 
-            fresh_catalog = load_website_catalog()
-            for item in items:
-                if not self._is_running and not standalone:
-                    break
+                fresh_catalog = load_website_catalog()
+                for item in items:
+                    if not self._is_running and not standalone:
+                        break
 
-                item_label = f"{item['clean_title']} ({item['year']})" if item['year'] else item['clean_title']
+                    item_label = f"{item['clean_title']} ({item['year']})" if item['year'] else item['clean_title']
 
-                if section == "tvshows" or item.get("is_series"):
-                    episodes = await scrape_cinesubz_tvshow_episodes(http_client, item["url"])
-                    for ep in episodes:
-                        if not self._is_running and not standalone:
-                            break
-                        s_num, e_num = ep["season"], ep["episode"]
-                        ep_tag = f"{item['clean_title']} {ep['label']}"
+                    if section == "tvshows" or item.get("is_series"):
+                        episodes = await scrape_cinesubz_tvshow_episodes(http_client, item["url"])
+                        for ep in episodes:
+                            if not self._is_running and not standalone:
+                                break
+                            s_num, e_num = ep["season"], ep["episode"]
+                            ep_tag = f"{item['clean_title']} {ep['label']}"
+                            fresh_catalog = load_website_catalog()
+                            if is_item_in_catalog(item, fresh_catalog, season=s_num, episode=e_num):
+                                continue
+
+                            ep_norm = normalize_title(ep_tag)
+                            if ep_norm in self._enqueued_titles_or_urls:
+                                continue
+
+                            log.info("[CineSubzCrawler] 🚨 Missing TV episode detected on Page %d: %s", page_num, ep_tag)
+                            new_items.append({"title": ep_tag, "url": ep.get("url") or item.get("url")})
+                            self.total_queued += 1
+                            self.current_item_name = ep_tag
+                            self.status_detail = f"🚨 New Upload (P{page_num}): {ep_tag}"
+                            await self._update_status_msg()
+
+                            ep_url = ep.get("url") or ""
+                            ep_query = f"{ep_url} {item['clean_title']} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz" if ep_url else f"{item['clean_title']} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz"
+
+                            leech_status_msg = None
+                            if eff_client and eff_admin_chat_id:
+                                try:
+                                    leech_status_msg = await eff_client.send_message(
+                                        chat_id=eff_admin_chat_id,
+                                        text=f"🚨 <b>CineSubz Missing TV Episode Found (Page {page_num})!</b>\n"
+                                             f"📺 <b>{ep_tag}</b> පෝලිමට එක්කරමින් පවතී...",
+                                        parse_mode=ParseMode.HTML,
+                                    )
+                                except Exception as s_err:
+                                    log.debug("[CineSubzCrawler] New upload TV msg note: %s", s_err)
+
+                            if eff_client and leech_status_msg:
+                                await queue_service.add_to_queue(
+                                    client=eff_client,
+                                    status_msg=leech_status_msg,
+                                    user_id=eff_admin_chat_id,
+                                    query_text=ep_query,
+                                    title_hint=ep_tag,
+                                    auto_publish=True,
+                                )
+                            self._enqueued_titles_or_urls.add(ep_norm)
+                            self.last_completed_item = ep_tag
+                            self.save_state()
+                            await self._update_status_msg()
+                    else:
                         fresh_catalog = load_website_catalog()
-                        if is_item_in_catalog(item, fresh_catalog, season=s_num, episode=e_num):
+                        if is_item_in_catalog(item, fresh_catalog):
                             continue
 
-                        ep_norm = normalize_title(ep_tag)
-                        if ep_norm in self._enqueued_titles_or_urls:
+                        t_norm = normalize_title(item["clean_title"])
+                        if t_norm in self._enqueued_titles_or_urls:
+                            continue
+                        if item.get("url") and item["url"] in self._enqueued_titles_or_urls:
                             continue
 
-                        log.info("[CineSubzCrawler] 🚨 New TV episode detected on Page 1: %s", ep_tag)
-                        new_items.append({"title": ep_tag, "url": ep.get("url") or item.get("url")})
+                        log.info("[CineSubzCrawler] 🚨 Missing movie release detected on Page %d: %s", page_num, item_label)
+                        new_items.append(item)
                         self.total_queued += 1
-                        self.current_item_name = ep_tag
-                        self.status_detail = f"🚨 New Upload: {ep_tag}"
+                        self.current_item_name = item_label
+                        self.status_detail = f"🚨 New Upload (P{page_num}): {item_label}"
                         await self._update_status_msg()
 
-                        ep_url = ep.get("url") or ""
-                        ep_query = f"{ep_url} {item['clean_title']} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz" if ep_url else f"{item['clean_title']} S{s_num:02d}E{e_num:02d} --auto --strict-cinesubz"
+                        item_url = item.get("url") or ""
+                        if item_url:
+                            q_text = f"{item_url} {item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item_url} {item['clean_title']} --auto --strict-cinesubz"
+                        else:
+                            q_text = f"{item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item['clean_title']} --auto --strict-cinesubz"
 
                         leech_status_msg = None
                         if eff_client and eff_admin_chat_id:
                             try:
                                 leech_status_msg = await eff_client.send_message(
                                     chat_id=eff_admin_chat_id,
-                                    text=f"🚨 <b>CineSubz New TV Episode Detected!</b>\n"
-                                         f"📺 <b>{ep_tag}</b> පෝලිමට එක්කරමින් පවතී...",
+                                    text=f"🚨 <b>CineSubz Missing Movie Found (Page {page_num})!</b>\n"
+                                         f"🎬 <b>{item_label}</b> පෝලිමට එක්කරමින් පවතී...",
                                     parse_mode=ParseMode.HTML,
                                 )
                             except Exception as s_err:
-                                log.debug("[CineSubzCrawler] New upload TV msg note: %s", s_err)
+                                log.debug("[CineSubzCrawler] New upload msg note: %s", s_err)
 
                         if eff_client and leech_status_msg:
                             await queue_service.add_to_queue(
                                 client=eff_client,
                                 status_msg=leech_status_msg,
                                 user_id=eff_admin_chat_id,
-                                query_text=ep_query,
-                                title_hint=ep_tag,
+                                query_text=q_text,
+                                title_hint=item_label,
                                 auto_publish=True,
+                                imdb_id=item.get("imdb_id", ""),
                             )
-                        self._enqueued_titles_or_urls.add(ep_norm)
-                        self.last_completed_item = ep_tag
+                        self._enqueued_titles_or_urls.add(t_norm)
+                        if item.get("url"):
+                            self._enqueued_titles_or_urls.add(item["url"])
+
+                        self.last_completed_item = item_label
                         self.save_state()
                         await self._update_status_msg()
-                else:
-                    fresh_catalog = load_website_catalog()
-                    if is_item_in_catalog(item, fresh_catalog):
-                        continue
-
-                    t_norm = normalize_title(item["clean_title"])
-                    if t_norm in self._enqueued_titles_or_urls:
-                        continue
-                    if item.get("url") and item["url"] in self._enqueued_titles_or_urls:
-                        continue
-
-                    log.info("[CineSubzCrawler] 🚨 New movie release detected on Page 1: %s", item_label)
-                    new_items.append(item)
-                    self.total_queued += 1
-                    self.current_item_name = item_label
-                    self.status_detail = f"🚨 New Upload: {item_label}"
-                    await self._update_status_msg()
-
-                    item_url = item.get("url") or ""
-                    if item_url:
-                        q_text = f"{item_url} {item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item_url} {item['clean_title']} --auto --strict-cinesubz"
-                    else:
-                        q_text = f"{item['clean_title']} {item['year']} --auto --strict-cinesubz" if item["year"] else f"{item['clean_title']} --auto --strict-cinesubz"
-
-                    leech_status_msg = None
-                    if eff_client and eff_admin_chat_id:
-                        try:
-                            leech_status_msg = await eff_client.send_message(
-                                chat_id=eff_admin_chat_id,
-                                text=f"🚨 <b>CineSubz New Upload Detected!</b>\n"
-                                     f"🎬 <b>{item_label}</b> පෝලිමට එක්කරමින් පවතී...",
-                                parse_mode=ParseMode.HTML,
-                            )
-                        except Exception as s_err:
-                            log.debug("[CineSubzCrawler] New upload msg note: %s", s_err)
-
-                    if eff_client and leech_status_msg:
-                        await queue_service.add_to_queue(
-                            client=eff_client,
-                            status_msg=leech_status_msg,
-                            user_id=eff_admin_chat_id,
-                            query_text=q_text,
-                            title_hint=item_label,
-                            auto_publish=True,
-                            imdb_id=item.get("imdb_id", ""),
-                        )
-                    self._enqueued_titles_or_urls.add(t_norm)
-                    if item.get("url"):
-                        self._enqueued_titles_or_urls.add(item["url"])
-
-                    self.last_completed_item = item_label
-                    self.save_state()
-                    await self._update_status_msg()
-        except Exception as exc:
-            log.warning("[CineSubzCrawler] Error in check_and_enqueue_new_releases for %s: %s", section, exc)
+            except Exception as exc:
+                log.warning("[CineSubzCrawler] Error in check_and_enqueue_new_releases on page %d for %s: %s", page_num, section, exc)
 
         return new_items
+
+    async def on_movie_upload_success(self, movie_entry: Dict[str, Any]) -> None:
+        """
+        Hook executed after any movie is successfully uploaded and published.
+        Audits all CineSubz pages from Page 1 up to the current crawler page
+        to guarantee that no movies were missed due to new uploads shifting pages.
+        """
+        try:
+            target_page = max(1, self.current_movie_page)
+            sec = "movies" if self.mode != "tvshows" else "tvshows"
+            log.info("[CineSubzCrawler] 🔍 Post-upload audit running: Checking %s pages 1 through %d...", sec, target_page)
+            async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as http_client:
+                found = await self.check_and_enqueue_new_releases(
+                    http_client=http_client,
+                    section=sec,
+                    up_to_page=target_page,
+                    standalone=True,
+                )
+                if found:
+                    log.info("[CineSubzCrawler] 🎯 Post-upload audit discovered and enqueued %d missed releases!", len(found))
+        except Exception as exc:
+            log.debug("[CineSubzCrawler] on_movie_upload_success audit note: %s", exc)
 
     async def _crawler_worker(self) -> None:
         """Main worker loop iterating through CineSubz archive."""
@@ -751,11 +779,11 @@ class CineSubzCrawler:
                             if p < 1:
                                 break
 
-                        # Check Page 1 for new releases periodically (every 45s if p > 1)
+                        # Check Pages 1..p for new or shifted releases periodically (every 45s if p > 1)
                         if p > 1 and (time.time() - self.last_new_release_check > 45.0):
                             self.last_new_release_check = time.time()
                             try:
-                                await self.check_and_enqueue_new_releases(http_client, "movies")
+                                await self.check_and_enqueue_new_releases(http_client, "movies", up_to_page=p)
                             except Exception as pr_err:
                                 log.debug("[CineSubzCrawler] Periodic new release check note: %s", pr_err)
 
@@ -871,13 +899,13 @@ class CineSubzCrawler:
                             self.save_state()
                             await self._update_status_msg()
 
-                            # Periodic Page 1 scan for newly uploaded releases between items
-                            if p > 1 and (time.time() - self.last_new_release_check > 45.0):
+                            # Post-item verification: audit Pages 1..p after each item so no shifted movies are missed
+                            if p > 1:
                                 self.last_new_release_check = time.time()
                                 try:
-                                    await self.check_and_enqueue_new_releases(http_client, "movies")
+                                    await self.check_and_enqueue_new_releases(http_client, "movies", up_to_page=p)
                                 except Exception as pr_err:
-                                    log.debug("[CineSubzCrawler] Periodic movie new release check note: %s", pr_err)
+                                    log.debug("[CineSubzCrawler] Post-item verification note: %s", pr_err)
 
                             await asyncio.sleep(1.0)
 
@@ -914,11 +942,11 @@ class CineSubzCrawler:
                             if p < 1:
                                 break
 
-                        # Check Page 1 for new TV episodes periodically during crawl
+                        # Check Pages 1..p for new TV episodes periodically during crawl
                         if p > 1 and (time.time() - self.last_new_release_check > 45.0):
                             self.last_new_release_check = time.time()
                             try:
-                                await self.check_and_enqueue_new_releases(http_client, "tvshows")
+                                await self.check_and_enqueue_new_releases(http_client, "tvshows", up_to_page=p)
                             except Exception as pr_tv_err:
                                 log.debug("[CineSubzCrawler] Periodic TV new release check note: %s", pr_tv_err)
 
@@ -1032,13 +1060,13 @@ class CineSubzCrawler:
                                 self.save_state()
                                 await self._update_status_msg()
 
-                                # Periodic Page 1 scan for newly uploaded TV episodes between items
-                                if p > 1 and (time.time() - self.last_new_release_check > 45.0):
+                                # Post-item verification: audit Pages 1..p after each episode so no shifted episodes are missed
+                                if p > 1:
                                     self.last_new_release_check = time.time()
                                     try:
-                                        await self.check_and_enqueue_new_releases(http_client, "tvshows")
+                                        await self.check_and_enqueue_new_releases(http_client, "tvshows", up_to_page=p)
                                     except Exception as pr_tv_err:
-                                        log.debug("[CineSubzCrawler] Periodic TV new release check note: %s", pr_tv_err)
+                                        log.debug("[CineSubzCrawler] Post-episode verification note: %s", pr_tv_err)
 
                                 await asyncio.sleep(1.0)
 

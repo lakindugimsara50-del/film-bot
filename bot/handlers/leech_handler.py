@@ -864,27 +864,33 @@ def register(app: Client) -> None:
             )
             return
 
-        if subcmd in ("check", "checknew", "latest", "recent", "scan"):
-            st_msg = await message.reply_text("🔍 <b>CineSubz නව නිකුතු පරික්ෂා කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
+        if subcmd in ("check", "checknew", "latest", "recent", "scan", "audit"):
+            target_p = 1
+            if len(args) > 2 and args[2].isdigit():
+                target_p = max(1, int(args[2]))
+            else:
+                target_p = max(1, cinesubz_crawler.current_movie_page)
+
+            st_msg = await message.reply_text(f"🔍 <b>CineSubz පිටු 1 සිට {target_p} දක්වා නව නිකුතු සහ මඟහැරුණු චිත්‍රපට පරික්ෂා කරමින් පවතී...</b>", parse_mode=ParseMode.HTML)
             import httpx
             from services.cinesubz_crawler import HEADERS
             async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as hc:
                 found_new = await cinesubz_crawler.check_and_enqueue_new_releases(
-                    hc, "movies", client=client, admin_chat_id=user_id, standalone=True
+                    hc, "movies", client=client, admin_chat_id=user_id, standalone=True, up_to_page=target_p
                 )
                 found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(
-                    hc, "tvshows", client=client, admin_chat_id=user_id, standalone=True
+                    hc, "tvshows", client=client, admin_chat_id=user_id, standalone=True, up_to_page=max(1, cinesubz_crawler.current_tv_page)
                 )
             tot = len(found_new) + len(found_tv)
             if tot > 0:
                 await st_msg.edit_text(
-                    f"🎉 <b>නව නිකුතුවන් {tot}ක් සොයාගෙන පෝලිමට (Queue) එක් කරන ලදී!</b>\n\n{cinesubz_crawler.get_status_text()}",
+                    f"🎉 <b>නව / මඟහැරුණු නිකුතුවන් {tot}ක් (පිටු 1..{target_p}) සොයාගෙන පෝලිමට (Queue) එක් කරන ලදී!</b>\n\n{cinesubz_crawler.get_status_text()}",
                     parse_mode=ParseMode.HTML,
                     reply_markup=crawl_kb,
                 )
             else:
                 await st_msg.edit_text(
-                    f"✅ <b>අලුත් නිකුතු නොමැත.</b> CineSubz මුල් පිටුවේ සියලුම චිත්‍රපට දැනටමත් අපගේ වෙබ් අඩවියේ ඇත.\n\n{cinesubz_crawler.get_status_text()}",
+                    f"✅ <b>අලුත් හෝ මඟහැරුණු නිකුතු නොමැත.</b> CineSubz පිටු 1 සිට {target_p} දක්වා සියලුම චිත්‍රපට දැනටමත් අපගේ වෙබ් අඩවියේ ඇත.\n\n{cinesubz_crawler.get_status_text()}",
                     parse_mode=ParseMode.HTML,
                     reply_markup=crawl_kb,
                 )
@@ -1074,25 +1080,26 @@ def register(app: Client) -> None:
             return
 
         if action == "new":
-            await query.answer("🔍 Checking Page 1 for new uploads...")
+            target_p = max(1, cinesubz_crawler.current_movie_page)
+            await query.answer(f"🔍 Checking Pages 1..{target_p} for missing uploads...")
             import httpx
             from services.cinesubz_crawler import HEADERS
             async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True, verify=False) as hc:
                 found_new = await cinesubz_crawler.check_and_enqueue_new_releases(
-                    hc, "movies", client=client, admin_chat_id=user_id, standalone=True
+                    hc, "movies", client=client, admin_chat_id=user_id, standalone=True, up_to_page=target_p
                 )
                 found_tv = await cinesubz_crawler.check_and_enqueue_new_releases(
-                    hc, "tvshows", client=client, admin_chat_id=user_id, standalone=True
+                    hc, "tvshows", client=client, admin_chat_id=user_id, standalone=True, up_to_page=max(1, cinesubz_crawler.current_tv_page)
                 )
             tot = len(found_new) + len(found_tv)
             if tot > 0:
                 await query.message.reply_text(
-                    f"🎉 <b>නව නිකුතුවන් {tot}ක් සොයාගෙන පෝලිමට (Queue) එක් කරන ලදී!</b>",
+                    f"🎉 <b>නව / මඟහැරුණු නිකුතුවන් {tot}ක් (පිටු 1..{target_p}) සොයාගෙන පෝලිමට (Queue) එක් කරන ලදී!</b>",
                     parse_mode=ParseMode.HTML,
                 )
             else:
                 await query.message.reply_text(
-                    "✅ <b>අලුත් නිකුතු නොමැත.</b> CineSubz මුල් පිටුවේ සියලුම චිත්‍රපට දැනටමත් අපගේ වෙබ් අඩවියේ ඇත.",
+                    f"✅ <b>අලුත් හෝ මඟහැරුණු නිකුතු නොමැත.</b> CineSubz පිටු 1 සිට {target_p} දක්වා සියලුම චිත්‍රපට දැනටමත් අපගේ වෙබ් අඩවියේ ඇත.",
                     parse_mode=ParseMode.HTML,
                 )
             try:

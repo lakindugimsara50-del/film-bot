@@ -474,3 +474,46 @@ async def test_crawler_resume_wrap_around_when_past_max_pages():
         assert "නැවතුණු තැනින් (Page 1)" in msg
         crawler.stop()
 
+
+@pytest.mark.asyncio
+async def test_audit_pages_up_to_current_page():
+    """Verify that crawler audits all pages from Page 1 up to current page, catching shifted or missed movies."""
+    crawler = CineSubzCrawler()
+    crawler._is_running = False
+    crawler.current_movie_page = 3
+
+    mock_client = MagicMock()
+    mock_sent_msg = MagicMock()
+    mock_client.send_message = AsyncMock(return_value=mock_sent_msg)
+    mock_hc = MagicMock()
+
+    # Page 1: all in catalog
+    # Page 2: has a missed movie 'Dune 2'
+    # Page 3: all in catalog
+    def fake_scrape(hc, page, section):
+        if page == 1:
+            return [{"clean_title": "Sugriva", "year": 2026, "url": "https://cinesubz.co/sugriva/", "is_series": False}]
+        elif page == 2:
+            return [{"clean_title": "Dune 2", "year": 2024, "url": "https://cinesubz.co/dune-2/", "is_series": False}]
+        else:
+            return [{"clean_title": "Sugriva", "year": 2026, "url": "https://cinesubz.co/sugriva/", "is_series": False}]
+
+    with patch("services.cinesubz_crawler.scrape_cinesubz_page", AsyncMock(side_effect=fake_scrape)), \
+         patch("services.cinesubz_crawler.queue_service.add_to_queue", AsyncMock(return_value=1)) as mock_add_queue:
+
+        found = await crawler.check_and_enqueue_new_releases(
+            http_client=mock_hc,
+            section="movies",
+            client=mock_client,
+            admin_chat_id=123456,
+            standalone=True,
+            up_to_page=3,
+        )
+
+        assert len(found) == 1
+        assert found[0]["clean_title"] == "Dune 2"
+        assert mock_add_queue.called
+        call_kwargs = mock_add_queue.call_args[1]
+        assert "Dune 2" in call_kwargs["query_text"]
+
+

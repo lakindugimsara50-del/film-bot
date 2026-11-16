@@ -3713,6 +3713,13 @@ async def _execute_leech(
             try:
                 saved = await github_service.add_movie(movie_entry)
                 log.info("[LeechService] Auto website publish: %s", saved)
+                if saved:
+                    # After successful movie upload: verify pages from Page 1 up to current crawler page
+                    try:
+                        from services.cinesubz_crawler import cinesubz_crawler
+                        asyncio.create_task(cinesubz_crawler.on_movie_upload_success(movie_entry))
+                    except Exception as cr_err:
+                        log.debug("[LeechService] Crawler post-upload verification note: %s", cr_err)
             except Exception as gh_err:
                 log.warning("[LeechService] GitHub service add_movie note: %s", gh_err)
 

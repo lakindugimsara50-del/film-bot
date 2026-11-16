@@ -18,13 +18,80 @@ import time
 from typing import Optional, Union
 
 import aiofiles
+import concurrent.futures
 import hashlib
 import httpx
 import math
+import struct
 from typing import BinaryIO, Callable, Optional, Union
 from pyrogram import Client, raw
 from pyrogram.errors import FloodWait, RPCError
 from pyrogram.session import Session
+
+# Eliminate MTProto parallel connection handshake timeouts on Cloud/Kaggle runners
+try:
+    Session.START_TIMEOUT = 15.0
+    Session.WAIT_TIMEOUT = 30.0
+except Exception:
+    pass
+
+# Scale Pyrogram crypto thread pool from default 1 thread to multi-core pool (up to 32 workers)
+try:
+    import pyrogram
+    pyrogram.crypto_executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(32, (os.cpu_count() or 4) * 4),
+        thread_name_prefix="PyrogramCrypto"
+    )
+except Exception:
+    pass
+
+# Hardware AES-NI OpenSSL acceleration patch when tgcrypto is missing on Python 3.13
+try:
+    import tgcrypto
+except ImportError:
+    try:
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        import pyrogram.crypto.aes as pyro_aes
+
+        def _fast_ige_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).encryptor()
+            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
+            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
+            n = len(data)
+            out = bytearray(n)
+            for i in range(0, n, 16):
+                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
+                t = struct.pack('>QQ', c_hi ^ iv_1_hi, c_lo ^ iv_1_lo)
+                enc = cipher.update(t)
+                e_hi, e_lo = struct.unpack('>QQ', enc)
+                r_hi, r_lo = e_hi ^ iv_2_hi, e_lo ^ iv_2_lo
+                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
+                iv_1_hi, iv_1_lo = r_hi, r_lo
+                iv_2_hi, iv_2_lo = c_hi, c_lo
+            return bytes(out)
+
+        def _fast_ige_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).decryptor()
+            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
+            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
+            n = len(data)
+            out = bytearray(n)
+            for i in range(0, n, 16):
+                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
+                t = struct.pack('>QQ', c_hi ^ iv_2_hi, c_lo ^ iv_2_lo)
+                dec = cipher.update(t)
+                d_hi, d_lo = struct.unpack('>QQ', dec)
+                r_hi, r_lo = d_hi ^ iv_1_hi, d_lo ^ iv_1_lo
+                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
+                iv_2_hi, iv_2_lo = r_hi, r_lo
+                iv_1_hi, iv_1_lo = c_hi, c_lo
+            return bytes(out)
+
+        pyro_aes.ige256_encrypt = _fast_ige_encrypt
+        pyro_aes.ige256_decrypt = _fast_ige_decrypt
+    except Exception:
+        pass
 
 # Support 64-bit Telegram channel IDs (e.g. -1004325759505)
 try:
@@ -192,7 +259,7 @@ async def fast_save_file(
     sessions = started_sessions
     num_sessions = len(sessions)
 
-    queue = asyncio.Queue(maxsize=num_workers * 2)
+    queue = asyncio.Queue(maxsize=max(32, num_workers * 4))
     transferred_bytes = [file_part * part_size]
     transferred_lock = asyncio.Lock()
     upload_error = None
@@ -570,10 +637,10 @@ async def upload_video_file(
         progress_state["current"] = 0
         progress_state["last_reported_bytes"] = -1
 
-    async def _pyrogram_progress(current: int, total: int) -> None:
+    def _pyrogram_progress(current: int, total: int) -> None:
         """
-        Fast in-memory update called from Pyrogram's chunk upload loop.
-        Does NOT block or make network/Telegram calls in-band.
+        Fast in-memory synchronous update called from Pyrogram's chunk upload loop.
+        Zero coroutine overhead: does NOT block or make network/Telegram calls in-band.
         """
         progress_state["current"] = current
         progress_state["total"] = total

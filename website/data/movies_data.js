@@ -19563,7 +19563,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T10:13:08Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "khalifa-the-ruler-2026",
+      "slug": "khalifa-the-ruler-2026",
+      "title": "Khalifa: The Ruler",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.2",
+      "rating": "5.2",
+      "imdb_id": "tt22797990",
+      "tmdb_id": "1036081",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/3HOC3omTbl7lB9gxKu7uCEpOtuC.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/3HOC3omTbl7lB9gxKu7uCEpOtuC.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/6Jz7rnnZrSkgs9ySWUxewpcxr7Q.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/6Jz7rnnZrSkgs9ySWUxewpcxr7Q.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Action",
+        "Thriller",
+        "Crime"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "159 min",
+      "description": "Aamir Ali, a notorious gold smuggling kingpin who inherited his multi-million dollar criminal enterprise from a lineage of gangsters, is drawn into a web of vengeance, legacy and power.",
+      "director": "Vysakh",
+      "cast": [
+        {
+          "name": "Prithviraj Sukumaran",
+          "character": "Aamir Ali"
+        },
+        {
+          "name": "Mohanlal",
+          "character": "Mambarakkal Ahmed Ali"
+        },
+        {
+          "name": "Neil Nitin Mukesh",
+          "character": "Harris Basheer"
+        },
+        {
+          "name": "Indrans",
+          "character": "Hamsa"
+        },
+        {
+          "name": "Shammi Thilakan",
+          "character": "Raghavan"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxdq-tvZiNyyPMiFw3_jaYvFzmNAQQACKx8AAqHv2VcfdJuBNWR8mR4E",
+      "message_id": 791,
+      "file_name": "comp_khalifa-the-ruler-2026_1080p.mp4",
+      "file_size": 2045961447,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxdq-tvZiNyyPMiFw3_jaYvFzmNAQQACKx8AAqHv2VcfdJuBNWR8mR4E",
+          "message_id": 791,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1036081"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt22797990"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt22797990"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/792",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/790"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2045961447,
+          "url": "https://t.me/c/4325759505/791",
+          "telegram_url": "https://t.me/c/4325759505/791",
+          "direct_url": "/stream/channel/-1004325759505/791?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxdq-tvZiNyyPMiFw3_jaYvFzmNAQQACKx8AAqHv2VcfdJuBNWR8mR4E",
+          "message_id": 791,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2064858206,
+          "url": "https://t.me/c/4325759505/792",
+          "telegram_url": "https://t.me/c/4325759505/792",
+          "direct_url": "/stream/channel/-1004325759505/792?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxhq-twlOBp5CwlMk07PkQfWdFLq_AACLB8AAqHv2Vcb6arHITh1lx4E",
+          "message_id": 792,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/792",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1104807924,
+          "url": "https://t.me/c/4325759505/790",
+          "telegram_url": "https://t.me/c/4325759505/790",
+          "direct_url": "/stream/channel/-1004325759505/790?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxZq-tuhwwq-jsN9ZROZG5YNjFOwbgACKR8AAqHv2VfMytcsA9Eygh4E",
+          "message_id": 790,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/790",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2045961447,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2064858206,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/792",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1104807924,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_khalifa-the-ruler-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/790",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxdq-tvZiNyyPMiFw3_jaYvFzmNAQQACKx8AAqHv2VcfdJuBNWR8mR4E",
+          "message_id": 791,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/791",
+          "size_bytes": 2045961447
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxhq-twlOBp5CwlMk07PkQfWdFLq_AACLB8AAqHv2Vcb6arHITh1lx4E",
+          "message_id": 792,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/792",
+          "size_bytes": 2064858206
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAxZq-tuhwwq-jsN9ZROZG5YNjFOwbgACKR8AAqHv2VfMytcsA9Eygh4E",
+          "message_id": 790,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/790",
+          "size_bytes": 1104807924
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/khalifa-the-ruler-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=khalifa-the-ruler-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T10:34:31Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T10:13:10Z"
+  "last_updated": "2026-11-16T10:34:33Z"
 };

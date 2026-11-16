@@ -20927,7 +20927,234 @@
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T12:29:37Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "mandaadi-2026",
+      "slug": "mandaadi-2026",
+      "title": "Mandaadi",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.6",
+      "rating": "7.6",
+      "imdb_id": "tt36596965",
+      "tmdb_id": "1465943",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/jLVMvJAmnVRo2lzbqtGiecLzPLy.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/jLVMvJAmnVRo2lzbqtGiecLzPLy.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/xO0YZ1zKFSSpM7dIsvssWKabp6J.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/xO0YZ1zKFSSpM7dIsvssWKabp6J.jpg",
+      "trailer_url": "",
+      "trailer_id": "",
+      "genres": [
+        "Action",
+        "Drama"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "153 min",
+      "description": "A fishing captain applies his maritime knowledge in a traditional boat race along Tamil Nadu's coast during a festival, leading a six-person team against other crews.",
+      "director": "Mathimaran Pugazhendhi",
+      "cast": [
+        {
+          "name": "Soori",
+          "character": "Muthukaali 'Kaali' / Mandaadi"
+        },
+        {
+          "name": "Suhas",
+          "character": "Saattapuli"
+        },
+        {
+          "name": "Mahima Nambiar",
+          "character": "Angel Rakkamma"
+        },
+        {
+          "name": "Sathyaraj",
+          "character": "Machamuni"
+        },
+        {
+          "name": "Mithun Jai Sankar",
+          "character": "Maari"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzBq-vyficMy3iBtRUTwAZhYNIGvTgACmR8AAqHv2Vf-_lG4stcMTx4E",
+      "message_id": 816,
+      "file_name": "comp_mandaadi-2026_1080p.mp4",
+      "file_size": 2060918750,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzBq-vyficMy3iBtRUTwAZhYNIGvTgACmR8AAqHv2Vf-_lG4stcMTx4E",
+          "message_id": 816,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1465943"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36596965"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36596965"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/815",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/814"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2060918750,
+          "url": "https://t.me/c/4325759505/816",
+          "telegram_url": "https://t.me/c/4325759505/816",
+          "direct_url": "/stream/channel/-1004325759505/816?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzBq-vyficMy3iBtRUTwAZhYNIGvTgACmR8AAqHv2Vf-_lG4stcMTx4E",
+          "message_id": 816,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2031135324,
+          "url": "https://t.me/c/4325759505/815",
+          "telegram_url": "https://t.me/c/4325759505/815",
+          "direct_url": "/stream/channel/-1004325759505/815?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAy9q-vx7S7fHxaVcqXTyvqwEMuz-bQAClh8AAqHv2Vd4KJp3FyeAuB4E",
+          "message_id": 815,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/815",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.0 GB",
+          "size_bytes": 1090623584,
+          "url": "https://t.me/c/4325759505/814",
+          "telegram_url": "https://t.me/c/4325759505/814",
+          "direct_url": "/stream/channel/-1004325759505/814?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAy5q-vu5vVdasF_v2ZA63Xncjg7o6wACjx8AAqHv2VeiKQQHF9EAAbkeBA",
+          "message_id": 814,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/814",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2060918750,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mandaadi-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2031135324,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mandaadi-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/815",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.0 GB",
+          "size_bytes": 1090623584,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_mandaadi-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/814",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzBq-vyficMy3iBtRUTwAZhYNIGvTgACmR8AAqHv2Vf-_lG4stcMTx4E",
+          "message_id": 816,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/816",
+          "size_bytes": 2060918750
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAy9q-vx7S7fHxaVcqXTyvqwEMuz-bQAClh8AAqHv2Vd4KJp3FyeAuB4E",
+          "message_id": 815,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/815",
+          "size_bytes": 2031135324
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAy5q-vu5vVdasF_v2ZA63Xncjg7o6wACjx8AAqHv2VeiKQQHF9EAAbkeBA",
+          "message_id": 814,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/814",
+          "size_bytes": 1090623584
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/mandaadi-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=mandaadi-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T12:53:03Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T12:29:39Z"
+  "last_updated": "2026-11-16T12:53:06Z"
 }

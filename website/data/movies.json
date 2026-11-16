@@ -21380,7 +21380,234 @@
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T13:08:48Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "insidious-out-of-the-further-2026",
+      "slug": "insidious-out-of-the-further-2026",
+      "title": "Insidious: Out of the Further",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.7",
+      "rating": "7.7",
+      "imdb_id": "tt32393988",
+      "tmdb_id": "1291595",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/4tTrW9dXCByS5wt2pXVWb58zNjz.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/4tTrW9dXCByS5wt2pXVWb58zNjz.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/p40lmrdI4blcAPZQMTPaiy5v5Ym.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/p40lmrdI4blcAPZQMTPaiy5v5Ym.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/gXjurDkYnEM",
+      "trailer_id": "gXjurDkYnEM",
+      "genres": [
+        "Horror",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "106 min",
+      "description": "Gemma, a young mother raising her daughter in the house she grew up in, discovers she can travel into The Further, where she possesses an ability to bring what lives there back to the real world.",
+      "director": "Jacob Chase",
+      "cast": [
+        {
+          "name": "Amelia Eve",
+          "character": "Gemma Hall"
+        },
+        {
+          "name": "Island Austin",
+          "character": "Maya Hall"
+        },
+        {
+          "name": "Brandon Perea",
+          "character": "Nick Mendoza"
+        },
+        {
+          "name": "Lin Shaye",
+          "character": "Elise Rainier"
+        },
+        {
+          "name": "Maisie Richardson-Sellers",
+          "character": "Clare"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzhq-wP9HWWv-0rftTABIikxgbI0kAAC5x8AAqHv2VcO--j4PoDIpR4E",
+      "message_id": 824,
+      "file_name": "comp_insidious-out-of-the-further-2026_1080p.mp4",
+      "file_size": 1890394777,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzhq-wP9HWWv-0rftTABIikxgbI0kAAC5x8AAqHv2VcO--j4PoDIpR4E",
+          "message_id": 824,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1291595"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt32393988"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt32393988"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/823",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/822"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.8 GB",
+          "size_bytes": 1890394777,
+          "url": "https://t.me/c/4325759505/824",
+          "telegram_url": "https://t.me/c/4325759505/824",
+          "direct_url": "/stream/channel/-1004325759505/824?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzhq-wP9HWWv-0rftTABIikxgbI0kAAC5x8AAqHv2VcO--j4PoDIpR4E",
+          "message_id": 824,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.1 GB",
+          "size_bytes": 1196552904,
+          "url": "https://t.me/c/4325759505/823",
+          "telegram_url": "https://t.me/c/4325759505/823",
+          "direct_url": "/stream/channel/-1004325759505/823?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzdq-wPISMGZQG_ZhOJnKFYLfD0dtgAC4B8AAqHv2Vdb6qKNacsCpR4E",
+          "message_id": 823,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/823",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "629.7 MB",
+          "size_bytes": 660262756,
+          "url": "https://t.me/c/4325759505/822",
+          "telegram_url": "https://t.me/c/4325759505/822",
+          "direct_url": "/stream/channel/-1004325759505/822?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzZq-wNQye9K75cvrBGjt3EsRPwnlwAC2h8AAqHv2VcZRAFEGad1qh4E",
+          "message_id": 822,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/822",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.8 GB",
+          "size_bytes": 1890394777,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_insidious-out-of-the-further-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.1 GB",
+          "size_bytes": 1196552904,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_insidious-out-of-the-further-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/823",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "629.7 MB",
+          "size_bytes": 660262756,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_insidious-out-of-the-further-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/822",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzhq-wP9HWWv-0rftTABIikxgbI0kAAC5x8AAqHv2VcO--j4PoDIpR4E",
+          "message_id": 824,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/824",
+          "size_bytes": 1890394777
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzdq-wPISMGZQG_ZhOJnKFYLfD0dtgAC4B8AAqHv2Vdb6qKNacsCpR4E",
+          "message_id": 823,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/823",
+          "size_bytes": 1196552904
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzZq-wNQye9K75cvrBGjt3EsRPwnlwAC2h8AAqHv2VcZRAFEGad1qh4E",
+          "message_id": 822,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/822",
+          "size_bytes": 660262756
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/insidious-out-of-the-further-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=insidious-out-of-the-further-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T13:24:28Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T13:08:49Z"
+  "last_updated": "2026-11-16T13:24:30Z"
 }

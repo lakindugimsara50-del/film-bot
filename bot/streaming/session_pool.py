@@ -250,36 +250,40 @@ class TelegramStreamPool:
                             log.debug("[StreamPool] Background session loading notice: %s", b_err)
                     asyncio.create_task(_load_other_background())
 
-        # 2. Check SESSION_STRINGS / MULTI_ACCOUNT_SESSIONS env (comma-separated session strings)
-        raw_strings = (os.getenv("SESSION_STRINGS", "") or os.getenv("MULTI_ACCOUNT_SESSIONS", "")).strip()
-        if raw_strings:
-            for i, s_str in enumerate(raw_strings.split(","), start=1):
-                s_str = s_str.strip()
-                if not s_str:
-                    continue
-                worker_name = f"stream_pool_worker_{i}"
-                if any(getattr(c, "name", "") == worker_name for c in self.clients):
-                    continue
-                try:
-                    c = Client(
-                        name=worker_name,
-                        session_string=s_str,
-                        api_id=api_id,
-                        api_hash=api_hash,
-                        no_updates=True,
-                        max_concurrent_transmissions=10,
-                    )
-                    await c.start()
-                    me = getattr(c, "me", None) or await c.get_me()
-                    c.me = me
-                    c._user_id = getattr(me, "id", None)
-                    self.clients.append(c)
-                    if c._user_id and c._user_id in admin_uids:
-                        if c not in self._admin_clients:
-                            self._admin_clients.append(c)
-                    log.info("[StreamPool] Loaded session string #%d into streaming pool (UID: %s).", i, getattr(me, "id", ""))
-                except Exception as exc:
-                    log.warning("[StreamPool] Could not start session string #%d: %s", i, exc)
+        # 2. Check SESSION_STRINGS / MULTI_ACCOUNT_SESSIONS env vars
+        env_session_strings: List[str] = []
+        for env_var in ("SESSION_STRINGS", "MULTI_ACCOUNT_SESSIONS"):
+            val = os.getenv(env_var, "").strip()
+            if val:
+                for part in re.split(r"[,;\n\r]+", val):
+                    part = part.strip()
+                    if part and part not in env_session_strings:
+                        env_session_strings.append(part)
+
+        for i, s_str in enumerate(env_session_strings, start=1):
+            worker_name = f"stream_pool_worker_{i}"
+            if any(getattr(c, "name", "") == worker_name for c in self.clients):
+                continue
+            try:
+                c = Client(
+                    name=worker_name,
+                    session_string=s_str,
+                    api_id=api_id,
+                    api_hash=api_hash,
+                    no_updates=True,
+                    max_concurrent_transmissions=10,
+                )
+                await c.start()
+                me = getattr(c, "me", None) or await c.get_me()
+                c.me = me
+                c._user_id = getattr(me, "id", None)
+                self.clients.append(c)
+                if c._user_id and c._user_id in admin_uids:
+                    if c not in self._admin_clients:
+                        self._admin_clients.append(c)
+                log.info("[StreamPool] Loaded session string #%d into streaming pool (UID: %s).", i, getattr(me, "id", ""))
+            except Exception as exc:
+                log.warning("[StreamPool] Could not start session string #%d: %s", i, exc)
 
         log.info(
             "[StreamPool] Stream pool ready: %d total sessions (%d verified admin userbots).",

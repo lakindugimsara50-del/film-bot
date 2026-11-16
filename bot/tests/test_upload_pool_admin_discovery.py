@@ -329,4 +329,59 @@ async def test_upload_pool_init_parses_session_strings(monkeypatch, tmp_path):
     assert any("upload_pool_worker_2" in getattr(c, "name", "") for c in pool.clients)
 
 
+@pytest.mark.asyncio
+async def test_upload_with_pool_empty_candidates_fallback_no_index_error():
+    """Verify that when candidates is empty (e.g. non-channel chat with disconnected sessions),
+    upload_with_pool cleanly falls back to the main bot without raising IndexError."""
+    pool = TelegramUploadPool()
+    private_chat = 987654321  # Non-channel chat ID (doesn't start with -100)
+
+    # Disconnected client in pool -> candidates will be empty
+    disc_client = MockClient(name="disconnected_userbot")
+    disc_client.is_connected = False
+    pool.clients = [disc_client]
+
+    main_bot = MockClient(name="main_bot")
+    pool.set_main_client(main_bot)
+
+    with patch("services.telegram_upload.upload_video_file", new_callable=AsyncMock) as mock_up:
+        mock_up.return_value = {"file_id": "fallback_ok", "message_id": 999}
+        res = await pool.upload_with_pool(
+            file_path="movie.mp4",
+            target_chat=private_chat,
+            quality="1080p",
+            fallback_client=main_bot
+        )
+        assert res.get("file_id") == "fallback_ok"
+        mock_up.assert_awaited_once()
+        assert mock_up.call_args.kwargs["bot_client"] == main_bot
+
+
+@pytest.mark.asyncio
+async def test_upload_with_pool_quality_case_insensitivity():
+    """Verify that quality strings like '1080P', '1080p', and '1080' share the same rotation tier."""
+    pool = TelegramUploadPool()
+    target_channel = -100123456789
+
+    admins = [MockClient(name=f"admin_{i}") for i in range(6)]
+    pool.clients = list(admins)
+    pool._admin_sessions[target_channel] = list(admins)
+
+    used = []
+    async def fake_upload(*args, **kwargs):
+        return {"file_id": "ok_id", "message_id": 100}
+
+    with patch("services.telegram_upload.upload_video_file", side_effect=fake_upload) as mock_up:
+        # First 1080p upload with lowercase
+        await pool.upload_with_pool(file_path="m1.mp4", target_chat=target_channel, quality="1080p")
+        used.append(mock_up.call_args.kwargs["bot_client"].name)
+
+        # Second 1080p upload with uppercase '1080P' -> should advance rotation to admin_3
+        await pool.upload_with_pool(file_path="m2.mp4", target_chat=target_channel, quality="1080P")
+        used.append(mock_up.call_args.kwargs["bot_client"].name)
+
+    assert used == ["admin_0", "admin_3"]
+
+
+
 

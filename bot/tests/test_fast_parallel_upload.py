@@ -114,3 +114,100 @@ async def test_fast_save_file_large_file_multi_session():
         for s in sessions_created:
             assert s.start.called
             assert s.stop.called
+
+
+@pytest.mark.asyncio
+async def test_fast_save_file_partial_sessions_resilience():
+    """Verify that if one session fails to connect, the remaining active sessions continue uploading."""
+    mock_client = MagicMock(spec=Client)
+    mock_client.storage = MagicMock()
+    mock_client.storage.dc_id = AsyncMock(return_value=2)
+    mock_client.storage.auth_key = AsyncMock(return_value=b"0" * 256)
+    mock_client.storage.test_mode = AsyncMock(return_value=False)
+    mock_client.rnd_id = MagicMock(return_value=123456789)
+    mock_client.loop = asyncio.get_event_loop()
+    mock_client.me = MagicMock(is_premium=True)
+
+    file_size_60m = 60 * 1024 * 1024
+    chunk_512k = b"X" * (512 * 1024)
+
+    class MockLargeFile(io.RawIOBase):
+        def __init__(self):
+            self.name = "movie_1080p.mp4"
+            self.pos = 0
+
+        def seek(self, offset, whence=io.SEEK_SET):
+            if whence == io.SEEK_END:
+                self.pos = file_size_60m
+            else:
+                self.pos = offset
+            return self.pos
+
+        def tell(self):
+            return self.pos
+
+        def read(self, size=-1):
+            if self.pos >= file_size_60m:
+                return b""
+            rem = file_size_60m - self.pos
+            sz = min(size if size > 0 else rem, rem)
+            self.pos += sz
+            return chunk_512k[:sz]
+
+    large_fp = MockLargeFile()
+
+    with patch("services.telegram_upload.Session") as mock_session_cls:
+        call_count = 0
+        sessions_created = []
+
+        def _make_session(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            s = MagicMock()
+            if call_count == 2:
+                # 2nd session fails during start (e.g. timeout)
+                s.start = AsyncMock(side_effect=TimeoutError("Connection timeout"))
+            else:
+                s.start = AsyncMock()
+            s.stop = AsyncMock()
+            s.invoke = AsyncMock(return_value=True)
+            sessions_created.append(s)
+            return s
+
+        mock_session_cls.side_effect = _make_session
+
+        res = await telegram_upload.fast_save_file(mock_client, large_fp)
+        assert isinstance(res, raw.types.InputFileBig)
+        # 4 sessions created, 3 succeeded and kept uploading
+        assert len(sessions_created) == 4
+        # The failed session should have been stopped
+        assert sessions_created[1].stop.called
+
+
+@pytest.mark.asyncio
+async def test_fast_save_file_invalid_env_sessions_handled(monkeypatch):
+    """Verify that invalid non-integer FAST_UPLOAD_SESSIONS does not crash fast_save_file."""
+    monkeypatch.setenv("FAST_UPLOAD_SESSIONS", "invalid_number")
+
+    mock_client = MagicMock(spec=Client)
+    mock_client.storage = MagicMock()
+    mock_client.storage.dc_id = AsyncMock(return_value=2)
+    mock_client.storage.auth_key = AsyncMock(return_value=b"0" * 256)
+    mock_client.storage.test_mode = AsyncMock(return_value=False)
+    mock_client.rnd_id = MagicMock(return_value=999)
+    mock_client.loop = asyncio.get_event_loop()
+    mock_client.me = MagicMock(is_premium=False)
+
+    bio = io.BytesIO(b"Hello")
+    bio.name = "small.txt"
+
+    with patch("services.telegram_upload.Session") as mock_session_cls:
+        mock_sess = MagicMock()
+        mock_sess.start = AsyncMock()
+        mock_sess.stop = AsyncMock()
+        mock_sess.invoke = AsyncMock(return_value=True)
+        mock_session_cls.return_value = mock_sess
+
+        res = await telegram_upload.fast_save_file(mock_client, bio)
+        assert isinstance(res, raw.types.InputFile)
+

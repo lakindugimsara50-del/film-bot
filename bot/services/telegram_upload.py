@@ -144,11 +144,14 @@ async def fast_save_file(
     # Scale parallel MTProto connections and worker tasks based on file size.
     # Uses 3-4 parallel sessions per stream (configurable via FAST_UPLOAD_SESSIONS, default: 4)
     # with 0.05s staggered session initialization to prevent exceeding Pyrogram's 2.0s START_TIMEOUT.
-    max_parallel_sessions = int(os.getenv("FAST_UPLOAD_SESSIONS", "4"))
-    max_parallel_sessions = max(1, min(max_parallel_sessions, 4))
+    try:
+        max_parallel_sessions = int(os.getenv("FAST_UPLOAD_SESSIONS", "4"))
+    except (ValueError, TypeError):
+        max_parallel_sessions = 4
+    max_parallel_sessions = max(1, min(max_parallel_sessions, 8))
 
     if file_size > 50 * 1024 * 1024:
-        num_sessions = max_parallel_sessions  # 3-4 parallel TCP sockets per stream
+        num_sessions = min(max_parallel_sessions, 4) if max_parallel_sessions <= 4 else max_parallel_sessions
         num_workers = max(2, num_sessions * 2)  # 6-8 worker tasks
     elif file_size > 10 * 1024 * 1024:
         num_sessions = min(max_parallel_sessions, 3)
@@ -159,26 +162,35 @@ async def fast_save_file(
 
     sessions = [Session(self, dc_id, auth_key, test_mode, is_media=True) for _ in range(num_sessions)]
     started_sessions = []
-    try:
-        for i, s in enumerate(sessions):
-            if i > 0:
-                await asyncio.sleep(0.05)
+    for i, s in enumerate(sessions):
+        if i > 0:
+            await asyncio.sleep(0.05)
+        try:
             await s.start()
             started_sessions.append(s)
-    except Exception as s_err:
+        except Exception as s_err:
+            log.warning(
+                "[FastUpload] Error starting parallel session %d/%d (%s)",
+                i + 1, num_sessions, s_err
+            )
+            try:
+                await s.stop()
+            except Exception:
+                pass
+
+    if not started_sessions:
         log.warning(
-            "[FastUpload] Error starting %d parallel sessions (%s); keeping %d active",
-            num_sessions, s_err, len(started_sessions)
+            "[FastUpload] All %d parallel sessions failed to start; attempting single fallback session",
+            num_sessions
         )
-        if not started_sessions:
-            fallback_sess = Session(self, dc_id, auth_key, test_mode, is_media=True)
-            await fallback_sess.start()
-            started_sessions.append(fallback_sess)
-            num_workers = 4
-        else:
-            num_workers = max(2, len(started_sessions) * 2)
-        sessions = started_sessions
-        num_sessions = len(sessions)
+        fallback_sess = Session(self, dc_id, auth_key, test_mode, is_media=True)
+        await fallback_sess.start()
+        started_sessions.append(fallback_sess)
+        num_workers = 4
+    else:
+        num_workers = max(2, len(started_sessions) * 2)
+    sessions = started_sessions
+    num_sessions = len(sessions)
 
     queue = asyncio.Queue(maxsize=num_workers * 2)
     transferred_bytes = [file_part * part_size]

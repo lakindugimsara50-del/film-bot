@@ -21154,7 +21154,233 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T12:53:03Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "fall-2-deadpoint-2026",
+      "slug": "fall-2-deadpoint-2026",
+      "title": "Fall 2: Deadpoint",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.2",
+      "rating": "7.2",
+      "imdb_id": "tt31192372",
+      "tmdb_id": "1101412",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/fgSm5ylwiXbIHn8UbUXDjk9RRu4.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/fgSm5ylwiXbIHn8UbUXDjk9RRu4.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/nGau0KBOaRILSK5MqFcuTfv7GMl.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/nGau0KBOaRILSK5MqFcuTfv7GMl.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/Krs0VDIjhmE",
+      "trailer_id": "Krs0VDIjhmE",
+      "genres": [
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "98 min",
+      "description": "On a perilous climb across Thailand's Mount Kwan, two climbers become trapped thousands of feet above the ground, where vertigo-inducing heights, sheer exposure, and impossible odds turn every moment into a fight for survival.",
+      "director": "Michael Spierig, Peter Spierig",
+      "cast": [
+        {
+          "name": "Harriet Slater",
+          "character": "Jax Hunter"
+        },
+        {
+          "name": "Arsema Thomas",
+          "character": "Luce"
+        },
+        {
+          "name": "Tom Brittney",
+          "character": "Jon Platt"
+        },
+        {
+          "name": "Sahajak Boonthanakit",
+          "character": "Thai Barman"
+        },
+        {
+          "name": "Korakod Yensuk",
+          "character": "Large Woman"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzRq-wABU7eb-_CswOVxQBXQQO1z0EIAArgfAAKh79lXx1XXT9_X6dceBA",
+      "message_id": 820,
+      "file_name": "comp_fall-2-deadpoint-2026_1080p.mp4",
+      "file_size": 2027396732,
+      "drive_file_id": "",
+      "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzRq-wABU7eb-_CswOVxQBXQQO1z0EIAArgfAAKh79lXx1XXT9_X6dceBA",
+          "message_id": 820,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1101412"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt31192372"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt31192372"
+        }
+      ],
+      "qualities": {
+        "auto": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+        "1080p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+        "720p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/819",
+        "480p": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/818"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.9 GB",
+          "size_bytes": 2027396732,
+          "url": "https://t.me/c/4325759505/820",
+          "telegram_url": "https://t.me/c/4325759505/820",
+          "direct_url": "/stream/channel/-1004325759505/820?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzRq-wABU7eb-_CswOVxQBXQQO1z0EIAArgfAAKh79lXx1XXT9_X6dceBA",
+          "message_id": 820,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1238947498,
+          "url": "https://t.me/c/4325759505/819",
+          "telegram_url": "https://t.me/c/4325759505/819",
+          "direct_url": "/stream/channel/-1004325759505/819?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzNq-v_oj_lkh0Jaz7gU7QABerXrrmoAArIfAAKh79lX-aTBRcJ7VBUeBA",
+          "message_id": 819,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/819",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "637.5 MB",
+          "size_bytes": 668460784,
+          "url": "https://t.me/c/4325759505/818",
+          "telegram_url": "https://t.me/c/4325759505/818",
+          "direct_url": "/stream/channel/-1004325759505/818?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzJq-v9xJAQJccZ1sIX1TTBSVlfwgAACsR8AAqHv2VfS8MSzP2aWWB4E",
+          "message_id": 818,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/818",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.9 GB",
+          "size_bytes": 2027396732,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_1080p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1238947498,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_720p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/819",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "637.5 MB",
+          "size_bytes": 668460784,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_fall-2-deadpoint-2026_480p",
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/818",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzRq-wABU7eb-_CswOVxQBXQQO1z0EIAArgfAAKh79lXx1XXT9_X6dceBA",
+          "message_id": 820,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/820",
+          "size_bytes": 2027396732
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzNq-v_oj_lkh0Jaz7gU7QABerXrrmoAArIfAAKh79lX-aTBRcJ7VBUeBA",
+          "message_id": 819,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/819",
+          "size_bytes": 1238947498
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACAzJq-v9xJAQJccZ1sIX1TTBSVlfwgAACsR8AAqHv2VfS8MSzP2aWWB4E",
+          "message_id": 818,
+          "stream_url": "https://participated-complications-more-enlarge.trycloudflare.com/stream/channel/-1004325759505/818",
+          "size_bytes": 668460784
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/fall-2-deadpoint-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=fall-2-deadpoint-2026",
+      "added_date": "2026-11-16",
+      "added_at": "2026-11-16T13:08:48Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T12:53:06Z"
+  "last_updated": "2026-11-16T13:08:49Z"
 };

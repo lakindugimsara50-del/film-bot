@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://replaced-pressure-planes-formation.trycloudflare.com",
+  "stream_base_url": "https://platforms-directions-thanksgiving-jewish.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-16T17:31:02.543602+00:00",
+  "updated_at": "2026-11-16T17:31:56.844591+00:00",
   "status": "online"
 };

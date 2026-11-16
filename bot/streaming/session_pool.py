@@ -250,8 +250,8 @@ class TelegramStreamPool:
                             log.debug("[StreamPool] Background session loading notice: %s", b_err)
                     asyncio.create_task(_load_other_background())
 
-        # 2. Check SESSION_STRINGS env (comma-separated session strings)
-        raw_strings = os.getenv("SESSION_STRINGS", "").strip()
+        # 2. Check SESSION_STRINGS / MULTI_ACCOUNT_SESSIONS env (comma-separated session strings)
+        raw_strings = (os.getenv("SESSION_STRINGS", "") or os.getenv("MULTI_ACCOUNT_SESSIONS", "")).strip()
         if raw_strings:
             for i, s_str in enumerate(raw_strings.split(","), start=1):
                 s_str = s_str.strip()

@@ -20,6 +20,7 @@ import asyncio
 import glob
 import logging
 import os
+import re
 import sqlite3
 import time
 from typing import Dict, List, Optional
@@ -231,12 +232,29 @@ class TelegramUploadPool:
                 pass
 
         session_files = sorted(glob.glob(os.path.join(sessions_dir, "*.session")))
-        if not session_files:
-            log.warning("[UploadPool] No .session files found in %s — pool will use main bot client.", sessions_dir)
+
+        # Check SESSION_STRINGS / MULTI_ACCOUNT_SESSIONS env vars
+        env_session_strings: List[str] = []
+        for env_var in ("SESSION_STRINGS", "MULTI_ACCOUNT_SESSIONS"):
+            val = os.getenv(env_var, "").strip()
+            if val:
+                for part in re.split(r"[,;\n\r]+", val):
+                    part = part.strip()
+                    if part and part not in env_session_strings:
+                        env_session_strings.append(part)
+
+        if not session_files and not env_session_strings:
+            log.warning(
+                "[UploadPool] No .session files found in %s and no session strings in env — pool will use main bot client.",
+                sessions_dir
+            )
             return
 
         password = os.getenv("SESSION_2FA_PASSWORD", "2122138")
-        log.info("[UploadPool] Loading %d session files concurrently from %s ...", len(session_files), sessions_dir)
+        if session_files:
+            log.info("[UploadPool] Loading %d session files concurrently from %s ...", len(session_files), sessions_dir)
+        if env_session_strings:
+            log.info("[UploadPool] Loading %d session strings from environment variables...", len(env_session_strings))
 
         sem = asyncio.Semaphore(10)
 
@@ -335,8 +353,106 @@ class TelegramUploadPool:
                         log.warning("[UploadPool] Could not start session '%s': %s", base_name, exc)
                         break
 
-        await asyncio.gather(*[_load_one(sp) for sp in session_files])
-        log.info("[UploadPool] Total active upload clients in pool: %d/%d", len(self.clients), len(session_files))
+        async def _load_string(s_str: str, idx: int):
+            worker_name = f"upload_pool_worker_{idx}"
+            if any(getattr(c, "name", "") == worker_name for c in self.clients):
+                return
+            async with sem:
+                for attempt in range(3):
+                    try:
+                        c = Client(
+                            name=worker_name,
+                            session_string=s_str,
+                            api_id=api_id,
+                            api_hash=api_hash,
+                            no_updates=True,
+                            max_concurrent_transmissions=16,
+                            sleep_threshold=15,
+                        )
+                        is_auth = await c.connect()
+                        if not is_auth:
+                            await c.disconnect()
+                            log.warning("[UploadPool] Session string #%d is not authorized. Skipping.", idx)
+                            return
+                        try:
+                            await c.initialize()
+                        except Exception as init_err:
+                            await c.disconnect()
+                            log.warning("[UploadPool] Session string #%d init error: %s. Skipping.", idx, init_err)
+                            return
+
+                        try:
+                            me = await c.get_me()
+                            c.me = me
+                            c._user_id = getattr(me, "id", None)
+                            if not hasattr(c.me, "is_premium"):
+                                setattr(c.me, "is_premium", False)
+                            self.clients.append(c)
+                            try:
+                                from streaming.session_pool import stream_pool
+                                if c not in stream_pool.clients:
+                                    stream_pool.clients.append(c)
+                            except Exception:
+                                pass
+                            log.info("[UploadPool] Loaded session string #%d (UID: %s)", idx, getattr(me, "id", ""))
+                            return
+                        except SessionPasswordNeeded:
+                            try:
+                                await c.check_password(password)
+                                me = await c.get_me()
+                                c.me = me
+                                c._user_id = getattr(me, "id", None)
+                                if not hasattr(c.me, "is_premium"):
+                                    setattr(c.me, "is_premium", False)
+                                self.clients.append(c)
+                                try:
+                                    from streaming.session_pool import stream_pool
+                                    if c not in stream_pool.clients:
+                                        stream_pool.clients.append(c)
+                                except Exception:
+                                    pass
+                                log.info("[UploadPool] 2FA OK for session string #%d (UID: %s)", idx, getattr(me, "id", ""))
+                                return
+                            except Exception as pw_err:
+                                if c.is_initialized:
+                                    await c.stop()
+                                elif c.is_connected:
+                                    await c.disconnect()
+                                log.warning("[UploadPool] 2FA failed for session string #%d: %s", idx, pw_err)
+                                return
+                        except Exception as auth_err:
+                            if c.is_initialized:
+                                await c.stop()
+                            elif c.is_connected:
+                                await c.disconnect()
+                            log.warning("[UploadPool] Session string #%d auth error (%s). Skipping.", idx, auth_err)
+                            return
+                    except Exception as exc:
+                        try:
+                            if 'c' in locals():
+                                if c.is_initialized:
+                                    await c.stop()
+                                elif c.is_connected:
+                                    await c.disconnect()
+                        except Exception:
+                            pass
+                        err_str = str(exc).lower()
+                        if "database is locked" in err_str and attempt < 2:
+                            await asyncio.sleep(0.6 * (attempt + 1))
+                            continue
+                        log.warning("[UploadPool] Could not start session string #%d: %s", idx, exc)
+                        break
+
+        tasks = [_load_one(sp) for sp in session_files]
+        tasks += [_load_string(s, i) for i, s in enumerate(env_session_strings, start=1)]
+        await asyncio.gather(*tasks)
+        log.info(
+            "[UploadPool] Total active upload clients in pool: %d/%d (%d files, %d strings)",
+            len(self.clients),
+            len(session_files) + len(env_session_strings),
+            len(session_files),
+            len(env_session_strings),
+        )
 
         admin_count = 0
         if target_channel:
@@ -771,7 +887,7 @@ class TelegramUploadPool:
         tried_clients: list = []
 
         # Build candidate pool:
-        # 1) Verified admin sessions in this quality tier (1080p, 720p, 480p)
+        # 1) Verified admin sessions in this quality tier (1080p, 720p, 480p) rotated per tier
         # 2) Other verified admin sessions in channel (cross-tier fallback)
         # 3) Remaining connected userbot sessions in the pool
         candidates: List[Client] = []
@@ -780,16 +896,47 @@ class TelegramUploadPool:
         except Exception:
             t_key = target_chat
 
-        active_admins = [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
-        if active_admins:
-            quality_map = {"1080p": 0, "720p": 1, "480p": 2, "360p": 3, "default": 0}
-            base_idx = quality_map.get(quality, 0)
-            n_admins = len(active_admins)
-            tier_admins = [active_admins[i] for i in range(n_admins) if (i % 3 == base_idx % 3)] if n_admins >= 3 else active_admins
-            other_admins = [c for c in active_admins if c not in tier_admins]
-            candidates = tier_admins + other_admins
-        else:
-            candidates = [c for c in self.clients if getattr(c, "is_connected", False)]
+        async with self._lock:
+            active_admins = [c for c in self._admin_sessions.get(t_key, []) if getattr(c, "is_connected", False)]
+            if active_admins:
+                quality_map = {"1080p": 0, "720p": 1, "480p": 2, "360p": 3, "default": 0}
+                base_idx = quality_map.get(quality, 0)
+                n_admins = len(active_admins)
+
+                if n_admins >= 3:
+                    tier_admins = [active_admins[i] for i in range(n_admins) if (i % 3 == base_idx % 3)]
+                    if not tier_admins:
+                        tier_admins = active_admins
+                elif n_admins == 2:
+                    tier_admins = [active_admins[base_idx % 2]]
+                else:
+                    tier_admins = active_admins
+
+                other_admins = [c for c in active_admins if c not in tier_admins]
+
+                # Round-robin rotation across tier admin accounts so all channel admin
+                # accounts are rotated evenly across successive movie uploads
+                q_key = f"{quality}_{t_key}"
+                cur_idx = self._indices.get(q_key, 0) % len(tier_admins)
+                self._indices[q_key] = (cur_idx + 1) % len(tier_admins)
+                rotated_tier_admins = tier_admins[cur_idx:] + tier_admins[:cur_idx]
+
+                candidates = rotated_tier_admins + other_admins
+            else:
+                connected = [c for c in self.clients if getattr(c, "is_connected", False)]
+                if connected:
+                    tier_start, tier_end = _QUALITY_TIERS.get(quality, _QUALITY_TIERS["default"])
+                    tier_start = min(tier_start, len(connected) - 1)
+                    tier_end = min(tier_end, len(connected) - 1)
+                    tier_clients = connected[tier_start : tier_end + 1] or connected
+
+                    idx = self._indices.get(quality, 0) % len(tier_clients)
+                    self._indices[quality] = (idx + 1) % len(tier_clients)
+                    rotated_tier = tier_clients[idx:] + tier_clients[:idx]
+                    other_clients = [c for c in connected if c not in rotated_tier]
+                    candidates = rotated_tier + other_clients
+                else:
+                    candidates = []
 
         max_attempts = min(len(candidates), 12) if candidates else 1
         for attempt in range(max_attempts):

@@ -109,8 +109,8 @@ async def test_fast_save_file_large_file_multi_session():
         assert isinstance(res, raw.types.InputFileBig)
         assert res.id == 123456789
         assert res.name == "movie_1080p.mp4"
-        # For >50MB, exactly 8 parallel sessions were instantiated and started!
-        assert len(sessions_created) == 8
+        # For >50MB, exactly 4 parallel sessions were instantiated and started!
+        assert len(sessions_created) == 4
         for s in sessions_created:
             assert s.start.called
             assert s.stop.called

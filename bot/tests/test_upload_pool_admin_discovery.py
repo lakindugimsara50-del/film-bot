@@ -253,3 +253,80 @@ async def test_stream_pool_channel_media_info_prefers_main_client():
     main_bot.get_messages.assert_awaited_once_with(-1004325759505, 280)
 
 
+@pytest.mark.asyncio
+async def test_upload_with_pool_round_robin_rotation_per_tier():
+    """Verify that successive uploads in the same quality tier rotate through all tier admin accounts."""
+    pool = TelegramUploadPool()
+    target_channel = -100123456789
+
+    # 6 admin accounts:
+    # 1080p tier (i % 3 == 0) -> c0, c3
+    # 720p  tier (i % 3 == 1) -> c1, c4
+    # 480p  tier (i % 3 == 2) -> c2, c5
+    admins = [MockClient(name=f"admin_{i}") for i in range(6)]
+    pool.clients = list(admins)
+    pool._admin_sessions[target_channel] = list(admins)
+
+    used_clients_1080p = []
+    used_clients_720p = []
+
+    async def fake_upload(*args, **kwargs):
+        return {"file_id": "ok_id", "message_id": 100}
+
+    with patch("services.telegram_upload.upload_video_file", side_effect=fake_upload) as mock_up:
+        # First 1080p upload -> should pick admin_0
+        await pool.upload_with_pool(file_path="m1.mp4", target_chat=target_channel, quality="1080p")
+        used_clients_1080p.append(mock_up.call_args.kwargs["bot_client"].name)
+
+        # Second 1080p upload -> should rotate to admin_3
+        await pool.upload_with_pool(file_path="m2.mp4", target_chat=target_channel, quality="1080p")
+        used_clients_1080p.append(mock_up.call_args.kwargs["bot_client"].name)
+
+        # Third 1080p upload -> should wrap around to admin_0
+        await pool.upload_with_pool(file_path="m3.mp4", target_chat=target_channel, quality="1080p")
+        used_clients_1080p.append(mock_up.call_args.kwargs["bot_client"].name)
+
+        # First 720p upload -> should pick admin_1
+        await pool.upload_with_pool(file_path="m1_720.mp4", target_chat=target_channel, quality="720p")
+        used_clients_720p.append(mock_up.call_args.kwargs["bot_client"].name)
+
+        # Second 720p upload -> should rotate to admin_4
+        await pool.upload_with_pool(file_path="m2_720.mp4", target_chat=target_channel, quality="720p")
+        used_clients_720p.append(mock_up.call_args.kwargs["bot_client"].name)
+
+    assert used_clients_1080p == ["admin_0", "admin_3", "admin_0"]
+    assert used_clients_720p == ["admin_1", "admin_4"]
+
+
+@pytest.mark.asyncio
+async def test_upload_pool_init_parses_session_strings(monkeypatch, tmp_path):
+    """Verify that upload_pool.init parses SESSION_STRINGS / MULTI_ACCOUNT_SESSIONS from environment."""
+    pool = TelegramUploadPool()
+    dummy_dir = str(tmp_path / "empty_sessions")
+    Path(dummy_dir).mkdir(parents=True, exist_ok=True)
+
+    fake_session_strings = "BQAAAFakeSessionString1, BQAAAFakeSessionString2"
+    monkeypatch.setenv("MULTI_ACCOUNT_SESSIONS", fake_session_strings)
+
+    created_clients = []
+
+    def mock_client_init(*args, **kwargs):
+        mc = MagicMock()
+        mc.name = kwargs.get("name", "client")
+        mc.is_connected = True
+        mc.is_initialized = True
+        mc.connect = AsyncMock(return_value=True)
+        mc.initialize = AsyncMock(return_value=None)
+        mc.get_me = AsyncMock(return_value=MagicMock(id=99901, is_premium=False, first_name="Userbot"))
+        created_clients.append(mc)
+        return mc
+
+    with patch("services.upload_pool.Client", side_effect=mock_client_init):
+        await pool.init(api_id=12345, api_hash="abcdef", sessions_dir=dummy_dir)
+
+    assert len(pool.clients) == 2
+    assert any("upload_pool_worker_1" in getattr(c, "name", "") for c in pool.clients)
+    assert any("upload_pool_worker_2" in getattr(c, "name", "") for c in pool.clients)
+
+
+

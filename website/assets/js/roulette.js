@@ -156,7 +156,7 @@
     });
 
     // Wire clicks
-    container.querySelectorAll('.cs-react-btn').forEach(btn => {
+    container.querySelectorAll('.cs-react-btn, .cs-react-pill').forEach(btn => {
       if (btn._bound) return;
       btn._bound = true;
 

@@ -447,26 +447,58 @@
       this.showActionToast(this.isLocked ? 'Playback locked: Host-Only mode 🔒' : 'Collaborative mode: Everyone can control 👥');
     }
 
+    createOrToggleRoom() {
+      if (!this.roomId) {
+        this.createRoom();
+      } else {
+        const container = document.getElementById('watch-party-container');
+        const theater = document.getElementById('cs-theater-layout');
+        if (container && theater) {
+          const isClosed = container.style.display === 'none';
+          if (isClosed) {
+            theater.classList.add('is-watch-party-active');
+            container.style.display = 'flex';
+          } else {
+            theater.classList.remove('is-watch-party-active');
+            container.style.display = 'none';
+          }
+        }
+      }
+    }
+
     // --- UI Renderers & Interactions ---
     renderWatchPartyUI() {
       let container = document.getElementById('watch-party-container');
+      const theater = document.getElementById('cs-theater-layout');
+      if (theater) theater.classList.add('is-watch-party-active');
+
       if (!container) {
         const playerSec = document.querySelector('.cs-player-card');
         if (!playerSec) return;
 
-        container = document.createElement('div');
+        container = document.createElement('aside');
         container.id = 'watch-party-container';
         container.className = 'watch-party-container';
         playerSec.parentNode.insertBefore(container, playerSec.nextSibling);
+      }
+
+      container.style.display = 'flex';
+
+      // Update Flagship button in menu bar
+      const wpBtn = document.getElementById('btn-watch-party-trigger');
+      if (wpBtn) {
+        wpBtn.classList.add('active-room');
+        const badge = wpBtn.querySelector('#cs-party-badge');
+        if (badge) badge.textContent = 'ACTIVE';
       }
 
       container.innerHTML = `
         <div class="wp-header">
           <div class="wp-title-wrap">
             <div class="wp-title">
-              <i class="fa-solid fa-users-viewfinder" style="color:var(--accent)"></i> Watch Party Room
+              <i class="fa-solid fa-users-viewfinder" style="color:#c084fc"></i> VIP Lounge
             </div>
-            <span class="wp-room-badge" id="wp-room-code">${this.roomId}</span>
+            <span class="wp-room-badge" id="wp-room-code" title="Click to copy room link">${this.roomId} <i class="fa-regular fa-copy" style="font-size:9.5px"></i></span>
           </div>
           <div class="wp-header-controls">
             ${this.isHost ? `
@@ -480,8 +512,8 @@
                 <span>${this.isLocked ? 'Host Only' : 'Everyone Controls'}</span>
               </span>
             `}
-            <button type="button" class="wp-share-btn" id="wp-share-btn">
-              <i class="fa-brands fa-whatsapp"></i> Invite Friends
+            <button type="button" class="wp-close-btn" id="wp-close-btn" title="Minimize Lounge">
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         </div>
@@ -494,29 +526,52 @@
           <div class="wp-chat-box" id="wp-chat-box">
             <div class="wp-msg-item" style="background:rgba(255,255,255,0.03);align-self:center;text-align:center;max-width:95%">
               <span class="wp-msg-text" style="font-size:12px;color:#94a3b8">
-                Welcome to the Watch Party! Share the invite link with your friends to stream together in real-time.
+                🍿 Welcome to the Watch Party! Stream with friends in perfect sync.
               </span>
             </div>
           </div>
 
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-            <div class="wp-floating-reactions-bar">
-              <button type="button" class="wp-reaction-chip" data-emoji="🔥">🔥</button>
-              <button type="button" class="wp-reaction-chip" data-emoji="🤯">🤯</button>
-              <button type="button" class="wp-reaction-chip" data-emoji="🍿">🍿</button>
-              <button type="button" class="wp-reaction-chip" data-emoji="❤️">❤️</button>
-              <button type="button" class="wp-reaction-chip" data-emoji="😂">😂</button>
-            </div>
+          <div class="wp-floating-reactions-bar">
+            <button type="button" class="wp-reaction-chip" data-emoji="🔥" title="Fire">🔥</button>
+            <button type="button" class="wp-reaction-chip" data-emoji="🤯" title="Mind Blown">🤯</button>
+            <button type="button" class="wp-reaction-chip" data-emoji="🍿" title="Popcorn">🍿</button>
+            <button type="button" class="wp-reaction-chip" data-emoji="❤️" title="Love">❤️</button>
+            <button type="button" class="wp-reaction-chip" data-emoji="😂" title="Laugh">😂</button>
           </div>
 
           <form class="wp-chat-input-bar" id="wp-chat-form">
-            <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message to the room..." autocomplete="off">
+            <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Chat with room..." autocomplete="off">
             <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
               <i class="fa-solid fa-paper-plane"></i>
             </button>
           </form>
         </div>
+
+        <div class="wp-footer-share">
+          <button type="button" class="wp-btn-wa-invite" id="wp-share-btn">
+            <i class="fa-brands fa-whatsapp"></i> Invite on WhatsApp
+          </button>
+          <button type="button" class="wp-btn-copy-link" id="wp-copy-link-btn" title="Copy Invite Link">
+            <i class="fa-solid fa-link"></i>
+          </button>
+        </div>
       `;
+
+      // Wire Room Code Copy
+      const roomBadge = container.querySelector('#wp-room-code');
+      if (roomBadge) {
+        roomBadge.addEventListener('click', () => this.shareInviteLink());
+      }
+
+      // Wire Close/Minimize
+      const closeBtn = container.querySelector('#wp-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          if (theater) theater.classList.remove('is-watch-party-active');
+          container.style.display = 'none';
+          this.showActionToast('Watch Party minimized. Click "Room Active" to re-open 👥');
+        });
+      }
 
       // Wire Lock Toggle
       const lockToggle = container.querySelector('#wp-lock-toggle');
@@ -524,10 +579,21 @@
         lockToggle.addEventListener('click', () => this.toggleLockMode());
       }
 
-      // Wire Share Invite
+      // Wire WhatsApp Share Invite
       const shareBtn = container.querySelector('#wp-share-btn');
       if (shareBtn) {
         shareBtn.addEventListener('click', () => this.shareInviteLink());
+      }
+
+      // Wire Copy Link Button
+      const copyBtn = container.querySelector('#wp-copy-link-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(window.location.href);
+            this.showActionToast('Watch Party link copied to clipboard! 📋');
+          }
+        });
       }
 
       // Wire Chat Form

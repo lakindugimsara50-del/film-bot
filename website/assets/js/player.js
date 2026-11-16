@@ -5478,7 +5478,9 @@ function renderMovieDetails(movie) {
   if (wpTrigger && !wpTrigger._bound) {
     wpTrigger._bound = true;
     wpTrigger.addEventListener('click', () => {
-      if (window.FilmZillaWatchParty && typeof window.FilmZillaWatchParty.createRoom === 'function') {
+      if (window.FilmZillaWatchParty && typeof window.FilmZillaWatchParty.createOrToggleRoom === 'function') {
+        window.FilmZillaWatchParty.createOrToggleRoom();
+      } else if (window.FilmZillaWatchParty && typeof window.FilmZillaWatchParty.createRoom === 'function') {
         window.FilmZillaWatchParty.createRoom();
       }
     });

@@ -69,6 +69,22 @@ function initApp() {
   fetchRemoteMovies().then(updated => {
     if (updated) renderAllSections();
   }).catch(() => {});
+
+  // 4. Background live updates: auto-check for newly uploaded movies on visibility & periodically
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchRemoteMovies().then(updated => {
+        if (updated) renderAllSections();
+      }).catch(() => {});
+    }
+  });
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      fetchRemoteMovies().then(updated => {
+        if (updated) renderAllSections();
+      }).catch(() => {});
+    }
+  }, 90000);
 }
 
 if (document.readyState === 'loading') {
@@ -201,6 +217,20 @@ function getMoviesByGenre(keyword) {
   }).slice(0, 20);
 }
 
+function _getMovieTimestamp(m) {
+  if (!m) return 0;
+  if (m.added_at) {
+    const t = new Date(m.added_at).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  if (m.added_date) {
+    const t = new Date(m.added_date).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  const yr = Number(m.year) || 2024;
+  return new Date(yr, 0, 1).getTime();
+}
+
 // ---- Data Helpers ----
 function getFeatured() {
   const spotlight = getHeroSpotlightList();
@@ -211,12 +241,12 @@ function getFeatured() {
 function getNewReleases() {
   const catalog = groupSeriesCatalog(allMovies);
   return [...catalog].sort((a, b) => {
+    const timeA = _getMovieTimestamp(a);
+    const timeB = _getMovieTimestamp(b);
+    if (timeB !== timeA) return timeB - timeA;
     const yA = Number(a.year) || 0;
     const yB = Number(b.year) || 0;
-    if (yB !== yA) return yB - yA;
-    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
-    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
-    return timeB - timeA;
+    return yB - yA;
   }).slice(0, 20);
 }
 function getTrending() {
@@ -224,12 +254,12 @@ function getTrending() {
   const tr = catalog.filter(m => m.trending);
   const list = tr.length > 0 ? tr : catalog;
   return [...list].sort((a, b) => {
+    const timeA = _getMovieTimestamp(a);
+    const timeB = _getMovieTimestamp(b);
+    if (timeB !== timeA) return timeB - timeA;
     const yA = Number(a.year) || 0;
     const yB = Number(b.year) || 0;
-    if (yB !== yA) return yB - yA;
-    const timeA = a.added_at ? new Date(a.added_at).getTime() : (a.added_date ? new Date(a.added_date).getTime() : 0);
-    const timeB = b.added_at ? new Date(b.added_at).getTime() : (b.added_date ? new Date(b.added_date).getTime() : 0);
-    return timeB - timeA;
+    return yB - yA;
   }).slice(0, 20);
 }
 function getSinhalaFilms() {
@@ -596,31 +626,31 @@ function getHeroSpotlightList() {
   const eligible = catalog.filter(m => Boolean(m.backdrop || m.backdrop_url || m.poster || m.poster_url));
   const pool = eligible.length > 0 ? eligible : [...catalog];
 
-  // 2. Score movies so newly uploaded films (at index 0 of movies.json) ALWAYS take top spot on Hero Banner!
+  // 2. Score movies so that NEWLY ADDED / UPLOADED FILMS ALWAYS take the top spot on Hero Banner!
   const scored = pool.map((m, idx) => {
-    let score = 0;
-
-    // Highest Priority: Array position (Newly added movies are unshifted to index 0)
-    score += (pool.length - idx) * 1000;
-
-    // Added timestamp bonus
-    const addedTime = m.added_at ? new Date(m.added_at).getTime() : (m.added_date ? new Date(m.added_date).getTime() : 0);
-    if (addedTime > 0) {
-      score += (addedTime / 10000);
-    }
-
-    // Release year bonus
+    const time = _getMovieTimestamp(m);
     const yr = Number(m.year) || 2024;
-    score += (yr - 2000) * 10;
+    const hasBackdrop = Boolean(m.backdrop || m.backdrop_url);
+    const hasTrailer = Boolean(m.trailer_url || m.trailer_id);
 
-    // Backdrop presence bonus
-    if (m.backdrop || m.backdrop_url) score += 50;
-    if (m.poster || m.poster_url) score += 20;
+    // Primary score: Unix timestamp in seconds (1 sec = 1 pt).
+    // Newly added films naturally get millions more points than older films!
+    let score = Math.floor(time / 1000);
+
+    // Tie-breaker 1: Higher index in array indicates more recently appended movie
+    score += idx * 10;
+
+    // Tie-breaker 2: Release year bonus
+    score += (yr - 2020) * 3600;
+
+    // Quality bonus: High-res Backdrop for Grand Cinema view (1-day equivalent bonus)
+    if (hasBackdrop) score += 86400;
+    if (hasTrailer) score += 3600;
 
     return { movie: m, score };
   });
 
-  // Sort by score descending
+  // Sort by score descending (Highest score = newest & best)
   scored.sort((a, b) => b.score - a.score);
 
   const merged = [];
@@ -2167,12 +2197,12 @@ function initMoviesShowcaseGrid() {
     const catalog = groupSeriesCatalog(allMovies);
     if (showcaseCurrentGenre === 'all') {
       return [...catalog].sort((a, b) => {
+        const tA = _getMovieTimestamp(a);
+        const tB = _getMovieTimestamp(b);
+        if (tB !== tA) return tB - tA;
         const yA = Number(a.year) || 0;
         const yB = Number(b.year) || 0;
-        if (yB !== yA) return yB - yA;
-        const tA = a.added_at ? new Date(a.added_at).getTime() : 0;
-        const tB = b.added_at ? new Date(b.added_at).getTime() : 0;
-        return tB - tA;
+        return yB - yA;
       });
     }
     if (showcaseCurrentGenre === 'sinhala') {

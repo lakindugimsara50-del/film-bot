@@ -19,7 +19,8 @@
     popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
     angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
     heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
-    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp'
+    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
+    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp'
   };
 
   class WatchPartyEngine {
@@ -562,38 +563,30 @@
             <!-- Pure live chat messages stream -->
           </div>
 
-          <!-- Quick Reaction Chat Prompts -->
-          <div class="wp-quick-prompts-bar">
-            <button type="button" class="wp-quick-prompt" data-text="🍿 What a scene!">🍿 What a scene!</button>
-            <button type="button" class="wp-quick-prompt" data-text="🔥 Pure Cinema!">🔥 Pure Cinema!</button>
-            <button type="button" class="wp-quick-prompt" data-text="🤯 Plot twist!">🤯 Plot twist!</button>
-            <button type="button" class="wp-quick-prompt" data-text="❤️ Goosebumps!">❤️ Goosebumps!</button>
-          </div>
-
-          <!-- Animated Telegram-Style Emojis Reaction Deck -->
+          <!-- 3D Fluent Live Reactions Deck -->
           <div class="wp-floating-reactions-bar">
-            <button type="button" class="wp-reaction-chip" data-emoji="fire" title="Fire">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" alt="Fire" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="fire" title="Fire 🔥">
+              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" alt="Fire" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="mindblown" title="Mind Blown">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn 🍿">
+              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Popcorn" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp" alt="Popcorn" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love ❤️">
+              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" alt="Heart" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="angry" title="Angry / Intense">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp" alt="Angry" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="mindblown" title="Mind Blown 🤯">
+              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp" alt="Heart" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh 😂">
+              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png" alt="Laugh" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp" alt="Laugh" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="party" title="Party 🎉">
+              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Party%20popper/3D/party_popper_3d.png" alt="Party" class="react-3d-emoji" loading="lazy">
             </button>
           </div>
 
           <form class="wp-chat-input-bar" id="wp-chat-form">
-            <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Chat with room..." autocomplete="off">
+            <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message..." autocomplete="off">
             <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
               <i class="fa-solid fa-paper-plane"></i>
             </button>
@@ -693,21 +686,6 @@
             type: 'REACTION_EMOJI',
             emoji: emoji,
             userName: this.localUser.name
-          });
-        });
-      });
-
-      // Wire Quick Reaction Prompts
-      container.querySelectorAll('.wp-quick-prompt').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const promptText = btn.textContent.trim();
-          if (!promptText) return;
-          this.appendChatMessage(this.localUser.name, promptText, true);
-          this.broadcast({
-            type: 'CHAT_MESSAGE',
-            userName: this.localUser.name,
-            text: promptText,
-            timestamp: Date.now()
           });
         });
       });
@@ -879,6 +857,30 @@
     }
 
     showFloatingReaction(emoji, userName) {
+      const emojiKey = String(emoji).toLowerCase();
+      const emojiMap = {
+        '🔥': 'fire',
+        '🤯': 'mindblown',
+        '🍿': 'popcorn',
+        '😡': 'angry',
+        '❤️': 'heart',
+        '😂': 'laugh',
+        '🎉': 'party',
+        'fire': 'fire',
+        'mindblown': 'mindblown',
+        'popcorn': 'popcorn',
+        'angry': 'angry',
+        'heart': 'heart',
+        'laugh': 'laugh',
+        'party': 'party'
+      };
+      const resolvedKey = emojiMap[emojiKey] || emojiMap[emoji] || 'fire';
+
+      if (typeof window.spawnFloatingEmoji === 'function') {
+        window.spawnFloatingEmoji(null, resolvedKey);
+        return;
+      }
+
       const playerWrap = document.querySelector('.player-container') || document.querySelector('#video-player-container');
       if (!playerWrap) return;
 
@@ -890,29 +892,17 @@
         playerWrap.appendChild(stage);
       }
 
-      const emojiKey = String(emoji).toLowerCase();
-      const emojiMap = {
-        '🔥': 'fire',
-        '🤯': 'mindblown',
-        '🍿': 'popcorn',
-        '😡': 'angry',
-        '❤️': 'heart',
-        '😂': 'laugh',
-        'fire': 'fire',
-        'mindblown': 'mindblown',
-        'popcorn': 'popcorn',
-        'angry': 'angry',
-        'heart': 'heart',
-        'laugh': 'laugh'
-      };
-      const resolvedKey = emojiMap[emojiKey] || emojiMap[emoji] || 'fire';
       const src = WP_3D_EMOJIS[resolvedKey] || WP_3D_EMOJIS.fire;
+      const baseLeft = Math.floor(Math.random() * 60 + 20); // 20% to 80%
 
-      const baseLeft = Math.floor(Math.random() * 65 + 15); // 15% to 80%
+      const randSway = (Math.random() - 0.5) * 80;
+      const randRot = (Math.random() - 0.5) * 30;
 
       const floater = document.createElement('div');
-      floater.className = 'cs-floating-hero-emoji';
+      floater.className = `cs-floating-hero-emoji cs-glow-${resolvedKey}`;
       floater.style.left = `${baseLeft}%`;
+      floater.style.setProperty('--rand-sway', `${randSway}px`);
+      floater.style.setProperty('--rand-rot', `${randRot}deg`);
       floater.innerHTML = `
         <img src="${src}" alt="${resolvedKey}" class="cs-floater-img">
         <span class="cs-floater-sparkle s1"></span>
@@ -922,7 +912,7 @@
       stage.appendChild(floater);
       setTimeout(() => {
         if (floater.parentNode) floater.parentNode.removeChild(floater);
-      }, 2400);
+      }, 2800);
     }
 
     showActionToast(text) {

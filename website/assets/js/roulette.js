@@ -132,6 +132,8 @@
     angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
     heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
     laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
+    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
+    crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
     sleep: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f634/512.webp'
   };
 
@@ -156,11 +158,12 @@
       popcorn: (savedState.popcorn ? 1 : 0) + Math.round(baseCount * 2.4),
       angry: (savedState.angry ? 1 : 0) + Math.round(baseCount * 0.9),
       heart: (savedState.heart ? 1 : 0) + Math.round(baseCount * 2.8),
+      laugh: (savedState.laugh ? 1 : 0) + Math.round(baseCount * 1.2),
       sleep: (savedState.sleep ? 1 : 0) + Math.round(baseCount * 0.15)
     };
 
     // Update UI counters
-    ['fire', 'mindblown', 'popcorn', 'angry', 'heart', 'sleep'].forEach(type => {
+    ['fire', 'mindblown', 'popcorn', 'angry', 'heart', 'laugh', 'sleep'].forEach(type => {
       const el = document.getElementById(`count-${type}`);
       if (el) el.textContent = counts[type];
       const btn = container.querySelector(`[data-reaction="${type}"]`);
@@ -210,11 +213,17 @@
     }
 
     const src = FLUENT_3D_EMOJIS[type] || FLUENT_3D_EMOJIS.fire;
-    const baseLeft = Math.floor(Math.random() * 65 + 15); // 15% to 80% across player width
+    const baseLeft = Math.floor(Math.random() * 60 + 20); // 20% to 80% across player width
 
+    const randSway = (Math.random() - 0.5) * 80; // -40px to +40px
+    const randRot = (Math.random() - 0.5) * 30; // -15deg to +15deg
+
+    // Hero 3D Emoji
     const floater = document.createElement('div');
-    floater.className = 'cs-floating-hero-emoji';
+    floater.className = `cs-floating-hero-emoji cs-glow-${type}`;
     floater.style.left = `${baseLeft}%`;
+    floater.style.setProperty('--rand-sway', `${randSway}px`);
+    floater.style.setProperty('--rand-rot', `${randRot}deg`);
     floater.innerHTML = `
       <img src="${src}" alt="${type}" class="cs-floater-img">
       <span class="cs-floater-sparkle s1"></span>
@@ -222,10 +231,29 @@
     `;
 
     stage.appendChild(floater);
+
+    // Companion floating micro particles
+    for (let i = 0; i < 2; i++) {
+      const mini = document.createElement('div');
+      mini.className = 'cs-floating-mini-particle';
+      mini.style.left = `calc(${baseLeft}% + ${(Math.random() - 0.5) * 50}px)`;
+      mini.style.setProperty('--rand-sway', `${(Math.random() - 0.5) * 60}px`);
+      mini.style.setProperty('--rand-rot', `${(Math.random() - 0.5) * 40}deg`);
+      mini.style.animationDelay = `${(i + 1) * 90}ms`;
+      mini.innerHTML = `<img src="${src}" alt="" class="cs-mini-floater-img">`;
+      stage.appendChild(mini);
+
+      setTimeout(() => {
+        if (mini.parentNode) mini.parentNode.removeChild(mini);
+      }, 2600);
+    }
+
     setTimeout(() => {
       if (floater.parentNode) floater.parentNode.removeChild(floater);
-    }, 2400);
+    }, 2800);
   }
+
+  window.spawnFloatingEmoji = spawnFloatingEmoji;
 
   // ---------------------------------------------------------------------
   // 3. Movie Request Modal Dispatcher

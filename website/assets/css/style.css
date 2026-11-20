@@ -10367,30 +10367,43 @@ body.is-window-scrolling .movie-card {
 
 /* 1. Header Left Hamburger Sidebar Toggle (☰) */
 .header-sidebar-toggle-btn {
-  display: inline-flex;
-  align-items: center;
+  display: inline-flex !important;
+  flex-direction: column;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
   margin-right: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
-  color: #ffffff;
-  font-size: 19px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   flex-shrink: 0;
+  z-index: 100;
+}
+
+.header-sidebar-toggle-btn .hamburger-bar {
+  display: block;
+  width: 20px;
+  height: 2.2px;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: all 0.25s ease;
 }
 
 .header-sidebar-toggle-btn:hover {
-  background: rgba(229, 9, 20, 0.2);
-  border-color: rgba(229, 9, 20, 0.5);
-  color: #ff3366;
+  background: rgba(229, 9, 20, 0.22);
+  border-color: rgba(229, 9, 20, 0.6);
   transform: scale(1.05);
-  box-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
+  box-shadow: 0 0 18px rgba(229, 9, 20, 0.4);
+}
+
+.header-sidebar-toggle-btn:hover .hamburger-bar {
+  background: #ff3366;
 }
 
 .header-sidebar-toggle-btn:active {
@@ -10672,14 +10685,43 @@ body.cinema-drawer-lock {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 6px 16px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.vip-hub-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vip-hub-menu-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #e2e8f0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vip-hub-menu-btn:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #c084fc;
 }
 
 /* 4. Avatar Picker Modal Dialog */

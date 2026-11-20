@@ -2857,43 +2857,28 @@ function openUserListModal(initialTab = 'favorites') {
   modal.classList.add('open');
 }
 
-// ---- Profile Avatar Picker & Customization Modal ----
+// ---- Profile Avatar Picker & 3D Cinema Avatar Studio ----
 const VIP_PRESET_AVATARS = [
-  { id: 'popcorn', name: 'Popcorn Cinephile', icon: '🍿', bg1: '#7928ca', bg2: '#ff0080' },
-  { id: 'director', name: 'Master Director', icon: '🎬', bg1: '#e50914', bg2: '#800020' },
-  { id: 'hero', name: 'Electric Hero', icon: '⚡', bg1: '#0052d4', bg2: '#4364f7' },
-  { id: 'agent', name: 'Secret Agent', icon: '🕶️', bg1: '#232526', bg2: '#414345' },
-  { id: 'ninja', name: 'Cyber Ninja', icon: '🥷', bg1: '#0f2027', bg2: '#203a43' },
-  { id: 'astronaut', name: 'Cosmic Voyager', icon: '🚀', bg1: '#141e30', bg2: '#243b55' },
-  { id: 'crown', name: 'VIP Royalty', icon: '👑', bg1: '#f39c12', bg2: '#d35400' },
-  { id: 'flame', name: 'Golden Legend', icon: '🔥', bg1: '#ff416c', bg2: '#ff4b2b' }
+  { id: 'popcorn', name: 'Popcorn Cinephile', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png' },
+  { id: 'director', name: 'Master Director', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png' },
+  { id: 'fire', name: 'Flame Legend', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png' },
+  { id: 'crown', name: 'VIP Royalty', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Crown/3D/crown_3d.png' },
+  { id: 'star', name: 'Cinema Star', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Glowing%20star/3D/glowing_star_3d.png' },
+  { id: 'rocket', name: 'Cosmic Voyager', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rocket/3D/rocket_3d.png' },
+  { id: 'party', name: 'Party Master', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Party%20popper/3D/party_popper_3d.png' },
+  { id: 'heart', name: 'Movie Lover', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png' },
+  { id: 'mindblown', name: 'Plot Wizard', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png' },
+  { id: 'laugh', name: 'Comedy Fan', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png' }
 ];
-
-function createPresetAvatarSvg(icon, bg1, bg2) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-    <defs>
-      <linearGradient id="g_${encodeURIComponent(icon)}" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${bg1}" />
-        <stop offset="100%" stop-color="${bg2}" />
-      </linearGradient>
-      <filter id="sh_${encodeURIComponent(icon)}" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
-      </filter>
-    </defs>
-    <rect width="128" height="128" rx="64" fill="url(#g_${encodeURIComponent(icon)})" />
-    <circle cx="64" cy="64" r="61" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-    <text x="64" y="78" font-size="54" text-anchor="middle" filter="url(#sh_${encodeURIComponent(icon)})">${icon}</text>
-  </svg>`;
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-}
 
 function applyNewAvatar(avatarUrl) {
   if (!window.FilmSubUser || !window.FilmSubUser.Profile) return;
   window.FilmSubUser.Profile.setPicture(avatarUrl);
-  const selectors = ['#vip-hub-avatar', '#user-avatar-img', '#nav-drawer-avatar', '#mob-user-avatar'];
+  const selectors = ['#vip-hub-avatar', '#user-avatar-img', '#nav-drawer-avatar', '#user-drawer-avatar', '#mob-user-avatar'];
   selectors.forEach(sel => {
-    const el = document.querySelector(sel);
-    if (el) el.src = avatarUrl;
+    document.querySelectorAll(sel).forEach(el => {
+      el.src = avatarUrl;
+    });
   });
   if (typeof showToast === 'function') showToast('Profile avatar updated! ✨');
 }
@@ -2909,7 +2894,7 @@ function openAvatarPickerModal() {
         <div class="vip-avatar-picker-header">
           <div class="vip-avatar-picker-title-wrap">
             <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent,#e50914)"></i>
-            <h3 id="avatar-picker-title">Choose Profile Avatar</h3>
+            <h3 id="avatar-picker-title">Profile Avatar Studio</h3>
           </div>
           <button type="button" class="vip-avatar-picker-close" id="avatar-picker-close-btn" aria-label="Close">
             <i class="fa-solid fa-xmark"></i>
@@ -2921,21 +2906,20 @@ function openAvatarPickerModal() {
               <i class="fa-solid fa-camera"></i>
               <span>Upload Custom Photo (Device / Camera)</span>
             </button>
-            <p class="vip-upload-subtext">Supports PNG, JPG, WebP. Automatically optimized for cinema avatar.</p>
+            <p class="vip-upload-subtext">Supports PNG, JPG, WebP. Automatically centered & optimized for your cinema profile.</p>
           </div>
           <div class="vip-avatar-divider">
             <span>OR CHOOSE A 3D CINEMA AVATAR</span>
           </div>
           <div class="vip-avatar-grid" id="vip-avatar-presets-grid">
-            ${VIP_PRESET_AVATARS.map(p => {
-              const svgUri = createPresetAvatarSvg(p.icon, p.bg1, p.bg2);
-              return `
-                <button type="button" class="vip-avatar-preset-btn" data-avatar-uri="${encodeURIComponent(svgUri)}" title="${p.name}">
-                  <img src="${svgUri}" alt="${p.name}" class="preset-avatar-img">
-                  <span class="preset-avatar-label">${p.name}</span>
-                </button>
-              `;
-            }).join('')}
+            ${VIP_PRESET_AVATARS.map(p => `
+              <button type="button" class="vip-avatar-preset-btn" data-avatar-uri="${p.img}" title="${p.name}">
+                <div class="preset-avatar-img-wrap">
+                  <img src="${p.img}" alt="${p.name}" class="preset-avatar-img" loading="lazy">
+                </div>
+                <span class="preset-avatar-label">${p.name}</span>
+              </button>
+            `).join('')}
           </div>
         </div>
       </div>
@@ -2950,14 +2934,49 @@ function openAvatarPickerModal() {
     });
 
     modal.querySelector('#vip-upload-trigger-btn').addEventListener('click', () => {
-      const fileInp = document.getElementById('vip-avatar-file-input');
-      if (fileInp) fileInp.click();
-      modal.classList.remove('open');
+      let fileInp = document.getElementById('vip-avatar-file-input');
+      if (!fileInp) {
+        fileInp = document.createElement('input');
+        fileInp.type = 'file';
+        fileInp.id = 'vip-avatar-file-input';
+        fileInp.accept = 'image/*';
+        fileInp.style.display = 'none';
+        document.body.appendChild(fileInp);
+      }
+      fileInp.onchange = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          if (typeof showToast === 'function') showToast('Please select an image file 🖼️');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 160;
+            canvas.height = 160;
+            const ctx = canvas.getContext('2d');
+            const size = Math.min(img.width, img.height);
+            const sx = (img.width - size) / 2;
+            const sy = (img.height - size) / 2;
+            ctx.drawImage(img, sx, sy, size, size, 0, 0, 160, 160);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            applyNewAvatar(dataUrl);
+            modal.classList.remove('open');
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+      fileInp.click();
     });
 
     modal.querySelectorAll('.vip-avatar-preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const uri = decodeURIComponent(btn.dataset.avatarUri);
+        const uri = btn.dataset.avatarUri;
         applyNewAvatar(uri);
         modal.classList.remove('open');
       });
@@ -3064,6 +3083,12 @@ function initGlobalCinemaDrawer() {
               </button>
             </li>
             <li>
+              <button type="button" class="drawer-nav-item" id="drawer-change-avatar-btn">
+                <i class="fa-solid fa-camera" style="color:#10b981"></i>
+                <span>Change Profile Photo / 3D Avatar</span>
+              </button>
+            </li>
+            <li>
               <a href="https://t.me/FilmZillaOfficial" target="_blank" rel="noopener" class="drawer-nav-item">
                 <i class="fa-brands fa-telegram" style="color:#229ed9"></i>
                 <span>Official Telegram Channel</span>
@@ -3124,6 +3149,14 @@ function initGlobalCinemaDrawer() {
         }
       });
     }
+
+    const changeAvBtn = drawer.querySelector('#drawer-change-avatar-btn');
+    if (changeAvBtn) {
+      changeAvBtn.addEventListener('click', () => {
+        closeDrawer();
+        openAvatarPickerModal();
+      });
+    }
   }
 
   const openDrawer = () => {
@@ -3153,6 +3186,10 @@ function initGlobalCinemaDrawer() {
     backdrop.classList.add('open');
     document.body.classList.add('cinema-drawer-lock');
   };
+
+  window.openCinemaDrawer = openDrawer;
+  window.openUserListModal = openUserListModal;
+  window.openAvatarPickerModal = openAvatarPickerModal;
 
   const toggleBtns = document.querySelectorAll('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn');
   toggleBtns.forEach(btn => {

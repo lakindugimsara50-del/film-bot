@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="si" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="FilmZilla Bite-Sized Teasers – Scroll and discover top Hollywood movie scenes in 30 seconds, TikTok and Reels style!">
+  <meta name="theme-color" content="#0a0a0c">
+  <title>FilmZilla Reels – 30s Scene Teaser Feed | Quick Movie Discovery</title>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/img/filmzilla_icon.png">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="assets/css/style.css?v=20261120_teasers_v1">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261120_teasers_v1">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261120_teasers_v1">
+</head>
+<body class="reels-page-active">
+
+  <!-- Fullscreen Reels App Viewport -->
+  <div class="reels-app-viewport">
+    
+    <!-- Ambient Stage Glow (Desktop Centered) -->
+    <div class="reels-ambient-glow" aria-hidden="true"></div>
+
+    <!-- Floating Top Navigation Header -->
+    <header class="reels-top-nav" role="banner">
+      <a href="index.html" class="reels-back-btn" aria-label="Back to FilmZilla Home">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Home</span>
+      </a>
+
+      <div class="reels-brand-badge">
+        <i class="fa-solid fa-bolt"></i>
+        <span>TEASERS FEED</span>
+      </div>
+
+      <div class="reels-header-actions">
+        <button type="button" class="reels-sound-toggle-btn" id="global-sound-toggle" aria-label="Toggle Sound" title="Sound Muted (Click to enable)">
+          <i class="fa-solid fa-volume-xmark"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Category Filter Horizontal Rail -->
+    <nav class="reels-category-rail" id="reels-category-rail" aria-label="Filter Teasers by Genre">
+      <button type="button" class="reels-pill active" data-filter="All">🔥 All Viral Scenes</button>
+      <button type="button" class="reels-pill" data-filter="Action">💥 Action</button>
+      <button type="button" class="reels-pill" data-filter="Comedy">😂 Comedy</button>
+      <button type="button" class="reels-pill" data-filter="Horror">👻 Horror</button>
+      <button type="button" class="reels-pill" data-filter="Sci-Fi">🚀 Sci-Fi</button>
+      <button type="button" class="reels-pill" data-filter="Drama">🎭 Drama</button>
+      <button type="button" class="reels-pill" data-filter="Sinhala Sub">💬 Sinhala Sub</button>
+    </nav>
+
+    <!-- Main Vertical Reels Feed Container -->
+    <main class="reels-feed-container" id="reels-feed-container" role="main" aria-label="Vertical Video Teaser Feed">
+      <!-- Dynamically populated by teasers.js -->
+    </main>
+
+    <!-- Desktop Up / Down Navigation Rail -->
+    <aside class="reels-desktop-nav-rail" aria-label="Desktop Navigation Controls">
+      <button type="button" class="reels-desktop-arrow" id="desktop-nav-prev" title="Previous Teaser (Arrow Up / K)" aria-label="Previous Teaser">
+        <i class="fa-solid fa-chevron-up"></i>
+      </button>
+      <button type="button" class="reels-desktop-arrow" id="desktop-nav-next" title="Next Teaser (Arrow Down / J)" aria-label="Next Teaser">
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+    </aside>
+
+  </div>
+
+  <!-- Smart Seek Choice Modal ("Watch Full Movie Options") -->
+  <div class="smart-seek-modal-backdrop" id="smart-seek-modal" role="dialog" aria-modal="true" aria-labelledby="smart-seek-heading">
+    <div class="smart-seek-dialog">
+      <div class="smart-seek-header">
+        <h3 id="smart-seek-heading">
+          <i class="fa-solid fa-film" style="color:var(--reels-accent)"></i>
+          <span>Watch Full Movie</span>
+        </h3>
+        <button type="button" class="smart-seek-close-btn" onclick="window.FilmZillaReels.closeSmartSeekModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <p style="color:#d1d5db;font-size:13px;margin:0;line-height:1.5;">
+        You're about to watch <strong id="smart-seek-title-text" style="color:#fff;">Movie</strong>. How would you like to start?
+      </p>
+
+      <div class="smart-seek-options">
+        <!-- Option 1: Jump directly to scene -->
+        <button type="button" class="smart-seek-opt-btn primary" onclick="window.FilmZillaReels.executeWatch('scene')">
+          <div class="smart-seek-icon">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div class="smart-seek-info">
+            <span class="smart-seek-title">⚡ Jump Directly to this Scene</span>
+            <span class="smart-seek-desc">Resume right at the high-stakes scene (<span id="smart-seek-scene-time">02:30</span>)</span>
+          </div>
+        </button>
+
+        <!-- Option 2: Watch from Beginning -->
+        <button type="button" class="smart-seek-opt-btn" onclick="window.FilmZillaReels.executeWatch('beginning')">
+          <div class="smart-seek-icon">
+            <i class="fa-solid fa-play"></i>
+          </div>
+          <div class="smart-seek-info">
+            <span class="smart-seek-title">🎬 Start from the Beginning</span>
+            <span class="smart-seek-desc">Watch the entire movie from 00:00 with Sinhala subtitles</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Movie Info Bottom Sheet Modal -->
+  <div class="reels-info-sheet-backdrop" id="reels-info-sheet-backdrop">
+    <div class="reels-info-sheet" id="reels-info-sheet">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- Data & Logic Scripts -->
+  <script src="data/movies_data.js"></script>
+  <script src="data/teasers_data.js"></script>
+  <script src="assets/js/user-state.js"></script>
+  <script src="assets/js/teasers.js"></script>
+
+</body>
+</html>

@@ -48,6 +48,7 @@
   <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261120_cinema_v45">
   <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261120_cinema_v45">
   <link rel="stylesheet" href="assets/css/watch-party.css?v=20261120_cinema_v45">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261120_teasers_v1">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -667,6 +668,7 @@
   </a>
   <nav class="primary-nav" aria-label="Main Navigation">
     <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+    <a href="teasers.html" class="nav-teaser-link" title="Bite-Sized Teasers – TikTok Style Quick Discovery"><i class="fa-solid fa-bolt" style="color:#ff3366"></i> Teasers <span class="badge-nav-hot">HOT</span></a>
     <a href="search.html?type=movie" class="active"><i class="fa-solid fa-film"></i> Movies</a>
     <a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a>
     <div class="nav-dropdown">
@@ -969,6 +971,9 @@
             <button type="button" class="cs-poster-trailer-btn" id="poster-trailer-btn">
               <i class="fa-solid fa-clapperboard"></i> Watch Trailer
             </button>
+            <a href="teasers.html" class="cs-poster-trailer-btn cs-poster-teaser-btn" id="poster-teaser-btn" style="display:none;background:linear-gradient(135deg,rgba(229,9,20,0.25) 0%,rgba(255,51,102,0.18) 100%);border-color:rgba(229,9,20,0.5);color:#fff;text-decoration:none;">
+              <i class="fa-solid fa-bolt" style="color:#ff3366"></i> 30s Viral Scene
+            </a>
             <a href="#downloads" class="cs-poster-dl-btn">
               <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
             </a>
@@ -1124,6 +1129,7 @@
 <!-- ========== CINESUBZ-STYLE MOBILE BOTTOM NAVIGATION BAR ========== -->
 <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
   <a href="index.html"><i class="fa-solid fa-house"></i><span>Home</span></a>
+  <a href="teasers.html" class="nav-bottom-teaser"><i class="fa-solid fa-bolt" style="color:#ff3366"></i><span>Teasers</span></a>
   <a href="search.html?type=movie" class="active"><i class="fa-solid fa-film"></i><span>Movies</span></a>
   <a href="search.html?type=series"><i class="fa-solid fa-tv"></i><span>TV Shows</span></a>
   <button type="button" id="mob-search-btn"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></button>
@@ -1136,6 +1142,7 @@
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 <script src="assets/js/user-state.js?v=20261120_cinema_v45"></script>
 <script src="data/movies_data.js?v=20261120_cinema_v45"></script>
+<script src="data/teasers_data.js?v=20261120_teasers_v1"></script>
 <script src="data/stream_endpoint.js?v=20261120_cinema_v45"></script>
 <script src="assets/js/app.js?v=20261120_cinema_v45"></script>
 <script src="assets/js/download.js?v=20261120_cinema_v45"></script>

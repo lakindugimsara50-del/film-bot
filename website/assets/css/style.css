@@ -10631,6 +10631,33 @@ body.cinema-drawer-lock {
   letter-spacing: 0.04em;
 }
 
+.badge-nav-hot {
+  background: linear-gradient(135deg, #e50914, #ff3366);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.6);
+  animation: pulse-hot-badge 2s infinite ease-in-out;
+}
+
+@keyframes pulse-hot-badge {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #ff3366); }
+  50% { transform: scale(1.12); filter: drop-shadow(0 0 6px #ff3366); }
+}
+
+.nav-teaser-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .drawer-pill-vip {
   margin-left: auto;
   background: linear-gradient(135deg, #f39c12, #e67e22);

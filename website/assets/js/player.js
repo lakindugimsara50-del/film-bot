@@ -5484,6 +5484,37 @@ function renderMovieDetails(movie) {
     });
   }
 
+  // Wire Bar Mic & Cam Buttons for Watch Party
+  const barMic = document.getElementById('btn-bar-mic');
+  if (barMic && !barMic._bound) {
+    barMic._bound = true;
+    barMic.addEventListener('click', () => {
+      if (window.FilmZillaWatchParty) {
+        if (!window.FilmZillaWatchParty.roomId) {
+          window.FilmZillaWatchParty.createRoom();
+          setTimeout(() => window.FilmZillaWatchParty.toggleMic(), 600);
+        } else {
+          window.FilmZillaWatchParty.toggleMic();
+        }
+      }
+    });
+  }
+
+  const barCam = document.getElementById('btn-bar-cam');
+  if (barCam && !barCam._bound) {
+    barCam._bound = true;
+    barCam.addEventListener('click', () => {
+      if (window.FilmZillaWatchParty) {
+        if (!window.FilmZillaWatchParty.roomId) {
+          window.FilmZillaWatchParty.createRoom();
+          setTimeout(() => window.FilmZillaWatchParty.toggleCam(), 600);
+        } else {
+          window.FilmZillaWatchParty.toggleCam();
+        }
+      }
+    });
+  }
+
   // Wire In-Video PiP Corner Button & PiP Triggers
   const pipCornerBtn = document.getElementById('cs-video-pip-corner-btn') || document.getElementById('btn-pip-trigger');
   if (pipCornerBtn && !pipCornerBtn._bound) {

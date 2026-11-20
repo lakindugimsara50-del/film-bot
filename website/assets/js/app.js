@@ -3159,27 +3159,47 @@ function initGlobalCinemaDrawer() {
     }
   }
 
+  const safeCount = (obj) => {
+    if (!obj) return 0;
+    if (typeof obj.count === 'function') {
+      try { return obj.count(); } catch (_) { return 0; }
+    }
+    if (typeof obj.getAll === 'function') {
+      try { return obj.getAll().length; } catch (_) { return 0; }
+    }
+    return 0;
+  };
+
   const openDrawer = () => {
-    const drawer = document.getElementById('cinema-global-nav-drawer');
-    const backdrop = document.getElementById('cinema-global-nav-backdrop');
-    if (!drawer || !backdrop) return;
+    let drawer = document.getElementById('cinema-global-nav-drawer');
+    let backdrop = document.getElementById('cinema-global-nav-backdrop');
+    if (!drawer || !backdrop) {
+      initGlobalCinemaDrawer();
+      drawer = document.getElementById('cinema-global-nav-drawer');
+      backdrop = document.getElementById('cinema-global-nav-backdrop');
+      if (!drawer || !backdrop) return;
+    }
 
-    if (window.FilmSubUser && window.FilmSubUser.Profile) {
-      const p = window.FilmSubUser.Profile.get();
-      const av = drawer.querySelector('#nav-drawer-avatar');
-      const name = drawer.querySelector('#nav-drawer-name');
-      if (av) av.src = p.picture || '';
-      if (name) name.textContent = p.name || 'Cinema Fan';
+    try {
+      if (window.FilmSubUser && window.FilmSubUser.Profile) {
+        const p = window.FilmSubUser.Profile.get();
+        const av = drawer.querySelector('#nav-drawer-avatar');
+        const name = drawer.querySelector('#nav-drawer-name');
+        if (av) av.src = p.picture || 'assets/img/avatars/avatar_1.png';
+        if (name) name.textContent = p.name || 'Cinema Fan';
 
-      const favEl = drawer.querySelector('#drawer-count-fav');
-      const laterEl = drawer.querySelector('#drawer-count-later');
-      const contEl = drawer.querySelector('#drawer-count-continue');
-      const histEl = drawer.querySelector('#drawer-count-history');
+        const favEl = drawer.querySelector('#drawer-count-fav');
+        const laterEl = drawer.querySelector('#drawer-count-later');
+        const contEl = drawer.querySelector('#drawer-count-continue');
+        const histEl = drawer.querySelector('#drawer-count-history');
 
-      if (favEl) favEl.textContent = window.FilmSubUser.Favorites.count();
-      if (laterEl) laterEl.textContent = window.FilmSubUser.WatchLater.count();
-      if (contEl) contEl.textContent = window.FilmSubUser.ContinueWatching.count();
-      if (histEl) histEl.textContent = window.FilmSubUser.WatchHistory.count();
+        if (favEl) favEl.textContent = safeCount(window.FilmSubUser.Favorites);
+        if (laterEl) laterEl.textContent = safeCount(window.FilmSubUser.WatchLater);
+        if (contEl) contEl.textContent = safeCount(window.FilmSubUser.ContinueWatching);
+        if (histEl) histEl.textContent = safeCount(window.FilmSubUser.WatchHistory);
+      }
+    } catch (err) {
+      console.warn('Cinema drawer user sync:', err);
     }
 
     drawer.classList.add('open');
@@ -3193,10 +3213,30 @@ function initGlobalCinemaDrawer() {
 
   const toggleBtns = document.querySelectorAll('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn');
   toggleBtns.forEach(btn => {
-    btn.removeEventListener('click', openDrawer);
-    btn.addEventListener('click', openDrawer);
+    btn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openDrawer();
+    };
   });
 }
+
+// Global delegated listener: Guarantee hamburger menu (☰) opens from any page/element
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn');
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window.openCinemaDrawer === 'function') {
+      window.openCinemaDrawer();
+    } else {
+      initGlobalCinemaDrawer();
+      if (typeof window.openCinemaDrawer === 'function') {
+        window.openCinemaDrawer();
+      }
+    }
+  }
+});
 
 // ---- Search Overlay ----
 function initSearchOverlay() {

@@ -830,6 +830,8 @@
             <div class="cs-reaction-floating-stage" id="cs-reaction-floating-stage"></div>
             <!-- Live In-Video Chat Overlay for Fullscreen & Normal Playback -->
             <div class="cs-video-chat-overlay" id="cs-video-chat-overlay" aria-live="polite"></div>
+            <!-- Floating Couple Cam PiP Dock (Voice & Cam Video Overlay) -->
+            <div class="cs-couple-cam-dock" id="cs-couple-cam-dock" style="display:none;" aria-label="Couple Video Cam PiP"></div>
             <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#000000">
               <div class="netflix-pulse-spinner">
                 <div class="netflix-pulse-ring"></div>
@@ -841,46 +843,34 @@
           <!-- Unified Luxury Cinema Action Menu Bar (Apple Liquid Glass) -->
           <div class="cs-cinema-menu-bar" id="cs-cinema-menu-bar">
             <div class="cs-bar-left">
-              <!-- Flagship Watch Party Button with Live Pulse Beacon -->
-              <button type="button" class="cs-bar-btn cs-btn-party" id="btn-watch-party-trigger" title="Watch together with friends in real-time">
+              <!-- Flagship Watch with Friends Button (Prominent & Eye-Catching) -->
+              <button type="button" class="cs-bar-btn cs-btn-party cs-btn-party-hero" id="btn-watch-party-trigger" title="Watch movie together with friends in real-time synchronized party">
                 <span class="cs-party-pulse"></span>
-                <i class="fa-solid fa-users-viewfinder"></i>
-                <span class="cs-party-label">Watch Party</span>
+                <i class="fa-solid fa-users-rays"></i>
+                <span class="cs-party-label">Watch with Friends (Party)</span>
                 <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
               </button>
 
               <!-- In-Screen Chat Popups Toggle (ON/OFF) -->
               <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
                 <i class="fa-solid fa-comment-dots"></i>
-                <span class="cs-popups-label">Chat Popups</span>
+                <span class="cs-popups-label">Popups</span>
                 <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
               </button>
 
-              <div class="cs-bar-divider"></div>
+              <!-- Live Mic Voice Chat Button -->
+              <button type="button" class="cs-bar-btn cs-btn-mic" id="btn-bar-mic" title="Toggle Microphone Voice Chat (M)">
+                <i class="fa-solid fa-microphone-slash"></i>
+                <span class="cs-mic-label">Mic</span>
+                <span class="cs-mic-badge" id="cs-mic-badge">OFF</span>
+              </button>
 
-              <!-- Compact Horizontal Live Emoji Reactions Capsule with Telegram-Style Animated Emojis -->
-              <div class="cs-reactions-capsule" id="cs-reaction-bar" title="Live Quick Reactions">
-                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="fire" title="Masterpiece 🔥">
-                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" alt="Fire" class="react-3d-emoji" loading="lazy">
-                  <span class="react-count" id="count-fire">0</span>
-                </button>
-                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="mindblown" title="Mind Blown 🤯">
-                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
-                  <span class="react-count" id="count-mindblown">0</span>
-                </button>
-                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="popcorn" title="Fun Watch 🍿">
-                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp" alt="Popcorn" class="react-3d-emoji" loading="lazy">
-                  <span class="react-count" id="count-popcorn">0</span>
-                </button>
-                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="angry" title="Angry / Intense 😡">
-                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp" alt="Angry" class="react-3d-emoji" loading="lazy">
-                  <span class="react-count" id="count-angry">0</span>
-                </button>
-                <button type="button" class="cs-react-pill cs-react-btn" data-reaction="heart" title="Love it ❤️">
-                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp" alt="Love" class="react-3d-emoji" loading="lazy">
-                  <span class="react-count" id="count-heart">0</span>
-                </button>
-              </div>
+              <!-- Live Couple Cam PiP Button -->
+              <button type="button" class="cs-bar-btn cs-btn-cam" id="btn-bar-cam" title="Toggle Couple Cam Video PiP (V)">
+                <i class="fa-solid fa-video-slash"></i>
+                <span class="cs-cam-label">Cam</span>
+                <span class="cs-cam-badge" id="cs-cam-badge">OFF</span>
+              </button>
             </div>
 
             <div class="cs-bar-right">

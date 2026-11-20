@@ -237,11 +237,11 @@
   display: flex;
   flex-direction: column;
   background: rgba(14, 14, 20, 0.96);
-  border: 1px solid rgba(138, 43, 226, 0.4);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.25);
+  border: 1.5px solid rgba(229, 9, 20, 0.75);
+  border-top: 2px solid rgba(255, 60, 70, 0.9);
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 0 35px rgba(138, 43, 226, 0.25), 0 16px 45px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 35px rgba(229, 9, 20, 0.35), 0 16px 45px rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   height: 100%;
@@ -256,9 +256,13 @@
 
 /* Lounge Header */
 .wp-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 25;
   padding: 12px 16px;
-  background: linear-gradient(90deg, rgba(138, 43, 226, 0.25) 0%, rgba(229, 9, 20, 0.15) 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(90deg, rgba(229, 9, 20, 0.32) 0%, rgba(18, 18, 26, 0.98) 100%);
+  border-bottom: 1px solid rgba(229, 9, 20, 0.45);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -272,7 +276,7 @@
 }
 
 .wp-title {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #ffffff;
   display: flex;
@@ -281,21 +285,49 @@
   letter-spacing: 0.3px;
 }
 
+.wp-title-beacon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+  animation: partyPulseAnim 1.6s infinite;
+}
+
 .wp-room-badge {
-  background: rgba(138, 43, 226, 0.25);
-  border: 1px solid rgba(138, 43, 226, 0.5);
-  color: #d8b4fe;
+  background: rgba(229, 9, 20, 0.18);
+  border: 1px solid rgba(229, 9, 20, 0.55);
+  color: #ff8585;
   font-size: 11px;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .wp-room-badge:hover {
-  background: rgba(138, 43, 226, 0.45);
+  background: rgba(229, 9, 20, 0.35);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.4);
+}
+
+.wp-room-badge.copied {
+  background: rgba(34, 197, 94, 0.25) !important;
+  border-color: rgba(34, 197, 94, 0.7) !important;
+  color: #86efac !important;
+}
+
+.wp-copy-pill {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 6px;
+  border-radius: 999px;
   color: #ffffff;
 }
 
@@ -303,6 +335,33 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.wp-popups-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #cbd5e1;
+}
+
+.wp-popups-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.wp-popups-toggle.active {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.6);
+  color: #86efac;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.35);
 }
 
 /* Dual Control Mode Toggle */
@@ -1129,4 +1188,328 @@
   width: 32px !important;
   height: 32px !important;
   font-size: 11px !important;
+}
+
+/* =====================================================================
+   WORLD-CLASS FLOATING COUPLE CAM PIP & REAL-TIME VOICE CHAT
+   ===================================================================== */
+
+/* Floating Couple Cam PiP Dock */
+.cs-couple-cam-dock {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(12, 13, 20, 0.78);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(138, 43, 226, 0.45);
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), 0 0 24px rgba(138, 43, 226, 0.25);
+  user-select: none;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90vw;
+}
+
+.cs-couple-cam-dock:hover {
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.9), 0 0 32px rgba(168, 85, 247, 0.38);
+}
+
+/* Drag Handle & Header */
+.cs-cam-dock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 6px;
+  cursor: grab;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cs-cam-dock-header:active {
+  cursor: grabbing;
+}
+
+.cs-cam-dock-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-cam-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: csCamPulseDot 1.6s infinite ease-in-out;
+}
+
+@keyframes csCamPulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.cs-cam-title-text {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #f1f5f9;
+  text-transform: uppercase;
+}
+
+.cs-cam-dock-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cs-cam-btn-min,
+.cs-cam-btn-close {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #cbd5e1;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cs-cam-btn-min:hover {
+  background: rgba(168, 85, 247, 0.3);
+  color: #ffffff;
+}
+
+.cs-cam-btn-close:hover {
+  background: rgba(239, 68, 68, 0.4);
+  color: #ffffff;
+}
+
+/* Bubbles Container */
+.cs-cam-bubbles-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 2cm x 2cm (~76px x 76px) Ultra-Sleek Squircle Video Bubble */
+.cs-cam-bubble {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #090a10;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.cs-cam-bubble video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1); /* Mirror camera for natural look */
+  background: #000;
+}
+
+/* Audio-Only Placeholder */
+.cs-cam-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.4) 0%, rgba(229, 9, 20, 0.25) 100%);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Live Speaking Halo & Pulsing Wave */
+.cs-cam-bubble.is-speaking {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.85), 0 0 32px rgba(34, 197, 94, 0.45) !important;
+  animation: csBubbleSpeakPop 1.2s infinite ease-in-out;
+}
+
+@keyframes csBubbleSpeakPop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.cs-speaking-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 22px;
+  border: 2px solid rgba(34, 197, 94, 0.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.cs-cam-bubble.is-speaking .cs-speaking-pulse {
+  opacity: 1;
+  animation: csHaloPulse 1.4s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes csHaloPulse {
+  0% { transform: scale(0.95); opacity: 0.9; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+/* Compact Info Badge */
+.cs-cam-info-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #ffffff;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cs-cam-badge-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46px;
+}
+
+.cs-cam-info-badge i {
+  font-size: 7.5px;
+  color: #4ade80;
+}
+
+.cs-cam-info-badge i.fa-microphone-slash {
+  color: #ef4444;
+}
+
+/* Collapsed Mini State */
+.cs-couple-cam-dock.is-collapsed {
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.cs-couple-cam-dock.is-collapsed .cs-cam-bubbles-wrap {
+  display: none !important;
+}
+
+.cs-couple-cam-dock.is-collapsed .cs-cam-dock-header {
+  background: transparent;
+  padding: 0;
+}
+
+.cs-couple-cam-dock.is-collapsed .cs-cam-title-text::after {
+  content: " (Min)";
+  color: #a855f7;
+}
+
+/* Header Controls Mic & Cam Buttons */
+.wp-media-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wp-media-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+.wp-media-btn.active#wp-btn-mic {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.65);
+  color: #4ade80;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
+}
+
+.wp-media-btn.active#wp-btn-cam {
+  background: rgba(236, 72, 153, 0.22);
+  border-color: rgba(236, 72, 153, 0.65);
+  color: #f472b6;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.45);
+}
+
+/* Cinema Menu Bar Mic & Cam Buttons */
+.cs-btn-mic,
+.cs-btn-cam {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cs-btn-mic:hover,
+.cs-btn-cam:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #f1f5f9;
+}
+
+.cs-btn-mic.active {
+  background: rgba(34, 197, 94, 0.18) !important;
+  border-color: rgba(34, 197, 94, 0.5) !important;
+  color: #4ade80 !important;
+}
+
+.cs-btn-cam.active {
+  background: rgba(236, 72, 153, 0.18) !important;
+  border-color: rgba(236, 72, 153, 0.5) !important;
+  color: #f472b6 !important;
+}
+
+.cs-mic-badge,
+.cs-cam-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  margin-left: 3px;
+  transition: all 0.2s ease;
+}
+
+.cs-btn-mic.active .cs-mic-badge {
+  background: rgba(34, 197, 94, 0.35);
+  color: #ffffff;
+}
+
+.cs-btn-cam.active .cs-cam-badge {
+  background: rgba(236, 72, 153, 0.35);
+  color: #ffffff;
 }

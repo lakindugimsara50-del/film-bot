@@ -15,13 +15,37 @@
 
   const WP_3D_EMOJIS = {
     fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
-    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
     popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
-    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
     heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
+    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
     laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
-    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp'
+    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
+    shock: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp',
+    clap: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44f/512.webp',
+    bolt: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
+    skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
+    crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
+    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp'
   };
+
+  const WP_CINEMA_STICKERS = [
+    { key: 'popcorn', name: 'Popcorn Blast', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png' },
+    { key: 'trophy', name: 'Oscar 10/10', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Trophy/3D/trophy_3d.png' },
+    { key: 'clapper', name: 'Action Clapper', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png' },
+    { key: 'ticket', name: 'VIP Ticket', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Admission%20tickets/3D/admission_tickets_3d.png' },
+    { key: 'bolt', name: 'Pure Hype', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/High%20voltage/3D/high_voltage_3d.png' },
+    { key: 'skull', name: 'Plot Twist', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Skull/3D/skull_3d.png' },
+    { key: 'crown', name: 'GOAT Movie', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Crown/3D/crown_3d.png' },
+    { key: 'pizza', name: 'Snack Break', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Pizza/3D/pizza_3d.png' },
+    { key: 'rocket', name: 'To The Moon', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rocket/3D/rocket_3d.png' },
+    { key: 'love', name: 'Pure Romance', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Heart%20with%20ribbon/3D/heart_with_ribbon_3d.png' }
+  ];
+
+  const WP_QUICK_EMOJIS = [
+    '😀', '😂', '🤣', '😍', '🤩', '😎', '🥳', '🥺', '😱', '🤯',
+    '🍿', '🎬', '🎟️', '🥤', '🔥', '❤️', '⚡', '💯', '👑', '💀',
+    '👍', '👏', '🙌', '✌️', '🤙', '🤝', '🍕', '🍻', '✨', '💤'
+  ];
 
   class WatchPartyEngine {
     constructor() {
@@ -38,24 +62,63 @@
       this.lastBroadcastActionTime = 0;
       this.chatPopupsEnabled = localStorage.getItem('fz_chat_popups_enabled') !== 'false';
 
+      // Couple Cam & Voice Chat WebRTC state
+      this.localStream = null;
+      this.remoteStreams = new Map(); // peerId -> MediaStream
+      this.mediaCalls = new Map(); // peerId -> MediaCall
+      this.remoteMediaStatus = new Map(); // userId -> { isMicOn, isCamOn, userName }
+      this.isMicOn = false;
+      this.isCamOn = false;
+      this.isCoupleCamCollapsed = false;
+      this.audioContext = null;
+
       this.initFromUrl();
       this.initFullscreenListener();
+      this.initKeyboardShortcuts();
     }
 
     initFullscreenListener() {
-      document.addEventListener('fullscreenchange', () => {
+      const syncOverlayWithFullscreen = () => {
         const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
-        const overlay = document.getElementById('cs-video-chat-overlay');
-        if (!overlay) return;
+        const targetParent = fsElem || document.getElementById('filmsubPlayer') || document.getElementById('video-player-container') || document.querySelector('.player-container');
+        if (!targetParent) return;
 
-        if (fsElem) {
-          if (!fsElem.contains(overlay)) {
-            fsElem.appendChild(overlay);
+        // Move Chat Overlay
+        const overlay = document.getElementById('cs-video-chat-overlay');
+        if (overlay && !targetParent.contains(overlay)) {
+          targetParent.appendChild(overlay);
+        }
+
+        // Move Couple Cam Dock
+        const camDock = document.getElementById('cs-couple-cam-dock');
+        if (camDock && !targetParent.contains(camDock)) {
+          targetParent.appendChild(camDock);
+        }
+
+        // Move Floating Emoji Stage
+        const stage = document.getElementById('cs-reaction-floating-stage');
+        if (stage && !targetParent.contains(stage)) {
+          targetParent.appendChild(stage);
+        }
+      };
+
+      document.addEventListener('fullscreenchange', syncOverlayWithFullscreen);
+      document.addEventListener('webkitfullscreenchange', syncOverlayWithFullscreen);
+    }
+
+    initKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) return;
+        if (e.key === 'm' || e.key === 'M') {
+          if (this.roomId) {
+            e.preventDefault();
+            this.toggleMic();
           }
-        } else {
-          const defaultParent = document.getElementById('video-player-container') || document.querySelector('.player-container');
-          if (defaultParent && !defaultParent.contains(overlay)) {
-            defaultParent.appendChild(overlay);
+        } else if (e.key === 'v' || e.key === 'V') {
+          if (this.roomId) {
+            e.preventDefault();
+            this.toggleCam();
           }
         }
       });
@@ -208,6 +271,11 @@
           this.setupPeerConnection(conn);
         });
 
+        // Listen for incoming Voice / Couple Cam Media Calls
+        this.peer.on('call', (mediaCall) => {
+          this.setupMediaCall(mediaCall);
+        });
+
         this.peer.on('error', (err) => {
           // Host peer ID might be taken if reconnecting, fallback gracefully
           console.log('PeerJS note:', err.type);
@@ -227,6 +295,11 @@
           isHost: this.isHost,
           timestamp: Date.now()
         });
+
+        // If local mic or cam is already active, call peer with media
+        if (this.localStream) {
+          setTimeout(() => this.callPeerWithMedia(conn.peer), 600);
+        }
       });
 
       conn.on('data', (data) => {
@@ -235,7 +308,106 @@
 
       conn.on('close', () => {
         this.peerConnections.delete(conn.peer);
+        this.remoteStreams.delete(conn.peer);
+        this.mediaCalls.delete(conn.peer);
+        this.updateCoupleCamDock();
       });
+    }
+
+    createPlaceholderMediaStream() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return new MediaStream();
+        const ctx = new AudioContextClass();
+        const osc = ctx.createOscillator();
+        const dst = ctx.createMediaStreamDestination();
+        osc.connect(dst);
+        osc.start();
+        const track = dst.stream.getAudioTracks()[0];
+        if (track) track.enabled = false;
+        return dst.stream;
+      } catch (e) {
+        return new MediaStream();
+      }
+    }
+
+    setupMediaCall(mediaCall) {
+      this.mediaCalls.set(mediaCall.peer, mediaCall);
+      const streamToAnswer = this.localStream || this.createPlaceholderMediaStream();
+      mediaCall.answer(streamToAnswer);
+
+      mediaCall.on('stream', (remoteStream) => {
+        this.remoteStreams.set(mediaCall.peer, remoteStream);
+        this.handleRemoteStream(mediaCall.peer, remoteStream);
+      });
+
+      mediaCall.on('close', () => {
+        this.remoteStreams.delete(mediaCall.peer);
+        this.mediaCalls.delete(mediaCall.peer);
+        this.updateCoupleCamDock();
+      });
+
+      mediaCall.on('error', (err) => {
+        console.warn('MediaCall note:', err);
+      });
+    }
+
+    callPeerWithMedia(peerId) {
+      if (!this.peer || !this.localStream) return;
+      const existingCall = this.mediaCalls.get(peerId);
+      if (existingCall && existingCall.open) {
+        try {
+          const senders = existingCall.peerConnection.getSenders();
+          const vTrack = this.localStream.getVideoTracks()[0] || null;
+          const aTrack = this.localStream.getAudioTracks()[0] || null;
+          senders.forEach(s => {
+            if (s.track && s.track.kind === 'video' && vTrack) s.replaceTrack(vTrack);
+            if (s.track && s.track.kind === 'audio' && aTrack) s.replaceTrack(aTrack);
+          });
+          return;
+        } catch (e) {}
+      }
+
+      try {
+        const call = this.peer.call(peerId, this.localStream);
+        if (call) {
+          this.mediaCalls.set(peerId, call);
+          call.on('stream', (remoteStream) => {
+            this.remoteStreams.set(peerId, remoteStream);
+            this.handleRemoteStream(peerId, remoteStream);
+          });
+          call.on('close', () => {
+            this.remoteStreams.delete(peerId);
+            this.mediaCalls.delete(peerId);
+            this.updateCoupleCamDock();
+          });
+        }
+      } catch (err) {
+        console.warn('Call peer error:', err);
+      }
+    }
+
+    callAllPeersWithMedia() {
+      if (!this.peer || !this.localStream) return;
+      for (const peerId of this.peerConnections.keys()) {
+        this.callPeerWithMedia(peerId);
+      }
+    }
+
+    handleRemoteStream(peerId, remoteStream) {
+      let audioEl = document.getElementById(`wp-remote-audio-${peerId}`);
+      if (!audioEl) {
+        audioEl = document.createElement('audio');
+        audioEl.id = `wp-remote-audio-${peerId}`;
+        audioEl.autoplay = true;
+        audioEl.playsInline = true;
+        document.body.appendChild(audioEl);
+      }
+      audioEl.srcObject = remoteStream;
+      audioEl.play().catch(() => {});
+
+      this.setupRemoteAudioAnalyser(peerId, remoteStream);
+      this.updateCoupleCamDock();
     }
 
     startHeartbeat() {
@@ -328,6 +500,21 @@
             const m = this.members.get(data.userId);
             m.status = data.status;
             this.updateMembersList();
+          }
+          break;
+
+        case 'MEDIA_STATUS':
+          if (data.userId) {
+            this.remoteMediaStatus.set(data.userId, {
+              isMicOn: !!data.isMicOn,
+              isCamOn: !!data.isCamOn,
+              userName: data.userName || 'Partner'
+            });
+            this.updateCoupleCamDock();
+            if (data.isCamOn) {
+              const uName = data.userName || 'Partner';
+              this.showActionToast(`${uName} turned ON their camera 👫📷`);
+            }
           }
           break;
       }
@@ -527,12 +714,26 @@
         <div class="wp-header">
           <div class="wp-title-wrap">
             <div class="wp-title">
+              <span class="wp-title-beacon"></span>
               <i class="fa-solid fa-crown" style="color:#f59e0b"></i>
-              <span class="wp-vip-title">VIP WATCH PARTY</span>
+              <span class="wp-vip-title">WATCH WITH FRIENDS</span>
             </div>
-            <span class="wp-room-badge" id="wp-room-code" title="Click to copy room link">${this.roomId} <i class="fa-regular fa-copy" style="font-size:9.5px"></i></span>
+            <button type="button" class="wp-room-badge" id="wp-room-code" title="Click to copy room invitation link">
+              <i class="fa-solid fa-link"></i>
+              <span id="wp-code-text">${this.roomId}</span>
+              <span class="wp-copy-pill"><i class="fa-regular fa-copy"></i> Copy</span>
+            </button>
           </div>
           <div class="wp-header-controls">
+            <!-- Voice Chat Mic Toggle -->
+            <button type="button" class="wp-media-btn ${this.isMicOn ? 'active' : ''}" id="wp-btn-mic" title="Toggle Voice Chat Mic (M)">
+              <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+            </button>
+            <!-- Couple Cam PiP Toggle -->
+            <button type="button" class="wp-media-btn ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Toggle Couple Cam PiP (V)">
+              <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
+            </button>
+            <!-- In-Video Chat Popups Toggle -->
             <button type="button" class="wp-popups-toggle ${this.chatPopupsEnabled !== false ? 'active' : ''}" id="wp-popups-toggle" title="Toggle On-Screen Chat Popups on Video">
               <i class="fa-solid ${this.chatPopupsEnabled !== false ? 'fa-comment-dots' : 'fa-comment-slash'}"></i>
               <span id="wp-popups-label">${this.chatPopupsEnabled !== false ? 'Popups ON' : 'Popups OFF'}</span>
@@ -563,34 +764,72 @@
             <!-- Pure live chat messages stream -->
           </div>
 
-          <!-- 3D Fluent Live Reactions Deck -->
+          <!-- 3D Fluent Live Reactions Deck (12 Modern Expressive Reactions) -->
           <div class="wp-floating-reactions-bar">
             <button type="button" class="wp-reaction-chip" data-emoji="fire" title="Fire 🔥">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" alt="Fire" class="react-3d-emoji" loading="lazy">
+              <img src="${WP_3D_EMOJIS.fire}" alt="Fire" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn 🍿">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Popcorn" class="react-3d-emoji" loading="lazy">
+              <img src="${WP_3D_EMOJIS.popcorn}" alt="Popcorn" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love ❤️">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" alt="Heart" class="react-3d-emoji" loading="lazy">
+              <img src="${WP_3D_EMOJIS.heart}" alt="Heart" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="mindblown" title="Mind Blown 🤯">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
+              <img src="${WP_3D_EMOJIS.mindblown}" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh 😂">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png" alt="Laugh" class="react-3d-emoji" loading="lazy">
+            <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh 🤣">
+              <img src="${WP_3D_EMOJIS.laugh}" alt="Laugh" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="party" title="Party 🎉">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Party%20popper/3D/party_popper_3d.png" alt="Party" class="react-3d-emoji" loading="lazy">
+              <img src="${WP_3D_EMOJIS.party}" alt="Party" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="shock" title="Shock 😱">
+              <img src="${WP_3D_EMOJIS.shock}" alt="Shock" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="clap" title="Clap 👏">
+              <img src="${WP_3D_EMOJIS.clap}" alt="Clap" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="bolt" title="Hype ⚡">
+              <img src="${WP_3D_EMOJIS.bolt}" alt="Hype" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="skull" title="Dead 💀">
+              <img src="${WP_3D_EMOJIS.skull}" alt="Dead" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="crown" title="GOAT 👑">
+              <img src="${WP_3D_EMOJIS.crown}" alt="Crown" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="star" title="Star-struck 🤩">
+              <img src="${WP_3D_EMOJIS.star}" alt="Star" class="react-3d-emoji" loading="lazy">
             </button>
           </div>
 
-          <form class="wp-chat-input-bar" id="wp-chat-form">
-            <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message..." autocomplete="off">
-            <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
-              <i class="fa-solid fa-paper-plane"></i>
-            </button>
-          </form>
+          <!-- WhatsApp-Style Chat Input Bar with Emoji & Cinema Sticker Picker -->
+          <div class="wp-chat-input-wrapper">
+            <!-- WhatsApp-Style Emoji & Cinema Sticker Popover -->
+            <div class="wp-picker-popover" id="wp-picker-popover" style="display:none">
+              <div class="wp-picker-header">
+                <div class="wp-picker-tabs">
+                  <button type="button" class="wp-picker-tab-btn active" data-tab="emojis"><i class="fa-regular fa-face-smile"></i> Emojis</button>
+                  <button type="button" class="wp-picker-tab-btn" data-tab="stickers"><i class="fa-solid fa-film"></i> Cinema Stickers</button>
+                </div>
+                <button type="button" class="wp-picker-close-btn" id="wp-picker-close-btn" title="Close Picker"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div class="wp-picker-body" id="wp-picker-body">
+                <!-- Injected dynamically by initEmojiAndStickerPicker -->
+              </div>
+            </div>
+
+            <form class="wp-chat-input-bar" id="wp-chat-form">
+              <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Cinema Sticker (WhatsApp Style)" aria-label="Open Emoji Picker">
+                <i class="fa-regular fa-face-smile"></i>
+              </button>
+              <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message or send stickers..." autocomplete="off">
+              <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
         </div>
 
         <div class="wp-footer-share">
@@ -603,10 +842,22 @@
         </div>
       `;
 
-      // Wire Room Code Copy
+      // Wire Room Code Copy with instant visual feedback
       const roomBadge = container.querySelector('#wp-room-code');
       if (roomBadge) {
-        roomBadge.addEventListener('click', () => this.shareInviteLink());
+        roomBadge.addEventListener('click', () => {
+          this.shareInviteLink();
+          const codeText = roomBadge.querySelector('#wp-code-text');
+          const originalText = this.roomId;
+          if (codeText) {
+            codeText.textContent = 'Copied! ✓';
+            roomBadge.classList.add('copied');
+            setTimeout(() => {
+              codeText.textContent = originalText;
+              roomBadge.classList.remove('copied');
+            }, 2000);
+          }
+        });
       }
 
       // Wire Close/Minimize
@@ -638,6 +889,29 @@
         barToggle.addEventListener('click', () => this.toggleChatPopups());
       }
       this.updateChatPopupsUI();
+
+      // Wire Mic buttons in Lounge & Player Menu Bar
+      const wpMicBtn = container.querySelector('#wp-btn-mic');
+      if (wpMicBtn) {
+        wpMicBtn.addEventListener('click', () => this.toggleMic());
+      }
+      const barMicBtn = document.getElementById('btn-bar-mic');
+      if (barMicBtn && !barMicBtn._bound) {
+        barMicBtn._bound = true;
+        barMicBtn.addEventListener('click', () => this.toggleMic());
+      }
+
+      // Wire Cam buttons in Lounge & Player Menu Bar
+      const wpCamBtn = container.querySelector('#wp-btn-cam');
+      if (wpCamBtn) {
+        wpCamBtn.addEventListener('click', () => this.toggleCam());
+      }
+      const barCamBtn = document.getElementById('btn-bar-cam');
+      if (barCamBtn && !barCamBtn._bound) {
+        barCamBtn._bound = true;
+        barCamBtn.addEventListener('click', () => this.toggleCam());
+      }
+      this.updateMediaControlsUI();
 
       // Wire WhatsApp Share Invite
       const shareBtn = container.querySelector('#wp-share-btn');
@@ -689,6 +963,115 @@
           });
         });
       });
+
+      // Wire WhatsApp-Style Emoji & Cinema Sticker Picker
+      this.initEmojiAndStickerPicker(container);
+    }
+
+    initEmojiAndStickerPicker(container) {
+      const smileyBtn = container.querySelector('#wp-btn-smiley');
+      const popover = container.querySelector('#wp-picker-popover');
+      const closeBtn = container.querySelector('#wp-picker-close-btn');
+      const body = container.querySelector('#wp-picker-body');
+      const tabBtns = container.querySelectorAll('.wp-picker-tab-btn');
+      const input = container.querySelector('#wp-chat-input');
+
+      if (!smileyBtn || !popover || !body) return;
+
+      let activeTab = 'emojis';
+
+      const renderContent = () => {
+        if (activeTab === 'emojis') {
+          body.innerHTML = `
+            <div class="wp-picker-emojis-grid">
+              ${WP_QUICK_EMOJIS.map(e => `
+                <button type="button" class="wp-emoji-btn" data-emoji="${e}" title="${e}">${e}</button>
+              `).join('')}
+            </div>
+          `;
+          body.querySelectorAll('.wp-emoji-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const emoji = btn.dataset.emoji;
+              if (input && emoji) {
+                input.value += emoji;
+                input.focus();
+              }
+            });
+          });
+        } else {
+          body.innerHTML = `
+            <div class="wp-picker-stickers-grid">
+              ${WP_CINEMA_STICKERS.map(s => `
+                <button type="button" class="wp-sticker-btn" data-sticker-key="${s.key}" title="${s.name}">
+                  <img src="${s.img}" alt="${s.name}" class="wp-sticker-thumb" loading="lazy">
+                  <span class="wp-sticker-caption">${s.name}</span>
+                </button>
+              `).join('')}
+            </div>
+          `;
+          body.querySelectorAll('.wp-sticker-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const key = btn.dataset.stickerKey;
+              const sticker = WP_CINEMA_STICKERS.find(s => s.key === key);
+              if (sticker) {
+                this.sendSticker(sticker);
+              }
+            });
+          });
+        }
+      };
+
+      smileyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isShowing = popover.style.display !== 'none';
+        popover.style.display = isShowing ? 'none' : 'flex';
+        if (!isShowing) renderContent();
+      });
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          popover.style.display = 'none';
+        });
+      }
+
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeTab = btn.dataset.tab;
+          renderContent();
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!popover.contains(e.target) && e.target !== smileyBtn && !smileyBtn.contains(e.target)) {
+          popover.style.display = 'none';
+        }
+      });
+    }
+
+    sendSticker(sticker) {
+      if (!sticker || !this.roomId) return;
+      const stickerPayload = `[STICKER:${sticker.name}:${sticker.img}]`;
+      this.appendChatMessage(this.localUser.name, stickerPayload, true);
+      this.broadcast({
+        type: 'CHAT_MESSAGE',
+        userName: this.localUser.name,
+        text: stickerPayload,
+        timestamp: Date.now()
+      });
+      if (typeof window.spawnFloatingEmoji === 'function') {
+        window.spawnFloatingEmoji(null, sticker.key || 'star');
+      }
+      const popover = document.getElementById('wp-picker-popover');
+      if (popover) popover.style.display = 'none';
     }
 
     updateLockUI() {
@@ -767,6 +1150,596 @@
       }
     }
 
+    syncLocalTracksToPeers() {
+      if (!this.peer || !this.localStream) return;
+
+      const vTrack = this.localStream.getVideoTracks()[0] || null;
+      const aTrack = this.localStream.getAudioTracks()[0] || null;
+
+      for (const [peerId, call] of this.mediaCalls.entries()) {
+        if (call && call.peerConnection) {
+          try {
+            const senders = call.peerConnection.getSenders();
+            let vReplaced = false;
+            let aReplaced = false;
+
+            senders.forEach(s => {
+              if (s.track && s.track.kind === 'video') {
+                s.replaceTrack(vTrack);
+                vReplaced = true;
+              } else if (s.track && s.track.kind === 'audio') {
+                s.replaceTrack(aTrack);
+                aReplaced = true;
+              }
+            });
+
+            if (!vReplaced && vTrack) {
+              call.peerConnection.addTrack(vTrack, this.localStream);
+            }
+            if (!aReplaced && aTrack) {
+              call.peerConnection.addTrack(aTrack, this.localStream);
+            }
+          } catch (e) {
+            console.warn('syncLocalTracks note:', e);
+          }
+        }
+      }
+
+      for (const peerId of this.peerConnections.keys()) {
+        if (!this.mediaCalls.has(peerId)) {
+          this.callPeerWithMedia(peerId);
+        }
+      }
+    }
+
+    broadcastMediaStatus() {
+      this.broadcast({
+        type: 'MEDIA_STATUS',
+        userId: this.localUser.id,
+        userName: this.localUser.name,
+        isMicOn: this.isMicOn,
+        isCamOn: this.isCamOn,
+        timestamp: Date.now()
+      });
+    }
+
+    async toggleMic() {
+      if (!this.roomId) {
+        this.showActionToast('Start or join a Watch Party room first 👥');
+        return;
+      }
+
+      try {
+        if (this.isMicOn) {
+          this.isMicOn = false;
+          if (this.localStream) {
+            this.localStream.getAudioTracks().forEach(t => {
+              t.enabled = false;
+              t.stop();
+              this.localStream.removeTrack(t);
+            });
+          }
+          if (this.localAudioInterval) {
+            clearInterval(this.localAudioInterval);
+            this.localAudioInterval = null;
+          }
+          const localBubble = document.querySelector('.cs-cam-bubble[data-user="local"]');
+          if (localBubble) localBubble.classList.remove('is-speaking');
+
+          this.syncLocalTracksToPeers();
+          this.broadcastMediaStatus();
+          this.updateMediaControlsUI();
+          this.updateCoupleCamDock();
+          this.showActionToast('Microphone Muted 🔇');
+        } else {
+          let audioStream;
+          try {
+            audioStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+              }
+            });
+          } catch (err) {
+            console.warn('Microphone permission denied/error:', err);
+            this.showActionToast('Please allow Microphone access to speak 🎙️');
+            return;
+          }
+
+          const aTrack = audioStream.getAudioTracks()[0];
+          if (!aTrack) {
+            this.showActionToast('No microphone found on your device');
+            return;
+          }
+
+          if (!this.localStream) {
+            this.localStream = new MediaStream();
+          }
+          this.localStream.getAudioTracks().forEach(t => {
+            t.stop();
+            this.localStream.removeTrack(t);
+          });
+          this.localStream.addTrack(aTrack);
+          this.isMicOn = true;
+
+          this.syncLocalTracksToPeers();
+          this.setupLocalAudioAnalyser();
+          this.broadcastMediaStatus();
+          this.updateMediaControlsUI();
+          this.updateCoupleCamDock();
+          this.showActionToast('Microphone ON 🎙️ Voice chat active');
+        }
+      } catch (err) {
+        console.error('toggleMic error:', err);
+        this.showActionToast('Could not access microphone');
+      }
+    }
+
+    async toggleCam() {
+      if (!this.roomId) {
+        this.showActionToast('Start or join a Watch Party room first 👥');
+        return;
+      }
+
+      try {
+        if (this.isCamOn) {
+          this.isCamOn = false;
+          if (this.localStream) {
+            this.localStream.getVideoTracks().forEach(t => {
+              t.stop();
+              this.localStream.removeTrack(t);
+            });
+          }
+          this.syncLocalTracksToPeers();
+          this.broadcastMediaStatus();
+          this.updateMediaControlsUI();
+          this.updateCoupleCamDock();
+          this.showActionToast('Camera turned OFF 📷');
+        } else {
+          let videoStream;
+          try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                width: { ideal: 320 },
+                height: { ideal: 320 },
+                facingMode: 'user'
+              }
+            });
+          } catch (err) {
+            console.warn('Camera permission denied/error:', err);
+            this.showActionToast('Please allow Camera access for Couple Cam 👫📷');
+            return;
+          }
+
+          const vTrack = videoStream.getVideoTracks()[0];
+          if (!vTrack) {
+            this.showActionToast('No camera found on your device');
+            return;
+          }
+
+          if (!this.localStream) {
+            this.localStream = new MediaStream();
+          }
+          this.localStream.getVideoTracks().forEach(t => {
+            t.stop();
+            this.localStream.removeTrack(t);
+          });
+          this.localStream.addTrack(vTrack);
+          this.isCamOn = true;
+
+          this.syncLocalTracksToPeers();
+          this.broadcastMediaStatus();
+          this.updateMediaControlsUI();
+          this.updateCoupleCamDock();
+          this.showActionToast('Couple Cam ON 👫 High-Definition PiP');
+        }
+      } catch (err) {
+        console.error('toggleCam error:', err);
+        this.showActionToast('Could not access camera');
+      }
+    }
+
+    updateMediaControlsUI() {
+      const wpMic = document.getElementById('wp-btn-mic');
+      if (wpMic) {
+        wpMic.classList.toggle('active', this.isMicOn);
+        const icon = wpMic.querySelector('i');
+        if (icon) icon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
+      }
+      const barMic = document.getElementById('btn-bar-mic');
+      if (barMic) {
+        barMic.classList.toggle('active', this.isMicOn);
+        const icon = barMic.querySelector('i');
+        if (icon) icon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
+        const badge = barMic.querySelector('#cs-mic-badge');
+        if (badge) badge.textContent = this.isMicOn ? 'ON' : 'OFF';
+      }
+
+      const wpCam = document.getElementById('wp-btn-cam');
+      if (wpCam) {
+        wpCam.classList.toggle('active', this.isCamOn);
+        const icon = wpCam.querySelector('i');
+        if (icon) icon.className = `fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}`;
+      }
+      const barCam = document.getElementById('btn-bar-cam');
+      if (barCam) {
+        barCam.classList.toggle('active', this.isCamOn);
+        const icon = barCam.querySelector('i');
+        if (icon) icon.className = `fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}`;
+        const badge = barCam.querySelector('#cs-cam-badge');
+        if (badge) badge.textContent = this.isCamOn ? 'ON' : 'OFF';
+      }
+    }
+
+    updateCoupleCamDock() {
+      const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+      const targetParent = fsElem || document.getElementById('filmsubPlayer') || document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!targetParent) return;
+
+      let dock = document.getElementById('cs-couple-cam-dock');
+      if (!dock) {
+        dock = document.createElement('div');
+        dock.id = 'cs-couple-cam-dock';
+        dock.className = 'cs-couple-cam-dock';
+        dock.setAttribute('aria-label', 'Couple Video Cam PiP');
+        targetParent.appendChild(dock);
+      } else if (!targetParent.contains(dock)) {
+        targetParent.appendChild(dock);
+      }
+
+      const hasLocalActive = this.isCamOn || this.isMicOn;
+      let hasRemoteActive = false;
+      for (const [userId, st] of this.remoteMediaStatus.entries()) {
+        if (st && (st.isCamOn || st.isMicOn)) {
+          hasRemoteActive = true;
+          break;
+        }
+      }
+      for (const [peerId, stream] of this.remoteStreams.entries()) {
+        if (stream && (stream.getVideoTracks().length > 0 || stream.getAudioTracks().length > 0)) {
+          hasRemoteActive = true;
+          break;
+        }
+      }
+
+      if (!hasLocalActive && !hasRemoteActive) {
+        dock.style.display = 'none';
+        return;
+      }
+
+      dock.style.display = 'flex';
+
+      // Render Dock Shell if empty
+      let header = dock.querySelector('#cs-cam-dock-drag-bar');
+      if (!header) {
+        dock.innerHTML = `
+          <div class="cs-cam-dock-header" id="cs-cam-dock-drag-bar" title="Drag to reposition anywhere on screen">
+            <div class="cs-cam-dock-title">
+              <span class="cs-cam-live-dot"></span>
+              <span class="cs-cam-title-text">COUPLE CAM</span>
+            </div>
+            <div class="cs-cam-dock-actions">
+              <button type="button" class="cs-cam-btn-min" id="cs-cam-btn-min" title="Minimize / Expand PiP">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <button type="button" class="cs-cam-btn-close" id="cs-cam-btn-close" title="Close Couple Cam">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="cs-cam-bubbles-wrap" id="cs-cam-bubbles-wrap"></div>
+        `;
+
+        header = dock.querySelector('#cs-cam-dock-drag-bar');
+        this.makeElementDraggable(dock, header);
+
+        const minBtn = dock.querySelector('#cs-cam-btn-min');
+        if (minBtn) {
+          minBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.isCoupleCamCollapsed = !this.isCoupleCamCollapsed;
+            dock.classList.toggle('is-collapsed', this.isCoupleCamCollapsed);
+            const icon = minBtn.querySelector('i');
+            if (icon) icon.className = `fa-solid ${this.isCoupleCamCollapsed ? 'fa-plus' : 'fa-minus'}`;
+          });
+        }
+
+        const closeBtn = dock.querySelector('#cs-cam-btn-close');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.isCamOn) this.toggleCam();
+            if (this.isMicOn) this.toggleMic();
+            dock.style.display = 'none';
+          });
+        }
+      }
+
+      const bubblesWrap = dock.querySelector('#cs-cam-bubbles-wrap');
+      if (!bubblesWrap) return;
+
+      // 1. Local Bubble
+      let localBubble = bubblesWrap.querySelector('.cs-cam-bubble[data-user="local"]');
+      if (hasLocalActive) {
+        if (!localBubble) {
+          localBubble = document.createElement('div');
+          localBubble.className = 'cs-cam-bubble';
+          localBubble.setAttribute('data-user', 'local');
+          bubblesWrap.appendChild(localBubble);
+        }
+
+        const userInitial = (this.localUser.name || 'U').charAt(0).toUpperCase();
+        if (this.isCamOn && this.localStream && this.localStream.getVideoTracks().length > 0) {
+          let videoEl = localBubble.querySelector('video');
+          if (!videoEl) {
+            localBubble.innerHTML = `
+              <video id="wp-local-cam-video" autoplay playsinline muted></video>
+              <div class="cs-cam-info-badge">
+                <span class="cs-cam-badge-name">You</span>
+                <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+              </div>
+              <div class="cs-speaking-pulse"></div>
+            `;
+            videoEl = localBubble.querySelector('video');
+          }
+          if (videoEl && videoEl.srcObject !== this.localStream) {
+            videoEl.srcObject = this.localStream;
+            videoEl.play().catch(() => {});
+          }
+          const micIcon = localBubble.querySelector('.cs-cam-info-badge i');
+          if (micIcon) micIcon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
+        } else {
+          // Audio only mode
+          localBubble.innerHTML = `
+            <div class="cs-cam-avatar-placeholder">
+              <span>${this.escapeHtml(userInitial)}</span>
+            </div>
+            <div class="cs-cam-info-badge">
+              <span class="cs-cam-badge-name">You</span>
+              <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+            </div>
+            <div class="cs-speaking-pulse"></div>
+          `;
+        }
+      } else if (localBubble) {
+        localBubble.remove();
+      }
+
+      // 2. Remote Partner Bubbles
+      const processedPeers = new Set();
+      for (const [peerId, remoteStream] of this.remoteStreams.entries()) {
+        processedPeers.add(peerId);
+        let remoteBubble = bubblesWrap.querySelector(`.cs-cam-bubble[data-user="${peerId}"]`);
+        if (!remoteBubble) {
+          remoteBubble = document.createElement('div');
+          remoteBubble.className = 'cs-cam-bubble';
+          remoteBubble.setAttribute('data-user', peerId);
+          bubblesWrap.appendChild(remoteBubble);
+        }
+
+        const hasVideo = remoteStream.getVideoTracks().length > 0;
+        let pName = 'Partner';
+        let pMic = true;
+        for (const [uid, st] of this.remoteMediaStatus.entries()) {
+          if (st && st.userName) {
+            pName = st.userName;
+            pMic = !!st.isMicOn;
+            break;
+          }
+        }
+        const pInitial = pName.charAt(0).toUpperCase();
+
+        if (hasVideo) {
+          let videoEl = remoteBubble.querySelector('video');
+          if (!videoEl) {
+            remoteBubble.innerHTML = `
+              <video id="wp-remote-cam-${peerId}" autoplay playsinline></video>
+              <div class="cs-cam-info-badge">
+                <span class="cs-cam-badge-name">${this.escapeHtml(pName)}</span>
+                <i class="fa-solid ${pMic ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+              </div>
+              <div class="cs-speaking-pulse"></div>
+            `;
+            videoEl = remoteBubble.querySelector('video');
+          }
+          if (videoEl && videoEl.srcObject !== remoteStream) {
+            videoEl.srcObject = remoteStream;
+            videoEl.play().catch(() => {});
+          }
+          const micIcon = remoteBubble.querySelector('.cs-cam-info-badge i');
+          if (micIcon) micIcon.className = `fa-solid ${pMic ? 'fa-microphone' : 'fa-microphone-slash'}`;
+        } else {
+          remoteBubble.innerHTML = `
+            <div class="cs-cam-avatar-placeholder">
+              <span>${this.escapeHtml(pInitial)}</span>
+            </div>
+            <div class="cs-cam-info-badge">
+              <span class="cs-cam-badge-name">${this.escapeHtml(pName)}</span>
+              <i class="fa-solid ${pMic ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+            </div>
+            <div class="cs-speaking-pulse"></div>
+          `;
+        }
+      }
+
+      // Remove orphaned bubbles
+      bubblesWrap.querySelectorAll('.cs-cam-bubble:not([data-user="local"])').forEach(b => {
+        const u = b.getAttribute('data-user');
+        if (u && !processedPeers.has(u)) {
+          b.remove();
+        }
+      });
+    }
+
+    makeElementDraggable(dock, dragBar) {
+      if (!dock || !dragBar || dock._isDraggableInitialized) return;
+      dock._isDraggableInitialized = true;
+
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+
+      const onMouseDown = (e) => {
+        if (e.target.closest('button')) return;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = dock.getBoundingClientRect();
+        const parentRect = dock.parentElement.getBoundingClientRect();
+        initialLeft = rect.left - parentRect.left;
+        initialTop = rect.top - parentRect.top;
+        dock.style.right = 'auto';
+        dock.style.bottom = 'auto';
+        dock.style.left = `${initialLeft}px`;
+        dock.style.top = `${initialTop}px`;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const parentRect = dock.parentElement.getBoundingClientRect();
+        const dockRect = dock.getBoundingClientRect();
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        newLeft = Math.max(8, Math.min(newLeft, parentRect.width - dockRect.width - 8));
+        newTop = Math.max(8, Math.min(newTop, parentRect.height - dockRect.height - 8));
+
+        dock.style.left = `${newLeft}px`;
+        dock.style.top = `${newTop}px`;
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      const onTouchStart = (e) => {
+        if (e.target.closest('button')) return;
+        if (e.touches.length !== 1) return;
+        isDragging = true;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        const rect = dock.getBoundingClientRect();
+        const parentRect = dock.parentElement.getBoundingClientRect();
+        initialLeft = rect.left - parentRect.left;
+        initialTop = rect.top - parentRect.top;
+        dock.style.right = 'auto';
+        dock.style.bottom = 'auto';
+        dock.style.left = `${initialLeft}px`;
+        dock.style.top = `${initialTop}px`;
+      };
+
+      const onTouchMove = (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        const parentRect = dock.parentElement.getBoundingClientRect();
+        const dockRect = dock.getBoundingClientRect();
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        newLeft = Math.max(8, Math.min(newLeft, parentRect.width - dockRect.width - 8));
+        newTop = Math.max(8, Math.min(newTop, parentRect.height - dockRect.height - 8));
+
+        dock.style.left = `${newLeft}px`;
+        dock.style.top = `${newTop}px`;
+      };
+
+      const onTouchEnd = () => {
+        isDragging = false;
+      };
+
+      dragBar.addEventListener('mousedown', onMouseDown);
+      dragBar.addEventListener('touchstart', onTouchStart, { passive: true });
+      dragBar.addEventListener('touchmove', onTouchMove, { passive: true });
+      dragBar.addEventListener('touchend', onTouchEnd);
+    }
+
+    setupLocalAudioAnalyser() {
+      if (!this.localStream || !this.isMicOn) return;
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!this.audioContext) this.audioContext = new AudioContextClass();
+        if (this.audioContext.state === 'suspended') this.audioContext.resume();
+
+        const audioTrack = this.localStream.getAudioTracks()[0];
+        if (!audioTrack) return;
+
+        const sourceStream = new MediaStream([audioTrack]);
+        const sourceNode = this.audioContext.createMediaStreamSource(sourceStream);
+        const analyser = this.audioContext.createAnalyser();
+        analyser.fftSize = 128;
+        sourceNode.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        if (this.localAudioInterval) clearInterval(this.localAudioInterval);
+
+        this.localAudioInterval = setInterval(() => {
+          if (!this.isMicOn) {
+            clearInterval(this.localAudioInterval);
+            this.localAudioInterval = null;
+            return;
+          }
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / dataArray.length;
+          const localBubble = document.querySelector('.cs-cam-bubble[data-user="local"]');
+          if (localBubble) {
+            localBubble.classList.toggle('is-speaking', avg > 14);
+          }
+        }, 120);
+      } catch (e) {
+        console.warn('Local Audio Analyser note:', e);
+      }
+    }
+
+    setupRemoteAudioAnalyser(peerId, remoteStream) {
+      if (!remoteStream || remoteStream.getAudioTracks().length === 0) return;
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!this.audioContext) this.audioContext = new AudioContextClass();
+        if (this.audioContext.state === 'suspended') this.audioContext.resume();
+
+        const sourceNode = this.audioContext.createMediaStreamSource(remoteStream);
+        const analyser = this.audioContext.createAnalyser();
+        analyser.fftSize = 128;
+        sourceNode.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const intervalId = setInterval(() => {
+          if (!this.remoteStreams.has(peerId)) {
+            clearInterval(intervalId);
+            return;
+          }
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / dataArray.length;
+          const remoteBubble = document.querySelector(`.cs-cam-bubble[data-user="${peerId}"]`);
+          if (remoteBubble) {
+            remoteBubble.classList.toggle('is-speaking', avg > 14);
+          }
+        }, 120);
+      } catch (e) {
+        console.warn('Remote Audio Analyser note:', e);
+      }
+    }
+
     showInVideoChatPopup(author, text, isMe = false) {
       if (this.chatPopupsEnabled === false) return;
 
@@ -794,6 +1767,21 @@
       const initial = (author || 'U').trim().charAt(0).toUpperCase();
       const popup = document.createElement('div');
       popup.className = `cs-video-chat-popup ${isMe ? 'is-me' : ''}`;
+
+      let popupTextHtml = this.escapeHtml(text);
+      if (typeof text === 'string' && text.startsWith('[STICKER:')) {
+        const stripped = text.slice(9, -1);
+        const colonIdx = stripped.indexOf(':');
+        const stickerName = colonIdx > 0 ? stripped.slice(0, colonIdx) : 'Cinema Sticker';
+        const stickerUrl = colonIdx > 0 ? stripped.slice(colonIdx + 1) : '';
+        popupTextHtml = `
+          <div class="vcp-sticker-pill">
+            <img src="${this.escapeHtml(stickerUrl)}" alt="${this.escapeHtml(stickerName)}" class="vcp-mini-sticker" loading="lazy">
+            <span>${this.escapeHtml(stickerName)}</span>
+          </div>
+        `;
+      }
+
       popup.innerHTML = `
         <div class="vcp-avatar">${this.escapeHtml(initial)}</div>
         <div class="vcp-content">
@@ -801,7 +1789,7 @@
             <span class="vcp-author">${this.escapeHtml(author)}${isMe ? ' (You)' : ''}</span>
             <span class="vcp-tag">Live</span>
           </div>
-          <div class="vcp-text">${this.escapeHtml(text)}</div>
+          <div class="vcp-text">${popupTextHtml}</div>
         </div>
         <button type="button" class="vcp-close" title="Dismiss">&times;</button>
         <div class="vcp-progress-bar"></div>
@@ -838,14 +1826,30 @@
         const item = document.createElement('div');
         item.className = `wp-msg-item ${isMe ? 'me' : ''}`;
         if (isSystem) {
-          item.style.background = 'rgba(138, 43, 226, 0.15)';
+          item.style.background = 'rgba(229, 9, 20, 0.18)';
           item.style.alignSelf = 'center';
         }
 
-        item.innerHTML = `
-          <span class="wp-msg-author">${this.escapeHtml(author)}</span>
-          <span class="wp-msg-text">${this.escapeHtml(text)}</span>
-        `;
+        if (typeof text === 'string' && text.startsWith('[STICKER:')) {
+          const stripped = text.slice(9, -1);
+          const colonIdx = stripped.indexOf(':');
+          const stickerName = colonIdx > 0 ? stripped.slice(0, colonIdx) : 'Cinema Sticker';
+          const stickerUrl = colonIdx > 0 ? stripped.slice(colonIdx + 1) : '';
+          item.classList.add('has-sticker');
+          item.innerHTML = `
+            <span class="wp-msg-author">${this.escapeHtml(author)}</span>
+            <div class="wp-sticker-bubble">
+              <img src="${this.escapeHtml(stickerUrl)}" alt="${this.escapeHtml(stickerName)}" class="wp-sticker-img" loading="lazy">
+              <span class="wp-sticker-tag"><i class="fa-brands fa-whatsapp" style="color:#25d366"></i> ${this.escapeHtml(stickerName)}</span>
+            </div>
+          `;
+        } else {
+          item.innerHTML = `
+            <span class="wp-msg-author">${this.escapeHtml(author)}</span>
+            <span class="wp-msg-text">${this.escapeHtml(text)}</span>
+          `;
+        }
+
         chatBox.appendChild(item);
         chatBox.scrollTop = chatBox.scrollHeight;
       }
@@ -860,19 +1864,31 @@
       const emojiKey = String(emoji).toLowerCase();
       const emojiMap = {
         '🔥': 'fire',
-        '🤯': 'mindblown',
-        '🍿': 'popcorn',
-        '😡': 'angry',
-        '❤️': 'heart',
-        '😂': 'laugh',
-        '🎉': 'party',
-        'fire': 'fire',
-        'mindblown': 'mindblown',
         'popcorn': 'popcorn',
-        'angry': 'angry',
+        '🍿': 'popcorn',
         'heart': 'heart',
+        '❤️': 'heart',
+        'mindblown': 'mindblown',
+        '🤯': 'mindblown',
         'laugh': 'laugh',
-        'party': 'party'
+        '😂': 'laugh',
+        '🤣': 'laugh',
+        'party': 'party',
+        '🎉': 'party',
+        'shock': 'shock',
+        '😱': 'shock',
+        'clap': 'clap',
+        '👏': 'clap',
+        'bolt': 'bolt',
+        '⚡': 'bolt',
+        'skull': 'skull',
+        '💀': 'skull',
+        'crown': 'crown',
+        '👑': 'crown',
+        'star': 'star',
+        '🤩': 'star',
+        'fire': 'fire',
+        'angry': 'mindblown'
       };
       const resolvedKey = emojiMap[emojiKey] || emojiMap[emoji] || 'fire';
 
@@ -912,7 +1928,7 @@
       stage.appendChild(floater);
       setTimeout(() => {
         if (floater.parentNode) floater.parentNode.removeChild(floater);
-      }, 2800);
+      }, 1600);
     }
 
     showActionToast(text) {

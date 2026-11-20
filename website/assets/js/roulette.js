@@ -123,18 +123,22 @@
   }
 
   // ---------------------------------------------------------------------
-  // 2. Live Quick Emoji Reactions (Under Player)
+  // 2. Modern Fluent 3D Emoji Assets & Screen Floater Engine
   // ---------------------------------------------------------------------
   const FLUENT_3D_EMOJIS = {
     fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
-    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
     popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
-    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
     heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
+    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
     laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
     party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
+    shock: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp',
+    clap: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44f/512.webp',
+    bolt: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
+    skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
     crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
-    sleep: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f634/512.webp'
+    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
+    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp'
   };
 
   function initLiveReactions(movieId) {
@@ -245,12 +249,12 @@
 
       setTimeout(() => {
         if (mini.parentNode) mini.parentNode.removeChild(mini);
-      }, 2600);
+      }, 1500);
     }
 
     setTimeout(() => {
       if (floater.parentNode) floater.parentNode.removeChild(floater);
-    }, 2800);
+    }, 1600);
   }
 
   window.spawnFloatingEmoji = spawnFloatingEmoji;

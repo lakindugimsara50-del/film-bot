@@ -385,6 +385,10 @@
       }
     },
 
+    count() {
+      return this.getAll().length;
+    },
+
     clear() {
       _set(STORAGE_KEYS.CONTINUE_WATCHING, {});
       _emit('fz:continue-changed', { list: [] });
@@ -438,6 +442,10 @@
       let list = this.getAll().filter(item => item.id !== movieId && item.slug !== movieId);
       _set(STORAGE_KEYS.WATCH_HISTORY, list);
       _emit('fz:history-changed', { list });
+    },
+
+    count() {
+      return this.getAll().length;
     },
 
     clear() {
@@ -559,6 +567,8 @@
   // Expose as global FilmZilla User API
   Favorites.getCount = () => Favorites.count();
   WatchLater.getCount = () => WatchLater.count();
+  ContinueWatching.getCount = () => ContinueWatching.count();
+  WatchHistory.getCount = () => WatchHistory.count();
   Affinity.get = () => Affinity.getScores();
   Radar.track = (movie) => Radar.toggle(movie);
   Radar.checkUpgrade = (movie) => {

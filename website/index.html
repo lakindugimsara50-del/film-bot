@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="assets/css/style.css?v=20261116_netflix_cinematic_hero_v37">
   <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261116_netflix_cinematic_hero_v37">
   <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261116_netflix_cinematic_hero_v37">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261120_teasers_v1">
 </head>
 <body>
 
@@ -59,6 +60,7 @@
   <!-- Primary Nav -->
   <nav class="primary-nav" aria-label="Main Navigation">
     <a href="index.html" class="active"><i class="fa-solid fa-house"></i> Home</a>
+    <a href="teasers.html" class="nav-teaser-link" title="Bite-Sized Teasers – TikTok Style Quick Discovery"><i class="fa-solid fa-bolt" style="color:#ff3366"></i> Teasers <span class="badge-nav-hot">HOT</span></a>
     <a href="search.html?type=movie"><i class="fa-solid fa-film"></i> Movies</a>
     <a href="search.html?type=series"><i class="fa-solid fa-tv"></i> TV Series</a>
 
@@ -307,6 +309,28 @@
       <!-- Injected by JS -->
     </div>
     <button class="carousel-arrow right" type="button" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</section>
+
+<!-- ========== 1.2 BITE-SIZED TEASERS (TikTok/Reels Style 30s Scene Discovery) ========== -->
+<section class="teasers-shelf-section" id="teasers-shelf-section" aria-label="Bite-Sized Teasers Discovery">
+  <div class="teasers-shelf-banner">
+    <div class="teasers-shelf-text">
+      <h2 class="teasers-shelf-title">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Bite-Sized Teasers • TikTok/Reels Feed</span>
+      </h2>
+      <p class="teasers-shelf-desc">
+        පැය භාගයක් තිස්සේ Posters කියව කියව කාලය නාස්ති නොකර, තත්පර 30න් හොඳම Scenes Scroll කරලා බලන්න!
+      </p>
+    </div>
+    <a href="teasers.html" class="btn-open-reels-feed">
+      <i class="fa-solid fa-play"></i>
+      <span>Open Reels Feed (30s)</span>
+    </a>
+  </div>
+  <div class="teasers-horizontal-rail" id="teasers-preview-rail" role="list" aria-label="Quick Scene Teasers">
+    <!-- Populated dynamically from teasers_data.js -->
   </div>
 </section>
 
@@ -574,6 +598,7 @@
 <!-- ========== CINESUBZ-STYLE MOBILE BOTTOM NAVIGATION BAR ========== -->
 <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
   <a href="index.html" class="active"><i class="fa-solid fa-house"></i><span>Home</span></a>
+  <a href="teasers.html" class="nav-bottom-teaser"><i class="fa-solid fa-bolt" style="color:#ff3366"></i><span>Teasers</span></a>
   <a href="search.html?type=movie"><i class="fa-solid fa-film"></i><span>Movies</span></a>
   <a href="search.html?type=series"><i class="fa-solid fa-tv"></i><span>TV Shows</span></a>
   <button type="button" id="mob-search-btn"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></button>
@@ -591,6 +616,7 @@
 <script src="assets/js/user-state.js?v=20261117_user_state_v1"></script>
 <script src="assets/js/roulette.js?v=20261117_roulette_v1"></script>
 <script src="data/movies_data.js?v=20261116_modern_top10_spotlight_v40"></script>
+<script src="data/teasers_data.js?v=20261120_teasers_v1"></script>
 <script src="assets/js/app.js?v=20261116_modern_top10_spotlight_v40"></script>
 <script src="assets/js/netflix-ui.js?v=20261116_modern_top10_spotlight_v40"></script>
 </body>

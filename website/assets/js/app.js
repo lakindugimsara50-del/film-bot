@@ -37,6 +37,7 @@ function renderAllSections() {
   }
   if (document.getElementById('continue-track')) renderContinueWatchingShelf();
   if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
+  if (document.getElementById('teasers-preview-rail')) renderTeasersPreviewShelf();
   if (document.getElementById('for-you-track')) renderForYouShelf();
   if (document.getElementById('all-movies-grid')) initMoviesShowcaseGrid();
   if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
@@ -51,6 +52,38 @@ function renderAllSections() {
   initHighlightPopup();
   initTrailerModalListeners();
   initScrollReveal();
+}
+
+function renderTeasersPreviewShelf() {
+  const rail = document.getElementById('teasers-preview-rail');
+  if (!rail) return;
+  const teasers = window.FILMSUB_TEASERS || [];
+  if (!teasers.length) {
+    const shelf = document.getElementById('teasers-shelf-section');
+    if (shelf) shelf.style.display = 'none';
+    return;
+  }
+  const displayTeasers = teasers.slice(0, 16);
+  rail.innerHTML = displayTeasers.map(t => {
+    return `
+      <a href="teasers.html?id=${encodeURIComponent(t.movie_id)}" class="teaser-mini-card" title="Watch 30s teaser: ${escapeAttr(t.title)}">
+        <img src="${t.poster || t.backdrop}" alt="${escapeAttr(t.title)}" class="teaser-mini-poster" loading="lazy">
+        <div class="teaser-mini-overlay">
+          <div class="teaser-mini-badge">
+            <i class="fa-solid fa-fire"></i>
+            <span>30s Teaser</span>
+          </div>
+          <div class="teaser-mini-play">
+            <i class="fa-solid fa-play"></i>
+          </div>
+          <div class="teaser-mini-info">
+            <h4 class="teaser-mini-title">${escapeHtml(t.title)}</h4>
+            <div class="teaser-mini-meta">★ ${t.imdb || '7.5'} • ${(t.genres || []).slice(0, 1).join('')}</div>
+          </div>
+        </div>
+      </a>
+    `;
+  }).join('');
 }
 
 function initApp() {
@@ -3028,6 +3061,7 @@ function initGlobalCinemaDrawer() {
           <div class="drawer-section-title">EXPLORE</div>
           <ul class="drawer-nav-list">
             <li><a href="index.html" class="drawer-nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a></li>
+            <li><a href="teasers.html" class="drawer-nav-item drawer-nav-teaser"><i class="fa-solid fa-bolt" style="color:#ff3366"></i><span>30s Teasers (Reels)</span><span class="drawer-pill-hot" style="background:linear-gradient(45deg,#e50914,#ff3366)">NEW</span></a></li>
             <li><a href="search.html?type=movie" class="drawer-nav-item"><i class="fa-solid fa-film"></i><span>Movies</span><span class="drawer-pill-hot">POPULAR</span></a></li>
             <li><a href="search.html?type=tv" class="drawer-nav-item"><i class="fa-solid fa-tv"></i><span>TV Series</span></a></li>
             <li><a href="search.html?genre=Action" class="drawer-nav-item"><i class="fa-solid fa-bolt" style="color:#f39c12"></i><span>Action & Thriller</span></a></li>

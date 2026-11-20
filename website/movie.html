@@ -655,6 +655,11 @@
 
 <!-- ========== HEADER ========== -->
 <header class="site-header solid" id="site-header">
+  <!-- Left Hamburger Sidebar Toggle (☰) -->
+  <button type="button" class="header-sidebar-toggle-btn" id="header-sidebar-toggle-btn" aria-label="Open Navigation Menu" title="Open Navigation Menu (☰)">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
   <a href="index.html" class="logo" aria-label="FilmZilla Home">
     <img src="assets/img/filmzilla_brand_horizontal.png" alt="FilmZilla" class="logo-brand-img">
   </a>
@@ -811,6 +816,10 @@
               <i class="fa-solid fa-clone"></i>
               <span>PiP</span>
             </button>
+            <!-- Cinema Floating Reaction Canvas Stage -->
+            <div class="cs-reaction-floating-stage" id="cs-reaction-floating-stage"></div>
+            <!-- Live In-Video Chat Overlay for Fullscreen & Normal Playback -->
+            <div class="cs-video-chat-overlay" id="cs-video-chat-overlay" aria-live="polite"></div>
             <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#000000">
               <div class="netflix-pulse-spinner">
                 <div class="netflix-pulse-ring"></div>
@@ -830,28 +839,35 @@
                 <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
               </button>
 
+              <!-- In-Screen Chat Popups Toggle (ON/OFF) -->
+              <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
+                <i class="fa-solid fa-comment-dots"></i>
+                <span class="cs-popups-label">Chat Popups</span>
+                <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
+              </button>
+
               <div class="cs-bar-divider"></div>
 
-              <!-- Compact Horizontal Live Emoji Reactions Capsule with 3D Glossy Emojis -->
+              <!-- Compact Horizontal Live Emoji Reactions Capsule with Telegram-Style Animated Emojis -->
               <div class="cs-reactions-capsule" id="cs-reaction-bar" title="Live Quick Reactions">
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="fire" title="Masterpiece 🔥">
-                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" alt="Fire" class="react-3d-emoji" loading="lazy">
+                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" alt="Fire" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-fire">0</span>
                 </button>
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="mindblown" title="Mind Blown 🤯">
-                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
+                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-mindblown">0</span>
                 </button>
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="popcorn" title="Fun Watch 🍿">
-                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Popcorn" class="react-3d-emoji" loading="lazy">
+                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp" alt="Popcorn" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-popcorn">0</span>
                 </button>
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="angry" title="Angry / Intense 😡">
-                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Angry%20face/3D/angry_face_3d.png" alt="Angry" class="react-3d-emoji" loading="lazy">
+                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp" alt="Angry" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-angry">0</span>
                 </button>
                 <button type="button" class="cs-react-pill cs-react-btn" data-reaction="heart" title="Love it ❤️">
-                  <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" alt="Love" class="react-3d-emoji" loading="lazy">
+                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp" alt="Love" class="react-3d-emoji" loading="lazy">
                   <span class="react-count" id="count-heart">0</span>
                 </button>
               </div>

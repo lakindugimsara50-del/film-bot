@@ -48,7 +48,7 @@ async function checkUrl(url) {
     if (u.includes('movie')) {
       const hasReactions = r.content.includes('id="cs-reaction-bar"');
       const hasWatchParty = r.content.includes('id="btn-watch-party-trigger"');
-      const hasPiP = r.content.includes('id="btn-pip-trigger"');
+      const hasPiP = r.content.includes('id="cs-video-pip-corner-btn"') || r.content.includes('id="btn-pip-trigger"');
       console.log(`  -> movie.html verification: Reactions=${hasReactions}, WatchParty=${hasWatchParty}, PiP=${hasPiP}`);
       if (!hasReactions || !hasWatchParty || !hasPiP) allPass = false;
     }

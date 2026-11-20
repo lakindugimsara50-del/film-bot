@@ -65,6 +65,7 @@ function initApp() {
   // 2. Init header, search, nav with safe isolation
   try { initHeader(); } catch (e) { console.error('initHeader error:', e); }
   try { initUserUI(); } catch (e) { console.error('initUserUI error:', e); }
+  try { initGlobalCinemaDrawer(); } catch (e) { console.error('initGlobalCinemaDrawer error:', e); }
   try { initSearchOverlay(); } catch (e) { console.error('initSearchOverlay error:', e); }
   try { initMobileBottomNav(); } catch (e) { console.error('initMobileBottomNav error:', e); }
 
@@ -2397,6 +2398,28 @@ function initUserUI() {
     });
   }
 
+  // Profile Avatar Picker Shortcut in Drawer
+  const btnDrawerChangeAv = document.getElementById('btn-drawer-change-avatar');
+  if (btnDrawerChangeAv && !btnDrawerChangeAv._bound) {
+    btnDrawerChangeAv._bound = true;
+    btnDrawerChangeAv.addEventListener('click', () => {
+      if (profileDrawer) profileDrawer.classList.remove('open');
+      openAvatarPickerModal();
+    });
+  }
+
+  // Explore Global Cinema Menu Shortcut in Drawer
+  const btnDrawerOpenMenu = document.getElementById('btn-drawer-open-menu');
+  if (btnDrawerOpenMenu && !btnDrawerOpenMenu._bound) {
+    btnDrawerOpenMenu._bound = true;
+    btnDrawerOpenMenu.addEventListener('click', () => {
+      if (profileDrawer) profileDrawer.classList.remove('open');
+      if (typeof window.openCinemaDrawer === 'function') {
+        window.openCinemaDrawer();
+      }
+    });
+  }
+
   // Sign in / Edit profile
   if (btnSignIn && !btnSignIn._bound) {
     btnSignIn._bound = true;
@@ -2418,6 +2441,10 @@ function initUserUI() {
       if (typeof showToast === 'function') showToast('Signed out. Switched to Guest Profile.');
     });
   }
+
+  // React dynamically to profile & list updates
+  window.addEventListener('fz:profile-updated', () => updateUI());
+  window.addEventListener('fz:lists-updated', () => updateUI());
 
   // Setup Delegated Click Listener for Card Quick Actions (❤️ Favorite & ⏱️ Watch Later)
   if (!window._cardActionBound) {
@@ -2480,10 +2507,12 @@ function openUserListModal(initialTab = 'favorites') {
         <!-- VIP Cinema Pass Banner Header -->
         <div class="vip-hub-header">
           <div class="vip-hub-profile-row">
-            <div class="vip-hub-avatar-wrap">
+            <div class="vip-hub-avatar-wrap" id="vip-hub-avatar-trigger" title="Click to Change Profile Picture">
               <img src="" alt="User" class="vip-hub-avatar" id="vip-hub-avatar">
               <span class="vip-hub-halo"></span>
+              <span class="vip-hub-avatar-edit-badge" title="Change Avatar"><i class="fa-solid fa-camera"></i></span>
             </div>
+            <input type="file" id="vip-avatar-file-input" accept="image/*" style="display:none">
             <div class="vip-hub-meta">
               <div class="vip-hub-name-wrap">
                 <h3 class="vip-hub-name" id="vip-hub-name">Loading...</h3>
@@ -2494,9 +2523,6 @@ function openUserListModal(initialTab = 'favorites') {
               <div class="vip-hub-badge-row">
                 <span class="vip-hub-badge vip-gold" id="vip-hub-status-badge">
                   <i class="fa-solid fa-crown"></i> VIP Cinema Pass
-                </span>
-                <span class="vip-hub-badge vip-sync" id="vip-hub-sync-badge">
-                  <i class="fa-solid fa-cloud-arrow-up"></i> Local & Synced
                 </span>
               </div>
             </div>
@@ -2509,17 +2535,17 @@ function openUserListModal(initialTab = 'favorites') {
         <!-- Real-Time Cinema Navigation Tabs -->
         <div class="vip-hub-tabs-nav" id="vip-hub-tabs-nav" role="tablist">
           <button type="button" class="vip-tab-btn" data-tab="favorites" role="tab">
-            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" class="tab-3d-icon" alt="Heart">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp" class="tab-3d-icon" alt="Heart">
             <span>Favorites</span>
             <span class="vip-tab-count" id="vip-count-favorites">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="watchlater" role="tab">
-            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" class="tab-3d-icon" alt="Watch Later">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp" class="tab-3d-icon" alt="Watch Later">
             <span>Watch Later</span>
             <span class="vip-tab-count" id="vip-count-watchlater">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="continue" role="tab">
-            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" class="tab-3d-icon" alt="Continue">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" class="tab-3d-icon" alt="Continue">
             <span>Continue Watching</span>
             <span class="vip-tab-count" id="vip-count-continue">0</span>
           </button>
@@ -2555,6 +2581,50 @@ function openUserListModal(initialTab = 'favorites') {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('open');
     });
+
+    // Wire Avatar Photo Changer
+    const avTrigger = modal.querySelector('#vip-hub-avatar-trigger');
+    const avInput = modal.querySelector('#vip-avatar-file-input');
+    if (avTrigger && avInput) {
+      avTrigger.addEventListener('click', () => {
+        openAvatarPickerModal();
+      });
+
+      avInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          if (typeof showToast === 'function') showToast('Please select an image file 🖼️');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 128, 128);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            window.FilmSubUser.Profile.setPicture(dataUrl);
+            renderVipHeader();
+            const mainAv = document.getElementById('user-avatar-img');
+            if (mainAv) mainAv.src = dataUrl;
+            const drawerAv = document.getElementById('user-drawer-avatar');
+            if (drawerAv) drawerAv.src = dataUrl;
+            const slideAv = document.getElementById('nav-drawer-avatar');
+            if (slideAv) slideAv.src = dataUrl;
+
+            if (typeof showToast === 'function') showToast('Profile photo updated! ✨');
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
 
     // Wire edit nickname button
     modal.querySelector('#vip-hub-edit-btn').addEventListener('click', () => {
@@ -2612,7 +2682,6 @@ function openUserListModal(initialTab = 'favorites') {
     const avatarEl = document.getElementById('vip-hub-avatar');
     const nameEl = document.getElementById('vip-hub-name');
     const statusBadge = document.getElementById('vip-hub-status-badge');
-    const syncBadge = document.getElementById('vip-hub-sync-badge');
 
     if (avatarEl) avatarEl.src = profile.picture || '';
     if (nameEl) nameEl.textContent = profile.name || 'Cinema Fan';
@@ -2621,10 +2690,6 @@ function openUserListModal(initialTab = 'favorites') {
       statusBadge.innerHTML = profile.isGuest 
         ? '<i class="fa-solid fa-crown" style="color:#ffd700"></i> VIP Guest Cinema Pass' 
         : '<i class="fa-brands fa-google" style="color:#4285f4"></i> Verified Google Member';
-    }
-
-    if (syncBadge) {
-      syncBadge.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#10b981"></i> Cloud Synced';
     }
 
     // Update Tab Counters
@@ -2663,25 +2728,41 @@ function openUserListModal(initialTab = 'favorites') {
 
     if (tab === 'favorites') {
       items = window.FilmSubUser.Favorites.getAll();
-      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> Favorite Movies in collection</span>`;
+      toolbarInfo.innerHTML = `
+        <div class="vip-hub-count-pill">
+          <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+          <span>${items.length === 1 ? '1 Favorite Movie' : `${items.length} Favorite Movies in Collection`}</span>
+        </div>`;
       emptyTitle = 'කැමතිම චිත්‍රපට තවම නැත';
       emptySub = 'චිත්‍රපටයක ඇති ❤️ Heart අයිකනය ඔබා මෙහි සුරැකීමට හැකිය.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
     } else if (tab === 'watchlater') {
       items = window.FilmSubUser.WatchLater.getAll();
-      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> Movies queued for later</span>`;
+      toolbarInfo.innerHTML = `
+        <div class="vip-hub-count-pill">
+          <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+          <span>${items.length === 1 ? '1 Movie in Watch Later Queue' : `${items.length} Movies in Watch Later Queue`}</span>
+        </div>`;
       emptyTitle = 'පස්සේ බලන්න දැමූ චිත්‍රපට තවම නැත';
       emptySub = 'චිත්‍රපටයක ඇති ⏱️ Watch Later ඔබා විවේකීව නැරඹීමට මෙහි සුරකින්න.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
     } else if (tab === 'continue') {
       items = window.FilmSubUser.ContinueWatching.getAll();
-      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> In-Progress Movies</span>`;
+      toolbarInfo.innerHTML = `
+        <div class="vip-hub-count-pill">
+          <i class="fa-solid fa-play" style="color:var(--accent)"></i>
+          <span>${items.length === 1 ? '1 In-Progress Movie' : `${items.length} In-Progress Movies`}</span>
+        </div>`;
       emptyTitle = 'නැවතු තැනින් නැවත බලන්න තවම චිත්‍රපට නැත';
       emptySub = 'ඔබ නරඹමින් සිටි චිත්‍රපට නැවතු වෙලාවේ සිටම මෙතැනින් Play කළ හැක.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
     } else if (tab === 'history') {
       items = window.FilmSubUser.WatchHistory.getAll();
-      toolbarInfo.innerHTML = `<span><strong>${items.length}</strong> Watched Movies in history</span>`;
+      toolbarInfo.innerHTML = `
+        <div class="vip-hub-count-pill">
+          <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+          <span>${items.length === 1 ? '1 Watched Movie' : `${items.length} Watched Movies in History`}</span>
+        </div>`;
       emptyTitle = 'Watch History හිස්ව ඇත';
       emptySub = 'ඔබ නරඹන සියලුම චිත්‍රපට වෙලාවත් සමග පිළිවෙළට මෙහි සටහන් වේ.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
@@ -2774,6 +2855,310 @@ function openUserListModal(initialTab = 'favorites') {
   renderVipHeader();
   switchVipTab(initialTab);
   modal.classList.add('open');
+}
+
+// ---- Profile Avatar Picker & Customization Modal ----
+const VIP_PRESET_AVATARS = [
+  { id: 'popcorn', name: 'Popcorn Cinephile', icon: '🍿', bg1: '#7928ca', bg2: '#ff0080' },
+  { id: 'director', name: 'Master Director', icon: '🎬', bg1: '#e50914', bg2: '#800020' },
+  { id: 'hero', name: 'Electric Hero', icon: '⚡', bg1: '#0052d4', bg2: '#4364f7' },
+  { id: 'agent', name: 'Secret Agent', icon: '🕶️', bg1: '#232526', bg2: '#414345' },
+  { id: 'ninja', name: 'Cyber Ninja', icon: '🥷', bg1: '#0f2027', bg2: '#203a43' },
+  { id: 'astronaut', name: 'Cosmic Voyager', icon: '🚀', bg1: '#141e30', bg2: '#243b55' },
+  { id: 'crown', name: 'VIP Royalty', icon: '👑', bg1: '#f39c12', bg2: '#d35400' },
+  { id: 'flame', name: 'Golden Legend', icon: '🔥', bg1: '#ff416c', bg2: '#ff4b2b' }
+];
+
+function createPresetAvatarSvg(icon, bg1, bg2) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+    <defs>
+      <linearGradient id="g_${encodeURIComponent(icon)}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${bg1}" />
+        <stop offset="100%" stop-color="${bg2}" />
+      </linearGradient>
+      <filter id="sh_${encodeURIComponent(icon)}" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
+      </filter>
+    </defs>
+    <rect width="128" height="128" rx="64" fill="url(#g_${encodeURIComponent(icon)})" />
+    <circle cx="64" cy="64" r="61" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+    <text x="64" y="78" font-size="54" text-anchor="middle" filter="url(#sh_${encodeURIComponent(icon)})">${icon}</text>
+  </svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+function applyNewAvatar(avatarUrl) {
+  if (!window.FilmSubUser || !window.FilmSubUser.Profile) return;
+  window.FilmSubUser.Profile.setPicture(avatarUrl);
+  const selectors = ['#vip-hub-avatar', '#user-avatar-img', '#nav-drawer-avatar', '#mob-user-avatar'];
+  selectors.forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.src = avatarUrl;
+  });
+  if (typeof showToast === 'function') showToast('Profile avatar updated! ✨');
+}
+
+function openAvatarPickerModal() {
+  let modal = document.getElementById('vip-avatar-picker-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'vip-avatar-picker-modal';
+    modal.className = 'vip-avatar-picker-overlay';
+    modal.innerHTML = `
+      <div class="vip-avatar-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="avatar-picker-title">
+        <div class="vip-avatar-picker-header">
+          <div class="vip-avatar-picker-title-wrap">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent,#e50914)"></i>
+            <h3 id="avatar-picker-title">Choose Profile Avatar</h3>
+          </div>
+          <button type="button" class="vip-avatar-picker-close" id="avatar-picker-close-btn" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="vip-avatar-picker-body">
+          <div class="vip-avatar-upload-cta">
+            <button type="button" class="vip-upload-photo-btn" id="vip-upload-trigger-btn">
+              <i class="fa-solid fa-camera"></i>
+              <span>Upload Custom Photo (Device / Camera)</span>
+            </button>
+            <p class="vip-upload-subtext">Supports PNG, JPG, WebP. Automatically optimized for cinema avatar.</p>
+          </div>
+          <div class="vip-avatar-divider">
+            <span>OR CHOOSE A 3D CINEMA AVATAR</span>
+          </div>
+          <div class="vip-avatar-grid" id="vip-avatar-presets-grid">
+            ${VIP_PRESET_AVATARS.map(p => {
+              const svgUri = createPresetAvatarSvg(p.icon, p.bg1, p.bg2);
+              return `
+                <button type="button" class="vip-avatar-preset-btn" data-avatar-uri="${encodeURIComponent(svgUri)}" title="${p.name}">
+                  <img src="${svgUri}" alt="${p.name}" class="preset-avatar-img">
+                  <span class="preset-avatar-label">${p.name}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('#avatar-picker-close-btn').addEventListener('click', () => {
+      modal.classList.remove('open');
+    });
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('open');
+    });
+
+    modal.querySelector('#vip-upload-trigger-btn').addEventListener('click', () => {
+      const fileInp = document.getElementById('vip-avatar-file-input');
+      if (fileInp) fileInp.click();
+      modal.classList.remove('open');
+    });
+
+    modal.querySelectorAll('.vip-avatar-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uri = decodeURIComponent(btn.dataset.avatarUri);
+        applyNewAvatar(uri);
+        modal.classList.remove('open');
+      });
+    });
+  }
+
+  modal.classList.add('open');
+}
+
+// ---- Global Cinema Left Drawer (☰ Hamburger Menu) ----
+function initGlobalCinemaDrawer() {
+  if (!document.getElementById('cinema-global-nav-drawer')) {
+    const backdrop = document.createElement('div');
+    backdrop.id = 'cinema-global-nav-backdrop';
+    backdrop.className = 'cinema-nav-drawer-backdrop';
+
+    const drawer = document.createElement('aside');
+    drawer.id = 'cinema-global-nav-drawer';
+    drawer.className = 'cinema-nav-drawer-panel';
+    drawer.setAttribute('aria-label', 'Global Cinema Navigation Menu');
+    drawer.innerHTML = `
+      <div class="cinema-drawer-header">
+        <a href="index.html" class="drawer-brand-link">
+          <img src="assets/img/filmzilla_brand_horizontal.png" alt="FilmZilla" class="drawer-brand-img">
+        </a>
+        <button type="button" class="cinema-drawer-close" id="cinema-drawer-close-btn" aria-label="Close Menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- User Profile Quick Card in Drawer -->
+      <div class="cinema-drawer-user-card" id="cinema-drawer-user-card" title="Click to open VIP Cinema Hub">
+        <div class="drawer-user-avatar-wrap">
+          <img src="" alt="Avatar" id="nav-drawer-avatar" class="drawer-user-avatar">
+          <span class="drawer-user-halo"></span>
+        </div>
+        <div class="drawer-user-info">
+          <div class="drawer-user-name" id="nav-drawer-name">Cinema Fan</div>
+          <div class="drawer-user-badge"><i class="fa-solid fa-crown" style="color:#f39c12"></i> VIP Cinema Member</div>
+        </div>
+        <button type="button" class="drawer-user-edit-btn" id="drawer-user-hub-btn" title="Open VIP Cinema Hub">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="cinema-drawer-scrollable">
+        <!-- Section: Browse -->
+        <div class="cinema-drawer-section">
+          <div class="drawer-section-title">EXPLORE</div>
+          <ul class="drawer-nav-list">
+            <li><a href="index.html" class="drawer-nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a></li>
+            <li><a href="search.html?type=movie" class="drawer-nav-item"><i class="fa-solid fa-film"></i><span>Movies</span><span class="drawer-pill-hot">POPULAR</span></a></li>
+            <li><a href="search.html?type=tv" class="drawer-nav-item"><i class="fa-solid fa-tv"></i><span>TV Series</span></a></li>
+            <li><a href="search.html?genre=Action" class="drawer-nav-item"><i class="fa-solid fa-bolt" style="color:#f39c12"></i><span>Action & Thriller</span></a></li>
+            <li><a href="search.html?genre=Horror" class="drawer-nav-item"><i class="fa-solid fa-ghost" style="color:#e50914"></i><span>Horror & Mystery</span></a></li>
+            <li><a href="search.html?genre=Animation" class="drawer-nav-item"><i class="fa-solid fa-wand-magic-sparkles" style="color:#a855f7"></i><span>Animation & Fantasy</span></a></li>
+          </ul>
+        </div>
+
+        <!-- Section: Your Cinema Collection -->
+        <div class="cinema-drawer-section">
+          <div class="drawer-section-title">YOUR COLLECTION</div>
+          <ul class="drawer-nav-list">
+            <li>
+              <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="favorites">
+                <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+                <span>Favorites</span>
+                <span class="drawer-count-badge" id="drawer-count-fav">0</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="watchlater">
+                <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+                <span>Watch Later</span>
+                <span class="drawer-count-badge" id="drawer-count-later">0</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="continue">
+                <i class="fa-solid fa-play" style="color:#e50914"></i>
+                <span>Continue Watching</span>
+                <span class="drawer-count-badge" id="drawer-count-continue">0</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="history">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+                <span>Watch History</span>
+                <span class="drawer-count-badge" id="drawer-count-history">0</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section: VIP Cinema Experiences -->
+        <div class="cinema-drawer-section">
+          <div class="drawer-section-title">SPECIAL EXPERIENCES</div>
+          <ul class="drawer-nav-list">
+            <li>
+              <button type="button" class="drawer-nav-item" id="drawer-roulette-btn">
+                <i class="fa-solid fa-dice" style="color:#a855f7"></i>
+                <span>Movie Roulette (Surprise Me)</span>
+                <span class="drawer-pill-vip">VIP</span>
+              </button>
+            </li>
+            <li>
+              <a href="https://t.me/FilmZillaOfficial" target="_blank" rel="noopener" class="drawer-nav-item">
+                <i class="fa-brands fa-telegram" style="color:#229ed9"></i>
+                <span>Official Telegram Channel</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://t.me/FilmZillaRequestBot" target="_blank" rel="noopener" class="drawer-nav-item">
+                <i class="fa-solid fa-paper-plane" style="color:#10b981"></i>
+                <span>Request Movie / Series</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(drawer);
+
+    const closeDrawer = () => {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('open');
+      document.body.classList.remove('cinema-drawer-lock');
+    };
+
+    backdrop.addEventListener('click', closeDrawer);
+    const closeBtn = drawer.querySelector('#cinema-drawer-close-btn');
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) closeDrawer();
+    });
+
+    drawer.querySelectorAll('.drawer-hub-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.hubTab;
+        closeDrawer();
+        openUserListModal(tab);
+      });
+    });
+
+    const hubTrigger = drawer.querySelector('#cinema-drawer-user-card');
+    if (hubTrigger) {
+      hubTrigger.addEventListener('click', () => {
+        closeDrawer();
+        openUserListModal('favorites');
+      });
+    }
+
+    const rouBtn = drawer.querySelector('#drawer-roulette-btn');
+    if (rouBtn) {
+      rouBtn.addEventListener('click', () => {
+        closeDrawer();
+        if (typeof window.openMovieRouletteModal === 'function') {
+          window.openMovieRouletteModal();
+        } else if (typeof showToast === 'function') {
+          showToast('Opening Cinema Roulette... 🎲');
+        }
+      });
+    }
+  }
+
+  const openDrawer = () => {
+    const drawer = document.getElementById('cinema-global-nav-drawer');
+    const backdrop = document.getElementById('cinema-global-nav-backdrop');
+    if (!drawer || !backdrop) return;
+
+    if (window.FilmSubUser && window.FilmSubUser.Profile) {
+      const p = window.FilmSubUser.Profile.get();
+      const av = drawer.querySelector('#nav-drawer-avatar');
+      const name = drawer.querySelector('#nav-drawer-name');
+      if (av) av.src = p.picture || '';
+      if (name) name.textContent = p.name || 'Cinema Fan';
+
+      const favEl = drawer.querySelector('#drawer-count-fav');
+      const laterEl = drawer.querySelector('#drawer-count-later');
+      const contEl = drawer.querySelector('#drawer-count-continue');
+      const histEl = drawer.querySelector('#drawer-count-history');
+
+      if (favEl) favEl.textContent = window.FilmSubUser.Favorites.count();
+      if (laterEl) laterEl.textContent = window.FilmSubUser.WatchLater.count();
+      if (contEl) contEl.textContent = window.FilmSubUser.ContinueWatching.count();
+      if (histEl) histEl.textContent = window.FilmSubUser.WatchHistory.count();
+    }
+
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.classList.add('cinema-drawer-lock');
+  };
+
+  const toggleBtns = document.querySelectorAll('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn');
+  toggleBtns.forEach(btn => {
+    btn.removeEventListener('click', openDrawer);
+    btn.addEventListener('click', openDrawer);
+  });
 }
 
 // ---- Search Overlay ----

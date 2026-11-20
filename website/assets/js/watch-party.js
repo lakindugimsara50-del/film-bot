@@ -14,12 +14,12 @@
   };
 
   const WP_3D_EMOJIS = {
-    fire: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png',
-    mindblown: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png',
-    popcorn: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png',
-    angry: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Angry%20face/3D/angry_face_3d.png',
-    heart: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png',
-    laugh: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png'
+    fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
+    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
+    popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
+    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
+    heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
+    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp'
   };
 
   class WatchPartyEngine {
@@ -35,8 +35,29 @@
       this.vjsPlayer = null;
       this.isInternalSeeking = false;
       this.lastBroadcastActionTime = 0;
+      this.chatPopupsEnabled = localStorage.getItem('fz_chat_popups_enabled') !== 'false';
 
       this.initFromUrl();
+      this.initFullscreenListener();
+    }
+
+    initFullscreenListener() {
+      document.addEventListener('fullscreenchange', () => {
+        const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+        const overlay = document.getElementById('cs-video-chat-overlay');
+        if (!overlay) return;
+
+        if (fsElem) {
+          if (!fsElem.contains(overlay)) {
+            fsElem.appendChild(overlay);
+          }
+        } else {
+          const defaultParent = document.getElementById('video-player-container') || document.querySelector('.player-container');
+          if (defaultParent && !defaultParent.contains(overlay)) {
+            defaultParent.appendChild(overlay);
+          }
+        }
+      });
     }
 
     getLocalUser() {
@@ -511,6 +532,10 @@
             <span class="wp-room-badge" id="wp-room-code" title="Click to copy room link">${this.roomId} <i class="fa-regular fa-copy" style="font-size:9.5px"></i></span>
           </div>
           <div class="wp-header-controls">
+            <button type="button" class="wp-popups-toggle ${this.chatPopupsEnabled !== false ? 'active' : ''}" id="wp-popups-toggle" title="Toggle On-Screen Chat Popups on Video">
+              <i class="fa-solid ${this.chatPopupsEnabled !== false ? 'fa-comment-dots' : 'fa-comment-slash'}"></i>
+              <span id="wp-popups-label">${this.chatPopupsEnabled !== false ? 'Popups ON' : 'Popups OFF'}</span>
+            </button>
             ${this.isHost ? `
               <button type="button" class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" id="wp-lock-toggle" title="Click to toggle control mode">
                 <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
@@ -528,27 +553,13 @@
           </div>
         </div>
 
-        <!-- Pinned Room Broadcast Card -->
-        <div class="wp-pinned-announcement">
-          <div class="wp-announcement-header">
-            <span class="wp-live-pulse-dot"></span>
-            <span class="wp-announcement-title">Cinema Live Synchronizer</span>
-            <span class="wp-sync-pill">🟢 100% Synced</span>
-          </div>
-          <p class="wp-announcement-desc">You are streaming in real-time. Pauses, play and skips synchronize across all screens.</p>
-        </div>
-
         <div class="wp-members-bar" id="wp-members-bar">
           <!-- Populated by updateMembersList -->
         </div>
 
         <div class="wp-body">
           <div class="wp-chat-box" id="wp-chat-box">
-            <div class="wp-msg-item" style="background:rgba(255,255,255,0.03);align-self:center;text-align:center;max-width:95%">
-              <span class="wp-msg-text" style="font-size:12px;color:#94a3b8">
-                🍿 Welcome to the VIP Watch Party! Stream with friends in perfect sync.
-              </span>
-            </div>
+            <!-- Pure live chat messages stream -->
           </div>
 
           <!-- Quick Reaction Chat Prompts -->
@@ -559,25 +570,25 @@
             <button type="button" class="wp-quick-prompt" data-text="❤️ Goosebumps!">❤️ Goosebumps!</button>
           </div>
 
-          <!-- 3D Fluent Emojis Reaction Deck -->
+          <!-- Animated Telegram-Style Emojis Reaction Deck -->
           <div class="wp-floating-reactions-bar">
             <button type="button" class="wp-reaction-chip" data-emoji="fire" title="Fire">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" alt="Fire" class="react-3d-emoji" loading="lazy">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" alt="Fire" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="mindblown" title="Mind Blown">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Popcorn" class="react-3d-emoji" loading="lazy">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp" alt="Popcorn" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="angry" title="Angry / Intense">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Angry%20face/3D/angry_face_3d.png" alt="Angry" class="react-3d-emoji" loading="lazy">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp" alt="Angry" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" alt="Heart" class="react-3d-emoji" loading="lazy">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp" alt="Heart" class="react-3d-emoji" loading="lazy">
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh">
-              <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png" alt="Laugh" class="react-3d-emoji" loading="lazy">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp" alt="Laugh" class="react-3d-emoji" loading="lazy">
             </button>
           </div>
 
@@ -620,6 +631,20 @@
       if (lockToggle && this.isHost) {
         lockToggle.addEventListener('click', () => this.toggleLockMode());
       }
+
+      // Wire Popups Toggle
+      const popupsToggle = container.querySelector('#wp-popups-toggle');
+      if (popupsToggle) {
+        popupsToggle.addEventListener('click', () => this.toggleChatPopups());
+      }
+
+      // Wire Player Menu Bar Popups Toggle button if present
+      const barToggle = document.getElementById('btn-toggle-chat-popups');
+      if (barToggle && !barToggle._bound) {
+        barToggle._bound = true;
+        barToggle.addEventListener('click', () => this.toggleChatPopups());
+      }
+      this.updateChatPopupsUI();
 
       // Wire WhatsApp Share Invite
       const shareBtn = container.querySelector('#wp-share-btn');
@@ -722,27 +747,149 @@
       bar.innerHTML = html.join('');
     }
 
-    appendChatMessage(author, text, isMe = false, isSystem = false) {
-      const chatBox = document.getElementById('wp-chat-box');
-      if (!chatBox) return;
+    toggleChatPopups(forcedState) {
+      if (typeof forcedState === 'boolean') {
+        this.chatPopupsEnabled = forcedState;
+      } else {
+        this.chatPopupsEnabled = !this.chatPopupsEnabled;
+      }
+      try {
+        localStorage.setItem('fz_chat_popups_enabled', this.chatPopupsEnabled ? 'true' : 'false');
+      } catch (e) {}
 
-      const item = document.createElement('div');
-      item.className = `wp-msg-item ${isMe ? 'me' : ''}`;
-      if (isSystem) {
-        item.style.background = 'rgba(138, 43, 226, 0.15)';
-        item.style.alignSelf = 'center';
+      this.updateChatPopupsUI();
+
+      if (!this.chatPopupsEnabled) {
+        const overlay = document.getElementById('cs-video-chat-overlay');
+        if (overlay) overlay.innerHTML = '';
+        this.showActionToast('In-screen chat popups turned OFF 🔕');
+      } else {
+        this.showActionToast('In-screen chat popups turned ON 🔔');
+      }
+    }
+
+    updateChatPopupsUI() {
+      const enabled = this.chatPopupsEnabled !== false;
+      const wpToggle = document.getElementById('wp-popups-toggle');
+      if (wpToggle) {
+        wpToggle.classList.toggle('active', enabled);
+        const icon = wpToggle.querySelector('i');
+        if (icon) icon.className = `fa-solid ${enabled ? 'fa-comment-dots' : 'fa-comment-slash'}`;
+        const lbl = wpToggle.querySelector('#wp-popups-label');
+        if (lbl) lbl.textContent = enabled ? 'Popups ON' : 'Popups OFF';
       }
 
-      item.innerHTML = `
-        <span class="wp-msg-author">${author}</span>
-        <span class="wp-msg-text">${this.escapeHtml(text)}</span>
+      const barToggle = document.getElementById('btn-toggle-chat-popups');
+      if (barToggle) {
+        barToggle.classList.toggle('active', enabled);
+        const icon = barToggle.querySelector('i');
+        if (icon) icon.className = `fa-solid ${enabled ? 'fa-comment-dots' : 'fa-comment-slash'}`;
+        const badge = barToggle.querySelector('#cs-popups-badge');
+        if (badge) badge.textContent = enabled ? 'ON' : 'OFF';
+      }
+    }
+
+    showInVideoChatPopup(author, text, isMe = false) {
+      if (this.chatPopupsEnabled === false) return;
+
+      const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+      const parent = fsElem || document.getElementById('filmsubPlayer') || document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!parent) return;
+
+      let overlay = parent.querySelector('#cs-video-chat-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'cs-video-chat-overlay';
+        overlay.className = 'cs-video-chat-overlay';
+        overlay.setAttribute('aria-live', 'polite');
+        parent.appendChild(overlay);
+      }
+
+      // Keep max 3 stacked popups to prevent obscuring film
+      const existing = overlay.querySelectorAll('.cs-video-chat-popup:not(.is-fading)');
+      if (existing.length >= 3) {
+        const oldest = existing[0];
+        oldest.classList.add('is-fading');
+        setTimeout(() => { if (oldest.parentNode) oldest.parentNode.removeChild(oldest); }, 300);
+      }
+
+      const initial = (author || 'U').trim().charAt(0).toUpperCase();
+      const popup = document.createElement('div');
+      popup.className = `cs-video-chat-popup ${isMe ? 'is-me' : ''}`;
+      popup.innerHTML = `
+        <div class="vcp-avatar">${this.escapeHtml(initial)}</div>
+        <div class="vcp-content">
+          <div class="vcp-header">
+            <span class="vcp-author">${this.escapeHtml(author)}${isMe ? ' (You)' : ''}</span>
+            <span class="vcp-tag">Live</span>
+          </div>
+          <div class="vcp-text">${this.escapeHtml(text)}</div>
+        </div>
+        <button type="button" class="vcp-close" title="Dismiss">&times;</button>
+        <div class="vcp-progress-bar"></div>
       `;
-      chatBox.appendChild(item);
-      chatBox.scrollTop = chatBox.scrollHeight;
+
+      overlay.appendChild(popup);
+
+      const closeBtn = popup.querySelector('.vcp-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          popup.classList.add('is-fading');
+          setTimeout(() => { if (popup.parentNode) popup.parentNode.removeChild(popup); }, 300);
+        });
+      }
+
+      let timer = setTimeout(() => {
+        popup.classList.add('is-fading');
+        setTimeout(() => { if (popup.parentNode) popup.parentNode.removeChild(popup); }, 350);
+      }, 4500);
+
+      popup.addEventListener('mouseenter', () => clearTimeout(timer));
+      popup.addEventListener('mouseleave', () => {
+        timer = setTimeout(() => {
+          popup.classList.add('is-fading');
+          setTimeout(() => { if (popup.parentNode) popup.parentNode.removeChild(popup); }, 350);
+        }, 1800);
+      });
+    }
+
+    appendChatMessage(author, text, isMe = false, isSystem = false) {
+      const chatBox = document.getElementById('wp-chat-box');
+      if (chatBox) {
+        const item = document.createElement('div');
+        item.className = `wp-msg-item ${isMe ? 'me' : ''}`;
+        if (isSystem) {
+          item.style.background = 'rgba(138, 43, 226, 0.15)';
+          item.style.alignSelf = 'center';
+        }
+
+        item.innerHTML = `
+          <span class="wp-msg-author">${this.escapeHtml(author)}</span>
+          <span class="wp-msg-text">${this.escapeHtml(text)}</span>
+        `;
+        chatBox.appendChild(item);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      // Show in-video floating chat popup (works in Fullscreen and regular view)
+      if (!isSystem) {
+        this.showInVideoChatPopup(author, text, isMe);
+      }
     }
 
     showFloatingReaction(emoji, userName) {
-      const playerWrap = document.querySelector('.player-container') || document.body;
+      const playerWrap = document.querySelector('.player-container') || document.querySelector('#video-player-container');
+      if (!playerWrap) return;
+
+      let stage = document.getElementById('cs-reaction-floating-stage');
+      if (!stage) {
+        stage = document.createElement('div');
+        stage.id = 'cs-reaction-floating-stage';
+        stage.className = 'cs-reaction-floating-stage';
+        playerWrap.appendChild(stage);
+      }
+
       const emojiKey = String(emoji).toLowerCase();
       const emojiMap = {
         '🔥': 'fire',
@@ -761,27 +908,21 @@
       const resolvedKey = emojiMap[emojiKey] || emojiMap[emoji] || 'fire';
       const src = WP_3D_EMOJIS[resolvedKey] || WP_3D_EMOJIS.fire;
 
-      const pRect = playerWrap.getBoundingClientRect();
-      const baseLeft = pRect.left + (Math.random() * (pRect.width * 0.6)) + (pRect.width * 0.2);
-      const baseTop = Math.max(100, pRect.bottom - 50);
+      const baseLeft = Math.floor(Math.random() * 65 + 15); // 15% to 80%
 
-      // Spawn 3 organic 3D floating particles
-      for (let i = 0; i < 3; i++) {
-        const particle = document.createElement('img');
-        particle.className = 'floating-3d-particle';
-        particle.src = src;
-        particle.alt = resolvedKey;
-        particle.style.left = `${baseLeft + (Math.random() * 40 - 20)}px`;
-        particle.style.top = `${baseTop}px`;
-        particle.style.setProperty('--rand-x', `${(Math.random() - 0.5) * 120}px`);
-        particle.style.setProperty('--rand-rot', `${(Math.random() - 0.5) * 50}deg`);
-        particle.style.animationDelay = `${i * 100}ms`;
+      const floater = document.createElement('div');
+      floater.className = 'cs-floating-hero-emoji';
+      floater.style.left = `${baseLeft}%`;
+      floater.innerHTML = `
+        <img src="${src}" alt="${resolvedKey}" class="cs-floater-img">
+        <span class="cs-floater-sparkle s1"></span>
+        <span class="cs-floater-sparkle s2"></span>
+      `;
 
-        document.body.appendChild(particle);
-        setTimeout(() => {
-          if (particle.parentNode) particle.parentNode.removeChild(particle);
-        }, 1800);
-      }
+      stage.appendChild(floater);
+      setTimeout(() => {
+        if (floater.parentNode) floater.parentNode.removeChild(floater);
+      }, 2400);
     }
 
     showActionToast(text) {

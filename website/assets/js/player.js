@@ -5542,60 +5542,72 @@ function renderDownloadSection(movie) {
       return true;
     });
 
-    grid.innerHTML = uniqueDls.map(dl => {
-      const rawQ = dl.quality || '720p';
-      const qTitle = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : `${rawQ} HD`));
-      const sz = dl.size || '';
-      const fmt = dl.format || 'MP4';
-      const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
-      const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
-
-      let actionBtns = '';
-
-      // 1. Direct Download button (clean cinema action)
-      if (directUrl) {
-        actionBtns += `
-          <button type="button" class="btn-dl-sleek btn-dl-direct btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="High Speed Direct Download">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
-          </button>`;
-      }
-
-      // 2. Telegram Cloud button (sleek cyan pill)
-      if (tgUrl) {
-        actionBtns += `
-          <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-dl-sleek btn-dl-tg btn-tg-dl" title="Save in Telegram Cloud">
-            <i class="fa-brands fa-telegram"></i> Telegram Cloud
-          </a>`;
-      } else if (!directUrl && dl.url) {
-        actionBtns += `
-          <a href="${FilmSub.escHtml(dl.url)}" target="_blank" rel="noopener" class="btn-dl-sleek btn-dl-tg btn-tg-dl">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Download
-          </a>`;
-      }
-
-      const isRec = rawQ.includes('720');
-      const recRibbon = isRec ? `<div class="cs-dl-rec-ribbon"><i class="fa-solid fa-crown"></i> RECOMMENDED</div>` : '';
-      const qIcon = rawQ.includes('1080') ? 'fa-solid fa-crown' : (rawQ.includes('720') ? 'fa-solid fa-bolt' : 'fa-solid fa-film');
-
-      return `
-        <div class="cs-sleek-dl-card ${isRec ? 'is-recommended' : ''}">
-          <div class="dl-left-meta">
-            <div class="dl-q-badge">
-              <i class="${qIcon}" style="color:var(--accent);font-size:16px"></i>
-              <span class="dl-q-name">${FilmSub.escHtml(qTitle)}</span>
-              ${isRec ? `<span class="dl-rec-pill"><i class="fa-solid fa-crown"></i> RECOMMENDED</span>` : ''}
-            </div>
-            <div class="dl-specs-inline">
-              ${sz ? `<span class="dl-spec-pill dl-size-pill"><i class="fa-solid fa-database"></i> ${FilmSub.escHtml(sz)}</span>` : ''}
-              <span class="dl-spec-pill"><i class="fa-solid fa-circle-check" style="color:#4ade80"></i> ${FilmSub.escHtml(fmt)}</span>
-              <span class="dl-spec-pill dl-sub-pill"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
+    grid.innerHTML = `
+      <div class="cs-3d-download-bubble-box">
+        <div class="cs-bubble-box-header">
+          <div class="cs-bubble-header-left">
+            <span class="cs-bubble-icon-glow"><i class="fa-solid fa-cloud-arrow-down"></i></span>
+            <div class="cs-bubble-titles">
+              <h4 class="cs-bubble-main-title">Fast Cloud Downloads</h4>
+              <p class="cs-bubble-sub-title">High Speed Direct Streaming & Telegram Cloud • Sinhala Subtitles Merged</p>
             </div>
           </div>
-          <div class="dl-right-actions">
-            ${actionBtns}
-          </div>
-        </div>`;
-    }).join('');
+          <span class="cs-bubble-ultra-badge"><i class="fa-solid fa-bolt"></i> Ultra Fast</span>
+        </div>
+        <div class="cs-bubble-tiers-list">
+          ${uniqueDls.map(dl => {
+            const rawQ = dl.quality || '720p';
+            const qTitle = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : `${rawQ} HD`));
+            const fmt = dl.format || 'MP4';
+            const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
+            const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
+
+            let actionBtns = '';
+
+            // 1. Direct Download button (clean cinema action)
+            if (directUrl) {
+              actionBtns += `
+                <button type="button" class="btn-dl-sleek btn-dl-direct btn-direct-dl" data-url="${FilmSub.escHtml(directUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="High Speed Direct Download">
+                  <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
+                </button>`;
+            }
+
+            // 2. Telegram Cloud button (sleek cyan pill)
+            if (tgUrl) {
+              actionBtns += `
+                <a href="${FilmSub.escHtml(tgUrl)}" target="_blank" rel="noopener" class="btn-dl-sleek btn-dl-tg btn-tg-dl" title="Save in Telegram Cloud">
+                  <i class="fa-brands fa-telegram"></i> Telegram Cloud
+                </a>`;
+            } else if (!directUrl && dl.url) {
+              actionBtns += `
+                <a href="${FilmSub.escHtml(dl.url)}" target="_blank" rel="noopener" class="btn-dl-sleek btn-dl-tg btn-tg-dl">
+                  <i class="fa-solid fa-cloud-arrow-down"></i> Download
+                </a>`;
+            }
+
+            const isRec = rawQ.includes('720');
+            const qIcon = rawQ.includes('1080') ? 'fa-solid fa-crown' : (rawQ.includes('720') ? 'fa-solid fa-bolt' : 'fa-solid fa-film');
+
+            return `
+              <div class="cs-bubble-tier-row ${isRec ? 'is-recommended' : ''}">
+                <div class="bubble-tier-meta">
+                  <div class="bubble-tier-badge">
+                    <i class="${qIcon}" style="color:var(--accent);font-size:15px"></i>
+                    <span class="bubble-tier-name">${FilmSub.escHtml(qTitle)}</span>
+                    ${isRec ? `<span class="bubble-rec-chip"><i class="fa-solid fa-crown"></i> RECOMMENDED</span>` : ''}
+                  </div>
+                  <div class="bubble-tier-specs">
+                    <span class="bubble-spec-pill"><i class="fa-solid fa-circle-check" style="color:#4ade80"></i> ${FilmSub.escHtml(fmt)}</span>
+                    <span class="bubble-spec-pill"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
+                  </div>
+                </div>
+                <div class="bubble-tier-actions">
+                  ${actionBtns}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
 
     grid.querySelectorAll('.btn-direct-dl').forEach(btn => {
       attachFastAction(btn, (e) => {

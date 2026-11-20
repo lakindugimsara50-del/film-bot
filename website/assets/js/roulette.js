@@ -126,13 +126,13 @@
   // 2. Live Quick Emoji Reactions (Under Player)
   // ---------------------------------------------------------------------
   const FLUENT_3D_EMOJIS = {
-    fire: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png',
-    mindblown: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png',
-    popcorn: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png',
-    angry: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Angry%20face/3D/angry_face_3d.png',
-    heart: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png',
-    laugh: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png',
-    sleep: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sleeping%20face/3D/sleeping_face_3d.png'
+    fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
+    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
+    popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
+    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
+    heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
+    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
+    sleep: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f634/512.webp'
   };
 
   function initLiveReactions(movieId) {
@@ -198,31 +198,33 @@
   }
 
   function spawnFloatingEmoji(anchorBtn, type = 'fire') {
-    const rect = anchorBtn ? anchorBtn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 30 };
-    const src = FLUENT_3D_EMOJIS[type] || FLUENT_3D_EMOJIS.fire;
+    const playerWrap = document.querySelector('.player-container') || document.querySelector('#video-player-container');
+    if (!playerWrap) return;
 
-    // Spawn 3 organic particles with randomized sway and scale
-    for (let i = 0; i < 3; i++) {
-      const particle = document.createElement('img');
-      particle.className = 'floating-3d-particle';
-      particle.src = src;
-      particle.alt = type;
-      
-      const randX = (Math.random() - 0.5) * 70; // -35px to +35px
-      const randRot = (Math.random() - 0.5) * 50; // -25deg to +25deg
-      const delay = i * 85;
-
-      particle.style.setProperty('--rand-x', `${randX}px`);
-      particle.style.setProperty('--rand-rot', `${randRot}deg`);
-      particle.style.left = `${rect.left + rect.width / 2 - 19}px`;
-      particle.style.top = `${rect.top - 15}px`;
-      particle.style.animationDelay = `${delay}ms`;
-
-      document.body.appendChild(particle);
-      setTimeout(() => {
-        if (particle.parentNode) particle.parentNode.removeChild(particle);
-      }, 1800 + delay);
+    let stage = document.getElementById('cs-reaction-floating-stage');
+    if (!stage) {
+      stage = document.createElement('div');
+      stage.id = 'cs-reaction-floating-stage';
+      stage.className = 'cs-reaction-floating-stage';
+      playerWrap.appendChild(stage);
     }
+
+    const src = FLUENT_3D_EMOJIS[type] || FLUENT_3D_EMOJIS.fire;
+    const baseLeft = Math.floor(Math.random() * 65 + 15); // 15% to 80% across player width
+
+    const floater = document.createElement('div');
+    floater.className = 'cs-floating-hero-emoji';
+    floater.style.left = `${baseLeft}%`;
+    floater.innerHTML = `
+      <img src="${src}" alt="${type}" class="cs-floater-img">
+      <span class="cs-floater-sparkle s1"></span>
+      <span class="cs-floater-sparkle s2"></span>
+    `;
+
+    stage.appendChild(floater);
+    setTimeout(() => {
+      if (floater.parentNode) floater.parentNode.removeChild(floater);
+    }, 2400);
   }
 
   // ---------------------------------------------------------------------

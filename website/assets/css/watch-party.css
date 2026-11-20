@@ -724,16 +724,8 @@
 }
 
 .wp-pinned-announcement {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px 14px 6px;
-  padding: 8px 14px;
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.18), rgba(255, 0, 128, 0.12));
-  border: 1px solid rgba(138, 43, 226, 0.35);
-  border-radius: 12px;
-  font-size: 12px;
-  color: #e2e8f0;
+  display: none !important;
+}
   backdrop-filter: blur(10px);
 }
 
@@ -826,4 +818,319 @@
     min-height: 420px;
     margin-top: 10px;
   }
+}
+
+
+/* ==========================================================================
+   IN-SCREEN VIDEO CHAT OVERLAY & ULTRA-COMPACT CINEMA CHAT BOX (FULLSCREEN COMPATIBLE)
+   ========================================================================== */
+
+/* 1. In-Screen Live Video Chat Overlay (Bottom-Left above subtitles) */
+.cs-video-chat-overlay {
+  position: absolute;
+  bottom: 56px;
+  left: 20px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 2147483647;
+  max-width: min(380px, 86vw);
+}
+
+.cs-video-chat-popup {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px 9px;
+  background: rgba(14, 15, 24, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-left: 3.5px solid #a855f7;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: chatToastSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+  color: #ffffff;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cs-video-chat-popup.is-me {
+  border-left-color: #38bdf8;
+  background: rgba(10, 20, 32, 0.9);
+}
+
+.cs-video-chat-popup.is-fading {
+  opacity: 0;
+  transform: translateY(-14px) scale(0.92);
+  pointer-events: none;
+}
+
+@keyframes chatToastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.vcp-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+}
+
+.cs-video-chat-popup.is-me .vcp-avatar {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+}
+
+.vcp-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vcp-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.vcp-author {
+  font-size: 11px;
+  font-weight: 800;
+  color: #c084fc;
+  letter-spacing: 0.02em;
+}
+
+.cs-video-chat-popup.is-me .vcp-author {
+  color: #38bdf8;
+}
+
+.vcp-tag {
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.vcp-text {
+  font-size: 12.5px;
+  color: #f1f5f9;
+  line-height: 1.35;
+  word-break: break-word;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.vcp-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.vcp-close:hover {
+  color: #ffffff;
+}
+
+.vcp-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  width: 100%;
+  animation: vcpProgressDrain 4.5s linear forwards;
+}
+
+.cs-video-chat-popup.is-me .vcp-progress-bar {
+  background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+}
+
+@keyframes vcpProgressDrain {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
+
+/* 2. Popups Toggle Buttons */
+.wp-popups-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wp-popups-toggle.active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #d8b4fe;
+}
+
+.wp-popups-toggle:hover {
+  transform: translateY(-1px);
+  border-color: rgba(168, 85, 247, 0.7);
+}
+
+.cs-btn-popups {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.cs-btn-popups.active {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.45);
+  color: #c084fc;
+}
+
+.cs-popups-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.25);
+  color: #ffffff;
+  margin-left: 3px;
+}
+
+/* 3. Ultra-Compact Theater Chat Lounge Layout */
+@media (min-width: 1080px) {
+  .cs-theater-layout.is-watch-party-active {
+    grid-template-columns: minmax(0, 1fr) 300px !important;
+    gap: 14px !important;
+  }
+}
+
+.watch-party-container {
+  min-height: 440px !important;
+  background: rgba(11, 12, 18, 0.94) !important;
+  border: 1px solid rgba(138, 43, 226, 0.35) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(138, 43, 226, 0.15) !important;
+}
+
+.wp-header {
+  padding: 10px 14px !important;
+}
+
+.wp-vip-title {
+  font-size: 11px !important;
+  letter-spacing: 0.04em !important;
+}
+
+.wp-room-badge {
+  padding: 2px 7px !important;
+  font-size: 10px !important;
+}
+
+.wp-members-bar {
+  padding: 6px 12px !important;
+  gap: 6px !important;
+}
+
+.wp-member-pill {
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+}
+
+.wp-msg-item {
+  padding: 5px 10px !important;
+  margin-bottom: 5px !important;
+  font-size: 12px !important;
+  border-radius: 10px !important;
+}
+
+.wp-msg-author {
+  font-size: 10.5px !important;
+  margin-bottom: 1px !important;
+}
+
+.wp-msg-text {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+
+.wp-quick-prompts-bar {
+  padding: 4px 10px 2px !important;
+  gap: 5px !important;
+}
+
+.wp-quick-prompt {
+  padding: 3px 8px !important;
+  font-size: 10px !important;
+}
+
+.wp-floating-reactions-bar {
+  padding: 4px 10px !important;
+  gap: 6px !important;
+}
+
+.wp-reaction-chip {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 2px !important;
+}
+
+.wp-chat-input-bar {
+  padding: 6px 10px 8px !important;
+}
+
+.wp-chat-input {
+  padding: 7px 14px !important;
+  font-size: 12px !important;
+  height: 34px !important;
+}
+
+.wp-btn-send {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 11px !important;
+}
+
+.wp-footer-share {
+  padding: 8px 12px !important;
+  gap: 6px !important;
+}
+
+.wp-btn-wa-invite {
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+  height: 32px !important;
+}
+
+.wp-btn-copy-link {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 11px !important;
 }

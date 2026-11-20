@@ -137,13 +137,25 @@
       }
     },
 
+    setPicture(newPicture) {
+      if (!newPicture) return;
+      const profile = this.get();
+      profile.picture = newPicture;
+      profile.avatar = newPicture;
+      profile.customAvatar = true;
+      _set(STORAGE_KEYS.PROFILE, profile);
+      _emit('fz:profile-updated', { profile });
+      return profile;
+    },
+
     setCustomName(newName) {
       if (!newName || !newName.trim()) return;
       const profile = this.get();
       profile.name = newName.trim();
       profile.given_name = profile.name.split(' ')[0];
-      if (profile.isGuest) {
+      if (profile.isGuest && !profile.customAvatar) {
         profile.picture = _createGuestAvatar(profile.given_name);
+        profile.avatar = profile.picture;
       }
       _set(STORAGE_KEYS.PROFILE, profile);
       _emit('fz:profile-updated', { profile });

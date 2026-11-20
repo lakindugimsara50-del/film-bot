@@ -4222,8 +4222,34 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         }
       } catch (e) {}
 
-      // Auto-Resume from FilmZilla Continue Watching State
-      if (window.FilmSubUser && movie) {
+      // Teaser Smart-Seek Support (?t=... or ?seek=...)
+      const playerUrlParams = new URLSearchParams(window.location.search);
+      const rawSeek = playerUrlParams.get('t') || playerUrlParams.get('seek');
+      let targetTeaserSeek = 0;
+      if (rawSeek) {
+        if (rawSeek.includes(':')) {
+          const parts = rawSeek.split(':').map(Number);
+          if (parts.length === 2) targetTeaserSeek = (parts[0] * 60) + parts[1];
+          else if (parts.length === 3) targetTeaserSeek = (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+        } else {
+          targetTeaserSeek = parseFloat(rawSeek) || 0;
+        }
+      }
+
+      if (targetTeaserSeek > 0) {
+        vjsPlayer.one('canplay', () => {
+          try {
+            vjsPlayer.currentTime(targetTeaserSeek);
+            const min = Math.floor(targetTeaserSeek / 60);
+            const sec = Math.floor(targetTeaserSeek % 60);
+            const formatted = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+            if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+              FilmSub.showToast(`⚡ Jumped directly to scene from 30s Teaser (${formatted})!`, 'success');
+            }
+          } catch (_) {}
+        });
+      } else if (window.FilmSubUser && movie) {
+        // Auto-Resume from FilmZilla Continue Watching State
         const mId = movie.id || movie.slug;
         const progress = window.FilmSubUser.ContinueWatching.getProgress(mId);
         if (progress && progress.currentTime > 15 && progress.percentage < 93) {
@@ -5285,6 +5311,20 @@ function renderMovieDetails(movie) {
       });
     } else {
       posterTrailerBtn.style.display = 'none';
+    }
+  }
+
+  // 4c. Teaser / 30s Scene Button on Poster
+  const posterTeaserBtn = document.getElementById('poster-teaser-btn');
+  if (posterTeaserBtn) {
+    const mId = movie.id || movie.slug;
+    const teasers = window.FILMSUB_TEASERS || [];
+    const hasTeaser = teasers.some(t => t.movie_id === mId || t.id === `teaser-${mId}`);
+    if (hasTeaser || movie.trailer_id) {
+      posterTeaserBtn.style.display = 'inline-flex';
+      posterTeaserBtn.href = `teasers.html?id=${encodeURIComponent(mId)}`;
+    } else {
+      posterTeaserBtn.style.display = 'none';
     }
   }
 

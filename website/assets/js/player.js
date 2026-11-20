@@ -4912,15 +4912,13 @@ function renderQuickDownloadStrip(movie) {
   let html = downloads.slice(0, 4).map(dl => {
     const rawQ = dl.quality || '1080p';
     const qBadge = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : rawQ));
-    const sz = dl.size || '';
     const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
     const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
 
     return `
-      <button type="button" class="quick-dl-pill" data-direct-url="${FilmSub.escHtml(directUrl)}" data-tg-url="${FilmSub.escHtml(tgUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Direct Download ${FilmSub.escHtml(rawQ)}">
+      <button type="button" class="quick-dl-pill" data-direct-url="${FilmSub.escHtml(directUrl)}" data-tg-url="${FilmSub.escHtml(tgUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Download ${FilmSub.escHtml(qBadge)}">
         <i class="fa-solid fa-arrow-down-to-bracket quick-dl-icon"></i>
         <span class="quick-dl-q-name">${FilmSub.escHtml(qBadge)}</span>
-        ${sz ? `<span class="quick-dl-size">${FilmSub.escHtml(sz)}</span>` : ''}
       </button>`;
   }).join('');
 

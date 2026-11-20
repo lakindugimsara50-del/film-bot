@@ -56,6 +56,12 @@ class TestPeakWindowAlgorithm:
         assert start < end
         assert end <= 25.0
 
+    def test_zero_or_none_duration_fallback(self):
+        start, end, score, method = calculate_peak_window([], duration=0.0, window_size=30.0)
+        assert start >= 0
+        assert end > start
+        assert method == "climax_algorithm"
+
 
 class TestGenreHooks:
     def test_action_hook(self):
@@ -84,6 +90,17 @@ class TestMovieSceneSeek:
         seek = estimate_movie_scene_seek(movie, peak_start=90.0, trailer_duration=150.0)
         # 120 mins = 7200s. Seek should be inside 25% - 75% range
         assert 1800 <= seek <= 5500
+
+    def test_empty_or_invalid_duration_formats(self):
+        assert estimate_movie_scene_seek({"duration": ""}, 30, 150) > 30
+        assert estimate_movie_scene_seek({"duration": "N/A"}, 30, 150) > 30
+        assert estimate_movie_scene_seek({}, 30, 150) > 30
+        assert estimate_movie_scene_seek({"duration": None}, 30, 150) > 30
+
+    def test_short_film_seek(self):
+        # 5 min film (300 secs)
+        seek = estimate_movie_scene_seek({"duration": "5 min"}, 15, 60)
+        assert 30 <= seek <= 300
 
 
 class TestTeasersDataIntegrity:
@@ -123,3 +140,7 @@ class TestTeaserService:
         teaser = TeaserService.get_teaser_for_movie(first_movie_id)
         assert teaser is not None
         assert teaser["movie_id"] == first_movie_id
+
+    def test_get_nonexistent_movie_teaser_returns_none(self):
+        teaser = TeaserService.get_teaser_for_movie("non-existent-movie-id-xyz-999")
+        assert teaser is None

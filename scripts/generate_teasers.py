@@ -211,14 +211,15 @@ def estimate_movie_scene_seek(movie, peak_start, trailer_duration):
     """
     dur_str = str(movie.get("duration", "100 min"))
     try:
-        dur_mins = int(''.join(c for c in dur_str.split()[0] if c.isdigit()))
+        digits = ''.join(c for c in dur_str.split()[0] if c.isdigit())
+        dur_mins = int(digits) if digits else 105
     except Exception:
         dur_mins = 105
         
-    total_movie_secs = dur_mins * 60
+    total_movie_secs = max(60, dur_mins * 60)
     rel_pos = (peak_start / max(60.0, trailer_duration or 150.0))
     target_sec = int(total_movie_secs * (0.32 + (rel_pos * 0.42)))
-    return max(60, min(total_movie_secs - 300, target_sec))
+    return max(30, min(max(30, total_movie_secs - 60), target_sec))
 
 def render_vertical_clip(trailer_id, start_time, end_time, output_mp4):
     """
@@ -254,8 +255,9 @@ def render_vertical_clip(trailer_id, start_time, end_time, output_mp4):
         
         ffmpeg_cmd = [
             "ffmpeg", "-y", "-i", str(src_temp),
-            "-vf", "split[bg][fg];[bg]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,boxblur=15:3[bgblur];[fg]scale=720:-1[fgfit];[bgblur][fgfit]overlay=(W-w)/2:(H-h)/2",
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+            "-vf", "split[bg][fg];[bg]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,boxblur=15:3[bgblur];[fg]scale=720:-2[fgfit];[bgblur][fgfit]overlay=(W-w)/2:(H-h)/2",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
             "-c:a", "aac", "-b:a", "128k",
             str(output_mp4)
         ]

@@ -57,33 +57,42 @@ function renderAllSections() {
 function renderTeasersPreviewShelf() {
   const rail = document.getElementById('teasers-preview-rail');
   if (!rail) return;
-  const teasers = window.FILMSUB_TEASERS || [];
-  if (!teasers.length) {
-    const shelf = document.getElementById('teasers-shelf-section');
-    if (shelf) shelf.style.display = 'none';
-    return;
+  try {
+    const teasers = window.FILMSUB_TEASERS || [];
+    if (!teasers || !teasers.length) {
+      const shelf = document.getElementById('teasers-shelf-section');
+      if (shelf) shelf.style.display = 'none';
+      return;
+    }
+    const displayTeasers = teasers.slice(0, 16);
+    rail.innerHTML = displayTeasers.map(t => {
+      const title = escHtml(t.title || 'Untitled');
+      const poster = escHtml(t.poster || t.backdrop || '');
+      const imdb = escHtml(String(t.imdb || '7.5'));
+      const genre = escHtml((t.genres || []).slice(0, 1).join('') || 'Movie');
+      const link = `teasers.html?id=${encodeURIComponent(t.movie_id || '')}`;
+      return `
+        <a href="${link}" class="teaser-mini-card" title="Watch 30s teaser: ${title}">
+          <img src="${poster}" alt="${title}" class="teaser-mini-poster" loading="lazy">
+          <div class="teaser-mini-overlay">
+            <div class="teaser-mini-badge">
+              <i class="fa-solid fa-fire"></i>
+              <span>30s Teaser</span>
+            </div>
+            <div class="teaser-mini-play">
+              <i class="fa-solid fa-play"></i>
+            </div>
+            <div class="teaser-mini-info">
+              <h4 class="teaser-mini-title">${title}</h4>
+              <div class="teaser-mini-meta">★ ${imdb} • ${genre}</div>
+            </div>
+          </div>
+        </a>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('renderTeasersPreviewShelf error:', err);
   }
-  const displayTeasers = teasers.slice(0, 16);
-  rail.innerHTML = displayTeasers.map(t => {
-    return `
-      <a href="teasers.html?id=${encodeURIComponent(t.movie_id)}" class="teaser-mini-card" title="Watch 30s teaser: ${escapeAttr(t.title)}">
-        <img src="${t.poster || t.backdrop}" alt="${escapeAttr(t.title)}" class="teaser-mini-poster" loading="lazy">
-        <div class="teaser-mini-overlay">
-          <div class="teaser-mini-badge">
-            <i class="fa-solid fa-fire"></i>
-            <span>30s Teaser</span>
-          </div>
-          <div class="teaser-mini-play">
-            <i class="fa-solid fa-play"></i>
-          </div>
-          <div class="teaser-mini-info">
-            <h4 class="teaser-mini-title">${escapeHtml(t.title)}</h4>
-            <div class="teaser-mini-meta">★ ${t.imdb || '7.5'} • ${(t.genres || []).slice(0, 1).join('')}</div>
-          </div>
-        </div>
-      </a>
-    `;
-  }).join('');
 }
 
 function initApp() {
@@ -766,6 +775,9 @@ function ensureHeroDOMStructure(heroEl) {
           <div class="hero-actions">
             <a href="#" class="btn btn-primary btn-hero hero-btn-watch" id="hero-watch-btn">
               <i class="fa-solid fa-play"></i> Watch Now
+            </a>
+            <a href="teasers.html" class="btn btn-secondary btn-hero hero-btn-teaser" id="hero-teaser-btn" title="Watch 30s Viral Scene Feed">
+              <i class="fa-solid fa-bolt" style="color:#ff3366"></i> <span>30s Teaser</span>
             </a>
             <button class="btn btn-secondary btn-hero hero-btn-trailer" id="hero-trailer-btn" type="button" title="Watch Official Trailer">
               <i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>
@@ -1598,6 +1610,12 @@ function updateHeroContent(movie) {
   const dlBtn = document.getElementById('hero-fs-download-btn');
   if (dlBtn) dlBtn.href = `${movieUrl}#downloads`;
 
+  const heroFsTeaserBtn = document.getElementById('hero-fs-teaser-btn');
+  if (heroFsTeaserBtn) {
+    const mId = movie.slug || movie.id;
+    heroFsTeaserBtn.href = `teasers.html?id=${encodeURIComponent(mId)}`;
+  }
+
   const trailerBtn = document.getElementById('hero-fs-trailer-btn');
   if (trailerBtn) {
     if (movie.trailer_id || movie.trailer_url) {
@@ -1740,6 +1758,21 @@ function renderHero(targetMovie, forcedIdx) {
   if (dlBtn) {
     dlBtn.href = `${movieUrl}#downloads`;
     dlBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Download`;
+  }
+
+  // Setup 30s Viral Scene Teaser Button
+  const heroTeaserBtn = document.getElementById('hero-teaser-btn');
+  if (heroTeaserBtn) {
+    const mId = movie.slug || movie.id;
+    const teasers = window.FILMSUB_TEASERS || [];
+    const hasTeaser = teasers.some(t => t.movie_id === mId || t.id === `teaser-${mId}`);
+    if (hasTeaser || movie.trailer_id) {
+      heroTeaserBtn.style.display = 'inline-flex';
+      heroTeaserBtn.href = `teasers.html?id=${encodeURIComponent(mId)}`;
+    } else {
+      heroTeaserBtn.style.display = 'inline-flex';
+      heroTeaserBtn.href = 'teasers.html';
+    }
   }
 
   // Setup Trailer Button to open dedicated Cinema Modal (or hide if no trailer)
@@ -3510,6 +3543,15 @@ function escHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function escapeHtml(str) {
+  return escHtml(str);
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ---- CineSubz-Style Advanced Highlight Popup on Card Hover ----
 function initHighlightPopup() {
   if (window.matchMedia && window.matchMedia('(hover: none)').matches) {
@@ -3602,6 +3644,9 @@ function initHighlightPopup() {
           <div class="cs-popup-actions">
             <a href="${movieUrl}" class="cs-popup-btn-watch">
               <i class="fa-solid fa-play"></i> Watch Now
+            </a>
+            <a href="teasers.html?id=${encodeURIComponent(movie.slug || movie.id)}" class="cs-popup-btn-teaser" title="Watch 30s Viral Teaser">
+              <i class="fa-solid fa-bolt" style="color:#ff3366"></i> 30s Teaser
             </a>
             <a href="${movieUrl}#downloads" class="cs-popup-btn-dl">
               <i class="fa-solid fa-cloud-arrow-down"></i> Download

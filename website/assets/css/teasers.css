@@ -321,6 +321,17 @@ body.reels-page-active {
   z-index: 3;
 }
 
+/* Touch & Click Gesture Layer (prevents iframe from swallowing swipe/double-tap) */
+.teaser-gesture-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  cursor: pointer;
+  touch-action: pan-y;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Play / Pause Animated Icon Ripple */
 .teaser-tap-ripple {
   position: absolute;
@@ -1082,4 +1093,68 @@ body.reels-page-active {
     flex: 0 0 140px;
     height: 230px;
   }
+}
+
+/* 30s Scene Teaser Action Buttons across Portal */
+.cs-btn-teaser {
+  background: rgba(229, 9, 20, 0.15) !important;
+  border-color: rgba(229, 9, 20, 0.4) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+.cs-btn-teaser:hover {
+  background: rgba(229, 9, 20, 0.35) !important;
+  border-color: rgba(229, 9, 20, 0.8) !important;
+  transform: translateY(-1px);
+}
+.cs-teaser-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hero-btn-teaser,
+.btn-hero-teaser {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 51, 102, 0.16) !important;
+  border: 1px solid rgba(255, 51, 102, 0.45) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  padding: 10px 20px;
+  border-radius: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.hero-btn-teaser:hover,
+.btn-hero-teaser:hover {
+  background: rgba(255, 51, 102, 0.35) !important;
+  border-color: #ff3366 !important;
+  box-shadow: 0 0 18px rgba(255, 51, 102, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+.cs-popup-btn-teaser {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(229, 9, 20, 0.2);
+  border: 1px solid rgba(229, 9, 20, 0.5);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.cs-popup-btn-teaser:hover {
+  background: var(--reels-accent-gradient);
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
 }

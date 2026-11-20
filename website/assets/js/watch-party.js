@@ -712,46 +712,54 @@
 
       container.innerHTML = `
         <div class="wp-header">
-          <div class="wp-title-wrap">
+          <!-- Row 1: Title, Dual Control Mode Pill & Close Button -->
+          <div class="wp-header-top">
             <div class="wp-title">
               <span class="wp-title-beacon"></span>
               <i class="fa-solid fa-crown" style="color:#f59e0b"></i>
               <span class="wp-vip-title">WATCH WITH FRIENDS</span>
             </div>
+            <div class="wp-header-top-actions">
+              ${this.isHost ? `
+                <button type="button" class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" id="wp-lock-toggle" title="Click to toggle control mode">
+                  <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
+                  <span id="wp-lock-label">${this.isLocked ? 'Host Only' : 'Everyone'}</span>
+                </button>
+              ` : `
+                <span class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" style="cursor:default">
+                  <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
+                  <span>${this.isLocked ? 'Host Only' : 'Everyone'}</span>
+                </span>
+              `}
+              <button type="button" class="wp-close-btn" id="wp-close-btn" title="Minimize Lounge" aria-label="Close Lounge">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 2: Room Code Badge & Action Cluster (Popups, Mic, Cam) -->
+          <div class="wp-header-toolbar">
             <button type="button" class="wp-room-badge" id="wp-room-code" title="Click to copy room invitation link">
               <i class="fa-solid fa-link"></i>
               <span id="wp-code-text">${this.roomId}</span>
               <span class="wp-copy-pill"><i class="fa-regular fa-copy"></i> Copy</span>
             </button>
-          </div>
-          <div class="wp-header-controls">
-            <!-- Voice Chat Mic Toggle -->
-            <button type="button" class="wp-media-btn ${this.isMicOn ? 'active' : ''}" id="wp-btn-mic" title="Toggle Voice Chat Mic (M)">
-              <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
-            </button>
-            <!-- Couple Cam PiP Toggle -->
-            <button type="button" class="wp-media-btn ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Toggle Couple Cam PiP (V)">
-              <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
-            </button>
-            <!-- In-Video Chat Popups Toggle -->
-            <button type="button" class="wp-popups-toggle ${this.chatPopupsEnabled !== false ? 'active' : ''}" id="wp-popups-toggle" title="Toggle On-Screen Chat Popups on Video">
-              <i class="fa-solid ${this.chatPopupsEnabled !== false ? 'fa-comment-dots' : 'fa-comment-slash'}"></i>
-              <span id="wp-popups-label">${this.chatPopupsEnabled !== false ? 'Popups ON' : 'Popups OFF'}</span>
-            </button>
-            ${this.isHost ? `
-              <button type="button" class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" id="wp-lock-toggle" title="Click to toggle control mode">
-                <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
-                <span id="wp-lock-label">${this.isLocked ? 'Host Only' : 'Everyone Controls'}</span>
+
+            <div class="wp-toolbar-actions">
+              <!-- In-Video Chat Popups Toggle -->
+              <button type="button" class="wp-popups-toggle ${this.chatPopupsEnabled !== false ? 'active' : ''}" id="wp-popups-toggle" title="Toggle On-Screen Chat Popups on Video">
+                <i class="fa-solid ${this.chatPopupsEnabled !== false ? 'fa-comment-dots' : 'fa-comment-slash'}"></i>
+                <span id="wp-popups-label">${this.chatPopupsEnabled !== false ? 'Popups ON' : 'Popups OFF'}</span>
               </button>
-            ` : `
-              <span class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" style="cursor:default">
-                <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
-                <span>${this.isLocked ? 'Host Only' : 'Everyone Controls'}</span>
-              </span>
-            `}
-            <button type="button" class="wp-close-btn" id="wp-close-btn" title="Minimize Lounge">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+              <!-- Voice Chat Mic Toggle -->
+              <button type="button" class="wp-media-btn ${this.isMicOn ? 'active' : ''}" id="wp-btn-mic" title="Toggle Voice Chat Mic (M)">
+                <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+              </button>
+              <!-- Couple Cam PiP Toggle -->
+              <button type="button" class="wp-media-btn ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Toggle Couple Cam PiP (V)">
+                <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -984,9 +992,13 @@
         if (activeTab === 'emojis') {
           body.innerHTML = `
             <div class="wp-picker-emojis-grid">
-              ${WP_QUICK_EMOJIS.map(e => `
-                <button type="button" class="wp-emoji-btn" data-emoji="${e}" title="${e}">${e}</button>
-              `).join('')}
+              ${WP_QUICK_EMOJIS.map(e => {
+                const url = window.FilmZillaEmoji ? window.FilmZillaEmoji.getEmojiUrl(e) : null;
+                const inner = url
+                  ? `<img src="${url}" alt="${e}" class="wp-picker-emoji-img" loading="lazy">`
+                  : e;
+                return `<button type="button" class="wp-emoji-btn" data-emoji="${e}" title="${e}">${inner}</button>`;
+              }).join('')}
             </div>
           `;
           body.querySelectorAll('.wp-emoji-btn').forEach(btn => {
@@ -1780,6 +1792,11 @@
             <span>${this.escapeHtml(stickerName)}</span>
           </div>
         `;
+      } else {
+        const safeRaw = this.escapeHtml(text);
+        const isJumbo = window.FilmZillaEmoji && window.FilmZillaEmoji.isOnlyEmojis(text);
+        const parsed = window.FilmZillaEmoji ? window.FilmZillaEmoji.parse(safeRaw) : safeRaw;
+        popupTextHtml = `<span class="${isJumbo ? 'jumbo-emojis' : ''}">${parsed}</span>`;
       }
 
       popup.innerHTML = `
@@ -1844,9 +1861,12 @@
             </div>
           `;
         } else {
+          const safeRaw = this.escapeHtml(text);
+          const isJumbo = window.FilmZillaEmoji && window.FilmZillaEmoji.isOnlyEmojis(text);
+          const formattedText = window.FilmZillaEmoji ? window.FilmZillaEmoji.parse(safeRaw) : safeRaw;
           item.innerHTML = `
             <span class="wp-msg-author">${this.escapeHtml(author)}</span>
-            <span class="wp-msg-text">${this.escapeHtml(text)}</span>
+            <span class="wp-msg-text ${isJumbo ? 'jumbo-emojis' : ''}">${formattedText}</span>
           `;
         }
 

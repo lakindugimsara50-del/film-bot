@@ -116,10 +116,45 @@
     const urlParams = new URLSearchParams(window.location.search);
     const requestedId = urlParams.get('id') || urlParams.get('movie');
     if (requestedId) {
-      const matchIdx = allTeasers.findIndex(t => t.movie_id === requestedId || t.id === requestedId);
+      const matchIdx = allTeasers.findIndex(t => t.movie_id === requestedId || t.id === requestedId || t.id === `teaser-${requestedId}`);
       if (matchIdx > -1) {
         const item = allTeasers.splice(matchIdx, 1)[0];
         allTeasers.unshift(item); // Prioritize requested teaser
+      } else if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) {
+        // Dynamic fallback: movie exists in catalog but wasn't in static teasers.json
+        const m = window.FILMSUB_DATA.movies.find(x => (x.id || x.slug) === requestedId);
+        if (m) {
+          const trailerId = m.trailer_id || '';
+          const dynamicItem = {
+            id: `teaser-${m.id || m.slug}`,
+            movie_id: m.id || m.slug,
+            title: m.title,
+            title_si: m.title_si || '',
+            year: m.year || 2026,
+            imdb: m.imdb || m.rating || '7.5',
+            rating: m.rating || m.imdb || '7.5',
+            quality: m.quality || '1080p',
+            genres: m.genres || ['Action'],
+            poster: m.poster || m.poster_url || '',
+            backdrop: m.backdrop || m.backdrop_url || '',
+            trailer_id: trailerId,
+            clip_start: 30,
+            clip_end: 60,
+            duration: 30,
+            intensity_score: 0.85,
+            scene_hook: '🔥 Most Replayed Scene • Quick Discovery',
+            scene_hook_si: '🔥 වැඩිම පිරිසක් නැවත නැවත නැරඹූ සුවිශේෂී ජවනිකාව',
+            scene_timestamp_movie: 1800,
+            formatted_seek_time: '30:00',
+            video_url: '',
+            youtube_embed_url: trailerId
+              ? `https://www.youtube-nocookie.com/embed/${trailerId}?start=30&end=60&autoplay=1&mute=1&controls=0&loop=1&playlist=${trailerId}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`
+              : '',
+            has_sinhala_sub: true,
+            likes_count: 240
+          };
+          allTeasers.unshift(dynamicItem);
+        }
       }
     }
 
@@ -170,6 +205,9 @@
 
     feedContainer.innerHTML = filtered.map((t, idx) => {
       const isLiked = likedSet.has(t.id);
+      const isBookmarked = (window.FilmSubUser && typeof window.FilmSubUser.WatchLater?.has === 'function')
+        ? window.FilmSubUser.WatchLater.has(t.movie_id)
+        : false;
       const isFirst = idx === 0;
 
       // Video engine: Native MP4 or YouTube embed
@@ -183,7 +221,11 @@
       } else if (t.youtube_embed_url) {
         // Embed YouTube with JS API enabled
         const ytMuted = isGlobalMuted ? 1 : 0;
-        const ytSrc = t.youtube_embed_url.replace(/mute=[01]/, `mute=${ytMuted}`);
+        let ytSrc = t.youtube_embed_url.replace(/mute=[01]/, `mute=${ytMuted}`);
+        const origin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : '';
+        if (origin && !ytSrc.includes('origin=')) {
+          ytSrc += `&origin=${encodeURIComponent(origin)}`;
+        }
         mediaHtml = `
           <iframe class="reels-yt-iframe" src="${isFirst ? ytSrc : ''}" data-src="${ytSrc}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         `;
@@ -194,7 +236,7 @@
       }
 
       return `
-        <article class="teaser-card" id="${t.id}" data-index="${idx}" data-movie-id="${t.movie_id}" data-seek="${t.scene_timestamp_movie || 120}" data-seek-time="${t.formatted_seek_time || '02:00'}">
+        <article class="teaser-card" id="${t.id}" data-index="${idx}" data-movie-id="${t.movie_id}" data-seek="${t.scene_timestamp_movie || 120}" data-seek-time="${t.formatted_seek_time || '02:00'}" data-clip-start="${t.clip_start || 0}" data-clip-end="${t.clip_end || 30}" data-paused="${isFirst ? 'false' : 'true'}">
           <!-- Background Stage -->
           <div class="teaser-stage-wrap">
             <div class="teaser-backdrop-blur" style="background-image: url('${t.backdrop || t.poster}')"></div>
@@ -202,6 +244,7 @@
               ${mediaHtml}
             </div>
             <div class="teaser-vignette"></div>
+            <div class="teaser-gesture-layer" data-card-idx="${idx}" title="Tap to Play/Pause, Double-tap to Like"></div>
           </div>
 
           <!-- Play/Pause Tap Feedback -->
@@ -234,7 +277,7 @@
 
             <!-- Bookmark / Watch Later -->
             <div class="action-rail-item">
-              <button type="button" class="action-rail-btn" id="bookmark-btn-${t.movie_id}" aria-label="Watch Later" onclick="window.FilmZillaReels.handleBookmark('${t.movie_id}', '${escapeAttr(t.title)}')">
+              <button type="button" class="action-rail-btn ${isBookmarked ? 'btn-bookmarked' : ''}" id="bookmark-btn-${t.movie_id}" aria-label="Watch Later" onclick="window.FilmZillaReels.handleBookmark('${t.movie_id}', '${escapeAttr(t.title)}')">
                 <i class="fa-solid fa-bookmark"></i>
               </button>
               <span class="action-rail-count">Save</span>
@@ -326,7 +369,7 @@
   function bindCardInteractions() {
     const cards = feedContainer.querySelectorAll('.teaser-card');
     cards.forEach((card, idx) => {
-      const mediaWrap = card.querySelector('.teaser-media-wrap');
+      const gestureLayer = card.querySelector('.teaser-gesture-layer') || card.querySelector('.teaser-media-wrap');
       const soundPrompt = card.querySelector('.teaser-sound-prompt');
 
       if (soundPrompt) {
@@ -337,11 +380,13 @@
         });
       }
 
+      if (!gestureLayer) return;
+
       // Tap & Double Tap Logic
       let lastTapTime = 0;
       let tapTimeout = null;
 
-      mediaWrap.addEventListener('click', (e) => {
+      gestureLayer.addEventListener('click', (e) => {
         // Ignore clicks on buttons/links
         if (e.target.closest('button') || e.target.closest('a')) return;
 
@@ -390,19 +435,28 @@
     const video = card.querySelector('video');
     const iframe = card.querySelector('iframe');
     const ripple = document.getElementById(`ripple-${idx}`);
+    const isPaused = card.dataset.paused === 'true';
 
     if (video) {
       if (video.paused) {
         video.play().catch(() => {});
+        card.dataset.paused = 'false';
         showRipple(ripple, 'play');
       } else {
         video.pause();
+        card.dataset.paused = 'true';
         showRipple(ripple, 'pause');
       }
     } else if (iframe && iframe.contentWindow) {
-      // Toggle YouTube iframe
-      iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-      showRipple(ripple, 'pause');
+      if (isPaused) {
+        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        card.dataset.paused = 'false';
+        showRipple(ripple, 'play');
+      } else {
+        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        card.dataset.paused = 'true';
+        showRipple(ripple, 'pause');
+      }
     }
   }
 
@@ -452,6 +506,14 @@
     const video = card.querySelector('video');
     const iframe = card.querySelector('iframe');
     const progressFill = document.getElementById(`progress-${idx}`);
+    const clipStart = parseFloat(card.dataset.clipStart || 0);
+
+    card.dataset.paused = 'false';
+
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
 
     if (video) {
       video.muted = isGlobalMuted;
@@ -474,10 +536,13 @@
         ? '{"event":"command","func":"mute","args":""}'
         : '{"event":"command","func":"unMute","args":""}';
       iframe.contentWindow.postMessage(ytMuteCmd, '*');
+      if (!isGlobalMuted) {
+        iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+      }
       iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
 
       // Animate progress bar across 30 seconds
-      animateTimelineProgress(progressFill, 30);
+      animateTimelineProgress(progressFill, 30, clipStart);
     }
   }
 
@@ -485,6 +550,13 @@
     const video = card.querySelector('video');
     const iframe = card.querySelector('iframe');
     const progressFill = document.getElementById(`progress-${idx}`);
+
+    card.dataset.paused = 'true';
+
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
 
     if (video) {
       video.pause();
@@ -497,7 +569,7 @@
   }
 
   let progressInterval = null;
-  function animateTimelineProgress(fillEl, durationSecs) {
+  function animateTimelineProgress(fillEl, durationSecs, clipStart = 0) {
     if (!fillEl) return;
     if (progressInterval) clearInterval(progressInterval);
     const start = Date.now();
@@ -509,6 +581,23 @@
       fillEl.style.width = `${pct}%`;
       if (pct >= 100) {
         clearInterval(progressInterval);
+        progressInterval = null;
+
+        // Continuous Loop for YouTube 30s clips
+        const cards = feedContainer.querySelectorAll('.teaser-card');
+        const curCard = cards[activeIndex];
+        if (curCard) {
+          const iframe = curCard.querySelector('iframe');
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'seekTo',
+              args: [clipStart, true]
+            }), '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            animateTimelineProgress(fillEl, durationSecs, clipStart);
+          }
+        }
       }
     }, 150);
   }
@@ -547,6 +636,9 @@
           ? '{"event":"command","func":"mute","args":""}'
           : '{"event":"command","func":"unMute","args":""}';
         iframe.contentWindow.postMessage(cmd, '*');
+        if (!isGlobalMuted) {
+          iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+        }
       }
     }
   }
@@ -597,14 +689,30 @@
   }
 
   function handleBookmark(movieId, movieTitle) {
+    const movie = (window.FILMSUB_DATA && window.FILMSUB_DATA.movies)
+      ? window.FILMSUB_DATA.movies.find(m => (m.id || m.slug) === movieId)
+      : allTeasers.find(t => t.movie_id === movieId);
+    const movieObj = movie ? {
+      id: movieId,
+      slug: movieId,
+      title: movie.title || movieTitle,
+      title_si: movie.title_si || '',
+      poster: movie.poster || movie.backdrop || '',
+      backdrop: movie.backdrop || movie.poster || '',
+      year: movie.year || 2026,
+      rating: movie.imdb || movie.rating || '7.5',
+      genres: movie.genres || []
+    } : { id: movieId, slug: movieId, title: movieTitle };
+
+    let isAdded = false;
     if (window.FilmSubUser && typeof window.FilmSubUser.WatchLater?.toggle === 'function') {
-      const added = window.FilmSubUser.WatchLater.toggle(movieId);
-      showToast(added ? `🔖 Saved "${movieTitle}" to Watch Later!` : `Removed "${movieTitle}"`);
+      isAdded = window.FilmSubUser.WatchLater.toggle(movieObj);
+      showToast(isAdded ? `🔖 Saved "${movieTitle}" to Watch Later!` : `Removed "${movieTitle}"`);
     } else {
       showToast(`🔖 Saved "${movieTitle}" to Watch Later!`);
     }
     const btn = document.getElementById(`bookmark-btn-${movieId}`);
-    if (btn) btn.classList.toggle('btn-bookmarked');
+    if (btn) btn.classList.toggle('btn-bookmarked', isAdded);
   }
 
   function handleShare(movieId, movieTitle) {
@@ -666,6 +774,10 @@
 
     if (!movie) return;
 
+    const teaser = allTeasers.find(t => t.movie_id === movieId || t.id === `teaser-${movieId}`);
+    const seekTime = teaser?.formatted_seek_time || '02:00';
+    const seekSecs = teaser?.scene_timestamp_movie || 120;
+
     infoSheet.innerHTML = `
       <div class="info-sheet-handle"></div>
       <div style="display:flex;gap:16px;margin-bottom:16px;">
@@ -681,7 +793,7 @@
         ${escapeHtml(movie.description_si || movie.storyline_si || movie.description || 'Watch full movie in high definition with Sinhala subtitles.')}
       </p>
       <div style="display:flex;gap:12px;">
-        <button type="button" class="btn-watch-full-movie" style="flex:1;" onclick="window.FilmZillaReels.promptWatchModal('${movie.id || movie.slug}', '${escapeAttr(movie.title)}', '02:00', 120)">
+        <button type="button" class="btn-watch-full-movie" style="flex:1;" onclick="window.FilmZillaReels.promptWatchModal('${movie.id || movie.slug}', '${escapeAttr(movie.title)}', '${seekTime}', ${seekSecs})">
           <div class="cta-left-content">
             <div class="cta-play-circle"><i class="fa-solid fa-play"></i></div>
             <div class="cta-text-group">
@@ -788,11 +900,7 @@
       categoryRail.addEventListener('click', (e) => {
         const pill = e.target.closest('.reels-pill');
         if (!pill) return;
-        categoryRail.querySelectorAll('.reels-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        currentFilter = pill.dataset.filter || 'All';
-        renderFeed();
-        setupIntersectionObserver();
+        applyFilter(pill.dataset.filter || 'All');
       });
     }
 
@@ -817,19 +925,32 @@
     }
   }
 
+  function applyFilter(filterName) {
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+    currentFilter = filterName || 'All';
+    activeIndex = 0;
+
+    if (categoryRail) {
+      categoryRail.querySelectorAll('.reels-pill').forEach(p => {
+        if (p.dataset.filter === currentFilter) p.classList.add('active');
+        else p.classList.remove('active');
+      });
+    }
+
+    if (feedContainer) {
+      feedContainer.scrollTop = 0;
+    }
+
+    renderFeed();
+    setupIntersectionObserver();
+  }
+
   // Public API
   window.FilmZillaReels = {
-    setFilter: (filterName) => {
-      currentFilter = filterName;
-      if (categoryRail) {
-        categoryRail.querySelectorAll('.reels-pill').forEach(p => {
-          if (p.dataset.filter === filterName) p.classList.add('active');
-          else p.classList.remove('active');
-        });
-      }
-      renderFeed();
-      setupIntersectionObserver();
-    },
+    setFilter: applyFilter,
     handleLike,
     handleBookmark,
     handleShare,

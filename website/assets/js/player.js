@@ -2928,7 +2928,20 @@ function initVideoPlayer(movie) {
     startIdx = 1;
   }
 
-  loadStream(movie, startIdx);
+  // Teaser Smart Entry: Detect arrival from 30s teaser or seek/autoplay parameter
+  const arrivalParams = new URLSearchParams(window.location.search);
+  const isTeaserArrival = arrivalParams.get('from_teaser') === '1' || arrivalParams.has('t') || arrivalParams.has('seek') || arrivalParams.get('autoplay') === '1';
+
+  loadStream(movie, startIdx, isTeaserArrival);
+
+  if (isTeaserArrival) {
+    setTimeout(() => {
+      const stage = document.getElementById('cs-player-card') || document.getElementById('video-player-container');
+      if (stage) {
+        stage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 400);
+  }
 
   // ── data-subtitle support (plan §6.2) ────────────────────────────────────
   // After Video.js is initialised (slight delay), attach the VTT track.
@@ -4237,9 +4250,12 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
       }
 
       if (targetTeaserSeek > 0) {
-        vjsPlayer.one('canplay', () => {
+        let seekDone = false;
+        const applySeek = () => {
+          if (seekDone) return;
           try {
             vjsPlayer.currentTime(targetTeaserSeek);
+            seekDone = true;
             const min = Math.floor(targetTeaserSeek / 60);
             const sec = Math.floor(targetTeaserSeek % 60);
             const formatted = `${min}:${sec < 10 ? '0' : ''}${sec}`;
@@ -4247,7 +4263,14 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
               FilmSub.showToast(`⚡ Jumped directly to scene from 30s Teaser (${formatted})!`, 'success');
             }
           } catch (_) {}
-        });
+        };
+
+        if (vjsPlayer.readyState && vjsPlayer.readyState() >= 1) {
+          applySeek();
+        } else {
+          vjsPlayer.one('loadedmetadata', applySeek);
+          vjsPlayer.one('canplay', applySeek);
+        }
       } else if (window.FilmSubUser && movie) {
         // Auto-Resume from FilmZilla Continue Watching State
         const mId = movie.id || movie.slug;
@@ -5314,17 +5337,29 @@ function renderMovieDetails(movie) {
     }
   }
 
-  // 4c. Teaser / 30s Scene Button on Poster
+  // 4c. Teaser / 30s Scene Button on Poster & Player Menu Bar
+  const mId = movie.id || movie.slug;
+  const teasers = window.FILMSUB_TEASERS || [];
+  const hasTeaser = teasers.some(t => t.movie_id === mId || t.id === `teaser-${mId}`);
+
   const posterTeaserBtn = document.getElementById('poster-teaser-btn');
   if (posterTeaserBtn) {
-    const mId = movie.id || movie.slug;
-    const teasers = window.FILMSUB_TEASERS || [];
-    const hasTeaser = teasers.some(t => t.movie_id === mId || t.id === `teaser-${mId}`);
     if (hasTeaser || movie.trailer_id) {
       posterTeaserBtn.style.display = 'inline-flex';
       posterTeaserBtn.href = `teasers.html?id=${encodeURIComponent(mId)}`;
     } else {
       posterTeaserBtn.style.display = 'none';
+    }
+  }
+
+  const barTeaserBtn = document.getElementById('bar-teaser-btn');
+  if (barTeaserBtn) {
+    if (hasTeaser || movie.trailer_id) {
+      barTeaserBtn.style.display = 'inline-flex';
+      barTeaserBtn.href = `teasers.html?id=${encodeURIComponent(mId)}`;
+    } else {
+      barTeaserBtn.style.display = 'inline-flex';
+      barTeaserBtn.href = 'teasers.html';
     }
   }
 
@@ -5506,9 +5541,9 @@ function renderMovieDetails(movie) {
   }
 
   // Wire Live Emoji Reactions
-  const mId = movie.id || movie.slug;
+  const reactionMovieId = movie.id || movie.slug;
   if (window.FilmZillaRoulette && typeof window.FilmZillaRoulette.initReactions === 'function') {
-    window.FilmZillaRoulette.initReactions(mId);
+    window.FilmZillaRoulette.initReactions(reactionMovieId);
   }
 
   // Wire Watch Party Trigger Button

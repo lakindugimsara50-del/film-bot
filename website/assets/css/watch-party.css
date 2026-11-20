@@ -98,23 +98,23 @@
 
 /* Flagship Watch Party Button */
 .cs-btn-party {
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.35) 0%, rgba(138, 43, 226, 0.35) 100%);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.45) 0%, rgba(185, 28, 28, 0.35) 100%);
   border: 1px solid rgba(229, 9, 20, 0.65);
   color: #ffffff;
-  box-shadow: 0 0 18px rgba(229, 9, 20, 0.3);
+  box-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
   position: relative;
 }
 
 .cs-btn-party:hover {
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.55) 0%, rgba(138, 43, 226, 0.55) 100%);
-  box-shadow: 0 0 24px rgba(229, 9, 20, 0.55);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.7) 0%, rgba(185, 28, 28, 0.6) 100%);
+  box-shadow: 0 0 24px rgba(229, 9, 20, 0.65);
   transform: translateY(-1px) scale(1.02);
 }
 
 .cs-btn-party.active-room {
-  background: linear-gradient(135deg, #e50914 0%, #8a2be2 100%);
+  background: linear-gradient(135deg, #e50914 0%, #b91c1c 100%);
   border-color: #ffffff;
-  box-shadow: 0 0 25px rgba(229, 9, 20, 0.7);
+  box-shadow: 0 0 25px rgba(229, 9, 20, 0.8);
 }
 
 /* Flagship Large "Watch with Friends" Hero Action Button */
@@ -122,15 +122,15 @@
   padding: 8px 18px !important;
   font-size: 13px !important;
   font-weight: 800 !important;
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.45) 0%, rgba(138, 43, 226, 0.45) 100%) !important;
-  border: 1.5px solid rgba(229, 9, 20, 0.75) !important;
-  box-shadow: 0 0 22px rgba(229, 9, 20, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.55) 0%, rgba(185, 28, 28, 0.45) 100%) !important;
+  border: 1.5px solid rgba(229, 9, 20, 0.8) !important;
+  box-shadow: 0 0 22px rgba(229, 9, 20, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
   letter-spacing: 0.2px !important;
 }
 
 .cs-btn-party-hero:hover {
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.65) 0%, rgba(138, 43, 226, 0.65) 100%) !important;
-  box-shadow: 0 0 28px rgba(229, 9, 20, 0.65) !important;
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.78) 0%, rgba(185, 28, 28, 0.68) 100%) !important;
+  box-shadow: 0 0 28px rgba(229, 9, 20, 0.75) !important;
   transform: translateY(-2px) scale(1.03) !important;
 }
 
@@ -277,13 +277,42 @@
   position: sticky;
   top: 0;
   z-index: 25;
-  padding: 12px 16px;
-  background: linear-gradient(90deg, rgba(229, 9, 20, 0.32) 0%, rgba(18, 18, 26, 0.98) 100%);
-  border-bottom: 1px solid rgba(229, 9, 20, 0.45);
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(229, 9, 20, 0.22) 0%, rgba(9, 10, 16, 0.98) 100%);
+  border-bottom: 1px solid rgba(229, 9, 20, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wp-header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  width: 100%;
+}
+
+.wp-header-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.wp-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.wp-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .wp-title-wrap {
@@ -293,13 +322,14 @@
 }
 
 .wp-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: #ffffff;
   display: flex;
   align-items: center;
   gap: 7px;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .wp-title-beacon {
@@ -318,7 +348,7 @@
   color: #ff8585;
   font-size: 11px;
   font-weight: 800;
-  padding: 3px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
   letter-spacing: 0.5px;
   cursor: pointer;
@@ -326,6 +356,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .wp-room-badge:hover {
@@ -367,6 +399,9 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #cbd5e1;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+  min-width: max-content;
 }
 
 .wp-popups-toggle:hover {
@@ -493,10 +528,11 @@
   gap: 2px;
   max-width: 88%;
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(18, 20, 29, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 7px 12px;
+  padding: 8px 12px;
   border-radius: 14px 14px 14px 3px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   animation: msgPop 0.2s ease-out;
 }
 
@@ -507,27 +543,84 @@
 
 .wp-msg-item.me {
   align-self: flex-end;
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.45) 0%, rgba(75, 0, 130, 0.45) 100%);
-  border-color: rgba(138, 43, 226, 0.6);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.28) 0%, rgba(20, 22, 32, 0.95) 100%);
+  border: 1px solid rgba(229, 9, 20, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 12px rgba(229, 9, 20, 0.15);
   border-radius: 14px 14px 3px 14px;
 }
 
 .wp-msg-author {
   font-size: 10.5px;
   font-weight: 700;
-  color: #a78bfa;
+  color: #94a3b8;
+  letter-spacing: 0.2px;
 }
 
 .wp-msg-item.me .wp-msg-author {
-  color: #c4b5fd;
+  color: #ff6b72;
   text-align: right;
 }
 
 .wp-msg-text {
   font-size: 13px;
-  color: #ffffff;
-  line-height: 1.4;
+  color: #f1f5f9;
+  line-height: 1.45;
   word-break: break-word;
+}
+
+/* Universal High-Definition 3D Emojis */
+.fz-inline-emoji {
+  width: 1.35em;
+  height: 1.35em;
+  object-fit: contain;
+  vertical-align: -0.22em;
+  display: inline-block;
+  margin: 0 0.08em;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+  user-select: none;
+  pointer-events: none;
+}
+
+.fz-emoji-text-span {
+  display: inline;
+}
+
+/* Jumbo Emojis for messages that contain only emojis */
+.wp-msg-text.jumbo-emojis,
+.vcp-text .jumbo-emojis {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.wp-msg-text.jumbo-emojis .fz-inline-emoji,
+.vcp-text .jumbo-emojis .fz-inline-emoji {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.65));
+  animation: jumboEmojiPulse 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes jumboEmojiPulse {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.wp-picker-emoji-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  vertical-align: middle;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+  transition: transform 0.16s ease;
+}
+
+.wp-emoji-btn:hover .wp-picker-emoji-img {
+  transform: scale(1.22);
 }
 
 /* Floating 3D Emoji Deck inside Lounge (12 Modern Fluent Reactions) */
@@ -930,15 +1023,15 @@
   top: 75px;
   left: 50%;
   transform: translateX(-50%) translateY(-10px);
-  background: rgba(14, 14, 20, 0.94);
+  background: rgba(12, 13, 20, 0.96);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(138, 43, 226, 0.6);
+  border: 1px solid rgba(229, 9, 20, 0.6);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   padding: 8px 20px;
   border-radius: 999px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(138, 43, 226, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.85), 0 0 20px rgba(229, 9, 20, 0.4);
   z-index: 999999;
   opacity: 0;
   pointer-events: none;
@@ -985,8 +1078,9 @@
 }
 
 .wp-reaction-chip:hover {
-  background: rgba(138, 43, 226, 0.3);
-  border-color: rgba(138, 43, 226, 0.6);
+  background: rgba(229, 9, 20, 0.28);
+  border-color: rgba(229, 9, 20, 0.65);
+  box-shadow: 0 0 14px rgba(229, 9, 20, 0.4);
   transform: translateY(-2px);
 }
 
@@ -1065,8 +1159,9 @@
 
 /* VIP Watch Party Lounge Enhancement */
 .watch-party-container {
-  border: 1px solid rgba(138, 43, 226, 0.4) !important;
-  box-shadow: 0 12px 45px rgba(0, 0, 0, 0.85), 0 0 30px rgba(138, 43, 226, 0.18) !important;
+  border: 1px solid rgba(229, 9, 20, 0.55) !important;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.95), 0 0 30px rgba(229, 9, 20, 0.3) !important;
+  background: #08090e !important;
 }
 
 .wp-pinned-announcement { display: none !important; }
@@ -1128,8 +1223,9 @@
 }
 
 .wp-quick-prompt:hover {
-  background: rgba(138, 43, 226, 0.3);
-  border-color: rgba(138, 43, 226, 0.6);
+  background: rgba(229, 9, 20, 0.28);
+  border-color: rgba(229, 9, 20, 0.65);
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.35);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -1383,12 +1479,15 @@
 }
 
 .wp-header {
-  padding: 11px 15px !important;
-  background: linear-gradient(90deg, rgba(229, 9, 20, 0.3) 0%, rgba(18, 18, 26, 0.98) 100%) !important;
+  padding: 10px 14px !important;
+  background: linear-gradient(180deg, rgba(229, 9, 20, 0.22) 0%, rgba(9, 10, 16, 0.98) 100%) !important;
   border-bottom: 1px solid rgba(229, 9, 20, 0.4) !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 25 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
 }
 
 .wp-vip-title {
@@ -1496,20 +1595,20 @@
   flex-direction: column;
   gap: 6px;
   padding: 6px 8px;
-  background: rgba(12, 13, 20, 0.78);
+  background: rgba(10, 11, 17, 0.88);
   backdrop-filter: blur(20px) saturate(190%);
   -webkit-backdrop-filter: blur(20px) saturate(190%);
-  border: 1px solid rgba(138, 43, 226, 0.45);
+  border: 1px solid rgba(229, 9, 20, 0.45);
   border-radius: 20px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), 0 0 24px rgba(138, 43, 226, 0.25);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.88), 0 0 24px rgba(229, 9, 20, 0.25);
   user-select: none;
   transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   max-width: 90vw;
 }
 
 .cs-couple-cam-dock:hover {
-  border-color: rgba(168, 85, 247, 0.7);
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.9), 0 0 32px rgba(168, 85, 247, 0.38);
+  border-color: rgba(229, 9, 20, 0.75);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.92), 0 0 32px rgba(229, 9, 20, 0.4);
 }
 
 /* Drag Handle & Header */
@@ -1625,7 +1724,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.4) 0%, rgba(229, 9, 20, 0.25) 100%);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.45) 0%, rgba(20, 22, 32, 0.9) 100%);
   color: #ffffff;
   font-size: 24px;
   font-weight: 800;
@@ -1718,7 +1817,7 @@
 
 .cs-couple-cam-dock.is-collapsed .cs-cam-title-text::after {
   content: " (Min)";
-  color: #a855f7;
+  color: #ff8585;
 }
 
 /* Header Controls Mic & Cam Buttons */

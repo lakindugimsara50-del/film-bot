@@ -10895,12 +10895,24 @@ body.cinema-drawer-lock {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
-.preset-avatar-img {
-  width: 48px;
-  height: 48px;
+.preset-avatar-img-wrap {
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.preset-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .preset-avatar-label {
@@ -11106,13 +11118,37 @@ body.cinema-drawer-lock {
 .cs-floating-hero-emoji {
   position: absolute;
   bottom: 24px;
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   pointer-events: none;
   z-index: 50;
-  filter: drop-shadow(0 8px 24px rgba(255, 69, 0, 0.5));
-  animation: heroEmojiAscend 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  filter: drop-shadow(0 8px 24px rgba(255, 69, 0, 0.65));
+  animation: heroEmojiAscend 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   will-change: transform, opacity;
+}
+
+.cs-glow-fire {
+  filter: drop-shadow(0 8px 26px rgba(255, 69, 0, 0.8)) drop-shadow(0 0 16px rgba(255, 140, 0, 0.6));
+}
+
+.cs-glow-popcorn {
+  filter: drop-shadow(0 8px 26px rgba(243, 156, 18, 0.8)) drop-shadow(0 0 16px rgba(255, 215, 0, 0.6));
+}
+
+.cs-glow-heart {
+  filter: drop-shadow(0 8px 26px rgba(255, 51, 102, 0.8)) drop-shadow(0 0 16px rgba(255, 0, 80, 0.6));
+}
+
+.cs-glow-mindblown {
+  filter: drop-shadow(0 8px 26px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 16px rgba(147, 51, 234, 0.6));
+}
+
+.cs-glow-laugh {
+  filter: drop-shadow(0 8px 26px rgba(234, 179, 8, 0.8)) drop-shadow(0 0 16px rgba(250, 204, 21, 0.6));
+}
+
+.cs-glow-party {
+  filter: drop-shadow(0 8px 26px rgba(59, 130, 246, 0.8)) drop-shadow(0 0 16px rgba(16, 185, 129, 0.6));
 }
 
 .cs-floater-img {
@@ -11124,22 +11160,60 @@ body.cinema-drawer-lock {
 @keyframes heroEmojiAscend {
   0% {
     opacity: 0;
-    transform: translateY(30px) scale(0.35) rotate(0deg);
+    transform: translateY(24px) translateX(0) scale(0.3) rotate(0deg);
   }
-  14% {
+  12% {
     opacity: 1;
-    transform: translateY(0) scale(1.15) rotate(5deg);
+    transform: translateY(-28px) translateX(calc(var(--rand-sway, 0px) * 0.2)) scale(1.22) rotate(var(--rand-rot, 4deg));
   }
-  30% {
-    transform: translateY(-50px) scale(1) rotate(-5deg);
+  35% {
+    transform: translateY(-130px) translateX(calc(var(--rand-sway, 0px) * -0.5)) scale(1.05) rotate(calc(var(--rand-rot, 4deg) * -0.8));
   }
-  75% {
+  70% {
     opacity: 0.95;
-    transform: translateY(-260px) scale(0.95) rotate(6deg);
+    transform: translateY(-290px) translateX(var(--rand-sway, 0px)) scale(0.98) rotate(var(--rand-rot, 4deg));
   }
   100% {
     opacity: 0;
-    transform: translateY(-400px) scale(0.7) rotate(-8deg);
+    transform: translateY(-460px) translateX(calc(var(--rand-sway, 0px) * 0.4)) scale(0.65) rotate(0deg);
+  }
+}
+
+.cs-floating-mini-particle {
+  position: absolute;
+  bottom: 24px;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  z-index: 48;
+  opacity: 0;
+  animation: miniParticleFloat 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.cs-mini-floater-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+@keyframes miniParticleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) translateX(0) scale(0.4);
+  }
+  15% {
+    opacity: 0.9;
+    transform: translateY(-24px) translateX(calc(var(--rand-sway, 0px) * 0.4)) scale(1.1) rotate(var(--rand-rot, 5deg));
+  }
+  65% {
+    opacity: 0.8;
+    transform: translateY(-190px) translateX(var(--rand-sway, 0px)) scale(0.9) rotate(calc(var(--rand-rot, 5deg) * -1));
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-380px) translateX(calc(var(--rand-sway, 0px) * 0.6)) scale(0.4);
   }
 }
 

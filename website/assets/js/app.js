@@ -2731,7 +2731,7 @@ function openUserListModal(initialTab = 'favorites') {
       toolbarInfo.innerHTML = `
         <div class="vip-hub-count-pill">
           <i class="fa-solid fa-heart" style="color:#ff3366"></i>
-          <span>${items.length === 1 ? '1 Favorite Movie' : `${items.length} Favorite Movies in Collection`}</span>
+          <span>${items.length === 1 ? '1 Favorite Title' : `${items.length} Favorite Titles`}</span>
         </div>`;
       emptyTitle = 'කැමතිම චිත්‍රපට තවම නැත';
       emptySub = 'චිත්‍රපටයක ඇති ❤️ Heart අයිකනය ඔබා මෙහි සුරැකීමට හැකිය.';
@@ -2741,17 +2741,17 @@ function openUserListModal(initialTab = 'favorites') {
       toolbarInfo.innerHTML = `
         <div class="vip-hub-count-pill">
           <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
-          <span>${items.length === 1 ? '1 Movie in Watch Later Queue' : `${items.length} Movies in Watch Later Queue`}</span>
+          <span>${items.length === 1 ? '1 Title Saved for Later' : `${items.length} Titles Saved for Later`}</span>
         </div>`;
-      emptyTitle = 'පස්සේ බලන්න දැමූ චිත්‍රපට තවම නැත';
-      emptySub = 'චිත්‍රපටයක ඇති ⏱️ Watch Later ඔබා විවේකීව නැරඹීමට මෙහි සුරකින්න.';
+      emptyTitle = 'පසුව නැරඹීමට එක් කළ චිත්‍රපට තවම නැත';
+      emptySub = 'චිත්‍රපටයක ඇති ⏱️ Watch Later ඔබා මෙහි සුරකින්න.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
     } else if (tab === 'continue') {
       items = window.FilmSubUser.ContinueWatching.getAll();
       toolbarInfo.innerHTML = `
         <div class="vip-hub-count-pill">
           <i class="fa-solid fa-play" style="color:var(--accent)"></i>
-          <span>${items.length === 1 ? '1 In-Progress Movie' : `${items.length} In-Progress Movies`}</span>
+          <span>${items.length === 1 ? '1 Title In-Progress' : `${items.length} Titles In-Progress`}</span>
         </div>`;
       emptyTitle = 'නැවතු තැනින් නැවත බලන්න තවම චිත්‍රපට නැත';
       emptySub = 'ඔබ නරඹමින් සිටි චිත්‍රපට නැවතු වෙලාවේ සිටම මෙතැනින් Play කළ හැක.';
@@ -2761,10 +2761,10 @@ function openUserListModal(initialTab = 'favorites') {
       toolbarInfo.innerHTML = `
         <div class="vip-hub-count-pill">
           <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
-          <span>${items.length === 1 ? '1 Watched Movie' : `${items.length} Watched Movies in History`}</span>
+          <span>${items.length === 1 ? '1 Title in History' : `${items.length} Titles in History`}</span>
         </div>`;
       emptyTitle = 'Watch History හිස්ව ඇත';
-      emptySub = 'ඔබ නරඹන සියලුම චිත්‍රපට වෙලාවත් සමග පිළිවෙළට මෙහි සටහන් වේ.';
+      emptySub = 'ඔබ නරඹන සියලුම චිත්‍රපට වෙලාවත් සමග මෙහි සටහන් වේ.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
     }
 

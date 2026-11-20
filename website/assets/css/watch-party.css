@@ -723,11 +723,7 @@
   box-shadow: 0 12px 45px rgba(0, 0, 0, 0.85), 0 0 30px rgba(138, 43, 226, 0.18) !important;
 }
 
-.wp-pinned-announcement {
-  display: none !important;
-}
-  backdrop-filter: blur(10px);
-}
+.wp-pinned-announcement { display: none !important; }
 
 .wp-pinned-icon {
   font-size: 14px;

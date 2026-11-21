@@ -830,10 +830,10 @@ async def status_handler(client: Client, message: Message) -> None:
     try:
         from services.auth_service import auth_service
         user_id = message.from_user.id if message.from_user else 0
-        me = await client.get_me()
+        me_name = getattr(getattr(client, "me", None), "username", None) or "Filmsinhala200Bot"
         is_admin = message.from_user and (message.from_user.id in config.ADMIN_IDS or auth_service.is_admin(message.from_user.id))
 
-        text, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
+        text, kb = _build_status_content(user_id, me_name, is_admin)
         if len(text) > 4000:
             text = text[:3950] + "\n\n<i>...[තත්ත්ව විස්තර දිගු බැවින් කෙටි කරන ලදී]</i>"
 

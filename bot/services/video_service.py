@@ -3133,10 +3133,10 @@ async def cover_cinesubz_watermark(
                     f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
                     f"[0:v]setpts=PTS-STARTPTS[v_main];"
                     f"[2:v]scale={badge_w}:-1[badge];"
-                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:shortest=1[v_badged];"
+                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[v_badged];"
                     f"[v_intro][v_badged]concat=n=2:v=1:a=0[outv];"
-                    f"[1:a]asetpts=PTS-STARTPTS[a_intro];"
-                    f"[0:a]asetpts=PTS-STARTPTS[a_main];"
+                    f"[1:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_intro];"
+                    f"[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_main];"
                     f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]"
                 )
                 maps = ["-map", "[outv]", "-map", "[outa]"]
@@ -3146,7 +3146,7 @@ async def cover_cinesubz_watermark(
                     f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
                     f"[0:v]setpts=PTS-STARTPTS[v_main];"
                     f"[2:v]scale={badge_w}:-1[badge];"
-                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:shortest=1[v_badged];"
+                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[v_badged];"
                     f"[v_intro][v_badged]concat=n=2:v=1:a=0[outv]"
                 )
                 maps = ["-map", "[outv]"]
@@ -3162,7 +3162,6 @@ async def cover_cinesubz_watermark(
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
                 "-i", os.path.abspath(intro_video),
-                "-loop", "1",
                 "-i", os.path.abspath(badge_path),
                 "-filter_complex", filter_complex,
                 *maps,
@@ -3175,7 +3174,7 @@ async def cover_cinesubz_watermark(
         elif badge_path and os.path.exists(badge_path):
             filter_complex = (
                 f"[1:v]scale={badge_w}:-1[badge];"
-                f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h[outv]"
+                f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[outv]"
             )
             maps = ["-map", "[outv]", "-map", "0:a?"]
             audio_opts = ["-c:a", "copy"]
@@ -3188,7 +3187,6 @@ async def cover_cinesubz_watermark(
                 *hw_opts,
                 *trim_opts,
                 "-i", os.path.abspath(video_path),
-                "-loop", "1",
                 "-i", os.path.abspath(badge_path),
                 "-filter_complex", filter_complex,
                 *maps,
@@ -3407,7 +3405,6 @@ async def cover_cinesubz_watermark(
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
                         "-i", os.path.abspath(intro_video),
-                        "-loop", "1",
                         "-i", os.path.abspath(badge_path),
                         "-filter_complex", filter_complex,
                         *maps,
@@ -3426,7 +3423,6 @@ async def cover_cinesubz_watermark(
                         "-filter_complex_threads", "0",
                         *trim_opts,
                         "-i", os.path.abspath(video_path),
-                        "-loop", "1",
                         "-i", os.path.abspath(badge_path),
                         "-filter_complex", filter_complex,
                         *maps,

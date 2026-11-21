@@ -36,19 +36,19 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Script Preloading for Instant Player Bootstrap -->
-  <link rel="preload" href="data/movies_data.js?v=20261121_cinema_v49" as="script">
-  <link rel="preload" href="data/stream_endpoint.js?v=20261121_cinema_v49" as="script">
+  <link rel="preload" href="data/movies_data.js?v=20261121_cinema_v50" as="script">
+  <link rel="preload" href="data/stream_endpoint.js?v=20261121_cinema_v50" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261121_cinema_v49">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261121_cinema_v49">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261121_cinema_v49">
-  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261121_cinema_v49">
-  <link rel="stylesheet" href="assets/css/teasers.css?v=20261121_cinema_v49">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261121_cinema_v50">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261121_cinema_v50">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261121_cinema_v50">
+  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261121_cinema_v50">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261121_cinema_v50">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -855,27 +855,12 @@
                 <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
               </button>
 
-              <!-- In-Screen Chat Popups Toggle (ON/OFF) -->
-              <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
-                <i class="fa-solid fa-comment-dots"></i>
-                <span class="cs-popups-label">Popups</span>
-                <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
+              <!-- Family / Parent Safe Mode (Instant Censor / Skip) -->
+              <button type="button" class="cs-bar-btn cs-btn-safe" id="btn-toggle-safe-mode" title="Family & Parent Safe Mode (Auto Censor/Skip Explicit Scenes)">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span class="cs-safe-label">Safe Mode</span>
+                <span class="cs-safe-badge" id="cs-safe-badge">OFF</span>
               </button>
-
-              <!-- Live Mic Voice Chat Button -->
-              <button type="button" class="cs-bar-btn cs-btn-mic" id="btn-bar-mic" title="Toggle Microphone Voice Chat (M)">
-                <i class="fa-solid fa-microphone-slash"></i>
-                <span class="cs-mic-label">Mic</span>
-                <span class="cs-mic-badge" id="cs-mic-badge">OFF</span>
-              </button>
-
-              <!-- Live Couple Cam PiP Button -->
-              <button type="button" class="cs-bar-btn cs-btn-cam" id="btn-bar-cam" title="Toggle Couple Cam Video PiP (V)">
-                <i class="fa-solid fa-video-slash"></i>
-                <span class="cs-cam-label">Cam</span>
-                <span class="cs-cam-badge" id="cs-cam-badge">OFF</span>
-              </button>
-
 
               <!-- Mobile 4D Haptic Feedback (Bass & Action Vibrations) -->
               <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
@@ -899,26 +884,22 @@
                 <i class="fa-solid fa-wifi"></i>
                 <span class="cs-p2p-text" id="cs-p2p-status">P2P Active • Saved <b id="cs-p2p-saved-val">0.0 MB</b></span>
               </div>
-              <!-- Multi-Quality Download Capsule (1080p, 720p, 480p) -->
-              <div class="cs-dl-capsule" id="quick-dl-buttons">
-                <!-- Injected dynamically by player.js -->
-              </div>
 
               <!-- 30s Viral Scene Teaser Button -->
               <a href="teasers.html" class="cs-bar-btn cs-btn-teaser" id="bar-teaser-btn" title="Watch 30s Viral Scene Feed">
-                <i class="fa-solid fa-bolt" style="color:#ff3366"></i>
+                <i class="fa-solid fa-clapperboard"></i>
                 <span class="cs-teaser-label">30s Scene</span>
               </a>
 
               <!-- Favorite Button -->
               <button type="button" class="cs-bar-btn cs-btn-fav" id="movie-fav-btn" title="Add to Favorites">
-                <i class="fa-regular fa-heart" style="color:#ff3366"></i>
+                <i class="fa-regular fa-heart"></i>
                 <span>Favorite</span>
               </button>
 
               <!-- Watch Later Button -->
               <button type="button" class="cs-bar-btn cs-btn-later" id="movie-later-btn" title="Save to Watch Later">
-                <i class="fa-regular fa-clock" style="color:#00b4d8"></i>
+                <i class="fa-regular fa-clock"></i>
                 <span>Watch Later</span>
               </button>
 
@@ -1169,17 +1150,17 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="assets/js/user-state.js?v=20261121_cinema_v49"></script>
-<script src="data/movies_data.js?v=20261121_cinema_v49"></script>
+<script src="assets/js/user-state.js?v=20261121_cinema_v50"></script>
+<script src="data/movies_data.js?v=20261121_cinema_v50"></script>
 <script src="data/censor_cues_data.js?v=20261121_censor_v1"></script>
-<script src="data/teasers_data.js?v=20261121_cinema_v49"></script>
-<script src="data/stream_endpoint.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/emoji-engine.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/app.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/download.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/roulette.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/watch-party.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/player.js?v=20261121_cinema_v49"></script>
-<script src="assets/js/netflix-ui.js?v=20261121_cinema_v49"></script>
+<script src="data/teasers_data.js?v=20261121_cinema_v50"></script>
+<script src="data/stream_endpoint.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/emoji-engine.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/app.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/download.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/roulette.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/watch-party.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/player.js?v=20261121_cinema_v50"></script>
+<script src="assets/js/netflix-ui.js?v=20261121_cinema_v50"></script>
 </body>
 </html>

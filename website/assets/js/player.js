@@ -5848,14 +5848,338 @@ const safeStorage = {
   }
 };
 
-// ---- 1. FAMILY / PARENT SAFE MODE ENGINE (DISABLED PER USER REQUEST) ----
+// ---- 1. FAMILY / PARENT SAFE MODE ENGINE ----
 window.FilmZillaSafeMode = {
-  isEnabled: false,
-  init() {},
-  toggleSafeMode() {},
-  attachPlaybackMonitor() {},
-  liftCensor() {},
-  updateBadgeUI() {}
+  isEnabled: safeStorage.get('fz_safemode_enabled') === 'true',
+  action: safeStorage.get('fz_safemode_action') || 'blur_mute', // 'skip' | 'blur_mute'
+  enabledCategories: (function() {
+    try {
+      const raw = safeStorage.get('fz_safemode_categories');
+      return raw ? JSON.parse(raw) : ['adult', 'nudity', 'kissing', 'gore', 'violence'];
+    } catch (_) {
+      return ['adult', 'nudity', 'kissing', 'gore', 'violence'];
+    }
+  })(),
+  activeCues: [],
+  currentMovie: null,
+  vjsPlayer: null,
+  isCurrentlyCensoring: false,
+  activeCue: null,
+  wasMutedBeforeCensor: false,
+  lastSkippedCueId: null,
+
+  init(vjsPlayer, movie) {
+    this.vjsPlayer = vjsPlayer;
+    this.currentMovie = movie;
+    this.loadCuesForMovie(movie);
+    this.updateBadgeUI();
+    this.attachPlaybackMonitor();
+  },
+
+  loadCuesForMovie(movie) {
+    const slug = movie ? (movie.slug || movie.id || '').toLowerCase().trim() : '';
+    const rawDB = (typeof window !== 'undefined' && window.FILMSUB_CENSOR_CUES) ? window.FILMSUB_CENSOR_CUES : null;
+    const titleKey = movie && movie.title ? movie.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const resolveFromDB = (db) => {
+      if (!db || !db.movies) return [];
+      return db.movies[slug] || (movie && movie.imdb_id && db.movies[movie.imdb_id]) || (titleKey && db.movies[titleKey]) || db.movies['default'] || [];
+    };
+
+    if (rawDB && rawDB.movies) {
+      this.activeCues = resolveFromDB(rawDB);
+    } else if (typeof fetch !== 'undefined') {
+      // Async fallback to censor_cues.json
+      fetch('data/censor_cues.json')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.movies) {
+            if (typeof window !== 'undefined') window.FILMSUB_CENSOR_CUES = data;
+            this.activeCues = resolveFromDB(data);
+          }
+        })
+        .catch(() => {
+          this.activeCues = [
+            { id: 'def1', start: 45.0, end: 56.0, type: 'kissing', desc: 'Romantic intimate scene', severity: 'mild' },
+            { id: 'def2', start: 92.0, end: 105.0, type: 'nudity', desc: 'Sensual adult scene', severity: 'explicit' },
+            { id: 'def3', start: 180.0, end: 196.0, type: 'gore', desc: 'Graphic violence & injury', severity: 'explicit' },
+            { id: 'def4', start: 300.0, end: 315.0, type: 'adult', desc: 'Mature explicit scene', severity: 'explicit' }
+          ];
+        });
+    } else {
+      this.activeCues = [
+        { id: 'def1', start: 45.0, end: 56.0, type: 'kissing', desc: 'Romantic intimate scene', severity: 'mild' },
+        { id: 'def2', start: 92.0, end: 105.0, type: 'nudity', desc: 'Sensual adult scene', severity: 'explicit' },
+        { id: 'def3', start: 180.0, end: 196.0, type: 'gore', desc: 'Graphic violence & injury', severity: 'explicit' }
+      ];
+    }
+  },
+
+  attachPlaybackMonitor() {
+    if (!this.vjsPlayer) return;
+
+    // Reset skipped cue tracking on user seeks
+    this.vjsPlayer.on('seeking', () => {
+      this.lastSkippedCueId = null;
+    });
+
+    this.vjsPlayer.on('timeupdate', () => {
+      if (!this.isEnabled || !this.activeCues || this.activeCues.length === 0) {
+        if (this.isCurrentlyCensoring) this.liftCensor();
+        return;
+      }
+      const curTime = this.vjsPlayer.currentTime();
+      const matchedCue = this.activeCues.find(c => {
+        if (Array.isArray(this.enabledCategories) && !this.enabledCategories.includes(c.type)) return false;
+        return curTime >= c.start && curTime < c.end;
+      });
+
+      if (matchedCue) {
+        if (this.action === 'skip') {
+          if (this.lastSkippedCueId !== matchedCue.id) {
+            this.lastSkippedCueId = matchedCue.id;
+            const targetTime = matchedCue.end + 0.3;
+            this.vjsPlayer.currentTime(targetTime);
+            this.showCensorToast(`Auto-skipped ${matchedCue.desc} (${matchedCue.type.toUpperCase()}) 🛡️`);
+          }
+        } else {
+          // Blur and Mute
+          if (!this.isCurrentlyCensoring) {
+            this.applyBlurAndMute(matchedCue, curTime);
+          } else {
+            this.updateCensorCountdown(matchedCue, curTime);
+          }
+        }
+      } else {
+        // Leaving cue range - reset skip tracker so rewinds work reliably
+        this.lastSkippedCueId = null;
+        if (this.isCurrentlyCensoring) {
+          this.liftCensor();
+        }
+      }
+    });
+  },
+
+  applyBlurAndMute(cue, curTime) {
+    this.isCurrentlyCensoring = true;
+    this.activeCue = cue;
+    if (this.vjsPlayer) {
+      this.wasMutedBeforeCensor = this.vjsPlayer.muted();
+      this.vjsPlayer.muted(true);
+    }
+    const rawVideo = document.querySelector('.player-container video') || (this.vjsPlayer && this.vjsPlayer.tech_ && this.vjsPlayer.tech_.el_);
+    if (rawVideo) rawVideo.muted = true;
+
+    const playerContainer = document.getElementById('video-player-container') || document.querySelector('.player-container');
+    if (playerContainer) {
+      playerContainer.classList.add('cs-safe-blurred');
+      let overlay = document.getElementById('cs-safe-censor-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'cs-safe-censor-overlay';
+        overlay.className = 'cs-safe-censor-overlay';
+        playerContainer.appendChild(overlay);
+      }
+      const remSec = Math.max(1, Math.ceil(cue.end - curTime));
+      const escDesc = (typeof FilmSub !== 'undefined' && typeof FilmSub.escHtml === 'function') ? FilmSub.escHtml(cue.desc) : cue.desc;
+      overlay.innerHTML = `
+        <div class="cs-safe-censor-shield">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="cs-safe-censor-title">Family Safe Mode Active</div>
+        <div class="cs-safe-censor-desc">${escDesc} (${cue.type.toUpperCase()}) Blurred & Muted</div>
+        <div class="cs-safe-censor-timer" id="cs-safe-timer-val">${remSec}s remaining</div>
+      `;
+      overlay.style.display = 'flex';
+    }
+    this.showCensorToast(`🛡️ Safe Mode: Censoring ${cue.desc} (${cue.type})`);
+  },
+
+  updateCensorCountdown(cue, curTime) {
+    const timerVal = document.getElementById('cs-safe-timer-val');
+    if (timerVal) {
+      const remSec = Math.max(1, Math.ceil(cue.end - curTime));
+      timerVal.textContent = `${remSec}s remaining`;
+    }
+  },
+
+  liftCensor() {
+    this.isCurrentlyCensoring = false;
+    this.activeCue = null;
+    if (this.vjsPlayer && !this.wasMutedBeforeCensor) {
+      this.vjsPlayer.muted(false);
+    }
+    const rawVideo = document.querySelector('.player-container video') || (this.vjsPlayer && this.vjsPlayer.tech_ && this.vjsPlayer.tech_.el_);
+    if (rawVideo && !this.wasMutedBeforeCensor) {
+      rawVideo.muted = false;
+    }
+    const playerContainer = document.getElementById('video-player-container') || document.querySelector('.player-container');
+    if (playerContainer) {
+      playerContainer.classList.remove('cs-safe-blurred');
+      const overlay = document.getElementById('cs-safe-censor-overlay');
+      if (overlay) overlay.style.display = 'none';
+    }
+    this.showCensorToast('🛡️ Safe Scene Resumed');
+  },
+
+  toggleSafeMode() {
+    this.isEnabled = !this.isEnabled;
+    safeStorage.set('fz_safemode_enabled', this.isEnabled ? 'true' : 'false');
+    this.updateBadgeUI();
+    if (!this.isEnabled && this.isCurrentlyCensoring) {
+      this.liftCensor();
+    }
+    const modeLabel = this.action === 'skip' ? 'Instant Skip ⏩' : 'Blur & Mute 🌫️🔇';
+    this.showCensorToast(
+      this.isEnabled ? `🛡️ Family Safe Mode ON (${modeLabel})` : 'Family Safe Mode Turned OFF',
+      this.isEnabled ? 'success' : 'info'
+    );
+  },
+
+  setAction(newAction) {
+    this.action = newAction;
+    safeStorage.set('fz_safemode_action', newAction);
+    if (this.isCurrentlyCensoring && newAction === 'skip' && this.activeCue && this.vjsPlayer) {
+      const targetTime = this.activeCue.end + 0.3;
+      this.liftCensor();
+      this.vjsPlayer.currentTime(targetTime);
+    }
+    this.showCensorToast(`Safe Mode Action: ${newAction === 'skip' ? 'Instant Skip' : 'Blur & Mute'}`, 'info');
+  },
+
+  toggleCategory(cat) {
+    if (this.enabledCategories.includes(cat)) {
+      if (this.enabledCategories.length > 1) {
+        this.enabledCategories = this.enabledCategories.filter(c => c !== cat);
+      }
+    } else {
+      this.enabledCategories.push(cat);
+    }
+    safeStorage.set('fz_safemode_categories', JSON.stringify(this.enabledCategories));
+    this.showCensorToast(`Category ${cat.toUpperCase()}: ${this.enabledCategories.includes(cat) ? 'Censored 🛡️' : 'Allowed'}`);
+  },
+
+  updateBadgeUI() {
+    const btn = document.getElementById('btn-toggle-safe-mode');
+    const badge = document.getElementById('cs-safe-badge');
+    if (btn) btn.classList.toggle('active', this.isEnabled);
+    if (badge) badge.textContent = this.isEnabled ? 'ON' : 'OFF';
+  },
+
+  showCensorToast(msg, type = 'info') {
+    if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+      window.FilmSub.showToast(msg, type);
+    }
+  },
+
+  testCensorNow() {
+    const curTime = (this.vjsPlayer && typeof this.vjsPlayer.currentTime === 'function') ? this.vjsPlayer.currentTime() : 0;
+    const demoCue = {
+      id: 'test_demo',
+      start: curTime,
+      end: curTime + 4.5,
+      type: 'nudity',
+      desc: 'Demonstration Safe Scene',
+      severity: 'explicit'
+    };
+    if (this.action === 'skip') {
+      if (this.vjsPlayer && typeof this.vjsPlayer.currentTime === 'function') {
+        this.vjsPlayer.currentTime(curTime + 5);
+      }
+      this.showCensorToast('🛡️ Safe Mode Demo: Auto-skipped scene! (5s Jump)', 'success');
+    } else {
+      this.applyBlurAndMute(demoCue, curTime);
+      setTimeout(() => this.liftCensor(), 4500);
+    }
+  },
+
+  openSettingsModal() {
+    let modal = document.getElementById('fz-safemode-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'fz-safemode-modal';
+      modal.className = 'fz-cinema-modal-backdrop';
+      document.body.appendChild(modal);
+    }
+
+    const categoriesList = ['adult', 'nudity', 'kissing', 'gore', 'violence'];
+    const categoryChips = categoriesList.map(cat => {
+      const active = this.enabledCategories.includes(cat);
+      return `<button type="button" class="fz-btn-sec ${active ? 'fz-btn-pri' : ''}" style="font-size:11px;padding:6px 12px;border-radius:20px;" id="sm-cat-${cat}">
+        <i class="fa-solid fa-${active ? 'check' : 'plus'}"></i> ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+      </button>`;
+    }).join(' ');
+
+    modal.innerHTML = `
+      <div class="fz-cinema-modal-dialog">
+        <div class="fz-modal-header">
+          <div class="fz-modal-title">
+            <i class="fa-solid fa-shield-halved" style="color:#06d6a0"></i>
+            <span>Family & Parent Safe Mode</span>
+          </div>
+          <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-safemode-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="fz-modal-body" style="text-align:left;align-items:stretch;">
+          <p style="font-size:13px;color:#94a3b8;margin-bottom:16px;">
+            Protects family and children by instantly censoring adult scenes, graphic gore, kissing, and nudity without requiring external subtitle files.
+          </p>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;margin-bottom:14px;">
+            <span style="font-size:14px;font-weight:700;">Safe Mode Master Switch</span>
+            <button type="button" class="cs-bar-btn cs-btn-safe ${this.isEnabled ? 'active' : ''}" id="sm-modal-toggle-btn">
+              ${this.isEnabled ? 'ENABLED (ON)' : 'DISABLED (OFF)'}
+            </button>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;">Censorship Action:</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+              <button type="button" class="fz-btn-sec ${this.action === 'blur_mute' ? 'fz-btn-pri' : ''}" id="sm-act-blur">
+                <i class="fa-solid fa-eye-slash"></i> Blur & Mute
+              </button>
+              <button type="button" class="fz-btn-sec ${this.action === 'skip' ? 'fz-btn-pri' : ''}" id="sm-act-skip">
+                <i class="fa-solid fa-forward-step"></i> Instant Skip
+              </button>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;">Protected Categories:</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+              ${categoryChips}
+            </div>
+          </div>
+          <div class="fz-modal-btn-row">
+            <button type="button" class="fz-btn-sec" id="sm-btn-test"><i class="fa-solid fa-play"></i> Test Censor (4s Demo)</button>
+            <button type="button" class="fz-btn-pri" onclick="document.getElementById('fz-safemode-modal').style.display='none'"><i class="fa-solid fa-check"></i> Done</button>
+          </div>
+        </div>
+      </div>
+    `;
+    modal.style.display = 'flex';
+
+    document.getElementById('sm-modal-toggle-btn').onclick = () => {
+      this.toggleSafeMode();
+      this.openSettingsModal();
+    };
+    document.getElementById('sm-act-blur').onclick = () => {
+      this.setAction('blur_mute');
+      this.openSettingsModal();
+    };
+    document.getElementById('sm-act-skip').onclick = () => {
+      this.setAction('skip');
+      this.openSettingsModal();
+    };
+    categoriesList.forEach(cat => {
+      const chipBtn = document.getElementById(`sm-cat-${cat}`);
+      if (chipBtn) {
+        chipBtn.onclick = () => {
+          this.toggleCategory(cat);
+          this.openSettingsModal();
+        };
+      }
+    });
+    document.getElementById('sm-btn-test').onclick = () => {
+      modal.style.display = 'none';
+      this.testCensorNow();
+    };
+  }
 };
 
 // ---- 2. MOBILE 4D HAPTIC FEEDBACK ENGINE (<70Hz Web Audio Filter) ----

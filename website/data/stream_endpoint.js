@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://determining-flights-collect-miniature.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-21T04:39:54.162123+00:00",
+  "updated_at": "2026-11-21T04:40:09.162791+00:00",
   "status": "online"
 };

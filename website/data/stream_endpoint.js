@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://separate-anthropology-cgi-healing.trycloudflare.com",
+  "stream_base_url": "https://memory-strings-advertisement-hello.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-21T11:47:00.697744+00:00",
+  "updated_at": "2026-11-21T11:47:53.841366+00:00",
   "status": "online"
 };

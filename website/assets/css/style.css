@@ -10587,37 +10587,89 @@ body.cinema-drawer-lock {
 .drawer-nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  gap: 13px;
+  padding: 8px 12px;
+  border-radius: 12px;
   color: #cbd5e1;
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 600;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   width: 100%;
   text-align: left;
   cursor: pointer;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-icon-tile {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-icon-tile i {
+  font-size: 15px;
+  color: #cbd5e1;
   transition: all 0.2s ease;
 }
 
-.drawer-nav-item i {
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
-  color: #94a3b8;
-  transition: color 0.2s ease;
+.drawer-icon-tile.tg i {
+  color: #229ed9;
+  font-size: 17px;
+}
+
+.drawer-3d-glyph {
+  width: 21px;
+  height: 21px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45));
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
 
 .drawer-nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-  transform: translateX(3px);
+  transform: translateX(4px);
 }
 
-.drawer-nav-item:hover i {
+.drawer-nav-item:hover .drawer-icon-tile {
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.22) 0%, rgba(229, 9, 20, 0.08) 100%);
+  border-color: rgba(229, 9, 20, 0.5);
+  box-shadow: 0 0 16px rgba(229, 9, 20, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
+}
+
+.drawer-nav-item:hover .drawer-icon-tile i {
   color: #ffffff;
+}
+
+.drawer-nav-item:hover .drawer-icon-tile.tg {
+  background: linear-gradient(135deg, rgba(34, 158, 217, 0.22) 0%, rgba(34, 158, 217, 0.08) 100%);
+  border-color: rgba(34, 158, 217, 0.5);
+  box-shadow: 0 0 16px rgba(34, 158, 217, 0.4);
+}
+
+.drawer-nav-item:hover .drawer-3d-glyph {
+  transform: scale(1.15) rotate(-3deg);
+  filter: drop-shadow(0 3px 8px rgba(229, 9, 20, 0.4));
 }
 
 .drawer-pill-hot {

@@ -2946,7 +2946,7 @@ function applyNewAvatar(avatarUrl) {
       el.src = avatarUrl;
     });
   });
-  if (typeof showToast === 'function') showToast('Profile avatar updated! ✨');
+  if (typeof showToast === 'function') showToast('Profile avatar updated');
 }
 
 function openAvatarPickerModal() {
@@ -3251,7 +3251,7 @@ function initGlobalCinemaDrawer() {
         } else if (typeof window.openMovieRouletteModal === 'function') {
           window.openMovieRouletteModal();
         } else if (typeof showToast === 'function') {
-          showToast('Opening Cinema Roulette... 🎲');
+          showToast('Opening Cinema Roulette...');
         }
       });
     }

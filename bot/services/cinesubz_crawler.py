@@ -644,7 +644,12 @@ class CineSubzCrawler:
                                         parse_mode=ParseMode.HTML,
                                     )
                                 except Exception as s_err:
-                                    log.debug("[CineSubzCrawler] New upload TV msg note: %s", s_err)
+                                    from pyrogram.errors import FloodWait
+                                    if isinstance(s_err, FloodWait):
+                                        log.warning("[CineSubzCrawler] FloodWait %ds while notifying TV episode: %s", s_err.value, s_err)
+                                        await asyncio.sleep(min(float(s_err.value), 5.0))
+                                    else:
+                                        log.debug("[CineSubzCrawler] New upload TV msg note: %s", s_err)
 
                             if eff_client and leech_status_msg:
                                 await queue_service.add_to_queue(
@@ -694,7 +699,12 @@ class CineSubzCrawler:
                                     parse_mode=ParseMode.HTML,
                                 )
                             except Exception as s_err:
-                                log.debug("[CineSubzCrawler] New upload msg note: %s", s_err)
+                                from pyrogram.errors import FloodWait
+                                if isinstance(s_err, FloodWait):
+                                    log.warning("[CineSubzCrawler] FloodWait %ds while notifying movie: %s", s_err.value, s_err)
+                                    await asyncio.sleep(min(float(s_err.value), 5.0))
+                                else:
+                                    log.debug("[CineSubzCrawler] New upload msg note: %s", s_err)
 
                         if eff_client and leech_status_msg:
                             await queue_service.add_to_queue(

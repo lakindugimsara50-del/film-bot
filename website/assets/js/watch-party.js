@@ -72,9 +72,21 @@
       this.isCoupleCamCollapsed = false;
       this.audioContext = null;
 
+      // Long-Distance Couple Mode, Hugs & Touch Sync
+      this.isCoupleMode = false;
+      this.isWhisperMode = false;
+      this.hugInterval = null;
+      this.hugProgress = 0;
+
+      // In-Party Live Predictions & Betting Arena
+      this.activePrediction = null;
+      this.popcornCoins = parseInt(localStorage.getItem('fz_popcorn_coins') || '250', 10);
+      this.predictionLeaderboard = new Map(); // userName -> coins
+
       this.initFromUrl();
       this.initFullscreenListener();
       this.initKeyboardShortcuts();
+      this.initCoupleTouchListener();
     }
 
     initFullscreenListener() {
@@ -1948,7 +1960,7 @@
       stage.appendChild(floater);
       setTimeout(() => {
         if (floater.parentNode) floater.parentNode.removeChild(floater);
-      }, 1600);
+      }, 2300);
     }
 
     showActionToast(text) {

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>FilmZilla – Phone Cinema Remote Companion</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --rose: #f43f5e;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 20px) 16px;
+    }
+    
+    /* Top Bar */
+    .remote-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .remote-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #e50914, #b20710);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      box-shadow: 0 4px 14px rgba(229, 9, 20, 0.4);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .brand-title span {
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 4px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .remote-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    
+    /* Movie Showcase Capsule */
+    .movie-capsule {
+      margin: 16px 0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      backdrop-filter: blur(16px);
+    }
+    .movie-poster-thumb {
+      width: 52px;
+      height: 74px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #1e293b;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+    }
+    .movie-info {
+      flex: 1;
+      overflow: hidden;
+    }
+    .movie-title-text {
+      font-size: 15px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .movie-meta-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Scrubbing & Time */
+    .scrubber-section {
+      margin: 10px 0 20px 0;
+    }
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .seek-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      outline: none;
+    }
+    .seek-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 14px #38bdf8;
+      cursor: pointer;
+    }
+    
+    /* Big Center Controls */
+    .transport-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px 0 26px 0;
+    }
+    .btn-seek-step {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-seek-step:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .btn-play-pause-hero {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      border: 2px solid #7dd3fc;
+      color: #ffffff;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.5), 0 0 25px rgba(56, 189, 248, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-play-pause-hero:active {
+      transform: scale(0.93);
+    }
+    
+    /* Volume Bar */
+    .volume-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .btn-mute {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .vol-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      outline: none;
+    }
+    .vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+    }
+    
+    /* Action & Reaction Bombs Grid */
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .reaction-bombs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .btn-remote-bomb {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+    .btn-remote-bomb:active {
+      transform: scale(0.94);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .bomb-emoji {
+      font-size: 26px;
+    }
+    .bomb-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    
+    /* Feature Toggle Cards */
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .btn-feature-toggle {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+    .btn-feature-toggle.active {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+    }
+    .btn-feature-toggle.haptic-active {
+      border-color: #f43f5e;
+      background: rgba(244, 63, 94, 0.15);
+      color: #fda4af;
+    }
+    
+    /* Couple Hug Touch Bar */
+    .couple-hug-strip {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(236, 72, 153, 0.18));
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .couple-hug-strip:active {
+      transform: scale(0.98);
+    }
+    .hug-fill-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      background: rgba(244, 63, 94, 0.35);
+      transition: width 0.1s linear;
+      pointer-events: none;
+    }
+    .hug-label {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hug-sub {
+      font-size: 11px;
+      color: #fda4af;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="remote-header">
+    <div class="remote-brand">
+      <div class="brand-icon"><i class="fa-solid fa-play"></i></div>
+      <div class="brand-title">FilmZilla <span>REMOTE</span></div>
+    </div>
+    <div class="remote-status-badge" id="companion-status-badge">
+      <span class="status-dot"></span>
+      <span id="companion-status-text">Connected</span>
+    </div>
+  </header>
+
+  <!-- Movie Showcase -->
+  <div class="movie-capsule">
+    <img src="assets/img/poster-placeholder.png" alt="Movie Poster" class="movie-poster-thumb" id="remote-movie-poster">
+    <div class="movie-info">
+      <div class="movie-title-text" id="remote-movie-title">Cinema Playback</div>
+      <div class="movie-meta-text">
+        <span id="remote-movie-quality">1080p Ultra HD</span>
+        <span>•</span>
+        <span id="remote-haptic-status"><i class="fa-solid fa-mobile-screen-button"></i> 4D Haptics Active</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline Scrubber -->
+  <div class="scrubber-section">
+    <div class="time-row">
+      <span id="remote-cur-time">00:00</span>
+      <span id="remote-duration">00:00</span>
+    </div>
+    <input type="range" class="seek-slider" id="remote-seek" min="0" max="100" value="0">
+  </div>
+
+  <!-- Big Playback Controls -->
+  <div class="transport-controls">
+    <button type="button" class="btn-seek-step" id="remote-rewind-btn" title="Rewind 10s">
+      <i class="fa-solid fa-rotate-left"></i>
+    </button>
+    <button type="button" class="btn-play-pause-hero" id="remote-play-btn" title="Play / Pause">
+      <i class="fa-solid fa-play" id="remote-play-icon"></i>
+    </button>
+    <button type="button" class="btn-seek-step" id="remote-forward-btn" title="Forward 10s">
+      <i class="fa-solid fa-rotate-right"></i>
+    </button>
+  </div>
+
+  <!-- Volume Control -->
+  <div class="volume-box">
+    <button type="button" class="btn-mute" id="remote-mute-btn"><i class="fa-solid fa-volume-high" id="remote-vol-icon"></i></button>
+    <input type="range" class="vol-slider" id="remote-vol-slider" min="0" max="100" value="100">
+  </div>
+
+  <!-- Feature Toggles -->
+  <div class="toggle-grid">
+    <button type="button" class="btn-feature-toggle active" id="remote-safe-btn">
+      <i class="fa-solid fa-shield-halved" style="color:#10b981;font-size:18px;"></i>
+      <div>
+        <div>Safe Mode</div>
+        <small style="color:var(--text-muted);font-size:10px;" id="remote-safe-status">Active (Blur/Mute)</small>
+      </div>
+    </button>
+    <button type="button" class="btn-feature-toggle haptic-active" id="remote-haptic-btn">
+      <i class="fa-solid fa-mobile-screen-button" style="color:#f43f5e;font-size:18px;"></i>
+      <div>
+        <div>4D Haptic</div>
+        <small style="color:var(--text-muted);font-size:10px;">Bass Vibration ON</small>
+      </div>
+    </button>
+  </div>
+
+  <!-- Reaction Bombs Thrower -->
+  <div class="section-title">
+    <span>Throw Reaction to Screen</span>
+    <span style="color:#38bdf8;font-size:11px;">Instant Blast</span>
+  </div>
+  <div class="reaction-bombs-grid">
+    <button type="button" class="btn-remote-bomb" data-bomb="popcorn">
+      <span class="bomb-emoji">🍿</span>
+      <span class="bomb-label">Popcorn</span>
+    </button>
+    <button type="button" class="btn-remote-bomb" data-bomb="tomato">
+      <span class="bomb-emoji">🍅</span>
+      <span class="bomb-label">Tomato Splat</span>
+    </button>
+    <button type="button" class="btn-remote-bomb" data-bomb="laugh">
+      <span class="bomb-emoji">😂</span>
+      <span class="bomb-label">Laugh Bomb</span>
+    </button>
+    <button type="button" class="btn-remote-bomb" data-bomb="fire">
+      <span class="bomb-emoji">🔥</span>
+      <span class="bomb-label">Fire Storm</span>
+    </button>
+    <button type="button" class="btn-remote-bomb" data-bomb="heart">
+      <span class="bomb-emoji">❤️</span>
+      <span class="bomb-label">Love Shower</span>
+    </button>
+    <button type="button" class="btn-remote-bomb" data-bomb="bomb">
+      <span class="bomb-emoji">💣</span>
+      <span class="bomb-label">Mega Bomb</span>
+    </button>
+  </div>
+
+  <!-- Long Distance Couple Hug Strip -->
+  <div class="couple-hug-strip" id="remote-hug-btn">
+    <div class="hug-fill-bar" id="remote-hug-bar"></div>
+    <div class="hug-label">
+      <i class="fa-solid fa-hands-holding-child" style="color:#ff2a6d;font-size:22px;"></i>
+      <div>
+        <div>Send Long-Distance Hug</div>
+        <div class="hug-sub">Hold down for 1.5s to deliver simultaneous haptic hug</div>
+      </div>
+    </div>
+    <span style="font-size:20px;">🤗</span>
+  </div>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const pairCode = urlParams.get('pair') || 'LOCAL';
+      const movieSlug = urlParams.get('movie') || '';
+
+      const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('fz_companion_sync') : null;
+      let peer = null;
+      let peerConn = null;
+      let isPlaying = false;
+      let isMuted = false;
+      let currentDuration = 100;
+      let hapticsEnabled = true;
+
+      // DOM Elements
+      const playBtn = document.getElementById('remote-play-btn');
+      const playIcon = document.getElementById('remote-play-icon');
+      const rewindBtn = document.getElementById('remote-rewind-btn');
+      const forwardBtn = document.getElementById('remote-forward-btn');
+      const seekSlider = document.getElementById('remote-seek');
+      const curTimeEl = document.getElementById('remote-cur-time');
+      const durTimeEl = document.getElementById('remote-duration');
+      const volSlider = document.getElementById('remote-vol-slider');
+      const muteBtn = document.getElementById('remote-mute-btn');
+      const volIcon = document.getElementById('remote-vol-icon');
+      const safeBtn = document.getElementById('remote-safe-btn');
+      const hapticBtn = document.getElementById('remote-haptic-btn');
+      const hugBtn = document.getElementById('remote-hug-btn');
+      const hugBar = document.getElementById('remote-hug-bar');
+      const movieTitleEl = document.getElementById('remote-movie-title');
+      const moviePosterEl = document.getElementById('remote-movie-poster');
+
+      function formatTime(sec) {
+        if (!sec || isNaN(sec)) return '00:00';
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+
+      function vibrate(pattern) {
+        if (hapticsEnabled && navigator.vibrate) {
+          try { navigator.vibrate(pattern); } catch (e) {}
+        }
+      }
+
+      function sendCommand(action, value = null) {
+        vibrate(30);
+        const msg = { type: 'REMOTE_CMD', action, value, pairCode, time: Date.now() };
+        if (bc) bc.postMessage(msg);
+        if (peerConn && peerConn.open) peerConn.send(msg);
+      }
+
+      // Handle incoming state from PC/TV player
+      function handleStateUpdate(data) {
+        if (!data) return;
+        if (data.type === 'PLAYER_STATE') {
+          if (typeof data.paused === 'boolean') {
+            isPlaying = !data.paused;
+            playIcon.className = `fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`;
+          }
+          if (typeof data.currentTime === 'number') {
+            curTimeEl.textContent = formatTime(data.currentTime);
+            if (!seekSlider._isDragging && data.duration) {
+              seekSlider.value = (data.currentTime / data.duration) * 100;
+            }
+          }
+          if (typeof data.duration === 'number' && data.duration > 0) {
+            currentDuration = data.duration;
+            durTimeEl.textContent = formatTime(data.duration);
+          }
+          if (data.title) movieTitleEl.textContent = data.title;
+          if (data.poster) moviePosterEl.src = data.poster;
+        } else if (data.type === 'HAPTIC_PULSE') {
+          vibrate(data.pattern || [80, 50, 160]);
+        } else if (data.type === 'COUPLE_HUG_RECEIVED') {
+          vibrate([120, 100, 150, 120, 250, 150, 400]);
+        }
+      }
+
+      if (bc) {
+        bc.onmessage = (e) => handleStateUpdate(e.data);
+      }
+
+      // Initialize PeerJS for Cross-Network QR pairing
+      if (typeof Peer !== 'undefined' && pairCode && pairCode !== 'LOCAL') {
+        try {
+          peer = new Peer('fz-companion-' + Math.random().toString(36).substring(2, 9));
+          peer.on('open', () => {
+            const hostPeerId = 'fz-host-' + pairCode;
+            peerConn = peer.connect(hostPeerId, { reliable: true });
+            peerConn.on('open', () => {
+              document.getElementById('companion-status-text').textContent = 'Paired WebRTC';
+              sendCommand('REQUEST_STATE');
+            });
+            peerConn.on('data', (d) => handleStateUpdate(d));
+          });
+        } catch (e) {}
+      }
+
+      // Wire Controls
+      playBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        playIcon.className = `fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`;
+        sendCommand(isPlaying ? 'PLAY' : 'PAUSE');
+      });
+
+      rewindBtn.addEventListener('click', () => sendCommand('SEEK_REL', -10));
+      forwardBtn.addEventListener('click', () => sendCommand('SEEK_REL', 10));
+
+      seekSlider.addEventListener('input', () => {
+        seekSlider._isDragging = true;
+        const targetSec = (parseFloat(seekSlider.value) / 100) * currentDuration;
+        curTimeEl.textContent = formatTime(targetSec);
+      });
+      seekSlider.addEventListener('change', () => {
+        seekSlider._isDragging = false;
+        const targetSec = (parseFloat(seekSlider.value) / 100) * currentDuration;
+        sendCommand('SEEK_ABS', targetSec);
+      });
+
+      volSlider.addEventListener('input', () => {
+        const val = parseFloat(volSlider.value) / 100;
+        volIcon.className = `fa-solid ${val === 0 ? 'fa-volume-xmark' : (val < 0.5 ? 'fa-volume-low' : 'fa-volume-high')}`;
+        sendCommand('VOLUME', val);
+      });
+
+      muteBtn.addEventListener('click', () => {
+        isMuted = !isMuted;
+        volIcon.className = `fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`;
+        sendCommand('MUTE', isMuted);
+      });
+
+      // Feature Toggles
+      safeBtn.addEventListener('click', () => {
+        const active = safeBtn.classList.toggle('active');
+        document.getElementById('remote-safe-status').textContent = active ? 'Active (Blur/Mute)' : 'Disabled';
+        sendCommand('TOGGLE_SAFE_MODE', active);
+      });
+
+      hapticBtn.addEventListener('click', () => {
+        hapticsEnabled = !hapticsEnabled;
+        hapticBtn.classList.toggle('haptic-active', hapticsEnabled);
+        if (hapticsEnabled) vibrate([50, 30, 80]);
+        sendCommand('TOGGLE_HAPTIC', hapticsEnabled);
+      });
+
+      // Reaction Bombs
+      document.querySelectorAll('.btn-remote-bomb').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const bomb = btn.getAttribute('data-bomb');
+          sendCommand('REACTION_BOMB', bomb);
+          vibrate([60, 40, 80]);
+        });
+      });
+
+      // Hold for Hug
+      let hugTimer = null;
+      let hugProgress = 0;
+      let hugInterval = null;
+
+      function startHug() {
+        hugProgress = 0;
+        hugBar.style.width = '0%';
+        hugInterval = setInterval(() => {
+          hugProgress += 10;
+          hugBar.style.width = hugProgress + '%';
+          if (hugProgress >= 100) {
+            clearInterval(hugInterval);
+            vibrate([100, 100, 200, 150, 300, 200, 500]);
+            sendCommand('COUPLE_HUG', 'Companion Partner');
+            hugBar.style.width = '0%';
+          }
+        }, 150);
+      }
+
+      function cancelHug() {
+        if (hugInterval) clearInterval(hugInterval);
+        hugBar.style.width = '0%';
+      }
+
+      hugBtn.addEventListener('mousedown', startHug);
+      hugBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHug(); }, { passive: false });
+      hugBtn.addEventListener('mouseup', cancelHug);
+      hugBtn.addEventListener('touchend', cancelHug);
+      hugBtn.addEventListener('mouseleave', cancelHug);
+
+      // Initial state ping
+      sendCommand('REQUEST_STATE');
+    })();
+  </script>
+</body>
+</html>

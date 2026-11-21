@@ -126,19 +126,19 @@
   // 2. Modern Fluent 3D Emoji Assets & Screen Floater Engine
   // ---------------------------------------------------------------------
   const FLUENT_3D_EMOJIS = {
-    fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
-    popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
-    heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
-    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
-    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
-    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
-    shock: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp',
-    clap: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44f/512.webp',
-    bolt: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
-    skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
-    crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
-    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
-    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp'
+    fire: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png',
+    popcorn: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png',
+    heart: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png',
+    mindblown: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png',
+    laugh: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rolling%20on%20the%20floor%20laughing/3D/rolling_on_the_floor_laughing_3d.png',
+    party: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Party%20popper/3D/party_popper_3d.png',
+    shock: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Face%20screaming%20in%20fear/3D/face_screaming_in_fear_3d.png',
+    clap: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapping%20hands/Default/3D/clapping_hands_3d_default.png',
+    bolt: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/High%20voltage/3D/high_voltage_3d.png',
+    skull: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Skull/3D/skull_3d.png',
+    crown: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Crown/3D/crown_3d.png',
+    star: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Star-struck/3D/star-struck_3d.png',
+    angry: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Exploding%20head/3D/exploding_head_3d.png'
   };
 
   function initLiveReactions(movieId) {
@@ -249,12 +249,12 @@
 
       setTimeout(() => {
         if (mini.parentNode) mini.parentNode.removeChild(mini);
-      }, 1500);
+      }, 2100);
     }
 
     setTimeout(() => {
       if (floater.parentNode) floater.parentNode.removeChild(floater);
-    }, 1600);
+    }, 2300);
   }
 
   window.spawnFloatingEmoji = spawnFloatingEmoji;

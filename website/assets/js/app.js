@@ -3209,7 +3209,9 @@ function initGlobalCinemaDrawer() {
     if (rouBtn) {
       rouBtn.addEventListener('click', () => {
         closeDrawer();
-        if (typeof window.openMovieRouletteModal === 'function') {
+        if (window.FilmZillaRoulette && typeof window.FilmZillaRoulette.openRoulette === 'function') {
+          window.FilmZillaRoulette.openRoulette();
+        } else if (typeof window.openMovieRouletteModal === 'function') {
           window.openMovieRouletteModal();
         } else if (typeof showToast === 'function') {
           showToast('Opening Cinema Roulette... 🎲');
@@ -3290,7 +3292,7 @@ function initGlobalCinemaDrawer() {
 
 // Global delegated listener: Guarantee hamburger menu (☰) opens from any page/element
 document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn');
+  const btn = e.target.closest('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn, #hamburger, .hamburger');
   if (btn) {
     e.preventDefault();
     e.stopPropagation();

@@ -107,16 +107,13 @@ class GPUDevicePool:
         # Multi-quality (1080p, 720p, 480p) simultaneous hardware encoding:
         # Guarantee all 3 qualities (1080p, 720p, 480p) encode simultaneously in parallel!
         if len(devs) >= 2:
-            # Dual/Multi GPU (e.g. Kaggle Dual T4): allocate 2 concurrent NVENC slots per physical GPU
-            # [devs[0], devs[1], devs[0], devs[1]] = 4 concurrent slots!
-            # 1080p -> GPU 0, 720p -> GPU 1, 480p -> GPU 0. All 3 run simultaneously!
-            return [devs[0], devs[1], devs[0], devs[1]]
+            # Dual GPU (e.g. Kaggle Dual T4): 1 dedicated slot per physical GPU (cuda:0, cuda:1)
+            # Parallel 2-stream encoding without VRAM or memory exhaustion
+            return [devs[0], devs[1]]
         elif len(devs) == 1:
-            # Single GPU (e.g. Colab / Kaggle 1x T4): allocate 3 concurrent NVENC slots on the single GPU
-            # [devs[0], devs[0], devs[0]] = 3 concurrent slots!
-            # All 3 qualities encode concurrently on the NVENC engine without queuing.
-            d = devs[0]
-            return [d, d, d]
+            # Single GPU (e.g. Kaggle 1x T4 / Colab): 1 dedicated NVENC slot
+            # Maximizes single-stream NVENC throughput (600-800+ FPS) and prevents Kaggle 13GB RAM OOM
+            return [devs[0]]
         return list(devs)
 
     async def _ensure_queue(self):

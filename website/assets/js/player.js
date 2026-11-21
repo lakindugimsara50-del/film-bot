@@ -6363,7 +6363,12 @@ window.FilmZilla4DHaptic = {
 
 // ---- 3. INTERACTIVE LOCAL P2P WI-FI DATA SHARING MESH ----
 window.FilmZillaP2P = {
-  bc: typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('fz_wifi_p2p_mesh') : null,
+  bc: (function() {
+    if (typeof BroadcastChannel === 'undefined') return null;
+    const channel = new BroadcastChannel('fz_wifi_p2p_mesh');
+    if (channel && typeof channel.unref === 'function') channel.unref();
+    return channel;
+  })(),
   peer: null,
   peerConnections: [],
   savedBytes: parseInt(safeStorage.get('fz_p2p_saved_bytes') || '18500000', 10), // start ~18.5MB saved
@@ -6507,7 +6512,12 @@ window.FilmZillaP2P = {
 // ---- 7. PHONE SECOND SCREEN / COMPANION REMOTE ENGINE ----
 window.FilmZillaCompanion = {
   pairCode: 'FZ-' + Math.floor(1000 + Math.random() * 9000),
-  bc: typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('fz_companion_sync') : null,
+  bc: (function() {
+    if (typeof BroadcastChannel === 'undefined') return null;
+    const channel = new BroadcastChannel('fz_companion_sync');
+    if (channel && typeof channel.unref === 'function') channel.unref();
+    return channel;
+  })(),
   peer: null,
   peerConn: null,
   vjsPlayer: null,

@@ -815,10 +815,12 @@
               <!-- Voice Chat Mic Toggle -->
               <button type="button" class="wp-media-btn ${this.isMicOn ? 'active' : ''}" id="wp-btn-mic" title="Toggle Voice Chat Mic (M)">
                 <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+                <span class="wp-media-label" id="wp-mic-label">${this.isMicOn ? 'Mic ON' : 'Mic'}</span>
               </button>
               <!-- Couple Cam PiP Toggle -->
-              <button type="button" class="wp-media-btn ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Toggle Couple Cam PiP (V)">
+              <button type="button" class="wp-media-btn ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Toggle Video Cam PiP (V)">
                 <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
+                <span class="wp-media-label" id="wp-cam-label">${this.isCamOn ? 'Cam ON' : 'Cam'}</span>
               </button>
             </div>
           </div>
@@ -874,25 +876,25 @@
           </div>
 
           <!-- VIP Interactive Actions Tray (Couple Sync, Hug, Predictions & Reaction Bombs) -->
-          <div class="wp-special-actions-tray" style="display:flex;align-items:center;gap:6px;padding:4px 14px 8px;overflow-x:auto;scrollbar-width:none;">
+          <div class="wp-special-actions-tray">
             <!-- Long-Distance Couple Mode Toggle -->
-            <button type="button" class="wp-couple-mode-btn ${this.isCoupleMode ? 'active' : ''}" id="wp-btn-couple" title="Toggle Long-Distance Couple Mode (Touch Glow & Private Hugs)">
-              <i class="fa-solid fa-heart-pulse" style="color:#ec4899"></i>
+            <button type="button" class="wp-action-pill wp-couple-mode-btn ${this.isCoupleMode ? 'active' : ''}" id="wp-btn-couple" title="Toggle Long-Distance Couple Mode (Touch Glow & Private Hugs)">
+              <i class="fa-solid fa-heart-pulse"></i>
               <span>Couple</span>
             </button>
             <!-- Hold for Hug Button -->
-            <button type="button" class="cs-couple-hug-btn" id="wp-btn-hug" title="Press & Hold 1.5s to deliver simultaneous warm hug 🤗">
+            <button type="button" class="wp-action-pill cs-couple-hug-btn" id="wp-btn-hug" title="Press & Hold 1.5s to deliver simultaneous warm hug 🤗">
               <div class="cs-hug-progress-bar" id="wp-hug-progress"></div>
-              <i class="fa-solid fa-hands-holding-child" style="color:#ff2a6d"></i>
+              <i class="fa-solid fa-hands-holding-child"></i>
               <span>Hug 🤗</span>
             </button>
             <!-- Live Predictions & Betting Arena Button -->
-            <button type="button" class="wp-prediction-btn" id="wp-btn-prediction" title="Live Predictions & Betting Arena (Popcorn Coins 🍿)">
-              <i class="fa-solid fa-trophy" style="color:#fbbf24"></i>
-              <span>Arena</span>
+            <button type="button" class="wp-action-pill wp-prediction-btn" id="wp-btn-prediction" title="Live Predictions & Betting Arena (Popcorn Coins 🍿)">
+              <i class="fa-solid fa-trophy"></i>
+              <span>Arena 🏆</span>
             </button>
-            <div class="wp-reaction-bombs-tray" style="display:inline-flex;align-items:center;gap:4px;margin-left:auto;">
-              <span style="font-size:9.5px;font-weight:800;color:#94a3b8;margin-right:2px;">BOMBS:</span>
+            <div class="wp-bombs-tray">
+              <span class="wp-bombs-label">BOMBS:</span>
               <button type="button" class="wp-bomb-btn" data-bomb="popcorn" title="Popcorn Burst 🍿">🍿</button>
               <button type="button" class="wp-bomb-btn" data-bomb="tomato" title="Tomato Splatter 🍅">🍅</button>
               <button type="button" class="wp-bomb-btn" data-bomb="laugh" title="Laugh Bomb 😂">😂</button>
@@ -1522,6 +1524,8 @@
         wpMic.classList.toggle('active', this.isMicOn);
         const icon = wpMic.querySelector('i');
         if (icon) icon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
+        const lbl = wpMic.querySelector('.wp-media-label');
+        if (lbl) lbl.textContent = this.isMicOn ? 'Mic ON' : 'Mic';
       }
       const barMic = document.getElementById('btn-bar-mic');
       if (barMic) {
@@ -1537,6 +1541,8 @@
         wpCam.classList.toggle('active', this.isCamOn);
         const icon = wpCam.querySelector('i');
         if (icon) icon.className = `fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}`;
+        const lbl = wpCam.querySelector('.wp-media-label');
+        if (lbl) lbl.textContent = this.isCamOn ? 'Cam ON' : 'Cam';
       }
       const barCam = document.getElementById('btn-bar-cam');
       if (barCam) {

@@ -1301,9 +1301,11 @@ async def _execute_leech(
 
                         async def _update_multi_dl_display(force: bool = False) -> None:
                             nonlocal last_edit_time, last_rendered_multi_text
+                            if multi_dl_lock.locked() and not force:
+                                return
                             async with multi_dl_lock:
                                 now = time.time()
-                                if not force and (now - last_edit_time < 2.5):
+                                if not force and (now - last_edit_time < 3.0):
                                     return
 
                                 _env_name = "Kaggle Cloud" if os.path.exists("/kaggle") else ("Google Colab" if (os.path.exists("/content") or os.path.isdir("/dev/shm")) else "Cloud VPS")
@@ -1383,7 +1385,14 @@ async def _execute_leech(
                                 last_rendered_multi_text = full_text
                                 last_edit_time = now
                                 try:
-                                    await status_msg.edit_text(full_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
+                                    import pyrogram.errors
+                                    await asyncio.wait_for(
+                                        status_msg.edit_text(full_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel),
+                                        timeout=4.0
+                                    )
+                                except pyrogram.errors.FloodWait as fw:
+                                    last_edit_time = now + fw.value
+                                    log.warning("[LeechService] FloodWait in multi display: %d s (backing off)", fw.value)
                                 except Exception as e:
                                     log.debug("[LeechService] Multi progress edit ignored: %s", e)
 

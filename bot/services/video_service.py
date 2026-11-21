@@ -1480,7 +1480,7 @@ async def compress_video(
         proc = await asyncio.create_subprocess_exec(
             *final_cmd,
             cwd=out_dir,
-            stdout=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE,
         )
 
@@ -1534,7 +1534,7 @@ async def compress_video(
                         if progress_callback:
                             try:
                                 if asyncio.iscoroutinefunction(progress_callback):
-                                    await progress_callback(pct, p_str)
+                                    asyncio.create_task(progress_callback(pct, p_str))
                                 else:
                                     progress_callback(pct, p_str)
                             except Exception:
@@ -2570,7 +2570,7 @@ async def prepend_filmzilla_intro(
             proc = await asyncio.create_subprocess_exec(
                 *final_cmd,
                 cwd=out_dir,
-                stdout=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
 
@@ -2579,7 +2579,12 @@ async def prepend_filmzilla_intro(
             last_logged_pct = 0.0
 
             while True:
-                line = await proc.stderr.readline()
+                if hasattr(proc.stderr, "read"):
+                    line = await proc.stderr.read(4096)
+                elif hasattr(proc.stderr, "readline"):
+                    line = await proc.stderr.readline()
+                else:
+                    break
                 if not line:
                     break
                 line_str = line.decode("utf-8", errors="replace")
@@ -2597,7 +2602,10 @@ async def prepend_filmzilla_intro(
                         log.info("[VideoService] Prepend Intro Progress: %.1f%%%s", pct, spd)
                         if progress_callback:
                             try:
-                                await progress_callback(pct, f"{pct:.1f}%")
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    asyncio.create_task(progress_callback(pct, f"{pct:.1f}%"))
+                                else:
+                                    progress_callback(pct, f"{pct:.1f}%")
                             except Exception:
                                 pass
 
@@ -3284,7 +3292,7 @@ async def cover_cinesubz_watermark(
 
             proc = await asyncio.create_subprocess_exec(
                 *final_cmd,
-                stdout=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
 
@@ -3334,7 +3342,7 @@ async def cover_cinesubz_watermark(
                                 p_str = " ".join(detail_parts)
                                 try:
                                     if asyncio.iscoroutinefunction(progress_callback):
-                                        await progress_callback(pct, p_str)
+                                        asyncio.create_task(progress_callback(pct, p_str))
                                     else:
                                         progress_callback(pct, p_str)
                                 except Exception:

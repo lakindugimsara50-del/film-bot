@@ -560,10 +560,18 @@ class CineSubzCrawler:
         )
 
     async def _update_status_msg(self) -> None:
-        """Edit status message if available."""
+        """Edit status message if available (throttled to min 4s)."""
         if self._status_msg:
+            now = time.time()
+            last_edit = getattr(self, "_last_status_edit_time", 0.0)
+            if now - last_edit < 4.0:
+                return
+            self._last_status_edit_time = now
             try:
-                await self._status_msg.edit_text(self.get_status_text(), parse_mode=ParseMode.HTML)
+                await asyncio.wait_for(
+                    self._status_msg.edit_text(self.get_status_text(), parse_mode=ParseMode.HTML),
+                    timeout=4.0
+                )
             except Exception:
                 pass
 
@@ -651,6 +659,7 @@ class CineSubzCrawler:
                             self.last_completed_item = ep_tag
                             self.save_state()
                             await self._update_status_msg()
+                            await asyncio.sleep(1.5)  # Pace TV episode additions to avoid FloodWait
                     else:
                         fresh_catalog = load_website_catalog()
                         if is_item_in_catalog(item, fresh_catalog):
@@ -704,6 +713,7 @@ class CineSubzCrawler:
                         self.last_completed_item = item_label
                         self.save_state()
                         await self._update_status_msg()
+                        await asyncio.sleep(1.5)  # Pace queue additions to avoid FloodWait
             except Exception as exc:
                 log.warning("[CineSubzCrawler] Error in check_and_enqueue_new_releases on page %d for %s: %s", page_num, section, exc)
 

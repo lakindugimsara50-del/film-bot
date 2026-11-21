@@ -824,20 +824,38 @@ async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
         await query.answer()
 
 
-@app.on_message(filters.command("status"))
+@app.on_message(filters.command(["status", "statys", "staus", "state"]))
 async def status_handler(client: Client, message: Message) -> None:
     """Show bot status, active/recent task progress, and configuration summary."""
-    from services.auth_service import auth_service
-    user_id = message.from_user.id if message.from_user else 0
-    me = await client.get_me()
-    is_admin = message.from_user and (message.from_user.id in config.ADMIN_IDS or auth_service.is_admin(message.from_user.id))
+    try:
+        from services.auth_service import auth_service
+        user_id = message.from_user.id if message.from_user else 0
+        me = await client.get_me()
+        is_admin = message.from_user and (message.from_user.id in config.ADMIN_IDS or auth_service.is_admin(message.from_user.id))
 
-    text, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
-    await message.reply_text(
-        text,
-        parse_mode=ParseMode.HTML,
-        reply_markup=kb,
-    )
+        text, kb = _build_status_content(user_id, me.username or "Filmsinhala200Bot", is_admin)
+        if len(text) > 4000:
+            text = text[:3950] + "\n\n<i>...[තත්ත්ව විස්තර දිගු බැවින් කෙටි කරන ලදී]</i>"
+
+        await asyncio.wait_for(
+            message.reply_text(
+                text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb,
+            ),
+            timeout=8.0,
+        )
+    except Exception as exc:
+        log.error("[StatusHandler] Error replying to status: %s", exc)
+        try:
+            await message.reply_text(
+                f"🤖 <b>Film Bot තත්ත්වය (Status):</b> 🟢 <code>Active</code>\n"
+                f"⚠️ විස්තර සැකසීමේ සුළු ප්‍රමාදයක් පවතී: <code>{str(exc)[:100]}</code>\n"
+                f"💡 ක්‍රියාකාරී පෝලිම බැලීමට: <code>/queue</code>",
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception:
+            pass
 
 
 @app.on_message(filters.command("sessions"))

@@ -47,6 +47,21 @@
     '👍', '👏', '🙌', '✌️', '🤙', '🤝', '🍕', '🍻', '✨', '💤'
   ];
 
+  const safeStorage = {
+    get(key, fallback = null) {
+      try {
+        return (typeof localStorage !== 'undefined' && localStorage) ? localStorage.getItem(key) : fallback;
+      } catch (_) {
+        return fallback;
+      }
+    },
+    set(key, val) {
+      try {
+        if (typeof localStorage !== 'undefined' && localStorage) localStorage.setItem(key, val);
+      } catch (_) {}
+    }
+  };
+
   class WatchPartyEngine {
     constructor() {
       this.roomId = null;
@@ -60,7 +75,7 @@
       this.vjsPlayer = null;
       this.isInternalSeeking = false;
       this.lastBroadcastActionTime = 0;
-      this.chatPopupsEnabled = localStorage.getItem('fz_chat_popups_enabled') !== 'false';
+      this.chatPopupsEnabled = safeStorage.get('fz_chat_popups_enabled') !== 'false';
 
       // Couple Cam & Voice Chat WebRTC state
       this.localStream = null;
@@ -80,7 +95,7 @@
 
       // In-Party Live Predictions & Betting Arena
       this.activePrediction = null;
-      this.popcornCoins = parseInt(localStorage.getItem('fz_popcorn_coins') || '250', 10);
+      this.popcornCoins = parseInt(safeStorage.get('fz_popcorn_coins') || '250', 10);
       this.predictionLeaderboard = new Map(); // userName -> coins
 
       this.initFromUrl();
@@ -497,7 +512,7 @@
 
         case 'CHAT_MESSAGE':
           if (data.text) {
-            this.appendChatMessage(data.userName || 'Friend', data.text, false);
+            this.appendChatMessage(data.userName || 'Friend', data.text, false, false, !!data.isWhisper);
           }
           break;
 
@@ -1277,9 +1292,7 @@
       } else {
         this.chatPopupsEnabled = !this.chatPopupsEnabled;
       }
-      try {
-        localStorage.setItem('fz_chat_popups_enabled', this.chatPopupsEnabled ? 'true' : 'false');
-      } catch (e) {}
+      safeStorage.set('fz_chat_popups_enabled', this.chatPopupsEnabled ? 'true' : 'false');
 
       this.updateChatPopupsUI();
 
@@ -1903,7 +1916,7 @@
       }
     }
 
-    showInVideoChatPopup(author, text, isMe = false) {
+    showInVideoChatPopup(author, text, isMe = false, isWhisper = false) {
       if (this.chatPopupsEnabled === false) return;
 
       const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
@@ -1929,7 +1942,7 @@
 
       const initial = (author || 'U').trim().charAt(0).toUpperCase();
       const popup = document.createElement('div');
-      popup.className = `cs-video-chat-popup ${isMe ? 'is-me' : ''}`;
+      popup.className = `cs-video-chat-popup ${isMe ? 'is-me' : ''} ${isWhisper ? 'is-whisper' : ''}`;
 
       let popupTextHtml = this.escapeHtml(text);
       if (typeof text === 'string' && text.startsWith('[STICKER:')) {
@@ -1955,7 +1968,7 @@
         <div class="vcp-content">
           <div class="vcp-header">
             <span class="vcp-author">${this.escapeHtml(author)}${isMe ? ' (You)' : ''}</span>
-            <span class="vcp-tag">Live</span>
+            <span class="vcp-tag">${isWhisper ? '🔒 Whisper' : 'Live'}</span>
           </div>
           <div class="vcp-text">${popupTextHtml}</div>
         </div>
@@ -2029,7 +2042,7 @@
 
       // Show in-video floating chat popup (works in Fullscreen and regular view)
       if (!isSystem) {
-        this.showInVideoChatPopup(author, text, isMe);
+        this.showInVideoChatPopup(author, text, isMe, isWhisper);
       }
     }
 
@@ -2110,7 +2123,11 @@
         toast = document.createElement('div');
         toast.id = 'wp-action-toast';
         toast.className = 'wp-action-toast';
-        document.body.appendChild(toast);
+        if (document.body) {
+          document.body.appendChild(toast);
+        } else if (document.documentElement) {
+          document.documentElement.appendChild(toast);
+        }
       }
 
       toast.textContent = text;
@@ -2699,7 +2716,7 @@
         return;
       }
       this.popcornCoins -= amount;
-      localStorage.setItem('fz_popcorn_coins', String(this.popcornCoins));
+      safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
 
       this.activePrediction.hasVoted = true;
       this.activePrediction.myVote = option;
@@ -2793,7 +2810,7 @@
       if (didIWin) {
         const reward = (this.activePrediction.myBet || 25) * 2;
         this.popcornCoins += reward;
-        localStorage.setItem('fz_popcorn_coins', String(this.popcornCoins));
+        safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
         this.showActionToast(`🏆 YOU WON ${reward} POPCORN COINS! 🍿`);
         this.playSynthesizedSound('heart');
       } else {
@@ -2827,6 +2844,35 @@
         document.body.appendChild(modal);
       }
 
+      const entries = [
+        { name: `${this.localUser.name} (You)`, coins: this.popcornCoins, isMe: true }
+      ];
+      if (this.predictionLeaderboard && this.predictionLeaderboard.size > 0) {
+        this.predictionLeaderboard.forEach((coins, user) => {
+          if (user !== this.localUser.name) {
+            entries.push({ name: user, coins, isMe: false });
+          }
+        });
+      }
+      if (entries.length < 2) entries.push({ name: 'Maya Cinema', coins: 180, isMe: false });
+      if (entries.length < 3) entries.push({ name: 'Alex FilmFan', coins: 145, isMe: false });
+
+      entries.sort((a, b) => b.coins - a.coins);
+      const medals = ['🥇', '🥈', '🥉'];
+
+      const rows = entries.slice(0, 5).map((e, idx) => {
+        const medal = medals[idx] || `#${idx + 1}`;
+        const isGold = idx === 0;
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:${isGold ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.05)'};border:${isGold ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(255,255,255,0.08)'};padding:12px 16px;border-radius:10px;">
+            <span style="font-weight:${isGold ? '800' : '700'};color:${isGold ? '#fbbf24' : (e.isMe ? '#38bdf8' : '#cbd5e1')};display:flex;align-items:center;gap:8px;">
+              ${medal} ${this.escapeHtml(e.name)}
+            </span>
+            <span style="font-weight:800;color:#fff;">${e.coins} 🍿</span>
+          </div>
+        `;
+      }).join('');
+
       modal.innerHTML = `
         <div class="fz-cinema-modal-dialog">
           <div class="fz-modal-header">
@@ -2838,18 +2884,7 @@
           </div>
           <div class="fz-modal-body" style="align-items:stretch;">
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:12px 16px;border-radius:10px;">
-                <span style="font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:8px;">🥇 1st • ${this.escapeHtml(this.localUser.name)} (You)</span>
-                <span style="font-weight:800;color:#fff;">${this.popcornCoins} 🍿</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);padding:12px 16px;border-radius:10px;">
-                <span style="font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:8px;">🥈 2nd • Maya Cinema</span>
-                <span style="font-weight:700;color:#94a3b8;">180 🍿</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);padding:12px 16px;border-radius:10px;">
-                <span style="font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:8px;">🥉 3rd • Alex FilmFan</span>
-                <span style="font-weight:700;color:#94a3b8;">145 🍿</span>
-              </div>
+              ${rows}
             </div>
             <div class="fz-modal-btn-row">
               <button type="button" class="fz-btn-pri" onclick="document.getElementById('fz-prediction-lb-modal').style.display='none'"><i class="fa-solid fa-check"></i> Close</button>

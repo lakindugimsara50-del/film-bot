@@ -5832,10 +5832,34 @@ function initShareButton(movie) {
    4. Phone Second Screen / Dual-Screen Companion Remote (QR Scan)
    ========================================================================== */
 
+// Safe storage helper for headless / iframe / private / test environments
+const safeStorage = {
+  get(key, fallback = null) {
+    try {
+      return (typeof localStorage !== 'undefined' && localStorage) ? localStorage.getItem(key) : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  },
+  set(key, val) {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage) localStorage.setItem(key, val);
+    } catch (_) {}
+  }
+};
+
 // ---- 1. FAMILY / PARENT SAFE MODE ENGINE ----
 window.FilmZillaSafeMode = {
-  isEnabled: localStorage.getItem('fz_safemode_enabled') === 'true',
-  action: localStorage.getItem('fz_safemode_action') || 'blur_mute', // 'skip' | 'blur_mute'
+  isEnabled: safeStorage.get('fz_safemode_enabled') === 'true',
+  action: safeStorage.get('fz_safemode_action') || 'blur_mute', // 'skip' | 'blur_mute'
+  enabledCategories: (function() {
+    try {
+      const raw = safeStorage.get('fz_safemode_categories');
+      return raw ? JSON.parse(raw) : ['adult', 'nudity', 'kissing', 'gore', 'violence'];
+    } catch (_) {
+      return ['adult', 'nudity', 'kissing', 'gore', 'violence'];
+    }
+  })(),
   activeCues: [],
   currentMovie: null,
   vjsPlayer: null,
@@ -5853,39 +5877,61 @@ window.FilmZillaSafeMode = {
   },
 
   loadCuesForMovie(movie) {
-    const slug = movie ? (movie.slug || movie.id || '') : '';
-    const rawDB = window.FILMSUB_CENSOR_CUES || null;
+    const slug = movie ? (movie.slug || movie.id || '').toLowerCase().trim() : '';
+    const rawDB = (typeof window !== 'undefined' && window.FILMSUB_CENSOR_CUES) ? window.FILMSUB_CENSOR_CUES : null;
+    const titleKey = movie && movie.title ? movie.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const resolveFromDB = (db) => {
+      if (!db || !db.movies) return [];
+      return db.movies[slug] || (movie && movie.imdb_id && db.movies[movie.imdb_id]) || (titleKey && db.movies[titleKey]) || db.movies['default'] || [];
+    };
+
     if (rawDB && rawDB.movies) {
-      this.activeCues = rawDB.movies[slug] || rawDB.movies['default'] || [];
-    } else {
+      this.activeCues = resolveFromDB(rawDB);
+    } else if (typeof fetch !== 'undefined') {
       // Async fallback to censor_cues.json
       fetch('data/censor_cues.json')
         .then(r => r.json())
         .then(data => {
           if (data && data.movies) {
-            window.FILMSUB_CENSOR_CUES = data;
-            this.activeCues = data.movies[slug] || data.movies['default'] || [];
+            if (typeof window !== 'undefined') window.FILMSUB_CENSOR_CUES = data;
+            this.activeCues = resolveFromDB(data);
           }
         })
         .catch(() => {
           this.activeCues = [
             { id: 'def1', start: 45.0, end: 56.0, type: 'kissing', desc: 'Romantic intimate scene', severity: 'mild' },
             { id: 'def2', start: 92.0, end: 105.0, type: 'nudity', desc: 'Sensual adult scene', severity: 'explicit' },
-            { id: 'def3', start: 180.0, end: 196.0, type: 'gore', desc: 'Graphic violence & injury', severity: 'explicit' }
+            { id: 'def3', start: 180.0, end: 196.0, type: 'gore', desc: 'Graphic violence & injury', severity: 'explicit' },
+            { id: 'def4', start: 300.0, end: 315.0, type: 'adult', desc: 'Mature explicit scene', severity: 'explicit' }
           ];
         });
+    } else {
+      this.activeCues = [
+        { id: 'def1', start: 45.0, end: 56.0, type: 'kissing', desc: 'Romantic intimate scene', severity: 'mild' },
+        { id: 'def2', start: 92.0, end: 105.0, type: 'nudity', desc: 'Sensual adult scene', severity: 'explicit' },
+        { id: 'def3', start: 180.0, end: 196.0, type: 'gore', desc: 'Graphic violence & injury', severity: 'explicit' }
+      ];
     }
   },
 
   attachPlaybackMonitor() {
     if (!this.vjsPlayer) return;
+
+    // Reset skipped cue tracking on user seeks
+    this.vjsPlayer.on('seeking', () => {
+      this.lastSkippedCueId = null;
+    });
+
     this.vjsPlayer.on('timeupdate', () => {
       if (!this.isEnabled || !this.activeCues || this.activeCues.length === 0) {
         if (this.isCurrentlyCensoring) this.liftCensor();
         return;
       }
       const curTime = this.vjsPlayer.currentTime();
-      const matchedCue = this.activeCues.find(c => curTime >= c.start && curTime < c.end);
+      const matchedCue = this.activeCues.find(c => {
+        if (Array.isArray(this.enabledCategories) && !this.enabledCategories.includes(c.type)) return false;
+        return curTime >= c.start && curTime < c.end;
+      });
 
       if (matchedCue) {
         if (this.action === 'skip') {
@@ -5904,6 +5950,8 @@ window.FilmZillaSafeMode = {
           }
         }
       } else {
+        // Leaving cue range - reset skip tracker so rewinds work reliably
+        this.lastSkippedCueId = null;
         if (this.isCurrentlyCensoring) {
           this.liftCensor();
         }
@@ -5914,8 +5962,12 @@ window.FilmZillaSafeMode = {
   applyBlurAndMute(cue, curTime) {
     this.isCurrentlyCensoring = true;
     this.activeCue = cue;
-    this.wasMutedBeforeCensor = this.vjsPlayer.muted();
-    this.vjsPlayer.muted(true);
+    if (this.vjsPlayer) {
+      this.wasMutedBeforeCensor = this.vjsPlayer.muted();
+      this.vjsPlayer.muted(true);
+    }
+    const rawVideo = document.querySelector('.player-container video') || (this.vjsPlayer && this.vjsPlayer.tech_ && this.vjsPlayer.tech_.el_);
+    if (rawVideo) rawVideo.muted = true;
 
     const playerContainer = document.getElementById('video-player-container') || document.querySelector('.player-container');
     if (playerContainer) {
@@ -5928,12 +5980,13 @@ window.FilmZillaSafeMode = {
         playerContainer.appendChild(overlay);
       }
       const remSec = Math.max(1, Math.ceil(cue.end - curTime));
+      const escDesc = (typeof FilmSub !== 'undefined' && typeof FilmSub.escHtml === 'function') ? FilmSub.escHtml(cue.desc) : cue.desc;
       overlay.innerHTML = `
         <div class="cs-safe-censor-shield">
           <i class="fa-solid fa-shield-halved"></i>
         </div>
         <div class="cs-safe-censor-title">Family Safe Mode Active</div>
-        <div class="cs-safe-censor-desc">${FilmSub.escHtml(cue.desc)} (${cue.type.toUpperCase()}) Blurred & Muted</div>
+        <div class="cs-safe-censor-desc">${escDesc} (${cue.type.toUpperCase()}) Blurred & Muted</div>
         <div class="cs-safe-censor-timer" id="cs-safe-timer-val">${remSec}s remaining</div>
       `;
       overlay.style.display = 'flex';
@@ -5955,6 +6008,10 @@ window.FilmZillaSafeMode = {
     if (this.vjsPlayer && !this.wasMutedBeforeCensor) {
       this.vjsPlayer.muted(false);
     }
+    const rawVideo = document.querySelector('.player-container video') || (this.vjsPlayer && this.vjsPlayer.tech_ && this.vjsPlayer.tech_.el_);
+    if (rawVideo && !this.wasMutedBeforeCensor) {
+      rawVideo.muted = false;
+    }
     const playerContainer = document.getElementById('video-player-container') || document.querySelector('.player-container');
     if (playerContainer) {
       playerContainer.classList.remove('cs-safe-blurred');
@@ -5966,13 +6023,13 @@ window.FilmZillaSafeMode = {
 
   toggleSafeMode() {
     this.isEnabled = !this.isEnabled;
-    localStorage.setItem('fz_safemode_enabled', this.isEnabled ? 'true' : 'false');
+    safeStorage.set('fz_safemode_enabled', this.isEnabled ? 'true' : 'false');
     this.updateBadgeUI();
     if (!this.isEnabled && this.isCurrentlyCensoring) {
       this.liftCensor();
     }
     const modeLabel = this.action === 'skip' ? 'Instant Skip ⏩' : 'Blur & Mute 🌫️🔇';
-    FilmSub.showToast(
+    this.showCensorToast(
       this.isEnabled ? `🛡️ Family Safe Mode ON (${modeLabel})` : 'Family Safe Mode Turned OFF',
       this.isEnabled ? 'success' : 'info'
     );
@@ -5980,8 +6037,25 @@ window.FilmZillaSafeMode = {
 
   setAction(newAction) {
     this.action = newAction;
-    localStorage.setItem('fz_safemode_action', newAction);
-    FilmSub.showToast(`Safe Mode Action: ${newAction === 'skip' ? 'Instant Skip' : 'Blur & Mute'}`, 'info');
+    safeStorage.set('fz_safemode_action', newAction);
+    if (this.isCurrentlyCensoring && newAction === 'skip' && this.activeCue && this.vjsPlayer) {
+      const targetTime = this.activeCue.end + 0.3;
+      this.liftCensor();
+      this.vjsPlayer.currentTime(targetTime);
+    }
+    this.showCensorToast(`Safe Mode Action: ${newAction === 'skip' ? 'Instant Skip' : 'Blur & Mute'}`, 'info');
+  },
+
+  toggleCategory(cat) {
+    if (this.enabledCategories.includes(cat)) {
+      if (this.enabledCategories.length > 1) {
+        this.enabledCategories = this.enabledCategories.filter(c => c !== cat);
+      }
+    } else {
+      this.enabledCategories.push(cat);
+    }
+    safeStorage.set('fz_safemode_categories', JSON.stringify(this.enabledCategories));
+    this.showCensorToast(`Category ${cat.toUpperCase()}: ${this.enabledCategories.includes(cat) ? 'Censored 🛡️' : 'Allowed'}`);
   },
 
   updateBadgeUI() {
@@ -5991,15 +6065,14 @@ window.FilmZillaSafeMode = {
     if (badge) badge.textContent = this.isEnabled ? 'ON' : 'OFF';
   },
 
-  showCensorToast(msg) {
-    if (window.FilmSub && typeof FilmSub.showToast === 'function') {
-      FilmSub.showToast(msg, 'info');
+  showCensorToast(msg, type = 'info') {
+    if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+      window.FilmSub.showToast(msg, type);
     }
   },
 
   testCensorNow() {
-    if (!this.vjsPlayer) return;
-    const curTime = this.vjsPlayer.currentTime();
+    const curTime = (this.vjsPlayer && typeof this.vjsPlayer.currentTime === 'function') ? this.vjsPlayer.currentTime() : 0;
     const demoCue = {
       id: 'test_demo',
       start: curTime,
@@ -6009,8 +6082,10 @@ window.FilmZillaSafeMode = {
       severity: 'explicit'
     };
     if (this.action === 'skip') {
-      this.vjsPlayer.currentTime(curTime + 5);
-      FilmSub.showToast('🛡️ Safe Mode Demo: Auto-skipped scene! (5s Jump)', 'success');
+      if (this.vjsPlayer && typeof this.vjsPlayer.currentTime === 'function') {
+        this.vjsPlayer.currentTime(curTime + 5);
+      }
+      this.showCensorToast('🛡️ Safe Mode Demo: Auto-skipped scene! (5s Jump)', 'success');
     } else {
       this.applyBlurAndMute(demoCue, curTime);
       setTimeout(() => this.liftCensor(), 4500);
@@ -6025,6 +6100,15 @@ window.FilmZillaSafeMode = {
       modal.className = 'fz-cinema-modal-backdrop';
       document.body.appendChild(modal);
     }
+
+    const categoriesList = ['adult', 'nudity', 'kissing', 'gore', 'violence'];
+    const categoryChips = categoriesList.map(cat => {
+      const active = this.enabledCategories.includes(cat);
+      return `<button type="button" class="fz-btn-sec ${active ? 'fz-btn-pri' : ''}" style="font-size:11px;padding:6px 12px;border-radius:20px;" id="sm-cat-${cat}">
+        <i class="fa-solid fa-${active ? 'check' : 'plus'}"></i> ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+      </button>`;
+    }).join(' ');
+
     modal.innerHTML = `
       <div class="fz-cinema-modal-dialog">
         <div class="fz-modal-header">
@@ -6055,6 +6139,12 @@ window.FilmZillaSafeMode = {
               </button>
             </div>
           </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;">Protected Categories:</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+              ${categoryChips}
+            </div>
+          </div>
           <div class="fz-modal-btn-row">
             <button type="button" class="fz-btn-sec" id="sm-btn-test"><i class="fa-solid fa-play"></i> Test Censor (4s Demo)</button>
             <button type="button" class="fz-btn-pri" onclick="document.getElementById('fz-safemode-modal').style.display='none'"><i class="fa-solid fa-check"></i> Done</button>
@@ -6076,6 +6166,15 @@ window.FilmZillaSafeMode = {
       this.setAction('skip');
       this.openSettingsModal();
     };
+    categoriesList.forEach(cat => {
+      const chipBtn = document.getElementById(`sm-cat-${cat}`);
+      if (chipBtn) {
+        chipBtn.onclick = () => {
+          this.toggleCategory(cat);
+          this.openSettingsModal();
+        };
+      }
+    });
     document.getElementById('sm-btn-test').onclick = () => {
       modal.style.display = 'none';
       this.testCensorNow();
@@ -6085,13 +6184,14 @@ window.FilmZillaSafeMode = {
 
 // ---- 2. MOBILE 4D HAPTIC FEEDBACK ENGINE (<70Hz Web Audio Filter) ----
 window.FilmZilla4DHaptic = {
-  isEnabled: localStorage.getItem('fz_4d_haptic') === 'true',
+  isEnabled: safeStorage.get('fz_4d_haptic') === 'true',
   vjsPlayer: null,
   audioCtx: null,
   analyser: null,
   biquadFilter: null,
   sourceNode: null,
   animFrameId: null,
+  corsInterval: null,
   lastVibrateTime: 0,
   cooldownMs: 220,
 
@@ -6105,22 +6205,26 @@ window.FilmZilla4DHaptic = {
 
   setupAudioAnalyser() {
     try {
-      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      const AudioCtxClass = (typeof window !== 'undefined') ? (window.AudioContext || window.webkitAudioContext) : null;
       if (!AudioCtxClass) return;
       if (!this.audioCtx) this.audioCtx = new AudioCtxClass();
       if (this.audioCtx.state === 'suspended') {
         const resumeCtx = () => {
-          this.audioCtx.resume();
-          document.removeEventListener('click', resumeCtx);
-          document.removeEventListener('touchstart', resumeCtx);
+          if (this.audioCtx && this.audioCtx.state === 'suspended') this.audioCtx.resume();
+          if (typeof document !== 'undefined') {
+            document.removeEventListener('click', resumeCtx);
+            document.removeEventListener('touchstart', resumeCtx);
+          }
         };
-        document.addEventListener('click', resumeCtx, { once: true });
-        document.addEventListener('touchstart', resumeCtx, { once: true });
+        if (typeof document !== 'undefined') {
+          document.addEventListener('click', resumeCtx, { once: true });
+          document.addEventListener('touchstart', resumeCtx, { once: true });
+        }
       }
 
       const videoEl = (this.vjsPlayer && this.vjsPlayer.tech_ && this.vjsPlayer.tech_.el_)
         ? this.vjsPlayer.tech_.el_
-        : document.querySelector('.player-container video');
+        : (typeof document !== 'undefined' ? document.querySelector('.player-container video') : null);
       if (!videoEl) return;
 
       // Real-time Low-Pass Filter (<70Hz for heavy sub-bass impacts)
@@ -6146,6 +6250,7 @@ window.FilmZilla4DHaptic = {
         } catch (e) {
           // Cross-Origin restriction fallback
           console.warn('[4D Haptic] CORS audio protection active, using intelligent action volume tracker');
+          this.startCorsFallback(videoEl);
         }
       }
       this.startAnalysisLoop();
@@ -6154,8 +6259,21 @@ window.FilmZilla4DHaptic = {
     }
   },
 
+  startCorsFallback(videoEl) {
+    if (this.corsInterval) clearInterval(this.corsInterval);
+    this.corsInterval = setInterval(() => {
+      if (!this.isEnabled || !videoEl || videoEl.paused) return;
+      const now = Date.now();
+      if ((now - this.lastVibrateTime) > 8000) {
+        // Trigger subtle action heartbeat pulse
+        this.lastVibrateTime = now;
+        this.triggerHapticPattern([40, 30, 60], 'bass');
+      }
+    }, 2000);
+  },
+
   startAnalysisLoop() {
-    if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+    if (this.animFrameId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.animFrameId);
     const bufferLength = this.analyser ? this.analyser.frequencyBinCount : 64;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -6186,44 +6304,56 @@ window.FilmZilla4DHaptic = {
           }
         }
       }
-      this.animFrameId = requestAnimationFrame(checkAudioImpact);
+      if (typeof requestAnimationFrame === 'function') {
+        this.animFrameId = requestAnimationFrame(checkAudioImpact);
+      }
     };
-    this.animFrameId = requestAnimationFrame(checkAudioImpact);
+    if (typeof requestAnimationFrame === 'function') {
+      this.animFrameId = requestAnimationFrame(checkAudioImpact);
+    }
   },
 
   triggerHapticPattern(pattern, impactType = 'impact') {
     // 1. Mobile Physical Vibration
-    if (navigator.vibrate) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(pattern); } catch (_) {}
     }
     // 2. Visual Tactile Pulse on player border
-    const playerContainer = document.getElementById('video-player-container') || document.querySelector('.player-container');
-    if (playerContainer) {
-      playerContainer.classList.remove('haptic-impact-pulse');
-      void playerContainer.offsetWidth; // Force reflow
-      playerContainer.classList.add('haptic-impact-pulse');
+    if (typeof document !== 'undefined') {
+      const playerContainer = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (playerContainer) {
+        playerContainer.classList.remove('haptic-impact-pulse');
+        void playerContainer.offsetWidth; // Force reflow
+        playerContainer.classList.add('haptic-impact-pulse');
+      }
     }
     // 3. Emit to Companion Phone Remote
-    if (window.FilmZillaCompanion && typeof window.FilmZillaCompanion.broadcastHaptic === 'function') {
+    if (typeof window !== 'undefined' && window.FilmZillaCompanion && typeof window.FilmZillaCompanion.broadcastHaptic === 'function') {
       window.FilmZillaCompanion.broadcastHaptic(pattern);
     }
   },
 
   toggleHaptic() {
     this.isEnabled = !this.isEnabled;
-    localStorage.setItem('fz_4d_haptic', this.isEnabled ? 'true' : 'false');
+    safeStorage.set('fz_4d_haptic', this.isEnabled ? 'true' : 'false');
     this.updateBadgeUI();
     if (this.isEnabled) {
       this.setupAudioAnalyser();
       this.triggerHapticPattern([50, 30, 80], 'test');
-      FilmSub.showToast('📳 4D Haptic Active! Bass Drops & Explosions Will Vibrate in Hand', 'success');
+      if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+        window.FilmSub.showToast('📳 4D Haptic Active! Bass Drops & Explosions Will Vibrate in Hand', 'success');
+      }
     } else {
-      if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
-      FilmSub.showToast('4D Haptic Feedback Disabled', 'info');
+      if (this.animFrameId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.animFrameId);
+      if (this.corsInterval) clearInterval(this.corsInterval);
+      if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+        window.FilmSub.showToast('4D Haptic Feedback Disabled', 'info');
+      }
     }
   },
 
   updateBadgeUI() {
+    if (typeof document === 'undefined') return;
     const btn = document.getElementById('btn-toggle-haptics');
     const badge = document.getElementById('cs-haptic-badge');
     if (btn) btn.classList.toggle('active', this.isEnabled);
@@ -6234,7 +6364,9 @@ window.FilmZilla4DHaptic = {
 // ---- 3. INTERACTIVE LOCAL P2P WI-FI DATA SHARING MESH ----
 window.FilmZillaP2P = {
   bc: typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('fz_wifi_p2p_mesh') : null,
-  savedBytes: parseInt(localStorage.getItem('fz_p2p_saved_bytes') || '18500000', 10), // start ~18.5MB saved
+  peer: null,
+  peerConnections: [],
+  savedBytes: parseInt(safeStorage.get('fz_p2p_saved_bytes') || '18500000', 10), // start ~18.5MB saved
   localPeersCount: 2,
   isEnabled: true,
 
@@ -6245,6 +6377,8 @@ window.FilmZillaP2P = {
       // Announce presence to local Wi-Fi mesh
       this.broadcast({ type: 'P2P_HELLO', time: Date.now() });
     }
+    this.initWebRTCMesh();
+
     // Incrementally simulate chunk savings as movie streams
     setInterval(() => {
       if (this.isEnabled && Math.random() > 0.6) {
@@ -6254,13 +6388,33 @@ window.FilmZillaP2P = {
     }, 15000);
   },
 
+  initWebRTCMesh() {
+    if (typeof Peer !== 'undefined') {
+      try {
+        const meshPeerId = 'fz-mesh-' + Math.floor(1000 + Math.random() * 9000);
+        this.peer = new Peer(meshPeerId);
+        this.peer.on('open', () => {
+          this.localPeersCount = Math.max(2, this.localPeersCount);
+          this.updateBadge();
+        });
+        this.peer.on('connection', (conn) => {
+          this.peerConnections.push(conn);
+          this.localPeersCount = Math.min(12, this.peerConnections.length + 2);
+          this.updateBadge();
+          conn.on('data', (d) => this.handleMessage(d));
+        });
+      } catch (_) {}
+    }
+  },
+
   addSavedBytes(bytes) {
     this.savedBytes += bytes;
-    localStorage.setItem('fz_p2p_saved_bytes', String(this.savedBytes));
+    safeStorage.set('fz_p2p_saved_bytes', String(this.savedBytes));
     this.updateBadge();
   },
 
   updateBadge() {
+    if (typeof document === 'undefined') return;
     const valEl = document.getElementById('cs-p2p-saved-val');
     if (valEl) {
       const mb = (this.savedBytes / (1024 * 1024)).toFixed(1);
@@ -6272,12 +6426,20 @@ window.FilmZillaP2P = {
     if (this.bc) {
       try { this.bc.postMessage(payload); } catch (_) {}
     }
+    if (Array.isArray(this.peerConnections)) {
+      this.peerConnections.forEach(conn => {
+        if (conn && conn.open) {
+          try { conn.send(payload); } catch (_) {}
+        }
+      });
+    }
   },
 
   handleMessage(data) {
     if (!data) return;
     if (data.type === 'P2P_HELLO') {
-      this.localPeersCount = Math.min(8, this.localPeersCount + 1);
+      this.localPeersCount = Math.min(12, this.localPeersCount + 1);
+      this.updateBadge();
     } else if (data.type === 'P2P_CHUNK_SHARE') {
       if (data.bytes) this.addSavedBytes(data.bytes);
     }
@@ -6287,10 +6449,13 @@ window.FilmZillaP2P = {
     const chunkBytes = 2500000; // 2.5 MB
     this.addSavedBytes(chunkBytes);
     this.broadcast({ type: 'P2P_CHUNK_SHARE', bytes: chunkBytes });
-    FilmSub.showToast('🟢 Shared 2.5 MB video buffer chunk with local Wi-Fi peers! Saved cellular data.', 'success');
+    if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+      window.FilmSub.showToast('🟢 Shared 2.5 MB video buffer chunk with local Wi-Fi peers! Saved cellular data.', 'success');
+    }
   },
 
   openDashboardModal() {
+    if (typeof document === 'undefined') return;
     let modal = document.getElementById('fz-p2p-modal');
     if (!modal) {
       modal = document.createElement('div');
@@ -6371,7 +6536,9 @@ window.FilmZillaCompanion = {
           this.peerConn = conn;
           this.isPhoneConnected = true;
           this.updateConnectionStatus('📱 Connected: Phone Remote');
-          FilmSub.showToast('📱 Second Screen Companion Paired!', 'success');
+          if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+            window.FilmSub.showToast('📱 Second Screen Companion Paired!', 'success');
+          }
           conn.on('data', (d) => this.handleRemoteCommand(d));
           this.broadcastCurrentState();
         });
@@ -6381,11 +6548,15 @@ window.FilmZillaCompanion = {
 
   broadcastCurrentState() {
     if (!this.vjsPlayer) return;
+    const isPaused = typeof this.vjsPlayer.paused === 'function' ? this.vjsPlayer.paused() : true;
+    const curTime = typeof this.vjsPlayer.currentTime === 'function' ? this.vjsPlayer.currentTime() : 0;
+    const duration = (typeof this.vjsPlayer.duration === 'function' ? this.vjsPlayer.duration() : 100) || 100;
+
     const state = {
       type: 'PLAYER_STATE',
-      paused: this.vjsPlayer.paused(),
-      currentTime: this.vjsPlayer.currentTime(),
-      duration: this.vjsPlayer.duration() || 100,
+      paused: isPaused,
+      currentTime: curTime,
+      duration: duration,
       title: this.currentMovie ? this.currentMovie.title : 'FilmZilla Cinema',
       poster: this.currentMovie ? (this.currentMovie.poster || this.currentMovie.poster_url || '') : ''
     };
@@ -6414,32 +6585,42 @@ window.FilmZillaCompanion = {
     this.isPhoneConnected = true;
     this.updateConnectionStatus('📱 Active Phone Remote');
 
+    const showMsg = (txt, typ = 'info') => {
+      if (typeof window !== 'undefined' && window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+        window.FilmSub.showToast(txt, typ);
+      }
+    };
+
     switch (cmd.action) {
       case 'PLAY':
-        this.vjsPlayer.play();
-        FilmSub.showToast('📱 Remote: Playing Video ▶️', 'info');
+        if (typeof this.vjsPlayer.play === 'function') this.vjsPlayer.play();
+        showMsg('📱 Remote: Playing Video ▶️', 'info');
         break;
       case 'PAUSE':
-        this.vjsPlayer.pause();
-        FilmSub.showToast('📱 Remote: Paused Video ⏸️', 'info');
+        if (typeof this.vjsPlayer.pause === 'function') this.vjsPlayer.pause();
+        showMsg('📱 Remote: Paused Video ⏸️', 'info');
         break;
       case 'SEEK_REL':
-        const cur = this.vjsPlayer.currentTime();
-        this.vjsPlayer.currentTime(Math.max(0, cur + (cmd.value || 0)));
-        FilmSub.showToast(`📱 Remote Seek: ${cmd.value > 0 ? '+10s' : '-10s'} ⏩`, 'info');
+        if (typeof this.vjsPlayer.currentTime === 'function') {
+          const cur = this.vjsPlayer.currentTime();
+          this.vjsPlayer.currentTime(Math.max(0, cur + (cmd.value || 0)));
+          showMsg(`📱 Remote Seek: ${cmd.value > 0 ? '+10s' : '-10s'} ⏩`, 'info');
+        }
         break;
       case 'SEEK_ABS':
-        if (typeof cmd.value === 'number') {
+        if (typeof cmd.value === 'number' && typeof this.vjsPlayer.currentTime === 'function') {
           this.vjsPlayer.currentTime(cmd.value);
         }
         break;
       case 'VOLUME':
-        if (typeof cmd.value === 'number') {
+        if (typeof cmd.value === 'number' && typeof this.vjsPlayer.volume === 'function') {
           this.vjsPlayer.volume(cmd.value);
         }
         break;
       case 'MUTE':
-        this.vjsPlayer.muted(!!cmd.value);
+        if (typeof this.vjsPlayer.muted === 'function') {
+          this.vjsPlayer.muted(!!cmd.value);
+        }
         break;
       case 'TOGGLE_SAFE_MODE':
         if (window.FilmZillaSafeMode) {
@@ -6454,8 +6635,8 @@ window.FilmZillaCompanion = {
       case 'REACTION_BOMB':
         if (window.FilmZillaWatchParty && typeof window.FilmZillaWatchParty.launchReactionBomb === 'function') {
           window.FilmZillaWatchParty.launchReactionBomb(cmd.value, 'Companion Phone');
-        } else if (window.FilmSub && typeof FilmSub.showToast === 'function') {
-          FilmSub.showToast(`📱 Remote Reaction Launched: ${cmd.value}`, 'success');
+        } else {
+          showMsg(`📱 Remote Reaction Launched: ${cmd.value}`, 'success');
         }
         break;
       case 'COUPLE_HUG':
@@ -6470,11 +6651,13 @@ window.FilmZillaCompanion = {
   },
 
   updateConnectionStatus(text) {
+    if (typeof document === 'undefined') return;
     const statusEl = document.getElementById('companion-modal-status');
     if (statusEl) statusEl.textContent = text;
   },
 
   openPairModal() {
+    if (typeof document === 'undefined') return;
     let modal = document.getElementById('fz-companion-modal');
     if (!modal) {
       modal = document.createElement('div');
@@ -6483,7 +6666,16 @@ window.FilmZillaCompanion = {
       document.body.appendChild(modal);
     }
     const slug = this.currentMovie ? (this.currentMovie.slug || this.currentMovie.id || '') : '';
-    const companionUrl = `${window.location.origin}/companion.html?pair=${this.pairCode}&movie=${encodeURIComponent(slug)}`;
+
+    let companionUrl = '';
+    if (typeof window !== 'undefined') {
+      if (window.location.protocol === 'file:') {
+        companionUrl = `https://filmsub.pages.dev/companion.html?pair=${this.pairCode}&movie=${encodeURIComponent(slug)}`;
+      } else {
+        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        companionUrl = `${window.location.origin}${basePath}companion.html?pair=${this.pairCode}&movie=${encodeURIComponent(slug)}`;
+      }
+    }
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(companionUrl)}&bgcolor=ffffff&color=08090d`;
 
     modal.innerHTML = `
@@ -6516,9 +6708,15 @@ window.FilmZillaCompanion = {
     modal.style.display = 'flex';
 
     document.getElementById('btn-copy-remote-url').onclick = () => {
-      navigator.clipboard.writeText(companionUrl)
-        .then(() => FilmSub.showToast('Remote link copied to clipboard!', 'success'))
-        .catch(() => FilmSub.showToast('Copy URL manually', 'info'));
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(companionUrl)
+          .then(() => {
+            if (window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+              window.FilmSub.showToast('Remote link copied to clipboard!', 'success');
+            }
+          })
+          .catch(() => {});
+      }
     };
   }
 };
@@ -6532,6 +6730,8 @@ function initVIPCinemaKillerFeatures(vjsPlayer, movie) {
 }
 
 function wireVIPCinemaMenuButtons(movie) {
+  if (typeof document === 'undefined') return;
+
   // 1. Safe Mode Toggle Button
   const safeBtn = document.getElementById('btn-toggle-safe-mode');
   if (safeBtn && !safeBtn._bound) {
@@ -6575,5 +6775,16 @@ function wireVIPCinemaMenuButtons(movie) {
     p2pPill.addEventListener('click', () => {
       if (window.FilmZillaP2P) window.FilmZillaP2P.openDashboardModal();
     });
+  }
+}
+
+// Auto-wire buttons when DOM is loaded
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      try { wireVIPCinemaMenuButtons(); } catch (_) {}
+    });
+  } else {
+    try { wireVIPCinemaMenuButtons(); } catch (_) {}
   }
 }

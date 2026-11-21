@@ -391,6 +391,13 @@
     </div>
   </header>
 
+  <!-- Pair Code Sync Bar -->
+  <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:7px 12px;border-radius:10px;margin-top:10px;border:1px solid rgba(255,255,255,0.08);">
+    <i class="fa-solid fa-qrcode" style="color:#38bdf8;font-size:13px;"></i>
+    <input type="text" id="manual-pair-input" placeholder="Pair Code (e.g. FZ-1234)" style="background:none;border:none;color:#fff;font-size:12px;font-weight:700;flex:1;outline:none;text-transform:uppercase;">
+    <button type="button" id="manual-pair-btn" style="background:#38bdf8;color:#08090d;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;">Sync</button>
+  </div>
+
   <!-- Movie Showcase -->
   <div class="movie-capsule">
     <img src="assets/img/poster-placeholder.png" alt="Movie Poster" class="movie-poster-thumb" id="remote-movie-poster">
@@ -580,19 +587,49 @@
       }
 
       // Initialize PeerJS for Cross-Network QR pairing
-      if (typeof Peer !== 'undefined' && pairCode && pairCode !== 'LOCAL') {
+      function connectPeer(targetCode) {
+        if (typeof Peer === 'undefined' || !targetCode || targetCode === 'LOCAL') return;
         try {
-          peer = new Peer('fz-companion-' + Math.random().toString(36).substring(2, 9));
-          peer.on('open', () => {
-            const hostPeerId = 'fz-host-' + pairCode;
+          if (peerConn) { try { peerConn.close(); } catch (_) {} }
+          if (!peer) {
+            peer = new Peer('fz-companion-' + Math.random().toString(36).substring(2, 9));
+          }
+          const doConnect = () => {
+            const hostPeerId = 'fz-host-' + targetCode;
             peerConn = peer.connect(hostPeerId, { reliable: true });
             peerConn.on('open', () => {
-              document.getElementById('companion-status-text').textContent = 'Paired WebRTC';
+              const statusEl = document.getElementById('companion-status-text');
+              if (statusEl) statusEl.textContent = 'Paired WebRTC';
               sendCommand('REQUEST_STATE');
             });
             peerConn.on('data', (d) => handleStateUpdate(d));
-          });
+          };
+          if (peer.open) {
+            doConnect();
+          } else {
+            peer.on('open', doConnect);
+          }
         } catch (e) {}
+      }
+
+      if (pairCode && pairCode !== 'LOCAL') {
+        connectPeer(pairCode);
+      }
+
+      // Wire Manual Pair Input & Button
+      const manualInput = document.getElementById('manual-pair-input');
+      const manualBtn = document.getElementById('manual-pair-btn');
+      if (manualInput && pairCode && pairCode !== 'LOCAL') {
+        manualInput.value = pairCode;
+      }
+      if (manualBtn) {
+        manualBtn.addEventListener('click', () => {
+          const code = (manualInput ? manualInput.value : '').trim().toUpperCase();
+          if (code) {
+            connectPeer(code);
+            vibrate(40);
+          }
+        });
       }
 
       // Wire Controls
@@ -657,6 +694,7 @@
       let hugInterval = null;
 
       function startHug() {
+        if (hugInterval) clearInterval(hugInterval);
         hugProgress = 0;
         hugBar.style.width = '0%';
         hugInterval = setInterval(() => {

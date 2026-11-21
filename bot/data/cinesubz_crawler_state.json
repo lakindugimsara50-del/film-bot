@@ -1,13 +1,13 @@
 {
   "mode": "movies",
   "direction": "forward",
-  "current_movie_page": 1,
+  "current_movie_page": 3,
   "max_movie_pages": 228,
   "current_tv_page": 1,
   "max_tv_pages": 20,
   "total_scraped": 50,
   "total_skipped": 0,
-  "total_queued": 2,
-  "last_completed_item": "Game of Thrones S01E01",
-  "updated_at": 1794826630.537336
+  "total_queued": 3,
+  "last_completed_item": "Dune 2 (2024)",
+  "updated_at": 1795255738.480028
 }

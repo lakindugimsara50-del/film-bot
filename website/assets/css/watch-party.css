@@ -2251,14 +2251,18 @@
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
 }
 
-/* Private Whisper Chat Message */
-.wp-chat-msg.is-whisper {
+/* Private Whisper Chat Message & In-Video Popup */
+.wp-msg-item.is-whisper,
+.wp-chat-msg.is-whisper,
+.cs-video-chat-popup.is-whisper {
   background: linear-gradient(135deg, rgba(88, 28, 135, 0.45) 0%, rgba(131, 24, 67, 0.45) 100%) !important;
   border-left: 3px solid #ec4899 !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.18);
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.22) !important;
 }
-.wp-chat-msg.is-whisper .wp-msg-author {
+.wp-msg-item.is-whisper .wp-msg-author,
+.wp-chat-msg.is-whisper .wp-msg-author,
+.cs-video-chat-popup.is-whisper .vcp-author {
   color: #f472b6 !important;
 }
 .wp-whisper-lock {

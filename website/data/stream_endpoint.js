@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://provincial-forums-july-usual.trycloudflare.com",
+  "stream_base_url": "https://anti-nose-officer-screw.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-21T11:55:49.651026+00:00",
+  "updated_at": "2026-11-21T11:56:42.421455+00:00",
   "status": "online"
 };

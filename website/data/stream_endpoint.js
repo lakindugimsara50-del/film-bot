@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://anti-nose-officer-screw.trycloudflare.com",
+  "stream_base_url": "https://wrist-twiki-ashley-divine.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-21T11:56:42.421455+00:00",
+  "updated_at": "2026-11-21T11:57:35.375154+00:00",
   "status": "online"
 };

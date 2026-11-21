@@ -73,9 +73,12 @@ export async function onRequest(context) {
   }
 
   const { primary, fallback } = await resolveLiveStreamBaseUrl(env);
-  const targetBackend = primary || fallback || 'https://film-bot-2.onrender.com';
+  // Only probe if we have a real, non-empty backend URL
+  const targetBackend = primary || fallback || '';
 
   let backendReady = false;
+  let backendOffline = false;
+
   if (targetBackend && targetBackend.startsWith('http')) {
     try {
       const probeCtrl = new AbortController();
@@ -88,19 +91,37 @@ export async function onRequest(context) {
       clearTimeout(probeTimer);
       if (probeResp.ok) {
         backendReady = true;
+      } else {
+        backendOffline = true;
       }
     } catch (e) {
+      backendOffline = true;
       backendReady = false;
     }
+  } else {
+    // No backend URL configured — tunnel is offline
+    backendOffline = true;
+    backendReady = false;
   }
 
-  return new Response(JSON.stringify({
-    status: 'pong',
-    service: 'filmsub_edge_stream',
-    mode: 'telegram_cloud',
-    ready: backendReady,
-    backend: targetBackend
-  }), {
+  const responseBody = backendReady
+    ? {
+        status: 'pong',
+        service: 'filmsub_edge_stream',
+        mode: 'telegram_cloud',
+        ready: true,
+        backend: targetBackend,
+      }
+    : {
+        status: 'pong',
+        service: 'filmsub_edge_stream',
+        mode: 'telegram_cloud',
+        ready: false,
+        backend_offline: true,
+        message: 'Stream backend offline. Please restart Kaggle session.',
+      };
+
+  return new Response(JSON.stringify(responseBody), {
     status: 200,
     headers: {
       ...corsHeaders,

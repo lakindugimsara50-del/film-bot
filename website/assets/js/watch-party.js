@@ -529,6 +529,40 @@
             }
           }
           break;
+
+        case 'COUPLE_MODE_TOGGLE':
+          this.isCoupleMode = !!data.enabled;
+          this.updateCoupleModeUI();
+          this.showActionToast(this.isCoupleMode ? '💑 Long-Distance Couple Mode Activated: Touch Sync & Hugs' : 'Couple Mode Deactivated');
+          break;
+
+        case 'COUPLE_TOUCH':
+          if (typeof data.x === 'number' && typeof data.y === 'number') {
+            this.renderCoupleTouchGlow(data.x, data.y, data.user);
+          }
+          break;
+
+        case 'COUPLE_HUG':
+          this.showCoupleHugOverlay(data.sender || 'Partner');
+          break;
+
+        case 'PREDICTION_START':
+          this.handlePredictionStart(data);
+          break;
+
+        case 'PREDICTION_BET':
+          this.handlePredictionBet(data);
+          break;
+
+        case 'PREDICTION_RESOLVE':
+          this.handlePredictionResolve(data);
+          break;
+
+        case 'REACTION_BOMB':
+          if (data.bomb) {
+            this.launchReactionBomb(data.bomb, data.user);
+          }
+          break;
       }
     }
 
@@ -824,6 +858,35 @@
             </button>
           </div>
 
+          <!-- VIP Interactive Actions Tray (Couple Sync, Hug, Predictions & Reaction Bombs) -->
+          <div class="wp-special-actions-tray" style="display:flex;align-items:center;gap:6px;padding:4px 14px 8px;overflow-x:auto;scrollbar-width:none;">
+            <!-- Long-Distance Couple Mode Toggle -->
+            <button type="button" class="wp-couple-mode-btn ${this.isCoupleMode ? 'active' : ''}" id="wp-btn-couple" title="Toggle Long-Distance Couple Mode (Touch Glow & Private Hugs)">
+              <i class="fa-solid fa-heart-pulse" style="color:#ec4899"></i>
+              <span>Couple</span>
+            </button>
+            <!-- Hold for Hug Button -->
+            <button type="button" class="cs-couple-hug-btn" id="wp-btn-hug" title="Press & Hold 1.5s to deliver simultaneous warm hug 🤗">
+              <div class="cs-hug-progress-bar" id="wp-hug-progress"></div>
+              <i class="fa-solid fa-hands-holding-child" style="color:#ff2a6d"></i>
+              <span>Hug 🤗</span>
+            </button>
+            <!-- Live Predictions & Betting Arena Button -->
+            <button type="button" class="wp-prediction-btn" id="wp-btn-prediction" title="Live Predictions & Betting Arena (Popcorn Coins 🍿)">
+              <i class="fa-solid fa-trophy" style="color:#fbbf24"></i>
+              <span>Arena</span>
+            </button>
+            <div class="wp-reaction-bombs-tray" style="display:inline-flex;align-items:center;gap:4px;margin-left:auto;">
+              <span style="font-size:9.5px;font-weight:800;color:#94a3b8;margin-right:2px;">BOMBS:</span>
+              <button type="button" class="wp-bomb-btn" data-bomb="popcorn" title="Popcorn Burst 🍿">🍿</button>
+              <button type="button" class="wp-bomb-btn" data-bomb="tomato" title="Tomato Splatter 🍅">🍅</button>
+              <button type="button" class="wp-bomb-btn" data-bomb="laugh" title="Laugh Bomb 😂">😂</button>
+              <button type="button" class="wp-bomb-btn" data-bomb="fire" title="Fire Storm 🔥">🔥</button>
+              <button type="button" class="wp-bomb-btn" data-bomb="heart" title="Heart Shower ❤️">❤️</button>
+              <button type="button" class="wp-bomb-btn" data-bomb="bomb" title="Mega Reaction Bomb 💣">💣</button>
+            </div>
+          </div>
+
           <!-- WhatsApp-Style Chat Input Bar with Emoji & Cinema Sticker Picker -->
           <div class="wp-chat-input-wrapper">
             <!-- WhatsApp-Style Emoji & Cinema Sticker Popover -->
@@ -843,6 +906,9 @@
             <form class="wp-chat-input-bar" id="wp-chat-form">
               <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Cinema Sticker (WhatsApp Style)" aria-label="Open Emoji Picker">
                 <i class="fa-regular fa-face-smile"></i>
+              </button>
+              <button type="button" class="wp-btn-smiley ${this.isWhisperMode ? 'active' : ''}" id="wp-btn-whisper" title="Private Whisper Mode (Couple/Partner)" style="color:${this.isWhisperMode ? '#ec4899' : '#94a3b8'};">
+                <i class="fa-solid fa-lock"></i>
               </button>
               <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message or send stickers..." autocomplete="off">
               <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
@@ -950,9 +1016,66 @@
         });
       }
 
+      // Wire Couple Mode button in Lounge
+      const coupleBtn = container.querySelector('#wp-btn-couple');
+      if (coupleBtn) {
+        coupleBtn.addEventListener('click', () => this.toggleCoupleMode());
+      }
+
+      // Wire Prediction Button in Lounge
+      const predBtn = container.querySelector('#wp-btn-prediction');
+      if (predBtn) {
+        predBtn.addEventListener('click', () => this.openPredictionManager());
+      }
+
+      // Wire Hold-for-Hug Button
+      const hugBtn = container.querySelector('#wp-btn-hug');
+      const hugBar = container.querySelector('#wp-hug-progress');
+      if (hugBtn) {
+        const startHug = (e) => {
+          if (e.type === 'touchstart') e.preventDefault();
+          this.hugProgress = 0;
+          if (hugBar) hugBar.style.width = '0%';
+          if (this.hugInterval) clearInterval(this.hugInterval);
+          this.hugInterval = setInterval(() => {
+            this.hugProgress += 10;
+            if (hugBar) hugBar.style.width = this.hugProgress + '%';
+            if (this.hugProgress >= 100) {
+              clearInterval(this.hugInterval);
+              this.triggerCoupleHug();
+              if (hugBar) hugBar.style.width = '0%';
+            }
+          }, 140);
+        };
+        const cancelHug = () => {
+          if (this.hugInterval) clearInterval(this.hugInterval);
+          if (hugBar) hugBar.style.width = '0%';
+        };
+        hugBtn.addEventListener('mousedown', startHug);
+        hugBtn.addEventListener('touchstart', startHug, { passive: false });
+        hugBtn.addEventListener('mouseup', cancelHug);
+        hugBtn.addEventListener('touchend', cancelHug);
+        hugBtn.addEventListener('mouseleave', cancelHug);
+      }
+
+      // Wire Whisper Button in Chat bar
+      const whisperBtn = container.querySelector('#wp-btn-whisper');
+      const chatInput = container.querySelector('#wp-chat-input');
+      if (whisperBtn) {
+        whisperBtn.addEventListener('click', () => {
+          this.isWhisperMode = !this.isWhisperMode;
+          whisperBtn.classList.toggle('active', this.isWhisperMode);
+          whisperBtn.style.color = this.isWhisperMode ? '#ec4899' : '#94a3b8';
+          if (chatInput) {
+            chatInput.placeholder = this.isWhisperMode ? 'Whisper private message to partner... 🔒' : 'Type a message or send stickers...';
+            chatInput.focus();
+          }
+          this.showActionToast(this.isWhisperMode ? '🔒 Whisper Mode ON (Private)' : 'Public Chat Mode');
+        });
+      }
+
       // Wire Chat Form
       const chatForm = container.querySelector('#wp-chat-form');
-      const chatInput = container.querySelector('#wp-chat-input');
       if (chatForm && chatInput) {
         chatForm.addEventListener('submit', (e) => {
           e.preventDefault();
@@ -960,17 +1083,33 @@
           if (!text) return;
           chatInput.value = '';
 
-          this.appendChatMessage(this.localUser.name, text, true);
+          const isWhisper = this.isWhisperMode;
+          this.appendChatMessage(this.localUser.name, text, true, false, isWhisper);
           this.broadcast({
             type: 'CHAT_MESSAGE',
             userName: this.localUser.name,
             text: text,
+            isWhisper: isWhisper,
             timestamp: Date.now()
           });
         });
       }
 
-      // Wire Reactions
+      // Wire Reaction Bombs Tray (Popcorn, Tomato, Laugh, Fire, Heart, Mega Bomb)
+      container.querySelectorAll('.wp-bomb-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const bomb = btn.dataset.bomb;
+          if (!bomb) return;
+          this.launchReactionBomb(bomb, this.localUser.name);
+          this.broadcast({
+            type: 'REACTION_BOMB',
+            bomb: bomb,
+            user: this.localUser.name
+          });
+        });
+      });
+
+      // Wire Reactions Chips
       container.querySelectorAll('.wp-reaction-chip').forEach(btn => {
         btn.addEventListener('click', () => {
           const emoji = btn.dataset.emoji;
@@ -1849,15 +1988,17 @@
       });
     }
 
-    appendChatMessage(author, text, isMe = false, isSystem = false) {
+    appendChatMessage(author, text, isMe = false, isSystem = false, isWhisper = false) {
       const chatBox = document.getElementById('wp-chat-box');
       if (chatBox) {
         const item = document.createElement('div');
-        item.className = `wp-msg-item ${isMe ? 'me' : ''}`;
+        item.className = `wp-msg-item ${isMe ? 'me' : ''} ${isWhisper ? 'is-whisper' : ''}`;
         if (isSystem) {
           item.style.background = 'rgba(229, 9, 20, 0.18)';
           item.style.alignSelf = 'center';
         }
+
+        const whisperBadge = isWhisper ? '<span class="wp-whisper-lock"><i class="fa-solid fa-lock"></i> Whisper</span>' : '';
 
         if (typeof text === 'string' && text.startsWith('[STICKER:')) {
           const stripped = text.slice(9, -1);
@@ -1866,7 +2007,7 @@
           const stickerUrl = colonIdx > 0 ? stripped.slice(colonIdx + 1) : '';
           item.classList.add('has-sticker');
           item.innerHTML = `
-            <span class="wp-msg-author">${this.escapeHtml(author)}</span>
+            <span class="wp-msg-author">${this.escapeHtml(author)} ${whisperBadge}</span>
             <div class="wp-sticker-bubble">
               <img src="${this.escapeHtml(stickerUrl)}" alt="${this.escapeHtml(stickerName)}" class="wp-sticker-img" loading="lazy">
               <span class="wp-sticker-tag"><i class="fa-brands fa-whatsapp" style="color:#25d366"></i> ${this.escapeHtml(stickerName)}</span>
@@ -1877,7 +2018,7 @@
           const isJumbo = window.FilmZillaEmoji && window.FilmZillaEmoji.isOnlyEmojis(text);
           const formattedText = window.FilmZillaEmoji ? window.FilmZillaEmoji.parse(safeRaw) : safeRaw;
           item.innerHTML = `
-            <span class="wp-msg-author">${this.escapeHtml(author)}</span>
+            <span class="wp-msg-author">${this.escapeHtml(author)} ${whisperBadge}</span>
             <span class="wp-msg-text ${isJumbo ? 'jumbo-emojis' : ''}">${formattedText}</span>
           `;
         }
@@ -2000,6 +2141,723 @@
           this.showActionToast('Watch Party link copied to clipboard! 📋');
         }
       }
+    }
+
+    // =========================================================================
+    // 4. LONG-DISTANCE COUPLE MODE ENGINE (Touch Glow, Hugs, Private Whisper)
+    // =========================================================================
+    initCoupleTouchListener() {
+      const playerWrap = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!playerWrap || playerWrap._hasTouchListener) return;
+      playerWrap._hasTouchListener = true;
+
+      const handlePointer = (e) => {
+        if (!this.isCoupleMode) return;
+        // Ignore clicks on control bars, buttons, or modal overlays
+        if (e.target.closest('button, .vjs-control-bar, .cs-player-center-overlay, .cs-cinema-menu-bar, .cs-prediction-card, .fz-cinema-modal-backdrop, .cs-couple-cam-dock')) {
+          return;
+        }
+        const rect = playerWrap.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const pctX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const pctY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+
+        this.renderCoupleTouchGlow(pctX, pctY, this.localUser.name);
+        this.broadcast({
+          type: 'COUPLE_TOUCH',
+          x: pctX,
+          y: pctY,
+          user: this.localUser.name
+        });
+      };
+
+      playerWrap.addEventListener('click', handlePointer);
+      playerWrap.addEventListener('touchstart', handlePointer, { passive: true });
+    }
+
+    toggleCoupleMode(forcedState = null) {
+      this.isCoupleMode = forcedState !== null ? !!forcedState : !this.isCoupleMode;
+      this.updateCoupleModeUI();
+      this.broadcast({
+        type: 'COUPLE_MODE_TOGGLE',
+        enabled: this.isCoupleMode
+      });
+      this.showActionToast(
+        this.isCoupleMode
+          ? '💑 Long-Distance Couple Mode Active! Tap screen to send glowing hearts'
+          : 'Couple Mode Deactivated'
+      );
+    }
+
+    updateCoupleModeUI() {
+      const btn = document.getElementById('wp-btn-couple');
+      if (btn) btn.classList.toggle('active', this.isCoupleMode);
+    }
+
+    renderCoupleTouchGlow(pctX, pctY, userName) {
+      const playerWrap = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!playerWrap) return;
+
+      let stage = document.getElementById('cs-reaction-floating-stage');
+      if (!stage) {
+        stage = document.createElement('div');
+        stage.id = 'cs-reaction-floating-stage';
+        stage.className = 'cs-reaction-floating-stage';
+        playerWrap.appendChild(stage);
+      }
+
+      const glow = document.createElement('div');
+      glow.className = 'couple-touch-glow';
+      glow.style.left = `${pctX * 100}%`;
+      glow.style.top = `${pctY * 100}%`;
+      glow.innerHTML = `<span class="couple-heart-icon">❤️</span>`;
+
+      stage.appendChild(glow);
+      this.playSynthesizedSound('heart');
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate([35, 20, 45]); } catch (_) {}
+      }
+
+      setTimeout(() => {
+        if (glow.parentNode) glow.parentNode.removeChild(glow);
+      }, 1600);
+    }
+
+    triggerCoupleHug() {
+      this.broadcast({
+        type: 'COUPLE_HUG',
+        sender: this.localUser.name
+      });
+      this.showCoupleHugOverlay(this.localUser.name);
+    }
+
+    showCoupleHugOverlay(senderName) {
+      const playerWrap = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!playerWrap) return;
+
+      let overlay = document.getElementById('cs-couple-hug-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'cs-couple-hug-overlay';
+        overlay.className = 'couple-hug-overlay';
+        playerWrap.appendChild(overlay);
+      }
+
+      overlay.innerHTML = `
+        <div class="couple-hug-heart">🤗❤️</div>
+        <div class="couple-hug-text">${this.escapeHtml(senderName)} gave you a warm hold hug!</div>
+        <div style="font-size:12px;color:#fda4af;font-weight:600;">Long-Distance Couple Sync • Simultaneous Heartbeat</div>
+      `;
+      overlay.style.display = 'flex';
+
+      this.playSynthesizedSound('hug');
+
+      // Heartbeat pulse pattern: [beat, rest, beat, rest, long rumble]
+      if (navigator.vibrate) {
+        try { navigator.vibrate([120, 100, 150, 120, 250, 150, 400]); } catch (_) {}
+      }
+
+      // Sync to companion remote phone if active
+      if (window.FilmZillaCompanion && typeof window.FilmZillaCompanion.broadcastHaptic === 'function') {
+        window.FilmZillaCompanion.broadcastHaptic([120, 100, 150, 120, 250, 150, 400]);
+      }
+
+      setTimeout(() => {
+        if (overlay) overlay.style.display = 'none';
+      }, 2800);
+    }
+
+    // =========================================================================
+    // 6. VIRTUAL POPCORN & REACTION BOMBS ENGINE (Splatter & Explosions)
+    // =========================================================================
+    launchReactionBomb(bombType, senderName = 'Viewer') {
+      const playerWrap = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!playerWrap) return;
+
+      let stage = document.getElementById('cs-reaction-floating-stage');
+      if (!stage) {
+        stage = document.createElement('div');
+        stage.id = 'cs-reaction-floating-stage';
+        stage.className = 'cs-reaction-floating-stage';
+        playerWrap.appendChild(stage);
+      }
+
+      this.playSynthesizedSound(bombType);
+
+      switch (bombType) {
+        case 'popcorn': {
+          // Burst 25 scattering popcorn kernels
+          for (let i = 0; i < 24; i++) {
+            const kernel = document.createElement('div');
+            kernel.className = 'bomb-popcorn-kernel';
+            kernel.textContent = '🍿';
+            const startX = Math.floor(Math.random() * 80 + 10);
+            kernel.style.left = `${startX}%`;
+            kernel.style.top = '60%';
+            const tx = (Math.random() - 0.5) * 280;
+            const ty = -(Math.random() * 180 + 80);
+            const tx2 = tx * 1.5;
+            const ty2 = Math.random() * 400 + 200;
+            kernel.style.setProperty('--tx', `${tx}px`);
+            kernel.style.setProperty('--ty', `${ty}px`);
+            kernel.style.setProperty('--tx2', `${tx2}px`);
+            kernel.style.setProperty('--ty2', `${ty2}px`);
+            kernel.style.animationDelay = `${Math.random() * 0.15}s`;
+            stage.appendChild(kernel);
+            setTimeout(() => { if (kernel.parentNode) kernel.parentNode.removeChild(kernel); }, 2400);
+          }
+          if (navigator.vibrate) try { navigator.vibrate([40, 25, 40]); } catch (_) {}
+          this.showActionToast(`🍿 ${senderName} launched a Popcorn Blast!`);
+          break;
+        }
+
+        case 'tomato': {
+          // Splat juicy tomato with drips
+          const splat = document.createElement('div');
+          splat.className = 'bomb-tomato-splat';
+          const rx = Math.floor(Math.random() * 60 + 20);
+          const ry = Math.floor(Math.random() * 50 + 25);
+          splat.style.left = `${rx}%`;
+          splat.style.top = `${ry}%`;
+          stage.appendChild(splat);
+          if (navigator.vibrate) try { navigator.vibrate([80, 40, 60]); } catch (_) {}
+          this.showActionToast(`🍅 ${senderName} threw a Rotten Tomato! SPLAT!`);
+          setTimeout(() => { if (splat.parentNode) splat.parentNode.removeChild(splat); }, 2600);
+          break;
+        }
+
+        case 'laugh': {
+          // 20 bouncing laughing faces
+          for (let i = 0; i < 18; i++) {
+            const face = document.createElement('div');
+            face.className = 'bomb-popcorn-kernel';
+            face.textContent = Math.random() > 0.5 ? '😂' : '🤣';
+            face.style.left = `${Math.random() * 90}%`;
+            face.style.top = '70%';
+            face.style.setProperty('--tx', `${(Math.random() - 0.5) * 200}px`);
+            face.style.setProperty('--ty', `-${Math.random() * 220 + 80}px`);
+            face.style.setProperty('--tx2', `${(Math.random() - 0.5) * 350}px`);
+            face.style.setProperty('--ty2', `${Math.random() * 300 + 150}px`);
+            face.style.animationDelay = `${Math.random() * 0.2}s`;
+            stage.appendChild(face);
+            setTimeout(() => { if (face.parentNode) face.parentNode.removeChild(face); }, 2300);
+          }
+          if (navigator.vibrate) try { navigator.vibrate([50, 30, 50, 30, 80]); } catch (_) {}
+          this.showActionToast(`😂 Laugh Bomb from ${senderName}!`);
+          break;
+        }
+
+        case 'fire': {
+          // Roaring fire along bottom edge
+          for (let i = 0; i < 22; i++) {
+            const flame = document.createElement('div');
+            flame.className = 'bomb-fire-flame';
+            flame.textContent = '🔥';
+            flame.style.left = `${(i / 22) * 100}%`;
+            flame.style.animationDelay = `${Math.random() * 0.3}s`;
+            stage.appendChild(flame);
+            setTimeout(() => { if (flame.parentNode) flame.parentNode.removeChild(flame); }, 2100);
+          }
+          if (navigator.vibrate) try { navigator.vibrate([100, 40, 120]); } catch (_) {}
+          this.showActionToast(`🔥 ${senderName} unleashed a Fire Storm!`);
+          break;
+        }
+
+        case 'heart': {
+          // 20 floating neon love hearts
+          for (let i = 0; i < 20; i++) {
+            const h = document.createElement('div');
+            h.className = 'bomb-popcorn-kernel';
+            h.textContent = Math.random() > 0.4 ? '❤️' : '💖';
+            h.style.left = `${Math.random() * 85 + 5}%`;
+            h.style.top = '80%';
+            h.style.setProperty('--tx', `${(Math.random() - 0.5) * 160}px`);
+            h.style.setProperty('--ty', `-${Math.random() * 300 + 100}px`);
+            h.style.setProperty('--tx2', `${(Math.random() - 0.5) * 220}px`);
+            h.style.setProperty('--ty2', `-${Math.random() * 450 + 200}px`);
+            stage.appendChild(h);
+            setTimeout(() => { if (h.parentNode) h.parentNode.removeChild(h); }, 2400);
+          }
+          if (navigator.vibrate) try { navigator.vibrate([50, 50, 100]); } catch (_) {}
+          this.showActionToast(`❤️ Love Shower from ${senderName}!`);
+          break;
+        }
+
+        case 'bomb': {
+          // Mega Cinema Bomb with screen shake
+          playerWrap.classList.remove('cs-screen-shake-intense');
+          void playerWrap.offsetWidth;
+          playerWrap.classList.add('cs-screen-shake-intense');
+
+          // Flash multiple explosions
+          for (let i = 0; i < 15; i++) {
+            const exp = document.createElement('div');
+            exp.className = 'bomb-popcorn-kernel';
+            exp.textContent = Math.random() > 0.5 ? '💥' : '💣';
+            exp.style.left = `${Math.random() * 70 + 15}%`;
+            exp.style.top = `${Math.random() * 50 + 25}%`;
+            exp.style.setProperty('--tx', `${(Math.random() - 0.5) * 300}px`);
+            exp.style.setProperty('--ty', `${(Math.random() - 0.5) * 300}px`);
+            stage.appendChild(exp);
+            setTimeout(() => { if (exp.parentNode) exp.parentNode.removeChild(exp); }, 2000);
+          }
+
+          if (navigator.vibrate) try { navigator.vibrate([120, 40, 90, 40, 220]); } catch (_) {}
+          this.showActionToast(`💣 MEGA CINEMA BOMB EXPLODED by ${senderName}!`);
+          setTimeout(() => { playerWrap.classList.remove('cs-screen-shake-intense'); }, 700);
+          break;
+        }
+      }
+    }
+
+    // High-performance Native Web Audio Synthesizer (Zero External Audio Downloads)
+    playSynthesizedSound(type) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!this.audioContext) this.audioContext = new AudioCtx();
+        if (this.audioContext.state === 'suspended') {
+          this.audioContext.resume();
+        }
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        if (type === 'popcorn') {
+          // High popping transient
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(700, now);
+          osc.frequency.exponentialRampToValueAtTime(1600, now + 0.04);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        } else if (type === 'tomato') {
+          // Wet squishy impact
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(60, now + 0.18);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } else if (type === 'laugh') {
+          // Melodic bouncy chirps
+          [0, 0.08, 0.16].forEach((offset, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(idx % 2 === 0 ? 520 : 660, now + offset);
+            gain.gain.setValueAtTime(0.25, now + offset);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.07);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + offset);
+            osc.stop(now + offset + 0.07);
+          });
+        } else if (type === 'fire') {
+          // Whoosh resonance
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.linearRampToValueAtTime(260, now + 0.25);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'bomb') {
+          // Deep sub-bass explosion
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.exponentialRampToValueAtTime(28, now + 0.55);
+          gain.gain.setValueAtTime(0.8, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.55);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.55);
+        } else if (type === 'heart' || type === 'hug') {
+          // Warm harmonic chord
+          [523.25, 659.25, 783.99].forEach((freq) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.45);
+          });
+        }
+      } catch (_) {}
+    }
+
+    // =========================================================================
+    // 5. IN-PARTY LIVE PREDICTIONS & BETTING ARENA (Gamified Popcorn Bets)
+    // =========================================================================
+    openPredictionManager() {
+      if (this.activePrediction && this.isHost) {
+        // Resolve active prediction
+        this.openResolvePredictionModal();
+      } else {
+        // Create new prediction
+        this.openCreatePredictionModal();
+      }
+    }
+
+    openCreatePredictionModal() {
+      let modal = document.getElementById('fz-prediction-create-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'fz-prediction-create-modal';
+        modal.className = 'fz-cinema-modal-backdrop';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="fz-cinema-modal-dialog">
+          <div class="fz-modal-header">
+            <div class="fz-modal-title">
+              <i class="fa-solid fa-trophy" style="color:#fbbf24"></i>
+              <span>Create Live In-Party Prediction</span>
+            </div>
+            <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-prediction-create-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="fz-modal-body" style="text-align:left;align-items:stretch;">
+            <p style="font-size:13px;color:#94a3b8;margin-bottom:14px;">
+              Pick a movie prediction question for viewers to bet their Popcorn Coins 🍿 during the film:
+            </p>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;">Quick Templates:</label>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Who will survive this scene?" data-oa="Hero survives" data-ob="Villain escapes">
+                  🗡️ "Who will survive this scene?" (Hero vs Villain)
+                </button>
+                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Will the bomb / crisis be defused in time?" data-oa="Defused in time" data-ob="Explosion happens">
+                  💣 "Will the crisis be resolved in time?" (Yes vs No)
+                </button>
+                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Who is the secret killer / suspect?" data-oa="Main Suspect" data-ob="Secret Ally">
+                  🔍 "Who is the secret killer / mastermind?" (Suspect A vs B)
+                </button>
+                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Will they share a romantic kiss?" data-oa="They Kiss ❤️" data-ob="Interrupted 🙅">
+                  💋 "Will they share a romantic kiss?" (Yes vs No)
+                </button>
+              </div>
+            </div>
+            <div class="fz-modal-btn-row">
+              <button type="button" class="fz-btn-sec" onclick="window.FilmZillaWatchParty.openPredictionLeaderboard()"><i class="fa-solid fa-ranking-star"></i> Leaderboard</button>
+              <button type="button" class="fz-btn-pri" onclick="document.getElementById('fz-prediction-create-modal').style.display='none'"><i class="fa-solid fa-check"></i> Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.style.display = 'flex';
+
+      modal.querySelectorAll('[data-q]').forEach(btn => {
+        btn.onclick = () => {
+          modal.style.display = 'none';
+          this.startPrediction(btn.dataset.q, btn.dataset.oa, btn.dataset.ob, 25);
+        };
+      });
+    }
+
+    startPrediction(question, optionA, optionB, duration = 25) {
+      const pred = {
+        id: 'pred_' + Date.now(),
+        question,
+        optionA,
+        optionB,
+        duration,
+        endTime: Date.now() + duration * 1000,
+        votesA: 1,
+        votesB: 1,
+        poolA: 25,
+        poolB: 25,
+        hasVoted: false,
+        myVote: null,
+        myBet: 0
+      };
+      this.activePrediction = pred;
+      this.broadcast({
+        type: 'PREDICTION_START',
+        prediction: pred
+      });
+      this.renderPredictionCard();
+      this.showActionToast(`🎲 Live Prediction Launched: "${question}"`);
+    }
+
+    handlePredictionStart(data) {
+      if (!data || !data.prediction) return;
+      this.activePrediction = {
+        ...data.prediction,
+        hasVoted: false,
+        myVote: null,
+        myBet: 0
+      };
+      this.renderPredictionCard();
+      this.showActionToast(`🎲 Place your Popcorn bets! "${data.prediction.question}"`);
+    }
+
+    renderPredictionCard() {
+      if (!this.activePrediction) return;
+      const pred = this.activePrediction;
+      const playerWrap = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      if (!playerWrap) return;
+
+      let card = document.getElementById('cs-prediction-card');
+      if (!card) {
+        card = document.createElement('div');
+        card.id = 'cs-prediction-card';
+        card.className = 'cs-prediction-card';
+        playerWrap.appendChild(card);
+      }
+
+      const totalPool = pred.poolA + pred.poolB;
+      const pctA = Math.round((pred.poolA / totalPool) * 100);
+      const pctB = 100 - pctA;
+      const remSec = Math.max(0, Math.ceil((pred.endTime - Date.now()) / 1000));
+
+      card.innerHTML = `
+        <div class="cs-prediction-header">
+          <div class="cs-prediction-title">
+            <i class="fa-solid fa-trophy"></i>
+            <span>LIVE PREDICTION</span>
+          </div>
+          <div class="cs-prediction-timer" id="cs-pred-timer">${remSec > 0 ? remSec + 's left' : 'VOTING CLOSED'}</div>
+        </div>
+        <div class="cs-prediction-question">${this.escapeHtml(pred.question)}</div>
+        <div class="cs-prediction-options">
+          <button type="button" class="cs-pred-opt-btn ${pred.myVote === 'A' ? 'is-voted' : ''}" id="pred-opt-a" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
+            <div class="cs-pred-opt-bar" style="width:${pctA}%"></div>
+            <div class="cs-pred-opt-title">${this.escapeHtml(pred.optionA)}</div>
+            <div class="cs-pred-opt-pct">${pctA}% (${pred.poolA} 🍿)</div>
+          </button>
+          <button type="button" class="cs-pred-opt-btn ${pred.myVote === 'B' ? 'is-voted' : ''}" id="pred-opt-b" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
+            <div class="cs-pred-opt-bar" style="width:${pctB}%"></div>
+            <div class="cs-pred-opt-title">${this.escapeHtml(pred.optionB)}</div>
+            <div class="cs-pred-opt-pct">${pctB}% (${pred.poolB} 🍿)</div>
+          </button>
+        </div>
+        <div class="cs-prediction-footer">
+          <div class="cs-prediction-coins"><i class="fa-solid fa-coins" style="color:#fbbf24"></i> Your Wallet: <b id="cs-user-popcorn">${this.popcornCoins}</b> 🍿</div>
+          ${this.isHost ? `<button type="button" style="background:none;border:none;color:#38bdf8;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner</button>` : ''}
+        </div>
+      `;
+      card.style.display = 'block';
+
+      const optABtn = card.querySelector('#pred-opt-a');
+      const optBBtn = card.querySelector('#pred-opt-b');
+      if (optABtn && !pred.hasVoted) {
+        optABtn.onclick = () => this.placePredictionBet('A', 25);
+      }
+      if (optBBtn && !pred.hasVoted) {
+        optBBtn.onclick = () => this.placePredictionBet('B', 25);
+      }
+      const resolveBtn = card.querySelector('#pred-btn-resolve');
+      if (resolveBtn) {
+        resolveBtn.onclick = () => this.openResolvePredictionModal();
+      }
+
+      // Interval countdown
+      if (this.predInterval) clearInterval(this.predInterval);
+      this.predInterval = setInterval(() => {
+        if (!this.activePrediction) {
+          clearInterval(this.predInterval);
+          return;
+        }
+        const left = Math.max(0, Math.ceil((this.activePrediction.endTime - Date.now()) / 1000));
+        const timerEl = document.getElementById('cs-pred-timer');
+        if (timerEl) timerEl.textContent = left > 0 ? `${left}s left` : 'VOTING CLOSED';
+        if (left <= 0) {
+          clearInterval(this.predInterval);
+          if (optABtn) optABtn.disabled = true;
+          if (optBBtn) optBBtn.disabled = true;
+        }
+      }, 1000);
+    }
+
+    placePredictionBet(option, amount = 25) {
+      if (!this.activePrediction || this.activePrediction.hasVoted) return;
+      if (this.popcornCoins < amount) {
+        this.showActionToast('Not enough Popcorn Coins! 🍿');
+        return;
+      }
+      this.popcornCoins -= amount;
+      localStorage.setItem('fz_popcorn_coins', String(this.popcornCoins));
+
+      this.activePrediction.hasVoted = true;
+      this.activePrediction.myVote = option;
+      this.activePrediction.myBet = amount;
+      if (option === 'A') {
+        this.activePrediction.poolA += amount;
+      } else {
+        this.activePrediction.poolB += amount;
+      }
+
+      this.broadcast({
+        type: 'PREDICTION_BET',
+        predictionId: this.activePrediction.id,
+        option,
+        amount,
+        user: this.localUser.name
+      });
+
+      this.renderPredictionCard();
+      this.showActionToast(`🍿 Placed ${amount} Popcorn bet on: ${option === 'A' ? this.activePrediction.optionA : this.activePrediction.optionB}`);
+    }
+
+    handlePredictionBet(data) {
+      if (!this.activePrediction || this.activePrediction.id !== data.predictionId) return;
+      if (data.option === 'A') {
+        this.activePrediction.poolA += (data.amount || 25);
+      } else {
+        this.activePrediction.poolB += (data.amount || 25);
+      }
+      this.renderPredictionCard();
+    }
+
+    openResolvePredictionModal() {
+      if (!this.activePrediction) return;
+      const pred = this.activePrediction;
+      let modal = document.getElementById('fz-prediction-resolve-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'fz-prediction-resolve-modal';
+        modal.className = 'fz-cinema-modal-backdrop';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="fz-cinema-modal-dialog">
+          <div class="fz-modal-header">
+            <div class="fz-modal-title">
+              <i class="fa-solid fa-crown" style="color:#fbbf24"></i>
+              <span>Declare Prediction Winner</span>
+            </div>
+            <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-prediction-resolve-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="fz-modal-body" style="text-align:left;align-items:stretch;">
+            <p style="font-size:14px;color:#f8fafc;font-weight:700;margin-bottom:14px;">${this.escapeHtml(pred.question)}</p>
+            <p style="font-size:12px;color:#94a3b8;margin-bottom:14px;">Select which outcome happened in the film to reward winning bettors:</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+              <button type="button" class="fz-btn-pri" id="res-win-a">🏆 ${this.escapeHtml(pred.optionA)} Wins</button>
+              <button type="button" class="fz-btn-pri" id="res-win-b">🏆 ${this.escapeHtml(pred.optionB)} Wins</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.style.display = 'flex';
+
+      document.getElementById('res-win-a').onclick = () => {
+        modal.style.display = 'none';
+        this.resolvePrediction('A');
+      };
+      document.getElementById('res-win-b').onclick = () => {
+        modal.style.display = 'none';
+        this.resolvePrediction('B');
+      };
+    }
+
+    resolvePrediction(winningOption) {
+      if (!this.activePrediction) return;
+      const winnerName = winningOption === 'A' ? this.activePrediction.optionA : this.activePrediction.optionB;
+      const resolution = {
+        type: 'PREDICTION_RESOLVE',
+        predictionId: this.activePrediction.id,
+        winningOption,
+        winnerName
+      };
+      this.broadcast(resolution);
+      this.handlePredictionResolve(resolution);
+    }
+
+    handlePredictionResolve(data) {
+      if (!this.activePrediction) return;
+      const didIWin = this.activePrediction.myVote === data.winningOption;
+      if (didIWin) {
+        const reward = (this.activePrediction.myBet || 25) * 2;
+        this.popcornCoins += reward;
+        localStorage.setItem('fz_popcorn_coins', String(this.popcornCoins));
+        this.showActionToast(`🏆 YOU WON ${reward} POPCORN COINS! 🍿`);
+        this.playSynthesizedSound('heart');
+      } else {
+        this.showActionToast(`🏆 Winner Revealed: "${data.winnerName}"`);
+      }
+
+      const card = document.getElementById('cs-prediction-card');
+      if (card) {
+        card.innerHTML = `
+          <div class="cs-prediction-winner-banner">
+            <div style="font-size:28px;margin-bottom:4px;">🎉🏆🍿</div>
+            <div style="font-size:16px;font-weight:800;color:#fbbf24;">${this.escapeHtml(data.winnerName)} WON!</div>
+            <div style="font-size:12px;color:#cbd5e1;margin-top:4px;">
+              ${didIWin ? 'Congratulations! Payout credited to your wallet 🍿' : 'Better luck on the next scene prediction!'}
+            </div>
+          </div>
+        `;
+        setTimeout(() => {
+          if (card.parentNode) card.parentNode.removeChild(card);
+        }, 5500);
+      }
+      this.activePrediction = null;
+    }
+
+    openPredictionLeaderboard() {
+      let modal = document.getElementById('fz-prediction-lb-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'fz-prediction-lb-modal';
+        modal.className = 'fz-cinema-modal-backdrop';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="fz-cinema-modal-dialog">
+          <div class="fz-modal-header">
+            <div class="fz-modal-title">
+              <i class="fa-solid fa-ranking-star" style="color:#fbbf24"></i>
+              <span>Watch Party Arena Leaderboard</span>
+            </div>
+            <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-prediction-lb-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="fz-modal-body" style="align-items:stretch;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:12px 16px;border-radius:10px;">
+                <span style="font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:8px;">🥇 1st • ${this.escapeHtml(this.localUser.name)} (You)</span>
+                <span style="font-weight:800;color:#fff;">${this.popcornCoins} 🍿</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);padding:12px 16px;border-radius:10px;">
+                <span style="font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:8px;">🥈 2nd • Maya Cinema</span>
+                <span style="font-weight:700;color:#94a3b8;">180 🍿</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);padding:12px 16px;border-radius:10px;">
+                <span style="font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:8px;">🥉 3rd • Alex FilmFan</span>
+                <span style="font-weight:700;color:#94a3b8;">145 🍿</span>
+              </div>
+            </div>
+            <div class="fz-modal-btn-row">
+              <button type="button" class="fz-btn-pri" onclick="document.getElementById('fz-prediction-lb-modal').style.display='none'"><i class="fa-solid fa-check"></i> Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.style.display = 'flex';
     }
 
     escapeHtml(str) {

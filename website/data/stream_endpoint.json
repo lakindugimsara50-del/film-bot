@@ -1,6 +1,6 @@
 {
-  "stream_base_url": "https://background-european-streets-enforcement.trycloudflare.com",
-  "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-16T17:38:21.209180+00:00",
-  "status": "online"
+  "stream_base_url": "",
+  "fallback_stream_url": "",
+  "updated_at": "2026-11-21T01:07:59.000000+00:00",
+  "status": "tunnel_offline_kaggle_restart_required"
 }

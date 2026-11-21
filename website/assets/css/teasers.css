@@ -298,11 +298,14 @@ body.reels-page-active {
   background-color: transparent;
 }
 
-.teaser-media-wrap iframe {
+.teaser-media-wrap iframe,
+.reels-yt-iframe {
   width: 100%;
   height: 100%;
   border: none;
+  background-color: transparent;
   pointer-events: auto;
+  display: block;
 }
 
 /* Video Overlay Gradient (Text Readability) */

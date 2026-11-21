@@ -98,8 +98,8 @@ runTest('2.5 teasers.html contains Smart Seek Modal with scene and beginning opt
 });
 
 runTest('2.6 teasers.html includes all required data and engine scripts', () => {
-  assert(htmlContent.includes('src="data/movies_data.js"'), 'movies_data.js script missing');
-  assert(htmlContent.includes('src="data/teasers_data.js"'), 'teasers_data.js script missing');
+  assert(htmlContent.includes('src="data/movies_data.js'), 'movies_data.js script missing');
+  assert(htmlContent.includes('src="data/teasers_data.js'), 'teasers_data.js script missing');
   assert(htmlContent.includes('src="assets/js/teasers.js'), 'teasers.js script missing');
 });
 
@@ -126,7 +126,7 @@ runTest('3.2 Each teaser entry adheres to schema contracts', () => {
     assert(typeof t.duration === 'number' && t.duration > 0, `Teaser #${i} invalid duration`);
     assert(typeof t.formatted_seek_time === 'string', `Teaser #${i} missing formatted_seek_time`);
     assert(typeof t.scene_hook === 'string', `Teaser #${i} missing scene_hook`);
-    assert(typeof t.youtube_embed_url === 'string' && t.youtube_embed_url.includes('youtube-nocookie.com/embed/'), `Teaser #${i} invalid youtube_embed_url`);
+    assert(typeof t.youtube_embed_url === 'string' && (t.youtube_embed_url.includes('youtube.com/embed/') || t.youtube_embed_url.includes('youtube-nocookie.com/embed/')), `Teaser #${i} invalid youtube_embed_url`);
   });
 });
 

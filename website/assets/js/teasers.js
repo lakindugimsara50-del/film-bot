@@ -90,7 +90,7 @@
           formatted_seek_time: '30:00',
           video_url: '',
           youtube_embed_url: m.trailer_id
-            ? `https://www.youtube-nocookie.com/embed/${m.trailer_id}?start=30&end=60&autoplay=1&mute=1&controls=0&loop=1&playlist=${m.trailer_id}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`
+            ? `https://www.youtube.com/embed/${m.trailer_id}?start=30&end=60&autoplay=1&mute=1&controls=0&loop=1&playlist=${m.trailer_id}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`
             : '',
           has_sinhala_sub: true,
           likes_count: 150 + idx * 25
@@ -148,7 +148,7 @@
             formatted_seek_time: '30:00',
             video_url: '',
             youtube_embed_url: trailerId
-              ? `https://www.youtube-nocookie.com/embed/${trailerId}?start=30&end=60&autoplay=1&mute=1&controls=0&loop=1&playlist=${trailerId}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`
+              ? `https://www.youtube.com/embed/${trailerId}?start=30&end=60&autoplay=1&mute=1&controls=0&loop=1&playlist=${trailerId}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`
               : '',
             has_sinhala_sub: true,
             likes_count: 240
@@ -218,16 +218,23 @@
             <source src="${t.video_url}" type="video/mp4">
           </video>
         `;
-      } else if (t.youtube_embed_url) {
+      } else if (t.youtube_embed_url || t.trailer_id) {
         // Embed YouTube with JS API enabled
+        const trailerId = t.trailer_id || (t.youtube_embed_url.match(/embed\/([^?&]+)/) || [])[1] || '';
+        const clipStart = Math.floor(t.clip_start || 0);
+        const clipEnd = Math.floor(t.clip_end || (clipStart + 30));
         const ytMuted = isGlobalMuted ? 1 : 0;
-        let ytSrc = t.youtube_embed_url.replace(/mute=[01]/, `mute=${ytMuted}`);
+        
+        let ytSrc = (t.youtube_embed_url || `https://www.youtube.com/embed/${trailerId}?start=${clipStart}&end=${clipEnd}&autoplay=1&mute=1&controls=0&loop=1&playlist=${trailerId}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`)
+          .replace(/mute=[01]/, `mute=${ytMuted}`)
+          .replace('https://www.youtube-nocookie.com/embed/', 'https://www.youtube.com/embed/');
+          
         const origin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : '';
         if (origin && !ytSrc.includes('origin=')) {
           ytSrc += `&origin=${encodeURIComponent(origin)}`;
         }
         mediaHtml = `
-          <iframe class="reels-yt-iframe" src="${isFirst ? ytSrc : ''}" data-src="${ytSrc}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe class="reels-yt-iframe" ${isFirst ? `src="${ytSrc}"` : ''} data-src="${ytSrc}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
         `;
       } else {
         mediaHtml = `
@@ -528,18 +535,26 @@
         }
       };
     } else if (iframe) {
-      // If iframe was lazy, set src
-      if (!iframe.src || iframe.src === 'about:blank') {
-        iframe.src = iframe.dataset.src;
+      const targetSrc = iframe.dataset.src || '';
+      const ytMuted = isGlobalMuted ? 1 : 0;
+      const currentSrc = iframe.getAttribute('src');
+
+      if (!currentSrc || currentSrc === 'about:blank' || currentSrc.includes('/teasers')) {
+        // First load of this iframe: inject src with current mute state
+        const finalSrc = targetSrc.replace(/mute=[01]/, `mute=${ytMuted}`);
+        iframe.setAttribute('src', finalSrc);
+      } else if (iframe.contentWindow) {
+        try {
+          const ytMuteCmd = isGlobalMuted
+            ? '{"event":"command","func":"mute","args":""}'
+            : '{"event":"command","func":"unMute","args":""}';
+          iframe.contentWindow.postMessage(ytMuteCmd, '*');
+          if (!isGlobalMuted) {
+            iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+          }
+          iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        } catch (_) {}
       }
-      const ytMuteCmd = isGlobalMuted
-        ? '{"event":"command","func":"mute","args":""}'
-        : '{"event":"command","func":"unMute","args":""}';
-      iframe.contentWindow.postMessage(ytMuteCmd, '*');
-      if (!isGlobalMuted) {
-        iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
-      }
-      iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
 
       // Animate progress bar across 30 seconds
       animateTimelineProgress(progressFill, 30, clipStart);
@@ -561,7 +576,10 @@
     if (video) {
       video.pause();
     } else if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      try {
+        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        iframe.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
+      } catch (_) {}
     }
     if (progressFill) {
       progressFill.style.width = '0%';
@@ -612,8 +630,10 @@
       if (video && video.preload !== 'auto') {
         video.preload = 'auto';
       }
-      if (iframe && !iframe.src && iframe.dataset.src) {
-        iframe.src = iframe.dataset.src;
+      if (iframe && !iframe.getAttribute('src') && iframe.dataset.src) {
+        // Preload next iframe so video buffers in advance, muted
+        const nextSrc = iframe.dataset.src.replace('autoplay=1', 'autoplay=0').replace('mute=0', 'mute=1');
+        iframe.setAttribute('src', nextSrc);
       }
     }
   }

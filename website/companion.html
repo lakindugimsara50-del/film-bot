@@ -440,18 +440,11 @@
   </div>
 
   <!-- Feature Toggles -->
-  <div class="toggle-grid">
-    <button type="button" class="btn-feature-toggle active" id="remote-safe-btn">
-      <i class="fa-solid fa-shield-halved" style="color:#10b981;font-size:18px;"></i>
-      <div>
-        <div>Safe Mode</div>
-        <small style="color:var(--text-muted);font-size:10px;" id="remote-safe-status">Active (Blur/Mute)</small>
-      </div>
-    </button>
+  <div class="toggle-grid" style="grid-template-columns: 1fr;">
     <button type="button" class="btn-feature-toggle haptic-active" id="remote-haptic-btn">
       <i class="fa-solid fa-mobile-screen-button" style="color:#f43f5e;font-size:18px;"></i>
       <div>
-        <div>4D Haptic</div>
+        <div>4D Haptic Feedback</div>
         <small style="color:var(--text-muted);font-size:10px;">Bass Vibration ON</small>
       </div>
     </button>
@@ -666,11 +659,14 @@
       });
 
       // Feature Toggles
-      safeBtn.addEventListener('click', () => {
-        const active = safeBtn.classList.toggle('active');
-        document.getElementById('remote-safe-status').textContent = active ? 'Active (Blur/Mute)' : 'Disabled';
-        sendCommand('TOGGLE_SAFE_MODE', active);
-      });
+      if (safeBtn) {
+        safeBtn.addEventListener('click', () => {
+          const active = safeBtn.classList.toggle('active');
+          const statusEl = document.getElementById('remote-safe-status');
+          if (statusEl) statusEl.textContent = active ? 'Active (Blur/Mute)' : 'Disabled';
+          sendCommand('TOGGLE_SAFE_MODE', active);
+        });
+      }
 
       hapticBtn.addEventListener('click', () => {
         hapticsEnabled = !hapticsEnabled;

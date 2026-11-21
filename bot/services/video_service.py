@@ -1731,7 +1731,7 @@ def cleanup_stale_work_dirs(extra_parents: tuple = ()) -> None:
         if os.path.isdir(parent) and os.access(parent, os.W_OK):
             try:
                 for entry in os.listdir(parent):
-                    if entry.startswith(("leech_ram_", "leech_work_")):
+                    if entry.startswith(("leech_", "leech_ram_", "leech_work_")):
                         p = os.path.join(parent, entry)
                         try:
                             if os.path.isdir(p):

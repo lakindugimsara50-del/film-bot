@@ -453,6 +453,42 @@ async function loadLiveStreamConfig(forceRefresh = false) {
   return activeStreamBaseUrl;
 }
 
+// ── Stream Offline Banner ────────────────────────────────────────────────────
+// Shows a user-friendly banner when the Kaggle/Cloudflare backend is offline.
+function showStreamOfflineBanner(containerEl) {
+  if (!containerEl) return;
+  // Avoid showing duplicate banners
+  if (containerEl.querySelector('.filmsub-offline-banner')) return;
+  const banner = document.createElement('div');
+  banner.className = 'filmsub-offline-banner';
+  banner.style.cssText = [
+    'position:absolute', 'inset:0', 'z-index:50',
+    'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+    'background:rgba(0,0,0,0.92)', 'color:#fff', 'gap:14px',
+    'border-radius:8px', 'padding:28px 20px', 'text-align:center',
+  ].join(';');
+  banner.innerHTML = `
+    <i class="fa-solid fa-satellite-dish" style="font-size:48px;color:#e55;"></i>
+    <h3 style="margin:0;font-size:18px;color:#fff;">Stream Server Offline</h3>
+    <p style="margin:0;font-size:13px;color:#ccc;max-width:380px;line-height:1.6">
+      The Kaggle streaming backend is currently offline.<br>
+      <strong>Admin:</strong> Please restart the Kaggle session to restore streaming.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+      <button onclick="location.reload()" style="background:var(--accent,#e55);color:#fff;border:none;padding:9px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+        <i class="fa-solid fa-rotate-right"></i> Retry
+      </button>
+    </div>`;
+  // Make container relative if not already
+  const pos = window.getComputedStyle(containerEl).position;
+  if (!pos || pos === 'static') containerEl.style.position = 'relative';
+  containerEl.appendChild(banner);
+}
+
+// Global flag for quick-fail stall detection
+let _consecutiveStallsWhileOffline = 0;
+let _firstOfflineStallTime = 0;
+
 function isRunningOnCloudflarePages() {
   if (typeof window === 'undefined' || !window.location) return false;
   const h = (window.location.hostname || '').toLowerCase();

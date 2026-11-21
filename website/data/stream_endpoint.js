@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://deaths-beer-installed-shopzilla.trycloudflare.com",
+  "stream_base_url": "https://dpi-shortcuts-acceptance-bicycle.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-21T05:31:09.373093+00:00",
+  "updated_at": "2026-11-21T11:31:58.237330+00:00",
   "status": "online"
 };

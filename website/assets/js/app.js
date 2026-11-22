@@ -2567,7 +2567,7 @@ function openUserListModal(initialTab = 'favorites') {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'user-list-modal';
-    modal.className = 'user-list-modal-backdrop';
+    modal.className = 'user-list-modal-backdrop vip-hub-modal';
     modal.innerHTML = `
       <div class="user-list-modal-dialog vip-cinema-hub-dialog">
         <!-- VIP Cinema Pass Banner Header -->
@@ -2601,22 +2601,22 @@ function openUserListModal(initialTab = 'favorites') {
         <!-- Real-Time Cinema Navigation Tabs -->
         <div class="vip-hub-tabs-nav" id="vip-hub-tabs-nav" role="tablist">
           <button type="button" class="vip-tab-btn" data-tab="favorites" role="tab">
-            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp" class="tab-3d-icon" alt="Heart">
+            <i class="fa-regular fa-heart tab-icon" style="color:#ff3366"></i>
             <span>Favorites</span>
             <span class="vip-tab-count" id="vip-count-favorites">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="watchlater" role="tab">
-            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp" class="tab-3d-icon" alt="Watch Later">
+            <i class="fa-regular fa-clock tab-icon" style="color:#00b4d8"></i>
             <span>Watch Later</span>
             <span class="vip-tab-count" id="vip-count-watchlater">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="continue" role="tab">
-            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" class="tab-3d-icon" alt="Continue">
+            <i class="fa-solid fa-play tab-icon" style="color:var(--accent)"></i>
             <span>Continue Watching</span>
             <span class="vip-tab-count" id="vip-count-continue">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="history" role="tab">
-            <i class="fa-solid fa-clock-rotate-left tab-history-icon"></i>
+            <i class="fa-solid fa-clock-rotate-left tab-history-icon tab-icon" style="color:#f39c12"></i>
             <span>History</span>
             <span class="vip-tab-count" id="vip-count-history">0</span>
           </button>
@@ -2786,6 +2786,7 @@ function openUserListModal(initialTab = 'favorites') {
     const bodyEl = document.getElementById('user-list-modal-body');
     const toolbarInfo = document.getElementById('vip-hub-toolbar-info');
     const clearBtn = document.getElementById('vip-hub-clear-btn');
+    const toolbarEl = modal.querySelector('.vip-hub-toolbar');
     if (!bodyEl) return;
 
     let items = [];
@@ -2794,51 +2795,64 @@ function openUserListModal(initialTab = 'favorites') {
 
     if (tab === 'favorites') {
       items = window.FilmSubUser.Favorites.getAll();
-      toolbarInfo.innerHTML = `
-        <div class="vip-hub-count-pill">
-          <i class="fa-solid fa-heart" style="color:#ff3366"></i>
-          <span>${items.length === 1 ? '1 Favorite Title' : `${items.length} Favorite Titles`}</span>
-        </div>`;
+      if (toolbarInfo) {
+        toolbarInfo.innerHTML = items.length > 0 ? `
+          <div class="vip-hub-count-pill">
+            <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+            <span>${items.length === 1 ? '1 Favorite Title' : `${items.length} Favorite Titles`}</span>
+          </div>` : '';
+      }
       emptyTitle = 'කැමතිම චිත්‍රපට තවම නැත';
       emptySub = 'චිත්‍රපටයක ඇති ❤️ Heart අයිකනය ඔබා මෙහි සුරැකීමට හැකිය.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+      if (toolbarEl) toolbarEl.style.display = items.length > 0 ? 'flex' : 'none';
     } else if (tab === 'watchlater') {
       items = window.FilmSubUser.WatchLater.getAll();
-      toolbarInfo.innerHTML = `
-        <div class="vip-hub-count-pill">
-          <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
-          <span>${items.length === 1 ? '1 Title Saved for Later' : `${items.length} Titles Saved for Later`}</span>
-        </div>`;
+      if (toolbarInfo) {
+        toolbarInfo.innerHTML = items.length > 0 ? `
+          <div class="vip-hub-count-pill">
+            <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+            <span>${items.length === 1 ? '1 Title Saved for Later' : `${items.length} Titles Saved for Later`}</span>
+          </div>` : '';
+      }
       emptyTitle = 'පසුව නැරඹීමට එක් කළ චිත්‍රපට තවම නැත';
       emptySub = 'චිත්‍රපටයක ඇති ⏱️ Watch Later ඔබා මෙහි සුරකින්න.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+      if (toolbarEl) toolbarEl.style.display = items.length > 0 ? 'flex' : 'none';
     } else if (tab === 'continue') {
       items = window.FilmSubUser.ContinueWatching.getAll();
-      toolbarInfo.innerHTML = `
-        <div class="vip-hub-count-pill">
-          <i class="fa-solid fa-play" style="color:var(--accent)"></i>
-          <span>${items.length === 1 ? '1 Title In-Progress' : `${items.length} Titles In-Progress`}</span>
-        </div>`;
+      if (toolbarInfo) {
+        toolbarInfo.innerHTML = items.length > 0 ? `
+          <div class="vip-hub-count-pill">
+            <i class="fa-solid fa-play" style="color:var(--accent)"></i>
+            <span>${items.length === 1 ? '1 Title In-Progress' : `${items.length} Titles In-Progress`}</span>
+          </div>` : '';
+      }
       emptyTitle = 'නැවතු තැනින් නැවත බලන්න තවම චිත්‍රපට නැත';
       emptySub = 'ඔබ නරඹමින් සිටි චිත්‍රපට නැවතු වෙලාවේ සිටම මෙතැනින් Play කළ හැක.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+      if (toolbarEl) toolbarEl.style.display = items.length > 0 ? 'flex' : 'none';
     } else if (tab === 'history') {
       items = window.FilmSubUser.WatchHistory.getAll();
-      toolbarInfo.innerHTML = `
-        <div class="vip-hub-count-pill">
-          <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
-          <span>${items.length === 1 ? '1 Title in History' : `${items.length} Titles in History`}</span>
-        </div>`;
+      if (toolbarInfo) {
+        toolbarInfo.innerHTML = items.length > 0 ? `
+          <div class="vip-hub-count-pill">
+            <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+            <span>${items.length === 1 ? '1 Title in History' : `${items.length} Titles in History`}</span>
+          </div>` : '';
+      }
       emptyTitle = 'Watch History හිස්ව ඇත';
       emptySub = 'ඔබ නරඹන සියලුම චිත්‍රපට වෙලාවත් සමග මෙහි සටහන් වේ.';
       if (clearBtn) clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+      if (toolbarEl) toolbarEl.style.display = items.length > 0 ? 'flex' : 'none';
     }
 
     if (!items || items.length === 0) {
       bodyEl.innerHTML = `
         <div class="vip-hub-empty-state">
           <div class="vip-empty-icon-box">
-            <img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" alt="Empty" class="vip-empty-3d-img">
+            <div class="vip-empty-glow-ring"></div>
+            <i class="fa-solid fa-clapperboard vip-empty-cinema-icon"></i>
           </div>
           <h4 class="vip-empty-title">${emptyTitle}</h4>
           <p class="vip-empty-sub">${emptySub}</p>
@@ -2932,9 +2946,7 @@ const VIP_PRESET_AVATARS = [
   { id: 'rocket', name: 'Cosmic Voyager', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp' },
   { id: 'party', name: 'Party Master', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp' },
   { id: 'heart', name: 'Movie Lover', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp' },
-  { id: 'mindblown', name: 'Plot Wizard', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp' },
-  { id: 'shock', name: 'Cinema Shock', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp' },
-  { id: 'laugh', name: 'Comedy Fan', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp' }
+  { id: 'mindblown', name: 'Plot Wizard', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp' }
 ];
 
 function applyNewAvatar(avatarUrl) {
@@ -3315,6 +3327,7 @@ function initGlobalCinemaDrawer() {
 
   window.openCinemaDrawer = openDrawer;
   window.openUserListModal = openUserListModal;
+  window.openUserProfileModal = openUserListModal;
   window.openAvatarPickerModal = openAvatarPickerModal;
 
   const toggleBtns = document.querySelectorAll('#header-sidebar-toggle-btn, .header-sidebar-toggle-btn');
@@ -3798,3 +3811,24 @@ window.FilmZilla = window.FilmSub = {
   trackView,
   SITE_CONFIG,
 };
+
+// ---- Deep-Linked Modal Trigger via Hash (#vip-hub, #favorites, #watchlist) ----
+function handleVipHubDeepLink() {
+  if (typeof window !== 'undefined' && window.location && window.location.hash) {
+    const hash = window.location.hash.toLowerCase();
+    if (hash === '#vip-hub' || hash === '#favorites' || hash === '#watchlist') {
+      const tab = hash === '#watchlist' ? 'watchlater' : (hash === '#favorites' ? 'favorites' : 'favorites');
+      if (typeof openUserListModal === 'function') {
+        openUserListModal(tab);
+      }
+    }
+  }
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', handleVipHubDeepLink);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', handleVipHubDeepLink);
+  } else {
+    handleVipHubDeepLink();
+  }
+}

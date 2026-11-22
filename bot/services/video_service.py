@@ -11,6 +11,7 @@ Provides:
 
 import asyncio
 import collections
+import inspect
 import logging
 import os
 import re
@@ -107,13 +108,10 @@ class GPUDevicePool:
         # Multi-quality (1080p, 720p, 480p) simultaneous hardware encoding:
         # Guarantee all 3 qualities (1080p, 720p, 480p) encode simultaneously in parallel!
         if len(devs) >= 2:
-            # Dual GPU (e.g. Kaggle Dual T4): 1 dedicated slot per physical GPU (cuda:0, cuda:1)
-            # Parallel 2-stream encoding without VRAM or memory exhaustion
-            return [devs[0], devs[1]]
+            return [devs[0], devs[1], devs[0], devs[1]]
         elif len(devs) == 1:
-            # Single GPU (e.g. Kaggle 1x T4 / Colab): 1 dedicated NVENC slot
-            # Maximizes single-stream NVENC throughput (600-800+ FPS) and prevents Kaggle 13GB RAM OOM
-            return [devs[0]]
+            d = devs[0]
+            return [d, d, d]
         return list(devs)
 
     async def _ensure_queue(self):
@@ -135,7 +133,7 @@ class GPUDevicePool:
         return self._queue.empty()
 
     @asynccontextmanager
-    async def acquire(self, timeout: Optional[float] = None):
+    async def acquire(self, timeout: Optional[float] = 3.0):
         await self._ensure_queue()
         if timeout is not None:
             gpu_id = await asyncio.wait_for(self._queue.get(), timeout=timeout)
@@ -1146,7 +1144,7 @@ async def compress_video(
     out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
     os.makedirs(out_dir, exist_ok=True)
 
-    in_w, in_h = get_video_resolution(input_path, ffmpeg_bin)
+    in_w, in_h = await asyncio.to_thread(get_video_resolution, input_path, ffmpeg_bin)
     if in_w <= 0:
         in_w = 1280
     if in_h <= 0:
@@ -1154,7 +1152,7 @@ async def compress_video(
 
     intro_video = None
     if prepend_intro:
-        intro_video = get_or_create_filmzilla_intro(in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
+        intro_video = await asyncio.to_thread(get_or_create_filmzilla_intro, in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
         if intro_video and not os.path.exists(intro_video):
             intro_video = None
 
@@ -1189,7 +1187,7 @@ async def compress_video(
                 pass
 
     requested_output_path = output_path
-    raw_duration = get_video_duration(input_path, ffmpeg_bin)
+    raw_duration = await asyncio.to_thread(get_video_duration, input_path, ffmpeg_bin)
     duration = max(1.0, raw_duration - trim_start) if trim_start > 0 else raw_duration
     if intro_video:
         duration += 5.0
@@ -1216,7 +1214,7 @@ async def compress_video(
     maxrate_k = int(v_bitrate_k * 1.06)
     bufsize_k = int(v_bitrate_k * 1.5)
 
-    hw_enc = detect_hw_encoder(ffmpeg_bin)
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
     if is_hardsub:
         log.info("[VideoService] Video is already hardsubbed (is_hardsub=True). Skipping subtitle burn/mux.")
         sub_path = None
@@ -1283,7 +1281,7 @@ async def compress_video(
         badge_input_idx = next_input_idx
         next_input_idx += 1
 
-    has_audio = bool(get_audio_codec(input_path, ffmpeg_bin))
+    has_audio = bool(await asyncio.to_thread(get_audio_codec, input_path, ffmpeg_bin))
     badge_w = max(100, min(220, int(in_w * 0.115)))
     ox = 0
     bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
@@ -1393,7 +1391,7 @@ async def compress_video(
             cmd.extend(["-an"])
     else:
         if has_audio:
-            in_audio_codec = get_audio_codec(input_path, ffmpeg_bin)
+            in_audio_codec = await asyncio.to_thread(get_audio_codec, input_path, ffmpeg_bin)
             if in_audio_codec and is_web_compatible_audio(in_audio_codec):
                 cmd.extend(["-c:a", "copy"])
             else:
@@ -1594,8 +1592,8 @@ async def compress_video(
                     cor_proc = await asyncio.create_subprocess_exec(
                         *cor_cmd,
                         cwd=out_dir,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
+                        stdout=asyncio.subprocess.DEVNULL,
+                        stderr=asyncio.subprocess.DEVNULL,
                     )
                     await asyncio.wait_for(cor_proc.wait(), timeout=1800.0)
                     if cor_proc.returncode == 0 and os.path.exists(output_path) and 0 < os.path.getsize(output_path) <= TELEGRAM_MTPROTO_MAX_BYTES:
@@ -2129,7 +2127,7 @@ async def trim_video_start(
 
     # Check input duration first: do NOT trim if the video is too short (< 30 seconds)
     try:
-        dur = get_video_duration(input_path, ffmpeg_bin)
+        dur = await asyncio.to_thread(get_video_duration, input_path, ffmpeg_bin)
         if dur > 0 and dur <= (start_seconds + 5.0):
             log.warning("[VideoService] Video duration (%.1fs) too short to trim %.1fs. Skipping trim.", dur, start_seconds)
             return False
@@ -2443,7 +2441,7 @@ async def prepend_filmzilla_intro(
     if not exe or not os.path.exists(input_path):
         return False
 
-    raw_dur = get_video_duration(input_path, exe)
+    raw_dur = await asyncio.to_thread(get_video_duration, input_path, exe)
     if raw_dur <= 0:
         log.warning("[VideoService] Input video has invalid duration (%.1fs). Skipping intro prepend.", raw_dur)
         return False
@@ -2451,7 +2449,7 @@ async def prepend_filmzilla_intro(
     out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
     os.makedirs(out_dir, exist_ok=True)
 
-    in_w, in_h = get_video_resolution(input_path, exe)
+    in_w, in_h = await asyncio.to_thread(get_video_resolution, input_path, exe)
     if in_w <= 0 or in_h <= 0:
         in_w, in_h = 1280, 720
     if in_w % 2 != 0:
@@ -2459,13 +2457,13 @@ async def prepend_filmzilla_intro(
     if in_h % 2 != 0:
         in_h += 1
 
-    intro_video = get_or_create_filmzilla_intro(in_w, in_h, fps=30, duration=intro_duration, ffmpeg_bin=exe)
+    intro_video = await asyncio.to_thread(get_or_create_filmzilla_intro, in_w, in_h, fps=30, duration=intro_duration, ffmpeg_bin=exe)
     if not intro_video or not os.path.exists(intro_video):
         log.warning("[VideoService] Could not obtain FilmZilla intro video. Skipping prepend.")
         return False
 
-    has_audio = bool(get_audio_codec(input_path, exe))
-    hw_enc = detect_hw_encoder(exe)
+    has_audio = bool(await asyncio.to_thread(get_audio_codec, input_path, exe))
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, exe)
 
     if hw_enc == "h264_nvenc":
         nvenc_preset = "p1"
@@ -2576,13 +2574,17 @@ async def prepend_filmzilla_intro(
             last_logged_pct = 0.0
 
             while True:
-                if hasattr(proc.stderr, "read"):
+                if inspect.iscoroutinefunction(getattr(proc.stderr, "read", None)):
                     line = await proc.stderr.read(4096)
                 elif hasattr(proc.stderr, "readline"):
-                    line = await proc.stderr.readline()
+                    res = proc.stderr.readline()
+                    line = await res if inspect.isawaitable(res) else res
+                elif hasattr(proc.stderr, "read"):
+                    res = proc.stderr.read(4096)
+                    line = await res if inspect.isawaitable(res) else res
                 else:
                     break
-                if not line:
+                if not line or not isinstance(line, (bytes, bytearray)):
                     break
                 line_str = line.decode("utf-8", errors="replace")
                 m_time = time_pattern.search(line_str)
@@ -2600,13 +2602,13 @@ async def prepend_filmzilla_intro(
                         if progress_callback:
                             try:
                                 if asyncio.iscoroutinefunction(progress_callback):
-                                    asyncio.create_task(progress_callback(pct, f"{pct:.1f}%"))
+                                    await progress_callback(pct, f"{pct:.1f}%")
                                 else:
                                     progress_callback(pct, f"{pct:.1f}%")
                             except Exception:
                                 pass
 
-            await proc.wait()
+            await asyncio.wait_for(proc.wait(), timeout=1800.0)
         finally:
             if gpu_slot_ctx:
                 try:
@@ -2615,6 +2617,14 @@ async def prepend_filmzilla_intro(
                     pass
 
         if proc.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
+            if progress_callback and last_logged_pct < 100.0:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(100.0, "100.0%")
+                    else:
+                        progress_callback(100.0, "100.0%")
+                except Exception:
+                    pass
             if is_inplace:
                 shutil.move(temp_target, output_path)
             log.info("[VideoService] Prepend FilmZilla intro success: %s (size=%d bytes)", output_path, os.path.getsize(output_path))
@@ -2649,7 +2659,7 @@ async def prepend_filmzilla_intro(
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
-            await proc_cpu.wait()
+            await asyncio.wait_for(proc_cpu.wait(), timeout=1800.0)
             if proc_cpu.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
                 if is_inplace:
                     shutil.move(temp_target, output_path)
@@ -2663,12 +2673,13 @@ async def prepend_filmzilla_intro(
                 pass
         return False
     except asyncio.CancelledError:
-        if proc and proc.returncode is None:
-            try:
-                proc.terminate()
-                proc.kill()
-            except Exception:
-                pass
+        for p_to_kill in (proc, proc_cpu if 'proc_cpu' in locals() else None):
+            if p_to_kill and p_to_kill.returncode is None:
+                try:
+                    p_to_kill.terminate()
+                    p_to_kill.kill()
+                except Exception:
+                    pass
         for t_p in (temp_target, output_path if not is_inplace else None):
             if t_p and os.path.exists(t_p):
                 try:
@@ -2942,7 +2953,7 @@ async def burn_subtitles_to_video(
         sub_to_use = shaped_ass if (shaped_ass and os.path.exists(shaped_ass)) else clean_srt
 
         burn_vf = build_subtitles_burn_filter(sub_to_use)
-        hw_enc = detect_hw_encoder(ffmpeg_bin)
+        hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
 
         cmd = [
             ffmpeg_bin,
@@ -3059,8 +3070,8 @@ async def cover_cinesubz_watermark(
             badge_path = default_badge
 
     in_size = os.path.getsize(video_path) if os.path.exists(video_path) else 0
-    duration = get_video_duration(video_path, ffmpeg_bin)
-    in_w, in_h = get_video_resolution(video_path, ffmpeg_bin)
+    duration = await asyncio.to_thread(get_video_duration, video_path, ffmpeg_bin)
+    in_w, in_h = await asyncio.to_thread(get_video_resolution, video_path, ffmpeg_bin)
     if in_w <= 0:
         in_w = 1280
     if in_h <= 0:
@@ -3081,7 +3092,7 @@ async def cover_cinesubz_watermark(
     max_kbps = int(target_kbps * 1.04)
     buf_kbps = int(target_kbps * 1.2)
 
-    hw_enc = detect_hw_encoder(ffmpeg_bin)
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
     if hw_enc == "h264_nvenc":
         nvenc_preset = "p1"
         enc_opts = [
@@ -3116,11 +3127,11 @@ async def cover_cinesubz_watermark(
 
     intro_video = None
     if prepend_intro:
-        intro_video = get_or_create_filmzilla_intro(in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
+        intro_video = await asyncio.to_thread(get_or_create_filmzilla_intro, in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
         if intro_video and not os.path.exists(intro_video):
             intro_video = None
 
-    has_audio = bool(get_audio_codec(video_path, ffmpeg_bin))
+    has_audio = bool(await asyncio.to_thread(get_audio_codec, video_path, ffmpeg_bin))
     badge_w = max(100, min(220, int(in_w * 0.115)))
     ox = 0
 
@@ -3355,7 +3366,7 @@ async def cover_cinesubz_watermark(
                     raise
             else:
                 try:
-                    _, stderr_bytes = await proc.communicate()
+                    _, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=1800.0)
                 except asyncio.CancelledError:
                     if proc and proc.returncode is None:
                         try:
@@ -3450,7 +3461,15 @@ async def cover_cinesubz_watermark(
                         os.path.abspath(output_path),
                     ]
                 cpu_proc = await asyncio.create_subprocess_exec(*cpu_cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                await cpu_proc.wait()
+                try:
+                    await asyncio.wait_for(cpu_proc.wait(), timeout=1800.0)
+                except asyncio.CancelledError:
+                    if cpu_proc and cpu_proc.returncode is None:
+                        try:
+                            cpu_proc.kill()
+                        except Exception:
+                            pass
+                    raise
                 if cpu_proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
                     log.info("[VideoService] Watermark cover succeeded via CPU retry: %s", output_path)
                     return True
@@ -3531,7 +3550,7 @@ async def generate_multi_quality_variants_ram(
             pass
 
     os.makedirs(abs_out_dir, exist_ok=True)
-    duration = get_video_duration(input_path, ffmpeg_bin)
+    duration = await asyncio.to_thread(get_video_duration, input_path, ffmpeg_bin)
     input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
     effective_duration = duration if duration > 0 else max(1200.0, (input_size / (1024 * 1024)) * 2.5)
     min_valid_size = min(256 * 1024, max(1024, int(input_size * 0.05)))
@@ -3569,10 +3588,10 @@ async def generate_multi_quality_variants_ram(
         return {}
 
     valid_outputs: dict[str, str] = {}
-    src_w, src_h = get_video_resolution(input_path, ffmpeg_bin)
+    src_w, src_h = await asyncio.to_thread(get_video_resolution, input_path, ffmpeg_bin)
 
     # Enforce AAC audio transcode unless source is confirmed already to be AAC (prevents MP4 mux errors with DTS/EAC3)
-    in_audio_codec = get_audio_codec(input_path, ffmpeg_bin)
+    in_audio_codec = await asyncio.to_thread(get_audio_codec, input_path, ffmpeg_bin)
     needs_aac_transcode = bool(in_audio_codec != "aac")
     if needs_aac_transcode:
         log.info("[VideoService] Audio codec is '%s' -> transcoding to AAC for universal MP4 browser playback", in_audio_codec or "unknown")
@@ -3681,7 +3700,7 @@ async def generate_multi_quality_variants_ram(
     if not target_q_list:
         return valid_outputs
 
-    hw_enc = detect_hw_encoder(ffmpeg_bin)
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
     num_q = len(target_q_list)
 
     def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
@@ -3867,6 +3886,15 @@ async def generate_multi_quality_variants_ram(
                         proc.kill()
                     except Exception:
                         pass
+            except asyncio.CancelledError:
+                log.warning("[VideoService] Multi-quality FFmpeg cancelled — terminating process")
+                if proc and proc.returncode is None:
+                    try:
+                        proc.terminate()
+                        proc.kill()
+                    except Exception:
+                        pass
+                raise
 
             if proc and proc.returncode == 0:
                 for q, p in out_paths.items():
@@ -4039,6 +4067,14 @@ async def generate_multi_quality_variants_ram(
                             os.remove(fallback_out)
                         except Exception:
                             pass
+            except asyncio.CancelledError:
+                for p_obj in (fb_proc if 'fb_proc' in locals() else None, p_simple if 'p_simple' in locals() else None):
+                    if p_obj and p_obj.returncode is None:
+                        try:
+                            p_obj.kill()
+                        except Exception:
+                            pass
+                raise
             except Exception as fb_err:
                 log.warning("[VideoService] Fallback encode for %s failed: %s", q, fb_err)
                 if os.path.exists(fallback_out) and q not in valid_outputs:

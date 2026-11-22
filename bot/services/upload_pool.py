@@ -521,12 +521,12 @@ class TelegramUploadPool:
         channel_username = None
         if self._main_client and getattr(self._main_client, "is_connected", False):
             try:
-                chat = await self._main_client.get_chat(target_channel)
+                chat = await asyncio.wait_for(self._main_client.get_chat(target_channel), timeout=8.0)
                 channel_username = getattr(chat, "username", None)
                 invite_link = getattr(chat, "invite_link", None)
                 if not invite_link and not channel_username:
                     try:
-                        exported = await self._main_client.export_chat_invite_link(target_channel)
+                        exported = await asyncio.wait_for(self._main_client.export_chat_invite_link(target_channel), timeout=8.0)
                         invite_link = exported
                     except Exception as exp_err:
                         log.debug("[UploadPool] Channel export invite link note: %s", exp_err)
@@ -538,7 +538,8 @@ class TelegramUploadPool:
             log.info("[UploadPool] No username or invite link available for auto-joining sessions to %s", target_channel)
             return {"joined": 0, "promoted": 0, "error": "Bot cannot access channel or export invite link"}
 
-        log.info("[UploadPool] Auto-joining %d sessions to channel %s (dest=%s)...", len(self.clients), target_channel, join_dest)
+        target_clients = self.clients[:42]
+        log.info("[UploadPool] Auto-joining %d (capped at 42) sessions to channel %s (dest=%s)...", len(target_clients), target_channel, join_dest)
         join_sem = asyncio.Semaphore(5)
         joined_count = 0
         promoted_count = 0
@@ -549,29 +550,47 @@ class TelegramUploadPool:
             if not getattr(c, "is_connected", False):
                 return
             async with join_sem:
+                is_member = False
                 try:
-                    await c.join_chat(join_dest)
-                    joined_count += 1
-                except Exception as j_err:
-                    err_s = str(j_err).lower()
-                    if "already" in err_s or "user_already_participant" in err_s:
+                    # Pre-check if session is already a participant/admin in target_channel
+                    c_chat = await asyncio.wait_for(c.get_chat(target_channel), timeout=2.0)
+                    if c_chat:
+                        is_member = True
                         joined_count += 1
-                    else:
-                        log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
+                except Exception:
+                    is_member = False
 
-                # Attempt to promote userbot to admin with can_post_messages if main bot is admin (up to 40 sessions)
+                if not is_member:
+                    try:
+                        await asyncio.wait_for(c.join_chat(join_dest), timeout=5.0)
+                        joined_count += 1
+                    except asyncio.CancelledError:
+                        return
+                    except asyncio.TimeoutError:
+                        log.warning("[UploadPool] Session %s join_chat timed out after 5s on %s", getattr(c, "name", "client"), target_channel)
+                    except Exception as j_err:
+                        err_s = str(j_err).lower()
+                        if "already" in err_s or "user_already_participant" in err_s:
+                            joined_count += 1
+                        else:
+                            log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
+
+                # Attempt to promote userbot to admin with can_post_messages if main bot is admin (up to 42 sessions)
                 if not limit_reached and promoted_count < 42 and self._main_client and getattr(self._main_client, "is_connected", False):
                     try:
                         u_me = getattr(c, "me", None)
                         if u_me and getattr(u_me, "id", None):
                             from pyrogram.types import ChatPrivileges
-                            await self._main_client.promote_chat_member(
-                                chat_id=target_channel,
-                                user_id=u_me.id,
-                                privileges=ChatPrivileges(
-                                    can_post_messages=True,
-                                    can_edit_messages=True,
-                                )
+                            await asyncio.wait_for(
+                                self._main_client.promote_chat_member(
+                                    chat_id=target_channel,
+                                    user_id=u_me.id,
+                                    privileges=ChatPrivileges(
+                                        can_post_messages=True,
+                                        can_edit_messages=True,
+                                    )
+                                ),
+                                timeout=8.0,
                             )
                             promoted_count += 1
                             log.info("[UploadPool] Session %s (user %s) promoted to admin in %s", getattr(c, "name", "session"), u_me.id, target_channel)
@@ -586,7 +605,23 @@ class TelegramUploadPool:
                         else:
                             log.debug("[UploadPool] Session %s promote note: %s", getattr(c, "name", "client"), prom_err)
 
-        await asyncio.gather(*[_join_one(c) for c in self.clients], return_exceptions=True)
+        t_join_start = time.time()
+        gather_join = asyncio.gather(*[_join_one(c) for c in target_clients], return_exceptions=True)
+        try:
+            await asyncio.wait_for(
+                gather_join,
+                timeout=6.5,
+            )
+        except asyncio.TimeoutError:
+            log.warning("[UploadPool] Batch join_channel timed out after 6.5s")
+        except (asyncio.CancelledError, GeneratorExit):
+            if not gather_join.done():
+                gather_join.cancel()
+            try:
+                await gather_join
+            except (asyncio.CancelledError, Exception):
+                pass
+            raise
         self._channel_unwritable.discard(target_channel)
         try:
             self._channel_unwritable.discard(int(target_channel))
@@ -594,7 +629,19 @@ class TelegramUploadPool:
             pass
 
         # Immediately refresh and cache verified admin sessions for this channel
-        admin_clients = await self.get_admin_sessions(target_channel, refresh=True)
+        elapsed_so_far = time.time() - t_join_start
+        admin_timeout = max(1.0, min(2.5, 9.2 - elapsed_so_far))
+        try:
+            admin_clients = await asyncio.wait_for(
+                self.get_admin_sessions(target_channel, refresh=True),
+                timeout=admin_timeout,
+            )
+        except asyncio.TimeoutError:
+            log.warning("[UploadPool] get_admin_sessions timed out after %.1fs in join_channel", admin_timeout)
+            admin_clients = self._admin_sessions.get(target_channel, [])
+        except Exception as e:
+            log.warning("[UploadPool] get_admin_sessions failed in join_channel: %s", e)
+            admin_clients = self._admin_sessions.get(target_channel, [])
         log.info(
             "[UploadPool] %d sessions joined, %d promoted, %d verified admin sessions in channel %s.",
             joined_count, promoted_count, len(admin_clients), target_channel
@@ -667,9 +714,11 @@ class TelegramUploadPool:
                 if token:
                     api_url = f"https://api.telegram.org/bot{token}/getChatAdministrators?chat_id={target_channel}"
                     req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
-                    with urllib.request.urlopen(req, timeout=8) as r:
-                        res = json.loads(r.read().decode())
-                        if res.get("ok"):
+                    def _fetch_admins_http():
+                        with urllib.request.urlopen(req, timeout=8) as r:
+                            return json.loads(r.read().decode())
+                    res = await asyncio.to_thread(_fetch_admins_http)
+                    if res.get("ok"):
                             for a in res.get("result", []):
                                 u = a.get("user", {})
                                 if not u or u.get("is_bot", False):
@@ -699,17 +748,37 @@ class TelegramUploadPool:
                     return
                 async with sem:
                     try:
-                        member = await c.get_chat_member(target_channel, "me")
+                        member = await asyncio.wait_for(
+                            c.get_chat_member(target_channel, "me"),
+                            timeout=2.5,
+                        )
                         status_raw = getattr(member, "status", None)
                         status_str = getattr(status_raw, "value", str(status_raw)).lower()
                         privs = getattr(member, "privileges", None)
                         can_post = getattr(privs, "can_post_messages", False) if privs else False
                         if ("admin" in status_str and can_post) or "owner" in status_str or "creator" in status_str:
                             admin_clients.append(c)
+                    except asyncio.CancelledError:
+                        return
                     except Exception as c_err:
                         log.debug("[UploadPool] Session %s admin check in %s: %s", getattr(c, "name", "client"), target_channel, c_err)
 
-            await asyncio.gather(*[_check_c(c) for c in self.clients], return_exceptions=True)
+            gather_check = asyncio.gather(*[_check_c(c) for c in self.clients], return_exceptions=True)
+            try:
+                await asyncio.wait_for(
+                    gather_check,
+                    timeout=3.5,
+                )
+            except asyncio.TimeoutError:
+                log.warning("[UploadPool] Fallback get_chat_member check timed out after 3.5s")
+            except (asyncio.CancelledError, GeneratorExit):
+                if not gather_check.done():
+                    gather_check.cancel()
+                try:
+                    await gather_check
+                except (asyncio.CancelledError, Exception):
+                    pass
+                raise
 
         # 3. Ensure all admin sessions have the channel peer resolved in their local SQLite peers table
         if admin_clients:
@@ -718,23 +787,25 @@ class TelegramUploadPool:
             async def _warmup_peer(c: Client):
                 async with warmup_sem:
                     try:
-                        await c.get_chat(target_channel)
+                        await asyncio.wait_for(c.get_chat(target_channel), timeout=5.0)
                         return
                     except Exception:
                         pass
                     try:
                         if channel_username:
-                            await c.get_chat(channel_username)
+                            await asyncio.wait_for(c.get_chat(channel_username), timeout=5.0)
                             return
                         if invite_link:
                             try:
-                                await c.join_chat(invite_link)
+                                await asyncio.wait_for(c.join_chat(invite_link), timeout=5.0)
                                 return
                             except Exception:
                                 pass
-                        async for d in c.get_dialogs(limit=50):
-                            if getattr(getattr(d, "chat", None), "id", None) == t_key:
-                                break
+                        async def _scan_dialogs():
+                            async for d in c.get_dialogs(limit=50):
+                                if getattr(getattr(d, "chat", None), "id", None) == t_key:
+                                    break
+                        await asyncio.wait_for(_scan_dialogs(), timeout=5.0)
                     except Exception:
                         pass
 
@@ -866,7 +937,15 @@ class TelegramUploadPool:
 
         # For channels, discover or refresh admin sessions
         if is_channel and self.clients:
-            admin_clients = await self.get_admin_sessions(target_chat)
+            try:
+                admin_clients = await asyncio.wait_for(self.get_admin_sessions(target_chat), timeout=5.0)
+            except Exception as e:
+                log.warning("[UploadPool] get_admin_sessions timed out or error (%s), using cached fallback", e)
+                try:
+                    t_k = int(target_chat)
+                except Exception:
+                    t_k = target_chat
+                admin_clients = [c for c in self._admin_sessions.get(t_k, []) if getattr(c, "is_connected", False)]
             if not admin_clients:
                 log.info(
                     "[UploadPool] No userbot sessions have admin rights in channel %s — uploading [%s] via main bot client '%s'",

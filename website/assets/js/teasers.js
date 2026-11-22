@@ -517,6 +517,32 @@
 
     card.dataset.paused = 'false';
 
+    // Update cinematic desktop ambient backdrop blur (always matches active card)
+    const ambientBg = document.getElementById('reels-ambient-image');
+    if (ambientBg) {
+      let bgImg = '';
+      if (card) {
+        const bgBlurEl = card.querySelector('.teaser-backdrop-blur');
+        if (bgBlurEl && bgBlurEl.style.backgroundImage) {
+          bgImg = bgBlurEl.style.backgroundImage;
+        } else if (card.id || (card.dataset && card.dataset.movieId)) {
+          const matched = (typeof allTeasers !== 'undefined' && Array.isArray(allTeasers))
+            ? allTeasers.find(t => t.id === card.id || t.movie_id === card.dataset.movieId)
+            : null;
+          if (matched && (matched.backdrop || matched.poster)) {
+            bgImg = `url("${matched.backdrop || matched.poster}")`;
+          }
+        }
+      }
+      if (!bgImg && typeof allTeasers !== 'undefined' && allTeasers && allTeasers[idx]) {
+        const fallback = allTeasers[idx].backdrop || allTeasers[idx].poster;
+        if (fallback) bgImg = `url("${fallback}")`;
+      }
+      if (bgImg) {
+        ambientBg.style.backgroundImage = bgImg.startsWith('url(') ? bgImg : `url("${bgImg}")`;
+      }
+    }
+
     if (progressInterval) {
       clearInterval(progressInterval);
       progressInterval = null;

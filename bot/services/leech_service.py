@@ -496,6 +496,23 @@ def _get_encode_upload_lock() -> asyncio.Lock:
     return _encode_upload_lock
 
 
+async def _safe_edit_status(msg: Any, text: str, parse_mode: Any = None, reply_markup: Any = None, timeout: float = 5.0) -> bool:
+    """Safely edit a Telegram status message with bounded timeout and suppressed errors."""
+    if not msg:
+        return False
+    try:
+        kwargs = {}
+        if parse_mode is not None:
+            kwargs["parse_mode"] = parse_mode
+        if reply_markup is not None:
+            kwargs["reply_markup"] = reply_markup
+        await asyncio.wait_for(msg.edit_text(text, **kwargs), timeout=timeout)
+        return True
+    except Exception as exc:
+        log.debug("[LeechService] Safe status edit suppressed: %s", exc)
+        return False
+
+
 async def run_auto_leech(
     client: Client,
     status_msg: Message,
@@ -664,7 +681,8 @@ async def _execute_leech(
             f"• Priority 4: High-Seed Torrents (Torrentio/YTS/EZTV)"
         )
 
-    await status_msg.edit_text(
+    await _safe_edit_status(
+        status_msg,
         step1_text,
         parse_mode=ParseMode.HTML,
         reply_markup=kb_cancel,
@@ -677,7 +695,11 @@ async def _execute_leech(
             if reply_media.get("type") == "torrent":
                 temp_dir = temp_dir or tempfile.mkdtemp(prefix="leech_")
                 tor_dest = os.path.join(temp_dir, reply_media.get("file_name", "movie.torrent"))
-                local_tor = await client.download_media(message=reply_media["file_id"], file_name=tor_dest)
+                try:
+                    local_tor = await asyncio.wait_for(client.download_media(message=reply_media["file_id"], file_name=tor_dest), timeout=120.0)
+                except Exception as dl_err:
+                    log.warning("[LeechService] Torrent download note: %s", dl_err)
+                    local_tor = None
                 if local_tor and os.path.exists(local_tor):
                     candidates.append(
                         LeechCandidate(
@@ -842,15 +864,13 @@ async def _execute_leech(
         if not candidates and is_strict_cinesubz:
             log.info("[LeechService] Strict CineSubz mode active: No CineSubz or direct streaming links found for '%s'. Skipping external torrents as requested.", display_title)
             task_tracker.tracker.complete_task(user_id)
-            try:
-                await status_msg.edit_text(
-                    f"⏭️ <b>CineSubz සෘජු Link හමු නොවූ බැවින් skip කරන ලදී.</b>\n\n"
-                    f"🎬 <b>{display_title}</b>\n"
-                    f"<i>(Strict CineSubz Mode: බාහිර Torrent වලින් ලබා නොගෙන මඟහරින ලදී)</i>",
-                    parse_mode=ParseMode.HTML,
-                )
-            except Exception:
-                pass
+            await _safe_edit_status(
+                status_msg,
+                f"⏭️ <b>CineSubz සෘජු Link හමු නොවූ බැවින් skip කරන ලදී.</b>\n\n"
+                f"🎬 <b>{display_title}</b>\n"
+                f"<i>(Strict CineSubz Mode: බාහිර Torrent වලින් ලබා නොගෙන මඟහරින ලදී)</i>",
+                parse_mode=ParseMode.HTML,
+            )
             return
 
         is_series_mode = bool(is_series or season is not None or episode is not None)
@@ -880,7 +900,8 @@ async def _execute_leech(
 
         if not candidates:
             task_tracker.tracker.fail_task(user_id, "No download candidates found across any method.")
-            await status_msg.edit_text(
+            await _safe_edit_status(
+                status_msg,
                 f"❌ <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'} හමු නොවීය (Not Found)!</b>\n\n"
                 f"{media_icon} <b>{display_title}</b> සඳහා බාගත කිරීමේ Link එකක් හමු නොවීය.\n\n"
                 f"කරුණාකර නම හෝ Season/Episode නිවැරදිදැයි පරීක්ෂා කරන්න (උදා: <code>/leech {title} S01E01</code>), නැතහොත් Direct Magnet URL එකක් ලබා දෙන්න.",
@@ -988,10 +1009,7 @@ async def _execute_leech(
                 f"📦 <b>ප්‍රමාණය:</b> {candidate.size}\n\n"
                 f"⏳ <b>බාගත කිරීම ආරම්භ කරමින් පවතී (Connecting to peers/server)...</b>"
             )
-            try:
-                await status_msg.edit_text(found_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-            except Exception:
-                pass
+            await _safe_edit_status(status_msg, found_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
 
             cloud_service_name = "Cloud"
             last_edit_time = 0.0
@@ -1017,10 +1035,7 @@ async def _execute_leech(
                         f"{status_line}\n"
                         f"☁️ <i>{_env_name} High-Speed Cloud Bandwidth (ඔබේ Data නොයයි)</i>"
                     )
-                    try:
-                        await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                    except Exception as p_err:
-                        log.debug("[LeechService] Download progress edit ignored: %s", p_err)
+                    await _safe_edit_status(status_msg, text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
 
             try:
                 if candidate.method in ("yts", "magnet", "torrent"):
@@ -1048,17 +1063,15 @@ async def _execute_leech(
                             log.info("[LeechService] Large file (>1.95GB). Using PikPak Cloud Debrid...")
                             cloud_service_name = "PikPak"
                             async def _pikpak_progress(pct: float, done_str: str, total_str: str, speed_str: str, eta_str: str) -> None:
-                                try:
-                                    await status_msg.edit_text(
-                                        f"☁️ <b>PikPak Cloud Debrid (10GB Tier) ක්‍රියාත්මකයි...</b>\n\n"
-                                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                                        f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
-                                        f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
-                                        parse_mode=ParseMode.HTML,
-                                        reply_markup=kb_cancel,
-                                    )
-                                except Exception:
-                                    pass
+                                await _safe_edit_status(
+                                    status_msg,
+                                    f"☁️ <b>PikPak Cloud Debrid (10GB Tier) ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ <b>Cloud Cache:</b> {pct:.1f}% ({done_str} / {total_str})\n"
+                                    f"⏳ PikPak සේවාදායකයෙන් Direct Download Link ලබාගනිමින් පවතී...",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
 
                             c_res = await pikpak_service.convert_magnet_to_direct_url(
                                 magnet_link=mag_to_use,
@@ -1077,16 +1090,14 @@ async def _execute_leech(
                             log.info("[LeechService] Attempting Seedr.cc Cloud Debrid conversion...")
                             cloud_service_name = "Seedr"
                             async def _seedr_progress(status_str: str) -> None:
-                                try:
-                                    await status_msg.edit_text(
-                                        f"☁️ <b>Seedr Cloud Debrid ක්‍රියාත්මකයි...</b>\n\n"
-                                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                                        f"⚡ {status_str}",
-                                        parse_mode=ParseMode.HTML,
-                                        reply_markup=kb_cancel,
-                                    )
-                                except Exception:
-                                    pass
+                                await _safe_edit_status(
+                                    status_msg,
+                                    f"☁️ <b>Seedr Cloud Debrid ක්‍රියාත්මකයි...</b>\n\n"
+                                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                                    f"⚡ {status_str}",
+                                    parse_mode=ParseMode.HTML,
+                                    reply_markup=kb_cancel,
+                                )
 
                             c_res = await seedr_service.seedr_client.convert_magnet_to_direct_url(
                                 magnet_url=mag_to_use,
@@ -1234,10 +1245,17 @@ async def _execute_leech(
                     tg_file_id = candidate.source_url
                     target_dest = os.path.join(temp_dir, f"{_slugify(title, year)}.mp4")
                     msg_obj = candidate.extra.get("message") if candidate.extra else None
-                    local_file = await client.download_media(
-                        message=msg_obj or tg_file_id,
-                        file_name=target_dest,
-                    )
+                    try:
+                        local_file = await asyncio.wait_for(
+                            client.download_media(
+                                message=msg_obj or tg_file_id,
+                                file_name=target_dest,
+                            ),
+                            timeout=3600.0,
+                        )
+                    except Exception as tg_dl_err:
+                        log.warning("[LeechService] Telegram download media error/timeout: %s", tg_dl_err)
+                        local_file = None
                 else:
                     # Direct HTTP / DDL
                     ep_sfx = f"-s{season:02d}e{episode:02d}" if (is_series and season and episode) else ""
@@ -1966,15 +1984,13 @@ async def _execute_leech(
                         "[LeechService] All %d Sri Lankan matched candidate(s) failed. Querying fallback sources (Telegram, DDL, Torrents/Seedr)...",
                         len(candidates)
                     )
-                    try:
-                        await status_msg.edit_text(
-                            f"🔄 <b>ප්‍රාථමික මූලාශ්‍ර සම්බන්ධ කරගැනීම අසාර්ථක විය.</b>\n\n"
-                            f"🎬 <b>{display_title}</b> සඳහා Cloud Debrid සහ විකල්ප මූලාශ්‍ර පරීක්ෂා කරමින් පවතී...",
-                            parse_mode=ParseMode.HTML,
-                            reply_markup=kb_cancel,
-                        )
-                    except Exception:
-                        pass
+                    await _safe_edit_status(
+                        status_msg,
+                        f"🔄 <b>ප්‍රාථමික මූලාශ්‍ර සම්බන්ධ කරගැනීම අසාර්ථක විය.</b>\n\n"
+                        f"🎬 <b>{display_title}</b> සඳහා Cloud Debrid සහ විකල්ප මූලාශ්‍ර පරීක්ෂා කරමින් පවතී...",
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=kb_cancel,
+                    )
 
                     fallback_cands = await find_all_candidates(
                         title=title,
@@ -2011,7 +2027,8 @@ async def _execute_leech(
 
         if not chosen_candidate or not local_file or not downloader.is_valid_downloaded_video(local_file):
             task_tracker.tracker.fail_task(user_id, "All download candidates failed.")
-            await status_msg.edit_text(
+            await _safe_edit_status(
+                status_msg,
                 f"⚠️ <b>බාගත කිරීම අසාර්ථක විය (Download Failed)!</b>\n\n"
                 f"🎬 <b>{display_title}</b> සඳහා තිබූ මූලාශ්‍ර {len(candidates)} ම බාගත කිරීමේදී දෝෂ ඇති විය.\n\n"
                 f"කරුණාකර වෙනත් නමකින් හෝ Direct Link එකක් ලබාදී නැවත උත්සාහ කරන්න.",
@@ -2234,10 +2251,7 @@ async def _execute_leech(
                     f"💬 <b>උපසිරැසි:</b> {sub_lbl}\n"
                     f"⚡ <i>Multi-Core NVENC/CPU High-Speed Encoding</i>"
                 )
-                try:
-                    await status_msg.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                except Exception:
-                    pass
+                await _safe_edit_status(status_msg, txt, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
 
             cand_portal = getattr(chosen_candidate, 'portal', '') or ''
             if not cand_portal and chosen_candidate and getattr(chosen_candidate, 'extra', None):
@@ -2257,19 +2271,17 @@ async def _execute_leech(
             if curr_size > video_service.MAX_TELEGRAM_BOT_SIZE:
                 log.info("[LeechService] Downloaded size %s > 1.95GB limit. Starting fast compression to <= 1.90GB...", downloader.format_bytes(curr_size))
                 task_tracker.tracker.set_step(user_id, "Fast 1080p Compression (FFmpeg)...")
-                try:
-                    await status_msg.edit_text(
-                        f"⚙️ <b>පියවර 3/5: Fast 1080p Compression ආරම්භ විය...</b>\n\n"
-                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                        f"📦 <b>මූලික ප්‍රමාණය:</b> {downloader.format_bytes(curr_size)} (> 1.95 GB Limit)\n"
-                        f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.90 GB (Telegram Safe)\n"
-                        f"⚡ <b>ක්‍රමය:</b> Multi-Core H.264 Fast Transcoding + Subtitle Muxing\n"
-                        f"⏳ මිනිත්තු කිහිපයක් රැඳී සිටින්න...",
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=kb_cancel,
-                    )
-                except Exception:
-                    pass
+                await _safe_edit_status(
+                    status_msg,
+                    f"⚙️ <b>පියවර 3/5: Fast 1080p Compression ආරම්භ විය...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"📦 <b>මූලික ප්‍රමාණය:</b> {downloader.format_bytes(curr_size)} (> 1.95 GB Limit)\n"
+                    f"🎯 <b>ඉලක්කගත ප්‍රමාණය:</b> 1.90 GB (Telegram Safe)\n"
+                    f"⚡ <b>ක්‍රමය:</b> Multi-Core H.264 Fast Transcoding + Subtitle Muxing\n"
+                    f"⏳ මිනිත්තු කිහිපයක් රැඳී සිටින්න...",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_cancel,
+                )
 
                 comp_res = await video_service.compress_video(
                     input_path=local_file,
@@ -2305,27 +2317,25 @@ async def _execute_leech(
                     log.error("[LeechService] Direct compression failed or produced output > 1.95GB for %s.", local_file)
             else:
                 # File is <= 1.95 GB
-                try:
-                    if is_already_hardsubbed:
-                        sub_status_text = "මූලාශ්‍රයේම සිංහල උපසිරැසි අඩංගුයි (Pre-hardsubbed ✅ Single Clean Sub)"
-                        method_text = f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
-                    elif sub_to_merge:
-                        sub_status_text = "සිංහල උපසිරැසි Hard-Burn Engine වෙත යොමු කෙරේ (Single-Decode NVENC)"
-                        method_text = f"Fast MP4 Remux + Hard-Burn Prep ({ext.upper()} ➔ MP4)"
-                    else:
-                        sub_status_text = "උපසිරැසි රහිතව Remux වේ"
-                        method_text = f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
-                    await status_msg.edit_text(
-                        f"⚙️ <b>පියවර 3/5: වීඩියෝ සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
-                        f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
-                        f"⚡ <b>ක්‍රමය:</b> {method_text}\n"
-                        f"💬 <b>උපසිරැසි:</b> {sub_status_text}\n"
-                        f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=kb_cancel,
-                    )
-                except Exception:
-                    pass
+                if is_already_hardsubbed:
+                    sub_status_text = "මූලාශ්‍රයේම සිංහල උපසිරැසි අඩංගුයි (Pre-hardsubbed ✅ Single Clean Sub)"
+                    method_text = f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
+                elif sub_to_merge:
+                    sub_status_text = "සිංහල උපසිරැසි Hard-Burn Engine වෙත යොමු කෙරේ (Single-Decode NVENC)"
+                    method_text = f"Fast MP4 Remux + Hard-Burn Prep ({ext.upper()} ➔ MP4)"
+                else:
+                    sub_status_text = "උපසිරැසි රහිතව Remux වේ"
+                    method_text = f"Instant Stream Copy Remux ({ext.upper()} ➔ MP4 +faststart)"
+                await _safe_edit_status(
+                    status_msg,
+                    f"⚙️ <b>පියවර 3/5: වීඩියෝ සහ සිංහල උපසිරැසි සැකසුම...</b>\n\n"
+                    f"🎬 <b>{'ගොනුව' if is_series else 'චිත්‍රපටය'}:</b> {display_title}\n"
+                    f"⚡ <b>ක්‍රමය:</b> {method_text}\n"
+                    f"💬 <b>උපසිරැසි:</b> {sub_status_text}\n"
+                    f"⏳ තත්පර කිහිපයක් රැඳී සිටින්න...",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=kb_cancel,
+                )
 
                 task_tracker.tracker.set_step(user_id, "Video Remux & Subtitle Prep (FFmpeg)...")
                 log.info("[LeechService] Executing video remux and sub prep (%s -> MP4, sub=%s)...", ext, sub_to_burn_video)
@@ -2497,15 +2507,13 @@ async def _execute_leech(
                 log.error("[LeechService] FATAL: File %s (%d bytes) strictly exceeds Telegram MTProto ceiling (%d bytes) even after compression. Aborting upload.",
                           local_file, os.path.getsize(local_file), video_service.TELEGRAM_MTPROTO_MAX_BYTES)
                 task_tracker.tracker.fail_task(user_id, "File exceeds Telegram 2GB limit after compression.")
-                try:
-                    await status_msg.edit_text(
-                        f"⚠️ <b>ගොනුවේ ප්‍රමාණය වැඩියි (File Too Large)!</b>\n\n"
-                        f"🎬 <b>{display_title}</b> ගොනුව Telegram සීමාව වන 2 GB ඉක්මවා ඇත ({downloader.format_bytes(os.path.getsize(local_file))}).\n"
-                        f"Compression මඟින්ද 2 GB ට වඩා අඩු කිරීමට නොහැකි විය. කරුණාකර 720p හෝ වෙනත් ගුණාත්මක භාවයක් තෝරන්න.",
-                        parse_mode=ParseMode.HTML,
-                    )
-                except Exception:
-                    pass
+                await _safe_edit_status(
+                    status_msg,
+                    f"⚠️ <b>ගොනුවේ ප්‍රමාණය වැඩියි (File Too Large)!</b>\n\n"
+                    f"🎬 <b>{display_title}</b> ගොනුව Telegram සීමාව වන 2 GB ඉක්මවා ඇත ({downloader.format_bytes(os.path.getsize(local_file))}).\n"
+                    f"Compression මඟින්ද 2 GB ට වඩා අඩු කිරීමට නොහැකි විය. කරුණාකර 720p හෝ වෙනත් ගුණාත්මක භාවයක් තෝරන්න.",
+                    parse_mode=ParseMode.HTML,
+                )
                 return
 
         # ── Step 3 & 4: Overlapped Multi-Quality RAM Encoding + Parallel Cloud Drive & Telegram Upload ──
@@ -2519,7 +2527,7 @@ async def _execute_leech(
         site_url = f"{base_site}/movie.html?id={slug}"
 
         # Detect source resolution upfront to cleanly route primary and variant pipelines (mutually exclusive)
-        src_w, src_h = video_service.get_video_resolution(local_file)
+        src_w, src_h = await asyncio.to_thread(video_service.get_video_resolution, local_file)
         if src_w >= 1600 or src_h >= 900:
             is_source_1080p = True
             is_source_720p = False
@@ -2724,10 +2732,7 @@ async def _execute_leech(
                     return
                 last_upload_edit = now
                 last_rendered_text = text
-                try:
-                    await status_msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
-                except Exception as up_err:
-                    log.debug("[LeechService] Dashboard edit note: %s", up_err)
+                await _safe_edit_status(status_msg, text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel)
 
         async def _mq_progress_cb(pct: float, pct_str: str) -> None:
             nonlocal _mq_progress_str
@@ -3199,7 +3204,18 @@ async def _execute_leech(
                     q_keys = "/".join(pending_variants.keys())
                     _mq_progress_str = f"{q_keys} Uploading to Telegram..."
                     from services.upload_pool import upload_pool
-                    admin_Pool = await upload_pool.get_admin_sessions(target_channel) if str(target_channel).startswith("-100") else []
+                    if str(target_channel).startswith("-100"):
+                        try:
+                            admin_Pool = await asyncio.wait_for(upload_pool.get_admin_sessions(target_channel), timeout=5.0)
+                        except Exception as e:
+                            log.warning("[LeechService] get_admin_sessions error/timeout (%s), using cached fallback", e)
+                            try:
+                                t_k = int(target_channel)
+                            except Exception:
+                                t_k = target_channel
+                            admin_Pool = [c for c in upload_pool._admin_sessions.get(t_k, []) if getattr(c, "is_connected", False)]
+                    else:
+                        admin_Pool = []
                     if len(admin_Pool) >= 2 and len(pending_variants) > 1:
                         await asyncio.gather(
                             *[
@@ -3707,10 +3723,7 @@ async def _execute_leech(
                 f"💾 <b>Draft ID:</b> <code>{draft_id}</code> ලෙස සුරකින ලදී.\n\n"
                 f"💡 කරුණාකර නැවත උත්සාහ කරන්න හෝ Bot log පරීක්ෂා කරන්න."
             )
-            try:
-                await status_msg.edit_text(err_text, parse_mode=ParseMode.HTML)
-            except Exception:
-                pass
+            await _safe_edit_status(status_msg, err_text, parse_mode=ParseMode.HTML)
             return
 
         imdb_val = movie_entry.get("imdb", "8.0")
@@ -3750,7 +3763,8 @@ async def _execute_leech(
             sub_status_text = "💬 <b>සිංහල උපසිරැසි:</b> Video එකට Soft-Mux විය ✅\n" if has_sinhala else "⚠️ <b>සිංහල උපසිරැසි:</b> නිවැරදි සිංහල උපසිරැසි හමු නොවීය\n"
             sub_hint_text = f"💡 <i>සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>" if not has_sinhala else f"💡 <i>වෙනත් සිංහල උපසිරැසි එක් කිරීමට: <code>/sub {title}</code></i>"
 
-            await status_msg.edit_text(
+            await _safe_edit_status(
+                status_msg,
                 f"🎉 <b>Ultra Auto-Leech සාර්ථකව නිම විය!</b>\n\n"
                 f"{media_icon} <b>{display_title}</b>\n"
                 f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
@@ -3786,7 +3800,8 @@ async def _execute_leech(
 
             sub_choice_desc = "• <b>🚀 Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (සිංහල උපසිරැසි සමඟ)\n" if has_sinhala else "• <b>🚀 Publish Now:</b> වෙබ් අඩවියට දැන්ම එක්වේ (උපසිරැසි රහිතව)\n"
 
-            await status_msg.edit_text(
+            await _safe_edit_status(
+                status_msg,
                 f"👋 <b>චිත්‍රපටය සාර්ථකව Download කර Channel එකට Upload විය!</b> 🎉\n\n"
                 f"{media_icon} <b>{display_title}</b>\n"
                 f"⭐ <b>IMDb:</b> {imdb_val} / 10 | 🎞 <b>Quality:</b> {chosen_candidate.quality}\n"
@@ -3849,15 +3864,13 @@ async def _execute_leech(
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 log.info("[LeechService] Deleted temporary directory on cancellation.")
 
-            try:
-                await status_msg.edit_text(
-                    f"❌ <b>Auto-Leech ක්‍රියාවලිය සාර්ථකව අවලංගු කරන ලදී (Cancelled)!</b>\n\n"
-                    f"{media_icon} <b>{display_title}</b>\n"
-                    f"🧹 Seedr Cloud Storage සහ Local Files සියල්ල පිරිසිදු කරන ලදී.",
-                    parse_mode=ParseMode.HTML,
-                )
-            except Exception:
-                pass
+            await _safe_edit_status(
+                status_msg,
+                f"❌ <b>Auto-Leech ක්‍රියාවලිය සාර්ථකව අවලංගු කරන ලදී (Cancelled)!</b>\n\n"
+                f"{media_icon} <b>{display_title}</b>\n"
+                f"🧹 Seedr Cloud Storage සහ Local Files සියල්ල පිරිසිදු කරන ලදී.",
+                parse_mode=ParseMode.HTML,
+            )
 
         try:
             await asyncio.shield(_do_cancel_cleanup())
@@ -3894,13 +3907,22 @@ async def _execute_leech(
             shutil.rmtree(temp_dir, ignore_errors=True)
 
         err_clean = str(exc).replace("<", "&lt;").replace(">", "&gt;")
-        try:
-            await status_msg.edit_text(
-                f"⚠️ <b>Auto-Leech සැකසීමේදී දෝෂයක් සිදු විය (Failed)!</b>\n\n"
-                f"{media_icon} <b>{display_title}</b>\n"
-                f"❌ දෝෂය: <code>{err_clean}</code>\n\n"
-                f"කරුණාකර /status බලන්න හෝ නැවත උත්සාහ කරන්න.",
-                parse_mode=ParseMode.HTML,
-            )
-        except Exception:
-            pass
+        await _safe_edit_status(
+            status_msg,
+            f"⚠️ <b>Auto-Leech සැකසීමේදී දෝෂයක් සිදු විය (Failed)!</b>\n\n"
+            f"{media_icon} <b>{display_title}</b>\n"
+            f"❌ දෝෂය: <code>{err_clean}</code>\n\n"
+            f"කරුණාකර /status බලන්න හෝ නැවත උත්සාහ කරන්න.",
+            parse_mode=ParseMode.HTML,
+        )
+    finally:
+        if _get_download_lock().locked():
+            try:
+                _get_download_lock().release()
+            except RuntimeError:
+                pass
+        if _get_encode_upload_lock().locked():
+            try:
+                _get_encode_upload_lock().release()
+            except RuntimeError:
+                pass

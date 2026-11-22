@@ -329,7 +329,11 @@ def register(app: Client) -> None:
             )
 
             from services.upload_pool import upload_pool
-            res = await upload_pool.join_channel(chat.id)
+            try:
+                res = await asyncio.wait_for(upload_pool.join_channel(chat.id), timeout=25.0)
+            except asyncio.TimeoutError:
+                log.warning("[AdminControl] join_channel timed out after 25s for channel %s", chat.id)
+                res = {"joined": 0, "promoted": 0, "error": "Operation timed out after 25s"}
 
             perm_warn = ""
             if not can_promote:
@@ -508,7 +512,11 @@ def register(app: Client) -> None:
 
         try:
             from services.upload_pool import upload_pool
-            res = await upload_pool.join_channel(target_ch)
+            try:
+                res = await asyncio.wait_for(upload_pool.join_channel(target_ch), timeout=25.0)
+            except asyncio.TimeoutError:
+                log.warning("[AdminControl] join_channel timed out after 25s for channel %s", target_ch)
+                res = {"joined": 0, "promoted": 0, "error": "Operation timed out after 25s"}
             await status_msg.edit_text(
                 f"✅ <b>Sessions Promotion ක්‍රියාවලිය සම්පූර්ණයි!</b>\n\n"
                 f"📢 <b>Target Channel:</b> <code>{target_ch}</code>\n"
@@ -519,10 +527,13 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
         except Exception as err:
-            await status_msg.edit_text(
-                f"❌ <b>Promotion දෝෂයක්:</b> {err}",
-                parse_mode=ParseMode.HTML,
-            )
+            try:
+                await status_msg.edit_text(
+                    f"❌ <b>Promotion දෝෂයක්:</b> {err}",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception:
+                pass
 
     @app.on_message(filters.command(["admins", "checkadmins", "syncadmins"]) & filters.private)
     async def check_admins_handler(client: Client, message: Message) -> None:
@@ -676,7 +687,8 @@ async def _handle_system_status(message: Message) -> None:
     # GPU status
     gpu_info = "❌ NVIDIA GPU හමු නොවීය (CPU Mode)"
     try:
-        smi = subprocess.run(
+        smi = await asyncio.to_thread(
+            subprocess.run,
             ["nvidia-smi", "--query-gpu=name,memory.total,memory.used,utilization.gpu", "--format=csv,noheader"],
             capture_output=True,
             text=True,

@@ -481,7 +481,7 @@ async def stream_status() -> dict:
     status["max_cache_mb"] = MAX_HEADER_CACHE_SIZE * (MAX_HEADER_CACHE_BYTES // (1024 * 1024))
     try:
         import subprocess
-        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True, stderr=subprocess.DEVNULL).strip()
+        commit = (await asyncio.to_thread(subprocess.check_output, ["git", "rev-parse", "--short", "HEAD"], text=True, stderr=subprocess.DEVNULL)).strip()
         status["git_commit"] = commit
     except Exception:
         status["git_commit"] = "unknown"

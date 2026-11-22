@@ -22,7 +22,7 @@
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Outfit:wght@400;600;700&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Preconnect & Stream Accelerator -->
@@ -39,6 +39,9 @@
   <link rel="preload" href="data/movies_data.js?v=20261121_cinema_v51" as="script">
   <link rel="preload" href="data/stream_endpoint.js?v=20261121_cinema_v51" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
+
+  <!-- Core Design Tokens -->
+  <link rel="stylesheet" href="assets/css/tokens.css">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
@@ -848,66 +851,101 @@
           <!-- FilmZilla Cinema Build 20261122_v51 -->
           <div class="cs-cinema-menu-bar" id="cs-cinema-menu-bar">
             <div class="cs-bar-left">
-              <!-- Flagship Watch with Friends Button (Prominent & Eye-Catching) -->
-              <button type="button" class="cs-bar-btn cs-btn-party cs-btn-party-hero" id="btn-watch-party-trigger" title="Watch movie together with friends in real-time synchronized party">
-                <span class="cs-party-pulse"></span>
-                <i class="fa-solid fa-users-rays"></i>
-                <span class="cs-party-label">Watch with Friends (Party)</span>
-                <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
-              </button>
+              <!-- Dock 1: Party & Social Controls -->
+              <div class="cs-dock-cluster cs-dock-social" id="cs-dock-social" aria-label="Party & Social Dock">
+                <!-- Flagship Watch with Friends Button (Prominent & Eye-Catching) -->
+                <button type="button" class="cs-bar-btn cs-btn-party cs-btn-party-hero" id="btn-watch-party-trigger" title="Watch movie together with friends in real-time synchronized party">
+                  <span class="cs-party-pulse"></span>
+                  <i class="fa-solid fa-users-rays"></i>
+                  <span class="cs-party-label">Watch with Friends (Party)</span>
+                  <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
+                </button>
 
-              <!-- Family / Parent Safe Mode (Instant Censor / Skip) -->
-              <button type="button" class="cs-bar-btn cs-btn-safe" id="btn-toggle-safe-mode" title="Family & Parent Safe Mode (Auto Censor/Skip Explicit Scenes)">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span class="cs-safe-label">Safe Mode</span>
-                <span class="cs-safe-badge" id="cs-safe-badge">OFF</span>
-              </button>
+                <!-- Live Mic Voice Chat Button -->
+                <button type="button" class="cs-bar-btn cs-btn-mic" id="btn-bar-mic" title="Toggle Microphone Voice Chat (M)">
+                  <i class="fa-solid fa-microphone-slash"></i>
+                  <span class="cs-mic-label">Mic</span>
+                  <span class="cs-mic-badge" id="cs-mic-badge">OFF</span>
+                </button>
 
-              <!-- Mobile 4D Haptic Feedback (Bass & Action Vibrations) -->
-              <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
-                <i class="fa-solid fa-mobile-screen-button"></i>
-                <span class="cs-haptic-label">4D Haptic</span>
-                <span class="cs-haptic-badge" id="cs-haptic-badge">OFF</span>
-              </button>
+                <!-- Live Couple Cam PiP Button -->
+                <button type="button" class="cs-bar-btn cs-btn-cam" id="btn-bar-cam" title="Toggle Couple Cam Video PiP (V)">
+                  <i class="fa-solid fa-video-slash"></i>
+                  <span class="cs-cam-label">Cam</span>
+                  <span class="cs-cam-badge" id="cs-cam-badge">OFF</span>
+                </button>
 
-              <!-- Phone Second Screen Remote (QR Code Sync) -->
-              <button type="button" class="cs-bar-btn cs-btn-companion" id="btn-open-companion" title="Use Phone as Second Screen Remote Companion (QR Scan)">
-                <i class="fa-solid fa-mobile-screen"></i>
-                <span class="cs-companion-label">Phone Remote</span>
-                <span class="cs-companion-badge">QR</span>
-              </button>
+                <!-- In-Screen Chat Popups Toggle (ON/OFF) -->
+                <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
+                  <i class="fa-solid fa-comment-dots"></i>
+                  <span class="cs-popups-label">Popups</span>
+                  <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
+                </button>
+              </div>
+
+              <div class="cs-dock-divider" aria-hidden="true"></div>
+
+              <!-- Dock 2: Sensory & Mode Controls -->
+              <div class="cs-dock-cluster cs-dock-sensory" id="cs-dock-sensory" aria-label="Sensory & Mode Dock">
+                <!-- Family / Parent Safe Mode (Instant Censor / Skip) -->
+                <button type="button" class="cs-bar-btn cs-btn-safe" id="btn-toggle-safe-mode" title="Family & Parent Safe Mode (Auto Censor/Skip Explicit Scenes)">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <span class="cs-safe-label">Safe Mode</span>
+                  <span class="cs-safe-badge" id="cs-safe-badge">OFF</span>
+                </button>
+
+                <!-- Mobile 4D Haptic Feedback (Bass & Action Vibrations) -->
+                <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
+                  <i class="fa-solid fa-mobile-screen-button"></i>
+                  <span class="cs-haptic-label">4D Haptic</span>
+                  <span class="cs-haptic-badge" id="cs-haptic-badge">OFF</span>
+                </button>
+
+                <!-- Phone Second Screen Remote (QR Code Sync) -->
+                <button type="button" class="cs-bar-btn cs-btn-companion" id="btn-open-companion" title="Use Phone as Second Screen Remote Companion (QR Scan)">
+                  <i class="fa-solid fa-mobile-screen"></i>
+                  <span class="cs-companion-label">Phone Remote</span>
+                  <span class="cs-companion-badge">QR</span>
+                </button>
+              </div>
             </div>
 
             <div class="cs-bar-right">
-              <!-- Local Wi-Fi P2P Mesh Data Sharing Badge -->
-              <div class="cs-p2p-pill" id="cs-p2p-pill" title="Local Wi-Fi P2P Data Mesh • Click for Mesh Dashboard">
-                <span class="p2p-pulse-dot"></span>
-                <i class="fa-solid fa-wifi"></i>
-                <span class="cs-p2p-text" id="cs-p2p-status">P2P Active • Saved <b id="cs-p2p-saved-val">0.0 MB</b></span>
+              <!-- Dock 3: Utility & Actions Controls -->
+              <div class="cs-dock-cluster cs-dock-utility" id="cs-dock-utility" aria-label="Utility & Actions Dock">
+                <!-- Local Wi-Fi P2P Mesh Data Sharing Badge -->
+                <div class="cs-p2p-pill" id="cs-p2p-pill" title="Local Wi-Fi P2P Data Mesh • Click for Mesh Dashboard">
+                  <span class="p2p-pulse-dot"></span>
+                  <i class="fa-solid fa-wifi"></i>
+                  <span class="cs-p2p-text" id="cs-p2p-status">P2P Active • Saved <b id="cs-p2p-saved-val">0.0 MB</b></span>
+                </div>
+
+                <!-- Multi-Quality Download Capsule (1080p, 720p, 480p) -->
+                <div class="cs-dl-capsule" id="quick-dl-buttons"></div>
+
+                <!-- 30s Viral Scene Teaser Button -->
+                <a href="teasers.html" class="cs-bar-btn cs-btn-teaser" id="bar-teaser-btn" title="Watch 30s Viral Scene Feed">
+                  <i class="fa-solid fa-clapperboard"></i>
+                  <span class="cs-teaser-label">30s Scene</span>
+                </a>
+
+                <!-- Favorite Button -->
+                <button type="button" class="cs-bar-btn cs-btn-fav" id="movie-fav-btn" title="Add to Favorites">
+                  <i class="fa-regular fa-heart"></i>
+                  <span>Favorite</span>
+                </button>
+
+                <!-- Watch Later Button -->
+                <button type="button" class="cs-bar-btn cs-btn-later" id="movie-later-btn" title="Save to Watch Later">
+                  <i class="fa-regular fa-clock"></i>
+                  <span>Watch Later</span>
+                </button>
+
+                <!-- Share Button -->
+                <button type="button" class="cs-bar-btn" id="movie-share-btn" title="Share Movie">
+                  <i class="fa-solid fa-share-nodes"></i>
+                </button>
               </div>
-
-              <!-- 30s Viral Scene Teaser Button -->
-              <a href="teasers.html" class="cs-bar-btn cs-btn-teaser" id="bar-teaser-btn" title="Watch 30s Viral Scene Feed">
-                <i class="fa-solid fa-clapperboard"></i>
-                <span class="cs-teaser-label">30s Scene</span>
-              </a>
-
-              <!-- Favorite Button -->
-              <button type="button" class="cs-bar-btn cs-btn-fav" id="movie-fav-btn" title="Add to Favorites">
-                <i class="fa-regular fa-heart"></i>
-                <span>Favorite</span>
-              </button>
-
-              <!-- Watch Later Button -->
-              <button type="button" class="cs-bar-btn cs-btn-later" id="movie-later-btn" title="Save to Watch Later">
-                <i class="fa-regular fa-clock"></i>
-                <span>Watch Later</span>
-              </button>
-
-              <!-- Share Button -->
-              <button type="button" class="cs-bar-btn" id="movie-share-btn" title="Share Movie">
-                <i class="fa-solid fa-share-nodes"></i>
-              </button>
             </div>
           </div>
         </div>
@@ -972,10 +1010,10 @@
               <i class="fa-solid fa-play"></i> Watch Movie
             </a>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%">
-              <button class="btn btn-secondary btn-sm cs-btn-fav" id="movie-fav-btn" type="button" style="justify-content:center;gap:6px">
+              <button class="btn btn-secondary btn-sm cs-btn-fav" id="poster-fav-btn" type="button" style="justify-content:center;gap:6px">
                 <i class="fa-regular fa-heart"></i> <span>Favorite</span>
               </button>
-              <button class="btn btn-secondary btn-sm cs-btn-later" id="movie-later-btn" type="button" style="justify-content:center;gap:6px">
+              <button class="btn btn-secondary btn-sm cs-btn-later" id="poster-later-btn" type="button" style="justify-content:center;gap:6px">
                 <i class="fa-regular fa-clock"></i> <span>Watch Later</span>
               </button>
             </div>
@@ -988,7 +1026,7 @@
             <a href="#downloads" class="cs-poster-dl-btn">
               <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
             </a>
-            <button class="btn btn-secondary btn-sm" id="movie-share-btn" type="button" style="width:100%;justify-content:center">
+            <button class="btn btn-secondary btn-sm" id="poster-share-btn" type="button" style="width:100%;justify-content:center">
               <i class="fa-solid fa-share-nodes"></i> Share Movie
             </button>
           </div>

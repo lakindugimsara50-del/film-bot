@@ -10,13 +10,14 @@
   <!-- Google Fonts & FontAwesome -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Outfit:wght@400;600;700&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="assets/img/filmzilla_icon.png">
 
   <!-- Core CSS -->
+  <link rel="stylesheet" href="assets/css/tokens.css">
   <link rel="stylesheet" href="assets/css/style.css?v=20261121_cinema_v51">
   <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261121_cinema_v51">
   <link rel="stylesheet" href="assets/css/teasers.css?v=20261121_cinema_v51">
@@ -26,6 +27,12 @@
   <!-- Fullscreen Reels App Viewport -->
   <div class="reels-app-viewport">
     
+    <!-- Cinematic Fullscreen Desktop Ambient Backdrop Blur (YouTube Shorts / TikTok Web Style) -->
+    <div class="reels-desktop-ambient-backdrop" id="reels-desktop-ambient-backdrop" aria-hidden="true">
+      <div class="reels-ambient-image" id="reels-ambient-image"></div>
+      <div class="reels-ambient-overlay"></div>
+    </div>
+
     <!-- Ambient Stage Glow (Desktop Centered) -->
     <div class="reels-ambient-glow" aria-hidden="true"></div>
 

@@ -43,25 +43,31 @@
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
-.cs-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.cs-bar-right {
+.cs-bar-left,
+.cs-bar-right,
+.cs-dock-cluster {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
+.cs-dock-cluster {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9999px;
+  padding: 4px 8px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.cs-dock-divider,
 .cs-bar-divider {
   width: 1px;
   height: 22px;
   background: rgba(255, 255, 255, 0.12);
-  margin: 0 2px;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 /* General Menu Bar Button */
@@ -1274,14 +1280,15 @@
 /* 1. In-Screen Live Video Chat Overlay (Bottom-Left above subtitles) */
 .cs-video-chat-overlay {
   position: absolute;
-  bottom: 56px;
-  left: 20px;
+  bottom: 60px;
+  left: 16px;
   display: flex;
   flex-direction: column-reverse;
   gap: 8px;
   pointer-events: none;
-  z-index: 2147483647;
+  z-index: 90;
   max-width: min(380px, 86vw);
+  max-height: 120px;
 }
 
 .cs-video-chat-popup {
@@ -1513,12 +1520,17 @@
   display: none;
 }
 
-.cs-bar-left, .cs-bar-right {
+.cs-bar-left, .cs-bar-right, .cs-dock-cluster {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   flex-wrap: nowrap !important;
   flex-shrink: 0 !important;
+}
+@media (max-width: 900px) {
+  .cs-dock-divider {
+    display: none !important;
+  }
 }
 
 /* Seamless Watch Party Lounge Matching Player Height */
@@ -1902,7 +1914,7 @@
   position: absolute;
   top: 18px;
   right: 18px;
-  z-index: 100;
+  z-index: 80;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2590,7 +2602,8 @@
 }
 
 /* ---- 5. In-Party Live Predictions & Betting Arena ---- */
-.cs-prediction-card {
+.cs-prediction-card,
+.wp-prediction-modal {
   position: absolute;
   top: 18px;
   left: 50%;

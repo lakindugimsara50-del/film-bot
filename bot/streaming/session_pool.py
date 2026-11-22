@@ -490,9 +490,11 @@ class TelegramStreamPool:
             if token:
                 api_url = f"https://api.telegram.org/bot{token}/getChatAdministrators?chat_id={channel_id}"
                 req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, timeout=5) as r:
-                    data = json.loads(r.read().decode("utf-8", errors="ignore"))
-                    if data.get("ok"):
+                def _fetch_admins_stream():
+                    with urllib.request.urlopen(req, timeout=5) as r:
+                        return json.loads(r.read().decode("utf-8", errors="ignore"))
+                data = await asyncio.to_thread(_fetch_admins_stream)
+                if data.get("ok"):
                         for a in data.get("result", []):
                             u = a.get("user", {})
                             if u and not u.get("is_bot", False):

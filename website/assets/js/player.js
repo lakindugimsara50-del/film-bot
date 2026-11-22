@@ -5544,41 +5544,55 @@ function renderMovieDetails(movie) {
 
   // Wire Detail Page Action Buttons (Favorite & Watch Later)
   if (window.FilmSubUser) {
-    const favBtn = document.getElementById('movie-fav-btn');
-    const laterBtn = document.getElementById('movie-later-btn');
+    const favBtns = [document.getElementById('movie-fav-btn'), document.getElementById('poster-fav-btn')].filter(Boolean);
+    const laterBtns = [document.getElementById('movie-later-btn'), document.getElementById('poster-later-btn')].filter(Boolean);
     const mId = movie.id || movie.slug;
 
-    if (favBtn && !favBtn._bound) {
-      favBtn._bound = true;
-      const isFav = window.FilmSubUser.Favorites.has(mId);
-      favBtn.classList.toggle('active', isFav);
-      favBtn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:#ff3366"></i> <span>${isFav ? 'Favorited' : 'Favorite'}</span>`;
-
-      favBtn.addEventListener('click', () => {
-        const added = window.FilmSubUser.Favorites.toggle(movie);
-        favBtn.classList.toggle('active', added);
-        favBtn.innerHTML = `<i class="${added ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:#ff3366"></i> <span>${added ? 'Favorited' : 'Favorite'}</span>`;
-        if (window.FilmSub && typeof FilmSub.showToast === 'function') {
-          FilmSub.showToast(added ? 'Added to Favorites ❤️' : 'Removed from Favorites', 'info');
-        }
+    const updateFavUI = (isFav) => {
+      favBtns.forEach(btn => {
+        btn.classList.toggle('active', isFav);
+        btn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:#ff3366"></i> <span>${isFav ? 'Favorited' : 'Favorite'}</span>`;
       });
-    }
+    };
 
-    if (laterBtn && !laterBtn._bound) {
-      laterBtn._bound = true;
-      const isLater = window.FilmSubUser.WatchLater.has(mId);
-      laterBtn.classList.toggle('active', isLater);
-      laterBtn.innerHTML = `<i class="${isLater ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:#00b4d8"></i> <span>${isLater ? 'In Queue' : 'Watch Later'}</span>`;
+    const isFavInit = window.FilmSubUser.Favorites.has(mId);
+    updateFavUI(isFavInit);
 
-      laterBtn.addEventListener('click', () => {
-        const added = window.FilmSubUser.WatchLater.toggle(movie);
-        laterBtn.classList.toggle('active', added);
-        laterBtn.innerHTML = `<i class="${added ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:#00b4d8"></i> <span>${added ? 'In Queue' : 'Watch Later'}</span>`;
-        if (window.FilmSub && typeof FilmSub.showToast === 'function') {
-          FilmSub.showToast(added ? 'Saved to Watch Later ⏱️' : 'Removed from Watch Later', 'info');
-        }
+    favBtns.forEach(btn => {
+      if (!btn._bound) {
+        btn._bound = true;
+        btn.addEventListener('click', () => {
+          const added = window.FilmSubUser.Favorites.toggle(movie);
+          updateFavUI(added);
+          if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+            FilmSub.showToast(added ? 'Added to Favorites ❤️' : 'Removed from Favorites', 'info');
+          }
+        });
+      }
+    });
+
+    const updateLaterUI = (isLater) => {
+      laterBtns.forEach(btn => {
+        btn.classList.toggle('active', isLater);
+        btn.innerHTML = `<i class="${isLater ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:#00b4d8"></i> <span>${isLater ? 'In Queue' : 'Watch Later'}</span>`;
       });
-    }
+    };
+
+    const isLaterInit = window.FilmSubUser.WatchLater.has(mId);
+    updateLaterUI(isLaterInit);
+
+    laterBtns.forEach(btn => {
+      if (!btn._bound) {
+        btn._bound = true;
+        btn.addEventListener('click', () => {
+          const added = window.FilmSubUser.WatchLater.toggle(movie);
+          updateLaterUI(added);
+          if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+            FilmSub.showToast(added ? 'Saved to Watch Later ⏱️' : 'Removed from Watch Later', 'info');
+          }
+        });
+      }
+    });
   }
 
   // Wire Live Emoji Reactions
@@ -5806,22 +5820,25 @@ function renderRelatedMovies(movie) {
 }
 
 function initShareButton(movie) {
-  const shareBtn = document.getElementById('movie-share-btn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', () => {
-      if (navigator.share) {
-        navigator.share({
-          title: `${movie.title} Sinhala Subtitles`,
-          text: `Watch and download ${movie.title} with Sinhala subtitles on FilmZilla!`,
-          url: window.location.href,
-        }).catch(() => {});
-      } else {
-        navigator.clipboard.writeText(window.location.href)
-          .then(() => FilmSub.showToast('Link copied to clipboard!', 'success'))
-          .catch(() => FilmSub.showToast('Copy the URL from your browser address bar.', 'info'));
-      }
-    });
-  }
+  const shareBtns = [document.getElementById('movie-share-btn'), document.getElementById('poster-share-btn')].filter(Boolean);
+  shareBtns.forEach(shareBtn => {
+    if (shareBtn && !shareBtn._bound) {
+      shareBtn._bound = true;
+      shareBtn.addEventListener('click', () => {
+        if (navigator.share) {
+          navigator.share({
+            title: `${movie.title} Sinhala Subtitles`,
+            text: `Watch and download ${movie.title} with Sinhala subtitles on FilmZilla!`,
+            url: window.location.href,
+          }).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(window.location.href)
+            .then(() => FilmSub.showToast('Link copied to clipboard!', 'success'))
+            .catch(() => FilmSub.showToast('Copy the URL from your browser address bar.', 'info'));
+        }
+      });
+    }
+  });
 }
 
 /* ==========================================================================

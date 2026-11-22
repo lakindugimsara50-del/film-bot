@@ -843,16 +843,22 @@ async def status_handler(client: Client, message: Message) -> None:
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
             ),
-            timeout=8.0,
+            timeout=5.0,
         )
+    except asyncio.TimeoutError:
+        log.warning("[StatusHandler] Timeout replying to /status (network stalled), skipping fallback reply")
+        return
     except Exception as exc:
         log.error("[StatusHandler] Error replying to status: %s", exc)
         try:
-            await message.reply_text(
-                f"🤖 <b>Film Bot තත්ත්වය (Status):</b> 🟢 <code>Active</code>\n"
-                f"⚠️ විස්තර සැකසීමේ සුළු ප්‍රමාදයක් පවතී: <code>{str(exc)[:100]}</code>\n"
-                f"💡 ක්‍රියාකාරී පෝලිම බැලීමට: <code>/queue</code>",
-                parse_mode=ParseMode.HTML,
+            await asyncio.wait_for(
+                message.reply_text(
+                    f"🤖 <b>Film Bot තත්ත්වය (Status):</b> 🟢 <code>Active</code>\n"
+                    f"⚠️ විස්තර සැකසීමේ සුළු ප්‍රමාදයක් පවතී: <code>{str(exc)[:100]}</code>\n"
+                    f"💡 ක්‍රියාකාරී පෝලිම බැලීමට: <code>/queue</code>",
+                    parse_mode=ParseMode.HTML,
+                ),
+                timeout=5.0,
             )
         except Exception:
             pass
@@ -1097,7 +1103,7 @@ async def _on_start(client: Client) -> None:
                         log.warning("[TunnelSupervisor] Stream tunnel %s is unreachable! Auto-healing...", current_url)
                         try:
                             import subprocess, re
-                            subprocess.run(["pkill", "-9", "-f", "cloudflared"], capture_output=True)
+                            await asyncio.to_thread(subprocess.run, ["pkill", "-9", "-f", "cloudflared"], capture_output=True)
                             await asyncio.sleep(1)
                             tunnel_log_file = open("/tmp/cloudflared.log", "w", buffering=1)
                             subprocess.Popen(

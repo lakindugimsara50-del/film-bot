@@ -2080,6 +2080,14 @@ function seamlessPreloadAndStepUp(targetQuality, candidate) {
   if (selectedQuality !== 'auto') return;
   if (vjsPlayer.paused() || (vjsPlayer.seeking && vjsPlayer.seeking())) return;
 
+  const isMobileClient = (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) || (typeof window !== 'undefined' && window.innerWidth <= 768);
+  if (isMobileClient) {
+    // Mobile hardware video decoders cannot sustain dual parallel video decoding without crashing the WebProcess or media engine.
+    // Apply quality upgrade directly without offscreen preloader.
+    applyQualitySwitch(targetQuality, { isAutoDowngrade: false });
+    return;
+  }
+
   _isPreloadingUpgrade = true;
   console.log(`[ABR] Starting proactive pre-buffering for ${targetQuality.toUpperCase()} while current quality plays smoothly...`);
 

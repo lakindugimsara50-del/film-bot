@@ -125,6 +125,7 @@ if (runPhase0) {
   runChildScript('Phase 0.4: Teaser Reels E2E Feed', 'scratch/test_teaser_reels_e2e.js', 16);
   runChildScript('Phase 0.5: Poll Creator Betting Unit', 'scratch/test_poll_creator.js', 5);
   runChildScript('Phase 0.6: VIP Cinema 7 Features Suite', 'scripts/test_vip_cinema_suite.js', 16);
+  runChildScript('Phase 0.7: Mobile Optimization & Stability', 'scratch/test_mobile_optimization.js', 8);
 }
 
 // PHASE 1: Tier 1 Feature Coverage (45 tests)

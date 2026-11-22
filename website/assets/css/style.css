@@ -39,8 +39,32 @@
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; font-size: 16px; }
-body { background-color: var(--bg); background-image: radial-gradient(circle at 50% -10%, var(--hero-bg-tint, rgba(229, 9, 20, 0.14)) 0%, #08080a 75%); background-attachment: fixed; color: var(--text); font-family: 'Roboto', 'Noto Sans Sinhala', 'Iskoola Pota', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; line-height: 1.6; }
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 50% -10%, var(--hero-bg-tint, rgba(229, 9, 20, 0.14)) 0%, #08080a 75%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: 'Roboto', 'Noto Sans Sinhala', 'Iskoola Pota', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll !important;
+  }
+}
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 img { display: block; max-width: 100%; }
@@ -4228,9 +4252,15 @@ main > .section:first-of-type {
   .movies-grid,
   .movie-grid,
   #movie-grid,
-  #movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+  #movies-grid,
+  #results-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
+    padding: 12px 10px !important;
+  }
+  .movie-card {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Player logo overlay hidden (plan -2.5) */
@@ -7399,6 +7429,11 @@ body.tg-browser-mode {
 @keyframes heroWatermarkBreathe {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
   50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 1; filter: blur(82px); }
+}
+@media (max-width: 768px) {
+  .hero-watermark-glow {
+    display: none !important;
+  }
 }
 
 .hero-watermark-backdrop {

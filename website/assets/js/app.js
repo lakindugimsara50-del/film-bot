@@ -188,10 +188,26 @@ async function fetchRemoteMovies() {
             addMovies(validRemote);
             addMovies(allMovies);
             if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) addMovies(window.FILMSUB_DATA.movies);
+
+            // Check if remote data actually changed anything compared to current allMovies
+            const currentSlugs = new Set((allMovies || []).map(m => String(m.slug || m.id || '').toLowerCase()));
+            let hasNewMovies = false;
+            if (merged.length !== (allMovies || []).length) {
+              hasNewMovies = true;
+            } else {
+              for (const m of merged) {
+                const s = String(m.slug || m.id || '').toLowerCase();
+                if (!currentSlugs.has(s)) {
+                  hasNewMovies = true;
+                  break;
+                }
+              }
+            }
+
             allMovies = merged;
             if (window.FILMSUB_DATA) window.FILMSUB_DATA.movies = merged;
             if (window.FILMZILLA_DATA) window.FILMZILLA_DATA.movies = merged;
-            return true;
+            return hasNewMovies;
           }
         }
       }

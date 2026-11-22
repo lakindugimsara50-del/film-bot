@@ -1514,6 +1514,9 @@
   overflow-x: auto !important;
   scrollbar-width: none !important;
   flex-shrink: 0 !important;
+  -webkit-overflow-scrolling: touch !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .cs-cinema-menu-bar::-webkit-scrollbar {

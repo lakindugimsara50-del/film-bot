@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const NEW_VER = '20261122_cinema_v60';
+const NEW_VER = '20261122_cinema_v61';
 const htmlFiles = ['index.html', 'movie.html', 'search.html', 'teasers.html', 'companion.html'];
 
 htmlFiles.forEach(file => {

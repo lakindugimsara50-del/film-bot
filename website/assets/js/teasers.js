@@ -494,6 +494,7 @@
           activeIndex = idx;
           playCard(card, idx);
           preloadAdjacent(idx);
+          unloadDistantCards(idx);
         } else {
           pauseCard(card, idx);
         }
@@ -506,6 +507,8 @@
     // Start playing the first card immediately
     if (cards.length > 0) {
       playCard(cards[0], 0);
+      preloadAdjacent(0);
+      unloadDistantCards(0);
     }
   }
 
@@ -610,6 +613,47 @@
     if (progressFill) {
       progressFill.style.width = '0%';
     }
+
+    // Distant inactive card unload: free WebGL and memory to prevent mobile OOM crash & auto-reload
+    if (Math.abs(idx - activeIndex) > 1 && iframe && iframe.getAttribute('src') && iframe.getAttribute('src') !== 'about:blank') {
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        }
+      } catch (_) {}
+      iframe.removeAttribute('src');
+      iframe.src = 'about:blank';
+    }
+  }
+
+  function unloadDistantCards(currentActiveIdx) {
+    if (!feedContainer) return;
+    const cards = feedContainer.querySelectorAll('.teaser-card');
+    cards.forEach((c) => {
+      const cIdx = parseInt(c.dataset.index, 10);
+      const dist = Math.abs(cIdx - currentActiveIdx);
+      if (dist > 1) {
+        // Distant card: unload YouTube iframe from memory to prevent mobile OOM crash & reloads
+        const iframe = c.querySelector('iframe');
+        if (iframe && iframe.getAttribute('src') && iframe.getAttribute('src') !== 'about:blank') {
+          try {
+            if (iframe.contentWindow) {
+              iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+            }
+          } catch (_) {}
+          iframe.removeAttribute('src');
+          iframe.src = 'about:blank';
+        }
+        const video = c.querySelector('video');
+        if (video) {
+          video.pause();
+          video.currentTime = 0;
+          if (dist > 2) {
+            video.preload = 'none';
+          }
+        }
+      }
+    });
   }
 
   let progressInterval = null;
@@ -648,20 +692,22 @@
 
   function preloadAdjacent(currentIdx) {
     const cards = feedContainer.querySelectorAll('.teaser-card');
-    const nextIdx = currentIdx + 1;
-    if (nextIdx < cards.length) {
-      const nextCard = cards[nextIdx];
-      const video = nextCard.querySelector('video');
-      const iframe = nextCard.querySelector('iframe');
-      if (video && video.preload !== 'auto') {
-        video.preload = 'auto';
+    const indicesToWarm = [currentIdx + 1, currentIdx - 1];
+    indicesToWarm.forEach(targetIdx => {
+      if (targetIdx >= 0 && targetIdx < cards.length) {
+        const warmCard = cards[targetIdx];
+        const video = warmCard.querySelector('video');
+        const iframe = warmCard.querySelector('iframe');
+        if (video && video.preload !== 'auto') {
+          video.preload = 'auto';
+        }
+        if (iframe && (!iframe.getAttribute('src') || iframe.getAttribute('src') === 'about:blank') && iframe.dataset.src) {
+          // Preload adjacent iframe so video buffers in advance, muted
+          const nextSrc = iframe.dataset.src.replace('autoplay=1', 'autoplay=0').replace('mute=0', 'mute=1');
+          iframe.setAttribute('src', nextSrc);
+        }
       }
-      if (iframe && !iframe.getAttribute('src') && iframe.dataset.src) {
-        // Preload next iframe so video buffers in advance, muted
-        const nextSrc = iframe.dataset.src.replace('autoplay=1', 'autoplay=0').replace('mute=0', 'mute=1');
-        iframe.setAttribute('src', nextSrc);
-      }
-    }
+    });
   }
 
   function setGlobalMute(mute) {
@@ -968,6 +1014,8 @@
     const targetIdx = Math.max(0, Math.min(cards.length - 1, activeIndex + dir));
     if (cards[targetIdx]) {
       cards[targetIdx].scrollIntoView({ behavior: 'smooth' });
+      preloadAdjacent(targetIdx);
+      unloadDistantCards(targetIdx);
     }
   }
 

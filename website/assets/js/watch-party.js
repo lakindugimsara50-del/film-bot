@@ -30,6 +30,7 @@
   };
 
   const WP_CINEMA_STICKERS = [
+    { key: 'bomb', name: 'Mega Bomb 💣', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp' },
     { key: 'popcorn', name: 'Popcorn Blast', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png' },
     { key: 'trophy', name: 'Oscar 10/10', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Trophy/3D/trophy_3d.png' },
     { key: 'clapper', name: 'Action Clapper', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png' },
@@ -846,6 +847,9 @@
             <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn 🍿">
               <img src="${WP_3D_EMOJIS.popcorn}" alt="Popcorn" class="react-3d-emoji" loading="lazy">
             </button>
+            <button type="button" class="wp-reaction-chip wp-reaction-chip-bomb" data-emoji="bomb" title="Drop Mega Bomb 💣">
+              <img src="${WP_3D_EMOJIS.bomb}" alt="Bomb" class="react-3d-emoji" loading="lazy">
+            </button>
             <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love ❤️">
               <img src="${WP_3D_EMOJIS.heart}" alt="Heart" class="react-3d-emoji" loading="lazy">
             </button>
@@ -875,9 +879,6 @@
             </button>
             <button type="button" class="wp-reaction-chip" data-emoji="star" title="Star-struck 🤩">
               <img src="${WP_3D_EMOJIS.star}" alt="Star" class="react-3d-emoji" loading="lazy">
-            </button>
-            <button type="button" class="wp-reaction-chip wp-reaction-chip-bomb" data-emoji="bomb" title="Mega Cinema Bomb 💣">
-              <img src="${WP_3D_EMOJIS.bomb}" alt="Bomb" class="react-3d-emoji" loading="lazy">
             </button>
           </div>
 
@@ -2417,27 +2418,64 @@
         }
 
         case 'bomb': {
-          // Mega Cinema Bomb with screen shake
-          playerWrap.classList.remove('cs-screen-shake-intense');
-          void playerWrap.offsetWidth;
-          playerWrap.classList.add('cs-screen-shake-intense');
+          // Play falling bomb whistle sound immediately
+          this.playSynthesizedSound('bomb');
 
-          // Flash multiple explosions
-          for (let i = 0; i < 15; i++) {
-            const exp = document.createElement('div');
-            exp.className = 'bomb-popcorn-kernel';
-            exp.textContent = Math.random() > 0.5 ? '💥' : '💣';
-            exp.style.left = `${Math.random() * 70 + 15}%`;
-            exp.style.top = `${Math.random() * 50 + 25}%`;
-            exp.style.setProperty('--tx', `${(Math.random() - 0.5) * 300}px`);
-            exp.style.setProperty('--ty', `${(Math.random() - 0.5) * 300}px`);
-            stage.appendChild(exp);
-            setTimeout(() => { if (exp.parentNode) exp.parentNode.removeChild(exp); }, 2000);
-          }
+          // 1. Create Falling 3D Missile (Bomba Watena animation) dropping from the top
+          const fallingMissile = document.createElement('div');
+          fallingMissile.className = 'bomb-falling-missile';
+          const dropX = Math.floor(Math.random() * 50 + 25); // 25% to 75%
+          fallingMissile.style.left = `${dropX}%`;
+          fallingMissile.style.top = '0';
+          const targetY = Math.max(160, Math.min(playerWrap.clientHeight * 0.52, 260));
+          fallingMissile.style.setProperty('--target-y', `${targetY}px`);
+          fallingMissile.innerHTML = `<img src="${WP_3D_EMOJIS.bomb}" alt="Falling Bomb" loading="lazy">`;
+          stage.appendChild(fallingMissile);
 
-          if (navigator.vibrate) try { navigator.vibrate([120, 40, 90, 40, 220]); } catch (_) {}
-          this.showActionToast(`💣 MEGA CINEMA BOMB EXPLODED by ${senderName}!`);
-          setTimeout(() => { playerWrap.classList.remove('cs-screen-shake-intense'); }, 700);
+          // 2. Detonate on ground impact after 0.6s
+          setTimeout(() => {
+            if (fallingMissile.parentNode) fallingMissile.parentNode.removeChild(fallingMissile);
+
+            // Screen detonation flash
+            const flash = document.createElement('div');
+            flash.className = 'bomb-detonation-flash';
+            stage.appendChild(flash);
+            setTimeout(() => { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 450);
+
+            // Expanding Shockwave ring
+            const shockwave = document.createElement('div');
+            shockwave.className = 'bomb-shockwave-ring';
+            shockwave.style.left = `${dropX}%`;
+            shockwave.style.top = `${targetY}px`;
+            stage.appendChild(shockwave);
+            setTimeout(() => { if (shockwave.parentNode) shockwave.parentNode.removeChild(shockwave); }, 750);
+
+            // Violent Screen Shake
+            playerWrap.classList.remove('cs-screen-shake-intense');
+            void playerWrap.offsetWidth;
+            playerWrap.classList.add('cs-screen-shake-intense');
+
+            // Flash multiple explosions and flying debris
+            for (let i = 0; i < 18; i++) {
+              const exp = document.createElement('div');
+              exp.className = 'bomb-popcorn-kernel';
+              const symbols = ['💥', '🔥', '💣', '⚡', '💨', '💥'];
+              exp.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+              exp.style.left = `${dropX}%`;
+              exp.style.top = `${targetY}px`;
+              exp.style.setProperty('--tx', `${(Math.random() - 0.5) * 360}px`);
+              exp.style.setProperty('--ty', `${-(Math.random() * 220 + 80)}px`);
+              exp.style.setProperty('--tx2', `${(Math.random() - 0.5) * 460}px`);
+              exp.style.setProperty('--ty2', `${Math.random() * 380 + 100}px`);
+              exp.style.animationDelay = `${Math.random() * 0.1}s`;
+              stage.appendChild(exp);
+              setTimeout(() => { if (exp.parentNode) exp.parentNode.removeChild(exp); }, 2200);
+            }
+
+            if (navigator.vibrate) try { navigator.vibrate([140, 40, 90, 40, 220]); } catch (_) {}
+            this.showActionToast(`💣 MEGA CINEMA BOMB EXPLODED by ${senderName}!`);
+            setTimeout(() => { playerWrap.classList.remove('cs-screen-shake-intense'); }, 700);
+          }, 600);
           break;
         }
       }
@@ -2508,18 +2546,31 @@
           osc.start(now);
           osc.stop(now + 0.3);
         } else if (type === 'bomb') {
-          // Deep sub-bass explosion
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(120, now);
-          osc.frequency.exponentialRampToValueAtTime(28, now + 0.55);
-          gain.gain.setValueAtTime(0.8, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.55);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.55);
+          // 1. Falling bomb whistle
+          const whistleOsc = ctx.createOscillator();
+          const whistleGain = ctx.createGain();
+          whistleOsc.type = 'sine';
+          whistleOsc.frequency.setValueAtTime(950, now);
+          whistleOsc.frequency.exponentialRampToValueAtTime(240, now + 0.58);
+          whistleGain.gain.setValueAtTime(0.25, now);
+          whistleGain.gain.linearRampToValueAtTime(0.01, now + 0.58);
+          whistleOsc.connect(whistleGain);
+          whistleGain.connect(ctx.destination);
+          whistleOsc.start(now);
+          whistleOsc.stop(now + 0.6);
+
+          // 2. Heavy sub-bass impact blast
+          const blastOsc = ctx.createOscillator();
+          const blastGain = ctx.createGain();
+          blastOsc.type = 'triangle';
+          blastOsc.frequency.setValueAtTime(140, now + 0.6);
+          blastOsc.frequency.exponentialRampToValueAtTime(26, now + 1.2);
+          blastGain.gain.setValueAtTime(0.9, now + 0.6);
+          blastGain.gain.linearRampToValueAtTime(0.01, now + 1.2);
+          blastOsc.connect(blastGain);
+          blastGain.connect(ctx.destination);
+          blastOsc.start(now + 0.6);
+          blastOsc.stop(now + 1.2);
         } else if (type === 'heart' || type === 'hug') {
           // Warm harmonic chord
           [523.25, 659.25, 783.99].forEach((freq) => {

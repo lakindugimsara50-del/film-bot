@@ -1121,7 +1121,7 @@
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 80;
+  z-index: 70;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -1139,6 +1139,14 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
   opacity: 0.9;
+}
+
+/* Coordinate Separation: Shift PiP Corner Button when Couple Cam is active */
+.player-container.couple-cam-active .cs-video-pip-corner-btn,
+#player-container.couple-cam-active .cs-video-pip-corner-btn,
+.player-container:has(#cs-couple-cam-dock:not([style*="display: none"]):not([style*="display:none"])) .cs-video-pip-corner-btn {
+  right: auto !important;
+  left: 14px !important;
 }
 
 .player-container:hover .cs-video-pip-corner-btn {
@@ -1748,45 +1756,57 @@
 }
 
 .wp-couple-mode-btn {
-  background: rgba(236, 72, 153, 0.12) !important;
-  border: 1px solid rgba(236, 72, 153, 0.35) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #e2e8f0 !important;
+}
+
+.wp-couple-mode-btn i {
   color: #f472b6 !important;
 }
 
 .wp-couple-mode-btn:hover,
 .wp-couple-mode-btn.active {
-  background: rgba(236, 72, 153, 0.25) !important;
-  border-color: rgba(236, 72, 153, 0.6) !important;
+  background: rgba(236, 72, 153, 0.15) !important;
+  border-color: rgba(236, 72, 153, 0.5) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(236, 72, 153, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 .cs-couple-hug-btn {
-  background: rgba(244, 63, 94, 0.12) !important;
-  border: 1px solid rgba(244, 63, 94, 0.35) !important;
-  color: #fda4af !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #e2e8f0 !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
+.cs-couple-hug-btn i {
+  color: #fda4af !important;
+}
+
 .cs-couple-hug-btn:hover {
-  background: rgba(244, 63, 94, 0.25) !important;
-  border-color: rgba(244, 63, 94, 0.6) !important;
+  background: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.5) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(244, 63, 94, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 .wp-prediction-btn {
-  background: rgba(245, 158, 11, 0.12) !important;
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #e2e8f0 !important;
+}
+
+.wp-prediction-btn i {
   color: #fbbf24 !important;
 }
 
 .wp-prediction-btn:hover {
-  background: rgba(245, 158, 11, 0.25) !important;
-  border-color: rgba(245, 158, 11, 0.6) !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 .wp-bombs-tray {
@@ -2577,16 +2597,23 @@
   transform: translateX(-50%);
   width: 90%;
   max-width: 440px;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 24px rgba(245, 158, 11, 0.25);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 47;
+  background: rgba(14, 16, 22, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 16px !important;
+  padding: 16px 18px !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(24px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
+  z-index: 50 !important;
   color: #ffffff;
   animation: predictionSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (max-width: 768px) {
+  .cs-prediction-card {
+    top: 54px !important;
+    max-width: calc(100% - 24px);
+  }
 }
 @keyframes predictionSlideDown {
   from { opacity: 0; transform: translate(-50%, -24px); }
@@ -2604,16 +2631,17 @@
   gap: 7px;
   font-size: 13px;
   font-weight: 800;
-  color: #fbbf24;
+  color: var(--fz-gold, #f5c518);
   letter-spacing: 0.5px;
 }
 .cs-prediction-timer {
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 9px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.2);
-  color: #fde68a;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
 }
 .cs-prediction-question {
   font-size: 14px;
@@ -2629,25 +2657,25 @@
   margin-bottom: 12px;
 }
 .cs-pred-opt-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
   color: #fff;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
 }
 .cs-pred-opt-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 .cs-pred-opt-btn.is-voted {
-  border-color: #fbbf24 !important;
-  background: rgba(245, 158, 11, 0.15) !important;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+  border-color: var(--fz-accent, #e50914) !important;
+  background: rgba(229, 9, 20, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(229, 9, 20, 0.3);
 }
 .cs-pred-opt-title {
   font-size: 12px;
@@ -2661,14 +2689,15 @@
   top: 0;
   left: 0;
   bottom: 0;
-  background: rgba(245, 158, 11, 0.22);
+  background: linear-gradient(90deg, rgba(229, 9, 20, 0.28) 0%, rgba(229, 9, 20, 0.14) 100%);
+  border-radius: 9px;
   z-index: 1;
-  transition: width 0.35s ease;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .cs-pred-opt-pct {
   font-size: 11px;
   font-weight: 800;
-  color: #fbbf24;
+  color: var(--fz-gold, #f5c518);
   position: relative;
   z-index: 2;
 }
@@ -3004,3 +3033,97 @@
   box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
 }
 
+
+/* --- 3D Falling Bomb Missile & Detonation Effects --- */
+.bomb-falling-missile {
+  position: absolute;
+  top: 0;
+  width: 52px;
+  height: 52px;
+  z-index: 9999;
+  pointer-events: none;
+  animation: bombFallDrop 0.62s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+  filter: drop-shadow(0 4px 16px rgba(239, 68, 68, 0.85));
+}
+
+.bomb-falling-missile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: rotate(35deg);
+}
+
+@keyframes bombFallDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.6) rotate(15deg);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(var(--target-y, 220px)) scale(1.35) rotate(45deg);
+  }
+}
+
+.bomb-detonation-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(255, 255, 240, 0.9) 0%, rgba(239, 68, 68, 0.65) 45%, rgba(185, 28, 28, 0.25) 75%, transparent 100%);
+  animation: bombFlashFade 0.45s ease-out forwards;
+}
+
+@keyframes bombFlashFade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.bomb-shockwave-ring {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 120, 40, 0.95);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.9), inset 0 0 20px rgba(255, 200, 50, 0.85);
+  z-index: 9997;
+  pointer-events: none;
+  animation: bombShockwaveExpand 0.75s ease-out forwards;
+}
+
+@keyframes bombShockwaveExpand {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(38);
+    opacity: 0;
+  }
+}
+
+.wp-reaction-chip-bomb {
+  border-color: rgba(239, 68, 68, 0.65) !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.35)) !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  animation: bombChipPulse 2.4s infinite ease-in-out;
+}
+
+.wp-reaction-chip-bomb:hover {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.85) !important;
+  transform: scale(1.18) !important;
+}
+
+@keyframes bombChipPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.75); }
+}
+
+.cs-glow-bomb {
+  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.85)) drop-shadow(0 0 28px rgba(220, 38, 38, 0.55));
+}

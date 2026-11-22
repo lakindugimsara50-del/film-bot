@@ -174,9 +174,11 @@
         this.roomId = roomParam;
         this.isHost = false;
         // Check if stored as host in session
-        if (sessionStorage.getItem(`fz_host_${this.roomId}`) === 'true') {
-          this.isHost = true;
-        }
+        try {
+          if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`fz_host_${this.roomId}`) === 'true') {
+            this.isHost = true;
+          }
+        } catch (_) {}
       }
     }
 
@@ -2532,14 +2534,19 @@
     }
 
     // =========================================================================
-    // 5. IN-PARTY LIVE PREDICTIONS & BETTING ARENA (Gamified Popcorn Bets)
+    // 5. IN-PARTY LIVE PREDICTIONS & BETTING ARENA (Gamified Popcorn Bets & Live Polls)
     // =========================================================================
     openPredictionManager() {
-      if (this.activePrediction && this.isHost) {
-        // Resolve active prediction
-        this.openResolvePredictionModal();
+      if (this.activePrediction) {
+        const canResolve = this.isHost || (this.activePrediction.creatorId === (this.localUser && this.localUser.id));
+        if (canResolve) {
+          this.openResolvePredictionModal();
+        } else {
+          this.renderPredictionCard();
+          this.showActionToast('Prediction is live! Vote on the screen or open leaderboard 🍿');
+        }
       } else {
-        // Create new prediction
+        // Create new prediction / poll!
         this.openCreatePredictionModal();
       }
     }
@@ -2554,64 +2561,152 @@
       }
 
       modal.innerHTML = `
-        <div class="fz-cinema-modal-dialog">
-          <div class="fz-modal-header">
-            <div class="fz-modal-title">
-              <i class="fa-solid fa-trophy" style="color:#fbbf24"></i>
-              <span>Create Live In-Party Prediction</span>
+        <div class="fz-cinema-modal-dialog" style="max-width:480px;width:92%;">
+          <div class="fz-modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px;">
+            <div class="fz-modal-title" style="display:flex;align-items:center;gap:10px;">
+              <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;box-shadow:0 0 15px rgba(245,158,11,0.3);flex-shrink:0;">
+                <i class="fa-solid fa-square-poll-vertical" style="color:#fff;font-size:18px;"></i>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:0.3px;">Live In-Party Poll & Prediction</div>
+                <div style="font-size:11px;color:#94a3b8;">Telegram & WhatsApp style live poll for party members</div>
+              </div>
             </div>
             <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-prediction-create-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <div class="fz-modal-body" style="text-align:left;align-items:stretch;">
-            <p style="font-size:13px;color:#94a3b8;margin-bottom:14px;">
-              Pick a movie prediction question for viewers to bet their Popcorn Coins 🍿 during the film:
-            </p>
-            <div style="margin-bottom:12px;">
-              <label style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;">Quick Templates:</label>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
-                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Who will survive this scene?" data-oa="Hero survives" data-ob="Villain escapes">
-                  🗡️ "Who will survive this scene?" (Hero vs Villain)
-                </button>
-                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Will the bomb / crisis be defused in time?" data-oa="Defused in time" data-ob="Explosion happens">
-                  💣 "Will the crisis be resolved in time?" (Yes vs No)
-                </button>
-                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Who is the secret killer / suspect?" data-oa="Main Suspect" data-ob="Secret Ally">
-                  🔍 "Who is the secret killer / mastermind?" (Suspect A vs B)
-                </button>
-                <button type="button" class="fz-btn-sec" style="justify-content:flex-start;" data-q="Will they share a romantic kiss?" data-oa="They Kiss ❤️" data-ob="Interrupted 🙅">
-                  💋 "Will they share a romantic kiss?" (Yes vs No)
-                </button>
+          <div class="fz-modal-body" style="text-align:left;align-items:stretch;padding:16px 0 0 0;gap:12px;display:flex;flex-direction:column;">
+            
+            <!-- Question Input -->
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
+                <i class="fa-solid fa-circle-question" style="color:#38bdf8;margin-right:4px;"></i> Question / අනාවැකි ප්‍රශ්නය
+              </label>
+              <input type="text" id="wp-poll-q" class="wp-poll-field" placeholder="Ask a question (e.g. Will he survive? / මූ බේරෙයිද? / Next target කවුද?)" />
+            </div>
+
+            <!-- Option 1 & 2 Inputs -->
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
+                <i class="fa-solid fa-list-check" style="color:#10b981;margin-right:4px;"></i> Options / පිළිතුරු (2 Choices)
+              </label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;font-weight:800;color:#38bdf8;background:rgba(56,189,248,0.15);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">A</span>
+                <input type="text" id="wp-poll-oa" class="wp-poll-field" placeholder="Option 1 (e.g. Yes / Survives / ඔව්)" />
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;font-weight:800;color:#f43f5e;background:rgba(244,63,94,0.15);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</span>
+                <input type="text" id="wp-poll-ob" class="wp-poll-field" placeholder="Option 2 (e.g. No / Fails / නෑ)" />
               </div>
             </div>
-            <div class="fz-modal-btn-row">
-              <button type="button" class="fz-btn-sec" onclick="window.FilmZillaWatchParty.openPredictionLeaderboard()"><i class="fa-solid fa-ranking-star"></i> Leaderboard</button>
-              <button type="button" class="fz-btn-pri" onclick="document.getElementById('fz-prediction-create-modal').style.display='none'"><i class="fa-solid fa-check"></i> Close</button>
+
+            <!-- Timer & Wager Mode Selectors -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
+                  <i class="fa-solid fa-stopwatch" style="color:#fbbf24;margin-right:4px;"></i> Voting Timer
+                </label>
+                <select id="wp-poll-dur" class="wp-poll-select">
+                  <option value="15">15 seconds (⚡ Fast)</option>
+                  <option value="25" selected>25 seconds (Standard)</option>
+                  <option value="45">45 seconds</option>
+                  <option value="60">60 seconds (1 Min)</option>
+                  <option value="90">90 seconds</option>
+                </select>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
+                  <i class="fa-solid fa-coins" style="color:#f59e0b;margin-right:4px;"></i> Bet / Mode
+                </label>
+                <select id="wp-poll-wager" class="wp-poll-select">
+                  <option value="0">Free Poll (0 🍿 Vote Only)</option>
+                  <option value="25" selected>Popcorn Bet (25 🍿 - 2x Win)</option>
+                  <option value="50">High Stakes (50 🍿 - 2x Win)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Quick Preset Chips -->
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">
+                ⚡ Quick Presets (Click to autofill):
+              </label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="wp-poll-chip" data-q="Who will survive this scene?" data-oa="Hero survives" data-ob="Villain escapes">🗡️ Hero vs Villain</button>
+                <button type="button" class="wp-poll-chip" data-q="Will the bomb / crisis be resolved in time?" data-oa="Resolved in time" data-ob="Explosion happens">💣 Bomb / Crisis (Yes/No)</button>
+                <button type="button" class="wp-poll-chip" data-q="Who is the secret mastermind / killer?" data-oa="Main Suspect" data-ob="Secret Ally">🔍 Killer / Suspect</button>
+                <button type="button" class="wp-poll-chip" data-q="Will they kiss in this scene?" data-oa="They Kiss ❤️" data-ob="Interrupted 🙅">💋 Romantic Kiss</button>
+                <button type="button" class="wp-poll-chip" data-q="මේ scene එකේදී මූ මැරෙයිද?" data-oa="ඔව් (මැරෙනවා)" data-ob="නෑ (බේරෙනවා)">🇱🇰 මැරෙයිද? බේරෙයිද?</button>
+                <button type="button" class="wp-poll-chip" data-q="කවුද මේක පිටිපස්සේ ඉන්නේ?" data-oa="ප්‍රධාන සැකකරු" data-ob="හිතවත් මිතුරා">🇱🇰 සැකකරු කවුද?</button>
+              </div>
+            </div>
+
+            <!-- Launch & Leaderboard Buttons -->
+            <div style="display:flex;gap:8px;margin-top:6px;">
+              <button type="button" class="fz-btn-sec" onclick="window.FilmZillaWatchParty.openPredictionLeaderboard()" style="flex:1;">
+                <i class="fa-solid fa-ranking-star"></i> Leaderboard
+              </button>
+              <button type="button" class="fz-btn-pri" id="wp-btn-launch-poll" style="flex:2;background:linear-gradient(135deg,#f59e0b,#e11d48);border:none;box-shadow:0 4px 15px rgba(245,158,11,0.3);font-weight:800;">
+                <i class="fa-solid fa-paper-plane"></i> Launch Live Poll 🚀
+              </button>
             </div>
           </div>
         </div>
       `;
       modal.style.display = 'flex';
 
-      modal.querySelectorAll('[data-q]').forEach(btn => {
-        btn.onclick = () => {
-          modal.style.display = 'none';
-          this.startPrediction(btn.dataset.q, btn.dataset.oa, btn.dataset.ob, 25);
+      // Attach chip click handlers to autofill
+      const chips = modal.querySelectorAll('.wp-poll-chip');
+      chips.forEach(chip => {
+        chip.onclick = () => {
+          const qInput = modal.querySelector('#wp-poll-q');
+          const oaInput = modal.querySelector('#wp-poll-oa');
+          const obInput = modal.querySelector('#wp-poll-ob');
+          if (qInput) qInput.value = chip.dataset.q || '';
+          if (oaInput) oaInput.value = chip.dataset.oa || '';
+          if (obInput) obInput.value = chip.dataset.ob || '';
+          chip.style.transform = 'scale(0.95)';
+          setTimeout(() => { chip.style.transform = ''; }, 150);
         };
       });
+
+      // Attach Launch button handler
+      const launchBtn = modal.querySelector('#wp-btn-launch-poll');
+      if (launchBtn) {
+        launchBtn.onclick = () => {
+          const qInput = modal.querySelector('#wp-poll-q');
+          const oaInput = modal.querySelector('#wp-poll-oa');
+          const obInput = modal.querySelector('#wp-poll-ob');
+          const durSelect = modal.querySelector('#wp-poll-dur');
+          const wagerSelect = modal.querySelector('#wp-poll-wager');
+
+          const question = (qInput && qInput.value.trim()) || 'Who will survive this scene?';
+          const optionA = (oaInput && oaInput.value.trim()) || 'Option A';
+          const optionB = (obInput && obInput.value.trim()) || 'Option B';
+          const duration = parseInt((durSelect && durSelect.value) || '25', 10);
+          const wager = parseInt((wagerSelect && wagerSelect.value) || '25', 10);
+
+          modal.style.display = 'none';
+          this.startPrediction(question, optionA, optionB, duration, wager);
+        };
+      }
     }
 
-    startPrediction(question, optionA, optionB, duration = 25) {
+    startPrediction(question, optionA, optionB, duration = 25, wager = 25) {
       const pred = {
         id: 'pred_' + Date.now(),
+        creator: (this.localUser && this.localUser.name) || 'Viewer',
+        creatorId: (this.localUser && this.localUser.id) || 'local',
         question,
         optionA,
         optionB,
         duration,
+        wager: typeof wager === 'number' ? wager : 25,
         endTime: Date.now() + duration * 1000,
-        votesA: 1,
-        votesB: 1,
-        poolA: 25,
-        poolB: 25,
+        votesA: 0,
+        votesB: 0,
+        poolA: (wager > 0 ? wager : 0),
+        poolB: (wager > 0 ? wager : 0),
         hasVoted: false,
         myVote: null,
         myBet: 0
@@ -2622,7 +2717,8 @@
         prediction: pred
       });
       this.renderPredictionCard();
-      this.showActionToast(`🎲 Live Prediction Launched: "${question}"`);
+      const modeLabel = (pred.wager > 0) ? `${pred.wager} 🍿 Popcorn Bet` : 'Free Community Poll';
+      this.showActionToast(`🎲 Live Poll Launched (${modeLabel}): "${question}"`);
     }
 
     handlePredictionStart(data) {
@@ -2634,7 +2730,9 @@
         myBet: 0
       };
       this.renderPredictionCard();
-      this.showActionToast(`🎲 Place your Popcorn bets! "${data.prediction.question}"`);
+      const wager = data.prediction.wager || 0;
+      const toastMsg = wager > 0 ? `🎲 Popcorn Bet (${wager} 🍿): "${data.prediction.question}"` : `📊 Live Poll: "${data.prediction.question}"`;
+      this.showActionToast(toastMsg);
     }
 
     renderPredictionCard() {
@@ -2651,16 +2749,23 @@
         playerWrap.appendChild(card);
       }
 
-      const totalPool = pred.poolA + pred.poolB;
-      const pctA = Math.round((pred.poolA / totalPool) * 100);
+      const isFreePoll = !pred.wager || pred.wager === 0;
+      const countA = isFreePoll ? (pred.votesA || 0) : (pred.poolA || 0);
+      const countB = isFreePoll ? (pred.votesB || 0) : (pred.poolB || 0);
+      const totalCount = countA + countB;
+      const pctA = totalCount > 0 ? Math.round((countA / totalCount) * 100) : 50;
       const pctB = 100 - pctA;
+      const subLabelA = isFreePoll ? `${pctA}% (${pred.votesA || 0} votes)` : `${pctA}% (${pred.poolA || 0} 🍿)`;
+      const subLabelB = isFreePoll ? `${pctB}% (${pred.votesB || 0} votes)` : `${pctB}% (${pred.poolB || 0} 🍿)`;
+
       const remSec = Math.max(0, Math.ceil((pred.endTime - Date.now()) / 1000));
+      const canResolve = this.isHost || (pred.creatorId === (this.localUser && this.localUser.id));
 
       card.innerHTML = `
         <div class="cs-prediction-header">
           <div class="cs-prediction-title">
-            <i class="fa-solid fa-trophy"></i>
-            <span>LIVE PREDICTION</span>
+            <i class="fa-solid ${isFreePoll ? 'fa-square-poll-vertical' : 'fa-trophy'}" style="color:${isFreePoll ? '#38bdf8' : '#fbbf24'}"></i>
+            <span>${isFreePoll ? 'LIVE COMMUNITY POLL' : 'LIVE POPCORN PREDICTION'}</span>
           </div>
           <div class="cs-prediction-timer" id="cs-pred-timer">${remSec > 0 ? remSec + 's left' : 'VOTING CLOSED'}</div>
         </div>
@@ -2669,17 +2774,17 @@
           <button type="button" class="cs-pred-opt-btn ${pred.myVote === 'A' ? 'is-voted' : ''}" id="pred-opt-a" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
             <div class="cs-pred-opt-bar" style="width:${pctA}%"></div>
             <div class="cs-pred-opt-title">${this.escapeHtml(pred.optionA)}</div>
-            <div class="cs-pred-opt-pct">${pctA}% (${pred.poolA} 🍿)</div>
+            <div class="cs-pred-opt-pct">${subLabelA}</div>
           </button>
           <button type="button" class="cs-pred-opt-btn ${pred.myVote === 'B' ? 'is-voted' : ''}" id="pred-opt-b" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
             <div class="cs-pred-opt-bar" style="width:${pctB}%"></div>
             <div class="cs-pred-opt-title">${this.escapeHtml(pred.optionB)}</div>
-            <div class="cs-pred-opt-pct">${pctB}% (${pred.poolB} 🍿)</div>
+            <div class="cs-pred-opt-pct">${subLabelB}</div>
           </button>
         </div>
         <div class="cs-prediction-footer">
           <div class="cs-prediction-coins"><i class="fa-solid fa-coins" style="color:#fbbf24"></i> Your Wallet: <b id="cs-user-popcorn">${this.popcornCoins}</b> 🍿</div>
-          ${this.isHost ? `<button type="button" style="background:none;border:none;color:#38bdf8;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner</button>` : ''}
+          ${canResolve ? `<button type="button" style="background:none;border:none;color:#38bdf8;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner / End Poll</button>` : ''}
         </div>
       `;
       card.style.display = 'block';
@@ -2687,10 +2792,10 @@
       const optABtn = card.querySelector('#pred-opt-a');
       const optBBtn = card.querySelector('#pred-opt-b');
       if (optABtn && !pred.hasVoted) {
-        optABtn.onclick = () => this.placePredictionBet('A', 25);
+        optABtn.onclick = () => this.placePredictionBet('A');
       }
       if (optBBtn && !pred.hasVoted) {
-        optBBtn.onclick = () => this.placePredictionBet('B', 25);
+        optBBtn.onclick = () => this.placePredictionBet('B');
       }
       const resolveBtn = card.querySelector('#pred-btn-resolve');
       if (resolveBtn) {
@@ -2715,42 +2820,56 @@
       }, 1000);
     }
 
-    placePredictionBet(option, amount = 25) {
+    placePredictionBet(option, amount = null) {
       if (!this.activePrediction || this.activePrediction.hasVoted) return;
-      if (this.popcornCoins < amount) {
-        this.showActionToast('Not enough Popcorn Coins! 🍿');
-        return;
-      }
-      this.popcornCoins -= amount;
-      safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
+      const pred = this.activePrediction;
+      const betAmount = amount !== null ? amount : (typeof pred.wager === 'number' ? pred.wager : 25);
 
-      this.activePrediction.hasVoted = true;
-      this.activePrediction.myVote = option;
-      this.activePrediction.myBet = amount;
+      if (betAmount > 0) {
+        if (this.popcornCoins < betAmount) {
+          this.showActionToast('Not enough Popcorn Coins! 🍿');
+          return;
+        }
+        this.popcornCoins -= betAmount;
+        safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
+      }
+
+      pred.hasVoted = true;
+      pred.myVote = option;
+      pred.myBet = betAmount;
       if (option === 'A') {
-        this.activePrediction.poolA += amount;
+        pred.votesA = (pred.votesA || 0) + 1;
+        pred.poolA = (pred.poolA || 0) + betAmount;
       } else {
-        this.activePrediction.poolB += amount;
+        pred.votesB = (pred.votesB || 0) + 1;
+        pred.poolB = (pred.poolB || 0) + betAmount;
       }
 
       this.broadcast({
         type: 'PREDICTION_BET',
-        predictionId: this.activePrediction.id,
+        predictionId: pred.id,
         option,
-        amount,
-        user: this.localUser.name
+        amount: betAmount,
+        user: (this.localUser && this.localUser.name) || 'Viewer'
       });
 
       this.renderPredictionCard();
-      this.showActionToast(`🍿 Placed ${amount} Popcorn bet on: ${option === 'A' ? this.activePrediction.optionA : this.activePrediction.optionB}`);
+      if (betAmount > 0) {
+        this.showActionToast(`🍿 Placed ${betAmount} Popcorn bet on: ${option === 'A' ? pred.optionA : pred.optionB}`);
+      } else {
+        this.showActionToast(`🗳️ Voted for: ${option === 'A' ? pred.optionA : pred.optionB}`);
+      }
     }
 
     handlePredictionBet(data) {
       if (!this.activePrediction || this.activePrediction.id !== data.predictionId) return;
+      const amount = data.amount || 0;
       if (data.option === 'A') {
-        this.activePrediction.poolA += (data.amount || 25);
+        this.activePrediction.votesA = (this.activePrediction.votesA || 0) + 1;
+        this.activePrediction.poolA = (this.activePrediction.poolA || 0) + amount;
       } else {
-        this.activePrediction.poolB += (data.amount || 25);
+        this.activePrediction.votesB = (this.activePrediction.votesB || 0) + 1;
+        this.activePrediction.poolB = (this.activePrediction.poolB || 0) + amount;
       }
       this.renderPredictionCard();
     }
@@ -2777,11 +2896,12 @@
           </div>
           <div class="fz-modal-body" style="text-align:left;align-items:stretch;">
             <p style="font-size:14px;color:#f8fafc;font-weight:700;margin-bottom:14px;">${this.escapeHtml(pred.question)}</p>
-            <p style="font-size:12px;color:#94a3b8;margin-bottom:14px;">Select which outcome happened in the film to reward winning bettors:</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-              <button type="button" class="fz-btn-pri" id="res-win-a">🏆 ${this.escapeHtml(pred.optionA)} Wins</button>
-              <button type="button" class="fz-btn-pri" id="res-win-b">🏆 ${this.escapeHtml(pred.optionB)} Wins</button>
+            <p style="font-size:12px;color:#94a3b8;margin-bottom:14px;">Select which outcome happened in the film to reward winning voters:</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <button type="button" class="fz-btn-pri" id="res-win-a" style="background:linear-gradient(135deg,#0284c7,#2563eb);border:none;">🏆 ${this.escapeHtml(pred.optionA)} Wins</button>
+              <button type="button" class="fz-btn-pri" id="res-win-b" style="background:linear-gradient(135deg,#e11d48,#b91c1c);border:none;">🏆 ${this.escapeHtml(pred.optionB)} Wins</button>
             </div>
+            <button type="button" class="fz-btn-sec" id="res-win-cancel" style="width:100%;"><i class="fa-solid fa-rotate-left"></i> Cancel / End without Winner</button>
           </div>
         </div>
       `;
@@ -2795,11 +2915,21 @@
         modal.style.display = 'none';
         this.resolvePrediction('B');
       };
+      const cancelBtn = document.getElementById('res-win-cancel');
+      if (cancelBtn) {
+        cancelBtn.onclick = () => {
+          modal.style.display = 'none';
+          this.resolvePrediction('CANCEL');
+        };
+      }
     }
 
     resolvePrediction(winningOption) {
       if (!this.activePrediction) return;
-      const winnerName = winningOption === 'A' ? this.activePrediction.optionA : this.activePrediction.optionB;
+      let winnerName = 'Cancelled';
+      if (winningOption === 'A') winnerName = this.activePrediction.optionA;
+      else if (winningOption === 'B') winnerName = this.activePrediction.optionB;
+
       const resolution = {
         type: 'PREDICTION_RESOLVE',
         predictionId: this.activePrediction.id,
@@ -2812,31 +2942,46 @@
 
     handlePredictionResolve(data) {
       if (!this.activePrediction) return;
-      const didIWin = this.activePrediction.myVote === data.winningOption;
-      if (didIWin) {
-        const reward = (this.activePrediction.myBet || 25) * 2;
-        this.popcornCoins += reward;
-        safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
-        this.showActionToast(`🏆 YOU WON ${reward} POPCORN COINS! 🍿`);
-        this.playSynthesizedSound('heart');
+      if (data.winningOption === 'CANCEL') {
+        if (this.activePrediction.myBet > 0) {
+          this.popcornCoins += this.activePrediction.myBet;
+          safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
+          this.showActionToast(`Prediction cancelled. ${this.activePrediction.myBet} 🍿 refunded.`);
+        } else {
+          this.showActionToast('Live Poll closed.');
+        }
       } else {
-        this.showActionToast(`🏆 Winner Revealed: "${data.winnerName}"`);
+        const didIWin = this.activePrediction.myVote === data.winningOption;
+        if (didIWin) {
+          const reward = (this.activePrediction.myBet > 0) ? (this.activePrediction.myBet * 2) : 10;
+          this.popcornCoins += reward;
+          safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
+          this.showActionToast(`🏆 YOU WON ${reward} POPCORN COINS! 🍿`);
+          this.playSynthesizedSound('heart');
+        } else {
+          this.showActionToast(`🏆 Winner Revealed: "${data.winnerName}"`);
+        }
       }
 
       const card = document.getElementById('cs-prediction-card');
       if (card) {
-        card.innerHTML = `
-          <div class="cs-prediction-winner-banner">
-            <div style="font-size:28px;margin-bottom:4px;">🎉🏆🍿</div>
-            <div style="font-size:16px;font-weight:800;color:#fbbf24;">${this.escapeHtml(data.winnerName)} WON!</div>
-            <div style="font-size:12px;color:#cbd5e1;margin-top:4px;">
-              ${didIWin ? 'Congratulations! Payout credited to your wallet 🍿' : 'Better luck on the next scene prediction!'}
-            </div>
-          </div>
-        `;
-        setTimeout(() => {
+        if (data.winningOption === 'CANCEL') {
           if (card.parentNode) card.parentNode.removeChild(card);
-        }, 5500);
+        } else {
+          const didIWin = this.activePrediction.myVote === data.winningOption;
+          card.innerHTML = `
+            <div class="cs-prediction-winner-banner">
+              <div style="font-size:28px;margin-bottom:4px;">🎉🏆🍿</div>
+              <div style="font-size:16px;font-weight:800;color:#fbbf24;">${this.escapeHtml(data.winnerName)} WON!</div>
+              <div style="font-size:12px;color:#cbd5e1;margin-top:4px;">
+                ${didIWin ? 'Congratulations! Reward credited to your wallet 🍿' : 'Better luck on the next scene prediction!'}
+              </div>
+            </div>
+          `;
+          setTimeout(() => {
+            if (card.parentNode) card.parentNode.removeChild(card);
+          }, 5500);
+        }
       }
       this.activePrediction = null;
     }

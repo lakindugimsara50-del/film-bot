@@ -3,34 +3,34 @@
    ============================================================ */
 
 :root {
-  --bg: #08080a;
-  --bg-surface: #0e0e12;
-  --bg2: #14141a;
-  --bg3: #1c1c24;
-  --bg-card: rgba(18, 18, 24, 0.85);
-  --bg-card-hover: rgba(28, 28, 38, 0.95);
-  --accent: #E50914;
-  --accent-hover: #f40612;
+  --bg: var(--fz-canvas, #0a0b0e);
+  --bg-surface: var(--fz-surface-ground, #101217);
+  --bg2: var(--fz-surface-raised, #1e212c);
+  --bg3: var(--fz-surface-overlay, #262a38);
+  --bg-card: var(--fz-surface-card, #161820);
+  --bg-card-hover: var(--fz-surface-raised, #1e212c);
+  --accent: var(--fz-accent, #E50914);
+  --accent-hover: var(--fz-accent-hover, #f40612);
   --accent-dark: #b20710;
-  --accent-glow: rgba(229, 9, 20, 0.55);
-  --accent-subtle: rgba(229, 9, 20, 0.14);
+  --accent-glow: var(--fz-accent-glow, rgba(229, 9, 20, 0.40));
+  --accent-subtle: var(--fz-accent-subtle, rgba(229, 9, 20, 0.15));
   --hero-bg-tint: rgba(229, 9, 20, 0.08);
-  --text: #ffffff;
-  --text2: #cbd5e1;
-  --text3: #71717a;
-  --gold: #f5c518;
+  --text: var(--fz-text-primary, #ffffff);
+  --text2: var(--fz-text-secondary, #cbd5e1);
+  --text3: var(--fz-text-muted, #9ca3af);
+  --gold: var(--fz-gold, #f5c518);
   --gold-glow: rgba(245, 197, 24, 0.35);
-  --blue: #00a8ff;
-  --green: #4ade80;
-  --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
-  --card-shadow-hover: 0 18px 48px rgba(0, 0, 0, 0.95), 0 0 24px rgba(229, 9, 20, 0.35);
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --header-h: 68px;
-  --transition: 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-  --transition-slow: 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  --blue: var(--fz-blue, #38bdf8);
+  --green: var(--fz-green, #4ade80);
+  --card-shadow: var(--fz-shadow-md, 0 12px 36px rgba(0, 0, 0, 0.85));
+  --card-shadow-hover: var(--fz-shadow-xl, 0 18px 48px rgba(0, 0, 0, 0.95));
+  --radius-sm: var(--fz-radius-sm, 4px);
+  --radius: var(--fz-radius-md, 10px);
+  --radius-lg: var(--fz-radius-lg, 14px);
+  --radius-xl: var(--fz-radius-xl, 18px);
+  --header-h: var(--fz-header-height, 68px);
+  --transition: var(--fz-transition-norm, 0.25s cubic-bezier(0.16, 1, 0.3, 1));
+  --transition-slow: var(--fz-transition-slow, 0.4s cubic-bezier(0.16, 1, 0.3, 1));
 
   /* Cinema Design Tokens - Z-Index Hierarchy */
   --fz-z-dropdown: 100000;
@@ -8559,14 +8559,12 @@ body.tg-browser-mode {
 
 .movie-card {
   opacity: 1 !important;
-  transform: none !important;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
-  will-change: auto !important;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, box-shadow !important;
 }
 
 .movie-card.is-card-visible {
   opacity: 1 !important;
-  transform: none !important;
 }
 
 /* Ensure poster images render immediately and cleanly without blur or fade delay */

@@ -2623,8 +2623,8 @@ function openUserListModal(initialTab = 'favorites') {
         </div>
 
         <!-- Tab Toolbar (Counter & Clear Action) -->
-        <div class="vip-hub-toolbar">
-          <div class="vip-hub-toolbar-info" id="vip-hub-toolbar-info">Showing collection</div>
+        <div class="vip-hub-toolbar" style="display:none">
+          <div class="vip-hub-toolbar-info" id="vip-hub-toolbar-info"></div>
           <div class="vip-hub-toolbar-actions">
             <button type="button" class="vip-clear-btn" id="vip-hub-clear-btn" style="display:none">
               <i class="fa-solid fa-trash-can"></i> Clear List

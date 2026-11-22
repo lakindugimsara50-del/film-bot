@@ -30,12 +30,11 @@ const GITHUB_ENDPOINT_JSON =
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk (moov atom + first video frames)
 const CANONICAL_CACHE_ORIGIN = 'https://filmsub.pages.dev';
 
-const DEFAULT_FALLBACK_TUNNEL =
-  'https://insertion-cult-pipes-sandy.trycloudflare.com';
-const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
+const DEFAULT_FALLBACK_TUNNEL = '';
+const DEFAULT_FALLBACK_RENDER = '';
 
-let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;
-let cachedFallbackBaseUrl = DEFAULT_FALLBACK_RENDER;
+let cachedStreamBaseUrl = '';
+let cachedFallbackBaseUrl = '';
 let cachedAtEpoch = 0;
 const CACHE_TTL_MS = 60000;
 

@@ -275,7 +275,7 @@ async function probeStreamServerHealth(baseUrl) {
             const b = data.backend.trim().replace(/\/+$/, '');
             activeStreamBaseUrl = b;
           }
-          if (data && (data.ready === true || data.status === 'pong')) {
+          if (data && data.ready === true) {
             streamServerHealthy = true;
             return true;
           }
@@ -4049,7 +4049,7 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         </div>
       </div>
       <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
-             controls preload="auto" playsinline webkit-playsinline ${posterAttr}
+             controls preload="auto" playsinline webkit-playsinline crossorigin="anonymous" ${posterAttr}
              style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000000 !important">
         <source src="${FilmSub.escHtml(stream.stream_url)}" type="${FilmSub.escHtml(stream.type || 'video/mp4')}">
         ${tracksHTML}
@@ -6227,6 +6227,9 @@ window.FilmZilla4DHaptic = {
         ? this.vjsPlayer.tech_.el_
         : (typeof document !== 'undefined' ? document.querySelector('.player-container video') : null);
       if (!videoEl) return;
+      if (videoEl && !videoEl.crossOrigin) {
+        try { videoEl.crossOrigin = 'anonymous'; } catch (_) {}
+      }
 
       // Real-time Low-Pass Filter (<70Hz for heavy sub-bass impacts)
       if (!this.biquadFilter) {
@@ -6265,18 +6268,19 @@ window.FilmZilla4DHaptic = {
     this.corsInterval = setInterval(() => {
       if (!this.isEnabled || !videoEl || videoEl.paused) return;
       const now = Date.now();
-      if ((now - this.lastVibrateTime) > 8000) {
+      if ((now - this.lastVibrateTime) > 6000) {
         // Trigger subtle action heartbeat pulse
         this.lastVibrateTime = now;
-        this.triggerHapticPattern([40, 30, 60], 'bass');
+        this.triggerHapticPattern([45, 30, 70], 'bass');
       }
-    }, 2000);
+    }, 1500);
   },
 
   startAnalysisLoop() {
     if (this.animFrameId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.animFrameId);
     const bufferLength = this.analyser ? this.analyser.frequencyBinCount : 64;
     const dataArray = new Uint8Array(bufferLength);
+    let zeroCount = 0;
 
     const checkAudioImpact = () => {
       if (!this.isEnabled) return;
@@ -6284,12 +6288,29 @@ window.FilmZilla4DHaptic = {
         this.analyser.getByteFrequencyData(dataArray);
         // Focus on bins 0-5 (<70Hz bass region)
         let bassEnergy = 0;
+        let nonZeroBins = 0;
         const bassBins = Math.min(6, bufferLength);
         for (let i = 0; i < bassBins; i++) {
           bassEnergy += dataArray[i];
+          if (dataArray[i] > 0) nonZeroBins++;
         }
         const avgBass = bassEnergy / bassBins;
         const now = Date.now();
+
+        // Check if video is playing with sound but browser CORS security zeroes out analyser
+        const isPlaying = videoEl && !videoEl.paused && videoEl.currentTime > 2 && !videoEl.muted;
+        if (isPlaying && nonZeroBins === 0) {
+          zeroCount++;
+          if (zeroCount > 180 && !this.corsInterval) {
+            this.startCorsFallback(videoEl);
+          }
+        } else if (nonZeroBins > 0) {
+          zeroCount = 0;
+          if (this.corsInterval) {
+            clearInterval(this.corsInterval);
+            this.corsInterval = null;
+          }
+        }
 
         if (avgBass > 185 && (now - this.lastVibrateTime) > this.cooldownMs) {
           this.lastVibrateTime = now;

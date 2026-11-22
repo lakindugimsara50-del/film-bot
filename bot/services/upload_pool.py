@@ -142,6 +142,7 @@ class TelegramUploadPool:
         self._admin_check_times: Dict[int, float] = {}
         self._lock = asyncio.Lock()
         self._client_upload_locks: Dict[int, asyncio.Lock] = {}
+        self._joined_sessions_cache: set[str] = set()
 
     def get_client_lock(self, client: Client) -> asyncio.Lock:
         """Return a persistent asyncio.Lock for the given Client instance to serialize same-account uploads."""
@@ -538,9 +539,14 @@ class TelegramUploadPool:
             log.info("[UploadPool] No username or invite link available for auto-joining sessions to %s", target_channel)
             return {"joined": 0, "promoted": 0, "error": "Bot cannot access channel or export invite link"}
 
-        target_clients = self.clients[:42]
-        log.info("[UploadPool] Auto-joining %d (capped at 42) sessions to channel %s (dest=%s)...", len(target_clients), target_channel, join_dest)
-        join_sem = asyncio.Semaphore(5)
+        # Prioritize unjoined sessions and cap to at most 6 per join run to avoid Telegram flood limits
+        unjoined_clients = [
+            c for c in self.clients
+            if f"{getattr(c, 'name', '')}_{target_channel}" not in self._joined_sessions_cache
+        ]
+        target_clients = unjoined_clients[:6] if unjoined_clients else self.clients[:3]
+        log.info("[UploadPool] Auto-joining %d session(s) to channel %s (dest=%s)...", len(target_clients), target_channel, join_dest)
+        join_sem = asyncio.Semaphore(2)
         joined_count = 0
         promoted_count = 0
         limit_reached = False
@@ -549,6 +555,11 @@ class TelegramUploadPool:
             nonlocal joined_count, promoted_count, limit_reached
             if not getattr(c, "is_connected", False):
                 return
+            sess_name = getattr(c, "name", "client")
+            cache_key = f"{sess_name}_{target_channel}"
+            if cache_key in self._joined_sessions_cache:
+                joined_count += 1
+                return
             async with join_sem:
                 is_member = False
                 try:
@@ -556,24 +567,30 @@ class TelegramUploadPool:
                     c_chat = await asyncio.wait_for(c.get_chat(target_channel), timeout=2.0)
                     if c_chat:
                         is_member = True
+                        self._joined_sessions_cache.add(cache_key)
                         joined_count += 1
                 except Exception:
                     is_member = False
 
                 if not is_member:
                     try:
-                        await asyncio.wait_for(c.join_chat(join_dest), timeout=5.0)
+                        await asyncio.wait_for(c.join_chat(join_dest), timeout=4.0)
+                        self._joined_sessions_cache.add(cache_key)
                         joined_count += 1
                     except asyncio.CancelledError:
                         return
                     except asyncio.TimeoutError:
-                        log.warning("[UploadPool] Session %s join_chat timed out after 5s on %s", getattr(c, "name", "client"), target_channel)
+                        log.warning("[UploadPool] Session %s join_chat timed out after 4s on %s", sess_name, target_channel)
                     except Exception as j_err:
                         err_s = str(j_err).lower()
                         if "already" in err_s or "user_already_participant" in err_s:
+                            self._joined_sessions_cache.add(cache_key)
                             joined_count += 1
+                        elif "flood_wait" in err_s or "floodwait" in err_s:
+                            log.warning("[UploadPool] Session %s hit Telegram FloodWait during join_chat. Skipping.", sess_name)
+                            return
                         else:
-                            log.debug("[UploadPool] Session %s join note: %s", getattr(c, "name", "client"), j_err)
+                            log.debug("[UploadPool] Session %s join note: %s", sess_name, j_err)
 
                 # Attempt to promote userbot to admin with can_post_messages if main bot is admin (up to 42 sessions)
                 if not limit_reached and promoted_count < 42 and self._main_client and getattr(self._main_client, "is_connected", False):
@@ -590,7 +607,7 @@ class TelegramUploadPool:
                                         can_edit_messages=True,
                                     )
                                 ),
-                                timeout=8.0,
+                                timeout=6.0,
                             )
                             promoted_count += 1
                             log.info("[UploadPool] Session %s (user %s) promoted to admin in %s", getattr(c, "name", "session"), u_me.id, target_channel)
@@ -613,7 +630,13 @@ class TelegramUploadPool:
                 timeout=6.5,
             )
         except asyncio.TimeoutError:
-            log.warning("[UploadPool] Batch join_channel timed out after 6.5s")
+            log.warning("[UploadPool] Batch join_channel timed out after 6.5s. Cancelling background join tasks.")
+            if not gather_join.done():
+                gather_join.cancel()
+            try:
+                await gather_join
+            except (asyncio.CancelledError, Exception):
+                pass
         except (asyncio.CancelledError, GeneratorExit):
             if not gather_join.done():
                 gather_join.cancel()

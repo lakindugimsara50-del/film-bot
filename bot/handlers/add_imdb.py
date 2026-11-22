@@ -195,7 +195,7 @@ def register(app: Client) -> None:
                 parse_mode=ParseMode.HTML,
             )
 
-    @app.on_message(filters.private & (filters.document | filters.text) & ~filters.command(["add", "cancel", "sub", "queue", "addsession", "start", "help"]))
+    @app.on_message(filters.private & (filters.document | filters.text) & ~filters.command(["add", "cancel", "sub", "queue", "addsession", "start", "help", "status", "stats", "sessions", "ping", "version"]))
     async def imdb_sub_input_handler(client: Client, message: Message):
         user_id = message.from_user.id if message.from_user else 0
         sess = PENDING_IMDB_SESSIONS.get(user_id)

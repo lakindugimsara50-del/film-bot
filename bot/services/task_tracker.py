@@ -265,6 +265,10 @@ class TaskTracker:
 
         return "✅ <b>කිසිදු වැඩක් නැත (Idle)</b> — සියලුම කාර්යයන් සාර්ථකව අවසන් හෝ නව කාර්යයක් බලාපොරොත්තුවෙන්."
 
+    def format_status_message(self, user_id: Optional[int] = None) -> str:
+        """Alias for get_status_summary for backwards and cross-handler compatibility."""
+        return self.get_status_summary(user_id)
+
 
 # Global singleton instance
 tracker = TaskTracker()

@@ -1316,13 +1316,19 @@ async def _execute_leech(
                         multi_dl_lock = asyncio.Lock()
                         sub_acquire_lock = asyncio.Lock()
                         last_rendered_multi_text = ""
+                        flood_wait_until = 0.0
 
                         async def _update_multi_dl_display(force: bool = False) -> None:
-                            nonlocal last_edit_time, last_rendered_multi_text
+                            nonlocal last_edit_time, last_rendered_multi_text, flood_wait_until
+                            now = time.time()
+                            if now < flood_wait_until and not force:
+                                return
                             if multi_dl_lock.locked() and not force:
                                 return
                             async with multi_dl_lock:
                                 now = time.time()
+                                if now < flood_wait_until and not force:
+                                    return
                                 if not force and (now - last_edit_time < 3.0):
                                     return
 
@@ -1408,9 +1414,12 @@ async def _execute_leech(
                                         status_msg.edit_text(full_text, parse_mode=ParseMode.HTML, reply_markup=kb_cancel),
                                         timeout=4.0
                                     )
+                                    last_edit_time = now
+                                    flood_wait_until = 0.0
                                 except pyrogram.errors.FloodWait as fw:
-                                    last_edit_time = now + fw.value
-                                    log.warning("[LeechService] FloodWait in multi display: %d s (backing off)", fw.value)
+                                    flood_wait_until = now + min(float(fw.value), 15.0)
+                                    last_edit_time = now
+                                    log.warning("[LeechService] FloodWait in multi display: %d s (backing off %0.1fs)", fw.value, min(float(fw.value), 15.0))
                                 except Exception as e:
                                     log.debug("[LeechService] Multi progress edit ignored: %s", e)
 
@@ -1525,13 +1534,18 @@ async def _execute_leech(
                                     wm_badge_out = os.path.join(temp_dir, f"badge_{slug}_{q_name}.mp4")
                                     log.info("[LeechService] CineSubz release detected (<=1.95GB). Applying FilmZilla logo badge + intro + 10s skip on %s [%s]...", slug, q_name)
 
+                                    _last_badge_pct = 0.0
                                     async def _badge_cb(pct: float, p_str: str):
+                                        nonlocal _last_badge_pct
+                                        force_edit = (pct - _last_badge_pct >= 5.0) or (pct >= 99.0)
+                                        if force_edit:
+                                            _last_badge_pct = pct
                                         companion_progress[q_name].update({
                                             "stage": "processing",
                                             "dl_pct": pct,
                                             "detail": p_str if str(p_str).startswith("GPU Queued") else f"FilmZilla Processing {p_str}",
                                         })
-                                        await _update_multi_dl_display()
+                                        await _update_multi_dl_display(force=force_edit)
 
                                     companion_progress[q_name].update({
                                         "stage": "processing",
@@ -1668,13 +1682,18 @@ async def _execute_leech(
                                     })
                                     await _update_multi_dl_display(force=True)
 
+                                    _last_comp_pct = 0.0
                                     async def _comp_cb(pct: float, p_str: str):
+                                        nonlocal _last_comp_pct
+                                        force_edit = (pct - _last_comp_pct >= 5.0) or (pct >= 99.0)
+                                        if force_edit:
+                                            _last_comp_pct = pct
                                         companion_progress[q_name].update({
                                             "stage": "compressing",
                                             "dl_pct": pct,
                                             "dl_done": p_str if str(p_str).startswith("GPU Queued") else f"Compressing {p_str}",
                                         })
-                                        await _update_multi_dl_display()
+                                        await _update_multi_dl_display(force=force_edit)
 
                                     comp_out = os.path.join(temp_dir, f"comp_{slug}_{q_name}.mp4")
                                     comp_res = await video_service.compress_video(

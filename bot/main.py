@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 import threading
+import time
 from typing import Optional
 
 _bot_dir = os.path.dirname(os.path.abspath(__file__))
@@ -172,9 +173,12 @@ async def status_endpoint() -> dict:
     except Exception:
         pass
 
+    loop_lag = round(time.time() - _last_loop_heartbeat, 1)
     return {
         "status": "running" if bot_connected else "stopped",
         "bot_status": "online" if bot_connected else "offline",
+        "event_loop_lag_s": loop_lag,
+        "event_loop_responsive": (loop_lag < 30.0),
         "version": BOT_VERSION,
         "bot": "@Filmsinhala200Bot",
         "seedr_pool_accounts": seedr_count,
@@ -185,6 +189,21 @@ async def status_endpoint() -> dict:
 
 
 _health_server_instance: Optional[uvicorn.Server] = None
+_last_loop_heartbeat: float = time.time()
+
+
+async def _bg_event_loop_watchdog() -> None:
+    """Proactive asyncio event loop heartbeat monitor and watchdog."""
+    global _last_loop_heartbeat
+    log.info("[Watchdog] Asyncio event loop watchdog started (10s interval).")
+    while True:
+        try:
+            _last_loop_heartbeat = time.time()
+            if not getattr(app, "is_connected", False):
+                log.warning("[Watchdog] Main Pyrogram bot client is disconnected!")
+        except Exception as exc:
+            log.debug("[Watchdog] Heartbeat note: %s", exc)
+        await asyncio.sleep(10)
 
 
 def start_health_server_thread(port: int) -> Optional[threading.Thread]:
@@ -824,7 +843,7 @@ async def quick_button_callback(client: Client, query: CallbackQuery) -> None:
         await query.answer()
 
 
-@app.on_message(filters.command(["status", "statys", "staus", "state"]))
+@app.on_message(filters.command(["status", "stats", "statys", "staus", "state"]))
 async def status_handler(client: Client, message: Message) -> None:
     """Show bot status, active/recent task progress, and configuration summary."""
     try:
@@ -1190,6 +1209,9 @@ async def _on_start(client: Client) -> None:
         video_service.cleanup_stale_work_dirs()
     except Exception as cl_err:
         log.debug("[Main] Stale workspace cleanup note: %s", cl_err)
+
+    # Launch proactive event loop monitor & watchdog
+    asyncio.create_task(_bg_event_loop_watchdog())
 
 
 async def main() -> None:

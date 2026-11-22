@@ -1251,13 +1251,12 @@ async def compress_video(
     cmd = [
         ffmpeg_bin,
         "-y",
+        "-nostdin",
         "-hide_banner",
         "-threads", "0",
         "-filter_threads", "0",
         "-filter_complex_threads", "0",
     ]
-    if hw_enc == "h264_nvenc":
-        cmd.extend(["-hwaccel", "cuda"])
     if trim_start > 0:
         cmd.extend(["-ss", str(trim_start)])
     cmd.extend(["-i", os.path.abspath(input_path)])
@@ -1475,6 +1474,7 @@ async def compress_video(
         proc = await asyncio.create_subprocess_exec(
             *final_cmd,
             cwd=out_dir,
+            stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -1488,10 +1488,16 @@ async def compress_video(
         async def _read_stderr():
             nonlocal last_pct
             while True:
-                if hasattr(proc.stderr, "read"):
-                    chunk = await proc.stderr.read(4096)
-                else:
-                    chunk = await proc.stderr.readline()
+                try:
+                    if hasattr(proc.stderr, "read"):
+                        chunk = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                    else:
+                        chunk = await asyncio.wait_for(proc.stderr.readline(), timeout=120.0)
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    log.warning("[VideoService] compress_video stderr stalled for 120s with no progress!")
+                    break
                 if not chunk:
                     break
                 decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
@@ -2467,7 +2473,7 @@ async def prepend_filmzilla_intro(
 
     if hw_enc == "h264_nvenc":
         nvenc_preset = "p1"
-        hw_opts = ["-hwaccel", "cuda"]
+        hw_opts = []
         enc_opts = [
             "-c:v", "h264_nvenc",
             "-preset", nvenc_preset,
@@ -2516,6 +2522,7 @@ async def prepend_filmzilla_intro(
 
     cmd = [
         exe, "-y",
+        "-nostdin",
         "-hide_banner",
         *hw_opts,
         "-i", os.path.abspath(intro_video),
@@ -2565,6 +2572,7 @@ async def prepend_filmzilla_intro(
             proc = await asyncio.create_subprocess_exec(
                 *final_cmd,
                 cwd=out_dir,
+                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -2574,15 +2582,21 @@ async def prepend_filmzilla_intro(
             last_logged_pct = 0.0
 
             while True:
-                if inspect.iscoroutinefunction(getattr(proc.stderr, "read", None)):
-                    line = await proc.stderr.read(4096)
-                elif hasattr(proc.stderr, "readline"):
-                    res = proc.stderr.readline()
-                    line = await res if inspect.isawaitable(res) else res
-                elif hasattr(proc.stderr, "read"):
-                    res = proc.stderr.read(4096)
-                    line = await res if inspect.isawaitable(res) else res
-                else:
+                try:
+                    if inspect.iscoroutinefunction(getattr(proc.stderr, "read", None)):
+                        line = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                    elif hasattr(proc.stderr, "readline"):
+                        res = proc.stderr.readline()
+                        line = await asyncio.wait_for(res, timeout=120.0) if inspect.isawaitable(res) else res
+                    elif hasattr(proc.stderr, "read"):
+                        res = proc.stderr.read(4096)
+                        line = await asyncio.wait_for(res, timeout=120.0) if inspect.isawaitable(res) else res
+                    else:
+                        break
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    log.warning("[VideoService] prepend_filmzilla_intro stderr stalled for 120s with no progress!")
                     break
                 if not line or not isinstance(line, (bytes, bytearray)):
                     break
@@ -3122,7 +3136,7 @@ async def cover_cinesubz_watermark(
             "-pix_fmt", "yuv420p",
         ]
 
-    hw_opts = ["-hwaccel", "cuda"] if hw_enc == "h264_nvenc" else []
+    hw_opts = []
     trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
 
     intro_video = None
@@ -3165,6 +3179,7 @@ async def cover_cinesubz_watermark(
 
             cmd = [
                 ffmpeg_bin, "-y",
+                "-nostdin",
                 "-hide_banner",
                 "-threads", "0",
                 "-filter_threads", "0",
@@ -3191,6 +3206,7 @@ async def cover_cinesubz_watermark(
             audio_opts = ["-c:a", "copy"]
             cmd = [
                 ffmpeg_bin, "-y",
+                "-nostdin",
                 "-hide_banner",
                 "-threads", "0",
                 "-filter_threads", "0",
@@ -3216,6 +3232,7 @@ async def cover_cinesubz_watermark(
             audio_opts = ["-c:a", "copy"]
             cmd = [
                 ffmpeg_bin, "-y",
+                "-nostdin",
                 "-hide_banner",
                 "-threads", "0",
                 "-filter_threads", "0",
@@ -3298,6 +3315,7 @@ async def cover_cinesubz_watermark(
 
             proc = await asyncio.create_subprocess_exec(
                 *final_cmd,
+                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -3311,11 +3329,17 @@ async def cover_cinesubz_watermark(
                 async def _read_stderr():
                     nonlocal last_pct
                     while True:
-                        if hasattr(proc.stderr, "read"):
-                            chunk = await proc.stderr.read(4096)
-                        elif hasattr(proc.stderr, "readline"):
-                            chunk = await proc.stderr.readline()
-                        else:
+                        try:
+                            if hasattr(proc.stderr, "read"):
+                                chunk = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                            elif hasattr(proc.stderr, "readline"):
+                                chunk = await asyncio.wait_for(proc.stderr.readline(), timeout=120.0)
+                            else:
+                                break
+                        except asyncio.TimeoutError:
+                            if proc.returncode is not None:
+                                break
+                            log.warning("[VideoService] cover_cinesubz_watermark stderr stalled for 120s with no progress!")
                             break
                         if not chunk:
                             break

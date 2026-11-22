@@ -59,7 +59,9 @@
     '💀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
     '✨': 'https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.webp',
     '🎉': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
-    '🚀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp'
+    '🚀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp',
+    '💣': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp',
+    '💥': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a5/512.webp'
   };
 
   // Unicode Regex for standard and compound emojis

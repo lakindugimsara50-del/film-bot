@@ -138,7 +138,8 @@
     skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
     crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
     star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
-    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp'
+    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
+    bomb: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp'
   };
 
   function initLiveReactions(movieId) {

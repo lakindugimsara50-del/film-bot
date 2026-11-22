@@ -6100,6 +6100,7 @@ window.FilmZillaSafeMode = {
       modal.className = 'fz-cinema-modal-backdrop';
       document.body.appendChild(modal);
     }
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
     const categoriesList = ['adult', 'nudity', 'kissing', 'gore', 'violence'];
     const categoryChips = categoriesList.map(cat => {
@@ -6675,6 +6676,23 @@ window.FilmZillaCompanion = {
       modal.className = 'fz-cinema-modal-backdrop';
       document.body.appendChild(modal);
     }
+
+    // Dismiss on backdrop click
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    };
+
+    // Dismiss on Escape key
+    const onModalEsc = (e) => {
+      if (e.key === 'Escape' && modal.style.display !== 'none') {
+        modal.style.display = 'none';
+        window.removeEventListener('keydown', onModalEsc);
+      }
+    };
+    window.addEventListener('keydown', onModalEsc);
+
     const slug = this.currentMovie ? (this.currentMovie.slug || this.currentMovie.id || '') : '';
 
     let companionUrl = '';
@@ -6686,7 +6704,7 @@ window.FilmZillaCompanion = {
         companionUrl = `${window.location.origin}${basePath}companion.html?pair=${this.pairCode}&movie=${encodeURIComponent(slug)}`;
       }
     }
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(companionUrl)}&bgcolor=ffffff&color=08090d`;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(companionUrl)}&bgcolor=ffffff&color=08090d`;
 
     modal.innerHTML = `
       <div class="fz-cinema-modal-dialog">
@@ -6695,7 +6713,7 @@ window.FilmZillaCompanion = {
             <i class="fa-solid fa-mobile-screen" style="color:#38bdf8"></i>
             <span>Phone Second Screen Remote</span>
           </div>
-          <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-companion-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          <button type="button" class="fz-modal-close" id="fz-companion-modal-close" title="Close"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="fz-modal-body">
           <div class="fz-qr-box">
@@ -6709,6 +6727,7 @@ window.FilmZillaCompanion = {
             Control movie playback, receive real-time 4D haptic vibrations in hand, and throw popcorn & reaction bombs onto this screen!
           </p>
           <div class="fz-modal-btn-row">
+            <button type="button" class="fz-btn-sec" id="btn-close-remote-modal"><i class="fa-solid fa-xmark"></i> Close</button>
             <button type="button" class="fz-btn-sec" id="btn-copy-remote-url"><i class="fa-regular fa-copy"></i> Copy Link</button>
             <a href="${companionUrl}" target="_blank" rel="noopener" class="fz-btn-pri"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open in New Tab</a>
           </div>
@@ -6717,19 +6736,43 @@ window.FilmZillaCompanion = {
     `;
     modal.style.display = 'flex';
 
-    document.getElementById('btn-copy-remote-url').onclick = () => {
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        navigator.clipboard.writeText(companionUrl)
-          .then(() => {
-            if (window.FilmSub && typeof window.FilmSub.showToast === 'function') {
-              window.FilmSub.showToast('Remote link copied to clipboard!', 'success');
-            }
-          })
-          .catch(() => {});
-      }
-    };
+    const closeBtn = document.getElementById('fz-companion-modal-close');
+    if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; };
+    const footerCloseBtn = document.getElementById('btn-close-remote-modal');
+    if (footerCloseBtn) footerCloseBtn.onclick = () => { modal.style.display = 'none'; };
+
+    const copyBtn = document.getElementById('btn-copy-remote-url');
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText(companionUrl)
+            .then(() => {
+              if (window.FilmSub && typeof window.FilmSub.showToast === 'function') {
+                window.FilmSub.showToast('Remote link copied to clipboard!', 'success');
+              }
+            })
+            .catch(() => {});
+        }
+      };
+    }
   }
 };
+
+// Global Delegated Dismissal for All Cinema Modals
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.classList && e.target.classList.contains('fz-cinema-modal-backdrop')) {
+      e.target.style.display = 'none';
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.fz-cinema-modal-backdrop').forEach(m => {
+        m.style.display = 'none';
+      });
+    }
+  });
+}
 
 // ---- VIP Cinema Enhancements Initializers ----
 function initVIPCinemaKillerFeatures(vjsPlayer, movie) {

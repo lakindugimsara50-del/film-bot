@@ -25,7 +25,8 @@
     bolt: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
     skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
     crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
-    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp'
+    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
+    bomb: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp'
   };
 
   const WP_CINEMA_STICKERS = [
@@ -875,9 +876,12 @@
             <button type="button" class="wp-reaction-chip" data-emoji="star" title="Star-struck 🤩">
               <img src="${WP_3D_EMOJIS.star}" alt="Star" class="react-3d-emoji" loading="lazy">
             </button>
+            <button type="button" class="wp-reaction-chip wp-reaction-chip-bomb" data-emoji="bomb" title="Mega Cinema Bomb 💣">
+              <img src="${WP_3D_EMOJIS.bomb}" alt="Bomb" class="react-3d-emoji" loading="lazy">
+            </button>
           </div>
 
-          <!-- VIP Interactive Actions Tray (Couple Sync, Hug, Predictions & Reaction Bombs) -->
+          <!-- VIP Interactive Actions Tray (Couple Sync, Hug, Predictions Arena) -->
           <div class="wp-special-actions-tray">
             <!-- Long-Distance Couple Mode Toggle -->
             <button type="button" class="wp-action-pill wp-couple-mode-btn ${this.isCoupleMode ? 'active' : ''}" id="wp-btn-couple" title="Toggle Long-Distance Couple Mode (Touch Glow & Private Hugs)">
@@ -895,15 +899,6 @@
               <i class="fa-solid fa-trophy"></i>
               <span>Arena 🏆</span>
             </button>
-            <div class="wp-bombs-tray">
-              <span class="wp-bombs-label">BOMBS:</span>
-              <button type="button" class="wp-bomb-btn" data-bomb="popcorn" title="Popcorn Burst 🍿">🍿</button>
-              <button type="button" class="wp-bomb-btn" data-bomb="tomato" title="Tomato Splatter 🍅">🍅</button>
-              <button type="button" class="wp-bomb-btn" data-bomb="laugh" title="Laugh Bomb 😂">😂</button>
-              <button type="button" class="wp-bomb-btn" data-bomb="fire" title="Fire Storm 🔥">🔥</button>
-              <button type="button" class="wp-bomb-btn" data-bomb="heart" title="Heart Shower ❤️">❤️</button>
-              <button type="button" class="wp-bomb-btn" data-bomb="bomb" title="Mega Reaction Bomb 💣">💣</button>
-            </div>
           </div>
 
           <!-- WhatsApp-Style Chat Input Bar with Emoji & Cinema Sticker Picker -->
@@ -1139,6 +1134,14 @@
             emoji: emoji,
             userName: this.localUser.name
           });
+          if (emoji === 'bomb') {
+            this.launchReactionBomb('bomb', this.localUser.name);
+            this.broadcast({
+              type: 'REACTION_BOMB',
+              bomb: 'bomb',
+              user: this.localUser.name
+            });
+          }
         });
       });
 
@@ -2082,6 +2085,8 @@
         'star': 'star',
         '🤩': 'star',
         'fire': 'fire',
+        'bomb': 'bomb',
+        '💣': 'bomb',
         'angry': 'mindblown'
       };
       const resolvedKey = emojiMap[emojiKey] || emojiMap[emoji] || 'fire';
@@ -2559,6 +2564,7 @@
         modal.className = 'fz-cinema-modal-backdrop';
         document.body.appendChild(modal);
       }
+      modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
       modal.innerHTML = `
         <div class="fz-cinema-modal-dialog" style="max-width:480px;width:92%;">
@@ -2884,6 +2890,7 @@
         modal.className = 'fz-cinema-modal-backdrop';
         document.body.appendChild(modal);
       }
+      modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
       modal.innerHTML = `
         <div class="fz-cinema-modal-dialog">
@@ -2994,6 +3001,7 @@
         modal.className = 'fz-cinema-modal-backdrop';
         document.body.appendChild(modal);
       }
+      modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
       const entries = [
         { name: `${this.localUser.name} (You)`, coins: this.popcornCoins, isMe: true }

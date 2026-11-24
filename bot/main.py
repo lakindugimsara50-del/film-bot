@@ -28,6 +28,17 @@ import pyrogram.utils
 pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
 pyrogram.utils.MIN_CHAT_ID = -999999999999
 
+import pyrogram
+from concurrent.futures import ThreadPoolExecutor
+# Expand Pyrogram's crypto worker pool from 1 to 16 threads so 98 userbots never block main bot updates
+try:
+    pyrogram.crypto_executor = ThreadPoolExecutor(
+        max_workers=max(8, (os.cpu_count() or 2) * 4),
+        thread_name_prefix="CryptoWorker"
+    )
+except Exception:
+    pass
+
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -193,17 +204,45 @@ _last_loop_heartbeat: float = time.time()
 
 
 async def _bg_event_loop_watchdog() -> None:
-    """Proactive asyncio event loop heartbeat monitor and watchdog."""
+    """Proactive asyncio event loop heartbeat monitor and bidirectional MTProto watchdog."""
     global _last_loop_heartbeat
-    log.info("[Watchdog] Asyncio event loop watchdog started (10s interval).")
+    log.info("[Watchdog] Asyncio event loop watchdog started (15s interval).")
+    consecutive_probe_failures = 0
+    await asyncio.sleep(10)  # Initial boot grace period
     while True:
         try:
             _last_loop_heartbeat = time.time()
             if not getattr(app, "is_connected", False):
-                log.warning("[Watchdog] Main Pyrogram bot client is disconnected!")
+                log.warning("[Watchdog] Main Pyrogram bot client is disconnected! Reconnecting...")
+                try:
+                    await app.start()
+                    log.info("[Watchdog] Main Pyrogram bot client reconnected successfully.")
+                    consecutive_probe_failures = 0
+                except Exception as start_err:
+                    log.error("[Watchdog] Error reconnecting client: %s", start_err)
+            else:
+                # Active bidirectional MTProto round-trip liveness probe (functions.Ping)
+                try:
+                    from pyrogram.raw.functions import Ping
+                    await asyncio.wait_for(
+                        app.invoke(Ping(ping_id=int(time.time()))),
+                        timeout=5.0,
+                    )
+                    consecutive_probe_failures = 0
+                except Exception as probe_err:
+                    consecutive_probe_failures += 1
+                    log.warning("[Watchdog] Telegram MTProto ping probe failed (#%d): %s", consecutive_probe_failures, probe_err)
+                    if consecutive_probe_failures >= 2:
+                        log.warning("[Watchdog] Consecutive MTProto probes failed. Reconnecting main bot client...")
+                        try:
+                            await app.restart(block=False)
+                            consecutive_probe_failures = 0
+                            log.info("[Watchdog] Client restart initiated.")
+                        except Exception as rst_err:
+                            log.error("[Watchdog] Client restart error: %s", rst_err)
         except Exception as exc:
             log.debug("[Watchdog] Heartbeat note: %s", exc)
-        await asyncio.sleep(10)
+        await asyncio.sleep(15)
 
 
 def start_health_server_thread(port: int) -> Optional[threading.Thread]:
@@ -862,7 +901,7 @@ async def status_handler(client: Client, message: Message) -> None:
                 parse_mode=ParseMode.HTML,
                 reply_markup=kb,
             ),
-            timeout=5.0,
+            timeout=15.0,
         )
     except asyncio.TimeoutError:
         log.warning("[StatusHandler] Timeout replying to /status (network stalled), skipping fallback reply")
@@ -877,7 +916,7 @@ async def status_handler(client: Client, message: Message) -> None:
                     f"💡 ක්‍රියාකාරී පෝලිම බැලීමට: <code>/queue</code>",
                     parse_mode=ParseMode.HTML,
                 ),
-                timeout=5.0,
+                timeout=10.0,
             )
         except Exception:
             pass
@@ -1157,9 +1196,9 @@ async def _on_start(client: Client) -> None:
     try:
         from streaming.stream_server import preload_catalog_headers
         async def _bg_warm_catalog():
-            await asyncio.sleep(5)  # wait for upload_pool sessions to connect
+            await asyncio.sleep(25)  # wait 25s for bot to become fully idle & responsive first
             try:
-                warmed = await preload_catalog_headers(max_movies=10)
+                warmed = await preload_catalog_headers(max_movies=2, bytes_per_stream=512 * 1024)
                 log.info("[Main] Proactive catalog pre-warming complete (%d streams warmed into RAM).", warmed)
             except Exception as w_err:
                 log.warning("[Main] Proactive catalog pre-warming note: %s", w_err)

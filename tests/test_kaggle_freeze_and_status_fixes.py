@@ -124,3 +124,95 @@ def test_upload_pool_joined_sessions_cache():
     c1.join_chat.assert_not_called()
     # c2 was not in cache, should have attempted join_chat
     c2.join_chat.assert_called_once()
+
+
+def test_crypto_executor_thread_pool_expanded():
+    """Verify that Pyrogram's crypto_executor has been expanded beyond the default 1 worker."""
+    import pyrogram
+    assert hasattr(pyrogram, "crypto_executor")
+    assert getattr(pyrogram.crypto_executor, "_max_workers", 1) >= 8
+
+
+def test_upload_pool_load_admin_sessions_manifest(tmp_path):
+    """Verify that load_admin_sessions_manifest populates _admin_sessions and _joined_sessions_cache from admin_sessions.json."""
+    import json
+    pool = TelegramUploadPool()
+    c1 = MagicMock()
+    c1.name = "sess_01"
+    c1.is_connected = True
+    c1.me = MagicMock(id=11111, first_name="Admin1", last_name="", phone_number=None)
+
+    c2 = MagicMock()
+    c2.name = "sess_02"
+    c2.is_connected = True
+    c2.me = MagicMock(id=22222, first_name="Admin2", last_name="", phone_number=None)
+
+    pool.clients = [c1, c2]
+    target_ch = -1004325759505
+
+    fake_manifest = {
+        "channel_id": target_ch,
+        "updated_at": 1700000000,
+        "total_sessions_loaded": 2,
+        "admin_sessions_count": 2,
+        "admin_sessions": [
+            {"session": "sess_01.session", "user_id": 11111, "name": "Admin1"},
+            {"session": "sess_02.session", "user_id": 22222, "name": "Admin2"},
+        ]
+    }
+    manifest_file = tmp_path / "admin_sessions.json"
+    manifest_file.write_text(json.dumps(fake_manifest), encoding="utf-8")
+
+    with patch("os.path.join", side_effect=lambda *args: str(manifest_file) if "admin_sessions.json" in args else "/".join(args)):
+        restored = pool.load_admin_sessions_manifest(target_ch)
+
+    assert restored == 2
+    assert target_ch in pool._admin_sessions
+    assert len(pool._admin_sessions[target_ch]) == 2
+    assert f"sess_01_{target_ch}" in pool._joined_sessions_cache
+    assert f"sess_02_{target_ch}" in pool._joined_sessions_cache
+
+
+def test_upload_pool_join_channel_skips_when_manifest_admins_exist():
+    """Verify that join_channel skips network operations if >= 3 verified admins are already loaded."""
+    pool = TelegramUploadPool()
+    target_ch = -1004325759505
+    c1, c2, c3 = MagicMock(), MagicMock(), MagicMock()
+    pool._admin_sessions[target_ch] = [c1, c2, c3]
+    pool.clients = [c1, c2, c3]
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        res = loop.run_until_complete(pool.join_channel(target_ch))
+    finally:
+        loop.close()
+
+    assert res["admin_sessions"] == 3
+    assert res["promoted"] == 0
+    # No clients called join_chat
+    for c in [c1, c2, c3]:
+        assert not hasattr(c.join_chat, "assert_called") or c.join_chat.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_bg_event_loop_watchdog_mtproto_ping_and_restart():
+    """Verify that _bg_event_loop_watchdog restarts client when MTProto ping probe fails consecutively."""
+    import main as main_mod
+
+    mock_app = MagicMock()
+    mock_app.is_connected = True
+    # Make MTProto invoke fail with TimeoutError
+    mock_app.invoke = AsyncMock(side_effect=asyncio.TimeoutError("MTProto timeout"))
+    mock_app.restart = AsyncMock()
+
+    with patch.object(main_mod, "app", mock_app), \
+         patch("asyncio.sleep", AsyncMock(side_effect=[None, None, asyncio.CancelledError()])):
+        try:
+            await main_mod._bg_event_loop_watchdog()
+        except asyncio.CancelledError:
+            pass
+
+    # Verify that after 2 consecutive probe failures, app.restart(block=False) was triggered
+    mock_app.restart.assert_called_with(block=False)
+

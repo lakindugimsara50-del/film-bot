@@ -204,6 +204,45 @@ class TelegramUploadPool:
         except Exception as sm_err:
             log.debug("[UploadPool] Admin manifest save note: %s", sm_err)
 
+    def load_admin_sessions_manifest(self, target_channel: int) -> int:
+        """Load and restore verified admin sessions from bot/sessions/admin_sessions.json if matching target channel."""
+        try:
+            import json
+            _services_dir = os.path.dirname(os.path.abspath(__file__))
+            _bot_dir = os.path.dirname(_services_dir)
+            manifest_path = os.path.join(_bot_dir, "sessions", "admin_sessions.json")
+            if not os.path.exists(manifest_path):
+                return 0
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            ch_in_file = data.get("channel_id")
+            if str(ch_in_file) != str(target_channel):
+                return 0
+            admin_list = data.get("admin_sessions", [])
+            admin_session_files = {a.get("session", "") for a in admin_list if a.get("session")}
+            admin_uids = {a.get("user_id") for a in admin_list if a.get("user_id")}
+
+            matched_clients: List[Client] = []
+            for c in self.clients:
+                sess_file = os.path.basename(getattr(c, "name", ""))
+                if not sess_file.endswith(".session"):
+                    sess_file += ".session"
+                c_uid = getattr(getattr(c, "me", None), "id", None)
+                if sess_file in admin_session_files or (c_uid and c_uid in admin_uids):
+                    if getattr(c, "is_connected", False) and c not in matched_clients:
+                        matched_clients.append(c)
+                        self._joined_sessions_cache.add(f"{getattr(c, 'name', '')}_{target_channel}")
+
+            if matched_clients:
+                ch_key = int(target_channel)
+                self._admin_sessions[ch_key] = matched_clients
+                self._admin_sessions[str(target_channel)] = matched_clients
+                log.info("[UploadPool] Restored %d verified channel admin sessions from %s for channel %s", len(matched_clients), manifest_path, target_channel)
+                return len(matched_clients)
+        except Exception as lm_err:
+            log.debug("[UploadPool] Admin manifest load note: %s", lm_err)
+        return 0
+
     def set_main_client(self, client: Client) -> None:
         """Register the primary bot client as upload fallback."""
         self._main_client = client
@@ -460,11 +499,18 @@ class TelegramUploadPool:
 
         admin_count = 0
         if target_channel:
-            try:
-                join_res = await self.join_channel(target_channel)
-                admin_count = join_res.get("admin_sessions", 0)
-            except Exception as j_err:
-                log.warning("[UploadPool] Channel auto-join error: %s", j_err)
+            # 1. First restore verified admin sessions from manifest
+            restored = self.load_admin_sessions_manifest(target_channel)
+            if restored > 0:
+                admin_count = restored
+
+            # 2. Only run join/promote if we don't have enough verified admin sessions
+            if admin_count < 3:
+                try:
+                    join_res = await self.join_channel(target_channel)
+                    admin_count = join_res.get("admin_sessions", admin_count)
+                except Exception as j_err:
+                    log.warning("[UploadPool] Channel auto-join error: %s", j_err)
 
         # Sync all connected userbot clients to stream_pool so stream_pool has the full multi-account fleet
         try:
@@ -510,6 +556,12 @@ class TelegramUploadPool:
         """Auto-join all loaded userbot sessions to the target Telegram channel and promote up to 40 sessions to admin."""
         if not self.clients or not target_channel:
             return {"joined": 0, "promoted": 0, "error": "No sessions or channel not set"}
+
+        ch_key = int(target_channel)
+        existing_admins = self._admin_sessions.get(ch_key, [])
+        if len(existing_admins) >= 3:
+            log.info("[UploadPool] Channel %s already has %d verified admin sessions from manifest. Skipping active join/promote.", target_channel, len(existing_admins))
+            return {"joined": len(existing_admins), "promoted": 0, "admin_sessions": len(existing_admins)}
 
         # Discard unwritable flag so newly promoted sessions are attempted
         self._channel_unwritable.discard(target_channel)
@@ -574,13 +626,21 @@ class TelegramUploadPool:
 
                 if not is_member:
                     try:
-                        await asyncio.wait_for(c.join_chat(join_dest), timeout=4.0)
+                        s_dest = str(join_dest)
+                        is_invite = s_dest.startswith("http") or "+" in s_dest or "joinchat" in s_dest
+                        if is_invite:
+                            inv_hash = s_dest.split("+")[-1].split("/")[-1]
+                            from pyrogram import raw
+                            await c.invoke(raw.functions.messages.ImportChatInvite(hash=inv_hash), retries=0, timeout=3.5)
+                        else:
+                            await c.join_chat(join_dest)
                         self._joined_sessions_cache.add(cache_key)
                         joined_count += 1
                     except asyncio.CancelledError:
                         return
-                    except asyncio.TimeoutError:
-                        log.warning("[UploadPool] Session %s join_chat timed out after 4s on %s", sess_name, target_channel)
+                    except (asyncio.TimeoutError, TimeoutError, OSError) as t_err:
+                        log.warning("[UploadPool] Session %s join_chat timed out/failed on %s: %s", sess_name, target_channel, t_err)
+                        self._joined_sessions_cache.add(cache_key)
                     except Exception as j_err:
                         err_s = str(j_err).lower()
                         if "already" in err_s or "user_already_participant" in err_s:
@@ -588,9 +648,11 @@ class TelegramUploadPool:
                             joined_count += 1
                         elif "flood_wait" in err_s or "floodwait" in err_s:
                             log.warning("[UploadPool] Session %s hit Telegram FloodWait during join_chat. Skipping.", sess_name)
+                            self._joined_sessions_cache.add(cache_key)
                             return
                         else:
                             log.debug("[UploadPool] Session %s join note: %s", sess_name, j_err)
+                            self._joined_sessions_cache.add(cache_key)
 
                 # Attempt to promote userbot to admin with can_post_messages if main bot is admin (up to 42 sessions)
                 if not limit_reached and promoted_count < 42 and self._main_client and getattr(self._main_client, "is_connected", False):

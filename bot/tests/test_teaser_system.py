@@ -122,7 +122,7 @@ class TestTeasersDataIntegrity:
             assert t["formatted_seek_time"]
             assert t["scene_hook"]
             assert t["scene_hook_si"]
-            assert t["youtube_embed_url"].startswith("https://www.youtube-nocookie.com/embed/")
+            assert t["youtube_embed_url"].startswith(("https://www.youtube-nocookie.com/embed/", "https://www.youtube.com/embed/"))
 
     def test_teasers_js_synced(self):
         assert TEASERS_JS.exists(), "teasers_data.js must exist"

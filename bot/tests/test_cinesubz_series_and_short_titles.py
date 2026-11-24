@@ -236,7 +236,7 @@ async def test_cinesubz_watermark_cover_and_badge():
             res_nv = await video_service.cover_cinesubz_watermark("dummy_in.mp4", "dummy_out.mp4", trim_start=10.0)
             assert res_nv is True
             call_args_nv = mock_exec.call_args[0]
-            assert "-hwaccel" in call_args_nv
+            assert "-c:v" in call_args_nv and "h264_nvenc" in call_args_nv
             assert "-ss" in call_args_nv
             ss_idx = call_args_nv.index("-ss")
             assert call_args_nv[ss_idx + 1] == "10.0"

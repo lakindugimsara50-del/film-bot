@@ -1373,6 +1373,54 @@ class TelegramUploadPool:
                 else:
                     candidates = []
 
+        _f_size = (os.path.getsize(file_path) if os.path.exists(file_path) else 0) if file_path else 0
+        _effective_name = file_name or (os.path.basename(file_path) if file_path else "")
+
+        async def _try_recover_posted_media(failed_client, err_obj, started_ts: float, max_pct: float) -> Optional[dict]:
+            if not target_chat or _f_size <= 0:
+                return None
+            elapsed_s = max(0.0, time.time() - started_ts)
+            is_commit_window = (
+                max_pct >= 98.0
+                or elapsed_s >= 15.0
+                or telegram_upload._is_transient_send_media_error(err_obj)
+                or telegram_upload._is_stale_file_part_error(err_obj)
+            )
+            if not is_commit_window:
+                return None
+            await asyncio.sleep(5.0)
+            pool_admins = [
+                c for c in ([failed_client] + list(self._admin_sessions.get(t_key, [])) + list(candidates))
+                if c is not None and getattr(c, "is_connected", False)
+            ]
+            # Deduplicate preserving order, max 2 session checks
+            verifiers = []
+            for c in pool_admins:
+                if c not in verifiers:
+                    verifiers.append(c)
+                if len(verifiers) >= 2:
+                    break
+            for vc in verifiers:
+                msg = await telegram_upload._find_already_posted_media_in_chat(
+                    vc, target_chat, _effective_name, _f_size, started_ts
+                )
+                if msg is not None:
+                    media = getattr(msg, "video", None) or getattr(msg, "document", None)
+                    fid = getattr(media, "file_id", "") if media else ""
+                    if fid and getattr(msg, "id", 0):
+                        log.info(
+                            "[UploadPool] Recovered already-committed [%s] upload from chat %s (msg_id=%s) — skipping duplicate/0%% restart!",
+                            quality, target_chat, msg.id,
+                        )
+                        return {
+                            "file_id": fid,
+                            "message_id": msg.id,
+                            "file_name": _effective_name,
+                            "file_size": _f_size,
+                            "stream_url": telegram_upload.get_file_stream_url(fid, chat_id=target_chat, message_id=msg.id),
+                        }
+            return None
+
         max_attempts = min(len(candidates), 12)
         for attempt in range(max_attempts):
             client = candidates[attempt]
@@ -1387,6 +1435,21 @@ class TelegramUploadPool:
                 target_chat,
             )
 
+            _attempt_state = {"max_pct": 0.0}
+            _t_up_start = time.time()
+
+            async def _tracked_cb(pct, downloaded_s, total_s, speed_s, eta_s, _orig=progress_callback, _st=_attempt_state):
+                try:
+                    _st["max_pct"] = max(_st["max_pct"], float(pct or 0.0))
+                except (TypeError, ValueError):
+                    pass
+                if _orig:
+                    res_cb = _orig(pct, downloaded_s, total_s, speed_s, eta_s)
+                    if asyncio.iscoroutine(res_cb):
+                        await res_cb
+
+            eff_cb = _tracked_cb if progress_callback else None
+
             try:
                 c_lock = self.get_client_lock(client)
                 async with c_lock:
@@ -1398,12 +1461,12 @@ class TelegramUploadPool:
                         caption=caption,
                         file_name=file_name,
                         reply_markup=reply_markup,
-                        progress_callback=progress_callback,
+                        progress_callback=eff_cb,
                         fallback_chat=0,
                     )
                     try:
                         _up_elapsed = max(0.25, time.time() - _t_up_start)
-                        _f_mb = (os.path.getsize(file_path) / (1024 * 1024)) if os.path.exists(file_path) else 0.0
+                        _f_mb = (_f_size / (1024 * 1024)) if _f_size > 0 else 0.0
                         if _f_mb > 1.0:
                             ck = self._client_key(client)
                             inst_mbps = _f_mb / _up_elapsed
@@ -1428,6 +1491,10 @@ class TelegramUploadPool:
                     "channel_private", "user_not_participant", "peer_id_invalid",
                     "right_forbidden", "admins_too_much"
                 ))
+                if not is_perm_err:
+                    recovered_res = await _try_recover_posted_media(client, exc, _t_up_start, _attempt_state["max_pct"])
+                    if recovered_res:
+                        return recovered_res
                 if is_perm_err:
                     log.warning(
                         "[UploadPool] Session '%s' lacks admin/write permissions in chat %s (%s) — removing from admin cache and rotating.",

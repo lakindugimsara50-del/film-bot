@@ -95,6 +95,26 @@ function renderTeasersPreviewShelf() {
   }
 }
 
+let _lastRemoteFetchEpoch = 0;
+
+function softRefreshCatalogSections() {
+  try {
+    // Only surgically update carousels & showcase grid without resetting user's Hero slide or scroll position!
+    if (document.getElementById('trending-track')) renderCarousel('trending-track', getTrending(), { isTrending: true });
+    if (document.getElementById('all-movies-grid')) initMoviesShowcaseGrid();
+    if (document.getElementById('new-releases-track')) renderCarousel('new-releases-track', getNewReleases(), { isTrending: false });
+    if (document.getElementById('tv-series-track')) renderCarousel('tv-series-track', getAllTVSeries(), { isTrending: false });
+    if (document.getElementById('action-track')) renderCarousel('action-track', getMoviesByGenre('action'), { isTrending: false });
+    if (document.getElementById('comedy-track')) renderCarousel('comedy-track', getMoviesByGenre('comedy'), { isTrending: false });
+    if (document.getElementById('drama-track')) renderCarousel('drama-track', getMoviesByGenre('drama'), { isTrending: false });
+    if (document.getElementById('scifi-track')) renderCarousel('scifi-track', getMoviesByGenre('sci-fi'), { isTrending: false });
+    if (document.getElementById('animation-track')) renderCarousel('animation-track', getMoviesByGenre('animation'), { isTrending: false });
+    if (document.getElementById('sinhala-dub-track')) renderCarousel('sinhala-dub-track', getSinhalaFilms(), { isTrending: false });
+  } catch (e) {
+    console.warn('softRefreshCatalogSections error:', e);
+  }
+}
+
 function initApp() {
   // 1. Instantly populate from local window.FILMSUB_DATA and render immediately
   try {
@@ -111,26 +131,26 @@ function initApp() {
   try { initSearchOverlay(); } catch (e) { console.error('initSearchOverlay error:', e); }
   try { initMobileBottomNav(); } catch (e) { console.error('initMobileBottomNav error:', e); }
 
-  // 3. Fetch remote updates in background without blocking rendering
+  // 3. Fetch remote updates once in background (only softly update carousels if genuinely new slugs arrived)
   fetchRemoteMovies().then(updated => {
-    if (updated) renderAllSections();
+    if (updated) softRefreshCatalogSections();
   }).catch(() => {});
 
-  // 4. Background live updates: auto-check for newly uploaded movies on visibility & periodically
+  // 4. Gentle throttled background check (cooldown >= 5 minutes; never re-fetch on quick mobile app switches)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
+    if (document.visibilityState === 'visible' && (Date.now() - _lastRemoteFetchEpoch > 300000)) {
       fetchRemoteMovies().then(updated => {
-        if (updated) renderAllSections();
+        if (updated) softRefreshCatalogSections();
       }).catch(() => {});
     }
   });
   setInterval(() => {
-    if (document.visibilityState === 'visible') {
+    if (document.visibilityState === 'visible' && (Date.now() - _lastRemoteFetchEpoch > 300000)) {
       fetchRemoteMovies().then(updated => {
-        if (updated) renderAllSections();
+        if (updated) softRefreshCatalogSections();
       }).catch(() => {});
     }
-  }, 90000);
+  }, 300000);
 }
 
 if (document.readyState === 'loading') {
@@ -155,6 +175,7 @@ function loadBaselineMovies() {
 }
 
 async function fetchRemoteMovies() {
+  _lastRemoteFetchEpoch = Date.now();
   const cacheBuster = `?_t=${Date.now()}&_r=${Math.random()}`;
   const localUrl = `${SITE_CONFIG.moviesPath}${cacheBuster}`;
   const remoteUrl = `https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/movies.json${cacheBuster}`;
@@ -189,18 +210,14 @@ async function fetchRemoteMovies() {
             addMovies(allMovies);
             if (window.FILMSUB_DATA && Array.isArray(window.FILMSUB_DATA.movies)) addMovies(window.FILMSUB_DATA.movies);
 
-            // Check if remote data actually changed anything compared to current allMovies
+            // Check ONLY if genuinely unseen slugs were added from remote catalog (prevents pointless DOM re-renders!)
             const currentSlugs = new Set((allMovies || []).map(m => String(m.slug || m.id || '').toLowerCase()));
             let hasNewMovies = false;
-            if (merged.length !== (allMovies || []).length) {
-              hasNewMovies = true;
-            } else {
-              for (const m of merged) {
-                const s = String(m.slug || m.id || '').toLowerCase();
-                if (!currentSlugs.has(s)) {
-                  hasNewMovies = true;
-                  break;
-                }
+            for (const m of validRemote) {
+              const s = String(m.slug || m.id || '').toLowerCase();
+              if (s && !currentSlugs.has(s)) {
+                hasNewMovies = true;
+                break;
               }
             }
 
@@ -1654,12 +1671,14 @@ function updateHeroContent(movie) {
     });
   }
 
-  // Dynamic theme extraction from backdrop
-  if (backdrop && backdrop.startsWith('http')) {
+  // Dynamic theme extraction from backdrop (skip external hosts without CORS like image.tmdb.org)
+  if (backdrop && backdrop.startsWith('http') && !backdrop.includes('image.tmdb.org')) {
     extractDominantColor(backdrop, (col) => {
       if (col) applyDynamicTheme(col.r, col.g, col.b);
       else applyDynamicTheme(null);
     });
+  } else {
+    applyDynamicTheme(null);
   }
 }
 

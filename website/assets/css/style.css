@@ -1421,35 +1421,47 @@ main > .section:first-of-type {
     order: 2 !important;
     margin-right: auto !important;
     margin-left: 0 !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
   }
   .logo-brand-img {
-    height: 28px;
-    max-width: 140px;
+    height: 25px;
+    max-width: 112px;
+    width: auto;
   }
   .logo-text {
-    font-size: 19px;
+    font-size: 18px;
   }
   .logo-icon {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
     border-radius: 5px;
   }
   .header-actions {
     order: 3 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 5px !important;
+    flex-shrink: 0 !important;
   }
   .user-greeting-name {
     display: none;
+  }
+  .user-profile-pill {
+    padding: 3px 6px 3px 3px !important;
+    gap: 4px !important;
+  }
+  .user-avatar-img {
+    width: 24px !important;
+    height: 24px !important;
   }
   .header-actions .tg-btn {
     display: none !important; /* Hide telegram button in mobile top bar to match CineSubz */
   }
   .icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     background: linear-gradient(175deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%);
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-top: 1.5px solid rgba(255, 255, 255, 0.45);
@@ -8828,6 +8840,35 @@ body.is-window-scrolling .movie-card {
     font-size: 13px;
     margin: 0;
   }
+@media (max-width: 768px) {
+  .hero-showcase {
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .hero-bg-layer {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    transform: none !important;
+    background-position: center top !important;
+    background-size: cover !important;
+  }
+  .hero-fs-title {
+    font-size: clamp(19px, 5.2vw, 24px);
+    line-height: 1.22;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.44em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+  .hero-fs-title-si {
+    font-size: 13px;
+    margin: 0;
+  }
   .hero-fs-meta {
     font-size: 12px;
     gap: 6px;
@@ -8844,19 +8885,34 @@ body.is-window-scrolling .movie-card {
     margin-bottom: 3px;
   }
   .hero-fs-actions {
-    gap: 8px;
-    flex-wrap: nowrap;
-    margin-top: 4px;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 6px;
+    box-sizing: border-box !important;
   }
+  .hero-fs-actions > *,
   .btn-hero-watch,
   .btn-hero-download,
-  .btn-hero-trailer {
-    padding: 8px 14px;
-    font-size: 12.5px;
-    border-radius: 999px;
-    flex: 1;
-    text-align: center;
-    justify-content: center;
+  .btn-hero-trailer,
+  .btn-hero-teaser {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
   }
 
   /* 3D Deck on Mobile */
@@ -11703,6 +11759,39 @@ body.cinema-drawer-lock {
 }
 
 @media (max-width: 768px) {
+  .mobile-bottom-bar {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .mobile-bottom-bar a,
+  .mobile-bottom-bar button {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    padding: 4px 2px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    gap: 3px !important;
+  }
+  .mobile-bottom-bar a span,
+  .mobile-bottom-bar button span {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .mobile-bottom-bar i {
+    font-size: 16px !important;
+    line-height: 1 !important;
+  }
   .toast-container {
     bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
     right: 16px !important;
@@ -11712,9 +11801,24 @@ body.cinema-drawer-lock {
   }
 }
 
+@media (max-width: 768px) {
+  .site-header {
+    padding: 0 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .header-sidebar-toggle-btn {
+    width: 34px !important;
+    height: 34px !important;
+    margin-right: 6px !important;
+  }
+}
+
 @media (max-width: 480px) {
   .logo-brand-img {
-    max-width: 120px !important;
+    max-width: 106px !important;
+    height: 24px !important;
   }
 }
 
@@ -12323,4 +12427,155 @@ body.cinema-drawer-lock {
 .vip-empty-cinema-icon {
   font-size: 22px !important;
   color: #e50914 !important;
+}
+
+/* ================================================================
+   MOBILE 2026 PERFECT FIT OVERRIDES (320px - 768px)
+   Zero Horizontal Clipping, Zero Badge Overlap, Proper Fixed Header Clearance
+   ================================================================ */
+@media (max-width: 768px) {
+  html,
+  body,
+  main {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 1. Showcase & Section Headers Fit Without Clipping VIEW ALL */
+  .section-header {
+    padding: 0 12px !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .section-title-wrap {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+  .section-title {
+    font-size: 14.5px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .section-badge-count {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .section-actions {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .view-switch-btns .view-text {
+    display: none !important;
+  }
+  .btn-view-mode {
+    padding: 5px 8px !important;
+  }
+  .section-link {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .showcase-filter-bar {
+    padding: 6px 12px 12px !important;
+  }
+
+  /* 2. Movie Cards: Eliminate Badge Overlap Between Left & Right Corners */
+  .card-badges-left {
+    top: 5px !important;
+    left: 5px !important;
+    gap: 3px !important;
+    max-width: 58% !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+  .badge-top-left,
+  .badge-card-new,
+  .badge-card-type {
+    font-size: 8.5px !important;
+    padding: 2px 4.5px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.15px !important;
+  }
+  .badge-top-right {
+    top: 5px !important;
+    right: 5px !important;
+    font-size: 8.5px !important;
+    padding: 2px 5px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    gap: 2.5px !important;
+  }
+  .badge-top-right i {
+    font-size: 8.5px !important;
+  }
+
+  /* 3. Compact Floating Roulette FAB Above Bottom Bar */
+  .fab-roulette {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 12px !important;
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 17px !important;
+  }
+
+  /* 4. Movie Page Fixed Header Clearance & Clean Subtitle Metadata */
+  #movie-main {
+    padding-top: calc(var(--header-h, 52px) + 4px) !important;
+  }
+  .cs-movie-header {
+    padding: 8px 0 8px !important;
+  }
+  .cs-main-title {
+    font-size: 16.5px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 5px !important;
+    word-break: break-word !important;
+  }
+  .cs-title-sub {
+    gap: 6px !important;
+    margin-top: 4px !important;
+  }
+  .cs-title-sub .cs-title-dot,
+  .cs-title-sub > span:not(.cs-title-dot):not(:empty) + span:not(.cs-title-dot):not(:empty)::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* 5. Player Poster Bottom Bar: Fit Title & All 4 Buttons Inside 100% Width */
+  .cs-poster-bottom-bar {
+    padding: 10px 10px !important;
+    gap: 8px !important;
+    align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .cs-standby-meta-block {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+  .cs-standby-title {
+    max-width: 100% !important;
+    font-size: 13.5px !important;
+  }
+  .cs-pbar-right {
+    gap: 5px !important;
+    flex-shrink: 0 !important;
+  }
+  .cs-pbar-circle-btn {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 11.5px !important;
+  }
 }

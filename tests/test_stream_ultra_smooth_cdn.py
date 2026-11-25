@@ -438,7 +438,36 @@ def test_player_js_syntax_helpers_and_contracts():
     assert "attachSeekPrewarmEngine" in player_txt
     assert "fz-shadow-handover" in player_txt
     assert "vjs-fz-seamless-switching" in css_txt
-    assert "v=20261125_cinema_v66" in movie_txt
+    assert "v=20261125_cinema_v67" in movie_txt
+
+    # Mobile responsive & auto-refresh regression contracts
+    app_path = _ROOT / "website" / "assets" / "js" / "app.js"
+    wp_css_path = _ROOT / "website" / "assets" / "css" / "watch-party.css"
+    headers_path = _ROOT / "website" / "_headers"
+
+    app_chk = subprocess.run(["node", "--check", str(app_path)], capture_output=True, text=True)
+    assert app_chk.returncode == 0, f"app.js syntax error: {app_chk.stderr}"
+
+    app_txt = app_path.read_text(encoding="utf-8")
+    wp_css_txt = wp_css_path.read_text(encoding="utf-8")
+    headers_txt = headers_path.read_text(encoding="utf-8")
+
+    # Zero aggressive auto-refresh / full-DOM wipe on mobile visibility change
+    assert "softRefreshCatalogSections" in app_txt
+    assert "_lastRemoteFetchEpoch" in app_txt
+    assert "300000" in app_txt
+    assert "!backdrop.includes('image.tmdb.org')" in app_txt
+    assert "imageUrl.includes('image.tmdb.org')" in player_txt
+    # Watch party lounge respects display:none unless opened
+    assert ".cs-theater-layout.is-watch-party-active .watch-party-container" in wp_css_txt
+    assert "flex-wrap: wrap !important" in wp_css_txt
+    # Mobile layout perfection rules present in style.css tail
+    assert ".mobile-bottom-bar a span" in css_txt
+    assert "grid-template-columns: 1fr 1fr !important" in css_txt
+    assert ".cs-poster-bottom-bar" in css_txt
+    # CSP allows PeerJS & Google Identity without console violations
+    assert "https://unpkg.com" in headers_txt
+    assert "https://accounts.google.com" in headers_txt
 
     # Unit-test JS helper functions extracted into clean VM sandbox
     vm_test = r"""

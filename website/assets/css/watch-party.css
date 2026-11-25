@@ -1750,11 +1750,31 @@
   .cs-cinema-menu-bar {
     padding: 8px 10px !important;
     border-radius: 0 !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .cs-bar-left,
+  .cs-bar-right,
+  .cs-dock-cluster {
+    flex-wrap: wrap !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     gap: 5px !important;
   }
   .cs-cinema-menu-bar .cs-bar-btn {
-    padding: 6px 9px !important;
+    padding: 6px 8px !important;
     font-size: 11.5px !important;
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  .cs-btn-party-hero {
+    padding: 6px 10px !important;
   }
   .cs-btn-party-hero .cs-party-badge,
   .cs-btn-tools-toggle span:not(.cs-tools-active-count),
@@ -1785,9 +1805,9 @@
   }
 }
 
-/* Seamless Watch Party Lounge Matching Player Height */
+/* Seamless Watch Party Lounge Matching Player Height (strictly hidden unless opened) */
 .watch-party-container {
-  display: flex !important;
+  display: flex;
   flex-direction: column !important;
   height: 100% !important;
   max-height: 100% !important;
@@ -1798,6 +1818,15 @@
   border-radius: 14px !important;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.92) !important;
   overflow: hidden !important;
+}
+.cs-theater-layout.is-watch-party-active .watch-party-container {
+  display: flex !important;
+}
+@media (max-width: 768px) {
+  .watch-party-container {
+    min-height: 360px !important;
+    border-radius: 10px !important;
+  }
 }
 
 .wp-header {

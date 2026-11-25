@@ -3,7 +3,7 @@
    Dynamic Theme Color Extraction for Movie Pages
 ============================================================ */
 function extractDominantColor(imageUrl, callback) {
-  if (!imageUrl || imageUrl.startsWith('data:')) {
+  if (!imageUrl || imageUrl.startsWith('data:') || imageUrl.includes('image.tmdb.org')) {
     callback(null);
     return;
   }
@@ -5341,8 +5341,15 @@ function renderPlayerFallback(playerEl, movie) {
       console.log('[FilmSub Player] Fallback auto-retry limit reached. Standby screen active awaiting user action.');
     }
   } else {
-    // If the server is currently OFFLINE, poll to auto-discover when Colab tunnel comes online
+    // If the server is currently OFFLINE, gently probe up to 4 times at 18s intervals (never trap mobile in endless rebuild loop)
+    let offlinePollCount = 0;
     window.fallbackRetryInterval = setInterval(async () => {
+      offlinePollCount++;
+      if (offlinePollCount > 4) {
+        clearInterval(window.fallbackRetryInterval);
+        window.fallbackRetryInterval = null;
+        return;
+      }
       await loadLiveStreamConfig(true);
       if (streamServerHealthy && activeStreamBaseUrl && !isDeadTunnel(activeStreamBaseUrl)) {
         clearInterval(window.fallbackRetryInterval);
@@ -5351,7 +5358,7 @@ function renderPlayerFallback(playerEl, movie) {
         FilmSub.showToast('⚡ Stream Ready! ස්වයංක්‍රීයව Playback ආරම්භ කෙරේ...', 'success');
         loadStream(movie, 0);
       }
-    }, 8000);
+    }, 18000);
   }
 }
 
@@ -6626,11 +6633,14 @@ window.FilmZillaP2P = {
       // Announce presence to local Wi-Fi mesh
       this.broadcast({ type: 'P2P_HELLO', time: Date.now() });
     }
-    this.initWebRTCMesh();
+    const isMob = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''));
+    if (!isMob) {
+      this.initWebRTCMesh();
+    }
 
     // Incrementally simulate chunk savings as movie streams
     setInterval(() => {
-      if (this.isEnabled && Math.random() > 0.6) {
+      if (this.isEnabled && !document.hidden && Math.random() > 0.6) {
         const chunkSaved = Math.floor(Math.random() * 800000 + 400000); // 400KB - 1.2MB chunk
         this.addSavedBytes(chunkSaved);
       }
@@ -6998,7 +7008,15 @@ window.FilmZillaCompanion = {
 
 // ---- 2026 Client-Side GPU Cinema Detail Enhancer (WebGL2 Contrast-Adaptive Sharpening / CAS) ----
 window.FilmZillaCinemaEnhance = {
-  _mode: (typeof localStorage !== 'undefined' && localStorage.getItem('fz_cas_enhance_mode')) || 'hd',
+  _mode: (function() {
+    try {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('fz_cas_enhance_mode') : null;
+      if (saved === 'off' || saved === 'hd' || saved === 'ultra') return saved;
+    } catch (_) {}
+    const isMob = (typeof window !== 'undefined' && window.innerWidth <= 768) ||
+      (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || ''));
+    return isMob ? 'off' : 'hd';
+  })(),
   _vjs: null,
   _canvas: null,
   _gl: null,

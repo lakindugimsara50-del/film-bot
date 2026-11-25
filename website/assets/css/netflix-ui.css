@@ -8,25 +8,25 @@
    1. CSS CUSTOM PROPERTIES – ADVANCED TOKENS
    ============================================= */
 :root {
-  /* Glassmorphism */
-  --glass-bg: rgba(17, 17, 22, 0.72);
-  --glass-border: rgba(255,255,255,0.10);
+  /* Glassmorphism (Obsidian Cinema) */
+  --glass-bg: rgba(12, 12, 16, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.10);
   --glass-blur: blur(20px);
 
-  /* Category accent colors */
-  --cat-trending: #ff4500;
-  --cat-new: #46d369;
-  --cat-sinhala: #1e90ff;
-  --cat-action: #ff6b35;
-  --cat-drama: #9b59b6;
-  --cat-comedy: #f39c12;
-  --cat-horror: #c0392b;
-  --cat-scifi: #00b4d8;
+  /* Unified Cinema Crimson & Neutral Palette */
+  --cat-trending: #e50914;
+  --cat-new: #e50914;
+  --cat-sinhala: #e50914;
+  --cat-action: #e50914;
+  --cat-drama: #e50914;
+  --cat-comedy: #e50914;
+  --cat-horror: #e50914;
+  --cat-scifi: #e50914;
 
-  /* Glow effects */
-  --glow-red: 0 0 20px rgba(229,9,20,0.6), 0 0 40px rgba(229,9,20,0.3);
-  --glow-green: 0 0 15px rgba(70,211,105,0.5);
-  --glow-gold: 0 0 15px rgba(245,197,24,0.45);
+  /* Disciplined Shadow & Accent Tokens */
+  --glow-red: 0 6px 20px rgba(229, 9, 20, 0.35);
+  --glow-green: 0 4px 12px rgba(229, 9, 20, 0.3);
+  --glow-gold: 0 4px 12px rgba(245, 197, 24, 0.25);
 
   /* Animation easing */
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -98,34 +98,22 @@ img {
   gap: 10px;
 }
 
-/* Animated accent bar */
+/* Unified Cinema Crimson Section Bar */
 .section-title::before {
   content: '';
   display: block;
-  width: 4px;
-  height: 22px;
-  background: linear-gradient(180deg, var(--accent), #ff6b35);
+  width: 3.5px;
+  height: 20px;
+  background: linear-gradient(180deg, #e50914 0%, #99070e 100%);
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(229,9,20,0.6);
-  animation: pulse-bar 2.5s ease infinite;
-}
-@keyframes pulse-bar {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  box-shadow: 0 0 8px rgba(229, 9, 20, 0.35);
 }
 
-/* Category-colored accent bars */
-.section.trending-section .section-title::before {
-  background: linear-gradient(180deg, #ff4500, #ff6b35);
-  box-shadow: 0 0 10px rgba(255,69,0,0.6);
-}
-.section.new-releases-section .section-title::before {
-  background: linear-gradient(180deg, #46d369, #00b4d8);
-  box-shadow: 0 0 10px rgba(70,211,105,0.5);
-}
+.section.trending-section .section-title::before,
+.section.new-releases-section .section-title::before,
 .section.sinhala-section .section-title::before {
-  background: linear-gradient(180deg, #1e90ff, #9b59b6);
-  box-shadow: 0 0 10px rgba(30,144,255,0.5);
+  background: linear-gradient(180deg, #e50914 0%, #99070e 100%);
+  box-shadow: 0 0 8px rgba(229, 9, 20, 0.35);
 }
 
 /* Count badge next to section title */
@@ -144,13 +132,13 @@ img {
    5. MOVIE CARDS – ADVANCED ENHANCEMENTS
    ============================================= */
 
-/* Netflix "NEW" ribbon */
+/* Netflix "NEW" ribbon (Crimson Obsidian) */
 .card-ribbon-new {
   position: absolute;
   top: 0;
   right: 0;
-  background: linear-gradient(135deg, #46d369, #00b4d8);
-  color: #000;
+  background: linear-gradient(135deg, #e50914, #99070e);
+  color: #ffffff;
   font-size: 9px;
   font-weight: 900;
   padding: 4px 8px 4px 6px;
@@ -170,33 +158,33 @@ img {
   display: block;
 }
 
-/* "HOT" fire badge for trending */
+/* "HOT" badge for trending (Cinema Red) */
 .card-hot-badge {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: linear-gradient(135deg, #ff4500, #ff6b35);
-  color: #fff;
+  background: #e50914;
+  color: #ffffff;
   font-size: 9.5px;
-  font-weight: 900;
+  font-weight: 800;
   padding: 3px 7px;
   border-radius: 4px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   z-index: 5;
-  box-shadow: 0 2px 10px rgba(255,69,0,0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: center;
   gap: 3px;
 }
 
-/* "SINHALA SUB" highlight badge */
+/* "SINHALA SUB" highlight badge (Subtle Crimson Scrim) */
 .card-sub-highlight {
   position: absolute;
   bottom: 40px;
   left: 0;
   right: 0;
-  background: linear-gradient(90deg, rgba(30,144,255,0.9), rgba(30,144,255,0));
+  background: linear-gradient(90deg, rgba(229, 9, 20, 0.88), rgba(229, 9, 20, 0));
   color: #fff;
   font-size: 9px;
   font-weight: 800;
@@ -222,20 +210,15 @@ img {
   transform: none !important;
 }
 
-/* Red glow ring on hover */
+/* Crisp subtle edge highlight on hover (No gaudy neon strobe) */
 .movie-card::after {
   content: '';
   position: absolute;
-  inset: -1px;
-  border-radius: 9px;
-  border: 2px solid transparent;
-  background: linear-gradient(135deg, rgba(229,9,20,0), rgba(229,9,20,0.7), rgba(229,9,20,0)) border-box;
-  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: destination-out;
-  mask-composite: exclude;
+  inset: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
   pointer-events: none;
   z-index: 6;
 }
@@ -243,17 +226,18 @@ img {
   opacity: 1;
 }
 
-/* TV Series type badge */
+/* TV Series type badge (Obsidian Neutral Pill) */
 .badge-card-type {
   position: absolute;
   bottom: 40px;
   right: 8px;
-  background: rgba(138,43,226,0.85);
-  color: #fff;
+  background: rgba(12, 12, 15, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e4e4e7;
   font-size: 9px;
   font-weight: 800;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: 4px;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -315,7 +299,7 @@ img {
   gap: 4px;
   font-size: 12px;
   font-weight: 800;
-  color: #46d369;
+  color: #e50914;
 }
 
 /* Add to list button */
@@ -632,8 +616,8 @@ img {
   left: 0;
   width: 0%;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent), #ff6b35);
-  box-shadow: var(--glow-red);
+  background: #e50914;
+  box-shadow: 0 0 8px rgba(229, 9, 20, 0.5);
   z-index: 10001;
   transition: width 0.1s linear;
   pointer-events: none;

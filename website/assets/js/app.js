@@ -793,7 +793,7 @@ function ensureHeroDOMStructure(heroEl) {
               <i class="fa-solid fa-play"></i> Watch Now
             </a>
             <a href="teasers.html" class="btn btn-secondary btn-hero hero-btn-teaser" id="hero-teaser-btn" title="Watch 30s Viral Scene Feed">
-              <i class="fa-solid fa-bolt" style="color:#ff3366"></i> <span>30s Teaser</span>
+              <i class="fa-solid fa-bolt" style="color:#e50914"></i> <span>30s Teaser</span>
             </a>
             <button class="btn btn-secondary btn-hero hero-btn-trailer" id="hero-trailer-btn" type="button" title="Watch Official Trailer">
               <i class="fa-solid fa-clapperboard"></i> <span>Trailer</span>
@@ -2617,12 +2617,12 @@ function openUserListModal(initialTab = 'favorites') {
         <!-- Real-Time Cinema Navigation Tabs -->
         <div class="vip-hub-tabs-nav" id="vip-hub-tabs-nav" role="tablist">
           <button type="button" class="vip-tab-btn" data-tab="favorites" role="tab">
-            <i class="fa-regular fa-heart tab-icon" style="color:#ff3366"></i>
+            <i class="fa-regular fa-heart tab-icon" style="color:#e50914"></i>
             <span>Favorites</span>
             <span class="vip-tab-count" id="vip-count-favorites">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="watchlater" role="tab">
-            <i class="fa-regular fa-clock tab-icon" style="color:#00b4d8"></i>
+            <i class="fa-regular fa-clock tab-icon" style="color:#d4d4d8"></i>
             <span>Watch Later</span>
             <span class="vip-tab-count" id="vip-count-watchlater">0</span>
           </button>
@@ -2632,7 +2632,7 @@ function openUserListModal(initialTab = 'favorites') {
             <span class="vip-tab-count" id="vip-count-continue">0</span>
           </button>
           <button type="button" class="vip-tab-btn" data-tab="history" role="tab">
-            <i class="fa-solid fa-clock-rotate-left tab-history-icon tab-icon" style="color:#f39c12"></i>
+            <i class="fa-solid fa-clock-rotate-left tab-history-icon tab-icon" style="color:#d4d4d8"></i>
             <span>History</span>
             <span class="vip-tab-count" id="vip-count-history">0</span>
           </button>
@@ -2814,7 +2814,7 @@ function openUserListModal(initialTab = 'favorites') {
       if (toolbarInfo) {
         toolbarInfo.innerHTML = items.length > 0 ? `
           <div class="vip-hub-count-pill">
-            <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+            <i class="fa-solid fa-heart" style="color:#e50914"></i>
             <span>${items.length === 1 ? '1 Favorite Title' : `${items.length} Favorite Titles`}</span>
           </div>` : '';
       }
@@ -2827,7 +2827,7 @@ function openUserListModal(initialTab = 'favorites') {
       if (toolbarInfo) {
         toolbarInfo.innerHTML = items.length > 0 ? `
           <div class="vip-hub-count-pill">
-            <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+            <i class="fa-solid fa-clock" style="color:#d4d4d8"></i>
             <span>${items.length === 1 ? '1 Title Saved for Later' : `${items.length} Titles Saved for Later`}</span>
           </div>` : '';
       }
@@ -2853,7 +2853,7 @@ function openUserListModal(initialTab = 'favorites') {
       if (toolbarInfo) {
         toolbarInfo.innerHTML = items.length > 0 ? `
           <div class="vip-hub-count-pill">
-            <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+            <i class="fa-solid fa-clock-rotate-left" style="color:#d4d4d8"></i>
             <span>${items.length === 1 ? '1 Title in History' : `${items.length} Titles in History`}</span>
           </div>` : '';
       }
@@ -3714,7 +3714,7 @@ function initHighlightPopup() {
               <i class="fa-solid fa-play"></i> Watch Now
             </a>
             <a href="teasers.html?id=${encodeURIComponent(movie.slug || movie.id)}" class="cs-popup-btn-teaser" title="Watch 30s Viral Teaser">
-              <i class="fa-solid fa-bolt" style="color:#ff3366"></i> 30s Teaser
+              <i class="fa-solid fa-bolt" style="color:#e50914"></i> 30s Teaser
             </a>
             <a href="${movieUrl}#downloads" class="cs-popup-btn-dl">
               <i class="fa-solid fa-cloud-arrow-down"></i> Download

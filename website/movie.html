@@ -36,22 +36,22 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Script Preloading for Instant Player Bootstrap -->
-  <link rel="preload" href="data/movies_data.js?v=20261122_cinema_v61" as="script">
-  <link rel="preload" href="data/stream_endpoint.js?v=20261122_cinema_v61" as="script">
+  <link rel="preload" href="data/movies_data.js?v=20261125_cinema_v62" as="script">
+  <link rel="preload" href="data/stream_endpoint.js?v=20261125_cinema_v62" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
 
   <!-- Core Design Tokens -->
-  <link rel="stylesheet" href="assets/css/tokens.css?v=20261122_cinema_v61">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v62">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261122_cinema_v61">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261122_cinema_v61">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261122_cinema_v61">
-  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261122_cinema_v61">
-  <link rel="stylesheet" href="assets/css/teasers.css?v=20261122_cinema_v61">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v62">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v62">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261125_cinema_v62">
+  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261125_cinema_v62">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v62">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -70,30 +70,82 @@
       font-family: 'Roboto', 'Noto Sans Sinhala', sans-serif !important;
     }
     .video-js .vjs-big-play-button {
-      background: rgba(229, 9, 20, 0.95) !important;
-      border: 2px solid rgba(255, 255, 255, 0.95) !important;
+      background: rgba(14, 14, 18, 0.85) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
       border-radius: 50% !important;
-      width: 72px !important;
-      height: 72px !important;
-      line-height: 68px !important;
-      margin-top: -36px !important;
-      margin-left: -36px !important;
-      box-shadow: 0 0 35px rgba(229, 9, 20, 0.85) !important;
-      transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), background 0.2s ease, box-shadow 0.25s ease !important;
+      width: 68px !important;
+      height: 68px !important;
+      line-height: 64px !important;
+      margin-top: -34px !important;
+      margin-left: -34px !important;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8) !important;
+      transition: transform 0.22s cubic-bezier(0.25, 1, 0.5, 1), background 0.2s ease, border-color 0.2s ease !important;
     }
     .video-js .vjs-big-play-button:hover,
     .video-js:hover .vjs-big-play-button {
-      background: #f40612 !important;
-      transform: scale(1.12) !important;
-      box-shadow: 0 0 45px rgba(229, 9, 20, 1) !important;
+      background: #e50914 !important;
+      border-color: #e50914 !important;
+      transform: scale(1.08) !important;
+      box-shadow: 0 10px 28px rgba(229, 9, 20, 0.45) !important;
     }
-    .video-js .vjs-control-bar {
-      background: linear-gradient(0deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 45%, rgba(0,0,0,0.2) 80%, transparent 100%) !important;
-      height: 52px !important;
-      padding: 0 12px !important;
+    /* Top Cinema HUD Scrim (Netflix / Apple TV+ Style) */
+    .cs-player-top-hud {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      padding: 16px 20px 36px !important;
+      background: linear-gradient(180deg, rgba(5, 5, 7, 0.85) 0%, rgba(5, 5, 7, 0.35) 60%, transparent 100%) !important;
       display: flex !important;
       align-items: center !important;
-      transition: opacity 0.4s ease, visibility 0.4s ease !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      z-index: 22 !important;
+      pointer-events: none !important;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.28s ease, transform 0.28s ease !important;
+    }
+    .video-js.vjs-paused .cs-player-top-hud,
+    .video-js.vjs-user-active .cs-player-top-hud,
+    .video-js:hover .cs-player-top-hud {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+    .video-js.vjs-user-inactive.vjs-playing .cs-player-top-hud {
+      opacity: 0 !important;
+      transform: translateY(-4px) !important;
+    }
+    .cs-hud-title-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 2px !important;
+      min-width: 0 !important;
+      padding-right: 76px !important;
+    }
+    .cs-hud-eyebrow {
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.9px !important;
+      text-transform: uppercase !important;
+      color: #e50914 !important;
+    }
+    .cs-hud-movie-title {
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      color: #ffffff !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    }
+    .video-js .vjs-control-bar {
+      background: linear-gradient(0deg, rgba(5, 5, 7, 0.96) 0%, rgba(5, 5, 7, 0.72) 55%, rgba(5, 5, 7, 0) 100%) !important;
+      height: 54px !important;
+      padding: 4px 14px 2px !important;
+      display: flex !important;
+      align-items: center !important;
+      transition: opacity 0.35s ease, visibility 0.35s ease !important;
     }
     .video-js.vjs-user-inactive.vjs-playing .vjs-control-bar {
       opacity: 0 !important;
@@ -102,34 +154,35 @@
     }
     .video-js .vjs-progress-control {
       position: absolute !important;
-      left: 12px !important;
-      right: 12px !important;
-      top: -10px !important;
-      width: calc(100% - 24px) !important;
+      left: 14px !important;
+      right: 14px !important;
+      top: -8px !important;
+      width: calc(100% - 28px) !important;
       height: 16px !important;
     }
     .video-js .vjs-progress-holder {
-      height: 4px !important;
+      height: 3px !important;
       border-radius: 4px !important;
       transition: height 0.15s ease !important;
-      background: rgba(255, 255, 255, 0.2) !important;
+      background: rgba(255, 255, 255, 0.22) !important;
     }
     .video-js .vjs-progress-control:hover .vjs-progress-holder {
-      height: 7px !important;
+      height: 6px !important;
     }
     .video-js .vjs-play-progress {
-      background: var(--accent, #e50914) !important;
+      background: #e50914 !important;
       border-radius: 4px !important;
-      box-shadow: 0 0 10px rgba(229, 9, 20, 0.75) !important;
+      box-shadow: 0 0 8px rgba(229, 9, 20, 0.45) !important;
     }
     .video-js .vjs-play-progress:before {
-      color: #ffffff !important;
-      font-size: 14px !important;
-      top: -4px !important;
-      transition: transform 0.15s ease !important;
+      color: #e50914 !important;
+      font-size: 13px !important;
+      top: -4.5px !important;
+      text-shadow: 0 0 6px rgba(0, 0, 0, 0.9) !important;
+      transition: transform 0.15s ease, color 0.15s ease !important;
     }
     .video-js .vjs-progress-control:hover .vjs-play-progress:before {
-      transform: scale(1.3) !important;
+      transform: scale(1.25) !important;
       color: #ffffff !important;
     }
     .video-js .vjs-load-progress {
@@ -201,47 +254,48 @@
       cursor: pointer !important;
     }
     .cs-center-btn {
-      background: rgba(10, 11, 16, 0.92);
-      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      background: rgba(12, 12, 16, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
       cursor: pointer;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9), 0 0 16px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.78);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       user-select: none;
-      transition: transform 0.22s cubic-bezier(0.25, 1, 0.5, 1), background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .cs-center-btn:hover {
-      transform: scale(1.12);
-      background: rgba(229, 9, 20, 0.95);
-      border-color: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 0 35px rgba(229, 9, 20, 0.95), 0 8px 25px rgba(0, 0, 0, 0.8);
+      transform: scale(1.08);
+      background: #e50914;
+      border-color: #e50914;
+      box-shadow: 0 8px 26px rgba(229, 9, 20, 0.42);
     }
     .cs-center-btn:active {
       transform: scale(0.95);
     }
     .cs-center-rewind,
     .cs-center-forward {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
     }
     .cs-center-playpause {
-      width: 68px;
-      height: 68px;
-      font-size: 24px;
-      background: linear-gradient(135deg, #e50914 0%, #b81d24 100%);
-      border: 2.5px solid #ffffff;
+      width: 64px;
+      height: 64px;
+      font-size: 22px;
+      background: rgba(16, 16, 20, 0.84);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
       color: #ffffff;
-      box-shadow: 0 0 35px rgba(229, 9, 20, 0.95), 0 8px 24px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.8);
     }
     .cs-center-playpause:hover {
-      background: #ff0f1f;
-      transform: scale(1.15);
-      box-shadow: 0 0 45px rgba(229, 9, 20, 1), 0 8px 28px rgba(0, 0, 0, 0.9);
+      background: #e50914;
+      border-color: #e50914;
+      transform: scale(1.08);
+      box-shadow: 0 10px 28px rgba(229, 9, 20, 0.45);
     }
     .cs-center-playpause i {
       margin-left: 2px;
@@ -363,10 +417,10 @@
 
     /* Dual Download Action Buttons (Direct Browser + Telegram) */
     .btn-download-primary {
-      background: linear-gradient(135deg, #e50914 0%, #b20710 100%) !important;
+      background: #e50914 !important;
       color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.2) !important;
-      box-shadow: 0 4px 15px rgba(229, 9, 20, 0.35) !important;
+      border: 1px solid #e50914 !important;
+      box-shadow: 0 4px 14px rgba(229, 9, 20, 0.3) !important;
       padding: 9px 16px !important;
       border-radius: 6px !important;
       font-size: 13px !important;
@@ -381,12 +435,12 @@
     .btn-download-primary:hover {
       background: #f40612 !important;
       transform: translateY(-1px) !important;
-      box-shadow: 0 6px 20px rgba(229, 9, 20, 0.55) !important;
+      box-shadow: 0 6px 20px rgba(229, 9, 20, 0.48) !important;
     }
     .btn-download-secondary {
-      background: rgba(34, 158, 217, 0.18) !important;
-      color: #229ed9 !important;
-      border: 1px solid rgba(34, 158, 217, 0.5) !important;
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: #f4f4f5 !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
       padding: 9px 16px !important;
       border-radius: 6px !important;
       font-size: 13px !important;
@@ -399,7 +453,8 @@
       text-decoration: none !important;
     }
     .btn-download-secondary:hover {
-      background: #229ed9 !important;
+      background: rgba(255, 255, 255, 0.14) !important;
+      border-color: rgba(255, 255, 255, 0.32) !important;
       color: #ffffff !important;
       transform: translateY(-1px) !important;
     }
@@ -724,26 +779,26 @@
             <span class="user-drawer-badge" id="badge-drawer-continue">0</span>
           </a>
           <button type="button" class="user-drawer-link" id="btn-drawer-favorites">
-            <i class="fa-solid fa-heart" style="color:#ff3366"></i>
+            <i class="fa-solid fa-heart" style="color:#e50914"></i>
             <span>My Favorites</span>
             <span class="user-drawer-badge" id="badge-drawer-favorites">0</span>
           </button>
           <button type="button" class="user-drawer-link" id="btn-drawer-watchlater">
-            <i class="fa-solid fa-clock" style="color:#00b4d8"></i>
+            <i class="fa-solid fa-clock" style="color:#d4d4d8"></i>
             <span>Watch Later</span>
             <span class="user-drawer-badge" id="badge-drawer-watchlater">0</span>
           </button>
           <button type="button" class="user-drawer-link" id="btn-drawer-history">
-            <i class="fa-solid fa-clock-rotate-left" style="color:#f39c12"></i>
+            <i class="fa-solid fa-clock-rotate-left" style="color:#d4d4d8"></i>
             <span>Watch History</span>
             <span class="user-drawer-badge" id="badge-drawer-history">0</span>
           </button>
           <button type="button" class="user-drawer-link" id="btn-drawer-change-avatar">
-            <i class="fa-solid fa-camera" style="color:#10b981"></i>
+            <i class="fa-solid fa-camera" style="color:#e50914"></i>
             <span>Change Photo / 3D Avatar</span>
           </button>
           <button type="button" class="user-drawer-link" id="btn-drawer-open-menu">
-            <i class="fa-solid fa-bars" style="color:#a855f7"></i>
+            <i class="fa-solid fa-bars" style="color:#d4d4d8"></i>
             <span>Explore All (Cinema Menu ☰)</span>
           </button>
         </div>
@@ -847,81 +902,104 @@
             </div>
           </div>
 
-          <!-- Unified Luxury Cinema Action Menu Bar (Apple Liquid Glass) -->
-          <!-- FilmZilla Cinema Build 20261122_v51 -->
+          <!-- Compact Black & Red Cinema Theater Bar -->
+          <!-- FilmZilla Cinema Build 20261125_v62 -->
           <div class="cs-cinema-menu-bar" id="cs-cinema-menu-bar">
             <div class="cs-bar-left">
-              <!-- Dock 1: Party & Social Controls -->
-              <div class="cs-dock-cluster cs-dock-social" id="cs-dock-social" aria-label="Party & Social Dock">
-                <!-- Flagship Watch with Friends Button (Prominent & Eye-Catching) -->
-                <button type="button" class="cs-bar-btn cs-btn-party cs-btn-party-hero" id="btn-watch-party-trigger" title="Watch movie together with friends in real-time synchronized party">
-                  <span class="cs-party-pulse"></span>
-                  <i class="fa-solid fa-users-rays"></i>
-                  <span class="cs-party-label">Watch with Friends (Party)</span>
-                  <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
+              <!-- Flagship Watch with Friends Action -->
+              <button type="button" class="cs-bar-btn cs-btn-party cs-btn-party-hero" id="btn-watch-party-trigger" title="Watch movie together with friends in real-time synchronized party">
+                <span class="cs-party-pulse"></span>
+                <i class="fa-solid fa-users-rays"></i>
+                <span class="cs-party-label">Watch with Friends</span>
+                <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
+              </button>
+
+              <!-- Compact Cinema Modes Drawer (Houses Mic, Cam, Popups, Safe Mode, 4D Haptic, Phone Remote & P2P Mesh) -->
+              <div class="cs-tools-menu-wrap" id="cs-tools-menu-wrap">
+                <button type="button" class="cs-bar-btn cs-btn-tools-toggle" id="btn-cinema-tools-toggle" aria-expanded="false" aria-controls="cs-tools-popover" title="Party Mic, Cam, Safe Mode, 4D Haptic & Phone Remote">
+                  <i class="fa-solid fa-sliders"></i>
+                  <span>Cinema Modes</span>
+                  <span class="cs-tools-active-count" id="cs-tools-active-count" style="display:none">0</span>
+                  <i class="fa-solid fa-chevron-up cs-popover-chevron"></i>
                 </button>
 
-                <!-- Live Mic Voice Chat Button -->
-                <button type="button" class="cs-bar-btn cs-btn-mic" id="btn-bar-mic" title="Toggle Microphone Voice Chat (M)">
-                  <i class="fa-solid fa-microphone-slash"></i>
-                  <span class="cs-mic-label">Mic</span>
-                  <span class="cs-mic-badge" id="cs-mic-badge">OFF</span>
-                </button>
+                <div class="cs-tools-popover" id="cs-tools-popover" role="region" aria-label="Cinema & Party Modes">
+                  <div class="cs-popover-header">
+                    <span>Party &amp; Theater Controls</span>
+                    <button type="button" class="cs-popover-close" id="btn-tools-popover-close" aria-label="Close Modes">&times;</button>
+                  </div>
 
-                <!-- Live Couple Cam PiP Button -->
-                <button type="button" class="cs-bar-btn cs-btn-cam" id="btn-bar-cam" title="Toggle Couple Cam Video PiP (V)">
-                  <i class="fa-solid fa-video-slash"></i>
-                  <span class="cs-cam-label">Cam</span>
-                  <span class="cs-cam-badge" id="cs-cam-badge">OFF</span>
-                </button>
+                  <!-- Dock 1: Party & Social Controls -->
+                  <div class="cs-dock-cluster cs-dock-social" id="cs-dock-social" aria-label="Party & Social Dock">
+                    <button type="button" class="cs-bar-btn cs-btn-mic" id="btn-bar-mic" title="Toggle Microphone Voice Chat (M)">
+                      <i class="fa-solid fa-microphone-slash"></i>
+                      <span class="cs-mic-label">Mic</span>
+                      <span class="cs-mic-badge" id="cs-mic-badge">OFF</span>
+                    </button>
 
-                <!-- In-Screen Chat Popups Toggle (ON/OFF) -->
-                <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
-                  <i class="fa-solid fa-comment-dots"></i>
-                  <span class="cs-popups-label">Popups</span>
-                  <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
-                </button>
-              </div>
+                    <button type="button" class="cs-bar-btn cs-btn-cam" id="btn-bar-cam" title="Toggle Couple Cam Video PiP (V)">
+                      <i class="fa-solid fa-video-slash"></i>
+                      <span class="cs-cam-label">Cam</span>
+                      <span class="cs-cam-badge" id="cs-cam-badge">OFF</span>
+                    </button>
 
-              <div class="cs-dock-divider" aria-hidden="true"></div>
+                    <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
+                      <i class="fa-solid fa-comment-dots"></i>
+                      <span class="cs-popups-label">Popups</span>
+                      <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
+                    </button>
+                  </div>
 
-              <!-- Dock 2: Sensory & Mode Controls -->
-              <div class="cs-dock-cluster cs-dock-sensory" id="cs-dock-sensory" aria-label="Sensory & Mode Dock">
-                <!-- Family / Parent Safe Mode (Instant Censor / Skip) -->
-                <button type="button" class="cs-bar-btn cs-btn-safe" id="btn-toggle-safe-mode" title="Family & Parent Safe Mode (Auto Censor/Skip Explicit Scenes)">
-                  <i class="fa-solid fa-shield-halved"></i>
-                  <span class="cs-safe-label">Safe Mode</span>
-                  <span class="cs-safe-badge" id="cs-safe-badge">OFF</span>
-                </button>
+                  <div class="cs-dock-divider" aria-hidden="true"></div>
 
-                <!-- Mobile 4D Haptic Feedback (Bass & Action Vibrations) -->
-                <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
-                  <i class="fa-solid fa-mobile-screen-button"></i>
-                  <span class="cs-haptic-label">4D Haptic</span>
-                  <span class="cs-haptic-badge" id="cs-haptic-badge">OFF</span>
-                </button>
+                  <!-- Dock 2: Sensory & Mode Controls -->
+                  <div class="cs-dock-cluster cs-dock-sensory" id="cs-dock-sensory" aria-label="Sensory & Mode Dock">
+                    <button type="button" class="cs-bar-btn cs-btn-safe" id="btn-toggle-safe-mode" title="Family & Parent Safe Mode (Auto Censor/Skip Explicit Scenes)">
+                      <i class="fa-solid fa-shield-halved"></i>
+                      <span class="cs-safe-label">Safe Mode</span>
+                      <span class="cs-safe-badge" id="cs-safe-badge">OFF</span>
+                    </button>
 
-                <!-- Phone Second Screen Remote (QR Code Sync) -->
-                <button type="button" class="cs-bar-btn cs-btn-companion" id="btn-open-companion" title="Use Phone as Second Screen Remote Companion (QR Scan)">
-                  <i class="fa-solid fa-mobile-screen"></i>
-                  <span class="cs-companion-label">Phone Remote</span>
-                  <span class="cs-companion-badge">QR</span>
-                </button>
+                    <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
+                      <i class="fa-solid fa-mobile-screen-button"></i>
+                      <span class="cs-haptic-label">4D Haptic</span>
+                      <span class="cs-haptic-badge" id="cs-haptic-badge">OFF</span>
+                    </button>
+
+                    <button type="button" class="cs-bar-btn cs-btn-companion" id="btn-open-companion" title="Use Phone as Second Screen Remote Companion (QR Scan)">
+                      <i class="fa-solid fa-mobile-screen"></i>
+                      <span class="cs-companion-label">Phone Remote</span>
+                      <span class="cs-companion-badge">QR</span>
+                    </button>
+                  </div>
+
+                  <div class="cs-p2p-pill" id="cs-p2p-pill" title="Local Wi-Fi P2P Data Mesh • Click for Mesh Dashboard">
+                    <span class="p2p-pulse-dot"></span>
+                    <i class="fa-solid fa-wifi"></i>
+                    <span class="cs-p2p-text" id="cs-p2p-status">P2P Active • Saved <b id="cs-p2p-saved-val">0.0 MB</b></span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="cs-bar-right">
-              <!-- Dock 3: Utility & Actions Controls -->
+              <!-- Dock 3: Compact Utility & Download Controls -->
               <div class="cs-dock-cluster cs-dock-utility" id="cs-dock-utility" aria-label="Utility & Actions Dock">
-                <!-- Local Wi-Fi P2P Mesh Data Sharing Badge -->
-                <div class="cs-p2p-pill" id="cs-p2p-pill" title="Local Wi-Fi P2P Data Mesh • Click for Mesh Dashboard">
-                  <span class="p2p-pulse-dot"></span>
-                  <i class="fa-solid fa-wifi"></i>
-                  <span class="cs-p2p-text" id="cs-p2p-status">P2P Active • Saved <b id="cs-p2p-saved-val">0.0 MB</b></span>
+                <!-- Compressed Download Quality Drawer -->
+                <div class="cs-dl-menu-wrap" id="cs-dl-menu-wrap">
+                  <button type="button" class="cs-bar-btn cs-btn-dl-toggle" id="btn-bar-download-toggle" aria-expanded="false" aria-controls="cs-dl-popover" title="Download Movie Quality Options">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Download</span>
+                    <i class="fa-solid fa-chevron-up cs-popover-chevron"></i>
+                  </button>
+                  <div class="cs-dl-popover" id="cs-dl-popover" role="region" aria-label="Download Options">
+                    <div class="cs-popover-header">
+                      <span>Quick Download</span>
+                      <button type="button" class="cs-popover-close" id="btn-dl-popover-close" aria-label="Close Downloads">&times;</button>
+                    </div>
+                    <div class="cs-dl-capsule" id="quick-dl-buttons"></div>
+                  </div>
                 </div>
-
-                <!-- Multi-Quality Download Capsule (1080p, 720p, 480p) -->
-                <div class="cs-dl-capsule" id="quick-dl-buttons"></div>
 
                 <!-- 30s Viral Scene Teaser Button -->
                 <a href="teasers.html" class="cs-bar-btn cs-btn-teaser" id="bar-teaser-btn" title="Watch 30s Viral Scene Feed">
@@ -942,7 +1020,7 @@
                 </button>
 
                 <!-- Share Button -->
-                <button type="button" class="cs-bar-btn" id="movie-share-btn" title="Share Movie">
+                <button type="button" class="cs-bar-btn cs-btn-share" id="movie-share-btn" title="Share Movie">
                   <i class="fa-solid fa-share-nodes"></i>
                 </button>
               </div>
@@ -1020,8 +1098,8 @@
             <button type="button" class="cs-poster-trailer-btn" id="poster-trailer-btn">
               <i class="fa-solid fa-clapperboard"></i> Watch Trailer
             </button>
-            <a href="teasers.html" class="cs-poster-trailer-btn cs-poster-teaser-btn" id="poster-teaser-btn" style="display:none;background:linear-gradient(135deg,rgba(229,9,20,0.25) 0%,rgba(255,51,102,0.18) 100%);border-color:rgba(229,9,20,0.5);color:#fff;text-decoration:none;">
-              <i class="fa-solid fa-bolt" style="color:#ff3366"></i> 30s Viral Scene
+            <a href="teasers.html" class="cs-poster-trailer-btn cs-poster-teaser-btn" id="poster-teaser-btn" style="display:none;background:rgba(229,9,20,0.16);border-color:rgba(229,9,20,0.5);color:#fff;text-decoration:none;">
+              <i class="fa-solid fa-bolt" style="color:#e50914"></i> 30s Viral Scene
             </a>
             <a href="#downloads" class="cs-poster-dl-btn">
               <i class="fa-solid fa-cloud-arrow-down"></i> Direct Download
@@ -1054,10 +1132,10 @@
           <div class="cs-synopsis-card">
             <div class="cs-synopsis-tabs-header">
               <button type="button" class="cs-synopsis-tab active" id="tab-btn-si" data-tab="si">
-                <i class="fa-solid fa-language" style="color:var(--gold)"></i> සිංහල කතාව (Sinhala Plot)
+                <i class="fa-solid fa-language"></i> සිංහල කතාව (Sinhala Plot)
               </button>
               <button type="button" class="cs-synopsis-tab" id="tab-btn-en" data-tab="en">
-                <i class="fa-solid fa-globe" style="color:#00c0ff"></i> English Storyline
+                <i class="fa-solid fa-globe"></i> English Storyline
               </button>
             </div>
             <div class="cs-synopsis-tab-content">
@@ -1178,7 +1256,7 @@
 <!-- ========== CINESUBZ-STYLE MOBILE BOTTOM NAVIGATION BAR ========== -->
 <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
   <a href="index.html"><i class="fa-solid fa-house"></i><span>Home</span></a>
-  <a href="teasers.html" class="nav-bottom-teaser"><i class="fa-solid fa-bolt" style="color:#ff3366"></i><span>Teasers</span></a>
+  <a href="teasers.html" class="nav-bottom-teaser"><i class="fa-solid fa-bolt" style="color:#e50914"></i><span>Teasers</span></a>
   <a href="search.html?type=movie" class="active"><i class="fa-solid fa-film"></i><span>Movies</span></a>
   <a href="search.html?type=series"><i class="fa-solid fa-tv"></i><span>TV Shows</span></a>
   <button type="button" id="mob-search-btn"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></button>
@@ -1189,17 +1267,17 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="assets/js/user-state.js?v=20261122_cinema_v61"></script>
-<script src="data/movies_data.js?v=20261122_cinema_v61"></script>
-<script src="data/censor_cues_data.js?v=20261122_cinema_v61"></script>
-<script src="data/teasers_data.js?v=20261122_cinema_v61"></script>
-<script src="data/stream_endpoint.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/emoji-engine.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/app.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/download.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/roulette.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/watch-party.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/player.js?v=20261122_cinema_v61"></script>
-<script src="assets/js/netflix-ui.js?v=20261122_cinema_v61"></script>
+<script src="assets/js/user-state.js?v=20261125_cinema_v62"></script>
+<script src="data/movies_data.js?v=20261125_cinema_v62"></script>
+<script src="data/censor_cues_data.js?v=20261125_cinema_v62"></script>
+<script src="data/teasers_data.js?v=20261125_cinema_v62"></script>
+<script src="data/stream_endpoint.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/emoji-engine.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/app.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/download.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/roulette.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/watch-party.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/player.js?v=20261125_cinema_v62"></script>
+<script src="assets/js/netflix-ui.js?v=20261125_cinema_v62"></script>
 </body>
 </html>

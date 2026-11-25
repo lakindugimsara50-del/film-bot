@@ -4,10 +4,10 @@
    ========================================================================== */
 
 :root {
-  --reels-bg: #0a0a0c;
-  --reels-card-bg: #141417;
+  --reels-bg: #050507;
+  --reels-card-bg: #111115;
   --reels-accent: #e50914;
-  --reels-accent-gradient: linear-gradient(135deg, #e50914 0%, #ff3366 100%);
+  --reels-accent-gradient: linear-gradient(135deg, #e50914 0%, #b91c1c 100%);
   --reels-gold: #f5c518;
   --reels-text: #ffffff;
   --reels-text-dim: #b3b3b3;
@@ -54,7 +54,7 @@ body.reels-page-active {
   transform: translate(-50%, -50%);
   width: 700px;
   height: 900px;
-  background: radial-gradient(circle, rgba(229, 9, 20, 0.15) 0%, rgba(255, 51, 102, 0.05) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(229, 9, 20, 0.14) 0%, rgba(229, 9, 20, 0.04) 45%, transparent 70%);
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
@@ -160,13 +160,13 @@ body.reels-page-active {
   backdrop-filter: blur(10px);
 }
 .reels-brand-badge i {
-  color: #ff3366;
+  color: #e50914;
   font-size: 15px;
   animation: pulse-glow 2s infinite ease-in-out;
 }
 @keyframes pulse-glow {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px #ff3366); }
-  50% { transform: scale(1.15); filter: drop-shadow(0 0 8px #ff3366); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px #e50914); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 8px #e50914); }
 }
 
 .reels-header-actions {
@@ -409,9 +409,9 @@ body.reels-page-active {
 .teaser-floating-heart {
   position: absolute;
   pointer-events: none;
-  color: #ff3366;
+  color: #e50914;
   font-size: 64px;
-  filter: drop-shadow(0 0 15px rgba(255, 51, 102, 0.8));
+  filter: drop-shadow(0 0 15px rgba(229, 9, 20, 0.75));
   animation: heart-pop 0.8s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
   z-index: 9;
 }
@@ -505,8 +505,8 @@ body.reels-page-active {
 }
 
 .action-rail-btn.btn-liked {
-  color: #ff3366;
-  background: rgba(255, 51, 102, 0.2);
+  color: #e50914;
+  background: rgba(229, 9, 20, 0.2);
   animation: heart-beat 0.3s ease-in-out;
 }
 @keyframes heart-beat {
@@ -605,7 +605,7 @@ body.reels-page-active {
   backdrop-filter: blur(8px);
 }
 .teaser-replay-tag i {
-  color: #ff3366;
+  color: #e50914;
   font-size: 12px;
 }
 
@@ -1011,7 +1011,7 @@ body.reels-page-active {
   margin: 0;
 }
 .teasers-shelf-title i {
-  color: #ff3366;
+  color: #e50914;
 }
 .teasers-shelf-desc {
   font-size: 13px;
@@ -1191,12 +1191,12 @@ body.reels-page-active {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 51, 102, 0.16) !important;
-  border: 1px solid rgba(255, 51, 102, 0.45) !important;
+  background: rgba(229, 9, 20, 0.16) !important;
+  border: 1px solid rgba(229, 9, 20, 0.45) !important;
   color: #ffffff !important;
   text-decoration: none !important;
   padding: 10px 20px;
-  border-radius: 28px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 700;
   backdrop-filter: blur(10px);
@@ -1205,9 +1205,9 @@ body.reels-page-active {
 }
 .hero-btn-teaser:hover,
 .btn-hero-teaser:hover {
-  background: rgba(255, 51, 102, 0.35) !important;
-  border-color: #ff3366 !important;
-  box-shadow: 0 0 18px rgba(255, 51, 102, 0.6) !important;
+  background: rgba(229, 9, 20, 0.32) !important;
+  border-color: #e50914 !important;
+  box-shadow: 0 6px 18px rgba(229, 9, 20, 0.4) !important;
   transform: translateY(-2px);
 }
 

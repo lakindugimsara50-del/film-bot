@@ -781,7 +781,7 @@
           <div class="wp-header-top">
             <div class="wp-title">
               <span class="wp-title-beacon"></span>
-              <i class="fa-solid fa-crown" style="color:#f59e0b"></i>
+              <i class="fa-solid fa-crown" style="color:#e50914"></i>
               <span class="wp-vip-title">WATCH WITH FRIENDS</span>
             </div>
             <div class="wp-header-top-actions">
@@ -962,7 +962,7 @@
               <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Cinema Sticker (WhatsApp Style)" aria-label="Open Emoji Picker">
                 <i class="fa-regular fa-face-smile"></i>
               </button>
-              <button type="button" class="wp-btn-smiley ${this.isWhisperMode ? 'active' : ''}" id="wp-btn-whisper" title="Private Whisper Mode (Couple/Partner)" style="color:${this.isWhisperMode ? '#ec4899' : '#94a3b8'};">
+              <button type="button" class="wp-btn-smiley ${this.isWhisperMode ? 'active' : ''}" id="wp-btn-whisper" title="Private Whisper Mode (Couple/Partner)" style="color:${this.isWhisperMode ? '#e50914' : '#94a3b8'};">
                 <i class="fa-solid fa-lock"></i>
               </button>
               <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message or send stickers..." autocomplete="off">
@@ -1120,7 +1120,7 @@
         whisperBtn.addEventListener('click', () => {
           this.isWhisperMode = !this.isWhisperMode;
           whisperBtn.classList.toggle('active', this.isWhisperMode);
-          whisperBtn.style.color = this.isWhisperMode ? '#ec4899' : '#94a3b8';
+          whisperBtn.style.color = this.isWhisperMode ? '#e50914' : '#94a3b8';
           if (chatInput) {
             chatInput.placeholder = this.isWhisperMode ? 'Whisper private message to partner... 🔒' : 'Type a message or send stickers...';
             chatInput.focus();
@@ -1327,7 +1327,7 @@
           <div class="wp-member-pill">
             <span class="wp-status-dot ${m.status === 'buffering' ? 'buffering' : ''}"></span>
             <span>${m.name}${isMe ? ' (You)' : ''}</span>
-            ${isHost ? '<span style="font-size:10px;background:#8a2be2;padding:1px 6px;border-radius:999px;font-weight:700">Host</span>' : ''}
+            ${isHost ? '<span style="font-size:10px;background:#e50914;color:#ffffff;padding:1px 6px;border-radius:4px;font-weight:800">Host</span>' : ''}
           </div>
         `);
       }
@@ -2075,7 +2075,7 @@
             <span class="wp-msg-author">${this.escapeHtml(author)} ${whisperBadge}</span>
             <div class="wp-sticker-bubble">
               <img src="${this.escapeHtml(stickerUrl)}" alt="${this.escapeHtml(stickerName)}" class="wp-sticker-img" loading="lazy">
-              <span class="wp-sticker-tag"><i class="fa-brands fa-whatsapp" style="color:#25d366"></i> ${this.escapeHtml(stickerName)}</span>
+              <span class="wp-sticker-tag"><i class="fa-brands fa-whatsapp" style="color:#e4e4e7"></i> ${this.escapeHtml(stickerName)}</span>
             </div>
           `;
         } else {
@@ -3074,12 +3074,12 @@
         <div class="fz-cinema-modal-dialog" style="max-width:480px;width:92%;">
           <div class="fz-modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px;">
             <div class="fz-modal-title" style="display:flex;align-items:center;gap:10px;">
-              <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;box-shadow:0 0 15px rgba(245,158,11,0.3);flex-shrink:0;">
+              <div style="width:36px;height:36px;border-radius:10px;background:#e50914;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(229,9,20,0.3);flex-shrink:0;">
                 <i class="fa-solid fa-square-poll-vertical" style="color:#fff;font-size:18px;"></i>
               </div>
               <div>
-                <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:0.3px;">Live In-Party Poll & Prediction</div>
-                <div style="font-size:11px;color:#94a3b8;">Telegram & WhatsApp style live poll for party members</div>
+                <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:0.3px;">Live In-Party Poll &amp; Prediction</div>
+                <div style="font-size:11px;color:#a1a1aa;">Interactive live poll for party members</div>
               </div>
             </div>
             <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-prediction-create-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
@@ -3088,23 +3088,23 @@
             
             <!-- Question Input -->
             <div style="display:flex;flex-direction:column;gap:6px;">
-              <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
-                <i class="fa-solid fa-circle-question" style="color:#38bdf8;margin-right:4px;"></i> Question / අනාවැකි ප්‍රශ්නය
+              <label style="font-size:11px;font-weight:700;color:#d4d4d8;text-transform:uppercase;letter-spacing:0.5px;">
+                <i class="fa-solid fa-circle-question" style="color:#e50914;margin-right:4px;"></i> Question / අනාවැකි ප්‍රශ්නය
               </label>
               <input type="text" id="wp-poll-q" class="wp-poll-field" placeholder="Ask a question (e.g. Will he survive? / මූ බේරෙයිද? / Next target කවුද?)" />
             </div>
 
             <!-- Option 1 & 2 Inputs -->
             <div style="display:flex;flex-direction:column;gap:8px;">
-              <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
-                <i class="fa-solid fa-list-check" style="color:#10b981;margin-right:4px;"></i> Options / පිළිතුරු (2 Choices)
+              <label style="font-size:11px;font-weight:700;color:#d4d4d8;text-transform:uppercase;letter-spacing:0.5px;">
+                <i class="fa-solid fa-list-check" style="color:#e50914;margin-right:4px;"></i> Options / පිළිතුරු (2 Choices)
               </label>
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:12px;font-weight:800;color:#38bdf8;background:rgba(56,189,248,0.15);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">A</span>
+                <span style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(255,255,255,0.12);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">A</span>
                 <input type="text" id="wp-poll-oa" class="wp-poll-field" placeholder="Option 1 (e.g. Yes / Survives / ඔව්)" />
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:12px;font-weight:800;color:#f43f5e;background:rgba(244,63,94,0.15);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</span>
+                <span style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(229,9,20,0.28);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</span>
                 <input type="text" id="wp-poll-ob" class="wp-poll-field" placeholder="Option 2 (e.g. No / Fails / නෑ)" />
               </div>
             </div>
@@ -3112,8 +3112,8 @@
             <!-- Timer & Wager Mode Selectors -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div style="display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
-                  <i class="fa-solid fa-stopwatch" style="color:#fbbf24;margin-right:4px;"></i> Voting Timer
+                <label style="font-size:11px;font-weight:700;color:#d4d4d8;text-transform:uppercase;letter-spacing:0.5px;">
+                  <i class="fa-solid fa-stopwatch" style="color:#d4d4d8;margin-right:4px;"></i> Voting Timer
                 </label>
                 <select id="wp-poll-dur" class="wp-poll-select">
                   <option value="15">15 seconds (⚡ Fast)</option>
@@ -3125,8 +3125,8 @@
               </div>
 
               <div style="display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.5px;">
-                  <i class="fa-solid fa-coins" style="color:#f59e0b;margin-right:4px;"></i> Bet / Mode
+                <label style="font-size:11px;font-weight:700;color:#d4d4d8;text-transform:uppercase;letter-spacing:0.5px;">
+                  <i class="fa-solid fa-coins" style="color:#d4d4d8;margin-right:4px;"></i> Bet / Mode
                 </label>
                 <select id="wp-poll-wager" class="wp-poll-select">
                   <option value="0">Free Poll (0 🍿 Vote Only)</option>
@@ -3156,7 +3156,7 @@
               <button type="button" class="fz-btn-sec" onclick="window.FilmZillaWatchParty.openPredictionLeaderboard()" style="flex:1;">
                 <i class="fa-solid fa-ranking-star"></i> Leaderboard
               </button>
-              <button type="button" class="fz-btn-pri" id="wp-btn-launch-poll" style="flex:2;background:linear-gradient(135deg,#f59e0b,#e11d48);border:none;box-shadow:0 4px 15px rgba(245,158,11,0.3);font-weight:800;">
+              <button type="button" class="fz-btn-pri" id="wp-btn-launch-poll" style="flex:2;font-weight:800;">
                 <i class="fa-solid fa-paper-plane"></i> Launch Live Poll 🚀
               </button>
             </div>
@@ -3274,7 +3274,7 @@
       card.innerHTML = `
         <div class="cs-prediction-header">
           <div class="cs-prediction-title">
-            <i class="fa-solid ${isFreePoll ? 'fa-square-poll-vertical' : 'fa-trophy'}" style="color:${isFreePoll ? '#38bdf8' : '#fbbf24'}"></i>
+            <i class="fa-solid ${isFreePoll ? 'fa-square-poll-vertical' : 'fa-trophy'}" style="color:${isFreePoll ? '#e50914' : '#fbbf24'}"></i>
             <span>${isFreePoll ? 'LIVE COMMUNITY POLL' : 'LIVE POPCORN PREDICTION'}</span>
           </div>
           <div class="cs-prediction-timer" id="cs-pred-timer">${remSec > 0 ? remSec + 's left' : 'VOTING CLOSED'}</div>
@@ -3294,7 +3294,7 @@
         </div>
         <div class="cs-prediction-footer">
           <div class="cs-prediction-coins"><i class="fa-solid fa-coins" style="color:#fbbf24"></i> Your Wallet: <b id="cs-user-popcorn">${this.popcornCoins}</b> 🍿</div>
-          ${canResolve ? `<button type="button" style="background:none;border:none;color:#38bdf8;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner / End Poll</button>` : ''}
+          ${canResolve ? `<button type="button" style="background:none;border:none;color:#e50914;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner / End Poll</button>` : ''}
         </div>
       `;
       card.style.display = 'block';
@@ -3409,8 +3409,8 @@
             <p style="font-size:14px;color:#f8fafc;font-weight:700;margin-bottom:14px;">${this.escapeHtml(pred.question)}</p>
             <p style="font-size:12px;color:#94a3b8;margin-bottom:14px;">Select which outcome happened in the film to reward winning voters:</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-              <button type="button" class="fz-btn-pri" id="res-win-a" style="background:linear-gradient(135deg,#0284c7,#2563eb);border:none;">🏆 ${this.escapeHtml(pred.optionA)} Wins</button>
-              <button type="button" class="fz-btn-pri" id="res-win-b" style="background:linear-gradient(135deg,#e11d48,#b91c1c);border:none;">🏆 ${this.escapeHtml(pred.optionB)} Wins</button>
+              <button type="button" class="fz-btn-pri" id="res-win-a" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);">🏆 ${this.escapeHtml(pred.optionA)} Wins</button>
+              <button type="button" class="fz-btn-pri" id="res-win-b" style="background:#e50914;border:none;">🏆 ${this.escapeHtml(pred.optionB)} Wins</button>
             </div>
             <button type="button" class="fz-btn-sec" id="res-win-cancel" style="width:100%;"><i class="fa-solid fa-rotate-left"></i> Cancel / End without Winner</button>
           </div>
@@ -3528,7 +3528,7 @@
         const isGold = idx === 0;
         return `
           <div style="display:flex;align-items:center;justify-content:space-between;background:${isGold ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.05)'};border:${isGold ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(255,255,255,0.08)'};padding:12px 16px;border-radius:10px;">
-            <span style="font-weight:${isGold ? '800' : '700'};color:${isGold ? '#fbbf24' : (e.isMe ? '#38bdf8' : '#cbd5e1')};display:flex;align-items:center;gap:8px;">
+            <span style="font-weight:${isGold ? '800' : '700'};color:${isGold ? '#fbbf24' : (e.isMe ? '#e50914' : '#e4e4e7')};display:flex;align-items:center;gap:8px;">
               ${medal} ${this.escapeHtml(e.name)}
             </span>
             <span style="font-weight:800;color:#fff;">${e.coins} 🍿</span>

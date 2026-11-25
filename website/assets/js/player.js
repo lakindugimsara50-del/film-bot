@@ -3533,6 +3533,21 @@ function injectBottomControlBarItems(player, movie) {
   const cbEl = player.controlBar.el();
   if (!cbEl) return;
 
+  // 0. Netflix / Apple TV+ Top Hover HUD Scrim inside player frame
+  const pEl = typeof player.el === 'function' ? player.el() : null;
+  if (pEl && !pEl.querySelector('.cs-player-top-hud')) {
+    const topHud = document.createElement('div');
+    topHud.className = 'cs-player-top-hud';
+    const titleStr = movie && movie.title ? FilmSub.escHtml(movie.title) : 'Now Playing';
+    const subTag = (movie && movie.hasSubtitles === false) ? 'HD Stream' : 'සිංහල උපසිරැසි • HD Stream';
+    topHud.innerHTML = `
+      <div class="cs-hud-title-group">
+        <span class="cs-hud-eyebrow">${subTag}</span>
+        <span class="cs-hud-movie-title">${titleStr}</span>
+      </div>`;
+    pEl.appendChild(topHud);
+  }
+
   // 1. Rewind 10s and Forward 10s buttons right next to playToggle
   if (!cbEl.querySelector('.vjs-rewind-10')) {
     const playToggleEl = player.controlBar.playToggle ? player.controlBar.playToggle.el() : cbEl.firstElementChild;
@@ -4038,7 +4053,11 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
           <i class="fa-solid fa-play"></i>
         </button>
         <div class="cs-poster-bottom-bar">
-          <div class="cs-pbar-left">
+          <div class="cs-standby-meta-block">
+            <span class="cs-standby-eyebrow"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි &bull; ${FilmSub.escHtml(movie.quality || '1080p HD')}</span>
+            <h3 class="cs-standby-title">${FilmSub.escHtml(movie.title || 'Now Playing')}</h3>
+          </div>
+          <div class="cs-pbar-right">
             <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-dl" title="Direct Download Options">
               <i class="fa-solid fa-download"></i>
             </button>
@@ -4048,8 +4067,6 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
             <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-sub" title="Sinhala Subtitles">
               <i class="fa-solid fa-closed-captioning"></i>
             </button>
-          </div>
-          <div class="cs-pbar-right">
             <button type="button" class="cs-pbar-circle-btn" id="pbar-btn-alert" title="Report Issue / Telegram Support">
               <i class="fa-solid fa-triangle-exclamation"></i>
             </button>
@@ -4679,7 +4696,11 @@ function renderPlayerFallback(playerEl, movie) {
         <i class="fa-solid fa-play"></i>
       </button>
       <div class="cs-poster-bottom-bar">
-        <div class="cs-pbar-left">
+        <div class="cs-standby-meta-block">
+          <span class="cs-standby-eyebrow"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි &bull; ${FilmSub.escHtml(movie.quality || '1080p HD')}</span>
+          <h3 class="cs-standby-title">${FilmSub.escHtml(movie.title || 'Now Playing')}</h3>
+        </div>
+        <div class="cs-pbar-right">
           <button type="button" class="cs-pbar-circle-btn" id="fb-pbar-dl" title="Direct Download Options">
             <i class="fa-solid fa-download"></i>
           </button>
@@ -4689,8 +4710,6 @@ function renderPlayerFallback(playerEl, movie) {
           <button type="button" class="cs-pbar-circle-btn" id="fb-pbar-sub" title="Sinhala Subtitles">
             <i class="fa-solid fa-closed-captioning"></i>
           </button>
-        </div>
-        <div class="cs-pbar-right">
           <a href="${FilmSub.escHtml(tgBotUrl)}" target="_blank" rel="noopener" class="cs-pbar-circle-btn" id="fb-pbar-alert" title="Telegram Bot">
             <i class="fa-solid fa-triangle-exclamation"></i>
           </a>
@@ -5012,17 +5031,23 @@ function renderQuickDownloadStrip(movie) {
     const qBadge = rawQ.includes('1080') ? '1080p Full HD' : (rawQ.includes('720') ? '720p HD' : (rawQ.includes('480') ? '480p SD' : rawQ));
     const directUrl = dl.direct_url || (dl.url && !dl.url.includes('t.me') ? dl.url : '');
     const tgUrl = dl.tg_url || dl.bot_url || dl.channel_url || (dl.url && dl.url.includes('t.me') ? dl.url : '');
+    const sizeText = dl.size ? `<span class="quick-dl-size">${FilmSub.escHtml(dl.size)}</span>` : '';
 
     return `
       <button type="button" class="quick-dl-pill" data-direct-url="${FilmSub.escHtml(directUrl)}" data-tg-url="${FilmSub.escHtml(tgUrl)}" data-quality="${FilmSub.escHtml(rawQ)}" title="Download ${FilmSub.escHtml(qBadge)}">
-        <i class="fa-solid fa-arrow-down-to-bracket quick-dl-icon"></i>
+        <i class="fa-solid fa-download quick-dl-icon"></i>
         <span class="quick-dl-q-name">${FilmSub.escHtml(qBadge)}</span>
+        ${sizeText}
       </button>`;
   }).join('');
 
   stripBtns.innerHTML = html;
   stripBtns.querySelectorAll('button.quick-dl-pill').forEach(btn => {
     btn.addEventListener('click', () => {
+      const dlWrap = document.getElementById('cs-dl-menu-wrap');
+      const dlToggle = document.getElementById('btn-bar-download-toggle');
+      if (dlWrap) dlWrap.classList.remove('open');
+      if (dlToggle) dlToggle.setAttribute('aria-expanded', 'false');
       const directUrl = btn.dataset.directUrl;
       const tgUrl = btn.dataset.tgUrl;
       const quality = btn.dataset.quality;
@@ -5479,7 +5504,7 @@ function renderMovieDetails(movie) {
     if (tabEn) {
       tabEn.style.display = 'inline-flex';
       tabEn.classList.remove('active');
-      tabEn.innerHTML = '<i class="fa-solid fa-globe" style="color:#00a8ff"></i> English Storyline';
+      tabEn.innerHTML = '<i class="fa-solid fa-globe"></i> English Storyline';
     }
     if (paneSi) {
       paneSi.classList.add('active');
@@ -5559,7 +5584,7 @@ function renderMovieDetails(movie) {
     const updateFavUI = (isFav) => {
       favBtns.forEach(btn => {
         btn.classList.toggle('active', isFav);
-        btn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:#ff3366"></i> <span>${isFav ? 'Favorited' : 'Favorite'}</span>`;
+        btn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:${isFav ? '#ffffff' : '#e50914'}"></i> <span>${isFav ? 'Favorited' : 'Favorite'}</span>`;
       });
     };
 
@@ -5582,7 +5607,7 @@ function renderMovieDetails(movie) {
     const updateLaterUI = (isLater) => {
       laterBtns.forEach(btn => {
         btn.classList.toggle('active', isLater);
-        btn.innerHTML = `<i class="${isLater ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:#00b4d8"></i> <span>${isLater ? 'In Queue' : 'Watch Later'}</span>`;
+        btn.innerHTML = `<i class="${isLater ? 'fa-solid' : 'fa-regular'} fa-clock" style="color:${isLater ? '#ffffff' : '#d4d4d8'}"></i> <span>${isLater ? 'In Queue' : 'Watch Later'}</span>`;
       });
     };
 
@@ -5769,7 +5794,7 @@ function renderDownloadSection(movie) {
                     ${isRec ? `<span class="bubble-rec-chip"><i class="fa-solid fa-crown"></i> RECOMMENDED</span>` : ''}
                   </div>
                   <div class="bubble-tier-specs">
-                    <span class="bubble-spec-pill"><i class="fa-solid fa-circle-check" style="color:#4ade80"></i> ${FilmSub.escHtml(fmt)}</span>
+                    <span class="bubble-spec-pill"><i class="fa-solid fa-circle-check" style="color:#e50914"></i> ${FilmSub.escHtml(fmt)}</span>
                     <span class="bubble-spec-pill"><i class="fa-solid fa-closed-captioning"></i> සිංහල උපසිරැසි Merged</span>
                   </div>
                 </div>
@@ -6139,7 +6164,7 @@ window.FilmZillaSafeMode = {
       <div class="fz-cinema-modal-dialog">
         <div class="fz-modal-header">
           <div class="fz-modal-title">
-            <i class="fa-solid fa-shield-halved" style="color:#06d6a0"></i>
+            <i class="fa-solid fa-shield-halved" style="color:#e50914"></i>
             <span>Family & Parent Safe Mode</span>
           </div>
           <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-safemode-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
@@ -6520,25 +6545,25 @@ window.FilmZillaP2P = {
       <div class="fz-cinema-modal-dialog">
         <div class="fz-modal-header">
           <div class="fz-modal-title">
-            <i class="fa-solid fa-wifi" style="color:#10b981"></i>
+            <i class="fa-solid fa-wifi" style="color:#e50914"></i>
             <span>Local Wi-Fi P2P Mesh Sharing</span>
           </div>
           <button type="button" class="fz-modal-close" onclick="document.getElementById('fz-p2p-modal').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="fz-modal-body">
           <div class="p2p-pulse-dot" style="width:16px;height:16px;margin-bottom:12px;"></div>
-          <h3 style="font-size:22px;color:#6ee7b7;font-weight:800;margin-bottom:6px;">${mb} MB Saved</h3>
-          <p style="font-size:13px;color:#94a3b8;margin-bottom:20px;max-width:380px;">
+          <h3 style="font-size:22px;color:#ffffff;font-weight:800;margin-bottom:6px;">${mb} MB Saved</h3>
+          <p style="font-size:13px;color:#a1a1aa;margin-bottom:20px;max-width:380px;">
             Devices on your same Wi-Fi exchange cached video buffer chunks directly over local peer-to-peer WebRTC mesh without consuming cellular broadband quota.
           </p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-bottom:20px;">
-            <div style="background:rgba(255,255,255,0.05);padding:14px;border-radius:10px;text-align:center;">
-              <div style="font-size:11px;color:#94a3b8;font-weight:700;">WI-FI PEERS ACTIVE</div>
-              <div style="font-size:20px;font-weight:800;color:#f8fafc;margin-top:4px;">${this.localPeersCount} Devices</div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:14px;border-radius:10px;text-align:center;">
+              <div style="font-size:11px;color:#a1a1aa;font-weight:700;">WI-FI PEERS ACTIVE</div>
+              <div style="font-size:20px;font-weight:800;color:#ffffff;margin-top:4px;">${this.localPeersCount} Devices</div>
             </div>
-            <div style="background:rgba(255,255,255,0.05);padding:14px;border-radius:10px;text-align:center;">
-              <div style="font-size:11px;color:#94a3b8;font-weight:700;">MESH EFFICIENCY</div>
-              <div style="font-size:20px;font-weight:800;color:#34d399;margin-top:4px;">99.4%</div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:14px;border-radius:10px;text-align:center;">
+              <div style="font-size:11px;color:#a1a1aa;font-weight:700;">MESH EFFICIENCY</div>
+              <div style="font-size:20px;font-weight:800;color:#e50914;margin-top:4px;">99.4%</div>
             </div>
           </div>
           <div class="fz-modal-btn-row">
@@ -6756,7 +6781,7 @@ window.FilmZillaCompanion = {
       <div class="fz-cinema-modal-dialog">
         <div class="fz-modal-header">
           <div class="fz-modal-title">
-            <i class="fa-solid fa-mobile-screen" style="color:#38bdf8"></i>
+            <i class="fa-solid fa-mobile-screen" style="color:#e50914"></i>
             <span>Phone Second Screen Remote</span>
           </div>
           <button type="button" class="fz-modal-close" id="fz-companion-modal-close" title="Close"><i class="fa-solid fa-xmark"></i></button>
@@ -6766,7 +6791,7 @@ window.FilmZillaCompanion = {
             <img src="${qrApiUrl}" alt="Pair QR Code" loading="lazy">
           </div>
           <div class="fz-pair-code">${this.pairCode}</div>
-          <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:12px;" id="companion-modal-status">
+          <div style="font-size:12px;font-weight:700;color:#f4f4f5;margin-bottom:12px;" id="companion-modal-status">
             ${this.isPhoneConnected ? '📱 Phone Paired & Active' : 'Scan QR code with your phone camera to pair'}
           </div>
           <p style="font-size:12px;color:#94a3b8;margin-bottom:16px;">
@@ -6873,6 +6898,99 @@ function wireVIPCinemaMenuButtons(movie) {
     p2pPill._bound = true;
     p2pPill.addEventListener('click', () => {
       if (window.FilmZillaP2P) window.FilmZillaP2P.openDashboardModal();
+    });
+  }
+
+  // 5. Compressed Popover Menus (Cinema Modes & Quick Download)
+  const toolsToggle = document.getElementById('btn-cinema-tools-toggle');
+  const toolsWrap = document.getElementById('cs-tools-menu-wrap');
+  const toolsClose = document.getElementById('btn-tools-popover-close');
+  const dlToggle = document.getElementById('btn-bar-download-toggle');
+  const dlWrap = document.getElementById('cs-dl-menu-wrap');
+  const dlClose = document.getElementById('btn-dl-popover-close');
+
+  const closeAllPopovers = () => {
+    if (toolsWrap) toolsWrap.classList.remove('open');
+    if (toolsToggle) toolsToggle.setAttribute('aria-expanded', 'false');
+    if (dlWrap) dlWrap.classList.remove('open');
+    if (dlToggle) dlToggle.setAttribute('aria-expanded', 'false');
+  };
+
+  const syncToolsCount = () => {
+    const countEl = document.getElementById('cs-tools-active-count');
+    if (!countEl || !toolsWrap) return;
+    const activeIds = ['btn-bar-mic', 'btn-bar-cam', 'btn-toggle-safe-mode', 'btn-toggle-haptics'];
+    const activeCount = activeIds.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.classList.contains('active');
+    }).length;
+    if (activeCount > 0) {
+      countEl.textContent = String(activeCount);
+      countEl.style.display = 'inline-flex';
+      if (toolsToggle) toolsToggle.classList.add('has-active');
+    } else {
+      countEl.style.display = 'none';
+      if (toolsToggle) toolsToggle.classList.remove('has-active');
+    }
+  };
+
+  if (toolsToggle && toolsWrap && !toolsToggle._bound) {
+    toolsToggle._bound = true;
+    toolsToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !toolsWrap.classList.contains('open');
+      closeAllPopovers();
+      if (willOpen) {
+        toolsWrap.classList.add('open');
+        toolsToggle.setAttribute('aria-expanded', 'true');
+      }
+    });
+    if (typeof MutationObserver !== 'undefined') {
+      const pop = document.getElementById('cs-tools-popover');
+      if (pop) {
+        new MutationObserver(syncToolsCount).observe(pop, { attributes: true, subtree: true, attributeFilter: ['class'] });
+      }
+    }
+    syncToolsCount();
+  }
+
+  if (toolsClose && !toolsClose._bound) {
+    toolsClose._bound = true;
+    toolsClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllPopovers();
+    });
+  }
+
+  if (dlToggle && dlWrap && !dlToggle._bound) {
+    dlToggle._bound = true;
+    dlToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !dlWrap.classList.contains('open');
+      closeAllPopovers();
+      if (willOpen) {
+        dlWrap.classList.add('open');
+        dlToggle.setAttribute('aria-expanded', 'true');
+      }
+    });
+  }
+
+  if (dlClose && !dlClose._bound) {
+    dlClose._bound = true;
+    dlClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllPopovers();
+    });
+  }
+
+  if (!document._csPopoverDocBound) {
+    document._csPopoverDocBound = true;
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.closest && e.target.closest('.cs-tools-menu-wrap, .cs-dl-menu-wrap')) return;
+      closeAllPopovers();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllPopovers();
     });
   }
 }

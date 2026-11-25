@@ -11,21 +11,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Outfit:wght@400;600;700&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=20261122_cinema_v61">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v62">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <style>
     :root {
-      --bg: #07090e;
-      --card-bg: rgba(18, 24, 38, 0.85);
+      --bg: #050507;
+      --card-bg: rgba(17, 17, 21, 0.92);
       --border: rgba(255, 255, 255, 0.1);
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.35);
-      --rose: #f43f5e;
-      --emerald: #10b981;
-      --amber: #f59e0b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
+      --accent: #e50914;
+      --accent-glow: rgba(229, 9, 20, 0.35);
+      --rose: #e50914;
+      --emerald: #e50914;
+      --amber: #f5c518;
+      --text: #ffffff;
+      --text-muted: #a1a1aa;
     }
     * {
       box-sizing: border-box;
@@ -76,14 +76,14 @@
       letter-spacing: -0.3px;
     }
     .brand-title span {
-      color: #38bdf8;
-      font-size: 12px;
-      font-weight: 600;
-      margin-left: 4px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #e50914;
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
     .remote-status-badge {
       display: inline-flex;
@@ -93,16 +93,16 @@
       border-radius: 999px;
       font-size: 11px;
       font-weight: 700;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      color: #34d399;
+      background: rgba(229, 9, 20, 0.14);
+      border: 1px solid rgba(229, 9, 20, 0.45);
+      color: #ffffff;
     }
     .status-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
+      background: #e50914;
+      box-shadow: 0 0 8px rgba(229, 9, 20, 0.7);
       animation: pulse 2s infinite ease-in-out;
     }
     @keyframes pulse {
@@ -175,8 +175,9 @@
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      background: #38bdf8;
-      box-shadow: 0 0 14px #38bdf8;
+      background: #e50914;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 12px rgba(229, 9, 20, 0.55);
       cursor: pointer;
     }
     
@@ -210,15 +211,15 @@
       width: 84px;
       height: 84px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #0284c7);
-      border: 2px solid #7dd3fc;
+      background: #e50914;
+      border: 2px solid rgba(255, 255, 255, 0.25);
       color: #ffffff;
       font-size: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.5), 0 0 25px rgba(56, 189, 248, 0.35);
+      box-shadow: 0 10px 30px rgba(229, 9, 20, 0.45);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .btn-play-pause-hero:active {
@@ -327,21 +328,21 @@
       text-align: left;
     }
     .btn-feature-toggle.active {
-      border-color: #10b981;
-      background: rgba(16, 185, 129, 0.15);
-      color: #6ee7b7;
+      border-color: #e50914;
+      background: rgba(229, 9, 20, 0.16);
+      color: #ffffff;
     }
     .btn-feature-toggle.haptic-active {
-      border-color: #f43f5e;
-      background: rgba(244, 63, 94, 0.15);
-      color: #fda4af;
+      border-color: #e50914;
+      background: rgba(229, 9, 20, 0.16);
+      color: #ffffff;
     }
     
     /* Couple Hug Touch Bar */
     .couple-hug-strip {
-      background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(236, 72, 153, 0.18));
-      border: 1px solid rgba(244, 63, 94, 0.35);
-      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(229, 9, 20, 0.18), rgba(20, 20, 26, 0.92));
+      border: 1px solid rgba(229, 9, 20, 0.42);
+      border-radius: 14px;
       padding: 16px;
       display: flex;
       align-items: center;
@@ -360,7 +361,7 @@
       top: 0;
       bottom: 0;
       width: 0%;
-      background: rgba(244, 63, 94, 0.35);
+      background: rgba(229, 9, 20, 0.38);
       transition: width 0.1s linear;
       pointer-events: none;
     }
@@ -374,7 +375,7 @@
     }
     .hug-sub {
       font-size: 11px;
-      color: #fda4af;
+      color: #d4d4d8;
     }
   </style>
 </head>
@@ -394,9 +395,9 @@
 
   <!-- Pair Code Sync Bar -->
   <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:7px 12px;border-radius:10px;margin-top:10px;border:1px solid rgba(255,255,255,0.08);">
-    <i class="fa-solid fa-qrcode" style="color:#38bdf8;font-size:13px;"></i>
+    <i class="fa-solid fa-qrcode" style="color:#e50914;font-size:13px;"></i>
     <input type="text" id="manual-pair-input" placeholder="Pair Code (e.g. FZ-1234)" style="background:none;border:none;color:#fff;font-size:12px;font-weight:700;flex:1;outline:none;text-transform:uppercase;">
-    <button type="button" id="manual-pair-btn" style="background:#38bdf8;color:#08090d;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;">Sync</button>
+    <button type="button" id="manual-pair-btn" style="background:#e50914;color:#ffffff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;">Sync</button>
   </div>
 
   <!-- Movie Showcase -->
@@ -443,7 +444,7 @@
   <!-- Feature Toggles -->
   <div class="toggle-grid" style="grid-template-columns: 1fr;">
     <button type="button" class="btn-feature-toggle haptic-active" id="remote-haptic-btn">
-      <i class="fa-solid fa-mobile-screen-button" style="color:#f43f5e;font-size:18px;"></i>
+      <i class="fa-solid fa-mobile-screen-button" style="color:#e50914;font-size:18px;"></i>
       <div>
         <div>4D Haptic Feedback</div>
         <small style="color:var(--text-muted);font-size:10px;">Bass Vibration ON</small>
@@ -454,7 +455,7 @@
   <!-- Reaction Bombs Thrower -->
   <div class="section-title">
     <span>Throw Reaction to Screen</span>
-    <span style="color:#38bdf8;font-size:11px;">Instant Blast</span>
+    <span style="color:#e50914;font-size:11px;">Instant Blast</span>
   </div>
   <div class="reaction-bombs-grid">
     <button type="button" class="btn-remote-bomb" data-bomb="popcorn">

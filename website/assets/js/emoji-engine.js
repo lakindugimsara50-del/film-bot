@@ -1,67 +1,70 @@
 /**
- * FilmZilla High-Definition 3D Emoji Engine
- * Renders high-quality Microsoft Fluent 3D & Twemoji vector graphics across the site,
- * replacing primitive low-res OS font emojis with modern, glossy cinema-grade visuals.
+ * FilmZilla Apple HD Cinema Emoji Engine
+ * Renders high-resolution glossy Apple iOS emoji assets across the site,
+ * replacing coarse OS fonts and cartoon clipart with crisp studio visuals.
  */
 (function(window) {
   'use strict';
 
+  const APPLE_CDN = 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64';
+
   const FLUENT_MAP = {
-    // Handshakes & Gestures
-    '🤝': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Handshake/3D/handshake_3d.png',
-    '👍': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Thumbs%20up/Default/3D/thumbs_up_3d_default.png',
-    '👎': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Thumbs%20down/Default/3D/thumbs_down_3d_default.png',
-    '👏': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapping%20hands/Default/3D/clapping_hands_3d_default.png',
-    '🙌': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Raising%20hands/Default/3D/raising_hands_3d_default.png',
-    '✌️': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Victory%20hand/Default/3D/victory_hand_3d_default.png',
-    '🤙': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Call%20me%20hand/Default/3D/call_me_hand_3d_default.png',
-    '🙏': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Folded%20hands/Default/3D/folded_hands_3d_default.png',
-    '👋': 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Waving%20hand/Default/3D/waving_hand_3d_default.png',
-    '👌': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44c/512.webp',
+    // Handshakes & Gestures (Apple HD)
+    '🤝': `${APPLE_CDN}/1f91d.png`,
+    '👍': `${APPLE_CDN}/1f44d.png`,
+    '👎': `${APPLE_CDN}/1f44e.png`,
+    '👏': `${APPLE_CDN}/1f44f.png`,
+    '🙌': `${APPLE_CDN}/1f64c.png`,
+    '✌️': `${APPLE_CDN}/270c-fe0f.png`,
+    '🤙': `${APPLE_CDN}/1f919.png`,
+    '🙏': `${APPLE_CDN}/1f64f.png`,
+    '👋': `${APPLE_CDN}/1f44b.png`,
+    '👌': `${APPLE_CDN}/1f44c.png`,
 
-    // Expressive Faces
-    '😀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f600/512.webp',
-    '😂': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
-    '🤣': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
-    '😍': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f60d/512.webp',
-    '🤩': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
-    '😎': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f60e/512.webp',
-    '🥳': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f973/512.webp',
-    '🥺': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f97a/512.webp',
-    '😭': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f62d/512.webp',
-    '😱': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp',
-    '🤯': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
-    '😴': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f634/512.webp',
-    '💤': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a4/512.webp',
-    '🤫': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92b/512.webp',
-    '👀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f440/512.webp',
-    '🤔': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f914/512.webp',
+    // Expressive Faces (Apple HD)
+    '😀': `${APPLE_CDN}/1f600.png`,
+    '😂': `${APPLE_CDN}/1f602.png`,
+    '🤣': `${APPLE_CDN}/1f923.png`,
+    '😍': `${APPLE_CDN}/1f60d.png`,
+    '🤩': `${APPLE_CDN}/1f929.png`,
+    '😎': `${APPLE_CDN}/1f60e.png`,
+    '🥳': `${APPLE_CDN}/1f973.png`,
+    '🥺': `${APPLE_CDN}/1f97a.png`,
+    '😭': `${APPLE_CDN}/1f62d.png`,
+    '😱': `${APPLE_CDN}/1f631.png`,
+    '🤯': `${APPLE_CDN}/1f92f.png`,
+    '😴': `${APPLE_CDN}/1f634.png`,
+    '💤': `${APPLE_CDN}/1f4a4.png`,
+    '🤫': `${APPLE_CDN}/1f92b.png`,
+    '👀': `${APPLE_CDN}/1f440.png`,
+    '🤔': `${APPLE_CDN}/1f914.png`,
+    '😡': `${APPLE_CDN}/1f621.png`,
 
-    // Cinema, Entertainment & Food
-    '🍿': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
-    '🎬': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f3ac/512.webp',
-    '🎟️': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f39f_fe0f/512.webp',
-    '🥤': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f964/512.webp',
-    '🍕': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f355/512.webp',
-    '🍻': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37b/512.webp',
-    '🏆': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f3c6/512.webp',
-    '🎲': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f3b2/512.webp',
+    // Cinema, Entertainment & Food (Apple HD)
+    '🍿': `${APPLE_CDN}/1f37f.png`,
+    '🎬': `${APPLE_CDN}/1f3ac.png`,
+    '🎟️': `${APPLE_CDN}/1f39f-fe0f.png`,
+    '🥤': `${APPLE_CDN}/1f964.png`,
+    '🍕': `${APPLE_CDN}/1f355.png`,
+    '🍻': `${APPLE_CDN}/1f37b.png`,
+    '🏆': `${APPLE_CDN}/1f3c6.png`,
+    '🎲': `${APPLE_CDN}/1f3b2.png`,
 
-    // Hearts & Hype
-    '🔥': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
-    '❤️': 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
-    '❤': 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
-    '💔': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f494/512.webp',
-    '💖': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f496/512.webp',
-    '⚡': 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
-    '💯': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4af/512.webp',
-    '👑': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
-    '💀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
-    '✨': 'https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.webp',
-    '🎉': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
-    '🚀': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp',
-    '💣': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp',
-    '💥': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a5/512.webp'
+    // Hearts & Hype (Apple HD)
+    '🔥': `${APPLE_CDN}/1f525.png`,
+    '❤️': `${APPLE_CDN}/2764-fe0f.png`,
+    '❤': `${APPLE_CDN}/2764-fe0f.png`,
+    '💔': `${APPLE_CDN}/1f494.png`,
+    '💖': `${APPLE_CDN}/1f496.png`,
+    '⚡': `${APPLE_CDN}/26a1.png`,
+    '💯': `${APPLE_CDN}/1f4af.png`,
+    '👑': `${APPLE_CDN}/1f451.png`,
+    '💀': `${APPLE_CDN}/1f480.png`,
+    '✨': `${APPLE_CDN}/2728.png`,
+    '🎉': `${APPLE_CDN}/1f389.png`,
+    '🚀': `${APPLE_CDN}/1f680.png`,
+    '💣': `${APPLE_CDN}/1f4a3.png`,
+    '💥': `${APPLE_CDN}/1f4a5.png`
   };
 
   // Unicode Regex for standard and compound emojis
@@ -76,11 +79,10 @@
       const clean = emoji.replace(/\uFE0F/g, '');
       if (FLUENT_MAP[clean]) return FLUENT_MAP[clean];
 
-      // Universal Twemoji SVG vector fallback for any other Unicode emoji
       try {
         const code = [...clean].map(c => c.codePointAt(0).toString(16)).join('-');
         if (code) {
-          return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${code}.svg`;
+          return `${APPLE_CDN}/${code}.png`;
         }
       } catch (_) {}
       return null;
@@ -97,7 +99,11 @@
       return rawText.replace(EMOJI_REGEX, (match) => {
         const url = this.getEmojiUrl(match);
         if (url) {
-          return `<img class="fz-inline-emoji" src="${url}" alt="${match}" draggable="false" loading="lazy">`;
+          const clean = match.replace(/\uFE0F/g, '');
+          const twCode = [...clean].map(c => c.codePointAt(0).toString(16)).join('-');
+          const fb = twCode ? `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${twCode}.svg` : '';
+          const errAttr = fb ? ` onerror="this.onerror=null;this.src='${fb}';"` : '';
+          return `<img class="fz-inline-emoji" src="${url}" alt="${match}"${errAttr} draggable="false" loading="lazy">`;
         }
         return match;
       });

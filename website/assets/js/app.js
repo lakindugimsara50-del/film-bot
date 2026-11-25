@@ -2953,16 +2953,20 @@ function openUserListModal(initialTab = 'favorites') {
   modal.classList.add('open');
 }
 
-// ---- Profile Avatar Picker & 3D Cinema Avatar Studio ----
+// ---- Profile Avatar Picker & Cinema Studio Avatars ----
+const _csSvgAvatar = (bgA, bgB, innerSvg) =>
+  'data:image/svg+xml;charset=UTF-8,' +
+  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${bgA}"/><stop offset="100%" stop-color="${bgB}"/></linearGradient></defs><rect width="64" height="64" rx="32" fill="url(#g)"/><circle cx="32" cy="32" r="29" fill="none" stroke="rgba(229,9,20,0.65)" stroke-width="2"/>${innerSvg}</svg>`);
+
 const VIP_PRESET_AVATARS = [
-  { id: 'fire', name: 'Flame Legend', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp' },
-  { id: 'popcorn', name: 'Popcorn Cinephile', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp' },
-  { id: 'crown', name: 'VIP Royalty', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp' },
-  { id: 'star', name: 'Cinema Star', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp' },
-  { id: 'rocket', name: 'Cosmic Voyager', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp' },
-  { id: 'party', name: 'Party Master', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp' },
-  { id: 'heart', name: 'Movie Lover', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp' },
-  { id: 'mindblown', name: 'Plot Wizard', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp' }
+  { id: 'crimson-f', name: 'FilmZilla Prime', img: _csSvgAvatar('#18181f', '#09090d', '<path d="M22 18h22v7H29v5h12v7H29v10h-7z" fill="#e50914"/>') },
+  { id: 'reel', name: 'Studio Reel', img: _csSvgAvatar('#1b161b', '#0b0a0f', '<circle cx="32" cy="32" r="14" fill="none" stroke="#f4f4f5" stroke-width="2.5"/><circle cx="32" cy="24" r="3" fill="#e50914"/><circle cx="25" cy="36" r="3" fill="#e50914"/><circle cx="39" cy="36" r="3" fill="#e50914"/><circle cx="32" cy="32" r="2" fill="#ffffff"/>') },
+  { id: 'director', name: 'Director Cut', img: _csSvgAvatar('#16161d', '#09090c', '<path d="M18 27h28v17a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2z" fill="#272730" stroke="#e4e4e7" stroke-width="1.8"/><path d="M17 24l28-6 1.5 5-28 6z" fill="#e50914"/>') },
+  { id: 'crown', name: 'VIP Obsidian', img: _csSvgAvatar('#1d1417', '#09090c', '<path d="M16 42l4-16 12 9 12-9 4 16z" fill="none" stroke="#facc15" stroke-width="2.5" stroke-linejoin="round"/><rect x="18" y="45" width="28" height="3" rx="1.5" fill="#e50914"/>') },
+  { id: 'lens', name: 'IMAX Optics', img: _csSvgAvatar('#131720', '#08090e', '<circle cx="32" cy="32" r="13" fill="#090b10" stroke="#94a3b8" stroke-width="2.2"/><circle cx="32" cy="32" r="7" fill="#e50914" opacity="0.88"/><circle cx="35" cy="29" r="2.2" fill="#ffffff"/>') },
+  { id: 'spotlight', name: 'Premiere Night', img: _csSvgAvatar('#1a141c', '#08080c', '<path d="M26 20h12l7 24H19z" fill="rgba(229,9,20,0.22)" stroke="#e4e4e7" stroke-width="2"/><polygon points="32,25 34.4,30 39.8,30.7 35.8,34.4 36.8,39.8 32,37.2 27.2,39.8 28.2,34.4 24.2,30.7 29.6,30" fill="#ffffff"/>') },
+  { id: 'ticket', name: 'First Row VIP', img: _csSvgAvatar('#1a1515', '#0a090b', '<rect x="16" y="22" width="32" height="20" rx="4" fill="#22191d" stroke="#e50914" stroke-width="2.2"/><circle cx="32" cy="32" r="4" fill="#f4f4f5"/>') },
+  { id: 'bolt', name: 'Crimson Spark', img: _csSvgAvatar('#191316', '#09090c', '<path d="M35 15L20 34h10l-2 15 16-20H34z" fill="#e50914" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>') }
 ];
 
 function applyNewAvatar(avatarUrl) {
@@ -3129,39 +3133,39 @@ function initGlobalCinemaDrawer() {
             </li>
             <li>
               <a href="teasers.html" class="drawer-nav-item drawer-nav-teaser">
-                <span class="drawer-icon-tile teaser"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/High%20voltage/3D/high_voltage_3d.png" class="drawer-3d-glyph" alt="Teasers" loading="lazy"></span>
+                <span class="drawer-icon-tile teaser"><i class="fa-solid fa-bolt"></i></span>
                 <span class="drawer-nav-label">30s Teasers</span>
                 <span class="drawer-pill-hot">NEW</span>
               </a>
             </li>
             <li>
               <a href="search.html?type=movie" class="drawer-nav-item">
-                <span class="drawer-icon-tile movies"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Film%20projector/3D/film_projector_3d.png" class="drawer-3d-glyph" alt="Movies" loading="lazy"></span>
+                <span class="drawer-icon-tile movies"><i class="fa-solid fa-film"></i></span>
                 <span class="drawer-nav-label">Movies</span>
                 <span class="drawer-pill-hot">POPULAR</span>
               </a>
             </li>
             <li>
               <a href="search.html?type=tv" class="drawer-nav-item">
-                <span class="drawer-icon-tile series"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Television/3D/television_3d.png" class="drawer-3d-glyph" alt="TV Series" loading="lazy"></span>
+                <span class="drawer-icon-tile series"><i class="fa-solid fa-tv"></i></span>
                 <span class="drawer-nav-label">TV Series</span>
               </a>
             </li>
             <li>
               <a href="search.html?genre=Action" class="drawer-nav-item">
-                <span class="drawer-icon-tile action"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Fire/3D/fire_3d.png" class="drawer-3d-glyph" alt="Action" loading="lazy"></span>
+                <span class="drawer-icon-tile action"><i class="fa-solid fa-fire"></i></span>
                 <span class="drawer-nav-label">Action & Thriller</span>
               </a>
             </li>
             <li>
               <a href="search.html?genre=Horror" class="drawer-nav-item">
-                <span class="drawer-icon-tile horror"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Ghost/3D/ghost_3d.png" class="drawer-3d-glyph" alt="Horror" loading="lazy"></span>
+                <span class="drawer-icon-tile horror"><i class="fa-solid fa-moon"></i></span>
                 <span class="drawer-nav-label">Horror & Mystery</span>
               </a>
             </li>
             <li>
               <a href="search.html?genre=Animation" class="drawer-nav-item">
-                <span class="drawer-icon-tile animation"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sparkles/3D/sparkles_3d.png" class="drawer-3d-glyph" alt="Animation" loading="lazy"></span>
+                <span class="drawer-icon-tile animation"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
                 <span class="drawer-nav-label">Animation & Fantasy</span>
               </a>
             </li>
@@ -3174,28 +3178,28 @@ function initGlobalCinemaDrawer() {
           <ul class="drawer-nav-list">
             <li>
               <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="favorites">
-                <span class="drawer-icon-tile fav"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Red%20heart/3D/red_heart_3d.png" class="drawer-3d-glyph" alt="Favorites" loading="lazy"></span>
+                <span class="drawer-icon-tile fav"><i class="fa-solid fa-heart"></i></span>
                 <span class="drawer-nav-label">Favorites</span>
                 <span class="drawer-count-badge" id="drawer-count-fav">0</span>
               </button>
             </li>
             <li>
               <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="watchlater">
-                <span class="drawer-icon-tile later"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png" class="drawer-3d-glyph" alt="Watch Later" loading="lazy"></span>
+                <span class="drawer-icon-tile later"><i class="fa-solid fa-clock"></i></span>
                 <span class="drawer-nav-label">Watch Later</span>
                 <span class="drawer-count-badge" id="drawer-count-later">0</span>
               </button>
             </li>
             <li>
               <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="continue">
-                <span class="drawer-icon-tile cont"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png" class="drawer-3d-glyph" alt="Continue Watching" loading="lazy"></span>
+                <span class="drawer-icon-tile cont"><i class="fa-solid fa-play"></i></span>
                 <span class="drawer-nav-label">Continue Watching</span>
                 <span class="drawer-count-badge" id="drawer-count-continue">0</span>
               </button>
             </li>
             <li>
               <button type="button" class="drawer-nav-item drawer-hub-btn" data-hub-tab="history">
-                <span class="drawer-icon-tile hist"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Hourglass%20done/3D/hourglass_done_3d.png" class="drawer-3d-glyph" alt="Watch History" loading="lazy"></span>
+                <span class="drawer-icon-tile hist"><i class="fa-solid fa-clock-rotate-left"></i></span>
                 <span class="drawer-nav-label">Watch History</span>
                 <span class="drawer-count-badge" id="drawer-count-history">0</span>
               </button>
@@ -3209,15 +3213,15 @@ function initGlobalCinemaDrawer() {
           <ul class="drawer-nav-list">
             <li>
               <button type="button" class="drawer-nav-item" id="drawer-roulette-btn">
-                <span class="drawer-icon-tile roulette"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Game%20die/3D/game_die_3d.png" class="drawer-3d-glyph" alt="Roulette" loading="lazy"></span>
+                <span class="drawer-icon-tile roulette"><i class="fa-solid fa-shuffle"></i></span>
                 <span class="drawer-nav-label">Cinema Roulette</span>
                 <span class="drawer-pill-vip">VIP</span>
               </button>
             </li>
             <li>
               <button type="button" class="drawer-nav-item" id="drawer-change-avatar-btn">
-                <span class="drawer-icon-tile avatar"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Camera/3D/camera_3d.png" class="drawer-3d-glyph" alt="Profile Avatar" loading="lazy"></span>
-                <span class="drawer-nav-label">Profile & 3D Avatar</span>
+                <span class="drawer-icon-tile avatar"><i class="fa-solid fa-camera"></i></span>
+                <span class="drawer-nav-label">Profile & Studio Avatar</span>
               </button>
             </li>
             <li>
@@ -3228,7 +3232,7 @@ function initGlobalCinemaDrawer() {
             </li>
             <li>
               <a href="https://t.me/FilmZillaRequestBot" target="_blank" rel="noopener" class="drawer-nav-item">
-                <span class="drawer-icon-tile req"><img src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rocket/3D/rocket_3d.png" class="drawer-3d-glyph" alt="Request" loading="lazy"></span>
+                <span class="drawer-icon-tile req"><i class="fa-solid fa-paper-plane"></i></span>
                 <span class="drawer-nav-label">Request Content</span>
               </a>
             </li>
@@ -3319,7 +3323,7 @@ function initGlobalCinemaDrawer() {
         const p = window.FilmSubUser.Profile.get();
         const av = drawer.querySelector('#nav-drawer-avatar');
         const name = drawer.querySelector('#nav-drawer-name');
-        if (av) av.src = p.picture || 'assets/img/avatars/avatar_1.png';
+        if (av) av.src = p.picture || VIP_PRESET_AVATARS[0].img;
         if (name) name.textContent = p.name || 'Cinema Fan';
 
         const favEl = drawer.querySelector('#drawer-count-fav');

@@ -69,14 +69,14 @@
     } catch (_) {}
   }
 
-  // Generate pleasant SVG avatar for guest accounts
+  // Generate sleek Obsidian/Crimson studio monogram avatar for guest accounts
   function _createGuestAvatar(name) {
     const initials = (name || 'G').slice(0, 2).toUpperCase();
-    const bgColors = ['#e50914', '#b20710', '#1f80e5', '#8a2be2', '#00b4d8', '#f39c12'];
+    const bgColors = ['#e50914', '#b91c1c', '#18181b', '#27272a', '#991b1b', '#141418'];
     let hash = 0;
     for (let i = 0; i < initials.length; i++) hash += initials.charCodeAt(i);
     const bg = bgColors[Math.abs(hash) % bgColors.length];
-    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="${encodeURIComponent(bg)}"/><text x="50%" y="54%" font-family="Arial,sans-serif" font-weight="bold" font-size="32" fill="%23ffffff" dominant-baseline="middle" text-anchor="middle">${initials}</text></svg>`;
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="${encodeURIComponent(bg)}" stroke="%23e50914" stroke-width="2"/><text x="50%" y="54%" font-family="Arial,sans-serif" font-weight="bold" font-size="30" fill="%23ffffff" dominant-baseline="middle" text-anchor="middle">${initials}</text></svg>`;
   }
 
   // ---------------------------------------------------------------------

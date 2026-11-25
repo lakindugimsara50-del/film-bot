@@ -17,10 +17,10 @@
   <link rel="icon" type="image/png" href="assets/img/filmzilla_icon.png">
 
   <!-- Core CSS -->
-  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v62">
-  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v62">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v62">
-  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v62">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v63">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v63">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v63">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v63">
 </head>
 <body class="reels-page-active">
 
@@ -38,33 +38,34 @@
 
     <!-- Floating Top Navigation Header -->
     <header class="reels-top-nav" role="banner">
-      <a href="index.html" class="reels-back-btn" aria-label="Back to FilmZilla Home">
-        <i class="fa-solid fa-arrow-left"></i>
-        <span>Home</span>
-      </a>
-
-      <div class="reels-brand-badge">
-        <i class="fa-solid fa-bolt"></i>
-        <span>TEASERS FEED</span>
+      <div class="reels-nav-left">
+        <a href="index.html" class="reels-back-btn" aria-label="Back to FilmZilla Home">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Home</span>
+        </a>
+        <div class="reels-brand-badge">
+          <i class="fa-solid fa-bolt"></i>
+          <span>CLIPS</span>
+        </div>
       </div>
 
+      <!-- Category Filter Horizontal Rail (Vector Studio Icons - Zero Cartoon Emojis) -->
+      <nav class="reels-category-rail" id="reels-category-rail" aria-label="Filter Teasers by Genre">
+        <button type="button" class="reels-pill active" data-filter="All"><i class="fa-solid fa-fire"></i><span>Featured Clips</span></button>
+        <button type="button" class="reels-pill" data-filter="Action"><i class="fa-solid fa-bolt"></i><span>Action</span></button>
+        <button type="button" class="reels-pill" data-filter="Comedy"><i class="fa-regular fa-face-laugh"></i><span>Comedy</span></button>
+        <button type="button" class="reels-pill" data-filter="Horror"><i class="fa-solid fa-ghost"></i><span>Horror</span></button>
+        <button type="button" class="reels-pill" data-filter="Sci-Fi"><i class="fa-solid fa-shuttle-space"></i><span>Sci-Fi</span></button>
+        <button type="button" class="reels-pill" data-filter="Drama"><i class="fa-solid fa-masks-theater"></i><span>Drama</span></button>
+        <button type="button" class="reels-pill" data-filter="Sinhala Sub"><i class="fa-solid fa-closed-captioning"></i><span>Sinhala Sub</span></button>
+      </nav>
+
       <div class="reels-header-actions">
-        <button type="button" class="reels-sound-toggle-btn" id="global-sound-toggle" aria-label="Toggle Sound" title="Sound Muted (Click to enable)">
+        <button type="button" class="reels-sound-toggle-btn" id="global-sound-toggle" aria-label="Toggle Sound" title="Toggle Sound">
           <i class="fa-solid fa-volume-xmark"></i>
         </button>
       </div>
     </header>
-
-    <!-- Category Filter Horizontal Rail -->
-    <nav class="reels-category-rail" id="reels-category-rail" aria-label="Filter Teasers by Genre">
-      <button type="button" class="reels-pill active" data-filter="All">🔥 All Viral Scenes</button>
-      <button type="button" class="reels-pill" data-filter="Action">💥 Action</button>
-      <button type="button" class="reels-pill" data-filter="Comedy">😂 Comedy</button>
-      <button type="button" class="reels-pill" data-filter="Horror">👻 Horror</button>
-      <button type="button" class="reels-pill" data-filter="Sci-Fi">🚀 Sci-Fi</button>
-      <button type="button" class="reels-pill" data-filter="Drama">🎭 Drama</button>
-      <button type="button" class="reels-pill" data-filter="Sinhala Sub">💬 Sinhala Sub</button>
-    </nav>
 
     <!-- Main Vertical Reels Feed Container -->
     <main class="reels-feed-container" id="reels-feed-container" role="main" aria-label="Vertical Video Teaser Feed">
@@ -107,8 +108,8 @@
             <i class="fa-solid fa-bolt"></i>
           </div>
           <div class="smart-seek-info">
-            <span class="smart-seek-title">⚡ Jump Directly to this Scene</span>
-            <span class="smart-seek-desc">Resume right at the high-stakes scene (<span id="smart-seek-scene-time">02:30</span>)</span>
+            <span class="smart-seek-title">Jump Directly to this Scene</span>
+            <span class="smart-seek-desc">Resume right at the highlight scene (<span id="smart-seek-scene-time">02:30</span>)</span>
           </div>
         </button>
 
@@ -118,7 +119,7 @@
             <i class="fa-solid fa-play"></i>
           </div>
           <div class="smart-seek-info">
-            <span class="smart-seek-title">🎬 Start from the Beginning</span>
+            <span class="smart-seek-title">Start from the Beginning</span>
             <span class="smart-seek-desc">Watch the entire movie from 00:00 with Sinhala subtitles</span>
           </div>
         </button>
@@ -134,11 +135,11 @@
   </div>
 
   <!-- Data & Logic Scripts -->
-  <script src="data/movies_data.js?v=20261125_cinema_v62"></script>
-  <script src="data/teasers_data.js?v=20261125_cinema_v62"></script>
-  <script src="assets/js/user-state.js?v=20261125_cinema_v62"></script>
-  <script src="assets/js/emoji-engine.js?v=20261125_cinema_v62"></script>
-  <script src="assets/js/teasers.js?v=20261125_cinema_v62"></script>
+  <script src="data/movies_data.js?v=20261125_cinema_v63"></script>
+  <script src="data/teasers_data.js?v=20261125_cinema_v63"></script>
+  <script src="assets/js/user-state.js?v=20261125_cinema_v63"></script>
+  <script src="assets/js/emoji-engine.js?v=20261125_cinema_v63"></script>
+  <script src="assets/js/teasers.js?v=20261125_cinema_v63"></script>
 
 </body>
 </html>

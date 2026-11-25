@@ -84,8 +84,8 @@
           clip_end: 60,
           duration: 30,
           intensity_score: 0.82,
-          scene_hook: '🔥 Most Replayed Scene • Quick Discovery',
-          scene_hook_si: '🔥 වැඩිම පිරිසක් නැවත නැවත නැරඹූ සුවිශේෂී ජවනිකාව',
+          scene_hook: 'Featured Scene Spotlight',
+          scene_hook_si: 'සුවිශේෂී සිනමා ජවනිකාව',
           scene_timestamp_movie: 1800,
           formatted_seek_time: '30:00',
           video_url: '',
@@ -142,8 +142,8 @@
             clip_end: 60,
             duration: 30,
             intensity_score: 0.85,
-            scene_hook: '🔥 Most Replayed Scene • Quick Discovery',
-            scene_hook_si: '🔥 වැඩිම පිරිසක් නැවත නැවත නැරඹූ සුවිශේෂී ජවනිකාව',
+            scene_hook: 'Featured Scene Spotlight',
+            scene_hook_si: 'සුවිශේෂී සිනමා ජවනිකාව',
             scene_timestamp_movie: 1800,
             formatted_seek_time: '30:00',
             video_url: '',
@@ -263,7 +263,7 @@
           ${isFirst && isGlobalMuted ? `
             <div class="teaser-sound-prompt" id="sound-prompt-${idx}" title="Click to enable sound">
               <i class="fa-solid fa-volume-xmark"></i>
-              <span>Tap for sound 🔊</span>
+              <span>Tap for sound</span>
             </div>
           ` : ''}
 
@@ -309,11 +309,6 @@
 
           <!-- Bottom Card Content -->
           <div class="teaser-bottom-info">
-            <div class="teaser-replay-tag">
-              <i class="fa-solid fa-fire"></i>
-              <span>YouTube Most Replayed Peak (${t.clip_start || 0}s - ${t.clip_end || 30}s)</span>
-            </div>
-
             <h2 class="teaser-movie-title">
               ${escapeHtml(t.title)} <span class="teaser-year">(${t.year})</span>
             </h2>
@@ -321,16 +316,21 @@
             ${t.title_si ? `<div class="teaser-movie-title-si">${escapeHtml(t.title_si)}</div>` : ''}
 
             <div class="teaser-meta-row">
-              <span class="teaser-badge badge-imdb"><i class="fa-solid fa-star"></i> ${t.imdb || '7.5'}</span>
+              ${parseFloat(t.imdb || 0) > 0 ? `<span class="teaser-badge badge-imdb"><i class="fa-solid fa-star"></i> ${escapeHtml(String(t.imdb))}</span>` : ''}
               <span class="teaser-badge">${(t.genres || []).slice(0, 2).join(' • ')}</span>
               ${t.has_sinhala_sub ? `<span class="teaser-badge badge-sub">සිංහල උපසිරැසි</span>` : ''}
-              <span class="teaser-badge" style="background:rgba(255,255,255,0.1)">⚡ 30s Cut</span>
             </div>
 
-            <p class="teaser-hook-text">
-              <i class="fa-solid fa-quote-left" style="opacity:0.6;margin-right:4px;"></i>
-              ${escapeHtml(t.scene_hook_si || t.scene_hook || '🔥 Most Replayed Scene')}
-            </p>
+            ${(() => {
+              const rawHook = String(t.scene_hook_si || t.scene_hook || '')
+                .replace(/^[\s\u{1F525}\u26A1]+/u, '')
+                .replace(/YouTube\s*Most\s*Replayed\s*(Peak)?/gi, '')
+                .replace(/Most\s*Replayed\s*/gi, '')
+                .replace(/වැඩිම\s*පිරිසක්\s*නැවත\s*නැවත\s*නැරඹූ/g, 'විශේෂ')
+                .trim();
+              if (!rawHook) return '';
+              return `<p class="teaser-hook-text">${escapeHtml(rawHook)}</p>`;
+            })()}
 
             <!-- Prominent CTA Button -->
             <div class="teaser-cta-container">
@@ -876,9 +876,9 @@
         <img src="${movie.poster || movie.backdrop}" alt="${movie.title}" style="width:90px;height:130px;object-fit:cover;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,0.6);">
         <div style="display:flex;flex-direction:column;gap:6px;">
           <h3 style="margin:0;font-size:18px;color:#fff;">${escapeHtml(movie.title)} (${movie.year || 2026})</h3>
-          ${movie.title_si ? `<div style="font-size:13px;color:#f39c12;font-weight:600;">${escapeHtml(movie.title_si)}</div>` : ''}
-          <div style="font-size:12px;color:#9ca3af;"><i class="fa-solid fa-star" style="color:#f5c518"></i> IMDb ${movie.imdb || movie.rating || '7.5'} • ${(movie.genres || []).join(', ')}</div>
-          <div style="font-size:12px;color:#38bdf8;"><i class="fa-solid fa-closed-captioning"></i> ${movie.subtitle_language || 'Sinhala'} Subtitles Included</div>
+          ${movie.title_si ? `<div style="font-size:13px;color:#e5e5e5;font-weight:600;">${escapeHtml(movie.title_si)}</div>` : ''}
+          ${parseFloat(movie.imdb || movie.rating || 0) > 0 ? `<div style="font-size:12px;color:#a1a1aa;"><i class="fa-solid fa-star" style="color:#f5c518"></i> IMDb ${escapeHtml(String(movie.imdb || movie.rating))} • ${(movie.genres || []).join(', ')}</div>` : `<div style="font-size:12px;color:#a1a1aa;">${(movie.genres || []).join(' • ')}</div>`}
+          <div style="font-size:12px;color:#ff4757;"><i class="fa-solid fa-closed-captioning"></i> ${movie.subtitle_language || 'Sinhala'} Subtitles Included</div>
         </div>
       </div>
       <p style="font-size:13px;line-height:1.6;color:#d1d5db;margin-bottom:20px;">

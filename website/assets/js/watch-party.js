@@ -13,34 +13,36 @@
     peerPrefix: 'fz_room_'
   };
 
+  const APPLE_HD_CDN = 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64';
+
   const WP_3D_EMOJIS = {
     fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
-    popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
-    heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
-    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
-    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
-    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
-    shock: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp',
-    clap: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44f/512.webp',
-    bolt: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
-    skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
-    crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
-    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
-    bomb: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp'
+    popcorn: `${APPLE_HD_CDN}/1f37f.png`,
+    heart: `${APPLE_HD_CDN}/2764-fe0f.png`,
+    mindblown: `${APPLE_HD_CDN}/1f92f.png`,
+    laugh: `${APPLE_HD_CDN}/1f923.png`,
+    party: `${APPLE_HD_CDN}/1f389.png`,
+    shock: `${APPLE_HD_CDN}/1f631.png`,
+    clap: `${APPLE_HD_CDN}/1f44f.png`,
+    bolt: `${APPLE_HD_CDN}/26a1.png`,
+    skull: `${APPLE_HD_CDN}/1f480.png`,
+    crown: `${APPLE_HD_CDN}/1f451.png`,
+    star: `${APPLE_HD_CDN}/1f929.png`,
+    bomb: `${APPLE_HD_CDN}/1f4a3.png`
   };
 
   const WP_CINEMA_STICKERS = [
-    { key: 'bomb', name: 'Mega Bomb 💣', img: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp' },
-    { key: 'popcorn', name: 'Popcorn Blast', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Popcorn/3D/popcorn_3d.png' },
-    { key: 'trophy', name: 'Oscar 10/10', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Trophy/3D/trophy_3d.png' },
-    { key: 'clapper', name: 'Action Clapper', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png' },
-    { key: 'ticket', name: 'VIP Ticket', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Admission%20tickets/3D/admission_tickets_3d.png' },
-    { key: 'bolt', name: 'Pure Hype', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/High%20voltage/3D/high_voltage_3d.png' },
-    { key: 'skull', name: 'Plot Twist', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Skull/3D/skull_3d.png' },
-    { key: 'crown', name: 'GOAT Movie', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Crown/3D/crown_3d.png' },
-    { key: 'pizza', name: 'Snack Break', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Pizza/3D/pizza_3d.png' },
-    { key: 'rocket', name: 'To The Moon', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Rocket/3D/rocket_3d.png' },
-    { key: 'love', name: 'Pure Romance', img: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Heart%20with%20ribbon/3D/heart_with_ribbon_3d.png' }
+    { key: 'bomb', name: 'Air-Strike', img: `${APPLE_HD_CDN}/1f4a3.png` },
+    { key: 'popcorn', name: 'Cinema Time', img: `${APPLE_HD_CDN}/1f37f.png` },
+    { key: 'trophy', name: 'Masterpiece', img: `${APPLE_HD_CDN}/1f3c6.png` },
+    { key: 'clapper', name: 'Action Scene', img: `${APPLE_HD_CDN}/1f3ac.png` },
+    { key: 'ticket', name: 'VIP Pass', img: `${APPLE_HD_CDN}/1f39f-fe0f.png` },
+    { key: 'bolt', name: 'Pure Hype', img: `${APPLE_HD_CDN}/26a1.png` },
+    { key: 'skull', name: 'Plot Twist', img: `${APPLE_HD_CDN}/1f480.png` },
+    { key: 'crown', name: 'GOAT Title', img: `${APPLE_HD_CDN}/1f451.png` },
+    { key: 'pizza', name: 'Snack Break', img: `${APPLE_HD_CDN}/1f355.png` },
+    { key: 'rocket', name: 'Next Level', img: `${APPLE_HD_CDN}/1f680.png` },
+    { key: 'love', name: 'Pure Romance', img: `${APPLE_HD_CDN}/1f496.png` }
   ];
 
   const WP_QUICK_EMOJIS = [
@@ -516,7 +518,21 @@
 
         case 'CHAT_MESSAGE':
           if (data.text) {
+            this.pendingIncomingMeta = { msgId: data.msgId || null, replyTo: data.replyTo || null };
             this.appendChatMessage(data.userName || 'Friend', data.text, false, false, !!data.isWhisper);
+            this.pendingIncomingMeta = null;
+          }
+          break;
+
+        case 'TYPING':
+          if (typeof this.handleRemoteTyping === 'function') {
+            this.handleRemoteTyping(data);
+          }
+          break;
+
+        case 'MSG_REACT':
+          if (typeof this.handleRemoteMsgReact === 'function') {
+            this.handleRemoteMsgReact(data);
           }
           break;
 
@@ -836,7 +852,15 @@
 
         <div class="wp-body">
           <div class="wp-chat-box" id="wp-chat-box">
-            <!-- Pure live chat messages stream -->
+            <div class="wp-chat-welcome" id="wp-chat-welcome">
+              <div class="wp-welcome-badge"><i class="fa-solid fa-film"></i> Watch Lounge</div>
+              <div class="wp-welcome-sub">React live, tag movie scenes by timestamp, or chat together.</div>
+              <div class="wp-welcome-chips">
+                <button type="button" class="wp-quick-chip" data-quick="timestamp"><i class="fa-regular fa-clock"></i> Tag Scene</button>
+                <button type="button" class="wp-quick-chip" data-quick="poll"><i class="fa-solid fa-square-poll-vertical"></i> Poll</button>
+                <button type="button" class="wp-quick-chip" data-quick="wave"><i class="fa-solid fa-hand"></i> Say Hi</button>
+              </div>
+            </div>
           </div>
 
           <!-- 3D Fluent Live Reactions Deck (12 Modern Expressive Reactions) -->
@@ -930,15 +954,15 @@
               <span>Couple</span>
             </button>
             <!-- Hold for Hug Button -->
-            <button type="button" class="wp-action-pill cs-couple-hug-btn" id="wp-btn-hug" title="Press & Hold 1.5s to deliver simultaneous warm hug 🤗">
+            <button type="button" class="wp-action-pill cs-couple-hug-btn" id="wp-btn-hug" title="Press and hold 1.5s to send a simultaneous hug">
               <div class="cs-hug-progress-bar" id="wp-hug-progress"></div>
-              <i class="fa-solid fa-hands-holding-child"></i>
-              <span>Hug 🤗</span>
+              <i class="fa-solid fa-heart"></i>
+              <span>Warm Hug</span>
             </button>
             <!-- Live Predictions & Betting Arena Button -->
-            <button type="button" class="wp-action-pill wp-prediction-btn" id="wp-btn-prediction" title="Live Predictions & Betting Arena (Popcorn Coins 🍿)">
-              <i class="fa-solid fa-trophy"></i>
-              <span>Arena 🏆</span>
+            <button type="button" class="wp-action-pill wp-prediction-btn" id="wp-btn-prediction" title="Live Scene Polls and Predictions">
+              <i class="fa-solid fa-square-poll-vertical"></i>
+              <span>Poll &amp; Arena</span>
             </button>
           </div>
 
@@ -958,14 +982,29 @@
               </div>
             </div>
 
+            <div class="wp-typing-indicator" id="wp-typing-indicator" aria-live="polite">
+              <span class="wp-typing-dots"><span></span><span></span><span></span></span>
+              <span class="wp-typing-text" id="wp-typing-text">Someone is typing...</span>
+            </div>
+            <div class="wp-reply-banner" id="wp-reply-banner">
+              <div class="wp-reply-preview">
+                <i class="fa-solid fa-reply"></i>
+                <span class="wp-reply-target-author" id="wp-reply-author"></span>
+                <span class="wp-reply-target-text" id="wp-reply-snippet"></span>
+              </div>
+              <button type="button" class="wp-reply-cancel" id="wp-reply-cancel" title="Cancel reply" aria-label="Cancel reply">&times;</button>
+            </div>
             <form class="wp-chat-input-bar" id="wp-chat-form">
-              <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Cinema Sticker (WhatsApp Style)" aria-label="Open Emoji Picker">
+              <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Cinema Sticker" aria-label="Open Emoji Picker">
                 <i class="fa-regular fa-face-smile"></i>
               </button>
-              <button type="button" class="wp-btn-smiley ${this.isWhisperMode ? 'active' : ''}" id="wp-btn-whisper" title="Private Whisper Mode (Couple/Partner)" style="color:${this.isWhisperMode ? '#e50914' : '#94a3b8'};">
+              <button type="button" class="wp-btn-smiley wp-btn-timestamp" id="wp-btn-timestamp" title="Tag current scene timestamp" aria-label="Tag current scene timestamp">
+                <i class="fa-regular fa-clock"></i>
+              </button>
+              <button type="button" class="wp-btn-smiley ${this.isWhisperMode ? 'active' : ''}" id="wp-btn-whisper" title="Private Whisper Mode" style="color:${this.isWhisperMode ? '#e50914' : '#94a3b8'};">
                 <i class="fa-solid fa-lock"></i>
               </button>
-              <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Type a message or send stickers..." autocomplete="off">
+              <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Message or tag [MM:SS]..." autocomplete="off">
               <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
@@ -1139,15 +1178,34 @@
           chatInput.value = '';
 
           const isWhisper = this.isWhisperMode;
+          const msgId = `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+          const replyTo = this.activeReplyTo ? { ...this.activeReplyTo } : null;
+
+          this.pendingOutgoingMeta = { msgId, replyTo };
           this.appendChatMessage(this.localUser.name, text, true, false, isWhisper);
+          this.pendingOutgoingMeta = null;
+
+          if (typeof this.clearReplyTarget === 'function') this.clearReplyTarget();
+
           this.broadcast({
             type: 'CHAT_MESSAGE',
             userName: this.localUser.name,
             text: text,
             isWhisper: isWhisper,
+            msgId: msgId,
+            replyTo: replyTo,
             timestamp: Date.now()
           });
+          this.broadcast({
+            type: 'TYPING',
+            userName: this.localUser.name,
+            isTyping: false
+          });
         });
+      }
+
+      if (typeof this.initEnhancedChatFeatures === 'function') {
+        this.initEnhancedChatFeatures(container);
       }
 
       // Wire Reaction Bombs Tray (Popcorn, Tomato, Laugh, Fire, Heart, Mega Bomb)
@@ -2075,7 +2133,7 @@
             <span class="wp-msg-author">${this.escapeHtml(author)} ${whisperBadge}</span>
             <div class="wp-sticker-bubble">
               <img src="${this.escapeHtml(stickerUrl)}" alt="${this.escapeHtml(stickerName)}" class="wp-sticker-img" loading="lazy">
-              <span class="wp-sticker-tag"><i class="fa-brands fa-whatsapp" style="color:#e4e4e7"></i> ${this.escapeHtml(stickerName)}</span>
+              <span class="wp-sticker-tag"><i class="fa-solid fa-film" style="color:#ff4757"></i> ${this.escapeHtml(stickerName)}</span>
             </div>
           `;
         } else {
@@ -2095,6 +2153,280 @@
       // Show in-video floating chat popup (works in Fullscreen and regular view)
       if (!isSystem) {
         this.showInVideoChatPopup(author, text, isMe, isWhisper);
+      }
+    }
+
+    formatTimestampLabel(totalSeconds) {
+      const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+      const hrs = Math.floor(s / 3600);
+      const mins = Math.floor((s % 3600) / 60);
+      const secs = s % 60;
+      const pad = (n) => String(n).padStart(2, '0');
+      return hrs > 0 ? `${hrs}:${pad(mins)}:${pad(secs)}` : `${pad(mins)}:${pad(secs)}`;
+    }
+
+    parseTimestampToSeconds(label) {
+      const parts = String(label || '').split(':').map((n) => parseInt(n, 10));
+      if (parts.some(Number.isNaN)) return null;
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      return null;
+    }
+
+    setReplyTarget(msgId, author, snippet) {
+      this.activeReplyTo = {
+        id: msgId || '',
+        author: (author || 'Friend').slice(0, 32),
+        text: (snippet || '').slice(0, 90)
+      };
+      const banner = document.getElementById('wp-reply-banner');
+      const authorEl = document.getElementById('wp-reply-author');
+      const snippetEl = document.getElementById('wp-reply-snippet');
+      if (banner && authorEl && snippetEl) {
+        authorEl.textContent = this.activeReplyTo.author;
+        snippetEl.textContent = this.activeReplyTo.text || '[Sticker]';
+        banner.classList.add('is-active');
+      }
+      const chatInput = document.getElementById('wp-chat-input');
+      if (chatInput) chatInput.focus();
+    }
+
+    clearReplyTarget() {
+      this.activeReplyTo = null;
+      const banner = document.getElementById('wp-reply-banner');
+      if (banner) banner.classList.remove('is-active');
+    }
+
+    handleRemoteTyping(data) {
+      const indicator = document.getElementById('wp-typing-indicator');
+      const textEl = document.getElementById('wp-typing-text');
+      if (!indicator || !textEl) return;
+      if (this.remoteTypingTimer) clearTimeout(this.remoteTypingTimer);
+
+      if (data && data.isTyping) {
+        const who = (data.userName || 'Someone').slice(0, 20);
+        textEl.textContent = `${who} is typing...`;
+        indicator.classList.add('is-active');
+        this.remoteTypingTimer = setTimeout(() => {
+          indicator.classList.remove('is-active');
+        }, 3200);
+      } else {
+        indicator.classList.remove('is-active');
+      }
+    }
+
+    handleRemoteMsgReact(data) {
+      if (!data || !data.msgId) return;
+      const chatBox = document.getElementById('wp-chat-box');
+      if (!chatBox) return;
+      const item = Array.from(chatBox.querySelectorAll('.wp-msg-item')).find((el) => el.dataset.msgId === data.msgId);
+      if (!item) return;
+      const reactBtn = item.querySelector('.wp-msg-react-btn');
+      const countSpan = item.querySelector('.wp-msg-react-count');
+      if (!reactBtn || !countSpan) return;
+      const nextCount = Math.max(0, (parseInt(reactBtn.dataset.count || '0', 10) || 0) + (data.delta || 1));
+      reactBtn.dataset.count = String(nextCount);
+      countSpan.textContent = nextCount > 0 ? String(nextCount) : '';
+      reactBtn.classList.toggle('has-reacts', nextCount > 0);
+    }
+
+    enhanceMessageElement(item) {
+      if (!item || item.nodeType !== 1 || !item.classList.contains('wp-msg-item')) return;
+      if (item.dataset.wpEnhanced === '1') return;
+      item.dataset.wpEnhanced = '1';
+
+      const welcome = document.getElementById('wp-chat-welcome');
+      if (welcome) welcome.remove();
+
+      const authorEl = item.querySelector('.wp-msg-author');
+      const authorText = authorEl ? authorEl.textContent.trim() : '';
+      const isSystem = item.classList.contains('system') || authorText === 'System';
+      if (isSystem) return;
+
+      const meta = this.pendingOutgoingMeta || this.pendingIncomingMeta || {};
+      if (!item.dataset.msgId) {
+        item.dataset.msgId = meta.msgId || `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+      }
+
+      const clone = item.cloneNode(true);
+      const cloneAuthor = clone.querySelector('.wp-msg-author');
+      if (cloneAuthor) cloneAuthor.remove();
+      item.dataset.rawText = clone.textContent.replace(/\s+/g, ' ').trim();
+
+      if (meta.replyTo && meta.replyTo.author) {
+        const quote = document.createElement('div');
+        quote.className = 'wp-msg-reply-quote';
+        const strong = document.createElement('strong');
+        strong.textContent = meta.replyTo.author + ': ';
+        const span = document.createElement('span');
+        span.textContent = meta.replyTo.text || '[Sticker]';
+        quote.appendChild(strong);
+        quote.appendChild(span);
+        if (authorEl && authorEl.nextSibling) {
+          item.insertBefore(quote, authorEl.nextSibling);
+        } else {
+          item.prepend(quote);
+        }
+      }
+
+      // Convert scene timestamps [MM:SS] or @MM:SS into clickable seek badges
+      const walker = document.createTreeWalker(item, NodeFilter.SHOW_TEXT, null);
+      const textNodes = [];
+      let current;
+      while ((current = walker.nextNode())) {
+        const p = current.parentElement;
+        if (!p || p.closest('.wp-msg-author, .wp-msg-reply-quote, .wp-time-badge, .wp-sticker-tag')) continue;
+        if (/(?:\[(?:⏱\s*)?\d{1,2}:\d{2}(?::\d{2})?\]|(?:^|\s)@\d{1,2}:\d{2}(?::\d{2})?\b)/.test(current.nodeValue)) {
+          textNodes.push(current);
+        }
+      }
+
+      const tsRegex = /(\[(?:⏱\s*)?(\d{1,2}:\d{2}(?::\d{2})?)\]|(^|\s)@(\d{1,2}:\d{2}(?::\d{2})?)\b)/g;
+      textNodes.forEach((node) => {
+        const raw = node.nodeValue || '';
+        const frag = document.createDocumentFragment();
+        let lastIdx = 0;
+        let match;
+        tsRegex.lastIndex = 0;
+        while ((match = tsRegex.exec(raw)) !== null) {
+          if (match.index > lastIdx) {
+            frag.appendChild(document.createTextNode(raw.slice(lastIdx, match.index)));
+          }
+          if (match[3]) {
+            frag.appendChild(document.createTextNode(match[3]));
+          }
+          const label = match[2] || match[4];
+          const sec = this.parseTimestampToSeconds(label);
+          if (sec !== null) {
+            const badge = document.createElement('button');
+            badge.type = 'button';
+            badge.className = 'wp-time-badge';
+            badge.dataset.seek = String(sec);
+            badge.title = `Jump player to ${label}`;
+            badge.innerHTML = `<i class="fa-solid fa-play"></i> ${this.escapeHtml(label)}`;
+            frag.appendChild(badge);
+          } else {
+            frag.appendChild(document.createTextNode(match[0]));
+          }
+          lastIdx = tsRegex.lastIndex;
+        }
+        if (lastIdx < raw.length) {
+          frag.appendChild(document.createTextNode(raw.slice(lastIdx)));
+        }
+        if (node.parentNode) node.parentNode.replaceChild(frag, node);
+      });
+
+      if (!item.querySelector('.wp-msg-actions')) {
+        const actions = document.createElement('div');
+        actions.className = 'wp-msg-actions';
+        actions.innerHTML = `
+          <button type="button" class="wp-msg-mini-btn wp-msg-reply-btn" title="Reply"><i class="fa-solid fa-reply"></i></button>
+          <button type="button" class="wp-msg-mini-btn wp-msg-react-btn" data-count="0" title="Like"><i class="fa-solid fa-heart"></i><span class="wp-msg-react-count"></span></button>
+        `;
+        item.appendChild(actions);
+      }
+    }
+
+    initEnhancedChatFeatures(container) {
+      if (!container) return;
+      const chatBox = container.querySelector('#wp-chat-box');
+      const chatInput = container.querySelector('#wp-chat-input');
+      const tsBtn = container.querySelector('#wp-btn-timestamp');
+      const replyCancelBtn = container.querySelector('#wp-reply-cancel');
+
+      if (replyCancelBtn) {
+        replyCancelBtn.addEventListener('click', () => this.clearReplyTarget());
+      }
+
+      if (tsBtn && chatInput) {
+        tsBtn.addEventListener('click', () => {
+          const curTime = this.vjsPlayer && typeof this.vjsPlayer.currentTime === 'function' ? this.vjsPlayer.currentTime() : 0;
+          const label = this.formatTimestampLabel(curTime);
+          const token = `[${label}] `;
+          chatInput.value = `${chatInput.value ? chatInput.value.trimEnd() + ' ' : ''}${token}`;
+          chatInput.focus();
+        });
+      }
+
+      if (chatInput) {
+        let lastTypingSent = 0;
+        let typingStopTimer = null;
+        chatInput.addEventListener('input', () => {
+          const now = Date.now();
+          if (chatInput.value.trim().length > 0 && now - lastTypingSent > 1800) {
+            lastTypingSent = now;
+            this.broadcast({ type: 'TYPING', userName: this.localUser.name, isTyping: true });
+          }
+          if (typingStopTimer) clearTimeout(typingStopTimer);
+          typingStopTimer = setTimeout(() => {
+            this.broadcast({ type: 'TYPING', userName: this.localUser.name, isTyping: false });
+          }, 2200);
+        });
+      }
+
+      if (chatBox) {
+        if (this.chatObserver) this.chatObserver.disconnect();
+        this.chatObserver = new MutationObserver((mutations) => {
+          mutations.forEach((m) => {
+            m.addedNodes.forEach((node) => this.enhanceMessageElement(node));
+          });
+        });
+        this.chatObserver.observe(chatBox, { childList: true });
+
+        chatBox.addEventListener('click', (e) => {
+          const quickBtn = e.target.closest('.wp-quick-chip');
+          if (quickBtn) {
+            const action = quickBtn.dataset.quick;
+            if (action === 'timestamp' && tsBtn) {
+              tsBtn.click();
+            } else if (action === 'poll') {
+              const predBtn = document.getElementById('wp-btn-prediction');
+              if (predBtn) predBtn.click();
+            } else if (action === 'wave' && chatInput) {
+              chatInput.value = 'Hey everyone, enjoy the movie!';
+              const form = document.getElementById('wp-chat-form');
+              if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+            return;
+          }
+
+          const timeBtn = e.target.closest('.wp-time-badge');
+          if (timeBtn) {
+            const sec = Number(timeBtn.dataset.seek);
+            if (!Number.isNaN(sec) && this.vjsPlayer && typeof this.vjsPlayer.currentTime === 'function') {
+              this.vjsPlayer.currentTime(sec);
+              this.showActionToast(`Jumped to scene ${timeBtn.textContent.trim()}`);
+            }
+            return;
+          }
+
+          const replyBtn = e.target.closest('.wp-msg-reply-btn');
+          if (replyBtn) {
+            const msgItem = replyBtn.closest('.wp-msg-item');
+            if (msgItem) {
+              const authorEl = msgItem.querySelector('.wp-msg-author');
+              const author = authorEl ? authorEl.textContent.replace('(You)', '').trim() : 'Friend';
+              const snippet = msgItem.dataset.rawText || '[Sticker]';
+              this.setReplyTarget(msgItem.dataset.msgId, author, snippet);
+            }
+            return;
+          }
+
+          const reactBtn = e.target.closest('.wp-msg-react-btn');
+          if (reactBtn) {
+            const msgItem = reactBtn.closest('.wp-msg-item');
+            const isLiked = reactBtn.classList.toggle('is-liked');
+            const delta = isLiked ? 1 : -1;
+            const cur = parseInt(reactBtn.dataset.count || '0', 10) || 0;
+            const next = Math.max(0, cur + delta);
+            reactBtn.dataset.count = String(next);
+            const countSpan = reactBtn.querySelector('.wp-msg-react-count');
+            if (countSpan) countSpan.textContent = next > 0 ? String(next) : '';
+            if (msgItem && msgItem.dataset.msgId) {
+              this.broadcast({ type: 'MSG_REACT', msgId: msgItem.dataset.msgId, delta, userName: this.localUser.name });
+            }
+          }
+        });
       }
     }
 
@@ -2133,7 +2465,7 @@
       const resolvedKey = emojiMap[emojiKey] || emojiMap[emoji] || 'fire';
 
       if (typeof window.spawnFloatingEmoji === 'function') {
-        window.spawnFloatingEmoji(null, resolvedKey);
+        window.spawnFloatingEmoji(null, resolvedKey, { author: userName });
         return;
       }
 

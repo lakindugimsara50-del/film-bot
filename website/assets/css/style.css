@@ -11781,3 +11781,185 @@ body.cinema-drawer-lock {
 .vip-tab-btn.active .vip-tab-count {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ================================================================
+   STUDIO 2026 CINEMA PLAYBACK FLOATING REACTION ENGINE
+   Smooth Bezier Ascent, Compact Right-Lane Staging, Refined Shadow
+   ================================================================ */
+.cs-floating-hero-emoji.cs-studio-floater {
+  width: auto !important;
+  min-width: 40px !important;
+  height: auto !important;
+  bottom: 54px !important;
+  animation: studioEmojiAscend var(--ascend-dur, 2.8s) cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  will-change: transform, opacity !important;
+  filter: none !important;
+}
+
+.cs-floating-hero-emoji.cs-studio-floater .cs-floater-core {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.cs-floating-hero-emoji.cs-studio-floater .cs-floater-img {
+  width: 38px !important;
+  height: 38px !important;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.62)) !important;
+}
+
+.cs-floating-hero-emoji.cs-studio-floater .cs-floater-author {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #f4f4f5;
+  background: rgba(12, 12, 16, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+.cs-floating-hero-emoji.cs-studio-floater .cs-floater-sparkle {
+  width: 4px !important;
+  height: 4px !important;
+  background: rgba(229, 9, 20, 0.85) !important;
+  box-shadow: 0 0 6px rgba(229, 9, 20, 0.55) !important;
+  opacity: 0.7;
+}
+
+@keyframes studioEmojiAscend {
+  0% {
+    transform: translate(-50%, 14px) scale(0.42) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    transform: translate(calc(-50% + var(--rand-sway, 8px) * 0.35), -18px) scale(calc(var(--depth-scale, 1) * 1.08)) rotate(calc(var(--rand-rot, 6deg) * 0.4));
+    opacity: 1;
+  }
+  42% {
+    transform: translate(calc(-50% + var(--rand-sway, 8px)), -96px) scale(var(--depth-scale, 1)) rotate(var(--rand-rot, 6deg));
+    opacity: 0.96;
+  }
+  78% {
+    transform: translate(calc(-50% + var(--sway-end, -10px) * 0.7), -182px) scale(calc(var(--depth-scale, 1) * 0.94)) rotate(calc(var(--rand-rot, 6deg) * -0.35));
+    opacity: 0.72;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--sway-end, -10px)), -238px) scale(calc(var(--depth-scale, 1) * 0.76)) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+/* ================================================================
+   STUDIO 2026 HEADER FIT, CLEAN POSTER CARDS & OBSIDIAN FAB
+   ================================================================ */
+@media (min-width: 960px) and (max-width: 1460px) {
+  .site-header {
+    padding: 0 16px !important;
+    gap: 10px !important;
+  }
+  .logo-brand-img {
+    height: 31px !important;
+    max-width: 170px !important;
+  }
+  .primary-nav {
+    gap: 2px !important;
+    padding: 4px 6px !important;
+  }
+  .primary-nav a,
+  .nav-dropdown > button {
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+  .header-actions {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .user-pill-btn {
+    padding: 5px 10px !important;
+    font-size: 12.5px !important;
+  }
+  .header-actions .tg-btn {
+    padding: 6px 12px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* Prevent card rank numbers from colliding with movie titles */
+.card-rank-num {
+  bottom: 54px !important;
+  left: 8px !important;
+  font-size: 38px !important;
+  line-height: 0.9 !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  -webkit-text-stroke: 1.5px rgba(9, 9, 12, 0.92) !important;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.88) !important;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .card-rank-num {
+    bottom: 44px !important;
+    font-size: 28px !important;
+  }
+}
+
+/* Single horizontal sleek metadata row on card corners */
+.card-badges-left {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  top: 8px !important;
+  left: 8px !important;
+}
+
+.badge-top-left {
+  background: rgba(12, 12, 16, 0.86) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #f4f4f5 !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.badge-card-new {
+  background: rgba(229, 9, 20, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+}
+
+.card-sub-tag {
+  color: #d4d4d8 !important;
+  font-weight: 600 !important;
+}
+
+.card-sub-tag i {
+  color: #e50914 !important;
+}
+
+/* Restyle Roulette FAB to Obsidian Black + Crimson Rim */
+.fab-roulette {
+  background: linear-gradient(145deg, #16161d 0%, #0b0b0f 100%) !important;
+  border: 1.5px solid rgba(229, 9, 20, 0.72) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 14px rgba(229, 9, 20, 0.25) !important;
+  animation: none !important;
+}
+
+.fab-roulette:hover {
+  background: linear-gradient(145deg, #e50914 0%, #991b1b 100%) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 10px 28px rgba(229, 9, 20, 0.45) !important;
+}

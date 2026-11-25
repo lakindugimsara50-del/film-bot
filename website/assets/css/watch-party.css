@@ -68,37 +68,50 @@
   flex-shrink: 0;
 }
 
-/* General Menu Bar Button — Unified Obsidian Monochrome */
+/* General Menu Bar Button — Sleek Monochrome Studio Controls */
 .cs-bar-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
+  gap: 6px;
+  padding: 6px 11px;
   border-radius: 8px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #e4e4e7;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4d4d8;
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .cs-bar-btn:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  transform: translateY(-1px);
 }
 
 .cs-bar-btn.active {
-  background: rgba(229, 9, 20, 0.2);
+  background: rgba(229, 9, 20, 0.16);
+  border-color: rgba(229, 9, 20, 0.55);
+  color: #ffffff;
+}
+
+.cs-btn-tools-toggle,
+.cs-btn-dl-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f4f4f5;
+  font-weight: 700;
+}
+
+.cs-tools-menu-wrap.open .cs-btn-tools-toggle,
+.cs-dl-menu-wrap.open .cs-btn-dl-toggle {
+  background: rgba(229, 9, 20, 0.18);
   border-color: #e50914;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(229, 9, 20, 0.25);
 }
 
 /* Flagship Watch Party Button — Solid Signature Crimson */
@@ -106,38 +119,36 @@
   background: #e50914;
   border: 1px solid #e50914;
   color: #ffffff;
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.32);
+  box-shadow: 0 3px 12px rgba(229, 9, 20, 0.28);
   position: relative;
 }
 
 .cs-btn-party:hover {
   background: #f40612;
   border-color: #ff4757;
-  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45);
-  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(229, 9, 20, 0.42);
 }
 
 .cs-btn-party.active-room {
-  background: #b91c1c;
-  border-color: #ffffff;
-  box-shadow: 0 4px 18px rgba(229, 9, 20, 0.45);
+  background: #991b1b;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 3px 14px rgba(229, 9, 20, 0.38);
 }
 
 /* Flagship Large "Watch with Friends" Hero Action Button */
 .cs-btn-party-hero {
-  padding: 8px 16px !important;
-  font-size: 12.5px !important;
+  padding: 7px 13px !important;
+  font-size: 12px !important;
   font-weight: 800 !important;
   background: #e50914 !important;
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.32) !important;
-  letter-spacing: 0.2px !important;
+  box-shadow: 0 3px 14px rgba(229, 9, 20, 0.28) !important;
+  letter-spacing: 0.1px !important;
 }
 
 .cs-btn-party-hero:hover {
   background: #f40612 !important;
-  box-shadow: 0 6px 22px rgba(229, 9, 20, 0.48) !important;
-  transform: translateY(-1px) !important;
+  box-shadow: 0 5px 18px rgba(229, 9, 20, 0.44) !important;
 }
 
 .cs-party-pulse {
@@ -1096,14 +1107,14 @@
 .wp-sticker-tag {
   font-size: 10px;
   font-weight: 700;
-  color: #86efac;
-  background: rgba(37, 211, 102, 0.15);
-  border: 1px solid rgba(37, 211, 102, 0.3);
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   padding: 2px 7px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 /* In-Video Sticker Pill */
@@ -1655,7 +1666,7 @@
   min-height: 0 !important;
 }
 
-/* Single-Line Zero-Clutter Cinema Menu Bar */
+/* Single-Line Zero-Clutter Studio Cinema Menu Bar */
 .cs-cinema-menu-bar {
   position: relative !important;
   z-index: 40 !important;
@@ -1663,11 +1674,11 @@
   align-items: center !important;
   justify-content: space-between !important;
   gap: 8px !important;
-  padding: 10px 14px !important;
-  background: #0a0a0d !important;
+  padding: 9px 14px !important;
+  background: #09090c !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 0 0 14px 14px !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
   overflow: visible !important;
   -webkit-overflow-scrolling: touch !important;
   flex-shrink: 0 !important;
@@ -1682,22 +1693,75 @@
 .cs-bar-left, .cs-bar-right, .cs-dock-cluster {
   display: flex !important;
   align-items: center !important;
-  gap: 7px !important;
+  gap: 6px !important;
   flex-wrap: nowrap !important;
   flex-shrink: 0 !important;
 }
+
+.cs-bar-right .cs-bar-btn {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #d4d4d8 !important;
+  padding: 6px 9px !important;
+}
+
+.cs-bar-right .cs-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+
+.cs-bar-right .cs-btn-dl-toggle {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  padding: 6px 11px !important;
+}
+
+.cs-bar-right .cs-dl-menu-wrap.open .cs-btn-dl-toggle,
+.cs-bar-right .cs-btn-fav.active,
+.cs-bar-right .cs-btn-later.active {
+  background: rgba(229, 9, 20, 0.18) !important;
+  border-color: rgba(229, 9, 20, 0.55) !important;
+  color: #ffffff !important;
+}
+
+.cs-bar-right .cs-btn-teaser {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.cs-bar-right .cs-btn-teaser i {
+  color: #e50914 !important;
+}
+
+/* Keep single row even when Watch Party 380px sidebar narrows the player column */
+.cs-theater-layout.is-watch-party-active .cs-bar-right .cs-btn-fav span,
+.cs-theater-layout.is-watch-party-active .cs-bar-right .cs-btn-later span,
+.cs-theater-layout.is-watch-party-active .cs-bar-right .cs-btn-teaser .cs-teaser-label {
+  display: none !important;
+}
+
+.cs-theater-layout.is-watch-party-active .cs-bar-right .cs-bar-btn {
+  padding: 6px 8px !important;
+}
+
 @media (max-width: 768px) {
   .cs-cinema-menu-bar {
     padding: 8px 10px !important;
     border-radius: 0 !important;
-    gap: 6px !important;
+    gap: 5px !important;
   }
   .cs-cinema-menu-bar .cs-bar-btn {
-    padding: 6px 10px !important;
+    padding: 6px 9px !important;
     font-size: 11.5px !important;
   }
+  .cs-btn-party-hero .cs-party-badge,
+  .cs-btn-tools-toggle span:not(.cs-tools-active-count),
+  .cs-btn-dl-toggle span,
   .cs-btn-fav span,
-  .cs-btn-later span {
+  .cs-btn-later span,
+  .cs-btn-teaser .cs-teaser-label {
     display: none !important;
   }
   .cs-tools-popover,
@@ -3327,4 +3391,249 @@
   height: 100%;
   pointer-events: none;
   z-index: 9999;
+}
+
+/* ================================================================
+   STUDIO 2026 WATCH LOUNGE CHAT FEATURES
+   Welcome Card, Scene Timestamp Badges, Replies, Quick Reacts
+   ================================================================ */
+.wp-chat-welcome {
+  margin: auto 4px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.wp-welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #f4f4f5;
+}
+
+.wp-welcome-badge i {
+  color: #e50914;
+}
+
+.wp-welcome-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.45;
+  max-width: 240px;
+}
+
+.wp-welcome-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.wp-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e4e4e7;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.wp-quick-chip:hover {
+  border-color: rgba(229, 9, 20, 0.65);
+  background: rgba(229, 9, 20, 0.14);
+  color: #ffffff;
+}
+
+.wp-typing-indicator {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 12px 6px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.wp-typing-indicator.is-active {
+  display: flex;
+}
+
+.wp-typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.wp-typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #e50914;
+  animation: wpTypingDot 1.2s infinite ease-in-out;
+}
+
+.wp-typing-dots span:nth-child(2) { animation-delay: 0.16s; }
+.wp-typing-dots span:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes wpTypingDot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+.wp-reply-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 2.5px solid #e50914;
+  font-size: 11px;
+}
+
+.wp-reply-banner.is-active {
+  display: flex;
+}
+
+.wp-reply-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #cbd5e1;
+}
+
+.wp-reply-preview i {
+  color: #e50914;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.wp-reply-target-author {
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.wp-reply-target-text {
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wp-reply-cancel {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.wp-reply-cancel:hover {
+  color: #ffffff;
+}
+
+.wp-btn-timestamp {
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+}
+
+.wp-btn-timestamp:hover {
+  color: #ffffff !important;
+}
+
+.wp-msg-reply-quote {
+  font-size: 10.5px;
+  color: #a1a1aa;
+  background: rgba(0, 0, 0, 0.35);
+  border-left: 2px solid #e50914;
+  padding: 3px 7px;
+  border-radius: 5px;
+  margin-bottom: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  margin: 0 2px;
+  border-radius: 5px;
+  background: rgba(229, 9, 20, 0.16);
+  border: 1px solid rgba(229, 9, 20, 0.42);
+  color: #fda4af;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wp-time-badge:hover {
+  background: rgba(229, 9, 20, 0.32);
+  color: #ffffff;
+}
+
+.wp-msg-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  align-self: flex-end;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.wp-msg-item:hover .wp-msg-actions {
+  opacity: 1;
+}
+
+.wp-msg-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wp-msg-mini-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.wp-msg-react-btn.is-liked {
+  color: #ff4757;
+  border-color: rgba(229, 9, 20, 0.45);
+  background: rgba(229, 9, 20, 0.16);
 }

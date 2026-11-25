@@ -123,23 +123,23 @@
   }
 
   // ---------------------------------------------------------------------
-  // 2. Modern Fluent 3D Emoji Assets & Screen Floater Engine
+  // 2. Apple HD Cinema Emoji Assets & Screen Floater Engine
   // ---------------------------------------------------------------------
   const FLUENT_3D_EMOJIS = {
     fire: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp',
-    popcorn: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f37f/512.webp',
-    heart: 'https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp',
-    mindblown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp',
-    laugh: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp',
-    party: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp',
-    shock: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f631/512.webp',
-    clap: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f44f/512.webp',
-    bolt: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp',
-    skull: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f480/512.webp',
-    crown: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp',
-    star: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp',
-    angry: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f621/512.webp',
-    bomb: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp'
+    popcorn: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f37f.png',
+    heart: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/2764-fe0f.png',
+    mindblown: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f92f.png',
+    laugh: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f923.png',
+    party: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f389.png',
+    shock: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f631.png',
+    clap: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f44f.png',
+    bolt: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/26a1.png',
+    skull: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f480.png',
+    crown: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f451.png',
+    star: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f929.png',
+    angry: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f621.png',
+    bomb: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/1f4a3.png'
   };
 
   function initLiveReactions(movieId) {
@@ -205,7 +205,7 @@
     });
   }
 
-  function spawnFloatingEmoji(anchorBtn, type = 'fire') {
+  function spawnFloatingEmoji(anchorBtn, type = 'fire', opts = {}) {
     const playerWrap = document.querySelector('.player-container') || document.querySelector('#video-player-container');
     if (!playerWrap) return;
 
@@ -217,20 +217,36 @@
       playerWrap.appendChild(stage);
     }
 
+    // Keep maximum 12 simultaneous active floaters for crisp 60fps performance
+    const activeFloaters = stage.querySelectorAll('.cs-floating-hero-emoji');
+    if (activeFloaters.length >= 12 && activeFloaters[0]) {
+      activeFloaters[0].remove();
+    }
+
     const src = FLUENT_3D_EMOJIS[type] || FLUENT_3D_EMOJIS.fire;
-    const baseLeft = Math.floor(Math.random() * 60 + 20); // 20% to 80% across player width
+    const baseLeft = Math.floor(Math.random() * 24 + 68); // 68% to 92% (cinematic right reaction lane)
 
-    const randSway = (Math.random() - 0.5) * 80; // -40px to +40px
-    const randRot = (Math.random() - 0.5) * 30; // -15deg to +15deg
+    const swayMid = (Math.random() - 0.5) * 34; // -17px to +17px
+    const swayEnd = (Math.random() - 0.5) * 48; // -24px to +24px
+    const randRot = (Math.random() - 0.5) * 18; // -9deg to +9deg
+    const depthScale = (0.86 + Math.random() * 0.22).toFixed(2);
+    const durSec = (2.6 + Math.random() * 0.65).toFixed(2);
+    const authorLabel = opts && opts.author ? String(opts.author).trim().slice(0, 14) : '';
 
-    // Hero 3D Emoji
+    // Studio 2026 Depth-Layered Reaction Floater
     const floater = document.createElement('div');
-    floater.className = `cs-floating-hero-emoji cs-glow-${type}`;
+    floater.className = `cs-floating-hero-emoji cs-studio-floater cs-glow-${type}`;
     floater.style.left = `${baseLeft}%`;
-    floater.style.setProperty('--rand-sway', `${randSway}px`);
-    floater.style.setProperty('--rand-rot', `${randRot}deg`);
+    floater.style.setProperty('--rand-sway', `${swayMid.toFixed(1)}px`);
+    floater.style.setProperty('--sway-end', `${swayEnd.toFixed(1)}px`);
+    floater.style.setProperty('--rand-rot', `${randRot.toFixed(1)}deg`);
+    floater.style.setProperty('--depth-scale', depthScale);
+    floater.style.setProperty('--ascend-dur', `${durSec}s`);
     floater.innerHTML = `
-      <img src="${src}" alt="${type}" class="cs-floater-img">
+      <div class="cs-floater-core">
+        <img src="${src}" alt="${type}" class="cs-floater-img">
+        ${authorLabel ? `<span class="cs-floater-author">${authorLabel.replace(/[<>&"]/g, '')}</span>` : ''}
+      </div>
       <span class="cs-floater-sparkle s1"></span>
       <span class="cs-floater-sparkle s2"></span>
     `;

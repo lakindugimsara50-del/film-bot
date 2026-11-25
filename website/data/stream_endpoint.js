@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://marker-gonna-translator-shirt.trycloudflare.com",
+  "stream_base_url": "https://connectors-cork-runner-brighton.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-25T12:38:55.509112+00:00",
+  "updated_at": "2026-11-25T12:39:00.974706+00:00",
   "status": "online"
 };

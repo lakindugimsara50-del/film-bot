@@ -22063,7 +22063,235 @@ window.FILMZILLA_DATA = window.FILMSUB_DATA = window.MOVIES_DATA = window.__MOVI
       "added_date": "2026-11-16",
       "added_at": "2026-11-16T13:59:49Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "the-last-temptation-of-becky-2026",
+      "slug": "the-last-temptation-of-becky-2026",
+      "title": "The Last Temptation of Becky",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "7.0",
+      "rating": "7.0",
+      "imdb_id": "tt40210362",
+      "tmdb_id": "1642568",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/nzSx9jiInWGWumMV1n1qyRqrpbq.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/nzSx9jiInWGWumMV1n1qyRqrpbq.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/4IyYpwIUAkWE3CiUEg2YItc4mIv.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/4IyYpwIUAkWE3CiUEg2YItc4mIv.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/aQrxHLuqJCk",
+      "trailer_id": "aQrxHLuqJCk",
+      "genres": [
+        "Action",
+        "Horror",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "89 min",
+      "description": "Now working as a field agent for the CIA, Becky is sent undercover to Poland to infiltrate a family of innkeepers running a tourist venture at The Wolf's Lair, Hitler's WWII bunker. After learning that the father, Wilhelm Reuss, is on a mission to bring about the Fourth Reich, Becky takes matters into her own hands.",
+      "director": "Jenn Wexler",
+      "cast": [
+        {
+          "name": "Lulu Wilson",
+          "character": "Becky"
+        },
+        {
+          "name": "Neil Patrick Harris",
+          "character": "General Wilhelm Reuss"
+        },
+        {
+          "name": "Kate Siegel",
+          "character": "Agent Kate Montana"
+        },
+        {
+          "name": "James Urbaniak",
+          "character": "Dr. Friedrich Metzger"
+        },
+        {
+          "name": "Brandon Flynn",
+          "character": "Jordan Rigby"
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0RrBsDFGJGTRbwX0wQRXzkLXGXyOAACvh8AAnpwMFT_jxJpHZVRnB4E",
+      "message_id": 836,
+      "file_name": "comp_the-last-temptation-of-becky-2026_1080p.mp4",
+      "file_size": 1812820785,
+      "drive_file_id": "",
+      "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0RrBsDFGJGTRbwX0wQRXzkLXGXyOAACvh8AAnpwMFT_jxJpHZVRnB4E",
+          "message_id": 836,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1642568"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt40210362"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt40210362"
+        }
+      ],
+      "qualities": {
+        "auto": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+        "1080p": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+        "720p": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/835",
+        "480p": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/834"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1812820785,
+          "url": "https://t.me/c/4325759505/836",
+          "telegram_url": "https://t.me/c/4325759505/836",
+          "direct_url": "/stream/channel/-1004325759505/836?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0RrBsDFGJGTRbwX0wQRXzkLXGXyOAACvh8AAnpwMFT_jxJpHZVRnB4E",
+          "message_id": 836,
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.5 GB",
+          "size_bytes": 1576679698,
+          "url": "https://t.me/c/4325759505/835",
+          "telegram_url": "https://t.me/c/4325759505/835",
+          "direct_url": "/stream/channel/-1004325759505/835?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0NrBryvB6OnMvjQyic4qVdTqXEaJwACph8AAnpwMFT0Qi0GxbyNmx4E",
+          "message_id": 835,
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/835",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "707.1 MB",
+          "size_bytes": 741434888,
+          "url": "https://t.me/c/4325759505/834",
+          "telegram_url": "https://t.me/c/4325759505/834",
+          "direct_url": "/stream/channel/-1004325759505/834?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0JrBrwcfyzmlr990vqxWH5c44Nx6wACpR8AAnpwMFROOpuX7y9M1h4E",
+          "message_id": 834,
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/834",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1812820785,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-last-temptation-of-becky-2026_1080p",
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.5 GB",
+          "size_bytes": 1576679698,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-last-temptation-of-becky-2026_720p",
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/835",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "707.1 MB",
+          "size_bytes": 741434888,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_the-last-temptation-of-becky-2026_480p",
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/834",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0RrBsDFGJGTRbwX0wQRXzkLXGXyOAACvh8AAnpwMFT_jxJpHZVRnB4E",
+          "message_id": 836,
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/836",
+          "size_bytes": 1812820785
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0NrBryvB6OnMvjQyic4qVdTqXEaJwACph8AAnpwMFT0Qi0GxbyNmx4E",
+          "message_id": 835,
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/835",
+          "size_bytes": 1576679698
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0JrBrwcfyzmlr990vqxWH5c44Nx6wACpR8AAnpwMFROOpuX7y9M1h4E",
+          "message_id": 834,
+          "stream_url": "https://potatoes-fed-supporters-strips.trycloudflare.com/stream/channel/-1004325759505/834",
+          "size_bytes": 741434888
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/the-last-temptation-of-becky-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=the-last-temptation-of-becky-2026",
+      "added_date": "2026-11-25",
+      "added_at": "2026-11-25T11:04:49Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-16T13:59:51Z"
+  "last_updated": "2026-11-25T11:04:51Z"
 };

@@ -6996,6 +6996,414 @@ window.FilmZillaCompanion = {
   }
 };
 
+// ---- 2026 Client-Side GPU Cinema Detail Enhancer (WebGL2 Contrast-Adaptive Sharpening / CAS) ----
+window.FilmZillaCinemaEnhance = {
+  _mode: (typeof localStorage !== 'undefined' && localStorage.getItem('fz_cas_enhance_mode')) || 'hd',
+  _vjs: null,
+  _canvas: null,
+  _gl: null,
+  _program: null,
+  _tex: null,
+  _uLocs: null,
+  _rafId: null,
+  _rvfcId: null,
+  _rvfcVideo: null,
+  _resizeObs: null,
+  _blockedByCors: false,
+  _lastW: 0,
+  _lastH: 0,
+
+  getMode() {
+    return (this._mode === 'off' || this._mode === 'ultra') ? this._mode : 'hd';
+  },
+
+  init(vjsPlayer) {
+    if (typeof document === 'undefined' || !vjsPlayer) return;
+    this._vjs = vjsPlayer;
+    this._blockedByCors = false;
+    this.updateUI();
+    this._ensureCanvasAndGL();
+    this._bindVideoEvents();
+  },
+
+  _getVideoEl() {
+    if (!this._vjs) return null;
+    try {
+      if (this._vjs.tech_ && this._vjs.tech_.el_ && this._vjs.tech_.el_.tagName === 'VIDEO') {
+        return this._vjs.tech_.el_;
+      }
+      const root = (typeof this._vjs.el === 'function' ? this._vjs.el() : null) || document.getElementById('filmsubPlayer');
+      return root ? root.querySelector('video') : null;
+    } catch (_) {
+      return null;
+    }
+  },
+
+  _getPlayerRoot() {
+    if (!this._vjs) return document.getElementById('filmsubPlayer');
+    try {
+      return (typeof this._vjs.el === 'function' ? this._vjs.el() : null) || document.getElementById('filmsubPlayer');
+    } catch (_) {
+      return document.getElementById('filmsubPlayer');
+    }
+  },
+
+  _ensureCanvasAndGL() {
+    const root = this._getPlayerRoot();
+    const videoEl = this._getVideoEl();
+    if (!root || !videoEl) return false;
+
+    let canvas = root.querySelector('#cs-cas-canvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'cs-cas-canvas';
+      canvas.className = 'cs-cas-canvas';
+      canvas.setAttribute('aria-hidden', 'true');
+      videoEl.insertAdjacentElement('afterend', canvas);
+    }
+    this._canvas = canvas;
+
+    if (this._gl && this._gl.canvas === canvas && !this._gl.isContextLost() && this._program) return true;
+
+    const gl = canvas.getContext('webgl2', {
+      alpha: true,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      premultipliedAlpha: true,
+      preserveDrawingBuffer: false,
+      powerPreference: 'high-performance',
+    });
+    if (!gl) return false;
+
+    const vsSrc = `#version 300 es
+      in vec2 aPos;
+      out vec2 vUv;
+      void main() {
+        vUv = aPos * 0.5 + 0.5;
+        gl_Position = vec4(aPos, 0.0, 1.0);
+      }`;
+
+    const fsSrc = `#version 300 es
+      precision highp float;
+      uniform sampler2D uTex;
+      uniform vec2 uTexel;
+      uniform float uStrength;
+      uniform float uContrast;
+      in vec2 vUv;
+      out vec4 fragColor;
+      void main() {
+        vec3 c  = texture(uTex, vUv).rgb;
+        vec3 n  = texture(uTex, vUv + vec2(0.0, uTexel.y)).rgb;
+        vec3 s  = texture(uTex, vUv - vec2(0.0, uTexel.y)).rgb;
+        vec3 e  = texture(uTex, vUv + vec2(uTexel.x, 0.0)).rgb;
+        vec3 w  = texture(uTex, vUv - vec2(uTexel.x, 0.0)).rgb;
+        vec3 ne = texture(uTex, vUv + vec2(uTexel.x, uTexel.y)).rgb;
+        vec3 nw = texture(uTex, vUv + vec2(-uTexel.x, uTexel.y)).rgb;
+        vec3 se = texture(uTex, vUv + vec2(uTexel.x, -uTexel.y)).rgb;
+        vec3 sw = texture(uTex, vUv + vec2(-uTexel.x, -uTexel.y)).rgb;
+
+        vec3 mn  = min(min(min(n, s), min(e, w)), c);
+        vec3 mx  = max(max(max(n, s), max(e, w)), c);
+        vec3 mn2 = min(mn, min(min(ne, nw), min(se, sw)));
+        vec3 mx2 = max(mx, max(max(ne, nw), max(se, sw)));
+        vec3 mnL = (mn + mn2) * 0.5;
+        vec3 mxL = (mx + mx2) * 0.5;
+
+        vec3 dMin = max(mnL, vec3(0.0));
+        vec3 dMax = max(vec3(1.0) - mxL, vec3(0.0));
+        vec3 amp = sqrt(clamp(min(dMin, dMax) / max(mxL, vec3(0.001)), 0.0, 1.0));
+
+        float lumaRange = dot(mxL - mnL, vec3(0.299, 0.587, 0.114));
+        float detailGate = smoothstep(0.015, 0.08, lumaRange);
+
+        float peak = mix(-0.075, -0.155, clamp(uStrength, 0.0, 1.0));
+        vec3 weight = amp * peak * detailGate;
+        vec3 sharp = clamp((c + (n + s + e + w) * weight) / (vec3(1.0) + 4.0 * weight), 0.0, 1.0);
+
+        vec3 lifted = sharp + uContrast * sharp * (1.0 - sharp) * (sharp - 0.5) * 4.0;
+        fragColor = vec4(clamp(lifted, 0.0, 1.0), 1.0);
+      }`;
+
+    const compile = (type, src) => {
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        gl.deleteShader(sh);
+        return null;
+      }
+      return sh;
+    };
+
+    const vs = compile(gl.VERTEX_SHADER, vsSrc);
+    const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+    if (!vs || !fs) return false;
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      gl.deleteProgram(prog);
+      return false;
+    }
+
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    this._gl = gl;
+    this._program = prog;
+    this._tex = tex;
+    this._uLocs = {
+      uTex: gl.getUniformLocation(prog, 'uTex'),
+      uTexel: gl.getUniformLocation(prog, 'uTexel'),
+      uStrength: gl.getUniformLocation(prog, 'uStrength'),
+      uContrast: gl.getUniformLocation(prog, 'uContrast'),
+    };
+    this._lastW = 0;
+    this._lastH = 0;
+
+    if (!canvas._casLostBound) {
+      canvas._casLostBound = true;
+      canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        this._stopLoop();
+        this._hideCanvas();
+      });
+      canvas.addEventListener('webglcontextrestored', () => {
+        this._gl = null;
+        this._program = null;
+        if (this._ensureCanvasAndGL() && this.getMode() !== 'off') this._scheduleNextFrame();
+      });
+    }
+    return true;
+  },
+
+  _hideCanvas() {
+    if (this._canvas) this._canvas.classList.remove('is-active');
+  },
+
+  _stopLoop() {
+    if (this._rafId != null) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+    if (this._rvfcId != null && this._rvfcVideo && typeof this._rvfcVideo.cancelVideoFrameCallback === 'function') {
+      try { this._rvfcVideo.cancelVideoFrameCallback(this._rvfcId); } catch (_) {}
+      this._rvfcId = null;
+      this._rvfcVideo = null;
+    }
+  },
+
+  renderSingleFrame() {
+    const mode = this.getMode();
+    if (mode === 'off' || this._blockedByCors) {
+      this._hideCanvas();
+      return false;
+    }
+    const videoEl = this._getVideoEl();
+    const root = this._getPlayerRoot();
+    if (!videoEl || !root || videoEl.readyState < 2 || !videoEl.videoWidth || !videoEl.videoHeight) {
+      this._hideCanvas();
+      return false;
+    }
+    if (!this._ensureCanvasAndGL()) {
+      this._hideCanvas();
+      return false;
+    }
+
+    const rect = root.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const cw = Math.max(2, Math.round(rect.width * dpr));
+    const ch = Math.max(2, Math.round(rect.height * dpr));
+    if (cw <= 4 || ch <= 4) return false;
+
+    const gl = this._gl;
+    if (cw !== this._lastW || ch !== this._lastH) {
+      this._canvas.width = cw;
+      this._canvas.height = ch;
+      this._lastW = cw;
+      this._lastH = ch;
+    }
+
+    try {
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this._tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoEl);
+    } catch (err) {
+      if (err && (err.name === 'SecurityError' || String(err).includes('tainted'))) {
+        this._blockedByCors = true;
+      }
+      this._stopLoop();
+      this._hideCanvas();
+      return false;
+    }
+
+    const vRatio = videoEl.videoWidth / videoEl.videoHeight;
+    const cRatio = cw / ch;
+    let drawW = cw;
+    let drawH = ch;
+    let drawX = 0;
+    let drawY = 0;
+    if (vRatio > cRatio) {
+      drawW = cw;
+      drawH = Math.max(2, Math.round(cw / vRatio));
+      drawY = Math.round((ch - drawH) * 0.5);
+    } else {
+      drawH = ch;
+      drawW = Math.max(2, Math.round(ch * vRatio));
+      drawX = Math.round((cw - drawW) * 0.5);
+    }
+
+    gl.viewport(0, 0, cw, ch);
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.viewport(drawX, drawY, drawW, drawH);
+    gl.useProgram(this._program);
+    gl.uniform1i(this._uLocs.uTex, 0);
+    gl.uniform2f(this._uLocs.uTexel, 1.0 / videoEl.videoWidth, 1.0 / videoEl.videoHeight);
+    gl.uniform1f(this._uLocs.uStrength, mode === 'ultra' ? 0.90 : 0.52);
+    gl.uniform1f(this._uLocs.uContrast, mode === 'ultra' ? 0.05 : 0.025);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    this._canvas.classList.add('is-active');
+    return true;
+  },
+
+  _scheduleNextFrame() {
+    this._stopLoop();
+    const videoEl = this._getVideoEl();
+    if (!videoEl || this.getMode() === 'off' || this._blockedByCors) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    if (videoEl.paused || videoEl.ended) return;
+
+    const tick = () => {
+      this.renderSingleFrame();
+      this._scheduleNextFrame();
+    };
+    if (typeof videoEl.requestVideoFrameCallback === 'function') {
+      this._rvfcVideo = videoEl;
+      this._rvfcId = videoEl.requestVideoFrameCallback(() => {
+        this._rvfcId = null;
+        tick();
+      });
+    } else {
+      this._rafId = requestAnimationFrame(() => {
+        this._rafId = null;
+        tick();
+      });
+    }
+  },
+
+  _bindVideoEvents() {
+    if (!this._vjs || this._vjs._casEventsBound) return;
+    this._vjs._casEventsBound = true;
+    const p = this._vjs;
+    const onPlay = () => {
+      this._blockedByCors = false;
+      this.renderSingleFrame();
+      this._scheduleNextFrame();
+    };
+    const onPauseOrEnd = () => {
+      this._stopLoop();
+      const v = this._getVideoEl();
+      if (v && v.readyState >= 2 && v.currentTime > 0 && this.getMode() !== 'off') {
+        this.renderSingleFrame();
+      } else {
+        this._hideCanvas();
+      }
+    };
+    const onSingle = () => {
+      if (this.getMode() === 'off') {
+        this._hideCanvas();
+        return;
+      }
+      this.renderSingleFrame();
+      const v = this._getVideoEl();
+      if (v && !v.paused && !v.ended) this._scheduleNextFrame();
+    };
+    p.on('play', onPlay);
+    p.on('playing', onPlay);
+    p.on('loadeddata', onSingle);
+    p.on('seeked', onSingle);
+    p.on('pause', onPauseOrEnd);
+    p.on('ended', onPauseOrEnd);
+    p.on('fullscreenchange', onSingle);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const root = this._getPlayerRoot();
+      if (root) {
+        if (this._resizeObs) this._resizeObs.disconnect();
+        this._resizeObs = new ResizeObserver(() => {
+          const v = this._getVideoEl();
+          if (v && v.readyState >= 2 && v.currentTime > 0 && this.getMode() !== 'off') {
+            this.renderSingleFrame();
+          }
+        });
+        this._resizeObs.observe(root);
+      }
+    }
+    if (!document._casVisBound) {
+      document._casVisBound = true;
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) this._stopLoop();
+        else {
+          const v = this._getVideoEl();
+          if (v && !v.paused && !v.ended && this.getMode() !== 'off') this._scheduleNextFrame();
+        }
+      });
+    }
+  },
+
+  cycleMode() {
+    const cur = this.getMode();
+    const next = cur === 'hd' ? 'ultra' : (cur === 'ultra' ? 'off' : 'hd');
+    this._mode = next;
+    try { localStorage.setItem('fz_cas_enhance_mode', next); } catch (_) {}
+    this.updateUI();
+    if (next === 'off') {
+      this._stopLoop();
+      this._hideCanvas();
+    } else {
+      this._blockedByCors = false;
+      this.renderSingleFrame();
+      this._scheduleNextFrame();
+    }
+    if (window.FilmSub && typeof FilmSub.showToast === 'function') {
+      const msgMap = {
+        hd: 'HD Enhance (CAS) ON — Balanced Cinema Sharpness ✨',
+        ultra: 'HD Enhance (ULTRA) — Maximum Edge Recovery 🔥',
+        off: 'HD Enhance OFF — Native Video Stream'
+      };
+      FilmSub.showToast(msgMap[next] || 'HD Enhance updated', 'info');
+    }
+  },
+
+  updateUI() {
+    if (typeof document === 'undefined') return;
+    const btn = document.getElementById('btn-toggle-cinema-enhance');
+    const badge = document.getElementById('cs-enhance-badge');
+    const mode = this.getMode();
+    const active = mode !== 'off';
+    if (btn) btn.classList.toggle('active', active);
+    if (badge) badge.textContent = mode === 'ultra' ? 'ULTRA' : (mode === 'hd' ? 'HD' : 'OFF');
+  }
+};
+
 // Global Delegated Dismissal for All Cinema Modals
 if (typeof document !== 'undefined') {
   document.addEventListener('click', (e) => {
@@ -7015,6 +7423,7 @@ if (typeof document !== 'undefined') {
 // ---- VIP Cinema Enhancements Initializers ----
 function initVIPCinemaKillerFeatures(vjsPlayer, movie) {
   // Safe Mode disabled per user request
+  if (window.FilmZillaCinemaEnhance) window.FilmZillaCinemaEnhance.init(vjsPlayer);
   if (window.FilmZilla4DHaptic) window.FilmZilla4DHaptic.init(vjsPlayer);
   if (window.FilmZillaP2P) window.FilmZillaP2P.init();
   if (window.FilmZillaCompanion) window.FilmZillaCompanion.init(vjsPlayer, movie);
@@ -7022,6 +7431,16 @@ function initVIPCinemaKillerFeatures(vjsPlayer, movie) {
 
 function wireVIPCinemaMenuButtons(movie) {
   if (typeof document === 'undefined') return;
+
+  // 0. 2026 WebGL2 CAS Cinema Detail Enhancer Toggle Button
+  const enhanceBtn = document.getElementById('btn-toggle-cinema-enhance');
+  if (enhanceBtn && !enhanceBtn._bound) {
+    enhanceBtn._bound = true;
+    if (window.FilmZillaCinemaEnhance) window.FilmZillaCinemaEnhance.updateUI();
+    enhanceBtn.addEventListener('click', () => {
+      if (window.FilmZillaCinemaEnhance) window.FilmZillaCinemaEnhance.cycleMode();
+    });
+  }
 
   // 1. 4D Haptic Toggle Button
   const hapticBtn = document.getElementById('btn-toggle-haptics');
@@ -7068,7 +7487,7 @@ function wireVIPCinemaMenuButtons(movie) {
   const syncToolsCount = () => {
     const countEl = document.getElementById('cs-tools-active-count');
     if (!countEl || !toolsWrap) return;
-    const activeIds = ['btn-toggle-haptics'];
+    const activeIds = ['btn-toggle-cinema-enhance', 'btn-toggle-haptics'];
     const activeCount = activeIds.filter(id => {
       const el = document.getElementById(id);
       return el && el.classList.contains('active');

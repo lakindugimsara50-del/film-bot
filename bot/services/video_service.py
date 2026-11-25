@@ -945,40 +945,78 @@ def _probe_cuda_overlay_and_nvenc_flags(exe_path: str) -> dict[str, Any]:
         has_scale_filter = False
         has_overlay_filter = False
 
-    # 2. Test NVENC HQ flags (preset p4 + tune hq + spatial/temporal AQ + rc-lookahead + qres multipass)
+    # 2. Test NVENC HQ flags (preset p5/p4 + tune hq + spatial/temporal AQ + rc-lookahead + fullres/qres multipass + b_ref_mode)
+    res["nvenc_fullres"] = False
+    res["nvenc_bref_middle"] = False
     try:
-        p_qres = subprocess.run(
+        p_full = subprocess.run(
             [
                 exe_path, "-hide_banner",
                 "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
                 "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
-                "-preset", "p4", "-tune", "hq", "-multipass", "qres",
-                "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
-                "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
+                "-preset", "p5", "-tune", "hq", "-multipass", "fullres",
+                "-rc", "vbr", "-cq", "19", "-rc-lookahead", "32",
+                "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "10",
                 "-f", "null", "-",
             ],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
         )
-        if getattr(p_qres, "returncode", 1) == 0:
+        if getattr(p_full, "returncode", 1) == 0:
             res["nvenc_hq"] = True
             res["nvenc_qres"] = True
+            res["nvenc_fullres"] = True
         else:
-            p_hq = subprocess.run(
+            p_qres = subprocess.run(
                 [
                     exe_path, "-hide_banner",
                     "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
                     "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
-                    "-preset", "p4", "-tune", "hq", "-multipass", "disabled",
+                    "-preset", "p4", "-tune", "hq", "-multipass", "qres",
                     "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
                     "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
                     "-f", "null", "-",
                 ],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
             )
-            if getattr(p_hq, "returncode", 1) == 0:
+            if getattr(p_qres, "returncode", 1) == 0:
                 res["nvenc_hq"] = True
+                res["nvenc_qres"] = True
+            else:
+                p_hq = subprocess.run(
+                    [
+                        exe_path, "-hide_banner",
+                        "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
+                        "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
+                        "-preset", "p4", "-tune", "hq",
+                        "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
+                        "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
+                        "-f", "null", "-",
+                    ],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+                )
+                if getattr(p_hq, "returncode", 1) == 0:
+                    res["nvenc_hq"] = True
     except Exception:
         pass
+
+    # 2b. Test NVENC B-frame reference mode (-b_ref_mode middle) separately so older drivers never fail HQ encode
+    if res.get("nvenc_hq"):
+        try:
+            p_bref = subprocess.run(
+                [
+                    exe_path, "-hide_banner",
+                    "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
+                    "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
+                    "-preset", "p4", "-tune", "hq", "-rc", "vbr", "-cq", "19",
+                    "-bf", "3", "-b_ref_mode", "middle",
+                    "-f", "null", "-",
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+            )
+            if getattr(p_bref, "returncode", 1) == 0:
+                res["nvenc_bref_middle"] = True
+        except Exception:
+            pass
 
     # 3. Test CUDA hardware scale_cuda
     if has_scale_filter:
@@ -1087,6 +1125,25 @@ def detect_cuda_pipeline_caps(ffmpeg_bin: Optional[str] = None) -> dict[str, Any
     return caps
 
 
+def _calc_safe_target_video_kbps(
+    duration_sec: float,
+    target_bytes: int = TARGET_COMPRESS_SIZE,
+    audio_kbps: int = 160,
+    min_kbps: int = 800,
+    max_kbps: int = 5200,
+    safety_ratio: float = 0.945,
+) -> int:
+    """
+    Compute maximum safe VBR target video bitrate (kbps) that fits inside Telegram's
+    strict < 2 GB ceiling (`target_bytes` = 1.90 GiB) with MP4 mux/VBR overshoot headroom.
+    Short movies/episodes automatically get higher bitrates instead of artificially low caps.
+    """
+    dur = max(float(duration_sec or 0.0), 60.0)
+    total_kbps = (float(target_bytes) * 8.0 * safety_ratio) / dur / 1000.0
+    v_kbps = int(total_kbps - float(audio_kbps))
+    return max(int(min_kbps), min(int(max_kbps), v_kbps))
+
+
 def _build_nvenc_encode_opts(
     v_bitrate_k: Optional[int] = None,
     maxrate_k: Optional[int] = None,
@@ -1096,22 +1153,47 @@ def _build_nvenc_encode_opts(
     for_cuda_frames: bool = False,
     caps: Optional[dict[str, Any]] = None,
     include_profile_level: bool = True,
+    multipass: Optional[str] = None,
+    lookahead: Optional[int] = None,
+    aq_strength: Optional[int] = None,
+    b_ref_mode: Optional[str] = None,
 ) -> list[str]:
     """
     Shared Turing T4 NVENC encoder options builder.
-    Balances maximum visual fidelity (1080p <= 2GB HQ AQ + Lookahead + VBR headroom)
+    Balances maximum visual fidelity (1080p <= 2GB HQ AQ + Lookahead + VBR headroom + 2-pass)
     with full NVENC ASIC hardware speed.
     """
     c_info = caps or {}
     use_hq = bool(c_info.get("nvenc_hq", True))
-    enable_qres = os.getenv("NVENC_ENABLE_MULTIPASS", "0") == "1"
-    use_qres = enable_qres and bool(c_info.get("nvenc_qres", False))
+
+    if multipass is None:
+        # Preserve default env contract expected by unit tests when caller omits multipass
+        enable_qres = os.getenv("NVENC_ENABLE_MULTIPASS", "0") == "1"
+        multipass_val = "qres" if (enable_qres and bool(c_info.get("nvenc_qres", False))) else "disabled"
+    elif multipass == "auto":
+        if os.getenv("NVENC_ENABLE_MULTIPASS", "") == "0":
+            multipass_val = "disabled"
+        elif c_info.get("nvenc_fullres"):
+            multipass_val = "fullres"
+        elif c_info.get("nvenc_qres"):
+            multipass_val = "qres"
+        else:
+            multipass_val = "disabled"
+    elif multipass == "fullres":
+        multipass_val = "fullres" if c_info.get("nvenc_fullres") else ("qres" if c_info.get("nvenc_qres") else "disabled")
+    elif multipass == "qres":
+        multipass_val = "qres" if c_info.get("nvenc_qres") else "disabled"
+    else:
+        multipass_val = "disabled"
+
+    la_val = str(int(lookahead)) if lookahead is not None else "16"
+    aq_val = str(int(aq_strength)) if aq_strength is not None else "8"
 
     opts: list[str] = [
         "-c:v", "h264_nvenc",
         "-preset", preset if use_hq else "p2",
         "-tune", "hq",
-        "-multipass", "qres" if use_qres else "disabled",
+        "-multipass", multipass_val,
         "-rc", "vbr",
         "-cq", str(cq),
     ]
@@ -1124,11 +1206,13 @@ def _build_nvenc_encode_opts(
 
     if use_hq:
         opts.extend([
-            "-rc-lookahead", "16",
+            "-rc-lookahead", la_val,
             "-spatial-aq", "1",
             "-temporal-aq", "1",
-            "-aq-strength", "8",
+            "-aq-strength", aq_val,
         ])
+        if b_ref_mode == "middle" and c_info.get("nvenc_bref_middle"):
+            opts.extend(["-bf", "3", "-b_ref_mode", "middle"])
     else:
         opts.extend([
             "-rc-lookahead", "0",
@@ -1655,8 +1739,8 @@ async def compress_video(
     has_fallback_box = bool(cover_watermark and not has_badge_img)
 
     caps: dict[str, Any] = {}
-    nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
-    nv_preset = os.getenv("NVENC_1080P_PRESET", "p3")
+    nv_cq = 18 if in_w >= 1400 else (19 if in_w >= 1000 else 20)
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p5")
 
     if hw_enc == "h264_nvenc":
         caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
@@ -1801,7 +1885,7 @@ async def compress_video(
 
     nvenc_enc_opts = []
     if hw_enc == "h264_nvenc":
-        # High-Quality Turing NVENC hardware encoding with Spatial/Temporal AQ & Lookahead
+        # High-Quality Turing NVENC hardware encoding with 2-pass + Spatial/Temporal AQ + 32f Lookahead + B-ref
         nvenc_enc_opts = _build_nvenc_encode_opts(
             v_bitrate_k=v_bitrate_k,
             maxrate_k=maxrate_k,
@@ -1810,13 +1894,18 @@ async def compress_video(
             preset=nv_preset,
             for_cuda_frames=False,
             caps=caps,
+            multipass="auto",
+            lookahead=32,
+            aq_strength=10,
+            b_ref_mode="middle",
         )
         cmd.extend(nvenc_enc_opts)
     else:
-        cpu_preset = "ultrafast" if _on_colab else "veryfast"
+        cpu_preset = os.getenv("X264_FALLBACK_PRESET", "veryfast")
         cmd.extend([
             "-c:v", "libx264",
             "-preset", cpu_preset,
+            "-tune", "film",
             "-threads", "0",
             "-b:v", f"{v_bitrate_k}k",
             "-maxrate", f"{maxrate_k}k",
@@ -3202,6 +3291,10 @@ async def _execute_pure_gpu_cuda_pipeline(
             preset=nvenc_preset,
             for_cuda_frames=True,
             caps=caps,
+            multipass="auto",
+            lookahead=32,
+            aq_strength=10,
+            b_ref_mode="middle",
         )
         cv_idx = nv_opts.index("-c:v")
         nv_opts.insert(cv_idx + 2, "-gpu")
@@ -3936,6 +4029,19 @@ async def burn_subtitles_to_video(
 
         burn_vf = build_subtitles_burn_filter(sub_to_use)
         hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+        burn_dur = await asyncio.to_thread(get_video_duration, video_path, ffmpeg_bin)
+        burn_w, burn_h = await asyncio.to_thread(get_video_resolution, video_path, ffmpeg_bin)
+        is_1080_src = max(int(burn_w or 0), int(burn_h or 0)) >= 1600
+        burn_target_k = _calc_safe_target_video_kbps(
+            burn_dur,
+            target_bytes=TARGET_COMPRESS_SIZE,
+            audio_kbps=160,
+            min_kbps=950,
+            max_kbps=5500 if is_1080_src else 3000,
+        )
+        burn_max_k = int(burn_target_k * 1.35)
+        burn_buf_k = int(burn_target_k * 2.0)
+        burn_cq = 18 if is_1080_src else 19
 
         cmd = [
             ffmpeg_bin,
@@ -3944,30 +4050,40 @@ async def burn_subtitles_to_video(
             "-threads", "0",
         ]
         if hw_enc == "h264_nvenc":
-            cmd.extend(["-hwaccel", "cuda"])
+            cmd.extend(["-hwaccel", "auto"])
         cmd.extend(["-i", os.path.abspath(video_path)])
         cmd.extend(["-vf", burn_vf])
 
         if hw_enc == "h264_nvenc":
-            cmd.extend([
-                "-c:v", "h264_nvenc",
-                "-preset", "fast",
-                "-tune", "hq",
-                "-rc", "vbr",
-                "-cq", "23",
-                "-maxrate", "3000k",
-                "-bufsize", "6000k",
-                "-rc-lookahead", "32",
-                "-spatial-aq", "1",
-                "-temporal-aq", "1",
-                "-pix_fmt", "yuv420p",
-            ])
+            cuda_caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+            if cuda_caps.get("ffmpeg_bin"):
+                cmd[0] = cuda_caps["ffmpeg_bin"]
+            cmd.extend(
+                _build_nvenc_encode_opts(
+                    v_bitrate_k=burn_target_k,
+                    maxrate_k=burn_max_k,
+                    bufsize_k=burn_buf_k,
+                    cq=burn_cq,
+                    preset=os.getenv("NVENC_BURN_PRESET", os.getenv("NVENC_1080P_PRESET", "p5")),
+                    for_cuda_frames=False,
+                    caps=cuda_caps,
+                    include_profile_level=True,
+                    multipass="auto",
+                    lookahead=32,
+                    aq_strength=10,
+                    b_ref_mode="middle",
+                )
+            )
         else:
             cmd.extend([
                 "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-crf", "23",
-                "-tune", "fastdecode",
+                "-preset", os.getenv("X264_FALLBACK_PRESET", "veryfast"),
+                "-crf", str(burn_cq + 1),
+                "-tune", "film",
+                "-maxrate", f"{burn_max_k}k",
+                "-bufsize", f"{burn_buf_k}k",
+                "-profile:v", "high",
+                "-level:v", "4.1",
                 "-threads", "0",
                 "-pix_fmt", "yuv420p",
             ])
@@ -3995,9 +4111,9 @@ async def burn_subtitles_to_video(
             stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=600.0)
+            _, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=1200.0)
         except asyncio.TimeoutError:
-            log.warning("[VideoService] Subtitle burn timed out after 600s: %s", video_path)
+            log.warning("[VideoService] Subtitle burn timed out after 1200s: %s", video_path)
             if proc and proc.returncode is None:
                 try:
                     proc.kill()
@@ -4085,8 +4201,8 @@ async def cover_cinesubz_watermark(
 
     max_kbps = int(target_kbps * 1.38)
     buf_kbps = int(target_kbps * 2.0)
-    nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
-    nv_preset = os.getenv("NVENC_1080P_PRESET", "p3")
+    nv_cq = 18 if in_w >= 1400 else (19 if in_w >= 1000 else 20)
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p5")
 
     hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
     caps: dict[str, Any] = {}
@@ -4123,15 +4239,22 @@ async def cover_cinesubz_watermark(
             preset=nv_preset,
             for_cuda_frames=False,
             caps=caps,
+            multipass="auto",
+            lookahead=32,
+            aq_strength=10,
+            b_ref_mode="middle",
         )
     else:
-        cpu_preset = "veryfast" if _on_colab else "faster"
+        cpu_preset = os.getenv("X264_FALLBACK_PRESET", "veryfast") if _on_colab else "faster"
         enc_opts = [
             "-c:v", "libx264",
             "-preset", cpu_preset,
-            "-crf", "24",
+            "-tune", "film",
+            "-crf", "20",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
+            "-profile:v", "high",
+            "-level:v", "4.1",
             "-threads", "0",
             "-pix_fmt", "yuv420p",
         ]
@@ -4600,12 +4723,16 @@ async def generate_multi_quality_variants_ram(
                 log.debug("[VideoService] ASS shaping note: %s", ass_err)
             ensure_sinhala_font_dir()
 
-    # CineSubz / SinhalaSub WebRip reference bitrate & resolution profiles per quality tier
+    # Duration-aware bitrate allocation maximizing crispness inside Telegram's < 2 GB limit
+    v_1080_k = _calc_safe_target_video_kbps(effective_duration, TARGET_COMPRESS_SIZE, audio_kbps=160, min_kbps=1400, max_kbps=4800)
+    v_720_k = _calc_safe_target_video_kbps(effective_duration, TARGET_COMPRESS_SIZE, audio_kbps=128, min_kbps=1000, max_kbps=2400)
+    v_480_k = _calc_safe_target_video_kbps(effective_duration, TARGET_COMPRESS_SIZE, audio_kbps=96, min_kbps=700, max_kbps=1150)
+    v_360_k = _calc_safe_target_video_kbps(effective_duration, TARGET_COMPRESS_SIZE, audio_kbps=64, min_kbps=450, max_kbps=700)
     profiles = {
-        "1080p": {"height": 1080, "crf": "23", "maxrate": "2600k", "bufsize": "5200k", "abitrate": "160k"},
-        "720p":  {"height": 720,  "crf": "24", "maxrate": "1400k", "bufsize": "2800k", "abitrate": "128k"},
-        "480p":  {"height": 480,  "crf": "25", "maxrate": "800k",  "bufsize": "1600k", "abitrate": "96k"},
-        "360p":  {"height": 360,  "crf": "26", "maxrate": "500k",  "bufsize": "1000k", "abitrate": "64k"},
+        "1080p": {"height": 1080, "crf": "19", "vbitrate": f"{v_1080_k}k", "maxrate": f"{int(v_1080_k * 1.35)}k", "bufsize": f"{int(v_1080_k * 2.0)}k", "abitrate": "160k"},
+        "720p":  {"height": 720,  "crf": "20", "vbitrate": f"{v_720_k}k",  "maxrate": f"{int(v_720_k * 1.35)}k",  "bufsize": f"{int(v_720_k * 2.0)}k",  "abitrate": "128k"},
+        "480p":  {"height": 480,  "crf": "21", "vbitrate": f"{v_480_k}k",  "maxrate": f"{int(v_480_k * 1.35)}k",  "bufsize": f"{int(v_480_k * 2.0)}k",  "abitrate": "96k"},
+        "360p":  {"height": 360,  "crf": "22", "vbitrate": f"{v_360_k}k",  "maxrate": f"{int(v_360_k * 1.35)}k",  "bufsize": f"{int(v_360_k * 2.0)}k",  "abitrate": "64k"},
     }
 
     target_q_list = [q for q in qualities if q in profiles]
@@ -4752,9 +4879,9 @@ async def generate_multi_quality_variants_ram(
             if use_cuda_scale:
                 fc = f"[0:v:0]scale_cuda=w=-2:h={h0}:interp_algo=lanczos:format={cuda_fmt}[v_{q0}]"
             elif burn_subs:
-                fc = f"[0:v:0]{sub_burn_expr},scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+                fc = f"[0:v:0]{sub_burn_expr},scale=w=-2:h={h0}:flags=lanczos+accurate_rnd+full_chroma_int[v_{q0}]"
             else:
-                fc = f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+                fc = f"[0:v:0]scale=w=-2:h={h0}:flags=lanczos+accurate_rnd+full_chroma_int[v_{q0}]"
         else:
             split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
             split_head = (
@@ -4769,7 +4896,7 @@ async def generate_multi_quality_variants_ram(
                 )
             else:
                 scale_branches = ";".join(
-                    f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
+                    f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=lanczos+accurate_rnd+full_chroma_int[v_{q}]"
                     for q in target_q_list
                 )
             fc = f"{split_head};{scale_branches}"
@@ -4826,16 +4953,22 @@ async def generate_multi_quality_variants_ram(
                     "-disposition:s:0", "default",
                 ])
             if use_hw == "h264_nvenc":
+                v_k = int(prof["vbitrate"].rstrip("k"))
                 max_k = int(prof["maxrate"].rstrip("k"))
                 buf_k = int(prof["bufsize"].rstrip("k"))
                 nv_opts = _build_nvenc_encode_opts(
+                    v_bitrate_k=v_k,
                     maxrate_k=max_k,
                     bufsize_k=buf_k,
                     cq=int(prof["crf"]),
-                    preset=os.getenv("NVENC_1080P_PRESET", "p3"),
+                    preset=os.getenv("NVENC_1080P_PRESET", "p5"),
                     for_cuda_frames=use_cuda_scale,
                     caps=cuda_caps,
                     include_profile_level=False,
+                    multipass="auto",
+                    lookahead=32,
+                    aq_strength=10,
+                    b_ref_mode="middle",
                 )
                 if gpu_id is not None:
                     cv_idx = nv_opts.index("-c:v")
@@ -4845,11 +4978,14 @@ async def generate_multi_quality_variants_ram(
             else:
                 c.extend([
                     "-c:v", "libx264",
-                    "-preset", "ultrafast",
-                    "-tune", "fastdecode",
+                    "-preset", os.getenv("X264_FALLBACK_PRESET", "veryfast"),
+                    "-tune", "film",
                     "-crf", prof["crf"],
+                    "-b:v", prof["vbitrate"],
                     "-maxrate", prof["maxrate"],
                     "-bufsize", prof["bufsize"],
+                    "-profile:v", "high",
+                    "-level:v", "4.1",
                     "-threads", "0",
                     "-pix_fmt", "yuv420p",
                 ])
@@ -5079,7 +5215,7 @@ async def generate_multi_quality_variants_ram(
                     has_fb_sub = False
 
             fb_cmd.extend([
-                "-vf", f"scale=-2:{h_val}",
+                "-vf", f"scale=-2:{h_val}:flags=lanczos+accurate_rnd+full_chroma_int",
                 "-map", "0:v:0",
                 "-map", "0:a:0?",
             ])
@@ -5092,23 +5228,37 @@ async def generate_multi_quality_variants_ram(
                     "-disposition:s:0", "default",
                 ])
             if hw_enc == "h264_nvenc":
-                fb_cmd.extend([
-                    "-c:v", "h264_nvenc",
-                    "-preset", "fast",
-                    "-rc", "vbr",
-                    "-cq", prof["crf"],
-                    "-maxrate", prof["maxrate"],
-                    "-bufsize", prof["bufsize"],
-                ])
+                fb_cmd.extend(
+                    _build_nvenc_encode_opts(
+                        v_bitrate_k=int(prof["vbitrate"].rstrip("k")),
+                        maxrate_k=int(prof["maxrate"].rstrip("k")),
+                        bufsize_k=int(prof["bufsize"].rstrip("k")),
+                        cq=int(prof["crf"]),
+                        preset=os.getenv("NVENC_1080P_PRESET", "p5"),
+                        for_cuda_frames=False,
+                        caps=cuda_caps,
+                        include_profile_level=True,
+                        multipass="auto",
+                        lookahead=32,
+                        aq_strength=10,
+                        b_ref_mode="middle",
+                    )
+                )
             else:
                 fb_cmd.extend([
                     "-c:v", "libx264",
-                    "-preset", "ultrafast",
-                    "-crf", "28",
+                    "-preset", os.getenv("X264_FALLBACK_PRESET", "veryfast"),
+                    "-tune", "film",
+                    "-crf", prof["crf"],
+                    "-b:v", prof["vbitrate"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
+                    "-profile:v", "high",
+                    "-level:v", "4.1",
                     "-threads", "0",
+                    "-pix_fmt", "yuv420p",
                 ])
             fb_cmd.extend([
-                "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", prof["abitrate"],
                 "-ac", "2",

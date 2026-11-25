@@ -2481,6 +2481,7 @@
 
 /* ---- Menu Bar Extra Buttons ---- */
 .cs-btn-safe,
+.cs-btn-enhance,
 .cs-btn-haptic,
 .cs-btn-companion {
   background: rgba(255, 255, 255, 0.05);
@@ -2488,6 +2489,7 @@
   color: #d4d4d8;
 }
 .cs-btn-safe:hover,
+.cs-btn-enhance:hover,
 .cs-btn-haptic:hover,
 .cs-btn-companion:hover {
   background: rgba(255, 255, 255, 0.12);
@@ -2495,6 +2497,7 @@
   color: #ffffff;
 }
 .cs-btn-safe.active,
+.cs-btn-enhance.active,
 .cs-btn-haptic.active {
   background: rgba(229, 9, 20, 0.22) !important;
   border-color: #e50914 !important;
@@ -2502,6 +2505,7 @@
   box-shadow: 0 4px 14px rgba(229, 9, 20, 0.28);
 }
 .cs-safe-badge,
+.cs-enhance-badge,
 .cs-haptic-badge,
 .cs-companion-badge {
   font-size: 9px;
@@ -2513,9 +2517,25 @@
   margin-left: 3px;
 }
 .cs-btn-safe.active .cs-safe-badge,
+.cs-btn-enhance.active .cs-enhance-badge,
 .cs-btn-haptic.active .cs-haptic-badge {
   background: #e50914;
   color: #ffffff;
+}
+
+/* 2026 WebGL2 CAS Video Enhancer Layer (Strict DOM layer above <video>, below overlays/subtitles/controls) */
+.video-js .cs-cas-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none !important;
+  z-index: auto;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+.video-js .cs-cas-canvas.is-active {
+  opacity: 1;
 }
 
 /* Local Wi-Fi P2P Mesh Capsule */

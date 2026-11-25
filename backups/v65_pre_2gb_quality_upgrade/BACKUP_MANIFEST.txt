@@ -1,0 +1,11 @@
+﻿FilmZilla Pre-2GB-Quality-Upgrade Backup
+Created: 2026-11-25 18:41:42 +05:30
+Git Base Commit: d832cc71220d4424baccc048de89dada0bcab31d
+Files Backed Up:
+- bot/services/video_service.py
+- bot/config.py
+- website/assets/js/player.js
+- website/movie.html
+- website/assets/css/style.css
+Notes:
+Exact snapshot before 2GB encoder quality maximization (multipass, p5, lanczos, dynamic duration-based bitrate filling, burn_subtitles_to_video upgrade) and client-side WebGL2 CAS sharpening enhancer.

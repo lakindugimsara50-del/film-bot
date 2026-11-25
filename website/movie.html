@@ -36,22 +36,22 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Script Preloading for Instant Player Bootstrap -->
-  <link rel="preload" href="data/movies_data.js?v=20261125_cinema_v65" as="script">
-  <link rel="preload" href="data/stream_endpoint.js?v=20261125_cinema_v65" as="script">
+  <link rel="preload" href="data/movies_data.js?v=20261125_cinema_v66" as="script">
+  <link rel="preload" href="data/stream_endpoint.js?v=20261125_cinema_v66" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
 
   <!-- Core Design Tokens -->
-  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v65">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v66">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v65">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v65">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261125_cinema_v65">
-  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261125_cinema_v65">
-  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v65">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v66">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v66">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261125_cinema_v66">
+  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261125_cinema_v66">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v66">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -920,9 +920,9 @@
                 <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
               </button>
 
-              <!-- Compact Cinema Modes Drawer (4D Haptic, Phone Remote & P2P Mesh) -->
+              <!-- Compact Cinema Modes Drawer (HD Enhance, 4D Haptic, Phone Remote & P2P Mesh) -->
               <div class="cs-tools-menu-wrap" id="cs-tools-menu-wrap">
-                <button type="button" class="cs-bar-btn cs-btn-tools-toggle" id="btn-cinema-tools-toggle" aria-expanded="false" aria-controls="cs-tools-popover" title="4D Haptic, Phone Remote & P2P Mesh">
+                <button type="button" class="cs-bar-btn cs-btn-tools-toggle" id="btn-cinema-tools-toggle" aria-expanded="false" aria-controls="cs-tools-popover" title="HD Enhance, 4D Haptic, Phone Remote & P2P Mesh">
                   <i class="fa-solid fa-sliders"></i>
                   <span>Cinema Modes</span>
                   <span class="cs-tools-active-count" id="cs-tools-active-count" style="display:none">0</span>
@@ -937,6 +937,12 @@
 
                   <!-- Dock: Sensory & Companion Controls -->
                   <div class="cs-dock-cluster cs-dock-sensory" id="cs-dock-sensory" aria-label="Sensory & Mode Dock">
+                    <button type="button" class="cs-bar-btn cs-btn-enhance active" id="btn-toggle-cinema-enhance" title="2026 GPU Contrast-Adaptive Sharpening (CAS) — Real-Time Detail Enhancer">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i>
+                      <span class="cs-enhance-label">HD Enhance</span>
+                      <span class="cs-enhance-badge" id="cs-enhance-badge">HD</span>
+                    </button>
+
                     <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
                       <i class="fa-solid fa-mobile-screen-button"></i>
                       <span class="cs-haptic-label">4D Haptic</span>
@@ -1244,16 +1250,16 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="assets/js/user-state.js?v=20261125_cinema_v65"></script>
-<script src="data/movies_data.js?v=20261125_cinema_v65"></script>
-<script src="data/teasers_data.js?v=20261125_cinema_v65"></script>
-<script src="data/stream_endpoint.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/emoji-engine.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/app.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/download.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/roulette.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/watch-party.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/player.js?v=20261125_cinema_v65"></script>
-<script src="assets/js/netflix-ui.js?v=20261125_cinema_v65"></script>
+<script src="assets/js/user-state.js?v=20261125_cinema_v66"></script>
+<script src="data/movies_data.js?v=20261125_cinema_v66"></script>
+<script src="data/teasers_data.js?v=20261125_cinema_v66"></script>
+<script src="data/stream_endpoint.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/emoji-engine.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/app.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/download.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/roulette.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/watch-party.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/player.js?v=20261125_cinema_v66"></script>
+<script src="assets/js/netflix-ui.js?v=20261125_cinema_v66"></script>
 </body>
 </html>

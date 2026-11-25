@@ -438,7 +438,7 @@ def test_player_js_syntax_helpers_and_contracts():
     assert "attachSeekPrewarmEngine" in player_txt
     assert "fz-shadow-handover" in player_txt
     assert "vjs-fz-seamless-switching" in css_txt
-    assert "v=20261125_cinema_v65" in movie_txt
+    assert "v=20261125_cinema_v66" in movie_txt
 
     # Unit-test JS helper functions extracted into clean VM sandbox
     vm_test = r"""

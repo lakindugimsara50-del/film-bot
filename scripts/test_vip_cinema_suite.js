@@ -471,6 +471,56 @@ test('16. Watch Party Predictions Betting & Reward Resolution', () => {
   assert.strictEqual(wp.popcornCoins, initialCoins - 25 + 50, 'Winning bettor should receive 2x payout');
 });
 
+test('17. 2026 Client-Side WebGL2 CAS Video Detail Enhancer', () => {
+  const playerJs = fs.readFileSync(path.join(__dirname, '../website/assets/js/player.js'), 'utf8');
+  const movieHtml = fs.readFileSync(path.join(__dirname, '../website/movie.html'), 'utf8');
+  const wpCss = fs.readFileSync(path.join(__dirname, '../website/assets/css/watch-party.css'), 'utf8');
+
+  assert(movieHtml.includes('id="btn-toggle-cinema-enhance"'), 'movie.html must include HD Enhance toggle button');
+  assert(movieHtml.includes('id="cs-enhance-badge"'), 'movie.html must include HD Enhance badge');
+  assert(wpCss.includes('.video-js .cs-cas-canvas'), 'watch-party.css must style .cs-cas-canvas');
+  assert(wpCss.includes('.cs-btn-enhance.active'), 'watch-party.css must style active .cs-btn-enhance');
+
+  assert(playerJs.includes('window.FilmZillaCinemaEnhance'), 'player.js must define FilmZillaCinemaEnhance');
+  assert(playerJs.includes('#version 300 es'), 'CAS enhancer must use WebGL2 GLSL 300 es shader');
+  assert(playerJs.includes('requestVideoFrameCallback'), 'CAS enhancer must use frame-synced requestVideoFrameCallback');
+  assert(playerJs.includes("err.name === 'SecurityError'"), 'CAS enhancer must gracefully handle cross-origin SecurityError');
+
+  // Verify mode cycle hd -> ultra -> off -> hd in isolated VM
+  const enhanceMatch = playerJs.match(/window\.FilmZillaCinemaEnhance\s*=\s*\{[\s\S]*?\n\};/);
+  assert(enhanceMatch, 'Must locate FilmZillaCinemaEnhance block in player.js');
+
+  let storedMode = '';
+  const fakeBadge = { textContent: '' };
+  const fakeBtn = { classList: { toggle: (cls, active) => { fakeBtn._active = active; } } };
+  const sandbox = {
+    window: {},
+    localStorage: {
+      getItem: () => storedMode,
+      setItem: (k, v) => { storedMode = v; }
+    },
+    document: {
+      getElementById: (id) => (id === 'cs-enhance-badge' ? fakeBadge : (id === 'btn-toggle-cinema-enhance' ? fakeBtn : null))
+    },
+    cancelAnimationFrame: () => {}
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(enhanceMatch[0], sandbox);
+
+  const enh = sandbox.window.FilmZillaCinemaEnhance;
+  assert.strictEqual(enh.getMode(), 'hd', 'Default enhance mode must be hd');
+  enh.cycleMode();
+  assert.strictEqual(enh.getMode(), 'ultra', 'Cycle 1 must switch hd -> ultra');
+  assert.strictEqual(fakeBadge.textContent, 'ULTRA');
+  enh.cycleMode();
+  assert.strictEqual(enh.getMode(), 'off', 'Cycle 2 must switch ultra -> off');
+  assert.strictEqual(fakeBadge.textContent, 'OFF');
+  enh.cycleMode();
+  assert.strictEqual(enh.getMode(), 'hd', 'Cycle 3 must switch off -> hd');
+  assert.strictEqual(fakeBadge.textContent, 'HD');
+});
+
 console.log('\n====================================================');
 console.log(`SUMMARY: ${passCount} passed, ${failCount} failed`);
 console.log('====================================================');
@@ -478,6 +528,6 @@ console.log('====================================================');
 if (failCount > 0) {
   process.exit(1);
 } else {
-  console.log('🎉 ALL 16 COMPREHENSIVE VERIFICATION CHECKS PASSED PERFECTLY!');
+  console.log('🎉 ALL 17 COMPREHENSIVE VERIFICATION CHECKS PASSED PERFECTLY!');
   process.exit(0);
 }

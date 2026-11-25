@@ -1,0 +1,5186 @@
+"""
+video_service.py — Smart 1080p FFmpeg Compression & Web Optimization.
+
+Provides:
+1. Smart 1080p Compression: Compresses bloated files (>1.95GB) down to 1.1GB-1.4GB
+   preserving 1080p Full HD resolution and visual fidelity (H.264 CRF 23 + AAC).
+2. Web Streamable Remux: Ensures MP4 container with moov atom at the front
+   (+faststart) and stereo AAC audio for 100% universal browser playback.
+3. Progress tracking via ffmpeg stderr parsing.
+"""
+
+import asyncio
+import collections
+import inspect
+import logging
+import os
+import re
+import multiprocessing
+import shutil
+import subprocess
+import tempfile
+from contextlib import asynccontextmanager
+from typing import Any, Callable, Optional
+
+log = logging.getLogger(__name__)
+
+# Max upload limit for standard Telegram Bot API (1.95 GB safe ceiling)
+MAX_TELEGRAM_BOT_SIZE = int(1.95 * 1024 * 1024 * 1024)
+# Target compression size for 1080p: ~1.90 GB (keeps clean headroom below 1.95GB & MTProto 2000 MiB ceiling)
+TARGET_COMPRESS_SIZE = int(1.90 * 1024 * 1024 * 1024)
+# Hard MTProto chunk ceiling for 4000 parts * 512KB (2,097,152,000 bytes). Any file strictly <= this is 100% uploadable.
+TELEGRAM_MTPROTO_MAX_BYTES = 2_090_000_000
+
+# ── Colab / Render environment detection ─────────────────────────────────────
+# Google Colab (T4 GPU, 12 GB RAM): use all cores + ultrafast preset
+# Render Free Tier (0.1 vCPU, 512 MB RAM): use veryfast + limited remux
+_on_colab: bool = (os.name != "nt") and (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE")))
+_threads: str = "0"          # always use all available CPU cores
+_preset: str = "ultrafast" if _on_colab else "veryfast"
+
+# Ensure NVIDIA CUDA / NVENC driver libraries (/usr/local/nvidia/lib64) are in LD_LIBRARY_PATH on Colab/Linux
+if os.name != "nt":
+    _nv_lib_dirs = [
+        d for d in ("/usr/local/nvidia/lib64", "/usr/local/cuda/lib64", "/usr/lib/x86_64-linux-gnu")
+        if os.path.isdir(d)
+    ]
+    if _nv_lib_dirs:
+        _cur_ld = os.environ.get("LD_LIBRARY_PATH", "")
+        _missing_ld = [d for d in _nv_lib_dirs if d not in _cur_ld.split(":")]
+        if _missing_ld:
+            os.environ["LD_LIBRARY_PATH"] = ":".join(_missing_ld + ([_cur_ld] if _cur_ld else []))
+
+log.info(
+    "[VideoService] Environment: on_colab=%s  preset=%s  threads=%s",
+    _on_colab, _preset, _threads,
+)
+
+
+_VALIDATED_FFMPEG: dict[str, bool] = {}
+_PREFERRED_FFMPEG_BIN: Optional[str] = None
+_COLAB_FFMPEG_REPAIR_ATTEMPTED: bool = False
+class GPUDevicePool:
+    """
+    Dynamic Multi-GPU Device Pool for Single-GPU and Multi-GPU setups (e.g. Kaggle Dual Tesla T4).
+    Enables true parallel NVENC/CUDA hardware-accelerated transcoding across all host GPUs (cuda:0, cuda:1).
+    """
+    def __init__(self):
+        self._devices: list[int] = []
+        self._queue: Optional[asyncio.Queue] = None
+        self._lock: Optional[asyncio.Lock] = None
+        self._gpu_weights: dict[int, int] = {}
+
+    def _discover_devices(self) -> list[int]:
+        devs = []
+        # 1. Check PyTorch device count
+        try:
+            import torch
+            if torch.cuda.is_available():
+                cnt = torch.cuda.device_count()
+                if cnt > 0:
+                    devs = list(range(cnt))
+        except Exception:
+            pass
+
+        # 2. Check nvidia-smi -L
+        if not devs:
+            try:
+                out = subprocess.check_output(["nvidia-smi", "-L"], text=True, errors="ignore", timeout=3)
+                lines = [l for l in out.strip().splitlines() if l.startswith("GPU ")]
+                if lines:
+                    devs = list(range(len(lines)))
+            except Exception:
+                pass
+
+        # 3. Check ctypes libcuda
+        if not devs and os.name != "nt":
+            try:
+                import ctypes
+                cuda = ctypes.CDLL("libcuda.so.1")
+                if cuda.cuInit(0) == 0:
+                    cnt = ctypes.c_int()
+                    if cuda.cuDeviceGetCount(ctypes.byref(cnt)) == 0 and cnt.value > 0:
+                        devs = list(range(cnt.value))
+            except Exception:
+                pass
+
+        if not devs:
+            devs = [0]
+        # Multi-quality (1080p, 720p, 480p) simultaneous hardware encoding:
+        # Guarantee all 3 qualities (1080p, 720p, 480p) encode simultaneously in parallel!
+        if len(devs) >= 2:
+            return [devs[0], devs[1], devs[0], devs[1]]
+        elif len(devs) == 1:
+            d = devs[0]
+            return [d, d, d]
+        return list(devs)
+
+    async def _ensure_queue(self):
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        if self._queue is None:
+            async with self._lock:
+                if self._queue is None:
+                    self._devices = self._discover_devices()
+                    q = asyncio.Queue()
+                    for d in self._devices:
+                        q.put_nowait(d)
+                    self._queue = q
+                    log.info("[VideoService] Dynamic Multi-GPU Pool initialized with %d slot(s) across GPU(s) %s", len(self._devices), sorted(list(set(self._devices))))
+
+    def is_busy(self) -> bool:
+        if self._queue is None:
+            return False
+        return self._queue.empty()
+
+    @asynccontextmanager
+    async def acquire(self, timeout: Optional[float] = 3.0, weight: int = 2):
+        await self._ensure_queue()
+        if timeout is not None:
+            gpu_id = await asyncio.wait_for(self._queue.get(), timeout=timeout)
+        else:
+            gpu_id = await self._queue.get()
+
+        # Load-balance across GPUs: if other idle slots exist with strictly lighter load, swap cleanly
+        # so 1080p (weight=3) stays dedicated on GPU 0 while 720p+480p share GPU 1.
+        extra_slots: list[int] = []
+        try:
+            while not self._queue.empty():
+                extra_slots.append(self._queue.get_nowait())
+        except Exception:
+            pass
+        if extra_slots:
+            all_cands = [gpu_id] + extra_slots
+            best_idx = 0
+            best_w = self._gpu_weights.get(all_cands[0], 0)
+            for idx, cid in enumerate(all_cands[1:], 1):
+                cw = self._gpu_weights.get(cid, 0)
+                if cw < best_w:
+                    best_w = cw
+                    best_idx = idx
+            gpu_id = all_cands.pop(best_idx)
+            for rem in all_cands:
+                self._queue.put_nowait(rem)
+
+        self._gpu_weights[gpu_id] = self._gpu_weights.get(gpu_id, 0) + max(1, int(weight))
+        try:
+            yield gpu_id
+        finally:
+            self._gpu_weights[gpu_id] = max(0, self._gpu_weights.get(gpu_id, 0) - max(1, int(weight)))
+            self._queue.put_nowait(gpu_id)
+            self._queue.task_done()
+
+_GPU_POOL = GPUDevicePool()
+
+class GPUSemaphoreProxy:
+    """Backwards compatibility proxy for _GPU_ENCODE_SEMAPHORE."""
+    def __init__(self, pool: GPUDevicePool):
+        self._pool = pool
+        self._ctx = None
+
+    def locked(self) -> bool:
+        return self._pool.is_busy()
+
+    async def __aenter__(self):
+        self._ctx = self._pool.acquire()
+        return await self._ctx.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._ctx:
+            await self._ctx.__aexit__(exc_type, exc_val, exc_tb)
+            self._ctx = None
+
+_GPU_ENCODE_SEMAPHORE = GPUSemaphoreProxy(_GPU_POOL)
+
+
+def _is_working_ffmpeg(exe_path: Optional[str]) -> bool:
+    """Verify that an ffmpeg candidate binary actually executes without missing-library errors (exit code 127)."""
+    if not exe_path:
+        return False
+    if exe_path in _VALIDATED_FFMPEG:
+        return _VALIDATED_FFMPEG[exe_path]
+    try:
+        proc = subprocess.run(
+            [exe_path, "-version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5,
+        )
+        ok = getattr(proc, "returncode", 0) == 0
+        _VALIDATED_FFMPEG[exe_path] = ok
+        if not ok:
+            log.warning(
+                "[VideoService] Rejecting broken ffmpeg binary '%s' (exit=%s): %s",
+                exe_path,
+                getattr(proc, "returncode", "N/A"),
+                (getattr(proc, "stderr", "") or "")[:200].strip(),
+            )
+        return ok
+    except Exception as exc:
+        log.debug("[VideoService] ffmpeg candidate '%s' check failed: %s", exe_path, exc)
+        _VALIDATED_FFMPEG[exe_path] = False
+        return False
+
+
+def _test_nvenc_binary(exe_path: Optional[str]) -> tuple[bool, str]:
+    """Test whether exe_path can initialize NVIDIA h264_nvenc hardware encoder on the host GPU."""
+    if not exe_path:
+        return False, "No ffmpeg binary"
+    try:
+        probe = subprocess.run(
+            [
+                exe_path,
+                "-hide_banner",
+                "-f", "lavfi",
+                "-i", "color=c=black:s=640x360:r=25:d=0.2",
+                "-pix_fmt", "yuv420p",
+                "-c:v", "h264_nvenc",
+                "-f", "null",
+                "-",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=8,
+        )
+        if getattr(probe, "returncode", 1) == 0:
+            return True, ""
+        err_txt = (getattr(probe, "stderr", "") or "").strip()
+        return False, err_txt[-300:] if err_txt else f"exit={getattr(probe, 'returncode', 1)}"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def ensure_colab_working_ffmpeg() -> Optional[str]:
+    """
+    Ensure a fully functional FFmpeg binary (with h264_nvenc compatible with Colab T4 Driver 535/550,
+    libx264, libass, aac, and mov_text) is available on Google Colab.
+    Note: BtbN 'ffmpeg-master-latest' requires NVENC API 13.0 (Driver >= 570), which fails on Colab T4
+    (Driver 535/550, NVENC API 12.1/12.2). Ubuntu's native apt ffmpeg and BtbN n6.1 work 100% with Colab T4.
+    """
+    global _COLAB_FFMPEG_REPAIR_ATTEMPTED, _PREFERRED_FFMPEG_BIN
+    if not os.path.exists("/content"):
+        return None
+
+    local_bin = "/usr/local/bin/ffmpeg"
+    sys_bin = "/usr/bin/ffmpeg"
+
+    if os.path.exists(sys_bin) and _is_working_ffmpeg(sys_bin):
+        return sys_bin
+    if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+        return local_bin
+
+    if not _COLAB_FFMPEG_REPAIR_ATTEMPTED:
+        _COLAB_FFMPEG_REPAIR_ATTEMPTED = True
+        log.info("[VideoService] Installing/repairing Colab FFmpeg (Ubuntu apt + BtbN n6.1 NVENC 12.1)...")
+        try:
+            subprocess.run(
+                "apt-get update -qq && apt-get install --reinstall -y -qq ffmpeg fonts-noto-core fontconfig",
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=90,
+            )
+            _VALIDATED_FFMPEG.pop(sys_bin, None)
+            if os.path.exists(sys_bin) and _is_working_ffmpeg(sys_bin):
+                return sys_bin
+        except Exception as apt_exc:
+            log.debug("[VideoService] apt ffmpeg reinstall note: %s", apt_exc)
+
+        try:
+            os.makedirs("/usr/local/bin", exist_ok=True)
+            cmd = (
+                "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-linux64-gpl-6.1.tar.xz -o /tmp/ff_static.tar.xz "
+                "&& tar -xf /tmp/ff_static.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
+                "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+                "&& rm -rf /tmp/ff_static.tar.xz"
+            )
+            res = subprocess.run(cmd, shell=True, timeout=180)
+            _VALIDATED_FFMPEG.pop(local_bin, None)
+            if getattr(res, "returncode", 1) == 0 and os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+                log.info("[VideoService] Static BtbN n6.1 FFmpeg installed at /usr/local/bin/ffmpeg")
+                return local_bin
+        except Exception as exc:
+            log.warning("[VideoService] Static BtbN FFmpeg install error: %s", exc)
+
+    # Fallback: copy bundled imageio_ffmpeg static binary if available
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and os.path.exists(exe) and _is_working_ffmpeg(exe):
+            return exe
+    except Exception:
+        pass
+
+    return None
+
+
+def get_ffmpeg_binary() -> Optional[str]:
+    """Find and validate a working system ffmpeg or bundled imageio_ffmpeg binary."""
+    if _PREFERRED_FFMPEG_BIN and _VALIDATED_FFMPEG.get(_PREFERRED_FFMPEG_BIN) and os.path.exists(_PREFERRED_FFMPEG_BIN):
+        return _PREFERRED_FFMPEG_BIN
+
+    # 1. Check /usr/local/bin/ffmpeg first
+    if os.path.exists("/usr/local/bin/ffmpeg") and os.access("/usr/local/bin/ffmpeg", os.X_OK):
+        if _is_working_ffmpeg("/usr/local/bin/ffmpeg"):
+            return "/usr/local/bin/ffmpeg"
+
+    # 2. Check system PATH ffmpeg and verify it actually runs (protects against broken colab-ffmpeg-cuda exit 127)
+    sys_ffmpeg = shutil.which("ffmpeg")
+    if sys_ffmpeg and _is_working_ffmpeg(sys_ffmpeg):
+        return sys_ffmpeg
+
+    # 3. On Google Colab, if system ffmpeg is missing or corrupted, self-heal immediately
+    if os.path.exists("/content"):
+        repaired = ensure_colab_working_ffmpeg()
+        if repaired and _is_working_ffmpeg(repaired):
+            return repaired
+
+    # 4. Fallback to bundled imageio_ffmpeg binary
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and os.path.exists(exe) and _is_working_ffmpeg(exe):
+            return exe
+    except Exception as exc:
+        log.debug("[VideoService] imageio_ffmpeg lookup error: %s", exc)
+
+    return None
+
+
+def get_video_duration(file_path: str, ffmpeg_bin: Optional[str] = None) -> float:
+    """Extract duration in seconds using ffmpeg -i (supports both container Duration and MKV stream DURATION tags)."""
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return 0.0
+    try:
+        cmd = [exe, "-hide_banner", "-i", file_path]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+        stderr_text = getattr(proc, "stderr", "") or ""
+        match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text)
+        if match:
+            h, m, s = match.groups()
+            dur = int(h) * 3600 + int(m) * 60 + float(s)
+            if dur > 0:
+                return dur
+        # Fallback for MKV files where container Duration is N/A but stream tag has DURATION: HH:MM:SS.nnnnnnnnn
+        tag_match = re.search(r"DURATION\s*:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text, re.IGNORECASE)
+        if tag_match:
+            h, m, s = tag_match.groups()
+            dur = int(h) * 3600 + int(m) * 60 + float(s)
+            if dur > 0:
+                return dur
+    except Exception as exc:
+        log.debug("[VideoService] Could not parse duration: %s", exc)
+    return 0.0
+
+
+def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tuple[int, int]:
+    """Extract (width, height) resolution using ffmpeg -i, accounting for anamorphic display aspect ratio (DAR)."""
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return (0, 0)
+    try:
+        cmd = [exe, "-hide_banner", "-i", file_path]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+        stderr_text = getattr(proc, "stderr", "") or ""
+        w, h = 0, 0
+        # Prefer matching directly on the Video stream line
+        v_match = re.search(r"Stream #.*?Video:.*?,\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*|$)", stderr_text)
+        if v_match:
+            w, h = int(v_match.group(1)), int(v_match.group(2))
+        else:
+            match = re.search(r",\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*)", stderr_text)
+            if match:
+                w, h = int(match.group(1)), int(match.group(2))
+
+        # Check for Display Aspect Ratio (DAR) in case of anamorphic video (e.g. 720x576 or 1440x1080 with DAR 16:9)
+        if w > 0 and h > 0:
+            dar_match = re.search(r"DAR\s*(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)", stderr_text)
+            if dar_match:
+                try:
+                    dar_num = float(dar_match.group(1))
+                    dar_den = float(dar_match.group(2))
+                    if dar_den > 0:
+                        dar = dar_num / dar_den
+                        sar_ratio = w / h
+                        if abs(dar - sar_ratio) > 0.1 and dar >= 1.3:
+                            display_w = int(round(h * dar))
+                            if display_w % 2 != 0:
+                                display_w += 1
+                            return (display_w, h)
+                except Exception:
+                    pass
+            return (w, h)
+    except Exception as exc:
+        log.debug("[VideoService] Could not parse resolution: %s", exc)
+    return (0, 0)
+
+
+def probe_media_summary(file_path: str, ffmpeg_bin: Optional[str] = None) -> dict:
+    """
+    Single-call FFmpeg stream inspection extracting width, height, duration, fps,
+    video codec, pixel format, audio codec, sample rate, channels, and bitrate.
+    Eliminates multiple redundant ffmpeg subprocess spawns per video.
+    """
+    info = {
+        "width": 0,
+        "height": 0,
+        "duration": 0.0,
+        "fps": 0.0,
+        "fps_str": "30",
+        "vcodec": "",
+        "pix_fmt": "",
+        "acodec": None,
+        "sample_rate": 48000,
+        "channels": 2,
+        "video_bitrate_k": 0,
+    }
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return info
+    try:
+        proc = subprocess.run(
+            [exe, "-hide_banner", "-i", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+        stderr_text = getattr(proc, "stderr", "") or ""
+
+        # Duration
+        m_dur = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text)
+        if not m_dur:
+            m_dur = re.search(r"DURATION\s*:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text, re.IGNORECASE)
+        if m_dur:
+            h_s, m_s, s_s = m_dur.groups()
+            dur = int(h_s) * 3600 + int(m_s) * 60 + float(s_s)
+            if dur > 0:
+                info["duration"] = dur
+
+        # Overall bitrate fallback
+        m_br = re.search(r"bitrate:\s*(\d+)\s*kb/s", stderr_text, re.IGNORECASE)
+        if m_br:
+            info["video_bitrate_k"] = max(0, int(m_br.group(1)) - 128)
+
+        # Video stream details
+        v_line_m = re.search(r"(Stream #.*?: Video:[^\r\n]*)", stderr_text)
+        if v_line_m:
+            v_line = v_line_m.group(1)
+            vc_m = re.search(r"Video:\s*([a-zA-Z0-9_]+)", v_line)
+            if vc_m:
+                info["vcodec"] = vc_m.group(1).lower()
+
+            pf_m = re.search(r"Video:[^,]+,\s*([a-z0-9_]+)(?:\(|,)", v_line)
+            if pf_m:
+                info["pix_fmt"] = pf_m.group(1).lower()
+
+            dim_m = re.search(r",\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*|$)", v_line)
+            if dim_m:
+                w, h = int(dim_m.group(1)), int(dim_m.group(2))
+                dar_m = re.search(r"DAR\s*(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)", v_line)
+                if dar_m and w > 0 and h > 0:
+                    try:
+                        dar = float(dar_m.group(1)) / float(dar_m.group(2))
+                        if float(dar_m.group(2)) > 0 and abs(dar - (w / h)) > 0.1 and dar >= 1.3:
+                            w = int(round(h * dar))
+                            if w % 2 != 0:
+                                w += 1
+                    except Exception:
+                        pass
+                info["width"], info["height"] = w, h
+
+            fps_m = re.search(r",\s*(\d+(?:\.\d+)?)\s*(?:fps|tbr)\b", v_line)
+            if fps_m:
+                fps_v = float(fps_m.group(1))
+                if 5.0 <= fps_v <= 120.0:
+                    info["fps"] = fps_v
+                    if abs(fps_v - 23.976) < 0.05:
+                        info["fps_str"] = "24000/1001"
+                    elif abs(fps_v - 29.97) < 0.05:
+                        info["fps_str"] = "30000/1001"
+                    elif abs(fps_v - 59.94) < 0.05:
+                        info["fps_str"] = "60000/1001"
+                    else:
+                        info["fps_str"] = str(int(round(fps_v))) if abs(fps_v - round(fps_v)) < 0.01 else f"{fps_v:.3f}"
+
+            vbr_m = re.search(r",\s*(\d+)\s*kb/s\b", v_line)
+            if vbr_m:
+                info["video_bitrate_k"] = int(vbr_m.group(1))
+
+        # Audio stream details
+        a_line_m = re.search(r"(Stream #.*?: Audio:[^\r\n]*)", stderr_text)
+        if a_line_m:
+            a_line = a_line_m.group(1)
+            ac_m = re.search(r"Audio:\s*([a-zA-Z0-9_]+)", a_line)
+            if ac_m:
+                info["acodec"] = ac_m.group(1).lower()
+            sr_m = re.search(r"(\d+)\s*Hz\b", a_line)
+            if sr_m:
+                info["sample_rate"] = int(sr_m.group(1))
+            if "mono" in a_line.lower() or "1 channels" in a_line.lower():
+                info["channels"] = 1
+            elif "stereo" in a_line.lower() or "2 channels" in a_line.lower():
+                info["channels"] = 2
+            elif any(x in a_line.lower() for x in ("5.1", "7.1", "6 channels", "8 channels")):
+                info["channels"] = 6
+    except Exception as exc:
+        log.debug("[VideoService] probe_media_summary error: %s", exc)
+    return info
+
+
+def get_video_metadata(file_path: str, ffmpeg_bin: Optional[str] = None) -> dict:
+    """
+    Extract video width, height, and duration in a single FFmpeg probe.
+    Guarantees valid widescreen (16:9) dimensions (e.g. 1920x1080, 1280x720, 854x480, 640x360)
+    for Telegram native widescreen video cards without square pillarboxing ("කොටු size").
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    w, h = 0, 0
+    duration = 0.0
+    if os.path.exists(file_path):
+        summary = probe_media_summary(file_path, exe)
+        w, h = summary["width"], summary["height"]
+        duration = summary["duration"]
+    if w <= 0 or h <= 0:
+        w, h = get_video_resolution(file_path, exe)
+    if duration <= 0:
+        duration = get_video_duration(file_path, exe)
+
+    # If resolution was not detected or invalid, infer from filename or fallback to standard 16:9 HD
+    if w <= 0 or h <= 0:
+        fn_lower = os.path.basename(file_path).lower()
+        if "1080" in fn_lower:
+            w, h = 1920, 1080
+        elif "720" in fn_lower:
+            w, h = 1280, 720
+        elif "480" in fn_lower:
+            w, h = 854, 480
+        elif "360" in fn_lower:
+            w, h = 640, 360
+        else:
+            w, h = 1280, 720
+
+    # Ensure valid even numbers for video encoder / player compatibility
+    w = int(w)
+    h = int(h)
+    if w % 2 != 0:
+        w += 1
+    if h % 2 != 0:
+        h += 1
+
+    dur_sec = max(0, int(round(duration)))
+    return {
+        "width": w,
+        "height": h,
+        "duration": dur_sec,
+    }
+
+
+def generate_video_thumbnail(
+    file_path: str,
+    thumb_path: Optional[str] = None,
+    duration: float = 0.0,
+    ffmpeg_bin: Optional[str] = None,
+    prefer_branded: bool = True,
+) -> Optional[str]:
+    """
+    Generate a crisp 16:9 widescreen thumbnail image (.jpg) from the video.
+    Prioritizes official FilmZilla branded 16:9 card (filmzilla_branded_thumb.jpg)
+    for Telegram video cards across Mobile, Laptop, and TV screens.
+    """
+    if not thumb_path:
+        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        thumb_path = tmp.name
+        tmp.close()
+
+    if prefer_branded:
+        try:
+            from services.branding_service import get_branded_thumbnail
+            branded = get_branded_thumbnail(thumb_path)
+            if branded and os.path.exists(branded) and os.path.getsize(branded) > 500:
+                return branded
+        except Exception:
+            pass
+
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return None
+
+    if duration <= 0:
+        duration = get_video_duration(file_path, exe)
+
+    # Pick a scene timestamp avoiding black screen at the start
+    if duration > 30:
+        seek_time = max(5.0, min(duration * 0.12, 120.0))
+    elif duration > 5:
+        seek_time = 2.0
+    else:
+        seek_time = 0.0
+
+    # 16:9 widescreen thumbnail filter: scale to 640x360 keeping aspect ratio and pad with black if cinematic
+    vf = "scale=640:360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2:black"
+
+    cmd = [
+        exe,
+        "-y",
+        "-hide_banner",
+        "-ss", f"{seek_time:.2f}",
+        "-i", file_path,
+        "-vframes", "1",
+        "-vf", vf,
+        "-q:v", "2",
+        thumb_path,
+    ]
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=15,
+        )
+        if proc.returncode == 0 and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500:
+            return thumb_path
+    except Exception as exc:
+        log.debug("[VideoService] First attempt to generate thumbnail failed: %s", exc)
+
+    # Fallback attempt at timestamp 00:00:01 if seek_time failed
+    try:
+        cmd_fallback = [
+            exe,
+            "-y",
+            "-hide_banner",
+            "-ss", "00:00:01",
+            "-i", file_path,
+            "-vframes", "1",
+            "-vf", vf,
+            "-q:v", "2",
+            thumb_path,
+        ]
+        proc = subprocess.run(
+            cmd_fallback,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+        )
+        if proc.returncode == 0 and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500:
+            return thumb_path
+    except Exception as exc:
+        log.debug("[VideoService] Fallback thumbnail generation failed: %s", exc)
+
+    try:
+        from services.branding_service import get_branded_thumbnail
+        branded = get_branded_thumbnail(thumb_path)
+        if branded and os.path.exists(branded) and os.path.getsize(branded) > 500:
+            return branded
+    except Exception:
+        pass
+
+    return None
+
+
+def get_audio_codec(file_path: str, ffmpeg_bin: Optional[str] = None) -> Optional[str]:
+    """Extract primary audio codec name using ffmpeg -i."""
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return None
+    try:
+        cmd = [exe, "-hide_banner", "-i", file_path]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+        stderr_text = getattr(proc, "stderr", "") or ""
+        audio_matches = re.findall(r"Stream #\d+:\d+.*?: Audio:\s*([a-zA-Z0-9_]+)", stderr_text)
+        if audio_matches:
+            return audio_matches[0].lower()
+    except Exception as exc:
+        log.debug("[VideoService] Could not parse audio codec: %s", exc)
+    return None
+
+
+def is_web_compatible_audio(codec: Optional[str]) -> bool:
+    """Check if audio codec can be natively decoded by web browsers (AAC, MP3)."""
+    if not codec:
+        return True
+    return codec.lower() in ("aac", "mp3")
+
+
+_CACHED_HW_ENCODER: Optional[str] = None
+
+
+def setup_colab_cuda_ffmpeg() -> bool:
+    """
+    On Google Colab / Kaggle GPU runtimes, heal FFmpeg if /usr/local/bin/ffmpeg or /usr/bin/ffmpeg
+    was overwritten by BtbN 'ffmpeg-master-latest' (which requires NVENC API 13.0 / Driver 570+,
+    failing on Colab's T4 Driver 535/550). Restores Ubuntu's native NVENC-compatible /usr/bin/ffmpeg
+    or BtbN n6.1 so h264_nvenc works 100%.
+    """
+    global _PREFERRED_FFMPEG_BIN
+    if not (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))):
+        return False
+
+    local_bin = "/usr/local/bin/ffmpeg"
+    sys_bin = "/usr/bin/ffmpeg"
+
+    # 1. If /usr/local/bin/ffmpeg exists but fails NVENC (e.g. NVENC API 13.0 mismatch), remove it first
+    if os.path.exists(local_bin):
+        ok_local, err_local = _test_nvenc_binary(local_bin)
+        if ok_local:
+            _VALIDATED_FFMPEG[local_bin] = True
+            _PREFERRED_FFMPEG_BIN = local_bin
+            return True
+        log.info("[VideoService] Removing NVENC-incompatible %s (%s)", local_bin, err_local[:120])
+        try:
+            os.remove(local_bin)
+            _VALIDATED_FFMPEG.pop(local_bin, None)
+        except Exception:
+            pass
+
+    # 2. Check if /usr/bin/ffmpeg already works with NVENC
+    if os.path.exists(sys_bin):
+        ok_sys, _ = _test_nvenc_binary(sys_bin)
+        if ok_sys:
+            _VALIDATED_FFMPEG[sys_bin] = True
+            _PREFERRED_FFMPEG_BIN = sys_bin
+            return True
+
+    # 3. Reinstall Ubuntu's native ffmpeg package (NVENC 11.x — 100% compatible with Colab T4 Driver 535/550)
+    if shutil.which("apt-get"):
+        try:
+            log.info("[VideoService] Restoring Ubuntu native NVENC FFmpeg via apt-get reinstall...")
+            subprocess.run(
+                "apt-get update -qq && apt-get install --reinstall -y -qq ffmpeg fonts-noto-core fontconfig",
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=90,
+            )
+            _VALIDATED_FFMPEG.pop(sys_bin, None)
+            if os.path.exists(sys_bin) and _is_working_ffmpeg(sys_bin):
+                ok_sys, _ = _test_nvenc_binary(sys_bin)
+                if ok_sys:
+                    _PREFERRED_FFMPEG_BIN = sys_bin
+                    try:
+                        shutil.copyfile(sys_bin, local_bin)
+                        os.chmod(local_bin, 0o755)
+                        _VALIDATED_FFMPEG[local_bin] = True
+                    except Exception:
+                        pass
+                    return True
+        except Exception as apt_err:
+            log.debug("[VideoService] apt reinstall ffmpeg note: %s", apt_err)
+
+    # 4. Fallback: install BtbN n6.1 (NVENC API 12.1 — compatible with Driver 535/550)
+    try:
+        os.makedirs("/usr/local/bin", exist_ok=True)
+        cmd = (
+            "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-linux64-gpl-6.1.tar.xz -o /tmp/ff_n61.tar.xz "
+            "&& tar -xf /tmp/ff_n61.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
+            "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+            "&& rm -rf /tmp/ff_n61.tar.xz"
+        )
+        subprocess.run(cmd, shell=True, timeout=180)
+        _VALIDATED_FFMPEG.pop(local_bin, None)
+        if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+            ok_b, _ = _test_nvenc_binary(local_bin)
+            if ok_b:
+                _PREFERRED_FFMPEG_BIN = local_bin
+                return True
+    except Exception as exc:
+        log.debug("[VideoService] BtbN n6.1 install note: %s", exc)
+
+    return False
+
+
+def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
+    """
+    Auto-detect if NVIDIA GPU hardware encoder (h264_nvenc on Google Colab T4/L4)
+    is available and functional. Falls back to 'libx264' on CPU-only hosts.
+    """
+    global _CACHED_HW_ENCODER, _PREFERRED_FFMPEG_BIN
+    if _CACHED_HW_ENCODER is not None:
+        return _CACHED_HW_ENCODER
+
+    # Check if NVIDIA GPU exists first
+    has_gpu = False
+    try:
+        smi = subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        has_gpu = (getattr(smi, "returncode", 1) == 0)
+    except Exception:
+        has_gpu = False
+
+    if not has_gpu:
+        log.info("[VideoService] No NVIDIA GPU detected (CPU mode active). Using high-speed multi-threaded CPU encoder.")
+        _CACHED_HW_ENCODER = "libx264"
+        return _CACHED_HW_ENCODER
+
+    # Test primary and system FFmpeg candidates for NVENC support
+    candidates = []
+    if ffmpeg_bin:
+        candidates.append(ffmpeg_bin)
+    else:
+        exe = get_ffmpeg_binary()
+        if exe:
+            candidates.append(exe)
+    for extra in ("/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/conda/bin/ffmpeg"):
+        if extra not in candidates and os.path.exists(extra):
+            candidates.append(extra)
+
+    last_err = ""
+    for cand in candidates:
+        ok, err_msg = _test_nvenc_binary(cand)
+        if ok:
+            _VALIDATED_FFMPEG[cand] = True
+            _PREFERRED_FFMPEG_BIN = cand
+            _CACHED_HW_ENCODER = "h264_nvenc"
+            log.info("[VideoService] Hardware GPU acceleration detected: h264_nvenc enabled (binary=%s)!", cand)
+            return _CACHED_HW_ENCODER
+        last_err = err_msg
+
+    # On Google Colab / Kaggle with GPU: if NVENC failed (e.g. due to BtbN master NVENC 13.0 driver mismatch), heal FFmpeg
+    if (os.name != "nt") and (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))) and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
+        setattr(detect_hw_encoder, "_attempted_cuda_install", True)
+        log.warning("[VideoService] Initial h264_nvenc probe failed (%s) — repairing Colab CUDA FFmpeg...", last_err[:160])
+        if setup_colab_cuda_ffmpeg():
+            new_exe = _PREFERRED_FFMPEG_BIN or get_ffmpeg_binary()
+            ok2, err2 = _test_nvenc_binary(new_exe)
+            if ok2:
+                _CACHED_HW_ENCODER = "h264_nvenc"
+                log.info("[VideoService] Colab CUDA GPU acceleration activated: h264_nvenc enabled (binary=%s)!", new_exe)
+                return _CACHED_HW_ENCODER
+            last_err = err2
+
+    _CACHED_HW_ENCODER = "libx264"
+    log.warning("[VideoService] h264_nvenc unavailable (%s); falling back to high-speed CPU encoder: libx264", last_err[:160])
+    return _CACHED_HW_ENCODER
+
+
+_CUDA_CTX_HANDLES: list[Any] = []
+_CUDA_MEM_PTRS: list[Any] = []
+_CACHED_CUDA_CAPS: dict[str, dict[str, Any]] = {}
+_NVDEC_SUPPORTED_VCODECS = frozenset({"h264", "hevc", "h265", "vp8", "vp9", "mpeg2video", "vc1", "mpeg4"})
+
+
+def _install_btbn_n61_ffmpeg() -> Optional[str]:
+    """Install BtbN n6.1 GPL FFmpeg (NVENC 12.1 + --enable-cuda-llvm overlay_cuda/scale_cuda) on Linux Kaggle/Colab."""
+    local_bin = "/usr/local/bin/ffmpeg"
+    try:
+        os.makedirs("/usr/local/bin", exist_ok=True)
+        cmd = (
+            "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-linux64-gpl-6.1.tar.xz -o /tmp/ff_n61.tar.xz "
+            "&& tar -xf /tmp/ff_n61.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
+            "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+            "&& rm -rf /tmp/ff_n61.tar.xz"
+        )
+        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=180)
+        _VALIDATED_FFMPEG.pop(local_bin, None)
+        if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+            ok_b, _ = _test_nvenc_binary(local_bin)
+            if ok_b:
+                return local_bin
+    except Exception as exc:
+        log.debug("[VideoService] BtbN n6.1 upgrade note: %s", exc)
+    return None
+
+
+def _probe_cuda_overlay_and_nvenc_flags(exe_path: str) -> dict[str, Any]:
+    """Run fast GPU smoke tests to detect scale_cuda, overlay_cuda, and Turing HQ NVENC capabilities."""
+    res: dict[str, Any] = {
+        "hwaccel_cuda": False,
+        "scale_cuda": False,
+        "overlay_cuda": False,
+        "cuda_main_fmt": "nv12",
+        "nvenc_hq": False,
+        "nvenc_qres": False,
+    }
+    if not exe_path or os.environ.get("PYTEST_CURRENT_TEST"):
+        return res
+
+    # 1. Check compiled filter support quickly
+    try:
+        flt = subprocess.run(
+            [exe_path, "-hide_banner", "-filters"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=6,
+        )
+        flt_txt = getattr(flt, "stdout", "") or ""
+        has_scale_filter = "scale_cuda" in flt_txt
+        has_overlay_filter = "overlay_cuda" in flt_txt and "hwupload_cuda" in flt_txt
+    except Exception:
+        has_scale_filter = False
+        has_overlay_filter = False
+
+    # 2. Test NVENC HQ flags (preset p4 + tune hq + spatial/temporal AQ + rc-lookahead + qres multipass)
+    try:
+        p_qres = subprocess.run(
+            [
+                exe_path, "-hide_banner",
+                "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
+                "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
+                "-preset", "p4", "-tune", "hq", "-multipass", "qres",
+                "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
+                "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
+                "-f", "null", "-",
+            ],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+        )
+        if getattr(p_qres, "returncode", 1) == 0:
+            res["nvenc_hq"] = True
+            res["nvenc_qres"] = True
+        else:
+            p_hq = subprocess.run(
+                [
+                    exe_path, "-hide_banner",
+                    "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
+                    "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
+                    "-preset", "p4", "-tune", "hq", "-multipass", "disabled",
+                    "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
+                    "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
+                    "-f", "null", "-",
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+            )
+            if getattr(p_hq, "returncode", 1) == 0:
+                res["nvenc_hq"] = True
+    except Exception:
+        pass
+
+    # 3. Test CUDA hardware scale_cuda
+    if has_scale_filter:
+        try:
+            p_sc = subprocess.run(
+                [
+                    exe_path, "-hide_banner",
+                    "-init_hw_device", "cuda=cu:0", "-filter_hw_device", "cu",
+                    "-f", "lavfi", "-i", "color=c=black:s=640x360:r=25:d=0.1",
+                    "-vf", "format=nv12,hwupload_cuda,scale_cuda=w=320:h=180:format=nv12",
+                    "-c:v", "h264_nvenc", "-preset", "p3", "-f", "null", "-",
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+            )
+            if getattr(p_sc, "returncode", 1) == 0:
+                res["scale_cuda"] = True
+                res["hwaccel_cuda"] = True
+        except Exception:
+            pass
+
+    # 4. Test overlay_cuda with main CUDA frames + alpha yuva420p overlay
+    if has_overlay_filter:
+        for cand_fmt in ("nv12", "yuv420p"):
+            try:
+                p_ov = subprocess.run(
+                    [
+                        exe_path, "-hide_banner",
+                        "-init_hw_device", "cuda=cu:0", "-filter_hw_device", "cu",
+                        "-f", "lavfi", "-i", "color=c=black:s=640x360:r=25:d=0.1",
+                        "-f", "lavfi", "-i", "color=c=red:s=64x24:r=25:d=0.1",
+                        "-filter_complex",
+                        f"[0:v]format={cand_fmt},hwupload_cuda[m];[1:v]format=yuva420p,hwupload_cuda[o];[m][o]overlay_cuda=x=0:y=main_h-overlay_h:eval=init:repeatlast=1[out]",
+                        "-map", "[out]", "-c:v", "h264_nvenc", "-preset", "p3", "-f", "null", "-",
+                    ],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+                )
+                if getattr(p_ov, "returncode", 1) == 0:
+                    res["overlay_cuda"] = True
+                    res["hwaccel_cuda"] = True
+                    res["cuda_main_fmt"] = cand_fmt
+                    break
+            except Exception:
+                continue
+
+    return res
+
+
+def detect_cuda_pipeline_caps(ffmpeg_bin: Optional[str] = None) -> dict[str, Any]:
+    """
+    Detect and cache full CUDA hardware pipeline capabilities (NVDEC + scale_cuda + overlay_cuda + HQ NVENC).
+    On Kaggle/Colab GPU runtimes, automatically upgrades Ubuntu FFmpeg lacking overlay_cuda to BtbN n6.1.
+    """
+    global _PREFERRED_FFMPEG_BIN, _CACHED_HW_ENCODER
+    exe = ffmpeg_bin or _PREFERRED_FFMPEG_BIN or get_ffmpeg_binary()
+    if not exe or os.environ.get("PYTEST_CURRENT_TEST"):
+        return {
+            "hwaccel_cuda": False,
+            "scale_cuda": False,
+            "overlay_cuda": False,
+            "cuda_main_fmt": "nv12",
+            "nvenc_hq": False,
+            "nvenc_qres": False,
+            "ffmpeg_bin": exe,
+        }
+
+    if exe in _CACHED_CUDA_CAPS:
+        return _CACHED_CUDA_CAPS[exe]
+
+    if detect_hw_encoder(exe) != "h264_nvenc":
+        empty = {
+            "hwaccel_cuda": False, "scale_cuda": False, "overlay_cuda": False,
+            "cuda_main_fmt": "nv12", "nvenc_hq": False, "nvenc_qres": False, "ffmpeg_bin": exe,
+        }
+        _CACHED_CUDA_CAPS[exe] = empty
+        return empty
+
+    caps = _probe_cuda_overlay_and_nvenc_flags(exe)
+    caps["ffmpeg_bin"] = exe
+
+    # On Kaggle/Colab GPU, if current ffmpeg supports h264_nvenc (e.g. Ubuntu apt) but lacks overlay_cuda/scale_cuda,
+    # upgrade once to BtbN n6.1 static GPL (--enable-cuda-llvm) to unlock full zero-CPU-copy GPU transcoding!
+    if _on_colab and (not caps["overlay_cuda"] or not caps["scale_cuda"]) and not getattr(detect_cuda_pipeline_caps, "_upgraded_n61", False):
+        setattr(detect_cuda_pipeline_caps, "_upgraded_n61", True)
+        log.info("[VideoService] Upgrading Linux GPU FFmpeg to BtbN n6.1 CUDA-LLVM build (enables full GPU overlay_cuda + scale_cuda)...")
+        n61_bin = _install_btbn_n61_ffmpeg()
+        if n61_bin:
+            n61_caps = _probe_cuda_overlay_and_nvenc_flags(n61_bin)
+            if n61_caps["overlay_cuda"] or n61_caps["scale_cuda"]:
+                _VALIDATED_FFMPEG[n61_bin] = True
+                _PREFERRED_FFMPEG_BIN = n61_bin
+                _CACHED_HW_ENCODER = "h264_nvenc"
+                n61_caps["ffmpeg_bin"] = n61_bin
+                _CACHED_CUDA_CAPS[n61_bin] = n61_caps
+                _CACHED_CUDA_CAPS[exe] = n61_caps
+                log.info(
+                    "[VideoService] Full CUDA GPU FFmpeg unlocked (%s): overlay_cuda=%s, scale_cuda=%s, nvenc_qres=%s",
+                    n61_bin, n61_caps["overlay_cuda"], n61_caps["scale_cuda"], n61_caps["nvenc_qres"],
+                )
+                return n61_caps
+
+    _CACHED_CUDA_CAPS[exe] = caps
+    log.info(
+        "[VideoService] CUDA GPU pipeline caps (bin=%s): hwaccel_cuda=%s, scale_cuda=%s, overlay_cuda=%s, nvenc_hq=%s, nvenc_qres=%s",
+        exe, caps["hwaccel_cuda"], caps["scale_cuda"], caps["overlay_cuda"], caps["nvenc_hq"], caps["nvenc_qres"],
+    )
+    return caps
+
+
+def _build_nvenc_encode_opts(
+    v_bitrate_k: Optional[int] = None,
+    maxrate_k: Optional[int] = None,
+    bufsize_k: Optional[int] = None,
+    cq: int = 20,
+    preset: str = "p3",
+    for_cuda_frames: bool = False,
+    caps: Optional[dict[str, Any]] = None,
+    include_profile_level: bool = True,
+) -> list[str]:
+    """
+    Shared Turing T4 NVENC encoder options builder.
+    Balances maximum visual fidelity (1080p <= 2GB HQ AQ + Lookahead + VBR headroom)
+    with full NVENC ASIC hardware speed.
+    """
+    c_info = caps or {}
+    use_hq = bool(c_info.get("nvenc_hq", True))
+    enable_qres = os.getenv("NVENC_ENABLE_MULTIPASS", "0") == "1"
+    use_qres = enable_qres and bool(c_info.get("nvenc_qres", False))
+
+    opts: list[str] = [
+        "-c:v", "h264_nvenc",
+        "-preset", preset if use_hq else "p2",
+        "-tune", "hq",
+        "-multipass", "qres" if use_qres else "disabled",
+        "-rc", "vbr",
+        "-cq", str(cq),
+    ]
+    if v_bitrate_k and v_bitrate_k > 0:
+        opts.extend(["-b:v", f"{int(v_bitrate_k)}k"])
+    if maxrate_k and maxrate_k > 0:
+        opts.extend(["-maxrate", f"{int(maxrate_k)}k"])
+    if bufsize_k and bufsize_k > 0:
+        opts.extend(["-bufsize", f"{int(bufsize_k)}k"])
+
+    if use_hq:
+        opts.extend([
+            "-rc-lookahead", "16",
+            "-spatial-aq", "1",
+            "-temporal-aq", "1",
+            "-aq-strength", "8",
+        ])
+    else:
+        opts.extend([
+            "-rc-lookahead", "0",
+            "-spatial-aq", "0",
+            "-temporal-aq", "0",
+        ])
+
+    if include_profile_level:
+        opts.extend(["-profile:v", "high", "-level:v", "4.1"])
+    else:
+        opts.extend(["-profile:v", "high"])
+
+    if not for_cuda_frames:
+        opts.extend(["-pix_fmt", "yuv420p"])
+
+    return opts
+
+
+def warm_up_colab_gpu() -> str:
+    """
+    Ensure FFmpeg h264_nvenc is healed/verified on Google Colab / Kaggle, probe/upgrade
+    full CUDA filter support (overlay_cuda + scale_cuda), and hold lightweight persistent CUDA contexts.
+    """
+    global _CUDA_CTX_HANDLES, _CUDA_MEM_PTRS
+    hw_enc = detect_hw_encoder()
+    if hw_enc == "h264_nvenc" and not _CUDA_CTX_HANDLES and os.name != "nt":
+        try:
+            import ctypes
+            cuda = ctypes.CDLL("libcuda.so.1")
+            if cuda.cuInit(0) == 0:
+                count = ctypes.c_int()
+                if cuda.cuDeviceGetCount(ctypes.byref(count)) == 0:
+                    num_devs = max(1, count.value)
+                    for d_idx in range(num_devs):
+                        dev = ctypes.c_int()
+                        if cuda.cuDeviceGet(ctypes.byref(dev), d_idx) == 0:
+                            ctx = ctypes.c_void_p()
+                            if cuda.cuCtxCreate_v2(ctypes.byref(ctx), 0, dev) == 0:
+                                _CUDA_CTX_HANDLES.append(ctx)
+                                dptr = ctypes.c_uint64()
+                                if cuda.cuMemAlloc_v2(ctypes.byref(dptr), ctypes.c_size_t(256 * 1024 * 1024)) == 0:
+                                    _CUDA_MEM_PTRS.append(dptr)
+                                    log.info("[VideoService] Tesla T4 GPU %d CUDA context warmed up (256 MB VRAM pinned for instant NVENC).", d_idx)
+        except Exception as exc:
+            log.debug("[VideoService] CUDA context warmup note: %s", exc)
+    if hw_enc == "h264_nvenc" and _on_colab:
+        try:
+            detect_cuda_pipeline_caps()
+        except Exception as cap_err:
+            log.debug("[VideoService] CUDA pipeline caps warmup note: %s", cap_err)
+    return hw_enc
+
+
+async def stream_copy_subtitles(
+    video_path: str,
+    sub_path: Optional[str],
+    output_path: str,
+    disposition: str = "default",
+) -> bool:
+    """
+    Instantaneous Stream Copy (Soft-sub Muxing) in 3-5 seconds without video re-encoding:
+    ffmpeg -y -i input.mp4 -i sub.srt -c:v copy -c:a copy -c:s mov_text -disposition:s:0 default -movflags +faststart output.mp4
+    (and if container is MKV or needs conversion: -c:s srt -disposition:s:0 default).
+
+    Marks the subtitle stream as the default/forced track (-disposition:s:0 default) so that
+    offline media players (VLC, MX Player, KMPlayer, Android/iOS, Smart TVs) automatically
+    display the Sinhala subtitle without user intervention.
+    Applies +faststart in the same command for instant zero-lag web streaming.
+    Handles edge cases gracefully: if input is MKV or has incompatible audio streams, falls back
+    to stream copy with stereo AAC transcode or subtitle-safe remux.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(video_path):
+        log.error("[VideoService] FFmpeg binary not found or input missing: %s", video_path)
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+    ext = os.path.splitext(output_path)[1].lower()
+    is_mp4 = ext in (".mp4", ".m4v", ".mov")
+    sub_codec = "mov_text" if is_mp4 else "srt"
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    clean_sub_temp: Optional[str] = None
+    if has_sub:
+        if is_mp4 and sub_path.lower().endswith(".vtt"):
+            try:
+                from services.subtitle_service import vtt_to_srt
+                sub_srt = os.path.join(out_dir, f"sub_copy_{os.path.basename(sub_path)}.srt")
+                sub_path = vtt_to_srt(sub_path, sub_srt)
+            except Exception as e_vtt:
+                log.debug("[VideoService] VTT->SRT prep for stream-copy: %s", e_vtt)
+        # Normalize UTF-8/UTF-16/BOM subtitle file so mov_text muxing never fails at EOF
+        try:
+            clean_sub_temp = os.path.join(out_dir, f"clean_copy_{os.path.basename(output_path)}.srt")
+            if prepare_clean_srt_for_burn(sub_path, clean_sub_temp):
+                sub_path = clean_sub_temp
+        except Exception:
+            pass
+
+    def _cleanup_sub_temp() -> None:
+        if clean_sub_temp and os.path.exists(clean_sub_temp):
+            try:
+                os.remove(clean_sub_temp)
+            except Exception:
+                pass
+
+    # Detect if source audio requires AAC transcode for browser compatibility
+    in_audio_codec = get_audio_codec(video_path, ffmpeg_bin)
+    needs_aac = is_mp4 and bool(in_audio_codec and not is_web_compatible_audio(in_audio_codec))
+    if needs_aac:
+        log.info("[VideoService] Stream-copy detected non-AAC audio (%s) -> transcoding to Stereo AAC for 100%% browser playback", in_audio_codec)
+
+    # Primary Attempt: Direct instantaneous stream copy with soft-sub muxing and +faststart
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(video_path),
+    ]
+    if has_sub:
+        cmd.extend([
+            "-i", os.path.abspath(sub_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-map", "1:0",
+            "-c:v", "copy",
+        ])
+        if needs_aac:
+            cmd.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2"])
+        else:
+            cmd.extend(["-c:a", "copy"])
+        cmd.extend([
+            "-c:s", sub_codec,
+            "-metadata:s:s:0", "language=sin",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+            "-disposition:s:0", disposition,
+        ])
+    else:
+        cmd.extend([
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+        ])
+        if needs_aac:
+            cmd.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2"])
+        else:
+            cmd.extend(["-c:a", "copy"])
+        cmd.extend(["-sn"])
+    cmd.extend(["-max_muxing_queue_size", "9999"])
+    cmd.extend([
+        "-metadata", "artist=FilmSub.lk",
+        "-metadata", "comment=https://filmsub.pages.dev",
+    ])
+    if is_mp4:
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(os.path.abspath(output_path))
+
+    _attempt_timeout = 180.0 if needs_aac else 60.0
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=_attempt_timeout)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] Stream-copy muxing succeeded: %s", output_path)
+            _cleanup_sub_temp()
+            return True
+        _cleanup_output()
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        _cleanup_sub_temp()
+        raise
+    except Exception as exc:
+        log.debug("[VideoService] Direct stream-copy primary attempt failed: %s", exc)
+        _cleanup_output()
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+    # Fallback Attempt 2: Only run if Attempt 1 did NOT already transcode audio to AAC
+    if not needs_aac:
+        cmd_fallback_audio = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(video_path),
+        ]
+        if has_sub:
+            cmd_fallback_audio.extend([
+                "-i", os.path.abspath(sub_path),
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-map", "1:0",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "160k",
+                "-ac", "2",
+                "-c:s", sub_codec,
+                "-metadata:s:s:0", "language=sin",
+                "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                "-disposition:s:0", disposition,
+            ])
+        else:
+            cmd_fallback_audio.extend([
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "160k",
+                "-ac", "2",
+                "-sn",
+            ])
+        cmd_fallback_audio.extend(["-max_muxing_queue_size", "9999"])
+        if is_mp4:
+            cmd_fallback_audio.extend(["-movflags", "+faststart"])
+        cmd_fallback_audio.append(os.path.abspath(output_path))
+
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_fallback_audio,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                log.info("[VideoService] Stream-copy with stereo AAC audio fallback succeeded: %s", output_path)
+                _cleanup_sub_temp()
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            _cleanup_sub_temp()
+            raise
+        except Exception as exc:
+            log.debug("[VideoService] Audio AAC transcode fallback failed: %s", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+
+    # Fallback Attempt 3: Only when has_sub and not needs_aac, try stream-copy without subtitle (-c:a copy -sn)
+    if has_sub and not needs_aac:
+        cmd_fallback_nosub = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(video_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-sn",
+            "-max_muxing_queue_size", "9999",
+        ]
+        if is_mp4:
+            cmd_fallback_nosub.extend(["-movflags", "+faststart"])
+        cmd_fallback_nosub.append(os.path.abspath(output_path))
+
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_fallback_nosub,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=60.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                log.info("[VideoService] Stream-copy without subtitle fallback succeeded: %s", output_path)
+                _cleanup_sub_temp()
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            _cleanup_sub_temp()
+            raise
+        except Exception as exc:
+            log.debug("[VideoService] Stream-copy no-sub fallback failed: %s", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+
+    # Fallback Attempt 4: Stream-copy video + stereo AAC without subtitle
+    if has_sub:
+        cmd_fallback_aac_nosub = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(video_path),
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-ac", "2",
+            "-sn",
+            "-max_muxing_queue_size", "9999",
+        ]
+        if is_mp4:
+            cmd_fallback_aac_nosub.extend(["-movflags", "+faststart"])
+        cmd_fallback_aac_nosub.append(os.path.abspath(output_path))
+
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_fallback_aac_nosub,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                log.info("[VideoService] Stream-copy AAC without subtitle fallback succeeded: %s", output_path)
+                _cleanup_sub_temp()
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            _cleanup_sub_temp()
+            raise
+        except Exception as exc:
+            log.warning("[VideoService] AAC no-sub fallback failed: %s", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+    _cleanup_sub_temp()
+
+    return False
+
+
+async def compress_video(
+    input_path: str,
+    output_path: str,
+    target_size_bytes: int = TARGET_COMPRESS_SIZE,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    sub_path: Optional[str] = None,
+    is_hardsub: bool = False,
+    cover_watermark: bool = False,
+    badge_path: Optional[str] = None,
+    trim_start: float = 0.0,
+    prepend_intro: bool = False,
+) -> bool:
+    """
+    Compress bloated video files (>1.95GB, e.g. KGF Chapter 2 2.3GB, DC 3.5GB) down to strictly <= 1.95GB
+    (target ~1.90GB safe ceiling to maximize 1080p visual fidelity) using multi-core CPU or GPU NVENC.
+    Calculates exact target bitrate from video duration to guarantee the output never exceeds
+    the Telegram Bot 1.95GB limit while preserving sharp resolution, audio fidelity, and crisp detail.
+    Supports single-pass 10s intro trim, watermark cover, and 5s FilmZilla intro prepending.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        log.error("[VideoService] FFmpeg binary not found. Cannot compress.")
+        return False
+
+    if not os.path.exists(input_path):
+        log.error("[VideoService] Input file does not exist: %s", input_path)
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    in_w, in_h = await asyncio.to_thread(get_video_resolution, input_path, ffmpeg_bin)
+    if in_w <= 0:
+        in_w = 1280
+    if in_h <= 0:
+        in_h = 720
+
+    intro_video = None
+    if prepend_intro:
+        intro_video = await asyncio.to_thread(get_or_create_filmzilla_intro, in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
+        if intro_video and not os.path.exists(intro_video):
+            intro_video = None
+
+    # Disk space safety check: ensure disk/RAM has sufficient space for input + output
+    try:
+        needed_bytes = target_size_bytes + 200 * 1024 * 1024
+        free_space = shutil.disk_usage(out_dir).free
+        if free_space < needed_bytes:
+            log.warning(
+                "[VideoService] Work dir '%s' has only %.2f GB free (target needs %.2f GB). "
+                "Checking alternative storage...",
+                out_dir, free_space / (1024 ** 3), needed_bytes / (1024 ** 3)
+            )
+            fallback_dirs = ["/content", tempfile.gettempdir(), "."]
+            for fb in fallback_dirs:
+                if os.path.isdir(fb) and os.access(fb, os.W_OK):
+                    fb_free = shutil.disk_usage(fb).free
+                    if fb_free >= needed_bytes:
+                        orig_name = os.path.basename(output_path)
+                        output_path = os.path.join(fb, orig_name)
+                        out_dir = fb
+                        log.info("[VideoService] Redirected compression output to disk '%s' (%.2f GB free)", output_path, fb_free / (1024 ** 3))
+                        break
+    except Exception as d_err:
+        log.debug("[VideoService] Disk space check note: %s", d_err)
+
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+    requested_output_path = output_path
+    raw_duration = await asyncio.to_thread(get_video_duration, input_path, ffmpeg_bin)
+    duration = max(1.0, raw_duration - trim_start) if trim_start > 0 else raw_duration
+    if intro_video:
+        duration += 5.0
+    in_bytes = os.path.getsize(input_path)
+    log.info("[VideoService] compress_video: '%s' (duration=%.1fs, raw=%.1fs, trim_start=%.1fs, intro=%s, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
+             input_path, duration, raw_duration, trim_start, bool(intro_video), in_bytes, output_path, target_size_bytes, is_hardsub)
+
+    # Calculate optimal target bitrate (~3% headroom reserved for MP4 container/muxing overhead)
+    audio_bps = 128_000
+    usable_bits = int(target_size_bytes * 8 * 0.97)
+    if duration > 10.0:
+        total_bps = usable_bits / duration
+        video_bps = max(500_000, int(total_bps - audio_bps))
+        v_bitrate_k = int(video_bps / 1000)
+    else:
+        # Fallback if duration is unknown/unparsed: assume 3 hours (10800s) to guarantee staying strictly under target_size_bytes
+        log.warning("[VideoService] Duration unparsed or <= 10s (%.1fs). Using safe 3-hour fallback bitrate.", duration)
+        fallback_dur = 10800.0
+        total_bps = usable_bits / fallback_dur
+        video_bps = max(500_000, int(total_bps - audio_bps))
+        v_bitrate_k = int(video_bps / 1000)
+
+    # Generous VBR headroom for complex scenes while maintaining average target size
+    maxrate_k = int(v_bitrate_k * 1.32)
+    bufsize_k = int(v_bitrate_k * 1.9)
+
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+    if is_hardsub:
+        log.info("[VideoService] Video is already hardsubbed (is_hardsub=True). Skipping subtitle burn/mux.")
+        sub_path = None
+        has_sub = False
+    else:
+        has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    ext = os.path.splitext(output_path)[1].lower()
+    is_mp4 = ext in (".mp4", ".m4v", ".mov")
+    sub_codec = "mov_text" if is_mp4 else "srt"
+
+    burn_vf = None
+    if has_sub:
+        try:
+            comp_sub_srt = os.path.join(out_dir, "sub_burn_comp.srt")
+            if prepare_clean_srt_for_burn(sub_path, comp_sub_srt):
+                sub_path = comp_sub_srt
+            ass_path = os.path.splitext(sub_path)[0] + ".ass"
+            shaped_ass = srt_to_ass_sinhala_shaped(sub_path, ass_path)
+            sub_to_use = shaped_ass if (shaped_ass and os.path.exists(shaped_ass)) else sub_path
+            burn_vf = build_subtitles_burn_filter(sub_to_use)
+        except Exception as b_err:
+            log.debug("[VideoService] compress_video hard-burn prep note: %s", b_err)
+
+    if cover_watermark and not badge_path:
+        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_badge.png")
+        if not os.path.exists(default_badge):
+            default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+        if os.path.exists(default_badge):
+            badge_path = default_badge
+
+    has_badge_img = bool(cover_watermark and badge_path and os.path.exists(badge_path))
+    has_fallback_box = bool(cover_watermark and not has_badge_img)
+
+    caps: dict[str, Any] = {}
+    nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p3")
+
+    if hw_enc == "h264_nvenc":
+        caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+        if caps.get("ffmpeg_bin"):
+            ffmpeg_bin = caps["ffmpeg_bin"]
+        # Tier 1 Fast Path: Full GPU CUDA decode -> GPU overlay_cuda -> HQ NVENC (+ TS 5s intro concat)
+        if not burn_vf and caps.get("hwaccel_cuda") and (not cover_watermark or caps.get("overlay_cuda")):
+            media_info = await asyncio.to_thread(probe_media_summary, input_path, ffmpeg_bin)
+            if not media_info.get("duration") and raw_duration > 0:
+                media_info["duration"] = raw_duration
+            if not media_info.get("width"):
+                media_info["width"] = in_w
+            if not media_info.get("height"):
+                media_info["height"] = in_h
+            gpu_out = await _execute_pure_gpu_cuda_pipeline(
+                input_path=input_path,
+                output_path=output_path,
+                ffmpeg_bin=ffmpeg_bin,
+                caps=caps,
+                media_info=media_info,
+                v_bitrate_k=v_bitrate_k,
+                maxrate_k=maxrate_k,
+                bufsize_k=bufsize_k,
+                cq=nv_cq,
+                nvenc_preset=nv_preset,
+                cover_watermark=cover_watermark,
+                badge_path=badge_path,
+                trim_start=trim_start,
+                prepend_intro=prepend_intro,
+                sub_path=sub_path if has_sub else None,
+                sub_codec=sub_codec,
+                progress_callback=progress_callback,
+                max_total_bytes=TELEGRAM_MTPROTO_MAX_BYTES,
+            )
+            if gpu_out and os.path.exists(gpu_out) and os.path.getsize(gpu_out) > 1024:
+                out_sz_gpu = os.path.getsize(gpu_out)
+                if os.path.abspath(gpu_out) != os.path.abspath(requested_output_path):
+                    try:
+                        req_dir = os.path.dirname(os.path.abspath(requested_output_path))
+                        if os.path.isdir(req_dir) and shutil.disk_usage(req_dir).free >= (out_sz_gpu + 100 * 1024 * 1024):
+                            shutil.move(gpu_out, requested_output_path)
+                            gpu_out = requested_output_path
+                    except Exception:
+                        pass
+                return gpu_out
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-nostdin",
+        "-hide_banner",
+        "-threads", "0",
+        "-filter_threads", "0",
+        "-filter_complex_threads", "0",
+    ]
+    if trim_start > 0:
+        cmd.extend(["-ss", str(trim_start)])
+    cmd.extend(["-i", os.path.abspath(input_path)])
+
+    next_input_idx = 1
+    intro_input_idx = -1
+    if intro_video:
+        cmd.extend(["-i", os.path.abspath(intro_video)])
+        intro_input_idx = next_input_idx
+        next_input_idx += 1
+
+    sub_input_idx = -1
+    if has_sub:
+        cmd.extend(["-i", os.path.abspath(sub_path)])
+        sub_input_idx = next_input_idx
+        next_input_idx += 1
+
+    badge_input_idx = -1
+    if has_badge_img:
+        cmd.extend(["-i", os.path.abspath(badge_path)])
+        badge_input_idx = next_input_idx
+        next_input_idx += 1
+
+    has_audio = bool(await asyncio.to_thread(get_audio_codec, input_path, ffmpeg_bin))
+    badge_w = max(100, min(220, int(in_w * 0.115)))
+    ox = 0
+    bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+    by = f"ih-{bh}"
+
+    if intro_video:
+        filter_parts = [
+            f"[{intro_input_idx}:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro]",
+            f"[0:v]setpts=PTS-STARTPTS[v_main]",
+        ]
+        curr_v = "[v_main]"
+        if has_badge_img:
+            filter_parts.append(f"[{badge_input_idx}:v]scale={badge_w}:-1[badge]")
+            filter_parts.append(f"{curr_v}[badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[v_badged]")
+            curr_v = "[v_badged]"
+        elif has_fallback_box:
+            filter_parts.append(f"{curr_v}drawbox=x=0:y={by}:w={badge_w}:h={bh}:color=black@0.95:t=fill[v_badged]")
+            curr_v = "[v_badged]"
+
+        filter_parts.append(f"[v_intro]{curr_v}concat=n=2:v=1:a=0[v_joined]")
+        curr_v = "[v_joined]"
+
+        if burn_vf:
+            filter_parts.append(f"{curr_v}{burn_vf}[v_out]")
+        else:
+            filter_parts.append(f"{curr_v}null[v_out]")
+
+        if has_audio:
+            filter_parts.append(f"[{intro_input_idx}:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_intro]")
+            filter_parts.append(f"[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_main]")
+            filter_parts.append(f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]")
+            cmd.extend(["-filter_complex", ";".join(filter_parts), "-map", "[v_out]", "-map", "[outa]"])
+        else:
+            cmd.extend(["-filter_complex", ";".join(filter_parts), "-map", "[v_out]"])
+    elif has_badge_img:
+        filter_complex = (
+            f"[{badge_input_idx}:v]scale={badge_w}:-1[badge];"
+            f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1"
+        )
+        if burn_vf:
+            filter_complex += f",{burn_vf}"
+        filter_complex += "[v_out]"
+        cmd.extend(["-filter_complex", filter_complex, "-map", "[v_out]", "-map", "0:a:0?"])
+    elif has_fallback_box:
+        box_str = f"drawbox=x=0:y={by}:w={badge_w}:h={bh}:color=black@0.95:t=fill"
+        full_vf = f"{box_str},{burn_vf}" if burn_vf else box_str
+        cmd.extend(["-map", "0:v:0", "-vf", full_vf, "-map", "0:a:0?"])
+    elif burn_vf:
+        cmd.extend(["-map", "0:v:0", "-vf", burn_vf, "-map", "0:a:0?"])
+    else:
+        cmd.extend(["-map", "0:v:0", "-map", "0:a:0?"])
+
+    if has_sub and sub_input_idx != -1:
+        cmd.extend([
+            "-map", f"{sub_input_idx}:0",
+            "-c:s", sub_codec,
+            "-metadata:s:s:0", "language=sin",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+            "-disposition:s:0", "default",
+        ])
+    else:
+        cmd.extend(["-sn"])
+
+    nvenc_enc_opts = []
+    if hw_enc == "h264_nvenc":
+        # High-Quality Turing NVENC hardware encoding with Spatial/Temporal AQ & Lookahead
+        nvenc_enc_opts = _build_nvenc_encode_opts(
+            v_bitrate_k=v_bitrate_k,
+            maxrate_k=maxrate_k,
+            bufsize_k=bufsize_k,
+            cq=nv_cq,
+            preset=nv_preset,
+            for_cuda_frames=False,
+            caps=caps,
+        )
+        cmd.extend(nvenc_enc_opts)
+    else:
+        cpu_preset = "ultrafast" if _on_colab else "veryfast"
+        cmd.extend([
+            "-c:v", "libx264",
+            "-preset", cpu_preset,
+            "-threads", "0",
+            "-b:v", f"{v_bitrate_k}k",
+            "-maxrate", f"{maxrate_k}k",
+            "-bufsize", f"{bufsize_k}k",
+            "-profile:v", "high",
+            "-level:v", "4.1",
+            "-pix_fmt", "yuv420p",
+        ])
+
+    if intro_video:
+        if has_audio:
+            cmd.extend([
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-ac", "2",
+            ])
+        else:
+            cmd.extend(["-an"])
+    else:
+        if has_audio:
+            in_audio_codec = await asyncio.to_thread(get_audio_codec, input_path, ffmpeg_bin)
+            if in_audio_codec and is_web_compatible_audio(in_audio_codec):
+                cmd.extend(["-c:a", "copy"])
+            else:
+                cmd.extend([
+                    "-c:a", "aac",
+                    "-b:a", "128k",
+                    "-ac", "2",
+                    "-af", "aresample=async=1",
+                ])
+        else:
+            cmd.extend(["-an"])
+    cmd.extend(["-max_muxing_queue_size", "9999"])
+    if is_mp4:
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(os.path.abspath(output_path))
+
+    proc = None
+    is_low_res = (in_h <= 500 or in_w <= 854 or "480p" in str(input_path).lower() or "480p" in str(output_path).lower() or "360p" in str(input_path).lower())
+    use_cpu_fallback = False
+    gpu_slot_ctx = None
+    gpu_id = None
+
+    try:
+        if hw_enc == "h264_nvenc":
+            if _GPU_POOL.is_busy() and progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                    else:
+                        progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                except Exception:
+                    pass
+
+            # Load-balanced GPU slot (1080p weight=3 keeps GPU 0 dedicated)
+            try:
+                gpu_w = 3 if in_w >= 1400 else (2 if in_w >= 1000 else 1)
+                gpu_slot_ctx = _GPU_POOL.acquire(weight=gpu_w)
+                gpu_id = await gpu_slot_ctx.__aenter__()
+            except (asyncio.TimeoutError, TimeoutError):
+                log.info("[VideoService] All GPU slots busy. Falling back to multi-core CPU encoding for 480p/low-res...")
+                use_cpu_fallback = True
+                gpu_slot_ctx = None
+
+        final_cmd = list(cmd)
+        if use_cpu_fallback and hw_enc == "h264_nvenc":
+            cpu_enc_opts = [
+                "-c:v", "libx264",
+                "-preset", "ultrafast" if _on_colab else "veryfast",
+                "-threads", "0",
+                "-b:v", f"{v_bitrate_k}k",
+                "-maxrate", f"{maxrate_k}k",
+                "-bufsize", f"{bufsize_k}k",
+                "-profile:v", "high",
+                "-level:v", "4.1",
+                "-pix_fmt", "yuv420p",
+            ]
+            new_cmd = []
+            skip = 0
+            for idx, tok in enumerate(final_cmd):
+                if skip > 0:
+                    skip -= 1
+                    continue
+                if tok in ("-hwaccel", "-hwaccel_device"):
+                    skip = 1
+                    continue
+                if tok == "-c:v":
+                    new_cmd.extend(cpu_enc_opts)
+                    skip = len(nvenc_enc_opts) - 1
+                    continue
+                new_cmd.append(tok)
+            final_cmd = new_cmd
+        elif hw_enc == "h264_nvenc" and gpu_id is not None:
+            if "-hwaccel" in final_cmd:
+                hw_idx = final_cmd.index("-hwaccel")
+                final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                final_cmd.insert(hw_idx + 3, str(gpu_id))
+            if "-c:v" in final_cmd:
+                cv_idx = final_cmd.index("-c:v")
+                final_cmd.insert(cv_idx + 2, "-gpu")
+                final_cmd.insert(cv_idx + 3, str(gpu_id))
+
+        proc = await asyncio.create_subprocess_exec(
+            *final_cmd,
+            cwd=out_dir,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+        fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+        last_pct = 0.0
+
+        stderr_tail = []
+        async def _read_stderr():
+            nonlocal last_pct
+            while True:
+                try:
+                    if hasattr(proc.stderr, "read"):
+                        chunk = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                    else:
+                        chunk = await asyncio.wait_for(proc.stderr.readline(), timeout=120.0)
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    log.warning("[VideoService] compress_video stderr stalled for 120s with no progress!")
+                    break
+                if not chunk:
+                    break
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                if len(stderr_tail) < 30:
+                    stderr_tail.append(decoded)
+                else:
+                    stderr_tail.pop(0)
+                    stderr_tail.append(decoded)
+                matches = time_pattern.findall(decoded)
+                if matches and duration > 0:
+                    h, mm, ss = matches[-1]
+                    cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                    pct = min(99.0, (cur_secs / duration) * 100.0)
+                    if pct - last_pct >= 1.5:
+                        last_pct = pct
+                        speed_match = speed_pattern.search(decoded)
+                        fps_match = fps_pattern.search(decoded)
+                        speed_val = float(speed_match.group(1)) if speed_match else 0.0
+                        fps_val = float(fps_match.group(1)) if fps_match else 0.0
+
+                        detail_parts = [f"{pct:.1f}%"]
+                        if speed_val > 0:
+                            if fps_val > 0:
+                                detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
+                            else:
+                                detail_parts.append(f"⚡ {speed_val:.1f}x")
+                            if duration > cur_secs:
+                                rem_s = int((duration - cur_secs) / speed_val)
+                                m_rem, s_rem = divmod(rem_s, 60)
+                                h_rem, m_rem = divmod(m_rem, 60)
+                                eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
+                                detail_parts.append(f"| ⏱ {eta_str}")
+
+                        p_str = " ".join(detail_parts)
+                        if progress_callback:
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    asyncio.create_task(progress_callback(pct, p_str))
+                                else:
+                                    progress_callback(pct, p_str)
+                            except Exception:
+                                pass
+
+        # Generous 1800s (30 minute) timeout to ensure long 3-hour movie compression finishes
+        await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            out_sz = os.path.getsize(output_path)
+            log.info("[VideoService] compress_video SUCCESS: %d bytes (<= %d MAX_TELEGRAM_BOT_SIZE)", out_sz, MAX_TELEGRAM_BOT_SIZE)
+            # Accept if <= MAX_TELEGRAM_BOT_SIZE (1.95GB) or strictly within MTProto upload ceiling (2,090,000,000 bytes)
+            if out_sz <= MAX_TELEGRAM_BOT_SIZE or out_sz <= TELEGRAM_MTPROTO_MAX_BYTES:
+                if out_sz > MAX_TELEGRAM_BOT_SIZE:
+                    log.info("[VideoService] Compressed size %d bytes is slightly > 1.95GB but strictly within MTProto ceiling (%d bytes). Accepting for upload!", out_sz, TELEGRAM_MTPROTO_MAX_BYTES)
+                if progress_callback:
+                    try:
+                        if asyncio.iscoroutinefunction(progress_callback):
+                            await progress_callback(100.0, "100.0%")
+                        else:
+                            progress_callback(100.0, "100.0%")
+                    except Exception:
+                        pass
+
+                # If redirected to fallback dir, attempt to move back to requested_output_path if space allows
+                if os.path.abspath(output_path) != os.path.abspath(requested_output_path):
+                    try:
+                        req_dir = os.path.dirname(os.path.abspath(requested_output_path))
+                        if os.path.isdir(req_dir) and shutil.disk_usage(req_dir).free >= (out_sz + 100 * 1024 * 1024):
+                            shutil.move(output_path, requested_output_path)
+                            output_path = requested_output_path
+                            log.info("[VideoService] Moved compressed video from fallback storage to target: %s", output_path)
+                    except Exception as mv_err:
+                        log.debug("[VideoService] Output relocation note: %s", mv_err)
+
+                return output_path
+            else:
+                log.warning(
+                    "[VideoService] Compressed size %d bytes strictly exceeded MTProto ceiling (%d bytes). "
+                    "Running fast corrective pass with 12%% lower bitrate to guarantee upload...",
+                    out_sz, TELEGRAM_MTPROTO_MAX_BYTES
+                )
+                _cleanup_output()
+                # Run quick corrective re-encode with 12% lower bitrate
+                cor_bitrate_k = int(v_bitrate_k * 0.88)
+                cor_maxrate_k = int(cor_bitrate_k * 1.05)
+                cor_bufsize_k = int(cor_bitrate_k * 1.2)
+                cor_cmd = list(cmd)
+                try:
+                    if "-b:v" in cor_cmd:
+                        b_idx = cor_cmd.index("-b:v")
+                        cor_cmd[b_idx + 1] = f"{cor_bitrate_k}k"
+                    if "-maxrate" in cor_cmd:
+                        m_idx = cor_cmd.index("-maxrate")
+                        cor_cmd[m_idx + 1] = f"{cor_maxrate_k}k"
+                    if "-bufsize" in cor_cmd:
+                        buf_idx = cor_cmd.index("-bufsize")
+                        cor_cmd[buf_idx + 1] = f"{cor_bufsize_k}k"
+                    log.info("[VideoService] Running corrective pass (bitrate=%dk)...", cor_bitrate_k)
+                    cor_proc = await asyncio.create_subprocess_exec(
+                        *cor_cmd,
+                        cwd=out_dir,
+                        stdout=asyncio.subprocess.DEVNULL,
+                        stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    await asyncio.wait_for(cor_proc.wait(), timeout=1800.0)
+                    if cor_proc.returncode == 0 and os.path.exists(output_path) and 0 < os.path.getsize(output_path) <= TELEGRAM_MTPROTO_MAX_BYTES:
+                        log.info("[VideoService] Corrective pass SUCCESS: %d bytes (<= %d ceiling)", os.path.getsize(output_path), TELEGRAM_MTPROTO_MAX_BYTES)
+                        return output_path
+                except Exception as cor_err:
+                    log.error("[VideoService] Corrective pass error: %s", cor_err)
+                _cleanup_output()
+                return ""
+        else:
+            log.error("[VideoService] FFmpeg exited with code %s: %s", proc.returncode, "".join(stderr_tail[-5:]))
+            _cleanup_output()
+            return ""
+    except asyncio.TimeoutError:
+        log.error("[VideoService] compress_video timed out after 1800s for: %s", input_path)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        return ""
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        raise
+    except Exception as exc:
+        log.error("[VideoService] compress_video exception: %s", exc)
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        return ""
+    finally:
+        if gpu_slot_ctx:
+            try:
+                await gpu_slot_ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
+async def compress_smart_1080p(
+    input_path: str,
+    output_path: str,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    sub_path: Optional[str] = None,
+    is_hardsub: bool = False,
+) -> bool:
+    """
+    Intelligent 1080p Processing:
+    1. If file size <= 1.95GB (MAX_TELEGRAM_BOT_SIZE):
+       Executes instantaneous Stream Copy & Soft-Sub Muxing in 3-5 seconds.
+    2. If file size > 1.95GB (bloated video like KGF Chapter 2 - 2.3GB, DC 3.5GB):
+       Executes fast multi-core compression (compress_video) targeting ~1.90GB,
+       guaranteeing output <= 1.95GB while preserving maximal 1080p visual fidelity.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        log.error("[VideoService] FFmpeg binary not found. Cannot process.")
+        return False
+
+    if not os.path.exists(input_path):
+        log.error("[VideoService] Input file does not exist: %s", input_path)
+        return False
+
+    in_size = os.path.getsize(input_path)
+    if in_size > MAX_TELEGRAM_BOT_SIZE:
+        log.info("[VideoService] Input file %s (%d bytes) > 1.95GB ceiling. Routing to fast compress_video...", input_path, in_size)
+        return await compress_video(
+            input_path=input_path,
+            output_path=output_path,
+            target_size_bytes=TARGET_COMPRESS_SIZE,
+            progress_callback=progress_callback,
+            sub_path=sub_path,
+            is_hardsub=is_hardsub,
+        )
+
+    log.info("[VideoService] compress_smart_1080p: Executing instant Stream Copy (Soft-sub Muxing) for '%s' -> '%s'", input_path, output_path)
+
+    ok = await stream_copy_subtitles(input_path, sub_path, output_path, disposition="default")
+    if not ok:
+        ok = await ensure_web_streamable(input_path, output_path, sub_path=sub_path)
+    if not ok and sub_path and os.path.exists(sub_path):
+        ok = await embed_subtitles_soft(input_path, sub_path, output_path, disposition="default")
+
+    if ok and os.path.exists(output_path):
+        out_sz = os.path.getsize(output_path)
+        if out_sz > MAX_TELEGRAM_BOT_SIZE:
+            log.warning("[VideoService] Stream copy output %d bytes > 1.95GB limit. Compressing...", out_sz)
+            return await compress_video(
+                input_path=input_path,
+                output_path=output_path,
+                target_size_bytes=TARGET_COMPRESS_SIZE,
+                progress_callback=progress_callback,
+                sub_path=sub_path,
+                is_hardsub=is_hardsub,
+            )
+        if progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(100.0, "100.0%")
+                else:
+                    progress_callback(100.0, "100.0%")
+            except Exception:
+                pass
+        return True
+
+    return False
+
+
+def cleanup_stale_work_dirs(extra_parents: tuple = ()) -> None:
+    """
+    Clean up any leftover temporary scratch directories from previous runs in /kaggle/working, /tmp, or /content.
+    Prevents /kaggle/working output quota inflation (19.5GB limit) and clears orphaned downloads.
+    """
+    targets = ("/kaggle/working", "/tmp", "/content") + tuple(extra_parents)
+    for parent in targets:
+        if os.path.isdir(parent) and os.access(parent, os.W_OK):
+            try:
+                for entry in os.listdir(parent):
+                    if entry.startswith(("leech_", "leech_ram_", "leech_work_")):
+                        p = os.path.join(parent, entry)
+                        try:
+                            if os.path.isdir(p):
+                                shutil.rmtree(p, ignore_errors=True)
+                                log.info("[VideoService] Cleaned up stale workspace: %s", p)
+                            elif os.path.isfile(p):
+                                os.remove(p)
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+
+def get_optimal_work_dir(min_free_gb: float = 2.0, prefix: str = "leech_work_") -> str:
+    """
+    Allocate a working directory in high-capacity fast scratch storage.
+    On Kaggle / Colab, prioritizes /tmp which has 70+ GB of free fast scratch space
+    and crucially DOES NOT count towards Kaggle's 19.5 GB output limit (/kaggle/working).
+    Falls back to /kaggle/temp, /content, /dev/shm, or /kaggle/working only if needed.
+    """
+    import tempfile
+
+    # On Cloud environments, multi-quality downloads (1080p, 720p, 480p) + FFmpeg operations
+    # need >= 15 GB of working space.
+    is_cloud_env = os.path.exists("/content") or os.path.exists("/kaggle/working") or os.path.exists("/kaggle/temp")
+    effective_min_gb = max(min_free_gb, 15.0) if (min_free_gb >= 1.0 and is_cloud_env) else min_free_gb
+    min_bytes = int(effective_min_gb * 1024 * 1024 * 1024)
+
+    # Candidate scratch directories in priority order:
+    # 1. /tmp: High-capacity NVMe scratch on Linux/Kaggle (70+ GB free, 0 MB charged to Kaggle Output!)
+    # 2. /kaggle/temp: Dedicated Kaggle temporary scratch if present
+    # 3. /content: Google Colab root NVMe
+    # 4. /dev/shm: Fast RAM disk if >= 15GB free
+    # 5. /kaggle/working: Persistent Kaggle output (last resort due to strict 19.5 GB notebook output quota)
+    candidates = ["/tmp", "/kaggle/temp", "/content", "/dev/shm", "/kaggle/working"]
+    for cand in candidates:
+        if os.path.isdir(cand) and os.access(cand, os.W_OK):
+            try:
+                free_sp = shutil.disk_usage(cand).free
+                if free_sp >= min_bytes:
+                    work_dir = tempfile.mkdtemp(prefix=prefix, dir=cand)
+                    log.info(
+                        "[VideoService] Allocated %s high-capacity scratch workspace: %s (%.2f GB free)",
+                        cand,
+                        work_dir,
+                        free_sp / (1024 ** 3),
+                    )
+                    return work_dir
+            except Exception:
+                pass
+
+    return tempfile.mkdtemp(prefix=prefix)
+
+
+async def extract_embedded_subtitle(video_path: str, output_srt_path: str) -> bool:
+    """
+    Extract the primary text subtitle track (SRT/ASS/WebVTT) from an MKV/MP4 video container
+    before remuxing, ensuring internal subtitles are never lost.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(video_path):
+        return False
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-i", video_path,
+        "-map", "0:s:0",
+        "-c:s", "srt",
+        output_srt_path,
+    ]
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=25.0)
+        if proc.returncode == 0 and os.path.exists(output_srt_path) and os.path.getsize(output_srt_path) > 64:
+            log.info("[VideoService] Extracted embedded subtitle from container: %s", output_srt_path)
+            return True
+    except Exception as exc:
+        log.debug("[VideoService] No extractable text subtitle in container (%s)", exc)
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+    return False
+
+
+async def ensure_web_streamable(
+    input_path: str,
+    output_path: str,
+    sub_path: Optional[str] = None,
+) -> bool:
+    """
+    Ultra-fast 12GB RAM-optimized MKV/AVI/WebM -> MP4 converter with +faststart
+    and optional single-pass Sinhala subtitle merging (mov_text default+forced).
+    Ensures stereo AAC audio so browsers (Chrome, Safari, Mobile) never play silent video.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(input_path):
+        return False
+
+    def _cleanup_output() -> None:
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    if has_sub and sub_path.lower().endswith(".vtt"):
+        try:
+            from services.subtitle_service import vtt_to_srt
+            out_d = os.path.dirname(os.path.abspath(output_path)) or "."
+            sub_srt = os.path.join(out_d, f"sub_web_{os.path.basename(sub_path)}.srt")
+            sub_path = vtt_to_srt(sub_path, sub_srt)
+        except Exception as e_vtt:
+            log.debug("[VideoService] VTT->SRT prep for ensure_web_streamable: %s", e_vtt)
+    _threads = "0"  # Use all CPU threads & RAM buffer
+    input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    min_valid_size = min(512 * 1024, max(1024, int(input_size * 0.25)))
+
+    # Inspect input audio codec quickly so we don't copy AC3/EAC3/DTS into MP4 (which causes silent playback in browsers)
+    in_codec = get_audio_codec(input_path, ffmpeg_bin)
+    needs_aac_transcode = bool(in_codec and not is_web_compatible_audio(in_codec))
+    if needs_aac_transcode:
+        log.info("[VideoService] Audio codec '%s' detected — will transcode to Stereo AAC for 100%% browser compatibility.", in_codec)
+
+    # Attempt 1: Instant stream-copy (only if audio is already browser-compatible AAC/MP3)
+    if not needs_aac_transcode:
+        cmd_copy = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", _threads,
+            "-i", input_path,
+        ]
+        if has_sub:
+            cmd_copy.extend([
+                "-i", sub_path,
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-map", "1:0",
+                "-map", "1:0",
+                "-c:v", "copy",
+                "-c:a", "copy",
+                "-c:s", "mov_text",
+                "-metadata:s:s:0", "language=eng",
+                "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
+                "-disposition:s:0", "default+forced",
+                "-metadata:s:s:1", "language=sin",
+                "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+                "-disposition:s:1", "default+forced",
+            ])
+        else:
+            cmd_copy.extend([
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-c:v", "copy",
+                "-c:a", "copy",
+                "-sn",
+            ])
+        cmd_copy.extend([
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            output_path,
+        ])
+
+        proc = None
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_copy,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc.wait(), timeout=180.0)
+            if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) >= min_valid_size:
+                log.info("[VideoService] Fast RAM remux (copy + sub=%s) succeeded: %s", has_sub, output_path)
+                return True
+            _cleanup_output()
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+            _cleanup_output()
+            raise
+        except Exception as exc:
+            log.debug("[VideoService] Fast copy remux fallback (%s)", exc)
+            _cleanup_output()
+        finally:
+            if proc and proc.returncode is None:
+                try:
+                    proc.terminate()
+                    proc.kill()
+                except Exception:
+                    pass
+
+    # For files > 1.2 GB on Render (non-Colab, no /dev/shm), skip CPU audio transcode
+    # to avoid OOM. Direct upload without extra remux is handled by leech_service.
+    file_size = input_size
+    if not _on_colab and file_size > 1.2 * 1024 * 1024 * 1024:
+        log.warning(
+            "[VideoService] File size %.2f GB > 1.2 GB on Render (not Colab). "
+            "Skipping audio transcode to prevent OOM.",
+            file_size / (1024 ** 3),
+        )
+        _cleanup_output()
+        return False
+
+    # Attempt 2: Video stream-copy + Multi-threaded Stereo AAC 160k audio + Dual Sinhala subtitle + faststart
+    cmd_aac = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", _threads,
+        "-i", input_path,
+    ]
+    if has_sub:
+        cmd_aac.extend([
+            "-i", sub_path,
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-map", "1:0",
+            "-map", "1:0",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-ac", "2",
+            "-c:s", "mov_text",
+            "-metadata:s:s:0", "language=eng",
+            "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
+            "-disposition:s:0", "default+forced",
+            "-metadata:s:s:1", "language=sin",
+            "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+            "-disposition:s:1", "default+forced",
+        ])
+    else:
+        cmd_aac.extend([
+            "-map", "0:v:0",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-ac", "2",
+            "-sn",
+        ])
+    cmd_aac.extend([
+        "-max_muxing_queue_size", "9999",
+        "-movflags", "+faststart",
+        output_path,
+    ])
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_aac,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=360.0)  # ≥300 s per plan §4.3; 360 s for large Colab files
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) >= min_valid_size:
+            log.info("[VideoService] AAC audio + MP4 remux (sub=%s) succeeded: %s", has_sub, output_path)
+            return True
+        _cleanup_output()
+        return False
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        _cleanup_output()
+        raise
+    except Exception as exc:
+        log.warning("[VideoService] AAC remux error or timeout: %s", exc)
+        _cleanup_output()
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
+async def embed_subtitles_soft(
+    video_path: str,
+    sub_path: str,
+    output_path: str,
+    disposition: str = "default+forced",
+) -> bool:
+    """
+    Soft-embed Sinhala subtitles into video container (MP4 mov_text or MKV srt)
+    with dual default+forced tracks and +faststart so ALL web browsers and
+    native media players (English-locale Android/iOS, VLC, MX Player, Smart TVs)
+    automatically display Sinhala subtitles immediately upon playback.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(video_path) or not os.path.exists(sub_path):
+        return False
+
+    ext = os.path.splitext(output_path)[1].lower()
+    is_mp4 = ext in (".mp4", ".m4v", ".mov")
+    sub_codec = "mov_text" if is_mp4 else "srt"
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", video_path,
+        "-i", sub_path,
+        "-map", "0:v:0",
+        "-map", "0:a:0?",
+        "-map", "1:0",
+        "-map", "1:0",
+        "-c:v", "copy",
+        "-c:a", "copy",
+        "-c:s", sub_codec,
+        "-metadata:s:s:0", "language=eng",
+        "-metadata:s:s:0", "title=Sinhala (සිංහල) [Auto]",
+        "-disposition:s:0", disposition,
+        "-metadata:s:s:1", "language=sin",
+        "-metadata:s:s:1", "title=සිංහල උපසිරැසි (Sinhala)",
+        "-disposition:s:1", disposition,
+    ]
+    if is_mp4:
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(output_path)
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        return proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
+    except asyncio.TimeoutError:
+        log.warning("[VideoService] Soft subtitle mux timed out (180s) — skipping soft embed.")
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        return False
+    except Exception as exc:
+        log.warning("[VideoService] Soft subtitle mux error: %s", exc)
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
+async def trim_video_start(
+    input_path: str,
+    output_path: str,
+    start_seconds: float = 10.0,
+) -> bool:
+    """
+    Trim leading seconds (e.g. 10.0s website intro/watermark) from a video using ultra-fast stream-copy:
+    ffmpeg -y -hide_banner -threads 0 -i input.mp4 -ss 10 -c copy -avoid_negative_ts make_zero -movflags +faststart output.mp4
+    Executes in <1-3 seconds without quality loss.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(input_path):
+        return False
+
+    # Check input duration first: do NOT trim if the video is too short (< 30 seconds)
+    try:
+        dur = await asyncio.to_thread(get_video_duration, input_path, ffmpeg_bin)
+        if dur > 0 and dur <= (start_seconds + 5.0):
+            log.warning("[VideoService] Video duration (%.1fs) too short to trim %.1fs. Skipping trim.", dur, start_seconds)
+            return False
+    except Exception:
+        pass
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-ss", str(start_seconds),
+        "-i", os.path.abspath(input_path),
+        "-c", "copy",
+        "-avoid_negative_ts", "make_zero",
+        "-max_muxing_queue_size", "9999",
+        "-movflags", "+faststart",
+        os.path.abspath(output_path),
+    ]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Successfully trimmed first %.1fs: %s (%s)",
+                     start_seconds, output_path, downloader.format_bytes(os.path.getsize(output_path)))
+            return True
+    except Exception as e:
+        log.warning("[VideoService] Stream-copy trim note: %s", e)
+
+    # Fallback if pure -c copy failed on rare codecs: copy video/audio streams
+    try:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        cmd_fb = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-ss", str(start_seconds),
+            "-i", os.path.abspath(input_path),
+            "-map", "0:v:0?",
+            "-map", "0:a:0?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-avoid_negative_ts", "make_zero",
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            os.path.abspath(output_path),
+        ]
+        proc_fb = await asyncio.create_subprocess_exec(
+            *cmd_fb,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc_fb.wait(), timeout=180.0)
+        if proc_fb.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Stream-copy fallback trim success: %s", output_path)
+            return True
+    except Exception as fb_err:
+        log.error("[VideoService] Stream-copy trim fallback failed: %s", fb_err)
+
+    return False
+
+
+async def apply_faststart(input_path: str, output_path: str) -> bool:
+    """
+    Execute an ultra-fast stream-copy remux relocating the MP4 moov atom to byte 0:
+    ffmpeg -y -hide_banner -threads 0 -i input.mp4 -c copy -movflags +faststart output.mp4
+
+    Relocates the metadata index from the tail to byte 0 in <3-5 seconds without re-encoding,
+    enabling browsers and Video.js to start playback in <300ms.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(input_path):
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-threads", "0",
+        "-i", os.path.abspath(input_path),
+        "-c", "copy",
+        "-max_muxing_queue_size", "9999",
+        "-movflags", "+faststart",
+        os.path.abspath(output_path),
+    ]
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] FastStart (+faststart) copy remux success: %s", output_path)
+            return True
+
+        # Fallback: if pure -c copy failed (e.g. due to incompatible subtitle/attachment streams in MKV/MP4),
+        # copy only video and audio streams to MP4 container with +faststart
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+
+        cmd_fallback = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+            "-i", os.path.abspath(input_path),
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            os.path.abspath(output_path),
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_fallback,
+            cwd=out_dir,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=180.0)
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            log.info("[VideoService] FastStart (+faststart) fallback remux success: %s", output_path)
+            return True
+
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+        return False
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        log.warning("[VideoService] FastStart copy remux error: %s", exc)
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
+def get_or_create_filmzilla_intro(
+    target_width: int,
+    target_height: int,
+    fps: int = 30,
+    duration: float = 5.0,
+    ffmpeg_bin: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Generate or retrieve a cached 5-second FilmZilla branded video intro with stereo silence audio.
+    Used to prepend before films and TV series.
+    Guarantees:
+    - Exactly `duration` seconds (default 5.0s).
+    - Audio stream: stereo silent AAC at 48000Hz (so concat with film audio is clean and has 0 bleed).
+    - Video stream: H.264 widescreen matching target dimensions, centered FilmZilla branding with fade in/out.
+    - Cached in tempfile.gettempdir()/filmzilla_intro_cache for instant reuse.
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe:
+        return None
+
+    w = int(target_width) if int(target_width) % 2 == 0 else int(target_width) + 1
+    h = int(target_height) if int(target_height) % 2 == 0 else int(target_height) + 1
+    w = max(320, w)
+    h = max(180, h)
+
+    cache_dir = os.path.join(tempfile.gettempdir(), "filmzilla_intro_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    cached_path = os.path.join(cache_dir, f"intro_{w}x{h}_{fps}fps_{int(round(duration))}s.mp4")
+
+    if os.path.exists(cached_path) and os.path.getsize(cached_path) > 50000:
+        cached_dur = get_video_duration(cached_path, exe)
+        if abs(cached_dur - duration) <= 0.5:
+            return cached_path
+    elif os.path.exists(cached_path):
+        try:
+            os.remove(cached_path)
+        except Exception:
+            pass
+
+    # Locate visual and audio assets
+    base_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+    web_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "assets", "img")
+
+    candidates = [
+        os.path.join(base_assets_dir, "filmzilla_intro_fullscreen.png"),
+        os.path.join(web_assets_dir, "filmzilla_intro_fullscreen.png"),
+        os.path.join(base_assets_dir, "filmzilla_intro_card.png"),
+        os.path.join(web_assets_dir, "filmzilla_intro_card.png"),
+        os.path.join(base_assets_dir, "filmzilla_brand_horizontal.png"),
+    ]
+    card_asset = next((p for p in candidates if os.path.exists(p)), None)
+
+    sound_candidates = [
+        os.path.join(base_assets_dir, "filmzilla_intro_sound.wav"),
+        os.path.join(web_assets_dir, "filmzilla_intro_sound.wav"),
+    ]
+    sound_asset = next((p for p in sound_candidates if os.path.exists(p)), None)
+
+    fade_out_st = max(0.5, duration - 0.8)
+
+    if card_asset:
+        filter_complex = (
+            f"[0:v]scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,"
+            f"fade=t=in:st=0.0:d=0.7,fade=t=out:st={fade_out_st:.2f}:d=0.8[outv]"
+        )
+        audio_in = ["-i", os.path.abspath(sound_asset)] if sound_asset else [
+            "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=48000:d={duration}"
+        ]
+        cmd = [
+            exe, "-y",
+            "-hide_banner",
+            "-loop", "1", "-t", str(duration), "-i", os.path.abspath(card_asset),
+            *audio_in,
+            "-filter_complex", filter_complex,
+            "-map", "[outv]", "-map", "1:a",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+            "-t", str(duration),
+            "-movflags", "+faststart",
+            cached_path,
+        ]
+    else:
+        # Fallback card if image asset not present
+        cmd = [
+            exe, "-y",
+            "-hide_banner",
+            "-f", "lavfi", "-i", f"color=c=black:s={w}x{h}:r={fps}:d={duration}",
+            "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=48000:d={duration}",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+            "-t", str(duration),
+            "-movflags", "+faststart",
+            cached_path,
+        ]
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=30,
+        )
+        if proc.returncode == 0 and os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
+            log.info("[VideoService] Successfully created FilmZilla intro card video: %s (size=%d bytes)", cached_path, os.path.getsize(cached_path))
+            return cached_path
+    except Exception as exc:
+        log.warning("[VideoService] Failed to create FilmZilla intro video: %s", exc)
+
+    return None
+
+
+def _get_or_create_fallback_box_png() -> Optional[str]:
+    """Create a tiny cached dark PNG badge used on GPU overlay_cuda if no brand PNG exists."""
+    import struct
+    import zlib
+    cache_dir = os.path.join(tempfile.gettempdir(), "filmzilla_intro_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    box_path = os.path.join(cache_dir, "fallback_black_box.png")
+    if os.path.exists(box_path) and os.path.getsize(box_path) > 32:
+        return box_path
+    try:
+        # Build minimal 16x16 RGBA solid black (alpha 240) PNG with pure stdlib zlib
+        w, h = 16, 16
+        raw_rows = b"".join(b"\x00" + (b"\x00\x00\x00\xf0" * w) for _ in range(h))
+
+        def _chunk(tag: bytes, data: bytes) -> bytes:
+            return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+        ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
+        idat = zlib.compress(raw_rows)
+        png_bytes = b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", ihdr) + _chunk(b"IDAT", idat) + _chunk(b"IEND", b"")
+        with open(box_path, "wb") as f:
+            f.write(png_bytes)
+        return box_path
+    except Exception:
+        return None
+
+
+def get_or_create_filmzilla_intro_ts(
+    target_width: int,
+    target_height: int,
+    fps_str: str = "30",
+    sample_rate: int = 48000,
+    has_audio: bool = True,
+    gpu_id: int = 0,
+    use_nvenc: bool = True,
+    duration: float = 5.0,
+    ffmpeg_bin: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Generate or retrieve a cached 5.0s MPEG-TS FilmZilla intro matching exact stream geometry
+    (w, h, fps, sample_rate, audio presence) so GPU-encoded main video joins cleanly in <1.5s
+    via concat demuxer with ZERO CPU re-encode and ZERO audio bleed.
+    """
+    exe = ffmpeg_bin or _PREFERRED_FFMPEG_BIN or get_ffmpeg_binary()
+    if not exe:
+        return None
+
+    w = int(target_width) if int(target_width) % 2 == 0 else int(target_width) + 1
+    h = int(target_height) if int(target_height) % 2 == 0 else int(target_height) + 1
+    w = max(320, w)
+    h = max(180, h)
+    ar = sample_rate if sample_rate in (44100, 48000) else 48000
+    safe_fps_tag = re.sub(r"[^0-9a-zA-Z._-]", "_", str(fps_str or "30"))
+    enc_tag = "nvenc" if use_nvenc else "x264"
+    aud_tag = f"a{ar}" if has_audio else "noa"
+
+    cache_dir = os.path.join(tempfile.gettempdir(), "filmzilla_intro_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    ts_path = os.path.join(cache_dir, f"intro_{w}x{h}_{safe_fps_tag}_{aud_tag}_{enc_tag}_{int(round(duration))}s.ts")
+
+    if os.path.exists(ts_path) and os.path.getsize(ts_path) > 50000:
+        cached_dur = get_video_duration(ts_path, exe)
+        if abs(cached_dur - duration) <= 0.6:
+            return ts_path
+    elif os.path.exists(ts_path):
+        try:
+            os.remove(ts_path)
+        except Exception:
+            pass
+
+    base_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+    web_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "assets", "img")
+    card_asset = next(
+        (
+            p for p in (
+                os.path.join(base_assets_dir, "filmzilla_intro_fullscreen.png"),
+                os.path.join(web_assets_dir, "filmzilla_intro_fullscreen.png"),
+                os.path.join(base_assets_dir, "filmzilla_intro_card.png"),
+                os.path.join(web_assets_dir, "filmzilla_intro_card.png"),
+                os.path.join(base_assets_dir, "filmzilla_brand_horizontal.png"),
+            )
+            if os.path.exists(p)
+        ),
+        None,
+    )
+    sound_asset = next(
+        (
+            p for p in (
+                os.path.join(base_assets_dir, "filmzilla_intro_sound.wav"),
+                os.path.join(web_assets_dir, "filmzilla_intro_sound.wav"),
+            )
+            if os.path.exists(p)
+        ),
+        None,
+    )
+
+    fade_out_st = max(0.5, duration - 0.8)
+    enc_v = (
+        ["-c:v", "h264_nvenc", "-gpu", str(gpu_id), "-preset", "p4", "-tune", "hq", "-rc", "vbr", "-cq", "19", "-profile:v", "high", "-level:v", "4.1", "-pix_fmt", "yuv420p"]
+        if use_nvenc
+        else ["-c:v", "libx264", "-preset", "ultrafast", "-profile:v", "high", "-level:v", "4.1", "-pix_fmt", "yuv420p"]
+    )
+    audio_out = ["-c:a", "aac", "-b:a", "160k", "-ar", str(ar), "-ac", "2"] if has_audio else ["-an"]
+
+    def _build_intro_ts_cmd(use_gpu_enc: bool) -> list[str]:
+        v_enc = enc_v if use_gpu_enc else ["-c:v", "libx264", "-preset", "ultrafast", "-profile:v", "high", "-level:v", "4.1", "-pix_fmt", "yuv420p"]
+        c = [exe, "-y", "-nostdin", "-hide_banner"]
+        if card_asset:
+            c.extend(["-loop", "1", "-r", str(fps_str), "-t", str(duration), "-i", os.path.abspath(card_asset)])
+            vf = (
+                f"[0:v]scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,"
+                f"setsar=1,format=yuv420p,fade=t=in:st=0.0:d=0.7,fade=t=out:st={fade_out_st:.2f}:d=0.8[outv]"
+            )
+            if has_audio:
+                if sound_asset:
+                    c.extend(["-i", os.path.abspath(sound_asset)])
+                    fc = f"{vf};[1:a]aformat=sample_fmts=fltp:sample_rates={ar}:channel_layouts=stereo,asetpts=PTS-STARTPTS[outa]"
+                else:
+                    c.extend(["-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate={ar}:d={duration}"])
+                    fc = f"{vf};[1:a]asetpts=PTS-STARTPTS[outa]"
+                c.extend(["-filter_complex", fc, "-map", "[outv]", "-map", "[outa]"])
+            else:
+                c.extend(["-filter_complex", vf, "-map", "[outv]"])
+        else:
+            c.extend(["-f", "lavfi", "-i", f"color=c=black:s={w}x{h}:r={fps_str}:d={duration}"])
+            if has_audio:
+                c.extend(["-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate={ar}:d={duration}"])
+                c.extend(["-map", "0:v", "-map", "1:a"])
+            else:
+                c.extend(["-map", "0:v"])
+        c.extend(["-r", str(fps_str), *v_enc, *audio_out, "-t", str(duration), "-f", "mpegts", ts_path])
+        return c
+
+    for try_nvenc in ([True, False] if use_nvenc else [False]):
+        try:
+            proc = subprocess.run(
+                _build_intro_ts_cmd(try_nvenc),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=30,
+            )
+            if proc.returncode == 0 and os.path.exists(ts_path) and os.path.getsize(ts_path) > 1024:
+                return ts_path
+        except Exception as exc:
+            log.debug("[VideoService] Intro TS creation note (nvenc=%s): %s", try_nvenc, exc)
+
+    return None
+
+
+async def _execute_pure_gpu_cuda_pipeline(
+    input_path: str,
+    output_path: str,
+    ffmpeg_bin: str,
+    caps: dict[str, Any],
+    media_info: dict[str, Any],
+    v_bitrate_k: int,
+    maxrate_k: int,
+    bufsize_k: int,
+    cq: int,
+    nvenc_preset: str,
+    cover_watermark: bool = False,
+    badge_path: Optional[str] = None,
+    trim_start: float = 0.0,
+    prepend_intro: bool = False,
+    sub_path: Optional[str] = None,
+    sub_codec: str = "mov_text",
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    max_total_bytes: Optional[int] = None,
+) -> Optional[str]:
+    """
+    Execute true zero-CPU-copy Full GPU CUDA video transcode:
+      NVDEC (-hwaccel cuda -hwaccel_output_format cuda) -> scale_cuda -> overlay_cuda -> h264_nvenc
+    If `prepend_intro=True`, joins the cached matching 5.0s FilmZilla TS intro via sub-2s concat demuxer
+    with zero re-encoding of video/audio and keeps audio perfectly synchronized (-c:a copy when AAC stereo).
+    Returns output_path on success, or None if the caller should fall back cleanly to Tier 2.
+    """
+    exe = caps.get("ffmpeg_bin") or ffmpeg_bin
+    vcodec = (media_info.get("vcodec") or "").lower()
+    if vcodec and vcodec not in _NVDEC_SUPPORTED_VCODECS:
+        log.info("[VideoService] Codec '%s' unsupported by T4 NVDEC; skipping pure GPU path.", vcodec)
+        return None
+    if not caps.get("hwaccel_cuda"):
+        return None
+
+    raw_w = media_info.get("width") or 1280
+    raw_h = media_info.get("height") or 720
+    in_w = raw_w + (raw_w % 2)
+    in_h = raw_h + (raw_h % 2)
+    need_cuda_even_dim = (raw_w % 2 != 0) or (raw_h % 2 != 0)
+
+    overlay_img: Optional[str] = None
+    is_real_badge = False
+    if cover_watermark:
+        if badge_path and os.path.exists(badge_path):
+            overlay_img = badge_path
+            is_real_badge = True
+        else:
+            overlay_img = _get_or_create_fallback_box_png()
+        if overlay_img and not caps.get("overlay_cuda"):
+            return None
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    is_mp4 = os.path.splitext(output_path)[1].lower() in (".mp4", ".m4v", ".mov")
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    if has_sub and is_mp4 and sub_path and sub_path.lower().endswith(".vtt"):
+        try:
+            from services.subtitle_service import vtt_to_srt
+            conv_srt = os.path.join(out_dir, f"gpu_sub_{os.getpid()}.srt")
+            sub_path = vtt_to_srt(sub_path, conv_srt)
+            has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+        except Exception:
+            pass
+
+    has_audio = bool(media_info.get("acodec"))
+    in_acodec = (media_info.get("acodec") or "").lower()
+    in_ar = media_info.get("sample_rate") or 48000
+    in_ch = media_info.get("channels") or 2
+    can_copy_audio_ts = bool(
+        has_audio and in_acodec == "aac" and in_ch == 2 and in_ar in (44100, 48000)
+    )
+    target_ar = in_ar if can_copy_audio_ts else 48000
+
+    gpu_weight = 3 if in_w >= 1400 else (2 if in_w >= 1000 else 1)
+    gpu_slot_ctx = None
+    gpu_id = 0
+    proc = None
+    temp_main_ts: Optional[str] = None
+    concat_list_file: Optional[str] = None
+
+    try:
+        try:
+            gpu_slot_ctx = _GPU_POOL.acquire(timeout=15.0, weight=gpu_weight)
+            gpu_id = await gpu_slot_ctx.__aenter__()
+        except (asyncio.TimeoutError, TimeoutError):
+            gpu_slot_ctx = None
+            return None
+
+        intro_ts: Optional[str] = None
+        if prepend_intro:
+            intro_ts = await asyncio.to_thread(
+                get_or_create_filmzilla_intro_ts,
+                in_w,
+                in_h,
+                fps_str=media_info.get("fps_str") or "30",
+                sample_rate=target_ar,
+                has_audio=has_audio,
+                gpu_id=gpu_id,
+                use_nvenc=True,
+                duration=5.0,
+                ffmpeg_bin=exe,
+            )
+            if not intro_ts or not os.path.exists(intro_ts):
+                return None
+
+        cuda_fmt = caps.get("cuda_main_fmt", "nv12")
+        badge_w = max(100, min(220, int(in_w * 0.115)))
+        badge_w += (badge_w % 2)
+        bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+        bh += (bh % 2)
+
+        cmd = [
+            exe, "-y",
+            "-nostdin",
+            "-hide_banner",
+            "-threads", "2",
+            "-filter_threads", "2",
+            "-filter_complex_threads", "2",
+            "-init_hw_device", f"cuda=cu:{gpu_id}",
+            "-filter_hw_device", "cu",
+        ]
+        if trim_start > 0:
+            cmd.extend(["-ss", str(trim_start)])
+        cmd.extend([
+            "-hwaccel", "cuda",
+            "-hwaccel_device", "cu",
+            "-hwaccel_output_format", "cuda",
+            "-i", os.path.abspath(input_path),
+        ])
+
+        next_idx = 1
+        badge_idx = -1
+        if overlay_img:
+            cmd.extend(["-i", os.path.abspath(overlay_img)])
+            badge_idx = next_idx
+            next_idx += 1
+
+        sub_idx = -1
+        if has_sub and not prepend_intro:
+            cmd.extend(["-i", os.path.abspath(sub_path)])
+            sub_idx = next_idx
+            next_idx += 1
+
+        main_cuda_flt = (
+            f"scale_cuda=w={in_w}:h={in_h}:format={cuda_fmt}"
+            if need_cuda_even_dim
+            else f"scale_cuda=format={cuda_fmt}"
+        )
+        if overlay_img:
+            b_scale = f"{badge_w}:-2" if is_real_badge else f"{badge_w}:{bh}"
+            fc = (
+                f"[0:v]{main_cuda_flt}[m_cu];"
+                f"[{badge_idx}:v]scale={b_scale},format=yuva420p,hwupload_cuda[b_cu];"
+                f"[m_cu][b_cu]overlay_cuda=x=0:y=main_h-overlay_h:eval=init:repeatlast=1[v_out]"
+            )
+            cmd.extend(["-filter_complex", fc, "-map", "[v_out]"])
+        else:
+            cmd.extend(["-filter_complex", f"[0:v]{main_cuda_flt}[v_out]", "-map", "[v_out]"])
+
+        if has_audio:
+            cmd.extend(["-map", "0:a:0?"])
+            if can_copy_audio_ts or (not prepend_intro and is_web_compatible_audio(in_acodec)):
+                cmd.extend(["-c:a", "copy"])
+            else:
+                cmd.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2", "-ar", str(target_ar)])
+        else:
+            cmd.extend(["-an"])
+
+        nv_opts = _build_nvenc_encode_opts(
+            v_bitrate_k=v_bitrate_k,
+            maxrate_k=maxrate_k,
+            bufsize_k=bufsize_k,
+            cq=cq,
+            preset=nvenc_preset,
+            for_cuda_frames=True,
+            caps=caps,
+        )
+        cv_idx = nv_opts.index("-c:v")
+        nv_opts.insert(cv_idx + 2, "-gpu")
+        nv_opts.insert(cv_idx + 3, str(gpu_id))
+        cmd.extend(nv_opts)
+
+        if prepend_intro:
+            temp_main_ts = os.path.join(out_dir, f"gpu_body_{os.getpid()}_{gpu_id}_{os.path.basename(output_path)}.ts")
+            cmd.extend(["-r", str(media_info.get("fps_str") or "30"), "-f", "mpegts", temp_main_ts])
+        else:
+            if sub_idx != -1:
+                cmd.extend([
+                    "-map", f"{sub_idx}:0",
+                    "-c:s", sub_codec,
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            else:
+                cmd.extend(["-sn"])
+            cmd.extend(["-max_muxing_queue_size", "9999"])
+            if is_mp4:
+                cmd.extend(["-movflags", "+faststart"])
+            cmd.append(os.path.abspath(output_path))
+
+        raw_dur = float(media_info.get("duration") or 0.0)
+        body_dur = max(1.0, raw_dur - trim_start) if raw_dur > trim_start else max(1.0, raw_dur)
+        log.info(
+            "[VideoService] Executing PURE GPU CUDA pipeline on GPU %d (%s -> %s, preset=%s, cq=%d, b:v=%dk, audio=%s, intro_ts=%s)",
+            gpu_id, os.path.basename(input_path), os.path.basename(output_path), nvenc_preset, cq, v_bitrate_k,
+            "copy" if (can_copy_audio_ts or not prepend_intro) else "aac", bool(intro_ts),
+        )
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+        fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+        last_pct = 0.0
+        stderr_tail: list[str] = []
+
+        async def _read_gpu_stderr():
+            nonlocal last_pct
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    log.warning("[VideoService] GPU CUDA pipeline stderr stalled 120s; aborting to fallback.")
+                    break
+                if not chunk:
+                    break
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                if len(stderr_tail) >= 25:
+                    stderr_tail.pop(0)
+                stderr_tail.append(decoded)
+                matches = time_pattern.findall(decoded)
+                if matches and body_dur > 0:
+                    h_s, m_s, s_s = matches[-1]
+                    cur_secs = int(h_s) * 3600 + int(m_s) * 60 + float(s_s)
+                    pct = min(98.0, (cur_secs / body_dur) * 98.0)
+                    if pct - last_pct >= 1.5:
+                        last_pct = pct
+                        sp_m = speed_pattern.search(decoded)
+                        fp_m = fps_pattern.search(decoded)
+                        sp_v = float(sp_m.group(1)) if sp_m else 0.0
+                        fp_v = float(fp_m.group(1)) if fp_m else 0.0
+                        parts = [f"{pct:.1f}%"]
+                        if sp_v > 0:
+                            parts.append(f"⚡ {sp_v:.1f}x ({int(fp_v)} fps)" if fp_v > 0 else f"⚡ {sp_v:.1f}x")
+                            if body_dur > cur_secs:
+                                rem_s = int((body_dur - cur_secs) / sp_v)
+                                m_r, s_r = divmod(rem_s, 60)
+                                h_r, m_r = divmod(m_r, 60)
+                                parts.append(f"| ⏱ {f'{h_r}h{m_r:02d}m' if h_r else f'{m_r}m{s_r:02d}s'}")
+                        if progress_callback:
+                            p_str = " ".join(parts)
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    asyncio.create_task(progress_callback(pct, p_str))
+                                else:
+                                    progress_callback(pct, p_str)
+                            except Exception:
+                                pass
+
+        await asyncio.wait_for(asyncio.gather(proc.wait(), _read_gpu_stderr()), timeout=1800.0)
+        target_written = temp_main_ts if prepend_intro else output_path
+        if proc.returncode != 0 or not target_written or not os.path.exists(target_written) or os.path.getsize(target_written) < 1024:
+            log.warning(
+                "[VideoService] Pure GPU CUDA encode failed (exit=%s, tail=%s); falling back to Tier 2.",
+                proc.returncode, "".join(stderr_tail[-5:])[-240:],
+            )
+            return None
+
+        if prepend_intro and intro_ts and temp_main_ts:
+            concat_list_file = os.path.join(out_dir, f"concat_{os.getpid()}_{gpu_id}_{os.path.basename(output_path)}.txt")
+            with open(concat_list_file, "w", encoding="utf-8") as cf:
+                cf.write(f"file '{os.path.abspath(intro_ts).replace(chr(92), '/')}'\n")
+                cf.write(f"file '{os.path.abspath(temp_main_ts).replace(chr(92), '/')}'\n")
+
+            remux_cmd = [
+                exe, "-y", "-nostdin", "-hide_banner",
+                "-f", "concat", "-safe", "0", "-i", os.path.abspath(concat_list_file),
+            ]
+            if has_sub:
+                remux_cmd.extend([
+                    "-i", os.path.abspath(sub_path),
+                    "-map", "0:v", "-map", "0:a?", "-map", "1:0",
+                    "-c:v", "copy", "-c:a", "copy",
+                    "-c:s", sub_codec,
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            else:
+                remux_cmd.extend(["-map", "0:v", "-map", "0:a?", "-c", "copy", "-sn"])
+
+            if has_audio:
+                remux_cmd.extend(["-bsf:a", "aac_adtstoasc"])
+            remux_cmd.extend(["-max_muxing_queue_size", "9999"])
+            if is_mp4:
+                remux_cmd.extend(["-movflags", "+faststart"])
+            remux_cmd.append(os.path.abspath(output_path))
+
+            r_proc = await asyncio.create_subprocess_exec(
+                *remux_cmd, cwd=out_dir, stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+            )
+            _, r_err = await asyncio.wait_for(r_proc.communicate(), timeout=240.0)
+            if r_proc.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) < 1024:
+                log.warning(
+                    "[VideoService] Pure GPU TS concat remux failed (exit=%s, err=%s); falling back to Tier 2.",
+                    r_proc.returncode, r_err.decode("utf-8", errors="replace")[-240:] if r_err else "",
+                )
+                return None
+
+        out_sz = os.path.getsize(output_path) if os.path.exists(output_path) else 0
+        if max_total_bytes and out_sz > max_total_bytes:
+            log.warning("[VideoService] GPU CUDA output (%d bytes) exceeded max ceiling (%d bytes); allowing Tier 2 corrective compress.", out_sz, max_total_bytes)
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+            return None
+
+        if progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(100.0, "100.0%")
+                else:
+                    progress_callback(100.0, "100.0%")
+            except Exception:
+                pass
+        log.info("[VideoService] Pure GPU CUDA pipeline SUCCESS: %s (%d bytes)", output_path, out_sz)
+        return output_path
+
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
+    except Exception as gpu_exc:
+        log.warning("[VideoService] Pure GPU CUDA pipeline error (%s); falling back cleanly.", gpu_exc)
+        return None
+    finally:
+        if gpu_slot_ctx:
+            try:
+                await gpu_slot_ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        for tmp_f in (temp_main_ts, concat_list_file):
+            if tmp_f and os.path.exists(tmp_f):
+                try:
+                    os.remove(tmp_f)
+                except Exception:
+                    pass
+
+
+async def prepend_filmzilla_intro(
+    input_path: str,
+    output_path: str,
+    intro_duration: float = 5.0,
+    progress_callback: Optional[Callable] = None,
+    ffmpeg_bin: Optional[str] = None,
+) -> bool:
+    """
+    Prepend a 5.0-second FilmZilla branded intro to any movie or TV series episode.
+    Guarantees:
+    - Video concat is smooth and uniform with proper scaling/padding.
+    - Zero audio overlap or bleed: Audio of the main video starts strictly after the intro (at t = 5.0s).
+    - Works for both videos with audio and audio-less videos.
+    - Uses hardware acceleration (NVENC) when available, falling back to libx264.
+    """
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(input_path):
+        return False
+
+    raw_dur = await asyncio.to_thread(get_video_duration, input_path, exe)
+    if raw_dur <= 0:
+        log.warning("[VideoService] Input video has invalid duration (%.1fs). Skipping intro prepend.", raw_dur)
+        return False
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    in_w, in_h = await asyncio.to_thread(get_video_resolution, input_path, exe)
+    if in_w <= 0 or in_h <= 0:
+        in_w, in_h = 1280, 720
+    if in_w % 2 != 0:
+        in_w += 1
+    if in_h % 2 != 0:
+        in_h += 1
+
+    intro_video = await asyncio.to_thread(get_or_create_filmzilla_intro, in_w, in_h, fps=30, duration=intro_duration, ffmpeg_bin=exe)
+    if not intro_video or not os.path.exists(intro_video):
+        log.warning("[VideoService] Could not obtain FilmZilla intro video. Skipping prepend.")
+        return False
+
+    has_audio = bool(await asyncio.to_thread(get_audio_codec, input_path, exe))
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, exe)
+
+    if hw_enc == "h264_nvenc":
+        nvenc_preset = "p1"
+        hw_opts = []
+        enc_opts = [
+            "-c:v", "h264_nvenc",
+            "-preset", nvenc_preset,
+            "-tune", "hq",
+            "-multipass", "disabled",
+            "-rc", "vbr",
+            "-cq", "24",
+            "-rc-lookahead", "0",
+            "-spatial-aq", "0",
+            "-temporal-aq", "0",
+            "-pix_fmt", "yuv420p",
+        ]
+    else:
+        hw_opts = []
+        enc_opts = [
+            "-c:v", "libx264",
+            "-preset", "ultrafast" if _on_colab else "veryfast",
+            "-crf", "23",
+            "-threads", "0",
+            "-pix_fmt", "yuv420p",
+        ]
+
+    total_duration = raw_dur + intro_duration
+
+    if has_audio:
+        filter_complex = (
+            f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v0];"
+            f"[1:v]setpts=PTS-STARTPTS[mv];"
+            f"[0:a]asetpts=PTS-STARTPTS,aresample=async=1[a0];"
+            f"[1:a]asetpts=PTS-STARTPTS[a1];"
+            f"[v0][a0][mv][a1]concat=n=2:v=1:a=1[outv][outa]"
+        )
+        maps = ["-map", "[outv]", "-map", "[outa]"]
+        audio_opts = ["-c:a", "aac", "-b:a", "192k", "-threads", "0"]
+    else:
+        filter_complex = (
+            f"[0:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,setpts=PTS-STARTPTS[v0];"
+            f"[1:v]setpts=PTS-STARTPTS[mv];"
+            f"[v0][mv]concat=n=2:v=1:a=0[outv]"
+        )
+        maps = ["-map", "[outv]"]
+        audio_opts = []
+
+    is_inplace = (os.path.abspath(input_path) == os.path.abspath(output_path))
+    temp_target = os.path.join(out_dir, f"tmp_intro_{os.path.basename(output_path)}") if is_inplace else output_path
+
+    cmd = [
+        exe, "-y",
+        "-nostdin",
+        "-hide_banner",
+        *hw_opts,
+        "-i", os.path.abspath(intro_video),
+        "-i", os.path.abspath(input_path),
+        "-filter_complex", filter_complex,
+        *maps,
+        *enc_opts,
+        *audio_opts,
+        "-max_muxing_queue_size", "9999",
+        "-metadata", "artist=FilmSub.lk",
+        "-metadata", "comment=https://filmsub.pages.dev",
+        "-movflags", "+faststart",
+        os.path.abspath(temp_target),
+    ]
+
+    log.info("[VideoService] Prepending FilmZilla intro (%s -> %s, duration=%.1fs -> %.1fs, hwaccel=%s)...",
+             input_path, output_path, raw_dur, total_duration, bool(hw_opts))
+
+    proc = None
+    try:
+        gpu_slot_ctx = None
+        gpu_id = None
+        if hw_enc == "h264_nvenc":
+            if _GPU_POOL.is_busy() and progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                    else:
+                        progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                except Exception:
+                    pass
+            gpu_slot_ctx = _GPU_POOL.acquire()
+            gpu_id = await gpu_slot_ctx.__aenter__()
+
+        try:
+            final_cmd = list(cmd)
+            if hw_enc == "h264_nvenc" and gpu_id is not None:
+                if "-hwaccel" in final_cmd:
+                    hw_idx = final_cmd.index("-hwaccel")
+                    final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                    final_cmd.insert(hw_idx + 3, str(gpu_id))
+                if "-c:v" in final_cmd:
+                    cv_idx = final_cmd.index("-c:v")
+                    final_cmd.insert(cv_idx + 2, "-gpu")
+                    final_cmd.insert(cv_idx + 3, str(gpu_id))
+
+            proc = await asyncio.create_subprocess_exec(
+                *final_cmd,
+                cwd=out_dir,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+            speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+            last_logged_pct = 0.0
+
+            while True:
+                try:
+                    if inspect.iscoroutinefunction(getattr(proc.stderr, "read", None)):
+                        line = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                    elif hasattr(proc.stderr, "readline"):
+                        res = proc.stderr.readline()
+                        line = await asyncio.wait_for(res, timeout=120.0) if inspect.isawaitable(res) else res
+                    elif hasattr(proc.stderr, "read"):
+                        res = proc.stderr.read(4096)
+                        line = await asyncio.wait_for(res, timeout=120.0) if inspect.isawaitable(res) else res
+                    else:
+                        break
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    log.warning("[VideoService] prepend_filmzilla_intro stderr stalled for 120s with no progress!")
+                    break
+                if not line or not isinstance(line, (bytes, bytearray)):
+                    break
+                line_str = line.decode("utf-8", errors="replace")
+                m_time = time_pattern.search(line_str)
+                if m_time and total_duration > 0:
+                    hours, minutes, seconds = m_time.groups()
+                    cur_sec = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+                    pct = min(100.0, max(0.0, (cur_sec / total_duration) * 100.0))
+                    if pct - last_logged_pct >= 15.0 or pct >= 99.0:
+                        last_logged_pct = pct
+                        spd = ""
+                        m_spd = speed_pattern.search(line_str)
+                        if m_spd:
+                            spd = f" ({m_spd.group(1)}x)"
+                        log.info("[VideoService] Prepend Intro Progress: %.1f%%%s", pct, spd)
+                        if progress_callback:
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    await progress_callback(pct, f"{pct:.1f}%")
+                                else:
+                                    progress_callback(pct, f"{pct:.1f}%")
+                            except Exception:
+                                pass
+
+            await asyncio.wait_for(proc.wait(), timeout=1800.0)
+        finally:
+            if gpu_slot_ctx:
+                try:
+                    await gpu_slot_ctx.__aexit__(None, None, None)
+                except Exception:
+                    pass
+
+        if proc.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
+            if progress_callback and last_logged_pct < 100.0:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(100.0, "100.0%")
+                    else:
+                        progress_callback(100.0, "100.0%")
+                except Exception:
+                    pass
+            if is_inplace:
+                shutil.move(temp_target, output_path)
+            log.info("[VideoService] Prepend FilmZilla intro success: %s (size=%d bytes)", output_path, os.path.getsize(output_path))
+            return True
+
+        # Fallback to CPU libx264 if hardware encoder failed
+        if hw_opts:
+            log.info("[VideoService] Retrying prepend intro with CPU libx264...")
+            cpu_enc_opts = [
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-crf", "23",
+                "-threads", "0",
+                "-pix_fmt", "yuv420p",
+            ]
+            cpu_cmd = [
+                exe, "-y",
+                "-hide_banner",
+                "-i", os.path.abspath(intro_video),
+                "-i", os.path.abspath(input_path),
+                "-filter_complex", filter_complex,
+                *maps,
+                *cpu_enc_opts,
+                *audio_opts,
+                "-max_muxing_queue_size", "9999",
+                "-movflags", "+faststart",
+                os.path.abspath(temp_target),
+            ]
+            proc_cpu = await asyncio.create_subprocess_exec(
+                *cpu_cmd,
+                cwd=out_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(proc_cpu.wait(), timeout=1800.0)
+            if proc_cpu.returncode == 0 and os.path.exists(temp_target) and os.path.getsize(temp_target) > 1024:
+                if is_inplace:
+                    shutil.move(temp_target, output_path)
+                log.info("[VideoService] Prepend FilmZilla intro CPU fallback success: %s", output_path)
+                return True
+
+        if is_inplace and os.path.exists(temp_target):
+            try:
+                os.remove(temp_target)
+            except Exception:
+                pass
+        return False
+    except asyncio.CancelledError:
+        for p_to_kill in (proc, proc_cpu if 'proc_cpu' in locals() else None):
+            if p_to_kill and p_to_kill.returncode is None:
+                try:
+                    p_to_kill.terminate()
+                    p_to_kill.kill()
+                except Exception:
+                    pass
+        for t_p in (temp_target, output_path if not is_inplace else None):
+            if t_p and os.path.exists(t_p):
+                try:
+                    os.remove(t_p)
+                except Exception:
+                    pass
+        raise
+    except Exception as exc:
+        log.warning("[VideoService] Prepend FilmZilla intro error: %s", exc)
+        if is_inplace and os.path.exists(temp_target):
+            try:
+                os.remove(temp_target)
+            except Exception:
+                pass
+        return False
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+
+def ensure_sinhala_font_dir() -> Optional[str]:
+    """
+    Ensure 'Noto Sans Sinhala' TrueType font (.ttf) is available for FFmpeg libass subtitle burning.
+    Checks bundled bot/assets/fonts first, then /usr/share/fonts/truetype/noto, and auto-installs
+    fonts-noto-core on Colab/Linux if missing.
+    """
+    _svc_dir = os.path.dirname(os.path.abspath(__file__))
+    _bundled_dir = os.path.join(os.path.dirname(_svc_dir), "assets", "fonts")
+    _candidate_dirs = [
+        _bundled_dir,
+        "/usr/share/fonts/truetype/noto",
+        "/usr/local/share/fonts/noto",
+    ]
+    for d in _candidate_dirs:
+        if os.path.isdir(d):
+            try:
+                if any("sinhala" in fn.lower() and fn.lower().endswith((".ttf", ".otf")) for fn in os.listdir(d)):
+                    return d
+            except Exception:
+                pass
+
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        if os.path.exists("/content") and shutil.which("apt-get"):
+            try:
+                subprocess.run(
+                    "apt-get update -qq && apt-get install -y -qq fonts-noto-core fontconfig p7zip-full unrar && fc-cache -f",
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=90,
+                )
+                if os.path.isdir("/usr/share/fonts/truetype/noto"):
+                    return "/usr/share/fonts/truetype/noto"
+            except Exception as apt_err:
+                log.debug("[VideoService] Colab fonts-noto-core install note: %s", apt_err)
+
+    return _bundled_dir if os.path.isdir(_bundled_dir) else None
+
+
+def prepare_clean_srt_for_burn(src_srt_path: str, dest_srt_path: str) -> bool:
+    """
+    Normalize a subtitle .srt file for FFmpeg libass hard-burning:
+    - Decodes UTF-8-SIG (strips BOM \\ufeff), UTF-16, or CP1252
+    - Converts CRLF to LF
+    - Strips malformed HTML font tags while preserving Sinhala Unicode (U+0D80..U+0DFF)
+    """
+    if not src_srt_path or not os.path.exists(src_srt_path):
+        return False
+    try:
+        raw = open(src_srt_path, "rb").read()
+        text = None
+        for enc in ("utf-8-sig", "utf-16", "utf-8", "cp1252"):
+            try:
+                text = raw.decode(enc)
+                break
+            except Exception:
+                continue
+        if not text:
+            text = raw.decode("utf-8", errors="replace")
+        text = text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
+        with open(dest_srt_path, "w", encoding="utf-8", newline="\n") as out_f:
+            out_f.write(text)
+        return os.path.exists(dest_srt_path) and os.path.getsize(dest_srt_path) > 16
+    except Exception as prep_err:
+        log.debug("[VideoService] Clean SRT prep fallback copy: %s", prep_err)
+        try:
+            shutil.copyfile(src_srt_path, dest_srt_path)
+            return os.path.exists(dest_srt_path)
+        except Exception:
+            return False
+
+
+def srt_to_ass_sinhala_shaped(src_srt_path: str, dest_ass_path: Optional[str] = None) -> Optional[str]:
+    """
+    Convert an .srt file to Advanced SubStation Alpha (.ass) format with OpenType HarfBuzz
+    text shaping and NFC normalization, preserving Zero-Width Joiner (ZWJ U+200D) and
+    Zero-Width Non-Joiner (ZWNJ U+200C).
+    Fixes broken Sinhala ligatures (kombuwa, yansaya, rakaransaya, rephaya).
+    """
+    import unicodedata
+
+    if not src_srt_path or not os.path.exists(src_srt_path):
+        return None
+
+    if not dest_ass_path:
+        dest_ass_path = os.path.splitext(src_srt_path)[0] + ".ass"
+
+    try:
+        raw = open(src_srt_path, "rb").read()
+        text = None
+        for enc in ("utf-8-sig", "utf-16", "utf-8", "cp1252"):
+            try:
+                text = raw.decode(enc)
+                break
+            except Exception:
+                continue
+        if not text:
+            text = raw.decode("utf-8", errors="replace")
+
+        text = text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
+        # Normalize Unicode NFC while strictly preserving ZWJ (\u200d) and ZWNJ (\u200c)
+        text = unicodedata.normalize("NFC", text)
+
+        def _srt_to_ass_ts(ts: str) -> str:
+            ts = ts.strip().replace(",", ".")
+            m = re.match(r"(\d+):(\d+):(\d+)(?:\.(\d+))?", ts)
+            if not m:
+                return "0:00:00.00"
+            h, mi, s, ms = m.groups()
+            ms_val = (ms or "0")[:2].ljust(2, "0")
+            return f"{int(h)}:{mi}:{s}.{ms_val}"
+
+        ass_header = (
+            "[Script Info]\n"
+            "Title: FilmZilla Sinhala Subtitle\n"
+            "ScriptType: v4.00+\n"
+            "WrapStyle: 0\n"
+            "ScaledBorderAndShadow: yes\n"
+            "YCbCr Matrix: TV.709\n"
+            "PlayResX: 1920\n"
+            "PlayResY: 1080\n\n"
+            "[V4+ Styles]\n"
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+            "Style: Default,Noto Sans Sinhala,44,&H0000FFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2.2,1.2,2,30,30,42,1\n\n"
+            "[Events]\n"
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+        )
+
+        dialogues = []
+        blocks = re.split(r"\n\s*\n", text.strip())
+        for blk in blocks:
+            lines = [ln.strip() for ln in blk.strip().split("\n") if ln.strip()]
+            if not lines:
+                continue
+            ts_idx = -1
+            for idx, ln in enumerate(lines[:3]):
+                if "-->" in ln:
+                    ts_idx = idx
+                    break
+            if ts_idx == -1:
+                continue
+            ts_line = lines[ts_idx]
+            parts = ts_line.split("-->")
+            if len(parts) != 2:
+                continue
+            start_ts = _srt_to_ass_ts(parts[0])
+            end_ts = _srt_to_ass_ts(parts[1])
+
+            content_lines = lines[ts_idx + 1:]
+            if not content_lines:
+                continue
+            cue_text = "\\N".join(content_lines)
+            cue_text = re.sub(r"<\s*i\s*>", r"{\\i1}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<\s*/\s*i\s*>", r"{\\i0}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<\s*b\s*>", r"{\\b1}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<\s*/\s*b\s*>", r"{\\b0}", cue_text, flags=re.IGNORECASE)
+            cue_text = re.sub(r"<[^>]+>", "", cue_text)
+            dialogues.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{cue_text}")
+
+        os.makedirs(os.path.dirname(os.path.abspath(dest_ass_path)) or ".", exist_ok=True)
+        with open(dest_ass_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(ass_header)
+            f.write("\n".join(dialogues))
+            f.write("\n")
+
+        if os.path.exists(dest_ass_path) and os.path.getsize(dest_ass_path) > 32:
+            return dest_ass_path
+        return None
+    except Exception as exc:
+        log.warning("[VideoService] srt_to_ass_sinhala_shaped error: %s", exc)
+        return None
+
+
+def build_subtitles_burn_filter(escaped_sub_file: str = "sub_burn_multi.srt", include_style: Optional[bool] = None) -> str:
+    """
+    Construct the FFmpeg libass subtitles/ass filter expression with Noto Sans Sinhala font directory
+    and CineSubz / SinhalaSub cinema styling (yellow/white high-contrast text with dark outline).
+    Supports both .ass (HarfBuzz OpenType shaping) and .srt subtitles.
+    Properly escapes colons, backslashes, and quotes for FFmpeg filter parser cross-platform.
+    """
+    is_ass = escaped_sub_file.lower().endswith(".ass")
+    # Convert path to forward slashes and escape colon for FFmpeg filter syntax (e.g. C\: -> C\:)
+    safe_sub = os.path.abspath(escaped_sub_file).replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
+
+    font_dir = ensure_sinhala_font_dir()
+    fdir_opt = ""
+    if font_dir:
+        safe_fdir = os.path.abspath(font_dir).replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
+        fdir_opt = f":fontsdir='{safe_fdir}'"
+
+    if is_ass:
+        return f"ass=filename='{safe_sub}'{fdir_opt}"
+
+    base = f"subtitles=filename='{safe_sub}'"
+    if include_style is None:
+        include_style = bool(os.name != "nt" and not os.environ.get("PYTEST_CURRENT_TEST"))
+    if not include_style:
+        return base
+
+    style_str = (
+        "FontName=Noto Sans Sinhala,FontSize=18,Bold=1,"
+        "PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H64000000,"
+        "BorderStyle=1,Outline=1.8,Shadow=1.2,MarginV=24,Alignment=2"
+    )
+    return f"{base}:charenc=UTF-8{fdir_opt}:force_style='{style_str}'"
+
+
+async def burn_subtitles_to_video(
+    video_path: str,
+    sub_path: Optional[str],
+    output_path: str,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+) -> bool:
+    """
+    Burn Sinhala subtitles directly into video frames with libass / HarfBuzz OpenType shaping
+    and Noto Sans Sinhala font.
+    If sub_path is None or missing, executes instant stream copy remux.
+    Falls back gracefully to stream_copy_subtitles if burning encounters an error.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(video_path):
+        log.error("[VideoService] burn_subtitles_to_video: ffmpeg or video missing: %s", video_path)
+        return False
+
+    if not sub_path or not os.path.exists(sub_path) or os.path.getsize(sub_path) < 16:
+        log.info("[VideoService] No subtitle to burn; delegating to stream_copy_subtitles.")
+        return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    try:
+        clean_srt = os.path.join(out_dir, f"sub_burn_{os.path.splitext(os.path.basename(video_path))[0]}.srt")
+        working_sub = sub_path
+        if working_sub.lower().endswith(".vtt"):
+            try:
+                from services.subtitle_service import vtt_to_srt
+                working_sub = vtt_to_srt(working_sub, clean_srt)
+            except Exception as e_vtt:
+                log.debug("[VideoService] VTT->SRT note in burn: %s", e_vtt)
+
+        if not prepare_clean_srt_for_burn(working_sub, clean_srt):
+            clean_srt = working_sub
+
+        ass_path = os.path.splitext(clean_srt)[0] + ".ass"
+        shaped_ass = srt_to_ass_sinhala_shaped(clean_srt, ass_path)
+        sub_to_use = shaped_ass if (shaped_ass and os.path.exists(shaped_ass)) else clean_srt
+
+        burn_vf = build_subtitles_burn_filter(sub_to_use)
+        hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+
+        cmd = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "0",
+        ]
+        if hw_enc == "h264_nvenc":
+            cmd.extend(["-hwaccel", "cuda"])
+        cmd.extend(["-i", os.path.abspath(video_path)])
+        cmd.extend(["-vf", burn_vf])
+
+        if hw_enc == "h264_nvenc":
+            cmd.extend([
+                "-c:v", "h264_nvenc",
+                "-preset", "fast",
+                "-tune", "hq",
+                "-rc", "vbr",
+                "-cq", "23",
+                "-maxrate", "3000k",
+                "-bufsize", "6000k",
+                "-rc-lookahead", "32",
+                "-spatial-aq", "1",
+                "-temporal-aq", "1",
+                "-pix_fmt", "yuv420p",
+            ])
+        else:
+            cmd.extend([
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-crf", "23",
+                "-tune", "fastdecode",
+                "-threads", "0",
+                "-pix_fmt", "yuv420p",
+            ])
+
+        in_acodec = get_audio_codec(video_path, ffmpeg_bin)
+        if in_acodec and is_web_compatible_audio(in_acodec):
+            cmd.extend(["-c:a", "copy"])
+        else:
+            cmd.extend([
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-threads", "0",
+            ])
+        cmd.extend([
+            "-sn",
+            "-max_muxing_queue_size", "9999",
+            "-movflags", "+faststart",
+            os.path.abspath(output_path),
+        ])
+
+        log.info("[VideoService] Executing subtitle burn: %s + %s -> %s", os.path.basename(video_path), os.path.basename(sub_to_use), os.path.basename(output_path))
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=600.0)
+        except asyncio.TimeoutError:
+            log.warning("[VideoService] Subtitle burn timed out after 600s: %s", video_path)
+            if proc and proc.returncode is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+            return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
+        except asyncio.CancelledError:
+            if proc and proc.returncode is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+            raise
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            log.info("[VideoService] Subtitle burn succeeded: %s (%d bytes)", output_path, os.path.getsize(output_path))
+            return True
+        else:
+            err_msg = stderr_bytes.decode("utf-8", errors="replace")[-300:] if stderr_bytes else ""
+            log.warning("[VideoService] Subtitle burn failed (exit=%s, stderr=%s). Falling back to stream_copy_subtitles.", proc.returncode, err_msg)
+    except Exception as exc:
+        log.warning("[VideoService] burn_subtitles_to_video exception: %s. Falling back to stream_copy_subtitles.", exc)
+
+    return await stream_copy_subtitles(video_path, sub_path, output_path, disposition="default")
+
+
+async def cover_cinesubz_watermark(
+    video_path: str,
+    output_path: str,
+    badge_path: Optional[str] = None,
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    trim_start: float = 0.0,
+    prepend_intro: bool = True,
+) -> bool:
+    """
+    Cover the bottom-left CineSubz watermark on pre-hardsubbed releases
+    with a sleek, branded FilmSub badge using hardware accelerated NVENC (NVDEC+NVENC) or fast CPU encoding.
+    Optionally skips leading seconds (e.g. 10.0s intro trim) AND prepends 5.0s FilmZilla intro video in a
+    SINGLE encoding pass without duplicate re-encoding or freezes.
+    Synchronizes audio strictly so the film audio starts at t = 5.0s with zero audio bleed.
+    """
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        log.warning("[VideoService] FFmpeg binary not found for cover_cinesubz_watermark.")
+        return False
+
+    if not badge_path:
+        default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmzilla_badge.png")
+        if not os.path.exists(default_badge):
+            default_badge = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "filmsub_badge.png")
+        if os.path.exists(default_badge):
+            badge_path = default_badge
+
+    media_info = await asyncio.to_thread(probe_media_summary, video_path, ffmpeg_bin)
+    in_size = os.path.getsize(video_path) if os.path.exists(video_path) else 0
+    duration = media_info["duration"] or await asyncio.to_thread(get_video_duration, video_path, ffmpeg_bin)
+    in_w = media_info["width"]
+    in_h = media_info["height"]
+    if in_w <= 0 or in_h <= 0:
+        in_w, in_h = await asyncio.to_thread(get_video_resolution, video_path, ffmpeg_bin)
+    if in_w <= 0:
+        in_w = 1280
+    if in_h <= 0:
+        in_h = 720
+    if not media_info.get("width"):
+        media_info["width"] = in_w
+    if not media_info.get("height"):
+        media_info["height"] = in_h
+    if not media_info.get("duration") and duration > 0:
+        media_info["duration"] = duration
+
+    if duration > 0 and in_size > 0:
+        src_kbps = max(350, int((in_size * 8) / (duration * 1000)))
+        max_safe_kbps = max(400, int(((TARGET_COMPRESS_SIZE * 8 * 0.97) / duration - 160_000) / 1000))
+        target_kbps = min(int(src_kbps * (1.12 if in_w >= 1400 else 1.08)), max_safe_kbps)
+    else:
+        if in_w >= 1600:
+            target_kbps = 2400
+        elif in_w >= 1000:
+            target_kbps = 1400
+        elif in_w >= 600:
+            target_kbps = 720
+        else:
+            target_kbps = 460
+
+    max_kbps = int(target_kbps * 1.38)
+    buf_kbps = int(target_kbps * 2.0)
+    nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p3")
+
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+    caps: dict[str, Any] = {}
+    if hw_enc == "h264_nvenc":
+        caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+        if caps.get("ffmpeg_bin"):
+            ffmpeg_bin = caps["ffmpeg_bin"]
+        if caps.get("hwaccel_cuda") and caps.get("overlay_cuda"):
+            gpu_done = await _execute_pure_gpu_cuda_pipeline(
+                input_path=video_path,
+                output_path=output_path,
+                ffmpeg_bin=ffmpeg_bin,
+                caps=caps,
+                media_info=media_info,
+                v_bitrate_k=target_kbps,
+                maxrate_k=max_kbps,
+                bufsize_k=buf_kbps,
+                cq=nv_cq,
+                nvenc_preset=nv_preset,
+                cover_watermark=True,
+                badge_path=badge_path,
+                trim_start=trim_start,
+                prepend_intro=prepend_intro,
+                progress_callback=progress_callback,
+            )
+            if gpu_done and os.path.exists(gpu_done) and os.path.getsize(gpu_done) > 1024:
+                return True
+
+        enc_opts = _build_nvenc_encode_opts(
+            v_bitrate_k=target_kbps,
+            maxrate_k=max_kbps,
+            bufsize_k=buf_kbps,
+            cq=nv_cq,
+            preset=nv_preset,
+            for_cuda_frames=False,
+            caps=caps,
+        )
+    else:
+        cpu_preset = "veryfast" if _on_colab else "faster"
+        enc_opts = [
+            "-c:v", "libx264",
+            "-preset", cpu_preset,
+            "-crf", "24",
+            "-maxrate", f"{max_kbps}k",
+            "-bufsize", f"{buf_kbps}k",
+            "-threads", "0",
+            "-pix_fmt", "yuv420p",
+        ]
+
+    hw_opts = []
+    trim_opts = ["-ss", str(trim_start)] if trim_start > 0 else []
+
+    intro_video = None
+    if prepend_intro:
+        intro_video = await asyncio.to_thread(get_or_create_filmzilla_intro, in_w, in_h, fps=30, duration=5.0, ffmpeg_bin=ffmpeg_bin)
+        if intro_video and not os.path.exists(intro_video):
+            intro_video = None
+
+    has_audio = bool(media_info.get("acodec")) or bool(await asyncio.to_thread(get_audio_codec, video_path, ffmpeg_bin))
+    badge_w = max(100, min(220, int(in_w * 0.115)))
+    ox = 0
+
+    try:
+        if intro_video and badge_path and os.path.exists(badge_path):
+            # Single-pass concat 5s intro + trimmed movie + corner badge
+            # Method 2 & 3: Never run scale/pad on the 2-hour movie [0:v]! Only scale 5s intro [1:v] (150 frames)
+            if has_audio:
+                filter_complex = (
+                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
+                    f"[2:v]scale={badge_w}:-1[badge];"
+                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[v_badged];"
+                    f"[v_intro][v_badged]concat=n=2:v=1:a=0[outv];"
+                    f"[1:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_intro];"
+                    f"[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,asetpts=PTS-STARTPTS[a_main];"
+                    f"[a_intro][a_main]concat=n=2:v=0:a=1[outa]"
+                )
+                maps = ["-map", "[outv]", "-map", "[outa]"]
+                audio_opts = ["-c:a", "aac", "-b:a", "192k", "-threads", "0"]
+            else:
+                filter_complex = (
+                    f"[1:v]scale={in_w}:{in_h}:force_original_aspect_ratio=decrease,pad={in_w}:{in_h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v_intro];"
+                    f"[0:v]setpts=PTS-STARTPTS[v_main];"
+                    f"[2:v]scale={badge_w}:-1[badge];"
+                    f"[v_main][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[v_badged];"
+                    f"[v_intro][v_badged]concat=n=2:v=1:a=0[outv]"
+                )
+                maps = ["-map", "[outv]"]
+                audio_opts = []
+
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-nostdin",
+                "-hide_banner",
+                "-threads", "0",
+                "-filter_threads", "0",
+                "-filter_complex_threads", "0",
+                *hw_opts,
+                *trim_opts,
+                "-i", os.path.abspath(video_path),
+                "-i", os.path.abspath(intro_video),
+                "-i", os.path.abspath(badge_path),
+                "-filter_complex", filter_complex,
+                *maps,
+                *enc_opts,
+                *audio_opts,
+                "-max_muxing_queue_size", "9999",
+                "-movflags", "+faststart",
+                os.path.abspath(output_path),
+            ]
+        elif badge_path and os.path.exists(badge_path):
+            filter_complex = (
+                f"[1:v]scale={badge_w}:-1[badge];"
+                f"[0:v][badge]overlay=x={ox}:y=main_h-overlay_h:repeatlast=1[outv]"
+            )
+            maps = ["-map", "[outv]", "-map", "0:a?"]
+            audio_opts = ["-c:a", "copy"]
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-nostdin",
+                "-hide_banner",
+                "-threads", "0",
+                "-filter_threads", "0",
+                "-filter_complex_threads", "0",
+                *hw_opts,
+                *trim_opts,
+                "-i", os.path.abspath(video_path),
+                "-i", os.path.abspath(badge_path),
+                "-filter_complex", filter_complex,
+                *maps,
+                *enc_opts,
+                *audio_opts,
+                "-max_muxing_queue_size", "9999",
+                "-movflags", "+faststart",
+                os.path.abspath(output_path),
+            ]
+        else:
+            bw = max(100, min(220, int(in_w * 0.115)))
+            bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+            by = f"ih-{bh}"
+            filter_str = f"drawbox=x=0:y={by}:w={bw}:h={bh}:color=black@0.95:t=fill"
+            maps = ["-map", "0:v", "-map", "0:a?"]
+            audio_opts = ["-c:a", "copy"]
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-nostdin",
+                "-hide_banner",
+                "-threads", "0",
+                "-filter_threads", "0",
+                "-filter_complex_threads", "0",
+                *hw_opts,
+                *trim_opts,
+                "-i", os.path.abspath(video_path),
+                "-vf", filter_str,
+                *maps,
+                *enc_opts,
+                *audio_opts,
+                "-max_muxing_queue_size", "9999",
+                "-movflags", "+faststart",
+                os.path.abspath(output_path),
+            ]
+
+        total_target_duration = max(1.0, (duration - trim_start) + (5.0 if intro_video else 0.0))
+        log.info("[VideoService] Executing single-pass watermark cover + intro (%s -> %s, trim_start=%.1fs, intro=%s, hwaccel=%s)...",
+                 video_path, output_path, trim_start, bool(intro_video), bool(hw_opts))
+        is_low_res = (in_h <= 500 or in_w <= 854 or "480p" in str(video_path).lower() or "480p" in str(output_path).lower() or "360p" in str(video_path).lower())
+        use_cpu_fallback = False
+        gpu_slot_ctx = None
+        gpu_id = None
+
+        if hw_enc == "h264_nvenc":
+            if _GPU_POOL.is_busy() and progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                    else:
+                        progress_callback(0.0, "GPU Queued (Waiting for slot)...")
+                except Exception:
+                    pass
+
+            # Load-balanced GPU slot (1080p weight=3 keeps GPU 0 dedicated)
+            try:
+                gpu_w = 3 if in_w >= 1400 else (2 if in_w >= 1000 else 1)
+                gpu_slot_ctx = _GPU_POOL.acquire(weight=gpu_w)
+                gpu_id = await gpu_slot_ctx.__aenter__()
+            except (asyncio.TimeoutError, TimeoutError):
+                log.info("[VideoService] All GPU slots busy. Falling back to multi-core CPU encoding for 480p/low-res...")
+                use_cpu_fallback = True
+                gpu_slot_ctx = None
+
+        try:
+            final_cmd = list(cmd)
+            if use_cpu_fallback and hw_enc == "h264_nvenc":
+                cpu_enc_opts = [
+                    "-c:v", "libx264",
+                    "-preset", "veryfast" if _on_colab else "faster",
+                    "-crf", "25",
+                    "-maxrate", f"{max_kbps}k",
+                    "-bufsize", f"{buf_kbps}k",
+                    "-threads", "0",
+                    "-pix_fmt", "yuv420p",
+                ]
+                new_cmd = []
+                skip = 0
+                for idx, tok in enumerate(final_cmd):
+                    if skip > 0:
+                        skip -= 1
+                        continue
+                    if tok in ("-hwaccel", "-hwaccel_device"):
+                        skip = 1
+                        continue
+                    if tok == "-c:v":
+                        new_cmd.extend(cpu_enc_opts)
+                        skip = len(enc_opts) - 1
+                        continue
+                    new_cmd.append(tok)
+                final_cmd = new_cmd
+            elif hw_enc == "h264_nvenc" and gpu_id is not None:
+                if "-hwaccel" in final_cmd:
+                    hw_idx = final_cmd.index("-hwaccel")
+                    final_cmd.insert(hw_idx + 2, "-hwaccel_device")
+                    final_cmd.insert(hw_idx + 3, str(gpu_id))
+                if "-c:v" in final_cmd:
+                    cv_idx = final_cmd.index("-c:v")
+                    final_cmd.insert(cv_idx + 2, "-gpu")
+                    final_cmd.insert(cv_idx + 3, str(gpu_id))
+
+            proc = await asyncio.create_subprocess_exec(
+                *final_cmd,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            if progress_callback:
+                time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+                speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+                fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+                last_pct = 0.0
+
+                async def _read_stderr():
+                    nonlocal last_pct
+                    while True:
+                        try:
+                            if hasattr(proc.stderr, "read"):
+                                chunk = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                            elif hasattr(proc.stderr, "readline"):
+                                chunk = await asyncio.wait_for(proc.stderr.readline(), timeout=120.0)
+                            else:
+                                break
+                        except asyncio.TimeoutError:
+                            if proc.returncode is not None:
+                                break
+                            log.warning("[VideoService] cover_cinesubz_watermark stderr stalled for 120s with no progress!")
+                            break
+                        if not chunk:
+                            break
+                        decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                        matches = time_pattern.findall(decoded)
+                        if matches and total_target_duration > 0:
+                            h, mm, ss = matches[-1]
+                            cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                            pct = min(99.0, (cur_secs / total_target_duration) * 100.0)
+                            if pct - last_pct >= 2.0:
+                                last_pct = pct
+                                speed_match = speed_pattern.search(decoded)
+                                fps_match = fps_pattern.search(decoded)
+                                speed_val = float(speed_match.group(1)) if speed_match else 0.0
+                                fps_val = float(fps_match.group(1)) if fps_match else 0.0
+
+                                detail_parts = [f"{pct:.1f}%"]
+                                if speed_val > 0:
+                                    if fps_val > 0:
+                                        detail_parts.append(f"⚡ {speed_val:.1f}x ({int(fps_val)} fps)")
+                                    else:
+                                        detail_parts.append(f"⚡ {speed_val:.1f}x")
+                                    if total_target_duration > cur_secs:
+                                        rem_s = int((total_target_duration - cur_secs) / speed_val)
+                                        m_rem, s_rem = divmod(rem_s, 60)
+                                        h_rem, m_rem = divmod(m_rem, 60)
+                                        eta_str = f"{h_rem}h{m_rem:02d}m" if h_rem else f"{m_rem}m{s_rem:02d}s"
+                                        detail_parts.append(f"| ⏱ {eta_str}")
+
+                                p_str = " ".join(detail_parts)
+                                try:
+                                    if asyncio.iscoroutinefunction(progress_callback):
+                                        asyncio.create_task(progress_callback(pct, p_str))
+                                    else:
+                                        progress_callback(pct, p_str)
+                                except Exception:
+                                    pass
+
+                try:
+                    await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=1800.0)
+                    stderr_bytes = b""
+                except asyncio.CancelledError:
+                    if proc and proc.returncode is None:
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
+                    raise
+            else:
+                try:
+                    _, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=1800.0)
+                except asyncio.CancelledError:
+                    if proc and proc.returncode is None:
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
+                    raise
+        finally:
+            if gpu_slot_ctx:
+                try:
+                    await gpu_slot_ctx.__aexit__(None, None, None)
+                except Exception:
+                    pass
+
+        if proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+            if progress_callback:
+                try:
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(100.0, "100.0%")
+                    else:
+                        progress_callback(100.0, "100.0%")
+                except Exception:
+                    pass
+            log.info("[VideoService] Watermark cover succeeded: %s (%d bytes)", output_path, os.path.getsize(output_path))
+            return True
+        else:
+            err_msg = stderr_bytes.decode("utf-8", errors="replace")[-300:] if stderr_bytes else ""
+            log.warning("[VideoService] Watermark cover primary attempt failed (exit=%s, stderr=%s).", proc.returncode, err_msg)
+            if hw_enc == "h264_nvenc":
+                log.info("[VideoService] Retrying watermark cover with CPU libx264 fallback...")
+                cpu_enc_opts = [
+                    "-c:v", "libx264",
+                    "-preset", "veryfast",
+                    "-crf", "25",
+                    "-maxrate", f"{max_kbps}k",
+                    "-bufsize", f"{buf_kbps}k",
+                    "-threads", "0",
+                    "-pix_fmt", "yuv420p",
+                ]
+                if intro_video and badge_path and os.path.exists(badge_path):
+                    cpu_cmd = [
+                        ffmpeg_bin, "-y",
+                        "-hide_banner",
+                        "-threads", "0",
+                        "-filter_threads", "0",
+                        "-filter_complex_threads", "0",
+                        *trim_opts,
+                        "-i", os.path.abspath(video_path),
+                        "-i", os.path.abspath(intro_video),
+                        "-i", os.path.abspath(badge_path),
+                        "-filter_complex", filter_complex,
+                        *maps,
+                        *cpu_enc_opts,
+                        *audio_opts,
+                        "-max_muxing_queue_size", "9999",
+                        "-movflags", "+faststart",
+                        os.path.abspath(output_path),
+                    ]
+                elif badge_path and os.path.exists(badge_path):
+                    cpu_cmd = [
+                        ffmpeg_bin, "-y",
+                        "-hide_banner",
+                        "-threads", "0",
+                        "-filter_threads", "0",
+                        "-filter_complex_threads", "0",
+                        *trim_opts,
+                        "-i", os.path.abspath(video_path),
+                        "-i", os.path.abspath(badge_path),
+                        "-filter_complex", filter_complex,
+                        *maps,
+                        *cpu_enc_opts,
+                        *audio_opts,
+                        "-max_muxing_queue_size", "9999",
+                        "-movflags", "+faststart",
+                        os.path.abspath(output_path),
+                    ]
+                else:
+                    cpu_cmd = [
+                        ffmpeg_bin, "-y",
+                        "-hide_banner",
+                        "-threads", "0",
+                        "-filter_threads", "0",
+                        "-filter_complex_threads", "0",
+                        *trim_opts,
+                        "-i", os.path.abspath(video_path),
+                        "-vf", filter_str,
+                        "-map", "0:v", "-map", "0:a?",
+                        *cpu_enc_opts,
+                        "-c:a", "copy",
+                        "-max_muxing_queue_size", "9999",
+                        "-movflags", "+faststart",
+                        os.path.abspath(output_path),
+                    ]
+                cpu_proc = await asyncio.create_subprocess_exec(*cpu_cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                try:
+                    await asyncio.wait_for(cpu_proc.wait(), timeout=1800.0)
+                except asyncio.CancelledError:
+                    if cpu_proc and cpu_proc.returncode is None:
+                        try:
+                            cpu_proc.kill()
+                        except Exception:
+                            pass
+                    raise
+                if cpu_proc.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+                    log.info("[VideoService] Watermark cover succeeded via CPU retry: %s", output_path)
+                    return True
+    except Exception as exc:
+        log.warning("[VideoService] cover_cinesubz_watermark exception: %s", exc)
+
+    # Robust 2-step fallback if single-pass fails: (Trim 10s + Badge) -> Prepend Intro.
+    # Never upload raw unprocessed video with foreign watermarks or promos!
+    try:
+        if intro_video and badge_path and os.path.exists(badge_path):
+            log.info("[VideoService] Executing 2-step fallback for watermark cover + intro on %s...", video_path)
+            temp_work_dir = os.path.dirname(os.path.abspath(output_path))
+            step1_out = os.path.join(temp_work_dir, f"step1_wm_{os.path.basename(output_path)}")
+            s1_ok = await cover_cinesubz_watermark(
+                video_path=video_path,
+                output_path=step1_out,
+                badge_path=badge_path,
+                trim_start=trim_start,
+                prepend_intro=False,
+            )
+            if s1_ok and os.path.exists(step1_out) and os.path.getsize(step1_out) > 1024:
+                s2_ok = await prepend_filmzilla_intro(step1_out, output_path, intro_duration=5.0)
+                try:
+                    if os.path.exists(step1_out):
+                        os.remove(step1_out)
+                except Exception:
+                    pass
+                if s2_ok and os.path.exists(output_path) and os.path.getsize(output_path) > 1024:
+                    log.info("[VideoService] 2-step fallback succeeded: %s", output_path)
+                    return True
+    except Exception as e_step:
+        log.warning("[VideoService] 2-step fallback error: %s", e_step)
+
+    return False
+
+
+async def generate_multi_quality_variants_ram(
+    input_path: str,
+    output_dir: str,
+    slug: str = "movie",
+    sub_path: Optional[str] = None,
+    qualities: tuple[str, ...] = ("720p", "480p"),
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    base_stem: Optional[str] = None,
+    target_qualities: Optional[tuple[str, ...]] = None,
+) -> dict[str, str]:
+    """
+    Leverage 12GB RAM (/dev/shm) or /content high-capacity workspace and all CPU/GPU cores
+    (-threads 0 -preset ultrafast) to generate multi-quality MP4 streams/downloads (1080p, 720p, 480p, 360p)
+    in a single FFmpeg pass with Sinhala subtitles (burn-in + mov_text soft-sub) and +faststart.
+    Returns a dict mapping quality label (e.g. '720p') -> generated local file path.
+    """
+    if base_stem:
+        slug = base_stem
+    if target_qualities:
+        qualities = target_qualities
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin or not os.path.exists(input_path):
+        log.error("[VideoService] generate_multi_quality_variants_ram aborted: ffmpeg_bin=%s, input_exists=%s (%s)",
+                  ffmpeg_bin, os.path.exists(input_path) if input_path else False, input_path)
+        return {}
+
+    abs_out_dir = os.path.abspath(output_dir)
+    # Guard against /dev/shm running out of space mid-encode when input_path is already occupying RAM disk
+    cloud_alt = "/kaggle/working" if os.path.isdir("/kaggle/working") else ("/content" if os.path.isdir("/content") else None)
+    if abs_out_dir.startswith("/dev/shm") and cloud_alt and os.access(cloud_alt, os.W_OK):
+        try:
+            free_shm = shutil.disk_usage(abs_out_dir).free
+            if free_shm < int(2.2 * 1024 * 1024 * 1024):
+                alt_dir = os.path.join(cloud_alt, os.path.basename(abs_out_dir) + "_variants")
+                os.makedirs(alt_dir, exist_ok=True)
+                log.info(
+                    "[VideoService] /dev/shm free space low (%.2f GB) -> redirecting variant output to %s",
+                    free_shm / (1024 ** 3), alt_dir,
+                )
+                abs_out_dir = alt_dir
+        except Exception:
+            pass
+
+    os.makedirs(abs_out_dir, exist_ok=True)
+    duration = await asyncio.to_thread(get_video_duration, input_path, ffmpeg_bin)
+    input_size = os.path.getsize(input_path) if os.path.exists(input_path) else 0
+    effective_duration = duration if duration > 0 else max(1200.0, (input_size / (1024 * 1024)) * 2.5)
+    min_valid_size = min(256 * 1024, max(1024, int(input_size * 0.05)))
+
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    local_burn_srt = os.path.join(abs_out_dir, "sub_burn_multi.srt")
+    if has_sub:
+        if sub_path.lower().endswith(".vtt"):
+            try:
+                from services.subtitle_service import vtt_to_srt
+                sub_srt = os.path.join(abs_out_dir, f"sub_multi_{slug}.srt")
+                sub_path = vtt_to_srt(sub_path, sub_srt)
+            except Exception as e_vtt:
+                log.debug("[VideoService] VTT->SRT prep in multi-quality: %s", e_vtt)
+        if not prepare_clean_srt_for_burn(sub_path, local_burn_srt):
+            has_sub = False
+        else:
+            local_burn_ass = os.path.join(abs_out_dir, "sub_burn_multi.ass")
+            try:
+                srt_to_ass_sinhala_shaped(local_burn_srt, local_burn_ass)
+            except Exception as ass_err:
+                log.debug("[VideoService] ASS shaping note: %s", ass_err)
+            ensure_sinhala_font_dir()
+
+    # CineSubz / SinhalaSub WebRip reference bitrate & resolution profiles per quality tier
+    profiles = {
+        "1080p": {"height": 1080, "crf": "23", "maxrate": "2600k", "bufsize": "5200k", "abitrate": "160k"},
+        "720p":  {"height": 720,  "crf": "24", "maxrate": "1400k", "bufsize": "2800k", "abitrate": "128k"},
+        "480p":  {"height": 480,  "crf": "25", "maxrate": "800k",  "bufsize": "1600k", "abitrate": "96k"},
+        "360p":  {"height": 360,  "crf": "26", "maxrate": "500k",  "bufsize": "1000k", "abitrate": "64k"},
+    }
+
+    target_q_list = [q for q in qualities if q in profiles]
+    if not target_q_list:
+        return {}
+
+    valid_outputs: dict[str, str] = {}
+    src_w, src_h = await asyncio.to_thread(get_video_resolution, input_path, ffmpeg_bin)
+
+    # Enforce AAC audio transcode unless source is confirmed already to be AAC (prevents MP4 mux errors with DTS/EAC3)
+    in_audio_codec = await asyncio.to_thread(get_audio_codec, input_path, ffmpeg_bin)
+    needs_aac_transcode = bool(in_audio_codec != "aac")
+    if needs_aac_transcode:
+        log.info("[VideoService] Audio codec is '%s' -> transcoding to AAC for universal MP4 browser playback", in_audio_codec or "unknown")
+
+    # Detect resolution tier cleanly (mutually exclusive) supporting both 16:9 and 2.39:1 widescreen films
+    if (src_w >= 1600 or src_h >= 900):
+        is_source_1080p = True
+        is_source_720p = is_source_480p = is_source_360p = False
+    elif (src_w >= 1000 or src_h >= 540):
+        is_source_720p = True
+        is_source_1080p = is_source_480p = is_source_360p = False
+    elif (src_w >= 650 or src_h >= 420):
+        is_source_480p = True
+        is_source_1080p = is_source_720p = is_source_360p = False
+    elif (src_w > 0 or src_h > 0):
+        is_source_360p = True
+        is_source_1080p = is_source_720p = is_source_480p = False
+    else:
+        is_source_1080p = is_source_720p = is_source_480p = is_source_360p = False
+
+    # If no subtitle hard-burn is requested and source matches target resolution, use instant stream-copy shortcut.
+    # When has_sub is True, all requested qualities go through the Single-Decode libass Hard-Burn + split=N engine!
+    if not has_sub and is_source_1080p and "1080p" in target_q_list:
+        direct_1080_path = os.path.join(abs_out_dir, f"{slug}-1080p.mp4")
+        if os.path.abspath(input_path) == os.path.abspath(direct_1080_path):
+            valid_outputs["1080p"] = direct_1080_path
+            target_q_list = [q for q in target_q_list if q != "1080p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_1080_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_1080_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_1080_path) and os.path.getsize(direct_1080_path) >= min_valid_size:
+                    valid_outputs["1080p"] = direct_1080_path
+                    target_q_list = [q for q in target_q_list if q != "1080p"]
+                    log.info("[VideoService] Source is already ~1080p (%dx%d). Instant 1080p copy applied: %s", src_w, src_h, direct_1080_path)
+            except Exception as e1080:
+                log.debug("[VideoService] Direct 1080p copy note: %s", e1080)
+
+    # If source is already ~720p and no hard-burn is needed, do not re-encode 720p if copy succeeds.
+    if not has_sub and is_source_720p and "720p" in target_q_list:
+        direct_720_path = os.path.join(abs_out_dir, f"{slug}-720p.mp4")
+        if os.path.abspath(input_path) == os.path.abspath(direct_720_path):
+            valid_outputs["720p"] = direct_720_path
+            target_q_list = [q for q in target_q_list if q != "720p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_720_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_720_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_720_path) and os.path.getsize(direct_720_path) >= min_valid_size:
+                    valid_outputs["720p"] = direct_720_path
+                    target_q_list = [q for q in target_q_list if q != "720p"]
+                    log.info("[VideoService] Source is already <= 720p (%dx%d). Instant 720p copy applied in seconds: %s", src_w, src_h, direct_720_path)
+            except Exception as e720:
+                log.debug("[VideoService] Direct 720p copy note: %s", e720)
+
+    # If source is already ~480p or smaller and no hard-burn is needed, do not re-encode 480p if copy succeeds.
+    if not has_sub and (is_source_480p or (src_h > 0 and src_h <= 500)) and "480p" in target_q_list:
+        direct_480_path = os.path.join(abs_out_dir, f"{slug}-480p.mp4")
+        if os.path.abspath(input_path) == os.path.abspath(direct_480_path):
+            valid_outputs["480p"] = direct_480_path
+            target_q_list = [q for q in target_q_list if q != "480p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_480_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_480_path, sub_path=sub_path)
+                if not ok_copy and os.path.exists(input_path):
+                    shutil.copyfile(input_path, direct_480_path)
+                    ok_copy = True
+                if ok_copy and os.path.exists(direct_480_path) and os.path.getsize(direct_480_path) >= min_valid_size:
+                    valid_outputs["480p"] = direct_480_path
+                    target_q_list = [q for q in target_q_list if q != "480p"]
+                    log.info("[VideoService] Source is already ~480p (%dx%d). Instant 480p copy applied in seconds: %s", src_w, src_h, direct_480_path)
+            except Exception as e480:
+                log.debug("[VideoService] Direct 480p copy note: %s", e480)
+
+    # If source is already ~360p and no hard-burn is needed, do not re-encode 360p if copy succeeds.
+    if not has_sub and is_source_360p and "360p" in target_q_list:
+        direct_360_path = os.path.join(abs_out_dir, f"{slug}-360p.mp4")
+        if os.path.abspath(input_path) == os.path.abspath(direct_360_path):
+            valid_outputs["360p"] = direct_360_path
+            target_q_list = [q for q in target_q_list if q != "360p"]
+        else:
+            try:
+                ok_copy = await stream_copy_subtitles(input_path, sub_path, direct_360_path, disposition="default")
+                if not ok_copy:
+                    ok_copy = await ensure_web_streamable(input_path, direct_360_path, sub_path=sub_path)
+                if ok_copy and os.path.exists(direct_360_path) and os.path.getsize(direct_360_path) >= min_valid_size:
+                    valid_outputs["360p"] = direct_360_path
+                    target_q_list = [q for q in target_q_list if q != "360p"]
+                    log.info("[VideoService] Source is already ~360p (%dx%d). Instant 360p copy applied in seconds: %s", src_w, src_h, direct_360_path)
+            except Exception as e360:
+                log.debug("[VideoService] Direct 360p copy note: %s", e360)
+
+    # Prevent wasteful upscaling: filter out qualities that exceed source resolution
+    # Check width or height to support widescreen aspect ratios (e.g. 1280x534 for 720p, 854x360 for 480p)
+    _min_w = {"1080p": 1400, "720p": 950, "480p": 500, "360p": 300}
+    if src_w > 0 or src_h > 0:
+        target_q_list = [
+            q for q in target_q_list
+            if (src_w >= _min_w.get(q, 0) or src_h >= (profiles[q]["height"] - 150))
+        ]
+
+    if not target_q_list:
+        return valid_outputs
+
+    hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+    cuda_caps: dict[str, Any] = {}
+    if hw_enc == "h264_nvenc":
+        cuda_caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+        if cuda_caps.get("ffmpeg_bin"):
+            ffmpeg_bin = cuda_caps["ffmpeg_bin"]
+    num_q = len(target_q_list)
+
+    def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool, gpu_id: Optional[int] = None, allow_cuda: bool = True) -> tuple[list[str], dict[str, str]]:
+        escaped_sub_file = "sub_burn_multi.ass" if os.path.exists(os.path.join(abs_out_dir, "sub_burn_multi.ass")) else "sub_burn_multi.srt"
+        sub_burn_expr = build_subtitles_burn_filter(escaped_sub_file)
+        use_cuda_scale = bool(
+            allow_cuda
+            and use_hw == "h264_nvenc"
+            and not burn_subs
+            and cuda_caps.get("scale_cuda")
+            and cuda_caps.get("hwaccel_cuda")
+        )
+        cuda_fmt = cuda_caps.get("cuda_main_fmt", "nv12")
+        target_gpu = 0 if gpu_id is None else int(gpu_id)
+
+        if num_q == 1:
+            q0 = target_q_list[0]
+            h0 = profiles[q0]["height"]
+            if use_cuda_scale:
+                fc = f"[0:v:0]scale_cuda=w=-2:h={h0}:interp_algo=lanczos:format={cuda_fmt}[v_{q0}]"
+            elif burn_subs:
+                fc = f"[0:v:0]{sub_burn_expr},scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+            else:
+                fc = f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
+        else:
+            split_labels = "".join(f"[sp_{q}]" for q in target_q_list)
+            split_head = (
+                f"[0:v:0]{sub_burn_expr},split={num_q}{split_labels}"
+                if burn_subs
+                else f"[0:v:0]split={num_q}{split_labels}"
+            )
+            if use_cuda_scale:
+                scale_branches = ";".join(
+                    f"[sp_{q}]scale_cuda=w=-2:h={profiles[q]['height']}:interp_algo=lanczos:format={cuda_fmt}[v_{q}]"
+                    for q in target_q_list
+                )
+            else:
+                scale_branches = ";".join(
+                    f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
+                    for q in target_q_list
+                )
+            fc = f"{split_head};{scale_branches}"
+
+        c: list[str] = [
+            ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-threads", "2" if use_cuda_scale else "0",
+        ]
+        if use_cuda_scale:
+            c.extend([
+                "-init_hw_device", f"cuda=cu:{target_gpu}",
+                "-filter_hw_device", "cu",
+                "-hwaccel", "cuda",
+                "-hwaccel_device", "cu",
+                "-hwaccel_output_format", "cuda",
+            ])
+        elif use_hw == "h264_nvenc":
+            c.extend(["-hwaccel", "auto"])
+        c.extend(["-i", os.path.abspath(input_path)])
+        effective_sub = sub_path
+        if include_soft_subs and sub_path and os.path.exists(sub_path):
+            if sub_path.lower().endswith(".vtt"):
+                try:
+                    from services.subtitle_service import vtt_to_srt
+                    conv_srt = os.path.join(abs_out_dir, "multi_sub_temp.srt")
+                    effective_sub = vtt_to_srt(sub_path, conv_srt)
+                except Exception as conv_err:
+                    log.debug("[VideoService] Subtitle format prep note: %s", conv_err)
+                    effective_sub = sub_path
+            if effective_sub and os.path.exists(effective_sub) and os.path.getsize(effective_sub) > 16:
+                c.extend(["-i", os.path.abspath(effective_sub)])
+            else:
+                include_soft_subs = False
+
+        c.extend(["-filter_complex", fc])
+
+        paths: dict[str, str] = {}
+        for q in target_q_list:
+            prof = profiles[q]
+            out_file = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
+            paths[q] = out_file
+            c.extend([
+                "-map", f"[v_{q}]",
+                "-map", "0:a:0?",
+            ])
+            if include_soft_subs and effective_sub and os.path.exists(effective_sub) and os.path.getsize(effective_sub) > 16:
+                c.extend([
+                    "-map", "1:0",
+                    "-c:s", "mov_text",
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            if use_hw == "h264_nvenc":
+                max_k = int(prof["maxrate"].rstrip("k"))
+                buf_k = int(prof["bufsize"].rstrip("k"))
+                nv_opts = _build_nvenc_encode_opts(
+                    maxrate_k=max_k,
+                    bufsize_k=buf_k,
+                    cq=int(prof["crf"]),
+                    preset=os.getenv("NVENC_1080P_PRESET", "p3"),
+                    for_cuda_frames=use_cuda_scale,
+                    caps=cuda_caps,
+                    include_profile_level=False,
+                )
+                if gpu_id is not None:
+                    cv_idx = nv_opts.index("-c:v")
+                    nv_opts.insert(cv_idx + 2, "-gpu")
+                    nv_opts.insert(cv_idx + 3, str(target_gpu))
+                c.extend(nv_opts)
+            else:
+                c.extend([
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-tune", "fastdecode",
+                    "-crf", prof["crf"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
+                    "-threads", "0",
+                    "-pix_fmt", "yuv420p",
+                ])
+            c.extend([
+                "-c:a", "aac",
+                "-b:a", prof["abitrate"],
+                "-ac", "2",
+                "-movflags", "+faststart",
+                out_file,
+            ])
+        return c, paths
+
+    # Build ordered attempt strategies:
+    # (enc_choice, burn_choice, soft_choice, allow_cuda_scale)
+    strategies: list[tuple[str, bool, bool, bool]] = []
+    has_cuda_sc = bool(hw_enc == "h264_nvenc" and cuda_caps.get("scale_cuda") and cuda_caps.get("hwaccel_cuda"))
+    if hw_enc == "h264_nvenc":
+        if has_sub:
+            strategies.append(("h264_nvenc", True, True, False))
+            if has_cuda_sc:
+                strategies.append(("h264_nvenc", False, True, True))
+            strategies.append(("h264_nvenc", False, True, False))
+        if has_cuda_sc:
+            strategies.append(("h264_nvenc", False, False, True))
+        strategies.append(("h264_nvenc", False, False, False))
+        if has_sub:
+            strategies.append(("libx264", False, True, False))
+        strategies.append(("libx264", False, False, False))
+    else:
+        if has_sub:
+            strategies.append(("libx264", True, True, False))
+            strategies.append(("libx264", False, True, False))
+        strategies.append(("libx264", False, False, False))
+
+    proc = None
+    try:
+        for attempt_idx, (enc_choice, burn_choice, soft_choice, allow_cuda_sc) in enumerate(strategies):
+            gpu_ctx = None
+            gpu_dev = None
+            if enc_choice == "h264_nvenc" and allow_cuda_sc:
+                try:
+                    gpu_ctx = _GPU_POOL.acquire(timeout=3.0, weight=2)
+                    gpu_dev = await gpu_ctx.__aenter__()
+                except Exception:
+                    gpu_ctx = None
+                    gpu_dev = 0
+            try:
+                cmd, out_paths = _build_multi_cmd(enc_choice, burn_choice, soft_choice, gpu_id=gpu_dev, allow_cuda=allow_cuda_sc)
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    cwd=abs_out_dir,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+            except Exception:
+                if gpu_ctx:
+                    try:
+                        await gpu_ctx.__aexit__(None, None, None)
+                    except Exception:
+                        pass
+                raise
+            time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+            last_pct = 0.0
+            stderr_tail = collections.deque(maxlen=40)
+
+            async def _read_stderr():
+                nonlocal last_pct
+                stderr_stream = getattr(proc, "stderr", None)
+                if stderr_stream is None:
+                    return
+                while True:
+                    if hasattr(stderr_stream, "read"):
+                        chunk = await stderr_stream.read(4096)
+                    elif hasattr(stderr_stream, "readline"):
+                        chunk = await stderr_stream.readline()
+                    else:
+                        break
+                    if not chunk:
+                        break
+                    decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                    for line in decoded.splitlines(keepends=True):
+                        stderr_tail.append(line)
+                    matches = time_pattern.findall(decoded)
+                    if matches and effective_duration > 0:
+                        h, mm, ss = matches[-1]
+                        cur_secs = int(h) * 3600 + int(mm) * 60 + float(ss)
+                        pct = min(99.0, (cur_secs / effective_duration) * 100.0)
+                        if pct - last_pct >= 2.5:
+                            last_pct = pct
+                            if progress_callback:
+                                try:
+                                    if asyncio.iscoroutinefunction(progress_callback):
+                                        await progress_callback(pct, f"{pct:.1f}%")
+                                    else:
+                                        progress_callback(pct, f"{pct:.1f}%")
+                                except Exception:
+                                    pass
+
+            timeout_val = (
+                max(360.0, min(2400.0, effective_duration * 0.8))
+                if enc_choice == "h264_nvenc"
+                else max(900.0, min(5400.0, effective_duration * 2.2))
+            )
+            try:
+                await asyncio.wait_for(asyncio.gather(proc.wait(), _read_stderr()), timeout=timeout_val)
+            except asyncio.TimeoutError:
+                log.warning("[VideoService] Multi-quality FFmpeg timed out (%.0fs) — terminating process", timeout_val)
+                if proc and proc.returncode is None:
+                    try:
+                        proc.terminate()
+                        proc.kill()
+                    except Exception:
+                        pass
+            except asyncio.CancelledError:
+                log.warning("[VideoService] Multi-quality FFmpeg cancelled — terminating process")
+                if proc and proc.returncode is None:
+                    try:
+                        proc.terminate()
+                        proc.kill()
+                    except Exception:
+                        pass
+                raise
+            finally:
+                if gpu_ctx:
+                    try:
+                        await gpu_ctx.__aexit__(None, None, None)
+                    except Exception:
+                        pass
+
+            if proc and proc.returncode == 0:
+                for q, p in out_paths.items():
+                    if os.path.exists(p) and os.path.getsize(p) >= min_valid_size:
+                        valid_outputs[q] = p
+            else:
+                tail_str = "".join(stderr_tail).strip()
+                log.error(
+                    "[VideoService] Multi-quality FFmpeg attempt %d failed (exit %s):\n%s",
+                    attempt_idx + 1, getattr(proc, "returncode", "None"), tail_str[-1200:] if tail_str else "(no stderr)",
+                )
+                # Even on non-zero exit, rescue any output files that appear fully-written.
+                _rescue_min = max(512 * 1024, min_valid_size)
+                rescued = []
+                for q, p in out_paths.items():
+                    if os.path.exists(p) and os.path.getsize(p) >= _rescue_min and q not in valid_outputs:
+                        valid_outputs[q] = p
+                        rescued.append(q)
+                    elif os.path.exists(p) and q not in valid_outputs:
+                        try:
+                            os.remove(p)
+                        except Exception:
+                            pass
+                if rescued:
+                    log.info(
+                        "[VideoService] Rescued %d valid output(s) from non-zero-exit FFmpeg attempt: %s",
+                        len(rescued), rescued,
+                    )
+
+            if all(q in valid_outputs for q in target_q_list):
+                if progress_callback:
+                    try:
+                        if asyncio.iscoroutinefunction(progress_callback):
+                            await progress_callback(100.0, "100.0%")
+                        else:
+                            progress_callback(100.0, "100.0%")
+                    except Exception:
+                        pass
+                log.info(
+                    "[VideoService] Multi-quality RAM generation complete (attempt %d, encoder=%s, burn=%s): %s",
+                    attempt_idx + 1, enc_choice, burn_choice, list(valid_outputs.keys()),
+                )
+                return valid_outputs
+
+            # If all newly targeted qualities were produced in this attempt, return
+            if proc and proc.returncode == 0 and any(q in valid_outputs for q in out_paths.keys()):
+                if progress_callback:
+                    try:
+                        if asyncio.iscoroutinefunction(progress_callback):
+                            await progress_callback(100.0, "100.0%")
+                        else:
+                            progress_callback(100.0, "100.0%")
+                    except Exception:
+                        pass
+                log.info(
+                    "[VideoService] Multi-quality variants successfully produced: %s",
+                    list(valid_outputs.keys()),
+                )
+                return valid_outputs
+
+            log.warning(
+                "[VideoService] Multi-quality attempt %d (encoder=%s, burn=%s) produced %d/%d variants; retrying fallback...",
+                attempt_idx + 1, enc_choice, burn_choice, len(valid_outputs), len(target_q_list),
+            )
+
+        # Guaranteed Fallback: If any requested quality is still missing (e.g. 480p),
+        # run a direct, bulletproof single-pass transcode with stereo AAC and soft-subs.
+        for q in target_q_list:
+            if q in valid_outputs:
+                continue
+            prof = profiles.get(q)
+            if not prof:
+                continue
+            fallback_out = os.path.join(abs_out_dir, f"{slug}-{q}.mp4")
+            log.info("[VideoService] Running guaranteed single-pass fallback encode for variant %s: %s", q, fallback_out)
+            h_val = prof["height"]
+            fb_cmd = [
+                ffmpeg_bin,
+                "-y",
+                "-hide_banner",
+                "-threads", "0",
+            ]
+            if hw_enc == "h264_nvenc":
+                fb_cmd.extend(["-hwaccel", "auto"])
+            fb_cmd.extend(["-i", os.path.abspath(input_path)])
+            has_fb_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+            fb_effective_sub = sub_path
+            if has_fb_sub:
+                if sub_path.lower().endswith(".vtt"):
+                    try:
+                        from services.subtitle_service import vtt_to_srt
+                        conv_srt = os.path.join(abs_out_dir, f"multi_fb_sub_{q}.srt")
+                        fb_effective_sub = vtt_to_srt(sub_path, conv_srt)
+                    except Exception:
+                        fb_effective_sub = sub_path
+                if fb_effective_sub and os.path.exists(fb_effective_sub) and os.path.getsize(fb_effective_sub) > 16:
+                    fb_cmd.extend(["-i", os.path.abspath(fb_effective_sub)])
+                else:
+                    has_fb_sub = False
+
+            fb_cmd.extend([
+                "-vf", f"scale=-2:{h_val}",
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+            ])
+            if has_fb_sub and fb_effective_sub:
+                fb_cmd.extend([
+                    "-map", "1:0",
+                    "-c:s", "mov_text",
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            if hw_enc == "h264_nvenc":
+                fb_cmd.extend([
+                    "-c:v", "h264_nvenc",
+                    "-preset", "fast",
+                    "-rc", "vbr",
+                    "-cq", prof["crf"],
+                    "-maxrate", prof["maxrate"],
+                    "-bufsize", prof["bufsize"],
+                ])
+            else:
+                fb_cmd.extend([
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-crf", "28",
+                    "-threads", "0",
+                ])
+            fb_cmd.extend([
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", prof["abitrate"],
+                "-ac", "2",
+                "-movflags", "+faststart",
+                fallback_out,
+            ])
+            try:
+                fb_proc = await asyncio.create_subprocess_exec(
+                    *fb_cmd,
+                    cwd=abs_out_dir,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL,
+                )
+                await asyncio.wait_for(fb_proc.wait(), timeout=max(300.0, min(1800.0, effective_duration * 1.5)))
+                if fb_proc.returncode == 0 and os.path.exists(fallback_out) and os.path.getsize(fallback_out) >= min_valid_size:
+                    valid_outputs[q] = fallback_out
+                    log.info("[VideoService] Guaranteed single-pass fallback succeeded for %s: %s", q, fallback_out)
+                else:
+                    log.warning("[VideoService] Fallback encode for %s returned code %s; trying simple transcode...", q, getattr(fb_proc, "returncode", "N/A"))
+                    simple_cmd = [
+                        ffmpeg_bin, "-y", "-hide_banner", "-threads", "0",
+                        "-i", os.path.abspath(input_path),
+                        "-vf", f"scale=-2:{h_val}",
+                        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28", "-threads", "0", "-pix_fmt", "yuv420p",
+                        "-c:a", "aac", "-b:a", prof["abitrate"], "-ac", "2",
+                        "-movflags", "+faststart",
+                        fallback_out,
+                    ]
+                    p_simple = await asyncio.create_subprocess_exec(
+                        *simple_cmd, cwd=abs_out_dir,
+                        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    await asyncio.wait_for(p_simple.wait(), timeout=max(300.0, min(1800.0, effective_duration * 1.5)))
+                    if p_simple.returncode == 0 and os.path.exists(fallback_out) and os.path.getsize(fallback_out) >= min_valid_size:
+                        valid_outputs[q] = fallback_out
+                        log.info("[VideoService] Simple single-pass fallback succeeded for %s: %s", q, fallback_out)
+                    elif os.path.exists(fallback_out) and q not in valid_outputs:
+                        try:
+                            os.remove(fallback_out)
+                        except Exception:
+                            pass
+            except asyncio.CancelledError:
+                for p_obj in (fb_proc if 'fb_proc' in locals() else None, p_simple if 'p_simple' in locals() else None):
+                    if p_obj and p_obj.returncode is None:
+                        try:
+                            p_obj.kill()
+                        except Exception:
+                            pass
+                raise
+            except Exception as fb_err:
+                log.warning("[VideoService] Fallback encode for %s failed: %s", q, fb_err)
+                if os.path.exists(fallback_out) and q not in valid_outputs:
+                    try:
+                        os.remove(fallback_out)
+                    except Exception:
+                        pass
+
+        return valid_outputs
+    except Exception as exc:
+        log.warning("[VideoService] Multi-quality generation skipped/failed: %s", exc)
+        return valid_outputs
+    finally:
+        if os.path.exists(local_burn_srt):
+            try:
+                os.remove(local_burn_srt)
+            except Exception:
+                pass
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+
+

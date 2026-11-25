@@ -2867,7 +2867,6 @@ function openUserListModal(initialTab = 'favorites') {
       bodyEl.innerHTML = `
         <div class="vip-hub-empty-state">
           <div class="vip-empty-icon-box">
-            <div class="vip-empty-glow-ring"></div>
             <i class="fa-solid fa-clapperboard vip-empty-cinema-icon"></i>
           </div>
           <h4 class="vip-empty-title">${emptyTitle}</h4>
@@ -2880,7 +2879,7 @@ function openUserListModal(initialTab = 'favorites') {
       return;
     }
 
-    // Render Luxury Collection Cards
+    // Render Studio Collection Cards
     bodyEl.innerHTML = `
       <div class="vip-hub-cards-grid">
         ${items.map(m => {
@@ -2889,20 +2888,23 @@ function openUserListModal(initialTab = 'favorites') {
           const isContinue = tab === 'continue';
           const pct = isContinue && m.duration ? Math.min(100, Math.round((m.currentTime / m.duration) * 100)) : 0;
           const timeLabel = isContinue && m.currentTime ? `${formatVipTime(m.currentTime)} / ${formatVipTime(m.duration)}` : '';
+          const ratingNum = parseFloat(m.rating);
+          const ratingBadge = (ratingNum > 0) ? `<span class="vip-card-rating"><i class="fa-solid fa-star" style="color:#f5c518;font-size:9px;margin-right:3px;"></i>${m.rating}</span>` : '';
 
           return `
             <div class="vip-card-item" data-movie-id="${movieId}">
               <a href="${movieUrl}" class="vip-card-poster-wrap">
-                <img src="${m.poster || SITE_CONFIG.defaultPoster}" alt="${m.title}" class="vip-card-poster" loading="lazy"
+                <img src="${m.poster || SITE_CONFIG.defaultPoster}" alt="${escHtml(m.title)}" class="vip-card-poster" loading="lazy"
                      onerror="this.onerror=null; if(window.SITE_CONFIG) this.src=window.SITE_CONFIG.defaultPoster;">
-                <span class="vip-card-rating">★ ${m.rating || '0.0'}</span>
+                <span class="vip-card-hover-play"><i class="fa-solid fa-play"></i></span>
+                ${ratingBadge}
                 ${isContinue ? `<div class="vip-card-progress-bar"><div class="vip-card-progress-fill" style="width:${pct}%"></div></div>` : ''}
               </a>
               <div class="vip-card-details">
                 <a href="${movieUrl}" class="vip-card-title" title="${escHtml(m.title)}">${escHtml(m.title)}</a>
                 <div class="vip-card-subinfo">
                   <span class="vip-card-year">${m.year || 'Movie'}</span>
-                  ${timeLabel ? `<span class="vip-card-time-badge">${timeLabel} (${pct}%)</span>` : ''}
+                  ${timeLabel ? `<span class="vip-card-time-badge">${pct}%</span>` : ''}
                 </div>
                 <div class="vip-card-actions-row">
                   <a href="${movieUrl}" class="vip-card-watch-btn">
@@ -2954,19 +2956,19 @@ function openUserListModal(initialTab = 'favorites') {
 }
 
 // ---- Profile Avatar Picker & Cinema Studio Avatars ----
-const _csSvgAvatar = (bgA, bgB, innerSvg) =>
+const _csSvgAvatar = (bgHex, innerSvg) =>
   'data:image/svg+xml;charset=UTF-8,' +
-  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${bgA}"/><stop offset="100%" stop-color="${bgB}"/></linearGradient></defs><rect width="64" height="64" rx="32" fill="url(#g)"/><circle cx="32" cy="32" r="29" fill="none" stroke="rgba(229,9,20,0.65)" stroke-width="2"/>${innerSvg}</svg>`);
+  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="${bgHex}"/><circle cx="32" cy="32" r="29" fill="none" stroke="rgba(229,9,20,0.7)" stroke-width="2"/>${innerSvg}</svg>`);
 
 const VIP_PRESET_AVATARS = [
-  { id: 'crimson-f', name: 'FilmZilla Prime', img: _csSvgAvatar('#18181f', '#09090d', '<path d="M22 18h22v7H29v5h12v7H29v10h-7z" fill="#e50914"/>') },
-  { id: 'reel', name: 'Studio Reel', img: _csSvgAvatar('#1b161b', '#0b0a0f', '<circle cx="32" cy="32" r="14" fill="none" stroke="#f4f4f5" stroke-width="2.5"/><circle cx="32" cy="24" r="3" fill="#e50914"/><circle cx="25" cy="36" r="3" fill="#e50914"/><circle cx="39" cy="36" r="3" fill="#e50914"/><circle cx="32" cy="32" r="2" fill="#ffffff"/>') },
-  { id: 'director', name: 'Director Cut', img: _csSvgAvatar('#16161d', '#09090c', '<path d="M18 27h28v17a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2z" fill="#272730" stroke="#e4e4e7" stroke-width="1.8"/><path d="M17 24l28-6 1.5 5-28 6z" fill="#e50914"/>') },
-  { id: 'crown', name: 'VIP Obsidian', img: _csSvgAvatar('#1d1417', '#09090c', '<path d="M16 42l4-16 12 9 12-9 4 16z" fill="none" stroke="#facc15" stroke-width="2.5" stroke-linejoin="round"/><rect x="18" y="45" width="28" height="3" rx="1.5" fill="#e50914"/>') },
-  { id: 'lens', name: 'IMAX Optics', img: _csSvgAvatar('#131720', '#08090e', '<circle cx="32" cy="32" r="13" fill="#090b10" stroke="#94a3b8" stroke-width="2.2"/><circle cx="32" cy="32" r="7" fill="#e50914" opacity="0.88"/><circle cx="35" cy="29" r="2.2" fill="#ffffff"/>') },
-  { id: 'spotlight', name: 'Premiere Night', img: _csSvgAvatar('#1a141c', '#08080c', '<path d="M26 20h12l7 24H19z" fill="rgba(229,9,20,0.22)" stroke="#e4e4e7" stroke-width="2"/><polygon points="32,25 34.4,30 39.8,30.7 35.8,34.4 36.8,39.8 32,37.2 27.2,39.8 28.2,34.4 24.2,30.7 29.6,30" fill="#ffffff"/>') },
-  { id: 'ticket', name: 'First Row VIP', img: _csSvgAvatar('#1a1515', '#0a090b', '<rect x="16" y="22" width="32" height="20" rx="4" fill="#22191d" stroke="#e50914" stroke-width="2.2"/><circle cx="32" cy="32" r="4" fill="#f4f4f5"/>') },
-  { id: 'bolt', name: 'Crimson Spark', img: _csSvgAvatar('#191316', '#09090c', '<path d="M35 15L20 34h10l-2 15 16-20H34z" fill="#e50914" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>') }
+  { id: 'crimson-f', name: 'FilmZilla Prime', img: _csSvgAvatar('#14141a', '<path d="M22 18h22v7H29v5h12v7H29v10h-7z" fill="#e50914"/>') },
+  { id: 'reel', name: 'Studio Reel', img: _csSvgAvatar('#16141a', '<circle cx="32" cy="32" r="14" fill="none" stroke="#f4f4f5" stroke-width="2.5"/><circle cx="32" cy="24" r="3" fill="#e50914"/><circle cx="25" cy="36" r="3" fill="#e50914"/><circle cx="39" cy="36" r="3" fill="#e50914"/><circle cx="32" cy="32" r="2" fill="#ffffff"/>') },
+  { id: 'director', name: 'Director Cut', img: _csSvgAvatar('#14151c', '<path d="M18 27h28v17a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2z" fill="#272730" stroke="#e4e4e7" stroke-width="1.8"/><path d="M17 24l28-6 1.5 5-28 6z" fill="#e50914"/>') },
+  { id: 'crown', name: 'VIP Obsidian', img: _csSvgAvatar('#181316', '<path d="M16 42l4-16 12 9 12-9 4 16z" fill="none" stroke="#facc15" stroke-width="2.5" stroke-linejoin="round"/><rect x="18" y="45" width="28" height="3" rx="1.5" fill="#e50914"/>') },
+  { id: 'lens', name: 'IMAX Optics', img: _csSvgAvatar('#12151d', '<circle cx="32" cy="32" r="13" fill="#090b10" stroke="#94a3b8" stroke-width="2.2"/><circle cx="32" cy="32" r="7" fill="#e50914"/><circle cx="35" cy="29" r="2.2" fill="#ffffff"/>') },
+  { id: 'spotlight', name: 'Premiere Night', img: _csSvgAvatar('#16131a', '<path d="M26 20h12l7 24H19z" fill="#26181e" stroke="#e4e4e7" stroke-width="2"/><polygon points="32,25 34.4,30 39.8,30.7 35.8,34.4 36.8,39.8 32,37.2 27.2,39.8 28.2,34.4 24.2,30.7 29.6,30" fill="#ffffff"/>') },
+  { id: 'ticket', name: 'First Row VIP', img: _csSvgAvatar('#181416', '<rect x="16" y="22" width="32" height="20" rx="4" fill="#22191d" stroke="#e50914" stroke-width="2.2"/><circle cx="32" cy="32" r="4" fill="#f4f4f5"/>') },
+  { id: 'bolt', name: 'Crimson Spark', img: _csSvgAvatar('#171215', '<path d="M35 15L20 34h10l-2 15 16-20H34z" fill="#e50914" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>') }
 ];
 
 function applyNewAvatar(avatarUrl) {
@@ -3339,6 +3341,14 @@ function initGlobalCinemaDrawer() {
     } catch (err) {
       console.warn('Cinema drawer user sync:', err);
     }
+
+    const curPath = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    const curFull = (curPath + (window.location.search || '')).toLowerCase();
+    drawer.querySelectorAll('.drawer-nav-item[href]').forEach(link => {
+      const href = (link.getAttribute('href') || '').toLowerCase();
+      const matched = (curPath === 'index.html' || curPath === '') ? href === 'index.html' : (href === curFull || (href === curPath && !href.includes('?')));
+      link.classList.toggle('is-active', matched);
+    });
 
     drawer.classList.add('open');
     backdrop.classList.add('open');

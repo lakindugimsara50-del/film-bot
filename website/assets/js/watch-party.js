@@ -751,18 +751,123 @@
         this.createRoom();
       } else {
         const container = document.getElementById('watch-party-container');
-        const theater = document.getElementById('cs-theater-layout');
-        if (container && theater) {
-          const isClosed = container.style.display === 'none';
-          if (isClosed) {
-            theater.classList.add('is-watch-party-active');
-            container.style.display = 'flex';
-          } else {
-            theater.classList.remove('is-watch-party-active');
-            container.style.display = 'none';
-          }
+        if (container && container.style.display === 'none') {
+          this.expandFromChatHead();
+        } else {
+          this.minimizeToChatHead();
         }
       }
+    }
+
+    ensureChatHeadBubble() {
+      const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+      const targetParent = fsElem || document.querySelector('.player-container') || document.getElementById('video-player-container') || document.body;
+      if (!targetParent) return null;
+
+      let head = document.getElementById('wp-chat-head-bubble');
+      if (!head) {
+        head = document.createElement('button');
+        head.type = 'button';
+        head.id = 'wp-chat-head-bubble';
+        head.className = 'wp-chat-head-bubble';
+        head.title = 'Open Watch Party Chat';
+        head.setAttribute('aria-label', 'Open Watch Party Chat');
+        head.innerHTML = `
+          <i class="fa-solid fa-comments"></i>
+          <span class="wp-chat-head-dot"></span>
+          <span class="wp-chat-head-badge" id="wp-chat-head-badge" style="display:none">0</span>
+        `;
+        let moved = false;
+        let startX = 0;
+        let startY = 0;
+        const onStart = (ev) => {
+          const pt = ev.touches ? ev.touches[0] : ev;
+          startX = pt.clientX;
+          startY = pt.clientY;
+          moved = false;
+        };
+        const onMove = (ev) => {
+          const pt = ev.touches ? ev.touches[0] : ev;
+          if (Math.abs(pt.clientX - startX) > 6 || Math.abs(pt.clientY - startY) > 6) {
+            moved = true;
+          }
+        };
+        head.addEventListener('mousedown', onStart);
+        head.addEventListener('touchstart', onStart, { passive: true });
+        head.addEventListener('mousemove', onMove);
+        head.addEventListener('touchmove', onMove, { passive: true });
+        head.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (moved) {
+            moved = false;
+            return;
+          }
+          this.expandFromChatHead(true);
+        });
+        this.makeElementDraggable(head, head);
+      }
+
+      if (!targetParent.contains(head)) {
+        targetParent.appendChild(head);
+      }
+      return head;
+    }
+
+    minimizeToChatHead() {
+      const container = document.getElementById('watch-party-container');
+      const theater = document.getElementById('cs-theater-layout');
+      if (theater) theater.classList.remove('is-watch-party-active');
+      if (container) {
+        container.classList.remove('is-floating-messenger');
+        container.style.display = 'none';
+        const playerCard = document.querySelector('.cs-player-card');
+        if (playerCard && container.parentNode !== playerCard.parentNode) {
+          playerCard.parentNode.insertBefore(container, playerCard.nextSibling);
+        }
+      }
+      const head = this.ensureChatHeadBubble();
+      if (head) head.style.display = 'inline-flex';
+    }
+
+    expandFromChatHead(asFloatingOverlay = false) {
+      const container = document.getElementById('watch-party-container');
+      const theater = document.getElementById('cs-theater-layout');
+      const head = document.getElementById('wp-chat-head-bubble');
+      if (!container) {
+        this.renderWatchPartyUI();
+        return;
+      }
+
+      this.unreadCount = 0;
+      const badge = document.getElementById('wp-chat-head-badge');
+      if (badge) {
+        badge.textContent = '0';
+        badge.style.display = 'none';
+      }
+      if (head) head.style.display = 'none';
+
+      const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+      const useOverlay = asFloatingOverlay || Boolean(fsElem);
+
+      if (useOverlay) {
+        const hostWrap = fsElem || document.querySelector('.player-container') || document.getElementById('video-player-container') || document.body;
+        if (theater) theater.classList.remove('is-watch-party-active');
+        container.classList.add('is-floating-messenger');
+        if (hostWrap && !hostWrap.contains(container)) {
+          hostWrap.appendChild(container);
+        }
+      } else {
+        const playerCard = document.querySelector('.cs-player-card');
+        container.classList.remove('is-floating-messenger');
+        if (playerCard && container.parentNode !== playerCard.parentNode) {
+          playerCard.parentNode.insertBefore(container, playerCard.nextSibling);
+        }
+        if (theater) theater.classList.add('is-watch-party-active');
+      }
+
+      container.style.display = 'flex';
+      const chatBox = document.getElementById('wp-chat-box');
+      if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     // --- UI Renderers & Interactions ---
@@ -781,7 +886,23 @@
         playerSec.parentNode.insertBefore(container, playerSec.nextSibling);
       }
 
+      container.classList.remove('is-floating-messenger');
       container.style.display = 'flex';
+      const existingHead = document.getElementById('wp-chat-head-bubble');
+      if (existingHead) existingHead.style.display = 'none';
+
+      if (!this._fsChangeBound) {
+        this._fsChangeBound = true;
+        document.addEventListener('fullscreenchange', () => {
+          const curContainer = document.getElementById('watch-party-container');
+          const curHead = document.getElementById('wp-chat-head-bubble');
+          if (curHead && curHead.style.display !== 'none') {
+            this.ensureChatHeadBubble();
+          } else if (curContainer && curContainer.style.display !== 'none' && curContainer.classList.contains('is-floating-messenger')) {
+            this.expandFromChatHead(true);
+          }
+        });
+      }
 
       // Update Flagship button in menu bar
       const wpBtn = document.getElementById('btn-watch-party-trigger');
@@ -793,54 +914,77 @@
 
       container.innerHTML = `
         <div class="wp-header">
-          <!-- Row 1: Title, Dual Control Mode Pill & Close Button -->
           <div class="wp-header-top">
-            <div class="wp-title">
-              <span class="wp-title-beacon"></span>
-              <i class="fa-solid fa-crown" style="color:#e50914"></i>
-              <span class="wp-vip-title">WATCH WITH FRIENDS</span>
+            <div class="wp-header-left-group">
+              <div class="wp-title">
+                <span class="wp-title-beacon"></span>
+                <span class="wp-vip-title">Watch Party</span>
+              </div>
+              <button type="button" class="wp-room-badge" id="wp-room-code" title="Copy Room Invite Link">
+                <i class="fa-solid fa-link"></i>
+                <span id="wp-code-text">${this.roomId}</span>
+              </button>
             </div>
+
             <div class="wp-header-top-actions">
-              ${this.isHost ? `
-                <button type="button" class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" id="wp-lock-toggle" title="Click to toggle control mode">
-                  <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
-                  <span id="wp-lock-label">${this.isLocked ? 'Host Only' : 'Everyone'}</span>
+              <!-- Single Party Controls Popover Icon (Houses Mic, Cam, Popups, Lock, Invite) -->
+              <div class="wp-controls-menu-wrap" id="wp-controls-menu-wrap">
+                <button type="button" class="wp-icon-btn wp-controls-toggle" id="wp-controls-toggle" aria-expanded="false" aria-controls="wp-controls-popover" title="Mic, Camera & Chat Popups">
+                  <i class="fa-solid fa-sliders"></i>
+                  <span class="wp-controls-dot" id="wp-controls-dot" style="display:none"></span>
                 </button>
-              ` : `
-                <span class="wp-lock-toggle ${this.isLocked ? 'locked' : ''}" style="cursor:default">
-                  <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
-                  <span>${this.isLocked ? 'Host Only' : 'Everyone'}</span>
-                </span>
-              `}
-              <button type="button" class="wp-close-btn" id="wp-close-btn" title="Minimize Lounge" aria-label="Close Lounge">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-          </div>
 
-          <!-- Row 2: Room Code Badge & Action Cluster (Popups, Mic, Cam) -->
-          <div class="wp-header-toolbar">
-            <button type="button" class="wp-room-badge" id="wp-room-code" title="Click to copy room invitation link">
-              <i class="fa-solid fa-link"></i>
-              <span id="wp-code-text">${this.roomId}</span>
-              <span class="wp-copy-pill"><i class="fa-regular fa-copy"></i> Copy</span>
-            </button>
+                <div class="wp-controls-popover" id="wp-controls-popover" role="region" aria-label="Party Media & Settings">
+                  <div class="wp-controls-pop-head">
+                    <span>Party Controls</span>
+                    <button type="button" class="wp-controls-pop-close" id="wp-controls-pop-close" aria-label="Close">&times;</button>
+                  </div>
 
-            <div class="wp-toolbar-actions">
-              <!-- In-Video Chat Popups Toggle -->
-              <button type="button" class="wp-popups-toggle ${this.chatPopupsEnabled !== false ? 'active' : ''}" id="wp-popups-toggle" title="Toggle On-Screen Chat Popups on Video">
-                <i class="fa-solid ${this.chatPopupsEnabled !== false ? 'fa-comment-dots' : 'fa-comment-slash'}"></i>
-                <span id="wp-popups-label">${this.chatPopupsEnabled !== false ? 'Popups ON' : 'Popups OFF'}</span>
+                  <!-- Icon-only toggles inside popover (zero cluttered text headers) -->
+                  <div class="wp-controls-icon-grid">
+                    <button type="button" class="wp-media-btn wp-ctl-tile ${this.isMicOn ? 'active' : ''}" id="wp-btn-mic" title="Microphone Voice Chat (M)" aria-label="Microphone">
+                      <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+                      <span class="wp-ctl-state" id="wp-mic-label">${this.isMicOn ? 'ON' : 'OFF'}</span>
+                    </button>
+                    <button type="button" class="wp-media-btn wp-ctl-tile ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Couple Camera Video (V)" aria-label="Camera">
+                      <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
+                      <span class="wp-ctl-state" id="wp-cam-label">${this.isCamOn ? 'ON' : 'OFF'}</span>
+                    </button>
+                    <button type="button" class="wp-popups-toggle wp-ctl-tile ${this.chatPopupsEnabled !== false ? 'active' : ''}" id="wp-popups-toggle" title="On-Screen Chat Popups" aria-label="Screen Popups">
+                      <i class="fa-solid ${this.chatPopupsEnabled !== false ? 'fa-comment-dots' : 'fa-comment-slash'}"></i>
+                      <span class="wp-ctl-state" id="wp-popups-label">${this.chatPopupsEnabled !== false ? 'ON' : 'OFF'}</span>
+                    </button>
+                  </div>
+
+                  <div class="wp-controls-pop-actions">
+                    ${this.isHost ? `
+                      <button type="button" class="wp-lock-toggle wp-pop-row-btn ${this.isLocked ? 'locked' : ''}" id="wp-lock-toggle" title="Toggle control permission">
+                        <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
+                        <span id="wp-lock-label">${this.isLocked ? 'Host Only' : 'Everyone'}</span>
+                      </button>
+                    ` : `
+                      <span class="wp-lock-toggle wp-pop-row-btn ${this.isLocked ? 'locked' : ''}" style="cursor:default">
+                        <i class="fa-solid ${this.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
+                        <span>${this.isLocked ? 'Host Only' : 'Everyone'}</span>
+                      </span>
+                    `}
+                    <button type="button" class="wp-pop-row-btn wp-pop-wa-btn" id="wp-share-btn" title="Invite on WhatsApp">
+                      <i class="fa-brands fa-whatsapp"></i>
+                      <span>WhatsApp</span>
+                    </button>
+                    <button type="button" class="wp-pop-row-btn" id="wp-copy-link-btn" title="Copy Room Link">
+                      <i class="fa-solid fa-copy"></i>
+                      <span>Link</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="wp-icon-btn" id="wp-dock-switch-btn" title="Pop Out / Dock Chat">
+                <i class="fa-solid fa-up-right-from-square"></i>
               </button>
-              <!-- Voice Chat Mic Toggle -->
-              <button type="button" class="wp-media-btn ${this.isMicOn ? 'active' : ''}" id="wp-btn-mic" title="Toggle Voice Chat Mic (M)">
-                <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
-                <span class="wp-media-label" id="wp-mic-label">${this.isMicOn ? 'Mic ON' : 'Mic'}</span>
-              </button>
-              <!-- Couple Cam PiP Toggle -->
-              <button type="button" class="wp-media-btn ${this.isCamOn ? 'active' : ''}" id="wp-btn-cam" title="Toggle Video Cam PiP (V)">
-                <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
-                <span class="wp-media-label" id="wp-cam-label">${this.isCamOn ? 'Cam ON' : 'Cam'}</span>
+              <button type="button" class="wp-icon-btn wp-close-btn" id="wp-close-btn" title="Minimize to Floating Bubble" aria-label="Minimize Watch Party">
+                <i class="fa-solid fa-minus"></i>
               </button>
             </div>
           </div>
@@ -853,26 +997,24 @@
         <div class="wp-body">
           <div class="wp-chat-box" id="wp-chat-box">
             <div class="wp-chat-welcome" id="wp-chat-welcome">
-              <div class="wp-welcome-badge"><i class="fa-solid fa-film"></i> Watch Lounge</div>
-              <div class="wp-welcome-sub">React live, tag movie scenes by timestamp, or chat together.</div>
+              <div class="wp-welcome-sub">In-sync watch lounge. Send a message or launch a scene poll.</div>
               <div class="wp-welcome-chips">
-                <button type="button" class="wp-quick-chip" data-quick="timestamp"><i class="fa-regular fa-clock"></i> Tag Scene</button>
-                <button type="button" class="wp-quick-chip" data-quick="poll"><i class="fa-solid fa-square-poll-vertical"></i> Poll</button>
                 <button type="button" class="wp-quick-chip" data-quick="wave"><i class="fa-solid fa-hand"></i> Say Hi</button>
+                <button type="button" class="wp-quick-chip" data-quick="poll"><i class="fa-solid fa-square-poll-vertical"></i> Poll</button>
               </div>
             </div>
           </div>
 
-          <!-- 3D Fluent Live Reactions Deck (12 Modern Expressive Reactions) -->
+          <!-- Compact Apple HD Reactions Strip -->
           <div class="wp-floating-reactions-bar">
-            <button type="button" class="wp-reaction-chip" data-emoji="fire" title="Fire 🔥">
+            <button type="button" class="wp-reaction-chip" data-emoji="fire" title="Fire">
               <img src="${WP_3D_EMOJIS.fire}" alt="Fire" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn 🍿">
+            <button type="button" class="wp-reaction-chip" data-emoji="popcorn" title="Popcorn">
               <img src="${WP_3D_EMOJIS.popcorn}" alt="Popcorn" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip wp-reaction-chip-bomb" data-emoji="bomb" title="2026 Cinematic Air-Strike Bomb 🚀💥">
-              <svg viewBox="0 0 48 48" class="react-3d-emoji react-tactical-bomb-svg" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
+            <button type="button" class="wp-reaction-chip wp-reaction-chip-bomb" data-emoji="bomb" title="Bomb">
+              <svg viewBox="0 0 48 48" class="react-3d-emoji react-tactical-bomb-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
   <defs>
     <linearGradient id="bombBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#475569" />
@@ -889,97 +1031,62 @@
       <stop offset="40%" stop-color="#ef4444" />
       <stop offset="100%" stop-color="#991b1b" />
     </radialGradient>
-    <filter id="laserGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.5" result="glow" />
-      <feMerge>
-        <feMergeNode in="glow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
   </defs>
-  <!-- Tactical Missile / Bomb Body -->
   <path d="M24 4 C15 13 14 26 15 36 C16 41 24 44 24 44 C24 44 32 41 33 36 C34 26 33 13 24 4 Z" fill="url(#bombBodyGrad)" stroke="#64748b" stroke-width="1.2" />
-  <!-- Yellow/Black Hazard Stripes -->
   <path d="M17 19 L31 19 L29 23 L19 23 Z" fill="#eab308" />
-  <path d="M18 20 L21 20 L19 22 L16 22 Z" fill="#0f172a" />
-  <path d="M24 20 L27 20 L25 22 L22 22 Z" fill="#0f172a" />
-  <!-- Tail Stabilizer Fins -->
   <path d="M15 32 L7 40 L13 41 L16 37 Z" fill="url(#bombFinsGrad)" />
   <path d="M33 32 L41 40 L35 41 L32 37 Z" fill="url(#bombFinsGrad)" />
-  <path d="M21 38 L21 44 L27 44 L27 38 Z" fill="#334155" />
-  <!-- Glowing Pulsing Plasma Core / Warhead LED -->
-  <circle cx="24" cy="28" r="4.5" fill="url(#plasmaCore)" filter="url(#laserGlow)" class="bomb-svg-plasma" />
-  <!-- Targeting Reticle Optics -->
-  <circle cx="24" cy="11" r="2.2" fill="#38bdf8" opacity="0.9" />
-  <circle cx="24" cy="11" r="1" fill="#ffffff" />
+  <circle cx="24" cy="28" r="4.5" fill="url(#plasmaCore)" class="bomb-svg-plasma" />
 </svg>
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love ❤️">
+            <button type="button" class="wp-reaction-chip" data-emoji="heart" title="Love">
               <img src="${WP_3D_EMOJIS.heart}" alt="Heart" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="mindblown" title="Mind Blown 🤯">
-              <img src="${WP_3D_EMOJIS.mindblown}" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
-            </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh 🤣">
+            <button type="button" class="wp-reaction-chip" data-emoji="laugh" title="Laugh">
               <img src="${WP_3D_EMOJIS.laugh}" alt="Laugh" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="party" title="Party 🎉">
+            <button type="button" class="wp-reaction-chip" data-emoji="mindblown" title="Mind Blown">
+              <img src="${WP_3D_EMOJIS.mindblown}" alt="Mind Blown" class="react-3d-emoji" loading="lazy">
+            </button>
+            <button type="button" class="wp-reaction-chip" data-emoji="party" title="Party">
               <img src="${WP_3D_EMOJIS.party}" alt="Party" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="shock" title="Shock 😱">
+            <button type="button" class="wp-reaction-chip" data-emoji="shock" title="Shock">
               <img src="${WP_3D_EMOJIS.shock}" alt="Shock" class="react-3d-emoji" loading="lazy">
             </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="clap" title="Clap 👏">
+            <button type="button" class="wp-reaction-chip" data-emoji="clap" title="Clap">
               <img src="${WP_3D_EMOJIS.clap}" alt="Clap" class="react-3d-emoji" loading="lazy">
-            </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="bolt" title="Hype ⚡">
-              <img src="${WP_3D_EMOJIS.bolt}" alt="Hype" class="react-3d-emoji" loading="lazy">
-            </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="skull" title="Dead 💀">
-              <img src="${WP_3D_EMOJIS.skull}" alt="Dead" class="react-3d-emoji" loading="lazy">
-            </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="crown" title="GOAT 👑">
-              <img src="${WP_3D_EMOJIS.crown}" alt="Crown" class="react-3d-emoji" loading="lazy">
-            </button>
-            <button type="button" class="wp-reaction-chip" data-emoji="star" title="Star-struck 🤩">
-              <img src="${WP_3D_EMOJIS.star}" alt="Star" class="react-3d-emoji" loading="lazy">
             </button>
           </div>
 
-          <!-- VIP Interactive Actions Tray (Couple Sync, Hug, Predictions Arena) -->
+          <!-- Clean Interactive Actions Row -->
           <div class="wp-special-actions-tray">
-            <!-- Long-Distance Couple Mode Toggle -->
-            <button type="button" class="wp-action-pill wp-couple-mode-btn ${this.isCoupleMode ? 'active' : ''}" id="wp-btn-couple" title="Toggle Long-Distance Couple Mode (Touch Glow & Private Hugs)">
+            <button type="button" class="wp-action-pill wp-couple-mode-btn ${this.isCoupleMode ? 'active' : ''}" id="wp-btn-couple" title="Long-Distance Touch Sync Mode">
               <i class="fa-solid fa-heart-pulse"></i>
               <span>Couple</span>
             </button>
-            <!-- Hold for Hug Button -->
-            <button type="button" class="wp-action-pill cs-couple-hug-btn" id="wp-btn-hug" title="Press and hold 1.5s to send a simultaneous hug">
+            <button type="button" class="wp-action-pill cs-couple-hug-btn" id="wp-btn-hug" title="Tap or hold to send a warm hug">
               <div class="cs-hug-progress-bar" id="wp-hug-progress"></div>
               <i class="fa-solid fa-heart"></i>
               <span>Warm Hug</span>
             </button>
-            <!-- Live Predictions & Betting Arena Button -->
-            <button type="button" class="wp-action-pill wp-prediction-btn" id="wp-btn-prediction" title="Live Scene Polls and Predictions">
+            <button type="button" class="wp-action-pill wp-prediction-btn" id="wp-btn-prediction" title="Create Live Poll">
               <i class="fa-solid fa-square-poll-vertical"></i>
-              <span>Poll &amp; Arena</span>
+              <span>Poll</span>
             </button>
           </div>
 
-          <!-- WhatsApp-Style Chat Input Bar with Emoji & Cinema Sticker Picker -->
+          <!-- Clean Chat Input Bar -->
           <div class="wp-chat-input-wrapper">
-            <!-- WhatsApp-Style Emoji & Cinema Sticker Popover -->
             <div class="wp-picker-popover" id="wp-picker-popover" style="display:none">
               <div class="wp-picker-header">
                 <div class="wp-picker-tabs">
                   <button type="button" class="wp-picker-tab-btn active" data-tab="emojis"><i class="fa-regular fa-face-smile"></i> Emojis</button>
-                  <button type="button" class="wp-picker-tab-btn" data-tab="stickers"><i class="fa-solid fa-film"></i> Cinema Stickers</button>
+                  <button type="button" class="wp-picker-tab-btn" data-tab="stickers"><i class="fa-solid fa-film"></i> Stickers</button>
                 </div>
                 <button type="button" class="wp-picker-close-btn" id="wp-picker-close-btn" title="Close Picker"><i class="fa-solid fa-xmark"></i></button>
               </div>
-              <div class="wp-picker-body" id="wp-picker-body">
-                <!-- Injected dynamically by initEmojiAndStickerPicker -->
-              </div>
+              <div class="wp-picker-body" id="wp-picker-body"></div>
             </div>
 
             <div class="wp-typing-indicator" id="wp-typing-indicator" aria-live="polite">
@@ -995,30 +1102,18 @@
               <button type="button" class="wp-reply-cancel" id="wp-reply-cancel" title="Cancel reply" aria-label="Cancel reply">&times;</button>
             </div>
             <form class="wp-chat-input-bar" id="wp-chat-form">
-              <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Cinema Sticker" aria-label="Open Emoji Picker">
+              <button type="button" class="wp-btn-smiley" id="wp-btn-smiley" title="Insert Emoji or Sticker" aria-label="Open Emoji Picker">
                 <i class="fa-regular fa-face-smile"></i>
-              </button>
-              <button type="button" class="wp-btn-smiley wp-btn-timestamp" id="wp-btn-timestamp" title="Tag current scene timestamp" aria-label="Tag current scene timestamp">
-                <i class="fa-regular fa-clock"></i>
               </button>
               <button type="button" class="wp-btn-smiley ${this.isWhisperMode ? 'active' : ''}" id="wp-btn-whisper" title="Private Whisper Mode" style="color:${this.isWhisperMode ? '#e50914' : '#94a3b8'};">
                 <i class="fa-solid fa-lock"></i>
               </button>
-              <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Message or tag [MM:SS]..." autocomplete="off">
+              <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Send a message..." autocomplete="off">
               <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
             </form>
           </div>
-        </div>
-
-        <div class="wp-footer-share">
-          <button type="button" class="wp-btn-wa-invite" id="wp-share-btn">
-            <i class="fa-brands fa-whatsapp"></i> Invite on WhatsApp
-          </button>
-          <button type="button" class="wp-btn-copy-link" id="wp-copy-link-btn" title="Copy Invite Link">
-            <i class="fa-solid fa-link"></i>
-          </button>
         </div>
       `;
 
@@ -1030,23 +1125,54 @@
           const codeText = roomBadge.querySelector('#wp-code-text');
           const originalText = this.roomId;
           if (codeText) {
-            codeText.textContent = 'Copied! ✓';
+            codeText.textContent = 'Copied';
             roomBadge.classList.add('copied');
             setTimeout(() => {
               codeText.textContent = originalText;
               roomBadge.classList.remove('copied');
-            }, 2000);
+            }, 1800);
           }
         });
       }
 
-      // Wire Close/Minimize
+      // Wire Minimize to Messenger Floating Chat Head Bubble
       const closeBtn = container.querySelector('#wp-close-btn');
       if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          if (theater) theater.classList.remove('is-watch-party-active');
-          container.style.display = 'none';
-          this.showActionToast('Watch Party minimized. Click "Room Active" to re-open 👥');
+        closeBtn.addEventListener('click', () => this.minimizeToChatHead());
+      }
+
+      // Wire Floating Overlay <-> Sidebar Dock Switch
+      const dockSwitchBtn = container.querySelector('#wp-dock-switch-btn');
+      if (dockSwitchBtn) {
+        dockSwitchBtn.addEventListener('click', () => {
+          const isFloating = container.classList.contains('is-floating-messenger');
+          this.expandFromChatHead(!isFloating);
+        });
+      }
+
+      // Wire Single Party Controls Popover (Mic, Cam, Popups, Lock, Invite)
+      const controlsWrap = container.querySelector('#wp-controls-menu-wrap');
+      const controlsToggle = container.querySelector('#wp-controls-toggle');
+      const controlsClose = container.querySelector('#wp-controls-pop-close');
+      if (controlsToggle && controlsWrap) {
+        controlsToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const willOpen = !controlsWrap.classList.contains('open');
+          controlsWrap.classList.toggle('open', willOpen);
+          controlsToggle.setAttribute('aria-expanded', String(willOpen));
+        });
+        if (controlsClose) {
+          controlsClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            controlsWrap.classList.remove('open');
+            controlsToggle.setAttribute('aria-expanded', 'false');
+          });
+        }
+        document.addEventListener('click', (e) => {
+          if (controlsWrap.classList.contains('open') && !controlsWrap.contains(e.target)) {
+            controlsWrap.classList.remove('open');
+            controlsToggle.setAttribute('aria-expanded', 'false');
+          }
         });
       }
 
@@ -1056,40 +1182,21 @@
         lockToggle.addEventListener('click', () => this.toggleLockMode());
       }
 
-      // Wire Popups Toggle
+      // Wire Popups Toggle inside Party Controls Popover
       const popupsToggle = container.querySelector('#wp-popups-toggle');
       if (popupsToggle) {
         popupsToggle.addEventListener('click', () => this.toggleChatPopups());
       }
-
-      // Wire Player Menu Bar Popups Toggle button if present
-      const barToggle = document.getElementById('btn-toggle-chat-popups');
-      if (barToggle && !barToggle._bound) {
-        barToggle._bound = true;
-        barToggle.addEventListener('click', () => this.toggleChatPopups());
-      }
       this.updateChatPopupsUI();
 
-      // Wire Mic buttons in Lounge & Player Menu Bar
+      // Wire Mic & Cam inside Party Controls Popover
       const wpMicBtn = container.querySelector('#wp-btn-mic');
       if (wpMicBtn) {
         wpMicBtn.addEventListener('click', () => this.toggleMic());
       }
-      const barMicBtn = document.getElementById('btn-bar-mic');
-      if (barMicBtn && !barMicBtn._bound) {
-        barMicBtn._bound = true;
-        barMicBtn.addEventListener('click', () => this.toggleMic());
-      }
-
-      // Wire Cam buttons in Lounge & Player Menu Bar
       const wpCamBtn = container.querySelector('#wp-btn-cam');
       if (wpCamBtn) {
         wpCamBtn.addEventListener('click', () => this.toggleCam());
-      }
-      const barCamBtn = document.getElementById('btn-bar-cam');
-      if (barCamBtn && !barCamBtn._bound) {
-        barCamBtn._bound = true;
-        barCamBtn.addEventListener('click', () => this.toggleCam());
       }
       this.updateMediaControlsUI();
 
@@ -1122,34 +1229,56 @@
         predBtn.addEventListener('click', () => this.openPredictionManager());
       }
 
-      // Wire Hold-for-Hug Button
+      // Wire Warm Hug Button (supports both single click AND press-and-hold)
       const hugBtn = container.querySelector('#wp-btn-hug');
       const hugBar = container.querySelector('#wp-hug-progress');
       if (hugBtn) {
+        let hugFired = false;
+        let lastHugAt = 0;
+        const fireHug = () => {
+          const now = Date.now();
+          if (now - lastHugAt < 900) return;
+          lastHugAt = now;
+          hugFired = true;
+          if (this.hugInterval) { clearInterval(this.hugInterval); this.hugInterval = null; }
+          if (hugBar) hugBar.style.width = '100%';
+          this.triggerCoupleHug();
+          setTimeout(() => { if (hugBar) hugBar.style.width = '0%'; }, 320);
+        };
         const startHug = (e) => {
           if (e.type === 'touchstart') e.preventDefault();
+          hugFired = false;
           this.hugProgress = 0;
           if (hugBar) hugBar.style.width = '0%';
           if (this.hugInterval) clearInterval(this.hugInterval);
           this.hugInterval = setInterval(() => {
-            this.hugProgress += 10;
-            if (hugBar) hugBar.style.width = this.hugProgress + '%';
+            this.hugProgress += 20;
+            if (hugBar) hugBar.style.width = Math.min(100, this.hugProgress) + '%';
             if (this.hugProgress >= 100) {
-              clearInterval(this.hugInterval);
-              this.triggerCoupleHug();
-              if (hugBar) hugBar.style.width = '0%';
+              fireHug();
             }
-          }, 140);
+          }, 90);
         };
-        const cancelHug = () => {
-          if (this.hugInterval) clearInterval(this.hugInterval);
-          if (hugBar) hugBar.style.width = '0%';
+        const endOrClickHug = (e) => {
+          if (this.hugInterval) { clearInterval(this.hugInterval); this.hugInterval = null; }
+          if (!hugFired && (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'click')) {
+            fireHug();
+          } else if (hugBar && !hugFired) {
+            hugBar.style.width = '0%';
+          }
         };
         hugBtn.addEventListener('mousedown', startHug);
         hugBtn.addEventListener('touchstart', startHug, { passive: false });
-        hugBtn.addEventListener('mouseup', cancelHug);
-        hugBtn.addEventListener('touchend', cancelHug);
-        hugBtn.addEventListener('mouseleave', cancelHug);
+        hugBtn.addEventListener('mouseup', endOrClickHug);
+        hugBtn.addEventListener('touchend', endOrClickHug);
+        hugBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          fireHug();
+        });
+        hugBtn.addEventListener('mouseleave', () => {
+          if (this.hugInterval) { clearInterval(this.hugInterval); this.hugInterval = null; }
+          if (!hugFired && hugBar) hugBar.style.width = '0%';
+        });
       }
 
       // Wire Whisper Button in Chat bar
@@ -1419,16 +1548,12 @@
         const icon = wpToggle.querySelector('i');
         if (icon) icon.className = `fa-solid ${enabled ? 'fa-comment-dots' : 'fa-comment-slash'}`;
         const lbl = wpToggle.querySelector('#wp-popups-label');
-        if (lbl) lbl.textContent = enabled ? 'Popups ON' : 'Popups OFF';
+        if (lbl) lbl.textContent = enabled ? 'ON' : 'OFF';
       }
 
-      const barToggle = document.getElementById('btn-toggle-chat-popups');
-      if (barToggle) {
-        barToggle.classList.toggle('active', enabled);
-        const icon = barToggle.querySelector('i');
-        if (icon) icon.className = `fa-solid ${enabled ? 'fa-comment-dots' : 'fa-comment-slash'}`;
-        const badge = barToggle.querySelector('#cs-popups-badge');
-        if (badge) badge.textContent = enabled ? 'ON' : 'OFF';
+      const controlsDot = document.getElementById('wp-controls-dot');
+      if (controlsDot) {
+        controlsDot.style.display = (this.isMicOn || this.isCamOn || enabled) ? 'block' : 'none';
       }
     }
 
@@ -1485,139 +1610,215 @@
       });
     }
 
+    async isMediaPermGranted(permName) {
+      try {
+        if (!navigator.permissions || !navigator.permissions.query) return false;
+        const st = await navigator.permissions.query({ name: permName });
+        return st && st.state === 'granted';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    openMediaConfirmDialog(kind, onConfirm) {
+      let modal = document.getElementById('wp-media-perm-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'wp-media-perm-modal';
+        modal.className = 'fz-cinema-modal-backdrop';
+        modal.style.zIndex = '100050';
+        document.body.appendChild(modal);
+      }
+
+      const isCam = kind === 'cam';
+      modal.innerHTML = `
+        <div class="wp-media-perm-card" role="dialog" aria-modal="true">
+          <div class="wp-media-perm-icon">
+            <i class="fa-solid ${isCam ? 'fa-video' : 'fa-microphone'}"></i>
+          </div>
+          <h3 style="margin:0;font-size:16px;font-weight:800;color:#ffffff;">
+            ${isCam ? 'Turn On Camera' : 'Turn On Microphone'}
+          </h3>
+          <p style="margin:0;font-size:12.5px;color:#a1a1aa;line-height:1.45;">
+            ${isCam ? 'Share your live camera preview cleanly with Watch Party members. Click OK to continue.' : 'Join live party voice chat. Click OK to enable your microphone.'}
+          </p>
+          <div class="wp-media-perm-actions">
+            <button type="button" class="fz-btn-sec" id="wp-perm-cancel" style="flex:1;">Cancel</button>
+            <button type="button" class="fz-btn-pri" id="wp-perm-ok" style="flex:1.4;font-weight:800;">
+              ${isCam ? 'Camera ON — OK' : 'Mic ON — OK'}
+            </button>
+          </div>
+        </div>
+      `;
+      modal.style.display = 'flex';
+      modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+      const cancelBtn = modal.querySelector('#wp-perm-cancel');
+      const okBtn = modal.querySelector('#wp-perm-ok');
+      if (cancelBtn) cancelBtn.onclick = () => { modal.style.display = 'none'; };
+      if (okBtn) {
+        okBtn.onclick = () => {
+          modal.style.display = 'none';
+          this._mediaConfirmed = this._mediaConfirmed || {};
+          this._mediaConfirmed[kind] = true;
+          onConfirm();
+        };
+      }
+    }
+
     async toggleMic() {
       if (!this.roomId) {
-        this.showActionToast('Start or join a Watch Party room first 👥');
+        this.showActionToast('Start or join a Watch Party room first');
         return;
       }
 
-      try {
-        if (this.isMicOn) {
-          this.isMicOn = false;
-          if (this.localStream) {
-            this.localStream.getAudioTracks().forEach(t => {
-              t.enabled = false;
-              t.stop();
-              this.localStream.removeTrack(t);
-            });
-          }
-          if (this.localAudioInterval) {
-            clearInterval(this.localAudioInterval);
-            this.localAudioInterval = null;
-          }
-          const localBubble = document.querySelector('.cs-cam-bubble[data-user="local"]');
-          if (localBubble) localBubble.classList.remove('is-speaking');
-
-          this.syncLocalTracksToPeers();
-          this.broadcastMediaStatus();
-          this.updateMediaControlsUI();
-          this.updateCoupleCamDock();
-          this.showActionToast('Microphone Muted 🔇');
-        } else {
-          let audioStream;
-          try {
-            audioStream = await navigator.mediaDevices.getUserMedia({
-              audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true
-              }
-            });
-          } catch (err) {
-            console.warn('Microphone permission denied/error:', err);
-            this.showActionToast('Please allow Microphone access to speak 🎙️');
-            return;
-          }
-
-          const aTrack = audioStream.getAudioTracks()[0];
-          if (!aTrack) {
-            this.showActionToast('No microphone found on your device');
-            return;
-          }
-
-          if (!this.localStream) {
-            this.localStream = new MediaStream();
-          }
+      if (this.isMicOn) {
+        this.isMicOn = false;
+        if (this.localStream) {
           this.localStream.getAudioTracks().forEach(t => {
+            t.enabled = false;
             t.stop();
             this.localStream.removeTrack(t);
           });
-          this.localStream.addTrack(aTrack);
-          this.isMicOn = true;
-
-          this.syncLocalTracksToPeers();
-          this.setupLocalAudioAnalyser();
-          this.broadcastMediaStatus();
-          this.updateMediaControlsUI();
-          this.updateCoupleCamDock();
-          this.showActionToast('Microphone ON 🎙️ Voice chat active');
         }
+        if (this.localAudioInterval) {
+          clearInterval(this.localAudioInterval);
+          this.localAudioInterval = null;
+        }
+        const localBubble = document.querySelector('.cs-cam-bubble[data-user="local"]');
+        if (localBubble) localBubble.classList.remove('is-speaking');
+
+        this.syncLocalTracksToPeers();
+        this.broadcastMediaStatus();
+        this.updateMediaControlsUI();
+        this.updateCoupleCamDock();
+        this.showActionToast('Microphone Muted');
+        return;
+      }
+
+      const granted = (this._mediaConfirmed && this._mediaConfirmed.mic) || await this.isMediaPermGranted('microphone');
+      if (!granted) {
+        this.openMediaConfirmDialog('mic', () => this.activateMicStream());
+        return;
+      }
+      await this.activateMicStream();
+    }
+
+    async activateMicStream() {
+      try {
+        let audioStream;
+        try {
+          audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+        } catch (err) {
+          console.warn('Microphone permission denied/error:', err);
+          this.showActionToast('Please allow Microphone access in browser settings');
+          return;
+        }
+
+        const aTrack = audioStream.getAudioTracks()[0];
+        if (!aTrack) {
+          this.showActionToast('No microphone found on your device');
+          return;
+        }
+
+        if (!this.localStream) {
+          this.localStream = new MediaStream();
+        }
+        this.localStream.getAudioTracks().forEach(t => {
+          t.stop();
+          this.localStream.removeTrack(t);
+        });
+        this.localStream.addTrack(aTrack);
+        this.isMicOn = true;
+
+        this.syncLocalTracksToPeers();
+        this.setupLocalAudioAnalyser();
+        this.broadcastMediaStatus();
+        this.updateMediaControlsUI();
+        this.updateCoupleCamDock();
+        this.showActionToast('Microphone ON');
       } catch (err) {
-        console.error('toggleMic error:', err);
+        console.error('activateMicStream error:', err);
         this.showActionToast('Could not access microphone');
       }
     }
 
     async toggleCam() {
       if (!this.roomId) {
-        this.showActionToast('Start or join a Watch Party room first 👥');
+        this.showActionToast('Start or join a Watch Party room first');
         return;
       }
 
-      try {
-        if (this.isCamOn) {
-          this.isCamOn = false;
-          if (this.localStream) {
-            this.localStream.getVideoTracks().forEach(t => {
-              t.stop();
-              this.localStream.removeTrack(t);
-            });
-          }
-          this.syncLocalTracksToPeers();
-          this.broadcastMediaStatus();
-          this.updateMediaControlsUI();
-          this.updateCoupleCamDock();
-          this.showActionToast('Camera turned OFF 📷');
-        } else {
-          let videoStream;
-          try {
-            videoStream = await navigator.mediaDevices.getUserMedia({
-              video: {
-                width: { ideal: 320 },
-                height: { ideal: 320 },
-                facingMode: 'user'
-              }
-            });
-          } catch (err) {
-            console.warn('Camera permission denied/error:', err);
-            this.showActionToast('Please allow Camera access for Couple Cam 👫📷');
-            return;
-          }
-
-          const vTrack = videoStream.getVideoTracks()[0];
-          if (!vTrack) {
-            this.showActionToast('No camera found on your device');
-            return;
-          }
-
-          if (!this.localStream) {
-            this.localStream = new MediaStream();
-          }
+      if (this.isCamOn) {
+        this.isCamOn = false;
+        if (this.localStream) {
           this.localStream.getVideoTracks().forEach(t => {
             t.stop();
             this.localStream.removeTrack(t);
           });
-          this.localStream.addTrack(vTrack);
-          this.isCamOn = true;
-
-          this.syncLocalTracksToPeers();
-          this.broadcastMediaStatus();
-          this.updateMediaControlsUI();
-          this.updateCoupleCamDock();
-          this.showActionToast('Couple Cam ON 👫 High-Definition PiP');
         }
+        this.syncLocalTracksToPeers();
+        this.broadcastMediaStatus();
+        this.updateMediaControlsUI();
+        this.updateCoupleCamDock();
+        this.showActionToast('Camera turned OFF');
+        return;
+      }
+
+      const granted = (this._mediaConfirmed && this._mediaConfirmed.cam) || await this.isMediaPermGranted('camera');
+      if (!granted) {
+        this.openMediaConfirmDialog('cam', () => this.activateCamStream());
+        return;
+      }
+      await this.activateCamStream();
+    }
+
+    async activateCamStream() {
+      try {
+        let videoStream;
+        try {
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 320 },
+              height: { ideal: 320 },
+              facingMode: 'user'
+            }
+          });
+        } catch (err) {
+          console.warn('Camera permission denied/error:', err);
+          this.showActionToast('Please allow Camera access in browser settings');
+          return;
+        }
+
+        const vTrack = videoStream.getVideoTracks()[0];
+        if (!vTrack) {
+          this.showActionToast('No camera found on your device');
+          return;
+        }
+
+        if (!this.localStream) {
+          this.localStream = new MediaStream();
+        }
+        this.localStream.getVideoTracks().forEach(t => {
+          t.stop();
+          this.localStream.removeTrack(t);
+        });
+        this.localStream.addTrack(vTrack);
+        this.isCamOn = true;
+
+        this.syncLocalTracksToPeers();
+        this.broadcastMediaStatus();
+        this.updateMediaControlsUI();
+        this.updateCoupleCamDock();
+        this.showActionToast('Camera ON');
       } catch (err) {
-        console.error('toggleCam error:', err);
+        console.error('activateCamStream error:', err);
         this.showActionToast('Could not access camera');
       }
     }
@@ -1628,16 +1829,8 @@
         wpMic.classList.toggle('active', this.isMicOn);
         const icon = wpMic.querySelector('i');
         if (icon) icon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
-        const lbl = wpMic.querySelector('.wp-media-label');
-        if (lbl) lbl.textContent = this.isMicOn ? 'Mic ON' : 'Mic';
-      }
-      const barMic = document.getElementById('btn-bar-mic');
-      if (barMic) {
-        barMic.classList.toggle('active', this.isMicOn);
-        const icon = barMic.querySelector('i');
-        if (icon) icon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
-        const badge = barMic.querySelector('#cs-mic-badge');
-        if (badge) badge.textContent = this.isMicOn ? 'ON' : 'OFF';
+        const lbl = wpMic.querySelector('#wp-mic-label') || wpMic.querySelector('.wp-media-label');
+        if (lbl) lbl.textContent = this.isMicOn ? 'ON' : 'OFF';
       }
 
       const wpCam = document.getElementById('wp-btn-cam');
@@ -1645,16 +1838,13 @@
         wpCam.classList.toggle('active', this.isCamOn);
         const icon = wpCam.querySelector('i');
         if (icon) icon.className = `fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}`;
-        const lbl = wpCam.querySelector('.wp-media-label');
-        if (lbl) lbl.textContent = this.isCamOn ? 'Cam ON' : 'Cam';
+        const lbl = wpCam.querySelector('#wp-cam-label') || wpCam.querySelector('.wp-media-label');
+        if (lbl) lbl.textContent = this.isCamOn ? 'ON' : 'OFF';
       }
-      const barCam = document.getElementById('btn-bar-cam');
-      if (barCam) {
-        barCam.classList.toggle('active', this.isCamOn);
-        const icon = barCam.querySelector('i');
-        if (icon) icon.className = `fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}`;
-        const badge = barCam.querySelector('#cs-cam-badge');
-        if (badge) badge.textContent = this.isCamOn ? 'ON' : 'OFF';
+
+      const controlsDot = document.getElementById('wp-controls-dot');
+      if (controlsDot) {
+        controlsDot.style.display = (this.isMicOn || this.isCamOn || this.chatPopupsEnabled !== false) ? 'block' : 'none';
       }
     }
 
@@ -1718,7 +1908,7 @@
         `;
 
         header = dock.querySelector('#cs-cam-dock-drag-bar');
-        this.makeElementDraggable(dock, header);
+        this.makeElementDraggable(dock, dock);
 
         const minBtn = dock.querySelector('#cs-cam-btn-min');
         if (minBtn) {
@@ -1757,6 +1947,7 @@
 
         const userInitial = (this.localUser.name || 'U').charAt(0).toUpperCase();
         if (this.isCamOn && this.localStream && this.localStream.getVideoTracks().length > 0) {
+          localBubble.classList.add('has-video');
           let videoEl = localBubble.querySelector('video');
           if (!videoEl) {
             localBubble.innerHTML = `
@@ -1777,6 +1968,7 @@
           if (micIcon) micIcon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
         } else {
           // Audio only mode
+          localBubble.classList.remove('has-video');
           localBubble.innerHTML = `
             <div class="cs-cam-avatar-placeholder">
               <span>${this.escapeHtml(userInitial)}</span>
@@ -1817,6 +2009,7 @@
         const pInitial = pName.charAt(0).toUpperCase();
 
         if (hasVideo) {
+          remoteBubble.classList.add('has-video');
           let videoEl = remoteBubble.querySelector('video');
           if (!videoEl) {
             remoteBubble.innerHTML = `
@@ -1836,6 +2029,7 @@
           const micIcon = remoteBubble.querySelector('.cs-cam-info-badge i');
           if (micIcon) micIcon.className = `fa-solid ${pMic ? 'fa-microphone' : 'fa-microphone-slash'}`;
         } else {
+          remoteBubble.classList.remove('has-video');
           remoteBubble.innerHTML = `
             <div class="cs-cam-avatar-placeholder">
               <span>${this.escapeHtml(pInitial)}</span>
@@ -2150,8 +2344,17 @@
         chatBox.scrollTop = chatBox.scrollHeight;
       }
 
-      // Show in-video floating chat popup (works in Fullscreen and regular view)
+      // Show in-video floating chat popup & update minimized Messenger chat-head unread count
       if (!isSystem) {
+        const container = document.getElementById('watch-party-container');
+        if (!isMe && (!container || container.style.display === 'none')) {
+          this.unreadCount = (this.unreadCount || 0) + 1;
+          const badge = document.getElementById('wp-chat-head-badge');
+          if (badge) {
+            badge.textContent = this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+            badge.style.display = 'inline-flex';
+          }
+        }
         this.showInVideoChatPopup(author, text, isMe, isWhisper);
       }
     }
@@ -2635,10 +2838,12 @@
         sender: this.localUser.name
       });
       this.showCoupleHugOverlay(this.localUser.name);
+      this.showActionToast('Warm Hug sent to party ❤️');
     }
 
     showCoupleHugOverlay(senderName) {
-      const playerWrap = document.getElementById('video-player-container') || document.querySelector('.player-container');
+      const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+      const playerWrap = fsElem || document.getElementById('filmsubPlayer') || document.getElementById('video-player-container') || document.querySelector('.player-container') || document.body;
       if (!playerWrap) return;
 
       let overlay = document.getElementById('cs-couple-hug-overlay');
@@ -2646,15 +2851,18 @@
         overlay = document.createElement('div');
         overlay.id = 'cs-couple-hug-overlay';
         overlay.className = 'couple-hug-overlay';
+      }
+      if (!playerWrap.contains(overlay)) {
         playerWrap.appendChild(overlay);
       }
 
       overlay.innerHTML = `
-        <div class="couple-hug-heart">🤗❤️</div>
-        <div class="couple-hug-text">${this.escapeHtml(senderName)} gave you a warm hold hug!</div>
-        <div style="font-size:12px;color:#fda4af;font-weight:600;">Long-Distance Couple Sync • Simultaneous Heartbeat</div>
+        <div class="couple-hug-heart"><i class="fa-solid fa-heart" style="color:#e50914;"></i></div>
+        <div class="couple-hug-text">${this.escapeHtml(senderName)} sent a warm hug</div>
+        <div style="font-size:11.5px;color:#fda4af;font-weight:600;letter-spacing:0.3px;">Synchronized Heartbeat Pulse</div>
       `;
       overlay.style.display = 'flex';
+      overlay.style.zIndex = '95';
 
       this.playSynthesizedSound('hug');
 
@@ -3426,18 +3634,25 @@
               <input type="text" id="wp-poll-q" class="wp-poll-field" placeholder="Ask a question (e.g. Will he survive? / මූ බේරෙයිද? / Next target කවුද?)" />
             </div>
 
-            <!-- Option 1 & 2 Inputs -->
+            <!-- Dynamic Options List (2+ Unlimited Choices) -->
             <div style="display:flex;flex-direction:column;gap:8px;">
-              <label style="font-size:11px;font-weight:700;color:#d4d4d8;text-transform:uppercase;letter-spacing:0.5px;">
-                <i class="fa-solid fa-list-check" style="color:#e50914;margin-right:4px;"></i> Options / පිළිතුරු (2 Choices)
-              </label>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(255,255,255,0.12);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">A</span>
-                <input type="text" id="wp-poll-oa" class="wp-poll-field" placeholder="Option 1 (e.g. Yes / Survives / ඔව්)" />
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <label style="font-size:11px;font-weight:700;color:#d4d4d8;text-transform:uppercase;letter-spacing:0.5px;">
+                  <i class="fa-solid fa-list-check" style="color:#e50914;margin-right:4px;"></i> Options / පිළිතුරු (<span id="wp-poll-opt-count">2</span> Choices)
+                </label>
+                <button type="button" id="wp-poll-add-opt" style="background:rgba(229,9,20,0.16);border:1px solid rgba(229,9,20,0.45);color:#ffffff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                  <i class="fa-solid fa-plus"></i> Add Answer
+                </button>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(229,9,20,0.28);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</span>
-                <input type="text" id="wp-poll-ob" class="wp-poll-field" placeholder="Option 2 (e.g. No / Fails / නෑ)" />
+              <div id="wp-poll-options-list" style="display:flex;flex-direction:column;gap:8px;max-height:210px;overflow-y:auto;padding-right:2px;">
+                <div class="wp-poll-opt-row" style="display:flex;align-items:center;gap:8px;">
+                  <span class="wp-poll-opt-badge" style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(255,255,255,0.12);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">A</span>
+                  <input type="text" id="wp-poll-oa" class="wp-poll-field wp-poll-opt-input" placeholder="Answer 1 (e.g. Yes / Survives)" />
+                </div>
+                <div class="wp-poll-opt-row" style="display:flex;align-items:center;gap:8px;">
+                  <span class="wp-poll-opt-badge" style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(229,9,20,0.28);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</span>
+                  <input type="text" id="wp-poll-ob" class="wp-poll-field wp-poll-opt-input" placeholder="Answer 2 (e.g. No / Fails)" />
+                </div>
               </div>
             </div>
 
@@ -3448,7 +3663,7 @@
                   <i class="fa-solid fa-stopwatch" style="color:#d4d4d8;margin-right:4px;"></i> Voting Timer
                 </label>
                 <select id="wp-poll-dur" class="wp-poll-select">
-                  <option value="15">15 seconds (⚡ Fast)</option>
+                  <option value="15">15 seconds (Fast)</option>
                   <option value="25" selected>25 seconds (Standard)</option>
                   <option value="45">45 seconds</option>
                   <option value="60">60 seconds (1 Min)</option>
@@ -3461,25 +3676,10 @@
                   <i class="fa-solid fa-coins" style="color:#d4d4d8;margin-right:4px;"></i> Bet / Mode
                 </label>
                 <select id="wp-poll-wager" class="wp-poll-select">
-                  <option value="0">Free Poll (0 🍿 Vote Only)</option>
-                  <option value="25" selected>Popcorn Bet (25 🍿 - 2x Win)</option>
-                  <option value="50">High Stakes (50 🍿 - 2x Win)</option>
+                  <option value="0">Free Poll (Vote Only)</option>
+                  <option value="25" selected>Popcorn Bet (25 Coins - 2x Win)</option>
+                  <option value="50">High Stakes (50 Coins - 2x Win)</option>
                 </select>
-              </div>
-            </div>
-
-            <!-- Quick Preset Chips -->
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <label style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">
-                ⚡ Quick Presets (Click to autofill):
-              </label>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                <button type="button" class="wp-poll-chip" data-q="Who will survive this scene?" data-oa="Hero survives" data-ob="Villain escapes">🗡️ Hero vs Villain</button>
-                <button type="button" class="wp-poll-chip" data-q="Will the bomb / crisis be resolved in time?" data-oa="Resolved in time" data-ob="Explosion happens">💣 Bomb / Crisis (Yes/No)</button>
-                <button type="button" class="wp-poll-chip" data-q="Who is the secret mastermind / killer?" data-oa="Main Suspect" data-ob="Secret Ally">🔍 Killer / Suspect</button>
-                <button type="button" class="wp-poll-chip" data-q="Will they kiss in this scene?" data-oa="They Kiss ❤️" data-ob="Interrupted 🙅">💋 Romantic Kiss</button>
-                <button type="button" class="wp-poll-chip" data-q="මේ scene එකේදී මූ මැරෙයිද?" data-oa="ඔව් (මැරෙනවා)" data-ob="නෑ (බේරෙනවා)">🇱🇰 මැරෙයිද? බේරෙයිද?</button>
-                <button type="button" class="wp-poll-chip" data-q="කවුද මේක පිටිපස්සේ ඉන්නේ?" data-oa="ප්‍රධාන සැකකරු" data-ob="හිතවත් මිතුරා">🇱🇰 සැකකරු කවුද?</button>
               </div>
             </div>
 
@@ -3489,7 +3689,7 @@
                 <i class="fa-solid fa-ranking-star"></i> Leaderboard
               </button>
               <button type="button" class="fz-btn-pri" id="wp-btn-launch-poll" style="flex:2;font-weight:800;">
-                <i class="fa-solid fa-paper-plane"></i> Launch Live Poll 🚀
+                <i class="fa-solid fa-paper-plane"></i> Launch Live Poll
               </button>
             </div>
           </div>
@@ -3497,58 +3697,121 @@
       `;
       modal.style.display = 'flex';
 
-      // Attach chip click handlers to autofill
-      const chips = modal.querySelectorAll('.wp-poll-chip');
-      chips.forEach(chip => {
-        chip.onclick = () => {
-          const qInput = modal.querySelector('#wp-poll-q');
-          const oaInput = modal.querySelector('#wp-poll-oa');
-          const obInput = modal.querySelector('#wp-poll-ob');
-          if (qInput) qInput.value = chip.dataset.q || '';
-          if (oaInput) oaInput.value = chip.dataset.oa || '';
-          if (obInput) obInput.value = chip.dataset.ob || '';
-          chip.style.transform = 'scale(0.95)';
-          setTimeout(() => { chip.style.transform = ''; }, 150);
+      const listEl = modal.querySelector('#wp-poll-options-list');
+      const countEl = modal.querySelector('#wp-poll-opt-count');
+      const addOptBtn = modal.querySelector('#wp-poll-add-opt');
+
+      const syncOptionLabels = () => {
+        if (!listEl) return;
+        const rows = Array.from(listEl.querySelectorAll('.wp-poll-opt-row'));
+        rows.forEach((row, idx) => {
+          const letter = String.fromCharCode(65 + idx);
+          const badge = row.querySelector('.wp-poll-opt-badge');
+          const inp = row.querySelector('.wp-poll-opt-input');
+          if (badge) {
+            badge.textContent = letter;
+            badge.style.background = idx % 2 === 1 ? 'rgba(229,9,20,0.28)' : 'rgba(255,255,255,0.12)';
+          }
+          if (inp && idx >= 2) inp.placeholder = `Answer ${idx + 1}`;
+        });
+        if (countEl) countEl.textContent = String(rows.length);
+      };
+
+      if (addOptBtn && listEl) {
+        addOptBtn.onclick = () => {
+          const curCount = listEl.querySelectorAll('.wp-poll-opt-row').length;
+          if (curCount >= 8) {
+            this.showActionToast('Maximum 8 poll choices allowed');
+            return;
+          }
+          const letter = String.fromCharCode(65 + curCount);
+          const row = document.createElement('div');
+          row.className = 'wp-poll-opt-row';
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+          row.innerHTML = `
+            <span class="wp-poll-opt-badge" style="font-size:12px;font-weight:800;color:#ffffff;background:rgba(255,255,255,0.12);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${letter}</span>
+            <input type="text" class="wp-poll-field wp-poll-opt-input" placeholder="Answer ${curCount + 1}" />
+            <button type="button" class="wp-poll-opt-del" title="Remove option" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;width:26px;height:26px;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">&times;</button>
+          `;
+          const delBtn = row.querySelector('.wp-poll-opt-del');
+          if (delBtn) {
+            delBtn.onclick = () => {
+              row.remove();
+              syncOptionLabels();
+            };
+          }
+          listEl.appendChild(row);
+          syncOptionLabels();
+          const newInp = row.querySelector('input');
+          if (newInp) newInp.focus();
         };
-      });
+      }
 
       // Attach Launch button handler
       const launchBtn = modal.querySelector('#wp-btn-launch-poll');
       if (launchBtn) {
         launchBtn.onclick = () => {
           const qInput = modal.querySelector('#wp-poll-q');
-          const oaInput = modal.querySelector('#wp-poll-oa');
-          const obInput = modal.querySelector('#wp-poll-ob');
           const durSelect = modal.querySelector('#wp-poll-dur');
           const wagerSelect = modal.querySelector('#wp-poll-wager');
 
           const question = (qInput && qInput.value.trim()) || 'Who will survive this scene?';
-          const optionA = (oaInput && oaInput.value.trim()) || 'Option A';
-          const optionB = (obInput && obInput.value.trim()) || 'Option B';
+          const optInputs = listEl ? Array.from(listEl.querySelectorAll('.wp-poll-opt-input')) : [];
+          const rawOptions = optInputs.map((inp, idx) => (inp.value.trim() || `Option ${String.fromCharCode(65 + idx)}`));
+          if (rawOptions.length < 2) {
+            rawOptions.push('Option A', 'Option B');
+          }
           const duration = parseInt((durSelect && durSelect.value) || '25', 10);
           const wager = parseInt((wagerSelect && wagerSelect.value) || '25', 10);
 
           modal.style.display = 'none';
-          this.startPrediction(question, optionA, optionB, duration, wager);
+          this.startPrediction(question, rawOptions, duration, wager);
         };
       }
     }
 
-    startPrediction(question, optionA, optionB, duration = 25, wager = 25) {
+    startPrediction(question, optionsOrA, optionBOrDur, duration = 25, wager = 25) {
+      let optList = [];
+      let resolvedDur = duration;
+      let resolvedWager = wager;
+
+      if (Array.isArray(optionsOrA)) {
+        resolvedDur = typeof optionBOrDur === 'number' ? optionBOrDur : 25;
+        resolvedWager = typeof duration === 'number' ? duration : 25;
+        optList = optionsOrA.filter(Boolean).map((lbl, idx) => ({
+          key: String.fromCharCode(65 + idx),
+          label: String(lbl),
+          votes: 0,
+          pool: resolvedWager > 0 ? resolvedWager : 0
+        }));
+      } else {
+        optList = [
+          { key: 'A', label: String(optionsOrA || 'Option A'), votes: 0, pool: resolvedWager > 0 ? resolvedWager : 0 },
+          { key: 'B', label: String(optionBOrDur || 'Option B'), votes: 0, pool: resolvedWager > 0 ? resolvedWager : 0 }
+        ];
+      }
+      if (optList.length < 2) {
+        optList = [
+          { key: 'A', label: 'Option A', votes: 0, pool: resolvedWager > 0 ? resolvedWager : 0 },
+          { key: 'B', label: 'Option B', votes: 0, pool: resolvedWager > 0 ? resolvedWager : 0 }
+        ];
+      }
+
       const pred = {
         id: 'pred_' + Date.now(),
         creator: (this.localUser && this.localUser.name) || 'Viewer',
         creatorId: (this.localUser && this.localUser.id) || 'local',
         question,
-        optionA,
-        optionB,
-        duration,
-        wager: typeof wager === 'number' ? wager : 25,
-        endTime: Date.now() + duration * 1000,
+        options: optList,
+        optionA: optList[0].label,
+        optionB: optList[1].label,
+        duration: resolvedDur,
+        wager: typeof resolvedWager === 'number' ? resolvedWager : 25,
+        endTime: Date.now() + resolvedDur * 1000,
         votesA: 0,
         votesB: 0,
-        poolA: (wager > 0 ? wager : 0),
-        poolB: (wager > 0 ? wager : 0),
+        poolA: (resolvedWager > 0 ? resolvedWager : 0),
+        poolB: (resolvedWager > 0 ? resolvedWager : 0),
         hasVoted: false,
         myVote: null,
         myBet: 0
@@ -3559,21 +3822,27 @@
         prediction: pred
       });
       this.renderPredictionCard();
-      const modeLabel = (pred.wager > 0) ? `${pred.wager} 🍿 Popcorn Bet` : 'Free Community Poll';
-      this.showActionToast(`🎲 Live Poll Launched (${modeLabel}): "${question}"`);
+      const modeLabel = (pred.wager > 0) ? `${pred.wager} Coins Bet` : 'Free Community Poll';
+      this.showActionToast(`Live Poll Launched (${modeLabel}): "${question}"`);
     }
 
     handlePredictionStart(data) {
       if (!data || !data.prediction) return;
+      const incoming = data.prediction;
+      const fallbackOpts = [
+        { key: 'A', label: incoming.optionA || 'Option A', votes: incoming.votesA || 0, pool: incoming.poolA || 0 },
+        { key: 'B', label: incoming.optionB || 'Option B', votes: incoming.votesB || 0, pool: incoming.poolB || 0 }
+      ];
       this.activePrediction = {
-        ...data.prediction,
+        ...incoming,
+        options: Array.isArray(incoming.options) && incoming.options.length >= 2 ? incoming.options : fallbackOpts,
         hasVoted: false,
         myVote: null,
         myBet: 0
       };
       this.renderPredictionCard();
-      const wager = data.prediction.wager || 0;
-      const toastMsg = wager > 0 ? `🎲 Popcorn Bet (${wager} 🍿): "${data.prediction.question}"` : `📊 Live Poll: "${data.prediction.question}"`;
+      const wager = incoming.wager || 0;
+      const toastMsg = wager > 0 ? `Popcorn Bet (${wager} Coins): "${incoming.question}"` : `Live Poll: "${incoming.question}"`;
       this.showActionToast(toastMsg);
     }
 
@@ -3591,17 +3860,31 @@
         playerWrap.appendChild(card);
       }
 
+      const opts = Array.isArray(pred.options) && pred.options.length >= 2 ? pred.options : [
+        { key: 'A', label: pred.optionA || 'Option A', votes: pred.votesA || 0, pool: pred.poolA || 0 },
+        { key: 'B', label: pred.optionB || 'Option B', votes: pred.votesB || 0, pool: pred.poolB || 0 }
+      ];
+      pred.options = opts;
+
       const isFreePoll = !pred.wager || pred.wager === 0;
-      const countA = isFreePoll ? (pred.votesA || 0) : (pred.poolA || 0);
-      const countB = isFreePoll ? (pred.votesB || 0) : (pred.poolB || 0);
-      const totalCount = countA + countB;
-      const pctA = totalCount > 0 ? Math.round((countA / totalCount) * 100) : 50;
-      const pctB = 100 - pctA;
-      const subLabelA = isFreePoll ? `${pctA}% (${pred.votesA || 0} votes)` : `${pctA}% (${pred.poolA || 0} 🍿)`;
-      const subLabelB = isFreePoll ? `${pctB}% (${pred.votesB || 0} votes)` : `${pctB}% (${pred.poolB || 0} 🍿)`;
+      const totalCount = opts.reduce((acc, o) => acc + (isFreePoll ? (o.votes || 0) : (o.pool || 0)), 0);
+      const defaultPct = Math.round(100 / opts.length);
 
       const remSec = Math.max(0, Math.ceil((pred.endTime - Date.now()) / 1000));
       const canResolve = this.isHost || (pred.creatorId === (this.localUser && this.localUser.id));
+
+      const optsHtml = opts.map((o) => {
+        const val = isFreePoll ? (o.votes || 0) : (o.pool || 0);
+        const pct = totalCount > 0 ? Math.round((val / totalCount) * 100) : defaultPct;
+        const subLabel = isFreePoll ? `${pct}% (${o.votes || 0} votes)` : `${pct}% (${o.pool || 0} Coins)`;
+        return `
+          <button type="button" class="cs-pred-opt-btn ${pred.myVote === o.key ? 'is-voted' : ''}" id="pred-opt-${o.key.toLowerCase()}" data-opt-key="${this.escapeHtml(o.key)}" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
+            <div class="cs-pred-opt-bar" style="width:${pct}%"></div>
+            <div class="cs-pred-opt-title"><span style="opacity:0.7;margin-right:5px;">${this.escapeHtml(o.key)}.</span>${this.escapeHtml(o.label)}</div>
+            <div class="cs-pred-opt-pct">${subLabel}</div>
+          </button>
+        `;
+      }).join('');
 
       card.innerHTML = `
         <div class="cs-prediction-header">
@@ -3612,33 +3895,25 @@
           <div class="cs-prediction-timer" id="cs-pred-timer">${remSec > 0 ? remSec + 's left' : 'VOTING CLOSED'}</div>
         </div>
         <div class="cs-prediction-question">${this.escapeHtml(pred.question)}</div>
-        <div class="cs-prediction-options">
-          <button type="button" class="cs-pred-opt-btn ${pred.myVote === 'A' ? 'is-voted' : ''}" id="pred-opt-a" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
-            <div class="cs-pred-opt-bar" style="width:${pctA}%"></div>
-            <div class="cs-pred-opt-title">${this.escapeHtml(pred.optionA)}</div>
-            <div class="cs-pred-opt-pct">${subLabelA}</div>
-          </button>
-          <button type="button" class="cs-pred-opt-btn ${pred.myVote === 'B' ? 'is-voted' : ''}" id="pred-opt-b" ${pred.hasVoted || remSec <= 0 ? 'disabled' : ''}>
-            <div class="cs-pred-opt-bar" style="width:${pctB}%"></div>
-            <div class="cs-pred-opt-title">${this.escapeHtml(pred.optionB)}</div>
-            <div class="cs-pred-opt-pct">${subLabelB}</div>
-          </button>
+        <div class="cs-prediction-options" style="${opts.length > 2 ? 'grid-template-columns:repeat(auto-fit,minmax(130px,1fr));' : ''}">
+          ${optsHtml}
         </div>
         <div class="cs-prediction-footer">
-          <div class="cs-prediction-coins"><i class="fa-solid fa-coins" style="color:#fbbf24"></i> Your Wallet: <b id="cs-user-popcorn">${this.popcornCoins}</b> 🍿</div>
-          ${canResolve ? `<button type="button" style="background:none;border:none;color:#e50914;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner / End Poll</button>` : ''}
+          <div class="cs-prediction-coins"><i class="fa-solid fa-coins" style="color:#fbbf24"></i> Wallet: <b id="cs-user-popcorn">${this.popcornCoins}</b> Coins</div>
+          ${canResolve ? `<button type="button" style="background:none;border:none;color:#e50914;cursor:pointer;font-weight:700;font-size:11px;" id="pred-btn-resolve">Declare Winner / End</button>` : ''}
         </div>
       `;
       card.style.display = 'block';
 
-      const optABtn = card.querySelector('#pred-opt-a');
-      const optBBtn = card.querySelector('#pred-opt-b');
-      if (optABtn && !pred.hasVoted) {
-        optABtn.onclick = () => this.placePredictionBet('A');
-      }
-      if (optBBtn && !pred.hasVoted) {
-        optBBtn.onclick = () => this.placePredictionBet('B');
-      }
+      const optBtns = typeof card.querySelectorAll === 'function'
+        ? Array.from(card.querySelectorAll('.cs-pred-opt-btn'))
+        : [card.querySelector('#pred-opt-a'), card.querySelector('#pred-opt-b')].filter(Boolean);
+      optBtns.forEach((btn, idx) => {
+        if (!pred.hasVoted) {
+          const optKey = (btn.dataset && btn.dataset.optKey) || String.fromCharCode(65 + idx);
+          btn.onclick = () => this.placePredictionBet(optKey);
+        }
+      });
       const resolveBtn = card.querySelector('#pred-btn-resolve');
       if (resolveBtn) {
         resolveBtn.onclick = () => this.openResolvePredictionModal();
@@ -3656,8 +3931,7 @@
         if (timerEl) timerEl.textContent = left > 0 ? `${left}s left` : 'VOTING CLOSED';
         if (left <= 0) {
           clearInterval(this.predInterval);
-          if (optABtn) optABtn.disabled = true;
-          if (optBBtn) optBBtn.disabled = true;
+          optBtns.forEach((b) => { b.disabled = true; });
         }
       }, 1000);
     }
@@ -3669,47 +3943,67 @@
 
       if (betAmount > 0) {
         if (this.popcornCoins < betAmount) {
-          this.showActionToast('Not enough Popcorn Coins! 🍿');
+          this.showActionToast('Not enough Popcorn Coins!');
           return;
         }
         this.popcornCoins -= betAmount;
         safeStorage.set('fz_popcorn_coins', String(this.popcornCoins));
       }
 
+      const key = String(option || 'A').toUpperCase();
       pred.hasVoted = true;
-      pred.myVote = option;
+      pred.myVote = key;
       pred.myBet = betAmount;
-      if (option === 'A') {
+
+      if (Array.isArray(pred.options)) {
+        const target = pred.options.find(o => o.key === key);
+        if (target) {
+          target.votes = (target.votes || 0) + 1;
+          target.pool = (target.pool || 0) + betAmount;
+        }
+      }
+      if (key === 'A') {
         pred.votesA = (pred.votesA || 0) + 1;
         pred.poolA = (pred.poolA || 0) + betAmount;
-      } else {
+      } else if (key === 'B') {
         pred.votesB = (pred.votesB || 0) + 1;
         pred.poolB = (pred.poolB || 0) + betAmount;
       }
 
+      const chosenObj = Array.isArray(pred.options) ? pred.options.find(o => o.key === key) : null;
+      const chosenLabel = chosenObj ? chosenObj.label : (key === 'A' ? pred.optionA : pred.optionB);
+
       this.broadcast({
         type: 'PREDICTION_BET',
         predictionId: pred.id,
-        option,
+        option: key,
         amount: betAmount,
         user: (this.localUser && this.localUser.name) || 'Viewer'
       });
 
       this.renderPredictionCard();
       if (betAmount > 0) {
-        this.showActionToast(`🍿 Placed ${betAmount} Popcorn bet on: ${option === 'A' ? pred.optionA : pred.optionB}`);
+        this.showActionToast(`Placed ${betAmount} Coins on: ${chosenLabel}`);
       } else {
-        this.showActionToast(`🗳️ Voted for: ${option === 'A' ? pred.optionA : pred.optionB}`);
+        this.showActionToast(`Voted for: ${chosenLabel}`);
       }
     }
 
     handlePredictionBet(data) {
       if (!this.activePrediction || this.activePrediction.id !== data.predictionId) return;
       const amount = data.amount || 0;
-      if (data.option === 'A') {
+      const key = String(data.option || 'A').toUpperCase();
+      if (Array.isArray(this.activePrediction.options)) {
+        const target = this.activePrediction.options.find(o => o.key === key);
+        if (target) {
+          target.votes = (target.votes || 0) + 1;
+          target.pool = (target.pool || 0) + amount;
+        }
+      }
+      if (key === 'A') {
         this.activePrediction.votesA = (this.activePrediction.votesA || 0) + 1;
         this.activePrediction.poolA = (this.activePrediction.poolA || 0) + amount;
-      } else {
+      } else if (key === 'B') {
         this.activePrediction.votesB = (this.activePrediction.votesB || 0) + 1;
         this.activePrediction.poolB = (this.activePrediction.poolB || 0) + amount;
       }
@@ -3719,6 +4013,10 @@
     openResolvePredictionModal() {
       if (!this.activePrediction) return;
       const pred = this.activePrediction;
+      const opts = Array.isArray(pred.options) && pred.options.length >= 2 ? pred.options : [
+        { key: 'A', label: pred.optionA || 'Option A' },
+        { key: 'B', label: pred.optionB || 'Option B' }
+      ];
       let modal = document.getElementById('fz-prediction-resolve-modal');
       if (!modal) {
         modal = document.createElement('div');
@@ -3727,6 +4025,12 @@
         document.body.appendChild(modal);
       }
       modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+      const winButtonsHtml = opts.map((o, idx) => `
+        <button type="button" class="fz-btn-pri wp-res-win-btn" data-win-key="${this.escapeHtml(o.key)}" style="background:${idx % 2 === 1 ? '#e50914' : 'rgba(255,255,255,0.1)'};border:1px solid rgba(255,255,255,0.22);">
+          <i class="fa-solid fa-trophy"></i> ${this.escapeHtml(o.key)}. ${this.escapeHtml(o.label)}
+        </button>
+      `).join('');
 
       modal.innerHTML = `
         <div class="fz-cinema-modal-dialog">
@@ -3740,9 +4044,8 @@
           <div class="fz-modal-body" style="text-align:left;align-items:stretch;">
             <p style="font-size:14px;color:#f8fafc;font-weight:700;margin-bottom:14px;">${this.escapeHtml(pred.question)}</p>
             <p style="font-size:12px;color:#94a3b8;margin-bottom:14px;">Select which outcome happened in the film to reward winning voters:</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-              <button type="button" class="fz-btn-pri" id="res-win-a" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);">🏆 ${this.escapeHtml(pred.optionA)} Wins</button>
-              <button type="button" class="fz-btn-pri" id="res-win-b" style="background:#e50914;border:none;">🏆 ${this.escapeHtml(pred.optionB)} Wins</button>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;">
+              ${winButtonsHtml}
             </div>
             <button type="button" class="fz-btn-sec" id="res-win-cancel" style="width:100%;"><i class="fa-solid fa-rotate-left"></i> Cancel / End without Winner</button>
           </div>
@@ -3750,14 +4053,12 @@
       `;
       modal.style.display = 'flex';
 
-      document.getElementById('res-win-a').onclick = () => {
-        modal.style.display = 'none';
-        this.resolvePrediction('A');
-      };
-      document.getElementById('res-win-b').onclick = () => {
-        modal.style.display = 'none';
-        this.resolvePrediction('B');
-      };
+      modal.querySelectorAll('.wp-res-win-btn').forEach((btn) => {
+        btn.onclick = () => {
+          modal.style.display = 'none';
+          this.resolvePrediction(btn.dataset.winKey);
+        };
+      });
       const cancelBtn = document.getElementById('res-win-cancel');
       if (cancelBtn) {
         cancelBtn.onclick = () => {
@@ -3769,14 +4070,21 @@
 
     resolvePrediction(winningOption) {
       if (!this.activePrediction) return;
+      const key = String(winningOption || '').toUpperCase();
       let winnerName = 'Cancelled';
-      if (winningOption === 'A') winnerName = this.activePrediction.optionA;
-      else if (winningOption === 'B') winnerName = this.activePrediction.optionB;
+      if (key !== 'CANCEL') {
+        const found = Array.isArray(this.activePrediction.options)
+          ? this.activePrediction.options.find(o => o.key === key)
+          : null;
+        if (found) winnerName = found.label;
+        else if (key === 'A') winnerName = this.activePrediction.optionA;
+        else if (key === 'B') winnerName = this.activePrediction.optionB;
+      }
 
       const resolution = {
         type: 'PREDICTION_RESOLVE',
         predictionId: this.activePrediction.id,
-        winningOption,
+        winningOption: key,
         winnerName
       };
       this.broadcast(resolution);

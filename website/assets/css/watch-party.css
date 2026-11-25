@@ -3637,3 +3637,380 @@
   border-color: rgba(229, 9, 20, 0.45);
   background: rgba(229, 9, 20, 0.16);
 }
+
+/* ================================================================
+   STUDIO 2026 CHAT HEAD, FLOATING MESSENGER OVERLAY & COMPACT HEADER
+   ================================================================ */
+.wp-header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wp-icon-btn {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.wp-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.wp-controls-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e50914;
+  box-shadow: 0 0 6px #e50914;
+}
+
+.wp-controls-menu-wrap {
+  position: relative;
+}
+
+.wp-controls-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 230px;
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.9);
+  z-index: 160;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wp-controls-menu-wrap.open .wp-controls-popover {
+  display: flex;
+}
+
+.wp-controls-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wp-controls-pop-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.wp-controls-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.wp-ctl-tile {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 10px 6px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #d4d4d8 !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+}
+
+.wp-ctl-tile i {
+  font-size: 14px !important;
+}
+
+.wp-ctl-tile.active {
+  background: rgba(229, 9, 20, 0.18) !important;
+  border-color: rgba(229, 9, 20, 0.65) !important;
+  color: #ffffff !important;
+}
+
+.wp-ctl-state {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+}
+
+.wp-ctl-tile.active .wp-ctl-state {
+  background: #e50914;
+  color: #ffffff;
+}
+
+.wp-controls-pop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wp-pop-row-btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e4e4e7;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wp-pop-row-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.wp-pop-wa-btn i {
+  color: #25d366;
+}
+
+/* Hide noisy action buttons on bubbles until hover */
+.wp-msg-actions {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  margin-top: 0;
+  transition: opacity 0.15s ease, max-height 0.15s ease;
+}
+
+.wp-msg-item:hover .wp-msg-actions,
+.wp-msg-actions:has(.is-liked),
+.wp-msg-actions:has(.has-reacts) {
+  opacity: 1;
+  max-height: 28px;
+  margin-top: 4px;
+}
+
+/* Compact Members strip & clean action pills */
+.wp-members-bar {
+  padding: 5px 12px !important;
+  min-height: 0 !important;
+}
+
+.wp-special-actions-tray {
+  padding: 6px 10px !important;
+  gap: 6px !important;
+}
+
+/* Messenger-Style Floating Circular Chat Head */
+.wp-chat-head-bubble {
+  position: absolute;
+  bottom: 66px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1a1a22 0%, #0b0b0f 100%);
+  border: 1.5px solid rgba(229, 9, 20, 0.85);
+  color: #ffffff;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 90;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.8), 0 0 14px rgba(229, 9, 20, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.wp-chat-head-bubble:hover {
+  transform: scale(1.08);
+  background: linear-gradient(145deg, #e50914 0%, #991b1b 100%);
+}
+
+.wp-chat-head-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #0b0b0f;
+}
+
+.wp-chat-head-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e50914;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0b0b0f;
+}
+
+/* Floating Messenger Mini-Chat Window Over Player (or Fullscreen) */
+.watch-party-container.is-floating-messenger {
+  position: absolute !important;
+  bottom: 64px !important;
+  right: 16px !important;
+  top: auto !important;
+  left: auto !important;
+  width: min(340px, 90vw) !important;
+  height: min(440px, 72vh) !important;
+  max-height: 75vh !important;
+  z-index: 92 !important;
+  border-radius: 16px !important;
+  background: rgba(12, 12, 16, 0.94) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+  border: 1px solid rgba(229, 9, 20, 0.45) !important;
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.92) !important;
+}
+
+/* ================================================================
+   STUDIO 2026 COMPACT DYNAMIC COUPLE CAM (Video-First, Zero Name Bar)
+   ================================================================ */
+.cs-couple-cam-dock {
+  top: 12px !important;
+  right: 12px !important;
+  padding: 4px !important;
+  gap: 0 !important;
+  width: fit-content !important;
+  max-width: min(260px, 75vw) !important;
+  border-radius: 16px !important;
+  background: rgba(10, 10, 14, 0.72) !important;
+  border: 1px solid rgba(229, 9, 20, 0.45) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75) !important;
+}
+
+.cs-cam-dock-header {
+  position: absolute !important;
+  top: -8px !important;
+  right: -6px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  z-index: 5 !important;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.cs-couple-cam-dock:hover .cs-cam-dock-header,
+.cs-couple-cam-dock.is-collapsed .cs-cam-dock-header {
+  opacity: 1;
+}
+
+.cs-cam-dock-title {
+  display: none !important;
+}
+
+.cs-cam-bubbles-wrap {
+  gap: 5px !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+.cs-cam-bubble {
+  width: 62px !important;
+  height: 62px !important;
+  border-radius: 13px !important;
+  border-width: 1.5px !important;
+  cursor: grab !important;
+}
+
+.cs-cam-bubble.has-video .cs-cam-badge-name {
+  display: none !important;
+}
+
+.cs-cam-bubble.has-video .cs-cam-info-badge {
+  background: rgba(10, 10, 14, 0.75) !important;
+  padding: 2px 4px !important;
+  bottom: 4px !important;
+  right: 4px !important;
+  left: auto !important;
+  width: auto !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 640px) {
+  .cs-cam-bubble {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 11px !important;
+  }
+}
+
+/* Studio Media Confirmation Modal (Camera ON / Mic ON - OK) */
+.wp-media-perm-card {
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 22px 20px 18px;
+  max-width: min(92vw, 360px);
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-media-perm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(229, 9, 20, 0.16);
+  border: 1px solid rgba(229, 9, 20, 0.45);
+  color: #e50914;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-media-perm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}

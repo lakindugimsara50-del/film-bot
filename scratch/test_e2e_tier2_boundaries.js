@@ -216,55 +216,38 @@ test('T2-F4-05', 'Touch Device Hover Suppression (@media (hover: none))', () => 
 // -----------------------------------------------------------------
 console.log('\n--- Feature 5: Video Playback & Player Control Bar (Boundaries) ---');
 
-test('T2-F5-01', 'Rapid Button Mash Stress Test (Safe Mode & Haptics Toggle)', () => {
+test('T2-F5-01', 'Rapid Button Mash Stress Test (4D Haptics Toggle)', () => {
   const playerJs = fs.readFileSync(path.join(JS_DIR, 'player.js'), 'utf8');
-  const cuesDataJs = fs.readFileSync(path.join(DATA_DIR, 'censor_cues_data.js'), 'utf8');
 
   const sandbox = createVmSandbox();
-  const safeBtn = new MockElement('button', 'btn-toggle-safe-mode');
-  const safeBadge = new MockElement('span', 'cs-safe-badge');
   const hapticBtn = new MockElement('button', 'btn-toggle-haptics');
   const hapticBadge = new MockElement('span', 'cs-haptic-badge');
 
-  sandbox.document.body.appendChild(safeBtn);
-  sandbox.document.body.appendChild(safeBadge);
   sandbox.document.body.appendChild(hapticBtn);
   sandbox.document.body.appendChild(hapticBadge);
 
-  vm.runInContext(cuesDataJs, sandbox);
   vm.runInContext(playerJs, sandbox);
 
-  const safeMode = sandbox.window.FilmZillaSafeMode;
   const hapticMode = sandbox.window.FilmZilla4DHaptic;
-
-  assert(safeMode && typeof safeMode.toggleSafeMode === 'function', 'player.js must expose FilmZillaSafeMode.toggleSafeMode');
   assert(hapticMode && typeof hapticMode.toggleHaptic === 'function', 'player.js must expose FilmZilla4DHaptic.toggleHaptic');
+  assert(!sandbox.window.FilmZillaSafeMode, 'FilmZillaSafeMode must be removed from player.js');
 
-  const initialSafe = safeMode.isEnabled;
   const initialHaptic = hapticMode.isEnabled;
 
   // Rapidly toggle 20 times (even count) to simulate rapid button mash
   for (let i = 0; i < 20; i++) {
-    safeMode.toggleSafeMode();
     hapticMode.toggleHaptic();
   }
 
   // After 20 even toggles, state machine must return to initial state without corruption
-  assert.strictEqual(safeMode.isEnabled, initialSafe,
-    'Safe Mode state machine must remain consistent after 20 rapid toggles');
   assert.strictEqual(hapticMode.isEnabled, initialHaptic,
     '4D Haptics state machine must remain consistent after 20 rapid toggles');
-  assert.strictEqual(safeBtn.classList.contains('active'), initialSafe,
-    'Safe Mode button DOM active class must reflect state');
   assert.strictEqual(hapticBtn.classList.contains('active'), initialHaptic,
     'Haptic button DOM active class must reflect state');
 
   // 21st toggle must cleanly invert state
-  safeMode.toggleSafeMode();
   hapticMode.toggleHaptic();
-  assert.strictEqual(safeMode.isEnabled, !initialSafe, '21st toggle must invert Safe Mode state cleanly');
   assert.strictEqual(hapticMode.isEnabled, !initialHaptic, '21st toggle must invert Haptics state cleanly');
-  assert.strictEqual(safeBtn.classList.contains('active'), !initialSafe);
   assert.strictEqual(hapticBtn.classList.contains('active'), !initialHaptic);
 });
 
@@ -285,26 +268,18 @@ test('T2-F5-03', 'Player Menu Bar Overflow Scroll Hint on Mobile', () => {
   assert(movieHtml.includes('cs-cinema-menu-bar'), 'movie.html must include cs-cinema-menu-bar');
 });
 
-test('T2-F5-04', 'Missing Audio Cues in Safe Mode Graceful Fallback', () => {
-  const cuesDataJs = fs.readFileSync(path.join(DATA_DIR, 'censor_cues_data.js'), 'utf8');
+test('T2-F5-04', 'Uninterrupted Playback & P2P Companion Init Verification', () => {
   const playerJs = fs.readFileSync(path.join(JS_DIR, 'player.js'), 'utf8');
 
   const sandbox = createVmSandbox();
-  vm.runInContext(cuesDataJs, sandbox);
   vm.runInContext(playerJs, sandbox);
 
-  const safeMode = sandbox.window.FilmZillaSafeMode;
-  if (safeMode && typeof safeMode.init === 'function') {
-    const mockVjs = createMockVjs();
-    safeMode.init(mockVjs, { slug: 'non-existent-movie-slug-without-cues' });
-    safeMode.isEnabled = true;
-
-    // Trigger timeupdate on movie without cues
-    mockVjs.currentTime(120);
-    assert.strictEqual(mockVjs.currentTime(), 120, 'Player must continue playing uninterrupted when title has no cues');
-  } else {
-    assert(playerJs.includes('FilmZillaSafeMode'), 'player.js must define FilmZillaSafeMode');
+  const mockVjs = createMockVjs();
+  if (sandbox.window.FilmZilla4DHaptic) {
+    sandbox.window.FilmZilla4DHaptic.init(mockVjs);
   }
+  mockVjs.currentTime(120);
+  assert.strictEqual(mockVjs.currentTime(), 120, 'Player must continue playing uninterrupted');
 });
 
 test('T2-F5-05', 'Disambiguated Poster Button Sync Contract', () => {

@@ -79,9 +79,9 @@ if (!movieHtml.includes('cs-video-chat-overlay') || !wpJs.includes('showInVideoC
   console.log('PASS 8: In-screen video chat overlay & fullscreen popups generator verified');
 }
 
-// 9. Popups Toggle & Ultra-Compact Lounge
+// 9. Popups Toggle inside Watch Party Lounge & Ultra-Compact Lounge
 const wpCss = fs.readFileSync(path.join(__dirname, '../website/assets/css/watch-party.css'), 'utf8');
-if (!wpJs.includes('toggleChatPopups') || !movieHtml.includes('btn-toggle-chat-popups') || !wpCss.includes('cs-video-chat-overlay')) {
+if (!wpJs.includes('toggleChatPopups') || !wpJs.includes('wp-popups-toggle') || !wpCss.includes('cs-video-chat-overlay')) {
   console.error('FAIL: Popups toggle or CSS overlay styling missing');
   process.exit(1);
 } else {

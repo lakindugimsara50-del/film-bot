@@ -9,13 +9,11 @@ const wpCss = fs.readFileSync(path.join(__dirname, '../website/assets/css/watch-
 const playerJs = fs.readFileSync(path.join(__dirname, '../website/assets/js/player.js'), 'utf8');
 
 // 1. Movie HTML elements
-if (!movieHtml.includes('id="cs-couple-cam-dock"') ||
-    !movieHtml.includes('id="btn-bar-mic"') ||
-    !movieHtml.includes('id="btn-bar-cam"')) {
-  console.error('FAIL: Required elements missing in movie.html');
+if (!movieHtml.includes('id="cs-couple-cam-dock"')) {
+  console.error('FAIL: Required #cs-couple-cam-dock missing in movie.html');
   process.exit(1);
 }
-console.log('PASS 1: movie.html has couple cam dock & mic/cam player menu bar buttons');
+console.log('PASS 1: movie.html has couple cam dock & watch party menu bar trigger');
 
 // 2. Watch party JS methods & events
 const requiredJsTokens = [
@@ -61,11 +59,11 @@ for (const token of requiredCssTokens) {
 }
 console.log('PASS 3: watch-party.css contains 2cm x 2cm squircle PiP styling, speaking wave & button styles');
 
-// 4. Player JS integration
-if (!playerJs.includes('btn-bar-mic') || !playerJs.includes('btn-bar-cam')) {
-  console.error('FAIL: player.js missing player bar mic & cam button handlers');
+// 4. Watch Party JS media integration
+if (!wpJs.includes('wp-btn-mic') || !wpJs.includes('wp-btn-cam') || !wpJs.includes('wp-controls-toggle')) {
+  console.error('FAIL: watch-party.js missing mic & cam controls inside party lounge');
   process.exit(1);
 }
-console.log('PASS 4: player.js wires player bar mic & cam triggers to start party and toggle media');
+console.log('PASS 4: watch-party.js wires party mic & cam controls cleanly inside lounge popover');
 
 console.log('--- ALL COUPLE CAM & VOICE CHAT AUDIT TESTS PASSED 100% ---');

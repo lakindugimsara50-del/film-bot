@@ -100,6 +100,12 @@
         };
         _set(STORAGE_KEYS.PROFILE, profile);
       }
+      if (profile && profile.isGuest && typeof profile.picture === 'string' && profile.picture.includes('url(%23g)')) {
+        const healed = _createGuestAvatar(profile.name || 'G');
+        profile.picture = healed;
+        profile.avatar = healed;
+        _set(STORAGE_KEYS.PROFILE, profile);
+      }
       if (profile && !profile.avatar && profile.picture) {
         profile.avatar = profile.picture;
       }

@@ -72,20 +72,18 @@ test('2. Family Safe Mode - JSON & JS Cues Database integrity', () => {
   assert(jsContent.includes('window.FILMSUB_CENSOR_CUES'), 'censor_cues_data.js must export global FILMSUB_CENSOR_CUES');
 });
 
-test('3. Family Safe Mode - Player Engine & DOM Integration', () => {
+test('3. Streamlined Theater Controls & Safe Mode Removal Verification', () => {
   const playerJs = fs.readFileSync(path.join(__dirname, '../website/assets/js/player.js'), 'utf8');
   const movieHtml = fs.readFileSync(path.join(__dirname, '../website/movie.html'), 'utf8');
+  const wpJs = fs.readFileSync(path.join(__dirname, '../website/assets/js/watch-party.js'), 'utf8');
 
-  assert(playerJs.includes('window.FilmZillaSafeMode'), 'player.js must define FilmZillaSafeMode');
-  assert(playerJs.includes('applyBlurAndMute'), 'FilmZillaSafeMode must have applyBlurAndMute');
-  assert(playerJs.includes('liftCensor'), 'FilmZillaSafeMode must have liftCensor');
-  assert(playerJs.includes('openSettingsModal'), 'FilmZillaSafeMode must have openSettingsModal');
-  assert(playerJs.includes('cs-safe-blurred'), 'FilmZillaSafeMode must toggle cs-safe-blurred class');
-  assert(playerJs.includes('cs-safe-censor-overlay'), 'FilmZillaSafeMode must mount cs-safe-censor-overlay');
+  assert(!playerJs.includes('window.FilmZillaSafeMode'), 'Safe Mode must be removed from player.js');
+  assert(!movieHtml.includes('id="btn-toggle-safe-mode"'), 'Safe Mode button must be removed from movie.html');
+  assert(!movieHtml.includes('censor_cues_data.js'), 'movie.html must not load censor_cues_data.js');
 
-  assert(movieHtml.includes('id="btn-toggle-safe-mode"'), 'movie.html must include Safe Mode button');
-  assert(movieHtml.includes('id="cs-safe-badge"'), 'movie.html must include Safe Mode status badge');
-  assert(movieHtml.includes('censor_cues_data.js'), 'movie.html must load censor_cues_data.js');
+  assert(movieHtml.includes('id="btn-toggle-haptics"'), 'movie.html must keep 4D Haptic button');
+  assert(movieHtml.includes('id="btn-open-companion"'), 'movie.html must keep Phone Remote button');
+  assert(wpJs.includes('wp-controls-toggle'), 'watch-party.js must house Mic/Cam/Popups inside lounge popover');
 });
 
 test('4. Local Wi-Fi P2P Data Sharing - Mesh Engine & UI Badge', () => {
@@ -186,145 +184,75 @@ test('9. Phone as Second Screen Remote - companion.html & QR Pairing Integration
 // SECTION B: Deep Dynamic Runtime Simulation & Execution
 // ---------------------------------------------------------------------
 
-test('10. Safe Mode Runtime Execution: Auto-Skip & Seek-Back Replay Bug Fix', () => {
-  const playerCode = fs.readFileSync(path.join(__dirname, '../website/assets/js/player.js'), 'utf8');
-  const cuesDataCode = fs.readFileSync(path.join(__dirname, '../website/data/censor_cues_data.js'), 'utf8');
+test('10. Watch Party Messenger Chat Head Minimize & Expand Runtime', () => {
+  const wpCode = fs.readFileSync(path.join(__dirname, '../website/assets/js/watch-party.js'), 'utf8');
+  const wpCss = fs.readFileSync(path.join(__dirname, '../website/assets/css/watch-party.css'), 'utf8');
 
-  // Create mock browser sandbox
-  const sandbox = {
-    window: {},
-    document: {
-      addEventListener: () => {},
-      getElementById: () => null,
-      querySelector: () => null,
-      querySelectorAll: () => []
-    },
-    navigator: { vibrate: () => {} },
-    location: { search: '', href: '', origin: 'https://filmsub.pages.dev', protocol: 'https:' },
-    FilmSub: { escHtml: s => s, showToast: () => {} },
-    currentSeason: 1,
-    currentEpisode: 1,
-    currentEffectiveQuality: '1080p',
-    getMovieStreams: () => []
-  };
-  sandbox.window = sandbox;
-  vm.createContext(sandbox);
-
-  vm.runInContext(cuesDataCode, sandbox);
-  vm.runInContext(playerCode, sandbox);
-
-  assert(sandbox.window.FilmZillaSafeMode, 'FilmZillaSafeMode must be exported to window');
-
-  // Mock Video.js player
-  let currentTimeVal = 0;
-  let mutedVal = false;
-  const eventListeners = {};
-  const mockVjs = {
-    currentTime(t) {
-      if (typeof t === 'number') currentTimeVal = t;
-      return currentTimeVal;
-    },
-    muted(m) {
-      if (typeof m === 'boolean') mutedVal = m;
-      return mutedVal;
-    },
-    on(event, cb) {
-      eventListeners[event] = cb;
-    },
-    trigger(event) {
-      if (eventListeners[event]) eventListeners[event]();
-    }
-  };
-
-  const safeMode = sandbox.window.FilmZillaSafeMode;
-  safeMode.init(mockVjs, { slug: 'sugriva-2026' });
-  safeMode.isEnabled = true;
-  safeMode.action = 'skip';
-
-  // Sugriva cue: c1: 45.0s to 58.0s
-  currentTimeVal = 46.0;
-  mockVjs.trigger('timeupdate');
-
-  // Verify auto-skip jumped past end of cue (58.3s)
-  assert(currentTimeVal >= 58.0, `Player should have auto-skipped past 58.0s, got ${currentTimeVal}`);
-
-  // CRITICAL EDGE CASE VERIFICATION:
-  // User seeks back to 10s and replays forward. Does lastSkippedCueId clear so it skips again?
-  currentTimeVal = 10.0;
-  mockVjs.trigger('seeking');
-  mockVjs.trigger('timeupdate');
-  assert.strictEqual(safeMode.lastSkippedCueId, null, 'lastSkippedCueId should be cleared after seeking outside the cue');
-
-  // Advances to 46.0s again
-  currentTimeVal = 46.0;
-  mockVjs.trigger('timeupdate');
-  assert(currentTimeVal >= 58.0, 'Player must auto-skip again on replay of the same scene');
+  assert(wpCode.includes('minimizeToChatHead'), 'watch-party.js must implement minimizeToChatHead');
+  assert(wpCode.includes('expandFromChatHead'), 'watch-party.js must implement expandFromChatHead');
+  assert(wpCode.includes('openMediaConfirmDialog'), 'watch-party.js must implement openMediaConfirmDialog');
+  assert(wpCss.includes('.wp-chat-head-bubble'), 'watch-party.css must style .wp-chat-head-bubble');
+  assert(wpCss.includes('.watch-party-container.is-floating-messenger'), 'watch-party.css must style floating messenger overlay');
 });
 
-test('11. Safe Mode Blur & Mute + Category Filtering Runtime', () => {
-  const playerCode = fs.readFileSync(path.join(__dirname, '../website/assets/js/player.js'), 'utf8');
-  const cuesDataCode = fs.readFileSync(path.join(__dirname, '../website/data/censor_cues_data.js'), 'utf8');
+test('11. Watch Party Multi-Option Dynamic Poll (3+ Choices) Runtime', () => {
+  const wpCode = fs.readFileSync(path.join(__dirname, '../website/assets/js/watch-party.js'), 'utf8');
 
-  const classes = new Set();
-  const mockPlayerWrap = {
+  const els = new Map();
+  const makeEl = (tag) => ({
+    tagName: tag,
+    id: '',
+    className: '',
+    style: {},
+    dataset: {},
+    innerHTML: '',
+    children: [],
     classList: {
-      add: (c) => classes.add(c),
-      remove: (c) => classes.delete(c),
-      contains: (c) => classes.has(c)
+      add: () => {},
+      remove: () => {},
+      toggle: () => {},
+      contains: () => false
     },
-    appendChild: () => {}
-  };
+    setAttribute: () => {},
+    addEventListener: () => {},
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    appendChild(c) { if (c && c.id) els.set(c.id, c); return c; }
+  });
 
   const sandbox = {
     window: {},
     document: {
       addEventListener: () => {},
-      createElement: () => ({ setAttribute: () => {}, style: {}, innerHTML: '', appendChild: () => {}, classList: { add: () => {}, remove: () => {} } }),
-      getElementById: (id) => (id === 'video-player-container' ? mockPlayerWrap : null),
-      querySelector: () => mockPlayerWrap,
-      querySelectorAll: () => []
+      createElement: makeEl,
+      getElementById: (id) => els.get(id) || null,
+      querySelector: () => makeEl('div'),
+      querySelectorAll: () => [],
+      body: makeEl('body')
     },
-    navigator: { vibrate: () => {} },
+    localStorage: { _d: {}, getItem(k) { return this._d[k] || null; }, setItem(k, v) { this._d[k] = String(v); } },
+    navigator: {},
+    URLSearchParams,
     location: { search: '', href: '', origin: 'https://filmsub.pages.dev', protocol: 'https:' },
-    FilmSub: { escHtml: s => s, showToast: () => {} },
     setInterval: () => 1,
     clearInterval: () => {},
-    setTimeout: (fn) => { fn(); return 1; },
-    clearTimeout: () => {}
+    setTimeout: () => 1,
+    clearTimeout: () => {},
+    FilmSub: { escHtml: s => s, showToast: () => {} }
   };
   sandbox.window = sandbox;
   vm.createContext(sandbox);
+  vm.runInContext(wpCode, sandbox);
 
-  vm.runInContext(cuesDataCode, sandbox);
-  vm.runInContext(playerCode, sandbox);
-
-  let curTime = 46.0;
-  let isMuted = false;
-  const listeners = {};
-  const mockVjs = {
-    currentTime: () => curTime,
-    muted: (m) => { if (typeof m === 'boolean') isMuted = m; return isMuted; },
-    on: (evt, cb) => { listeners[evt] = cb; },
-    trigger: (evt) => { if (listeners[evt]) listeners[evt](); }
-  };
-
-  const safeMode = sandbox.window.FilmZillaSafeMode;
-  safeMode.init(mockVjs, { slug: 'sugriva-2026' });
-  safeMode.isEnabled = true;
-  safeMode.action = 'blur_mute';
-
-  // 46.0s is inside cue 'c1' (gore: 45.0 to 58.0)
-  mockVjs.trigger('timeupdate');
-  assert.strictEqual(safeMode.isCurrentlyCensoring, true, 'Safe mode should be currently censoring');
-  assert.strictEqual(isMuted, true, 'Player should be muted during censor');
-  assert.strictEqual(classes.has('cs-safe-blurred'), true, 'cs-safe-blurred class should be added');
-
-  // Advance time beyond cue
-  curTime = 60.0;
-  mockVjs.trigger('timeupdate');
-  assert.strictEqual(safeMode.isCurrentlyCensoring, false, 'Censorship should lift past cue end');
-  assert.strictEqual(isMuted, false, 'Player should be unmuted after censor lifts');
-  assert.strictEqual(classes.has('cs-safe-blurred'), false, 'cs-safe-blurred class should be removed');
+  const wp = sandbox.window.FilmZillaWatchParty;
+  wp.popcornCoins = 200;
+  wp.startPrediction('Pick culprit', ['Guard', 'CEO', 'Hacker', 'Doctor'], 30, 25);
+  assert(wp.activePrediction && wp.activePrediction.options.length === 4, 'Multi-option poll must hold 4 options');
+  wp.placePredictionBet('C', 25);
+  assert.strictEqual(wp.activePrediction.myVote, 'C');
+  assert.strictEqual(wp.activePrediction.options[2].votes, 1, 'Option C vote count must increment');
+  wp.resolvePrediction('C');
+  assert.strictEqual(wp.popcornCoins, 225, '2x payout (50) minus 25 wager yields 225 coins');
 });
 
 test('12. Mobile 4D Haptic Feedback: Distinct Patterns & Pulse Dispatch', () => {

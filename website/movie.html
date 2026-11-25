@@ -36,22 +36,22 @@
   <link rel="apple-touch-icon" href="assets/img/filmzilla_icon.png">
 
   <!-- Script Preloading for Instant Player Bootstrap -->
-  <link rel="preload" href="data/movies_data.js?v=20261125_cinema_v63" as="script">
-  <link rel="preload" href="data/stream_endpoint.js?v=20261125_cinema_v63" as="script">
+  <link rel="preload" href="data/movies_data.js?v=20261125_cinema_v64" as="script">
+  <link rel="preload" href="data/stream_endpoint.js?v=20261125_cinema_v64" as="script">
   <link rel="preload" href="https://vjs.zencdn.net/8.10.0/video.min.js" as="script">
 
   <!-- Core Design Tokens -->
-  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v63">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=20261125_cinema_v64">
 
   <!-- Video.js -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
 
   <!-- Site CSS -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v63">
-  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v63">
-  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261125_cinema_v63">
-  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261125_cinema_v63">
-  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v63">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261125_cinema_v64">
+  <link rel="stylesheet" href="assets/css/netflix-ui.css?v=20261125_cinema_v64">
+  <link rel="stylesheet" href="assets/css/popup-extras.css?v=20261125_cinema_v64">
+  <link rel="stylesheet" href="assets/css/watch-party.css?v=20261125_cinema_v64">
+  <link rel="stylesheet" href="assets/css/teasers.css?v=20261125_cinema_v64">
 
   <!-- Extra player overrides & Zero-White-Screen Super Player CSS -->
   <!-- Netflix VIP Cinema Player Overrides -->
@@ -341,32 +341,38 @@
       transform: scale(1.18) !important;
     }
 
-    /* Fix Playback Rate Button (1x) positioning & prevent overlap with time display */
+    /* Fix Playback Rate Button (1x) positioning & keep compact Netflix pill */
     .video-js .vjs-playback-rate {
       position: static !important;
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
+      align-self: center !important;
       width: auto !important;
-      min-width: 36px !important;
-      height: 100% !important;
-      padding: 0 4px !important;
+      min-width: 32px !important;
+      max-width: 46px !important;
+      height: 24px !important;
+      flex: 0 0 auto !important;
+      padding: 0 3px !important;
       margin: 0 4px !important;
-      flex-shrink: 0 !important;
       order: 85 !important;
     }
     .video-js .vjs-playback-rate .vjs-playback-rate-value {
       position: static !important;
-      display: inline-block !important;
-      font-size: 11.5px !important;
-      font-weight: 800 !important;
-      line-height: normal !important;
-      color: #ffffff !important;
-      background: rgba(255, 255, 255, 0.12) !important;
-      padding: 3px 7px !important;
-      border-radius: 4px !important;
-      border: 1px solid rgba(255, 255, 255, 0.22) !important;
-      letter-spacing: 0.5px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: auto !important;
+      height: 22px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      line-height: 1 !important;
+      color: #f4f4f5 !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      padding: 0 7px !important;
+      border-radius: 5px !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      letter-spacing: 0.2px !important;
       transition: all 0.15s ease !important;
     }
     .video-js .vjs-playback-rate:hover .vjs-playback-rate-value {
@@ -914,52 +920,23 @@
                 <span class="cs-party-badge" id="cs-party-badge">LIVE</span>
               </button>
 
-              <!-- Compact Cinema Modes Drawer (Houses Mic, Cam, Popups, Safe Mode, 4D Haptic, Phone Remote & P2P Mesh) -->
+              <!-- Compact Cinema Modes Drawer (4D Haptic, Phone Remote & P2P Mesh) -->
               <div class="cs-tools-menu-wrap" id="cs-tools-menu-wrap">
-                <button type="button" class="cs-bar-btn cs-btn-tools-toggle" id="btn-cinema-tools-toggle" aria-expanded="false" aria-controls="cs-tools-popover" title="Party Mic, Cam, Safe Mode, 4D Haptic & Phone Remote">
+                <button type="button" class="cs-bar-btn cs-btn-tools-toggle" id="btn-cinema-tools-toggle" aria-expanded="false" aria-controls="cs-tools-popover" title="4D Haptic, Phone Remote & P2P Mesh">
                   <i class="fa-solid fa-sliders"></i>
                   <span>Cinema Modes</span>
                   <span class="cs-tools-active-count" id="cs-tools-active-count" style="display:none">0</span>
                   <i class="fa-solid fa-chevron-up cs-popover-chevron"></i>
                 </button>
 
-                <div class="cs-tools-popover" id="cs-tools-popover" role="region" aria-label="Cinema & Party Modes">
+                <div class="cs-tools-popover" id="cs-tools-popover" role="region" aria-label="Cinema & Theater Modes">
                   <div class="cs-popover-header">
-                    <span>Party &amp; Theater Controls</span>
+                    <span>Theater Controls</span>
                     <button type="button" class="cs-popover-close" id="btn-tools-popover-close" aria-label="Close Modes">&times;</button>
                   </div>
 
-                  <!-- Dock 1: Party & Social Controls -->
-                  <div class="cs-dock-cluster cs-dock-social" id="cs-dock-social" aria-label="Party & Social Dock">
-                    <button type="button" class="cs-bar-btn cs-btn-mic" id="btn-bar-mic" title="Toggle Microphone Voice Chat (M)">
-                      <i class="fa-solid fa-microphone-slash"></i>
-                      <span class="cs-mic-label">Mic</span>
-                      <span class="cs-mic-badge" id="cs-mic-badge">OFF</span>
-                    </button>
-
-                    <button type="button" class="cs-bar-btn cs-btn-cam" id="btn-bar-cam" title="Toggle Couple Cam Video PiP (V)">
-                      <i class="fa-solid fa-video-slash"></i>
-                      <span class="cs-cam-label">Cam</span>
-                      <span class="cs-cam-badge" id="cs-cam-badge">OFF</span>
-                    </button>
-
-                    <button type="button" class="cs-bar-btn cs-btn-popups active" id="btn-toggle-chat-popups" title="Toggle On-Screen Live Chat Popups (ON/OFF)">
-                      <i class="fa-solid fa-comment-dots"></i>
-                      <span class="cs-popups-label">Popups</span>
-                      <span class="cs-popups-badge" id="cs-popups-badge">ON</span>
-                    </button>
-                  </div>
-
-                  <div class="cs-dock-divider" aria-hidden="true"></div>
-
-                  <!-- Dock 2: Sensory & Mode Controls -->
+                  <!-- Dock: Sensory & Companion Controls -->
                   <div class="cs-dock-cluster cs-dock-sensory" id="cs-dock-sensory" aria-label="Sensory & Mode Dock">
-                    <button type="button" class="cs-bar-btn cs-btn-safe" id="btn-toggle-safe-mode" title="Family & Parent Safe Mode (Auto Censor/Skip Explicit Scenes)">
-                      <i class="fa-solid fa-shield-halved"></i>
-                      <span class="cs-safe-label">Safe Mode</span>
-                      <span class="cs-safe-badge" id="cs-safe-badge">OFF</span>
-                    </button>
-
                     <button type="button" class="cs-bar-btn cs-btn-haptic" id="btn-toggle-haptics" title="Mobile 4D Haptic Feedback (Bass & Explosion Vibrations)">
                       <i class="fa-solid fa-mobile-screen-button"></i>
                       <span class="cs-haptic-label">4D Haptic</span>
@@ -1267,17 +1244,16 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="assets/js/user-state.js?v=20261125_cinema_v63"></script>
-<script src="data/movies_data.js?v=20261125_cinema_v63"></script>
-<script src="data/censor_cues_data.js?v=20261125_cinema_v63"></script>
-<script src="data/teasers_data.js?v=20261125_cinema_v63"></script>
-<script src="data/stream_endpoint.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/emoji-engine.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/app.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/download.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/roulette.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/watch-party.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/player.js?v=20261125_cinema_v63"></script>
-<script src="assets/js/netflix-ui.js?v=20261125_cinema_v63"></script>
+<script src="assets/js/user-state.js?v=20261125_cinema_v64"></script>
+<script src="data/movies_data.js?v=20261125_cinema_v64"></script>
+<script src="data/teasers_data.js?v=20261125_cinema_v64"></script>
+<script src="data/stream_endpoint.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/emoji-engine.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/app.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/download.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/roulette.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/watch-party.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/player.js?v=20261125_cinema_v64"></script>
+<script src="assets/js/netflix-ui.js?v=20261125_cinema_v64"></script>
 </body>
 </html>

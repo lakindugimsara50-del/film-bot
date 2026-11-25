@@ -248,20 +248,19 @@ test('T1-F5-01', 'Cinema Menu Bar Clustered Dock Presence in movie.html', () => 
   assert(movieHtml.includes('class="cs-bar-right"'), 'movie.html must contain .cs-bar-right cluster');
 });
 
-test('T1-F5-02', 'Restoration of Missing Menu Bar Controls (Contract Verification)', () => {
+test('T1-F5-02', 'Watch Party Media Controls Inside Chat Lounge (Contract Verification)', () => {
   const movieHtml = fs.readFileSync(path.join(HTML_DIR, 'movie.html'), 'utf8');
-  const playerJs = fs.readFileSync(path.join(JS_DIR, 'player.js'), 'utf8');
   const wpJs = fs.readFileSync(path.join(JS_DIR, 'watch-party.js'), 'utf8');
 
-  // Verify the JavaScript engines bind these buttons
-  assert(playerJs.includes('btn-bar-mic') || wpJs.includes('btn-bar-mic'), 'btn-bar-mic must be handled by player scripts');
-  assert(playerJs.includes('btn-bar-cam') || wpJs.includes('btn-bar-cam'), 'btn-bar-cam must be handled by player scripts');
-  assert(wpJs.includes('btn-toggle-chat-popups'), 'btn-toggle-chat-popups must be handled by watch-party.js');
+  // Verify Watch Party owns Mic, Cam, and Chat Popups inside its chat lounge popover
+  assert(wpJs.includes('wp-btn-mic'), 'wp-btn-mic must be handled by watch-party.js');
+  assert(wpJs.includes('wp-btn-cam'), 'wp-btn-cam must be handled by watch-party.js');
+  assert(wpJs.includes('wp-popups-toggle'), 'wp-popups-toggle must be handled by watch-party.js');
 
-  // Verify DOM presence in movie.html markup (flags implementation status)
-  assert(movieHtml.includes('id="btn-toggle-chat-popups"'), 'btn-toggle-chat-popups must be restored in movie.html');
-  assert(movieHtml.includes('id="btn-bar-mic"'), 'btn-bar-mic must be restored in movie.html');
-  assert(movieHtml.includes('id="btn-bar-cam"'), 'btn-bar-cam must be restored in movie.html');
+  // Verify Cinema Modes in movie.html is streamlined without Safe Mode
+  assert(!movieHtml.includes('id="btn-toggle-safe-mode"'), 'Safe Mode must be removed from movie.html');
+  assert(movieHtml.includes('id="btn-toggle-haptics"'), 'movie.html must have 4D Haptic control');
+  assert(movieHtml.includes('id="btn-open-companion"'), 'movie.html must have Phone Remote control');
 });
 
 test('T1-F5-03', 'Disambiguation of Duplicate DOM Element IDs in movie.html', () => {
@@ -283,10 +282,11 @@ test('T1-F5-04', 'Video.js Player Container 16:9 Aspect Ratio Preservation', () 
   assert(has169, 'movie.html video player must preserve 16:9 aspect ratio');
 });
 
-test('T1-F5-05', 'Family Safe Mode Toggle State Reflection', () => {
+test('T1-F5-05', 'Safe Mode Removal & Theater Controls Reflection', () => {
   const movieHtml = fs.readFileSync(path.join(HTML_DIR, 'movie.html'), 'utf8');
-  assert(movieHtml.includes('id="btn-toggle-safe-mode"'), 'movie.html must have #btn-toggle-safe-mode');
-  assert(movieHtml.includes('id="cs-safe-badge"'), 'movie.html must have #cs-safe-badge');
+  assert(!movieHtml.includes('id="btn-toggle-safe-mode"'), 'movie.html must not contain #btn-toggle-safe-mode');
+  assert(!movieHtml.includes('id="cs-safe-badge"'), 'movie.html must not contain #cs-safe-badge');
+  assert(movieHtml.includes('id="cs-haptic-badge"'), 'movie.html must retain #cs-haptic-badge');
 });
 
 // -----------------------------------------------------------------

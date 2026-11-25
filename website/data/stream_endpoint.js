@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
-  "stream_base_url": "https://keep-grad-zealand-arising.trycloudflare.com",
+  "stream_base_url": "https://stream.yourdomain.workers.dev",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-25T04:51:56.959716+00:00",
+  "updated_at": "2026-11-25T06:01:19.737351+00:00",
   "status": "online"
 };

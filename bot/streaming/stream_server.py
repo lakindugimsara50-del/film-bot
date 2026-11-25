@@ -19,7 +19,9 @@ from contextlib import asynccontextmanager
 import logging
 import os
 import re
+import struct
 import tempfile
+import time
 from typing import AsyncGenerator, Optional, Union
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
@@ -242,14 +244,233 @@ async def _get_from_header_cache(key: str, start: int, end: int) -> Optional[byt
 
 _WARMING_UP: set[str] = set()
 _WARMUP_SEMAPHORE = asyncio.Semaphore(1)
+_TAIL_CACHE: OrderedDict[str, tuple[int, bytes]] = OrderedDict()  # key -> (tail_start_offset, bytes)
+_MAX_TAIL_CACHE_BYTES = 2 * 1024 * 1024
+_SEEK_INDEX_CACHE: OrderedDict[str, dict] = OrderedDict()
 
 
-async def warmup_channel_message(chat_id: Union[int, str], message_id: int, target_bytes: int = 2 * 1024 * 1024) -> bool:
+async def _get_from_tail_cache(key: str, file_size: int, start: int, end: int) -> Optional[bytes]:
+    if file_size <= 0 or start < max(0, file_size - _MAX_TAIL_CACHE_BYTES):
+        return None
+    async with _CACHE_LOCK:
+        entry = _TAIL_CACHE.get(key)
+        if not entry:
+            return None
+        tail_start, buf = entry
+        if start >= tail_start and start < tail_start + len(buf):
+            _TAIL_CACHE.move_to_end(key)
+            rel_s = start - tail_start
+            rel_e = min(len(buf), end - tail_start + 1)
+            return buf[rel_s:rel_e]
+    return None
+
+
+async def _save_to_tail_cache(key: str, tail_start: int, data: bytes) -> None:
+    if not data or tail_start < 0:
+        return
+    async with _CACHE_LOCK:
+        _TAIL_CACHE[key] = (tail_start, data)
+        _TAIL_CACHE.move_to_end(key)
+        while len(_TAIL_CACHE) > MAX_HEADER_CACHE_SIZE:
+            _TAIL_CACHE.popitem(last=False)
+
+
+def _iter_mp4_boxes(buf: bytes, start: int, end: int):
+    pos = start
+    n = min(end, len(buf))
+    while pos + 8 <= n:
+        sz = struct.unpack(">I", buf[pos:pos + 4])[0]
+        btype = buf[pos + 4:pos + 8]
+        hdr = 8
+        if sz == 1:
+            if pos + 16 > n:
+                break
+            sz = struct.unpack(">Q", buf[pos + 8:pos + 16])[0]
+            hdr = 16
+        elif sz == 0:
+            sz = n - pos
+        if sz < hdr or pos + sz > n:
+            yield btype, pos + hdr, n, False
+            break
+        yield btype, pos + hdr, pos + sz, True
+        pos += sz
+
+
+def _parse_mp4_seek_index(header_bytes: bytes, file_size: int) -> dict:
     """
-    Pre-buffers initial video chunks (e.g. 2MB moov header) into RAM cache in background.
-    Runs asynchronously, with a concurrency semaphore to prevent overwhelming Telegram MTProto workers.
+    Zero-subprocess pure-Python MP4 moov parser extracting exact video duration
+    and sampled keyframe byte offsets (~2-4s spacing) for instant seeks & quality switches.
+    """
+    result = {"duration": 0.0, "file_size": file_size, "anchors": []}
+    if not header_bytes or len(header_bytes) < 64:
+        return result
+
+    moov_range = None
+    for btype, d_s, d_e, complete in _iter_mp4_boxes(header_bytes, 0, len(header_bytes)):
+        if btype == b"moov":
+            moov_range = (d_s, d_e)
+            break
+    if not moov_range:
+        return result
+
+    duration = 0.0
+    best_anchors: list[dict] = []
+
+    for btype, d_s, d_e, _ in _iter_mp4_boxes(header_bytes, moov_range[0], moov_range[1]):
+        if btype == b"mvhd" and d_s + 20 <= d_e:
+            ver = header_bytes[d_s]
+            if ver == 0 and d_s + 20 <= d_e:
+                ts, dur = struct.unpack(">II", header_bytes[d_s + 12:d_s + 20])
+                if ts > 0:
+                    duration = dur / ts
+            elif ver == 1 and d_s + 32 <= d_e:
+                ts, dur = struct.unpack(">IQ", header_bytes[d_s + 20:d_s + 32])
+                if ts > 0:
+                    duration = dur / ts
+        elif btype == b"trak":
+            mdia_r = None
+            for tb, ts_p, te_p, _ in _iter_mp4_boxes(header_bytes, d_s, d_e):
+                if tb == b"mdia":
+                    mdia_r = (ts_p, te_p)
+                    break
+            if not mdia_r:
+                continue
+            timescale = 0
+            is_video = False
+            stbl_r = None
+            for mb, ms_p, me_p, _ in _iter_mp4_boxes(header_bytes, mdia_r[0], mdia_r[1]):
+                if mb == b"mdhd" and ms_p + 20 <= me_p:
+                    ver = header_bytes[ms_p]
+                    if ver == 0 and ms_p + 16 <= me_p:
+                        timescale = struct.unpack(">I", header_bytes[ms_p + 12:ms_p + 16])[0]
+                    elif ver == 1 and ms_p + 24 <= me_p:
+                        timescale = struct.unpack(">I", header_bytes[ms_p + 20:ms_p + 24])[0]
+                elif mb == b"hdlr" and ms_p + 12 <= me_p:
+                    if header_bytes[ms_p + 8:ms_p + 12] == b"vide":
+                        is_video = True
+                elif mb == b"minf":
+                    for nb, ns_p, ne_p, _ in _iter_mp4_boxes(header_bytes, ms_p, me_p):
+                        if nb == b"stbl":
+                            stbl_r = (ns_p, ne_p)
+                            break
+            if not is_video or not stbl_r or timescale <= 0:
+                continue
+
+            stts_entries = []
+            stss_samples = None
+            stsc_entries = []
+            stco_offsets = []
+            sample_sizes = []
+            const_sample_size = 0
+
+            for sb, ss_p, se_p, complete in _iter_mp4_boxes(header_bytes, stbl_r[0], stbl_r[1]):
+                if not complete:
+                    continue
+                if sb == b"stts" and ss_p + 8 <= se_p:
+                    cnt = struct.unpack(">I", header_bytes[ss_p + 4:ss_p + 8])[0]
+                    pos = ss_p + 8
+                    for _i in range(min(cnt, (se_p - pos) // 8)):
+                        sc, sd = struct.unpack(">II", header_bytes[pos:pos + 8])
+                        stts_entries.append((sc, sd))
+                        pos += 8
+                elif sb == b"stss" and ss_p + 8 <= se_p:
+                    cnt = struct.unpack(">I", header_bytes[ss_p + 4:ss_p + 8])[0]
+                    pos = ss_p + 8
+                    stss_samples = [
+                        struct.unpack(">I", header_bytes[pos + j * 4:pos + (j + 1) * 4])[0]
+                        for j in range(min(cnt, (se_p - pos) // 4))
+                    ]
+                elif sb == b"stsc" and ss_p + 8 <= se_p:
+                    cnt = struct.unpack(">I", header_bytes[ss_p + 4:ss_p + 8])[0]
+                    pos = ss_p + 8
+                    for _i in range(min(cnt, (se_p - pos) // 12)):
+                        fc, spc, _sdi = struct.unpack(">III", header_bytes[pos:pos + 12])
+                        stsc_entries.append((fc, spc))
+                        pos += 12
+                elif sb == b"stco" and ss_p + 8 <= se_p:
+                    cnt = struct.unpack(">I", header_bytes[ss_p + 4:ss_p + 8])[0]
+                    pos = ss_p + 8
+                    stco_offsets = [
+                        struct.unpack(">I", header_bytes[pos + j * 4:pos + (j + 1) * 4])[0]
+                        for j in range(min(cnt, (se_p - pos) // 4))
+                    ]
+                elif sb == b"co64" and ss_p + 8 <= se_p:
+                    cnt = struct.unpack(">I", header_bytes[ss_p + 4:ss_p + 8])[0]
+                    pos = ss_p + 8
+                    stco_offsets = [
+                        struct.unpack(">Q", header_bytes[pos + j * 8:pos + (j + 1) * 8])[0]
+                        for j in range(min(cnt, (se_p - pos) // 8))
+                    ]
+                elif sb == b"stsz" and ss_p + 12 <= se_p:
+                    const_sample_size, cnt = struct.unpack(">II", header_bytes[ss_p + 4:ss_p + 12])
+                    if const_sample_size == 0:
+                        pos = ss_p + 12
+                        sample_sizes = [
+                            struct.unpack(">I", header_bytes[pos + j * 4:pos + (j + 1) * 4])[0]
+                            for j in range(min(cnt, (se_p - pos) // 4))
+                        ]
+
+            if stco_offsets and stts_entries:
+                # Build sampled ~1-per-chunk / keyframe time-to-offset anchors directly
+                total_chunks = len(stco_offsets)
+                chunk_first_sample: list[int] = [1] * total_chunks
+                cur_samp = 1
+                stsc_idx = 0
+                for c_idx in range(total_chunks):
+                    c_num = c_idx + 1
+                    while stsc_idx + 1 < len(stsc_entries) and stsc_entries[stsc_idx + 1][0] <= c_num:
+                        stsc_idx += 1
+                    spc = stsc_entries[stsc_idx][1] if stsc_entries else 1
+                    chunk_first_sample[c_idx] = cur_samp
+                    cur_samp += spc
+
+                # Map sample index -> timestamp
+                def _sample_to_sec(target_s: int) -> float:
+                    acc_s = 1
+                    acc_ticks = 0
+                    for sc, sd in stts_entries:
+                        if target_s < acc_s + sc:
+                            return (acc_ticks + (target_s - acc_s) * sd) / timescale
+                        acc_s += sc
+                        acc_ticks += sc * sd
+                    return acc_ticks / timescale
+
+                step = max(1, total_chunks // 250)
+                anchors: list[dict] = []
+                for c_idx in range(0, total_chunks, step):
+                    t_sec = round(_sample_to_sec(chunk_first_sample[c_idx]), 2)
+                    anchors.append({"t": t_sec, "offset": int(stco_offsets[c_idx])})
+                if stco_offsets and (not anchors or anchors[-1]["offset"] != int(stco_offsets[-1])):
+                    anchors.append({"t": round(_sample_to_sec(chunk_first_sample[-1]), 2), "offset": int(stco_offsets[-1])})
+                if anchors:
+                    best_anchors = anchors
+                    break
+
+    result["duration"] = round(duration, 2)
+    result["anchors"] = best_anchors
+    return result
+
+
+async def warmup_channel_message(chat_id: Union[int, str], message_id: int, target_bytes: int = 2 * 1024 * 1024, start_offset_req: int = 0) -> bool:
+    """
+    Pre-buffers video bytes into RAM/Chunk cache in background.
+    Supports both initial moov warming (start_offset_req=0) and middle-seek range warming.
     """
     cache_key = _get_cache_key(chat_id, message_id)
+    if start_offset_req > 0:
+        async def _do_seek_warmup():
+            async with _WARMUP_SEMAPHORE:
+                try:
+                    info = await stream_pool.get_media_info(chat_id, message_id)
+                    msg = info["message"]
+                    file_size = info["file_size"]
+                    if start_offset_req < file_size:
+                        await stream_pool.prewarm_chunk_range(msg, start_offset_req, total_bytes=min(target_bytes, 4 * 1024 * 1024))
+                except Exception as sw_err:
+                    log.debug("[StreamServer] Seek warmup note for %s@%d: %s", cache_key, start_offset_req, sw_err)
+        asyncio.create_task(_do_seek_warmup())
+        return True
+
     async with _CACHE_LOCK:
         if cache_key in _HEADER_CACHE and len(_HEADER_CACHE[cache_key]) >= min(target_bytes, MAX_HEADER_CACHE_BYTES):
             return False
@@ -362,6 +583,9 @@ async def preload_catalog_headers(max_movies: int = 3, bytes_per_stream: int = 2
 
     warmed_count = 0
     for c_id, m_id in unique_targets:
+        if stream_pool.has_recent_viewer():
+            log.info("[StreamServer] Yielding catalog warmup to active viewer stream.")
+            break
         started = await warmup_channel_message(c_id, m_id, target_bytes=bytes_per_stream)
         if started:
             warmed_count += 1
@@ -527,14 +751,82 @@ async def warmup_catalog_stream(limit: int = 10) -> dict:
 
 @stream_router.get("/stream/warmup/{chat_id}/{message_id}")
 @stream_router.post("/stream/warmup/{chat_id}/{message_id}")
-async def warmup_channel_stream(chat_id: str, message_id: int) -> dict:
-    """Preload video header and first 16MB into memory cache for zero-buffering start."""
-    started = await warmup_channel_message(chat_id, message_id)
+async def warmup_channel_stream(
+    chat_id: str,
+    message_id: int,
+    start_byte: int = 0,
+    bytes: int = 0,
+) -> dict:
+    """Preload video header (or target seek byte offset) into RAM cache for zero-buffering start/switch."""
+    if start_byte <= 0 and bytes <= 0:
+        started = await warmup_channel_message(chat_id, message_id)
+    else:
+        clamped_bytes = max(512 * 1024, min(int(bytes or 4 * 1024 * 1024), 8 * 1024 * 1024))
+        started = await warmup_channel_message(
+            chat_id,
+            message_id,
+            target_bytes=clamped_bytes,
+            start_offset_req=max(0, int(start_byte)),
+        )
     return {
         "status": "warming" if started else "already_cached_or_warming",
         "chat_id": chat_id,
         "message_id": message_id,
+        "start_byte": max(0, int(start_byte)),
     }
+
+
+@stream_router.get("/stream/seekinfo/{chat_id}/{message_id}")
+@stream_router.head("/stream/seekinfo/{chat_id}/{message_id}")
+async def stream_seek_info(chat_id: str, message_id: int) -> JSONResponse:
+    """Return MP4 moov keyframe time->byte seek anchors for instant middle-seek & zero-reload quality switching."""
+    cache_key = _get_cache_key(chat_id, message_id)
+    if cache_key in _SEEK_INDEX_CACHE:
+        _SEEK_INDEX_CACHE.move_to_end(cache_key)
+        return JSONResponse(
+            content=_SEEK_INDEX_CACHE[cache_key],
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=86400",
+            },
+        )
+
+    try:
+        info = await stream_pool.get_media_info(chat_id, message_id)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=f"Video not found: {exc}")
+
+    file_size = info["file_size"]
+    msg = info["message"]
+    probe_limit = min(file_size, 4 * 1024 * 1024)
+    hdr_bytes = await _get_from_header_cache(cache_key, 0, probe_limit - 1) if probe_limit > 0 else b""
+    if not hdr_bytes or len(hdr_bytes) < min(file_size, 512 * 1024):
+        buf = bytearray()
+        cur = 0
+        async for chunk in stream_pool.stream_media_chunks(msg, 0, max(0, probe_limit - 1)):
+            if not chunk:
+                break
+            await _save_to_header_cache(cache_key, chunk, offset=cur)
+            buf.extend(chunk)
+            cur += len(chunk)
+            if cur >= probe_limit:
+                break
+        hdr_bytes = bytes(buf)
+
+    parsed = await asyncio.to_thread(_parse_mp4_seek_index, hdr_bytes or b"", file_size)
+    if parsed.get("anchors"):
+        _SEEK_INDEX_CACHE[cache_key] = parsed
+        _SEEK_INDEX_CACHE.move_to_end(cache_key)
+        while len(_SEEK_INDEX_CACHE) > MAX_HEADER_CACHE_SIZE:
+            _SEEK_INDEX_CACHE.popitem(last=False)
+
+    return JSONResponse(
+        content=parsed,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400",
+        },
+    )
 
 
 
@@ -543,33 +835,46 @@ async def _cached_stream_generator(
     msg_obj,
     start: int,
     end: int,
+    file_size: int = 0,
 ) -> AsyncGenerator[bytes, None]:
     """
     Yields video bytes for range [start, end].
-    If the start range is cached in memory, yields from RAM instantly (<50ms),
-    then streams any remaining bytes directly from Telegram MTProto with parallel pipelining.
-    Populates RAM header cache in real-time as chunks arrive.
-    Gracefully handles client disconnects, scrubbing, and cancellations without leaking tasks or error spam.
+    Serves from RAM header cache, tail metadata cache, or aligned 1 MiB chunk cache in <5ms,
+    then streams remaining bytes via multi-session MTProto pipelining.
     """
     cur_pos = start
+    is_tail_read = bool(file_size > _MAX_TAIL_CACHE_BYTES and start >= file_size - _MAX_TAIL_CACHE_BYTES)
+    tail_buf = bytearray() if is_tail_read else None
+
     try:
         cached_part = await _get_from_header_cache(cache_key, cur_pos, end)
         if cached_part:
             yield cached_part
             cur_pos += len(cached_part)
 
+        if cur_pos <= end and is_tail_read:
+            tail_hit = await _get_from_tail_cache(cache_key, file_size, cur_pos, end)
+            if tail_hit:
+                yield tail_hit
+                cur_pos += len(tail_hit)
+
         if cur_pos <= end:
             async for chunk in stream_pool.stream_media_chunks(msg_obj, cur_pos, end):
                 if not chunk:
                     break
-                # Populate 16MB RAM cache immediately in real-time if reading within initial header
+                # Populate 32MB RAM cache immediately in real-time if reading within initial header
                 if cur_pos < MAX_HEADER_CACHE_BYTES:
                     try:
                         await _save_to_header_cache(cache_key, chunk, offset=cur_pos)
                     except Exception:
                         pass
+                if tail_buf is not None and len(tail_buf) < _MAX_TAIL_CACHE_BYTES:
+                    tail_buf.extend(chunk[:_MAX_TAIL_CACHE_BYTES - len(tail_buf)])
                 yield chunk
                 cur_pos += len(chunk)
+
+        if tail_buf is not None and len(tail_buf) > 0 and cur_pos > end:
+            await _save_to_tail_cache(cache_key, start, bytes(tail_buf))
     except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError) as abort_exc:
         log.debug("[StreamServer] Client aborted stream range %d-%d for %s (%s)", start, end, cache_key, type(abort_exc).__name__)
         return
@@ -644,6 +949,15 @@ async def stream_channel_message(
         or is_downloader_ua
     )
 
+    effective_serve = MIN_SERVE
+    try:
+        q_params = getattr(request, "query_params", None)
+        raw_burst = q_params.get("burst") if hasattr(q_params, "get") else None
+        if raw_burst is not None and str(raw_burst).isdigit():
+            effective_serve = max(1024 * 1024, min(int(raw_burst), 12 * 1024 * 1024))
+    except Exception:
+        effective_serve = MIN_SERVE
+
     if is_download:
         # Full file one-click download: serve entire remaining file unless client specified an explicit closed range
         if not range_header or not explicit_end:
@@ -651,25 +965,30 @@ async def stream_channel_message(
         if not range_header:
             start = 0
     elif not range_header:
-        # Initial request without range -> serve first 8 MiB
-        end = min(start + MIN_SERVE - 1, max(file_size - 1, 0))
+        # Initial request without range -> serve first 8 MiB (or requested adaptive burst)
+        end = min(start + effective_serve - 1, max(file_size - 1, 0))
     elif not explicit_end:
-        # Open-ended range (e.g. bytes=0-) -> serve next 8 MiB slice for rapid burst playback
-        end = min(start + MIN_SERVE - 1, file_size - 1)
+        # Open-ended range (e.g. bytes=0- or seek bytes=900000000-) -> serve adaptive burst slice
+        end = min(start + effective_serve - 1, file_size - 1)
 
     content_length = max(0, end - start + 1)
     cache_key = _get_cache_key(chat_id, message_id)
     is_partial = bool(range_header) or (not is_download and end < file_size - 1)
 
-    # Proactively warm up full 16MB into RAM cache if not already cached (only on seek requests to avoid socket contention with initial stream)
-    async with _CACHE_LOCK:
-        cached_len = len(_HEADER_CACHE[cache_key]) if cache_key in _HEADER_CACHE else 0
-    if start > 0 and cached_len < min(file_size, MAX_HEADER_CACHE_BYTES) and cache_key not in _WARMING_UP:
-        asyncio.create_task(warmup_channel_message(chat_id, message_id))
+    if not is_download:
+        stream_pool.note_viewer_activity(20.0)
 
     is_cached = False
     async with _CACHE_LOCK:
         if cache_key in _HEADER_CACHE and start < len(_HEADER_CACHE[cache_key]):
+            is_cached = True
+        elif cache_key in _TAIL_CACHE:
+            t_start, t_buf = _TAIL_CACHE[cache_key]
+            if t_start <= start < t_start + len(t_buf):
+                is_cached = True
+    if not is_cached and hasattr(stream_pool, "_get_chunk_cache"):
+        from streaming.session_pool import CHUNK_SIZE as _POOL_CHUNK_SIZE
+        if stream_pool._get_chunk_cache(cache_key, start // _POOL_CHUNK_SIZE) is not None:
             is_cached = True
 
     headers = {
@@ -697,7 +1016,7 @@ async def stream_channel_message(
         return Response(status_code=206 if is_partial else 200, headers=headers)
 
     return StreamingResponse(
-        _cached_stream_generator(cache_key, msg, start, end),
+        _cached_stream_generator(cache_key, msg, start, end, file_size=file_size),
         status_code=206 if is_partial else 200,
         headers=headers,
         media_type=mime_type,

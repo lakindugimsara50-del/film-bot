@@ -73,14 +73,15 @@ export async function onRequest(context) {
   }
 
   const { primary, fallback } = await resolveLiveStreamBaseUrl(env);
-  const targetBackend = primary || fallback || 'https://film-bot-2.onrender.com';
-
+  const candidates = [primary, fallback, 'https://film-bot-2.onrender.com'].filter((u, idx, arr) => u && u.startsWith('http') && arr.indexOf(u) === idx);
+  let targetBackend = candidates[0] || '';
   let backendReady = false;
-  if (targetBackend && targetBackend.startsWith('http')) {
+
+  for (const cand of candidates) {
     try {
       const probeCtrl = new AbortController();
-      const probeTimer = setTimeout(() => probeCtrl.abort(), 1800);
-      const probeResp = await fetch(`${targetBackend}/health?t=${Date.now()}`, {
+      const probeTimer = setTimeout(() => probeCtrl.abort(), 3800);
+      const probeResp = await fetch(`${cand}/health?t=${Date.now()}`, {
         method: 'GET',
         headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0' },
         signal: probeCtrl.signal,
@@ -88,10 +89,10 @@ export async function onRequest(context) {
       clearTimeout(probeTimer);
       if (probeResp.ok) {
         backendReady = true;
+        targetBackend = cand;
+        break;
       }
-    } catch (e) {
-      backendReady = false;
-    }
+    } catch (e) {}
   }
 
   return new Response(JSON.stringify({

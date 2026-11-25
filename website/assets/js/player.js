@@ -249,11 +249,28 @@ let lastDowngradeEpoch = 0;
 let fallbackAutoRetryCount = 0;
 let lastFallbackRetryEpoch = 0;
 let _isPreloadingUpgrade = false;
+let _isSeamlessSwitching = false;
 let _activePreloadCleanup = null;
+let _measuredMbps = 0;
+const _seekIndexCache = {};
 
 let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM_CONFIG.stream_base_url) || '';
 let streamServerHealthy = false;
 let edgeProxyHealthy = false;
+
+function _recordMeasuredThroughput(bytes, durationMs) {
+  if (!bytes || bytes < 65536 || !durationMs || durationMs < 20) return;
+  const mbps = (bytes * 8) / (durationMs * 1000);
+  if (!isFinite(mbps) || mbps <= 0.05 || mbps > 2500) return;
+  _measuredMbps = _measuredMbps > 0 ? (_measuredMbps * 0.55 + mbps * 0.45) : mbps;
+}
+
+function getEffectiveDownloadMbps() {
+  if (_measuredMbps > 0) return _measuredMbps;
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn && typeof conn.downlink === 'number' && conn.downlink > 0) return conn.downlink;
+  return 0;
+}
 
 async function probeStreamServerHealth(baseUrl) {
   // If baseUrl is empty, probe the edge proxy /stream/ping
@@ -337,7 +354,7 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     const cached = sessionStorage.getItem('filmsub_stream_base');
     const cachedTime = parseInt(sessionStorage.getItem('filmsub_stream_base_time') || '0', 10);
     const cachedHealthy = sessionStorage.getItem('filmsub_stream_healthy') === 'true';
-    if (cached && cachedHealthy && (Date.now() - cachedTime) < 60000) {
+    if (cached && cachedHealthy && (Date.now() - cachedTime) < 20000) {
       activeStreamBaseUrl = cached;
       streamServerHealthy = true;
       edgeProxyHealthy = sessionStorage.getItem('filmsub_edge_healthy') === 'true';
@@ -551,8 +568,211 @@ function normalizeStreamUrl(u) {
   return isDeadTunnel(u) ? '' : u;
 }
 
-// ── Multi-Quality Edge & RAM Pre-Warming System ─────────────────────────────
+// ── Multi-Quality Edge & RAM Pre-Warming + Seek Table Engine ────────────────
 const _warmedTiers = new Set();
+const _prewarmByteRangeLocks = new Map();
+
+function extractChannelIdsFromUrl(src) {
+  if (!src || typeof src !== 'string') return null;
+  const m = src.match(/\/stream\/(?:channel|download)\/(-?\d+)\/(\d+)/);
+  if (!m) return null;
+  return { chatId: m[1], messageId: m[2] };
+}
+
+async function fetchSeekInfo(chatId, messageId) {
+  if (!chatId || !messageId) return null;
+  const key = `${chatId}:${messageId}`;
+  const existing = _seekIndexCache[key];
+  if (existing) {
+    if (typeof existing.then === 'function') return existing;
+    if (existing.data) return existing.data;
+    if ((Date.now() - existing.ts) < 15000) return null;
+  }
+
+  const pfx = getStreamEndpointPrefix() || '';
+  const url = `${pfx}/stream/seekinfo/${chatId}/${messageId}`;
+  const reqPromise = (async () => {
+    const ctrl = new AbortController();
+    const tId = setTimeout(() => ctrl.abort(), 4500);
+    try {
+      const resp = await fetch(url, { method: 'GET', mode: 'cors', signal: ctrl.signal });
+      clearTimeout(tId);
+      if (resp && resp.ok) {
+        const data = await resp.json().catch(() => null);
+        if (data && (data.file_size > 0 || (Array.isArray(data.anchors) && data.anchors.length > 0))) {
+          _seekIndexCache[key] = { ts: Date.now(), data };
+          return data;
+        }
+      }
+    } catch (e) {
+      clearTimeout(tId);
+    }
+    _seekIndexCache[key] = { ts: Date.now(), data: null };
+    return null;
+  })();
+
+  _seekIndexCache[key] = reqPromise;
+  return reqPromise;
+}
+
+function estimateByteOffsetForTime(seekInfo, targetSec, knownDuration = 0, fallbackFileSize = 0) {
+  const sec = Math.max(0, Number(targetSec) || 0);
+  if (sec <= 0.5) return 0;
+
+  const anchors = (seekInfo && Array.isArray(seekInfo.anchors)) ? seekInfo.anchors : [];
+  const fileSize = (seekInfo && Number(seekInfo.file_size)) || Number(fallbackFileSize) || 0;
+  const dur = (seekInfo && Number(seekInfo.duration)) || Number(knownDuration) || 0;
+
+  let estByte = 0;
+  if (anchors.length >= 2) {
+    const lastIdx = anchors.length - 1;
+    if (sec <= (anchors[0].t || 0)) {
+      estByte = anchors[0].offset || 0;
+    } else if (sec >= (anchors[lastIdx].t || 0)) {
+      estByte = anchors[lastIdx].offset || 0;
+    } else {
+      let lo = 0;
+      let hi = lastIdx;
+      while (lo + 1 < hi) {
+        const mid = (lo + hi) >> 1;
+        if ((anchors[mid].t || 0) <= sec) lo = mid;
+        else hi = mid;
+      }
+      const a0 = anchors[lo];
+      const a1 = anchors[hi];
+      const dt = Math.max(0.001, (a1.t || 0) - (a0.t || 0));
+      const frac = Math.min(1, Math.max(0, (sec - (a0.t || 0)) / dt));
+      estByte = Math.floor((a0.offset || 0) + frac * ((a1.offset || 0) - (a0.offset || 0)));
+    }
+  } else if (dur > 0 && fileSize > 0) {
+    estByte = Math.floor((Math.min(dur, sec) / dur) * fileSize);
+  } else {
+    // Approximate fallback (~380 KB/s baseline) when duration/size unavailable yet
+    estByte = Math.floor(sec * 393216);
+  }
+
+  // Align down to 1 MiB Telegram chunk boundary (with 1 chunk safety lead so keyframe precedes target)
+  const chunkAlign = 1048576;
+  let aligned = Math.max(0, Math.floor(estByte / chunkAlign) * chunkAlign - chunkAlign);
+  if (fileSize > chunkAlign * 2) {
+    aligned = Math.min(aligned, fileSize - chunkAlign * 2);
+  }
+  return Math.max(0, aligned);
+}
+
+async function prewarmStreamAtTime(movieOrCandidate, targetSec, knownDuration = 0, opts = {}) {
+  const sec = Math.max(0, Number(targetSec) || 0);
+  const candidate = (movieOrCandidate && typeof movieOrCandidate === 'object' && typeof movieOrCandidate.src === 'string')
+    ? movieOrCandidate
+    : resolveStreamUrlForQuality(movieOrCandidate, currentEffectiveQuality);
+  if (!candidate || !candidate.src) return false;
+
+  const ids = (candidate.chatId && candidate.messageId)
+    ? { chatId: String(candidate.chatId), messageId: String(candidate.messageId) }
+    : extractChannelIdsFromUrl(candidate.src);
+  if (!ids) return false;
+
+  const seekInfo = await fetchSeekInfo(ids.chatId, ids.messageId);
+  const startByte = estimateByteOffsetForTime(seekInfo, sec, knownDuration);
+  const burstBytes = opts.burstBytes || 4194304;
+  const lockKey = `${ids.chatId}:${ids.messageId}:${startByte}`;
+  const prevLock = _prewarmByteRangeLocks.get(lockKey) || 0;
+  const cooldownMs = opts.urgent ? 4000 : 18000;
+  if ((Date.now() - prevLock) < cooldownMs) return true;
+  _prewarmByteRangeLocks.set(lockKey, Date.now());
+  if (_prewarmByteRangeLocks.size > 120) {
+    const oldestKey = _prewarmByteRangeLocks.keys().next().value;
+    _prewarmByteRangeLocks.delete(oldestKey);
+  }
+
+  const pfx = getStreamEndpointPrefix() || '';
+  fetch(`${pfx}/stream/warmup/${ids.chatId}/${ids.messageId}?start_byte=${startByte}&bytes=${burstBytes}`, {
+    method: 'POST',
+    mode: 'cors',
+    signal: opts.signal
+  }).catch(() => {});
+
+  if (opts.warmupOnly) return true;
+
+  const maxEnd = seekInfo && seekInfo.file_size > 0
+    ? Math.min(seekInfo.file_size - 1, startByte + 2097151)
+    : (startByte + 2097151);
+  if (maxEnd <= startByte) return true;
+
+  const t0 = performance.now();
+  try {
+    const resp = await fetch(`${pfx}/stream/channel/${ids.chatId}/${ids.messageId}`, {
+      method: 'GET',
+      headers: { 'Range': `bytes=${startByte}-${maxEnd}` },
+      mode: 'cors',
+      signal: opts.signal
+    });
+    if (resp && resp.ok) {
+      const buf = await resp.arrayBuffer();
+      _recordMeasuredThroughput(buf.byteLength, performance.now() - t0);
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function prewarmQualityBytesViaFetch(candidate, curT = 0, knownDuration = 0, opts = {}) {
+  if (!candidate || !candidate.src) return { ok: false, aborted: false, mbps: 0 };
+  const ctrl = !opts.signal ? new AbortController() : null;
+  const signal = opts.signal || ctrl.signal;
+  const timeoutMs = opts.timeoutMs || 8500;
+  const timerId = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+
+  try {
+    const ids = (candidate.chatId && candidate.messageId)
+      ? { chatId: String(candidate.chatId), messageId: String(candidate.messageId) }
+      : extractChannelIdsFromUrl(candidate.src);
+
+    const tasks = [];
+    // 1. Warm byte 0..1 MiB (moov atom & initial keyframes) + measure speed
+    tasks.push((async () => {
+      const t0 = performance.now();
+      const resp = await fetch(candidate.src, {
+        method: 'GET',
+        headers: { 'Range': 'bytes=0-1048575' },
+        mode: 'cors',
+        signal
+      });
+      if (!resp || !resp.ok) return false;
+      const buf = await resp.arrayBuffer();
+      _recordMeasuredThroughput(buf.byteLength, performance.now() - t0);
+      return buf.byteLength > 0;
+    })());
+
+    // 2. If playing mid-movie, warm the exact playhead byte range too!
+    if (curT > 3 && ids) {
+      tasks.push(prewarmStreamAtTime(candidate, curT + 1.0, knownDuration, {
+        urgent: true,
+        burstBytes: 4194304,
+        signal
+      }));
+    } else if (ids) {
+      const pfx = getStreamEndpointPrefix() || '';
+      tasks.push(
+        fetch(`${pfx}/stream/warmup/${ids.chatId}/${ids.messageId}?start_byte=0&bytes=4194304`, {
+          method: 'POST',
+          mode: 'cors',
+          signal
+        }).then(() => true).catch(() => false)
+      );
+    }
+
+    const results = await Promise.all(tasks);
+    if (timerId) clearTimeout(timerId);
+    const ok = Boolean(results[0]);
+    return { ok, aborted: false, mbps: _measuredMbps };
+  } catch (err) {
+    if (timerId) clearTimeout(timerId);
+    const aborted = Boolean(err && err.name === 'AbortError');
+    return { ok: false, aborted, mbps: _measuredMbps };
+  }
+}
+
 function prewarmQualityTier(movie, quality) {
   if (!movie) return;
   const qNorm = String(quality || '').toLowerCase();
@@ -565,6 +785,7 @@ function prewarmQualityTier(movie, quality) {
 
     const pfx = getStreamEndpointPrefix() || '';
     fetch(`${pfx}/stream/warmup/${resolved.chatId}/${resolved.messageId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+    fetchSeekInfo(resolved.chatId, resolved.messageId).catch(() => {});
     return;
   }
 
@@ -730,8 +951,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Background non-blocking stream config refresh
-  loadLiveStreamConfig().catch(() => {});
+  // Resolve live stream config cleanly (1.5s cap so playback never stalls on slow GitHub fetch)
+  try {
+    await Promise.race([
+      loadLiveStreamConfig(),
+      new Promise(resolve => setTimeout(resolve, 1500))
+    ]);
+  } catch (e) {}
 
   // 2. Fallback: If movie is not in bundled data or requested specific episode is missing, fetch
   const needsEpisodeFetch = Boolean(
@@ -1826,24 +2052,21 @@ function renderServerTabs(movie) {
 function detectNetworkSpeed() {
   const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''));
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (!conn) {
-    // No Network Information API: default 720p (works well on both Wi-Fi and 4G)
+  const apiDownlink = (conn && typeof conn.downlink === 'number' && conn.downlink > 0) ? conn.downlink : 5;
+  const effectiveType = (conn && conn.effectiveType) ? conn.effectiveType : '4g';
+  const saveData = Boolean(conn && conn.saveData);
+  const effMbps = getEffectiveDownloadMbps() || apiDownlink;
+
+  if (saveData || effectiveType === '2g' || effectiveType === 'slow-2g' || effMbps < 1.8 || (effectiveType === '3g' && effMbps < 2.5)) {
+    return { speed: 'slow', downlink: effMbps, effectiveType, recommendedQuality: '480p' };
+  }
+  if (_measuredMbps > 0 ? _measuredMbps >= 5.5 : apiDownlink >= 25.0) {
+    return { speed: 'fast', downlink: effMbps, effectiveType, recommendedQuality: '1080p' };
+  }
+  if (!conn && _measuredMbps <= 0) {
     return { speed: isMobile ? 'medium' : 'fast', downlink: 5, effectiveType: '4g', recommendedQuality: '720p' };
   }
-  const downlink = typeof conn.downlink === 'number' ? conn.downlink : 5;
-  const effectiveType = conn.effectiveType || '4g';
-  const saveData = Boolean(conn.saveData);
-
-  // Only suggest 480p if explicitly saving data or on very low-speed 2G/3G connections (<1.2 Mbps)
-  if (saveData || downlink < 1.2 || effectiveType === '2g' || effectiveType === 'slow-2g') {
-    return { speed: 'slow', downlink, effectiveType, recommendedQuality: '480p' };
-  }
-  // 720p is the golden default for instant startup, smooth buffering, and high clarity.
-  // Only start on 1080p if explicitly very high bandwidth (> 25 Mbps)
-  if (downlink < 25.0) {
-    return { speed: 'medium', downlink, effectiveType, recommendedQuality: '720p' };
-  }
-  return { speed: 'fast', downlink, effectiveType, recommendedQuality: '1080p' };
+  return { speed: 'medium', downlink: effMbps, effectiveType, recommendedQuality: '720p' };
 }
 
 function mapQualityToDriveVq(q) {
@@ -2075,26 +2298,87 @@ function resolveStreamUrlForQuality(movie, quality) {
  * plays with 100% uninterrupted audio and video.
  * Handover to higher quality only occurs once initial frames and byte ranges are verified ready.
  */
-function seamlessPreloadAndStepUp(targetQuality, candidate) {
-  if (_isPreloadingUpgrade || !candidate || !candidate.src || !vjsPlayer) return;
-  if (selectedQuality !== 'auto') return;
-  if (vjsPlayer.paused() || (vjsPlayer.seeking && vjsPlayer.seeking())) return;
+let _pendingMobileAutoStepUp = false;
+
+/**
+ * Pre-buffers target quality (step-up OR smooth step-down) in the background while the active quality
+ * keeps playing with uninterrupted audio and video.
+ * On Desktop, performs a frame-synced visual shadow overlay handover so Video.js never flashes a spinner.
+ * On Mobile, warms moov + playhead bytes via single-connection HTTP Range fetch before src swap.
+ */
+function seamlessPreloadAndStepUp(targetQuality, candidate, opts = {}) {
+  const isAutoDowngrade = Boolean(opts.isAutoDowngrade);
+  if (_isPreloadingUpgrade || _isSeamlessSwitching || !candidate || !candidate.src || !vjsPlayer) return;
+  if (!opts.isManual && selectedQuality !== 'auto') return;
+  if (!opts.allowWhenPaused && (vjsPlayer.paused() || (vjsPlayer.seeking && vjsPlayer.seeking()))) return;
+
+  const curT = (vjsPlayer && typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
+  const totalDur = (vjsPlayer && typeof vjsPlayer.duration === 'function') ? (vjsPlayer.duration() || 0) : 0;
 
   const isMobileClient = (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) || (typeof window !== 'undefined' && window.innerWidth <= 768);
   if (isMobileClient) {
     // Mobile hardware video decoders cannot sustain dual parallel video decoding without crashing the WebProcess or media engine.
-    // Apply quality upgrade directly without offscreen preloader.
-    applyQualitySwitch(targetQuality, { isAutoDowngrade: false });
+    // Apply quality upgrade after lightweight single-connection HTTP Range pre-warm (zero duplicate video decoder).
+    if (opts.skipPrewarm) {
+      if (isAutoDowngrade) {
+        applyQualitySwitch(targetQuality, { isAutoDowngrade: true, force: Boolean(opts.force), preloadedTime: curT, targetSrc: candidate.src });
+      } else {
+        _pendingMobileAutoStepUp = !opts.isManual && selectedQuality === 'auto';
+        applyQualitySwitch(targetQuality, { isAutoDowngrade: false });
+      }
+      return;
+    }
+
+    _isPreloadingUpgrade = true;
+    const ctrl = new AbortController();
+    _activePreloadCleanup = () => {
+      _isPreloadingUpgrade = false;
+      _activePreloadCleanup = null;
+      try { ctrl.abort(); } catch (e) {}
+    };
+
+    prewarmQualityBytesViaFetch(candidate, curT, totalDur, {
+      signal: ctrl.signal,
+      timeoutMs: isAutoDowngrade ? 6000 : 9000
+    }).then((res) => {
+      _isPreloadingUpgrade = false;
+      _activePreloadCleanup = null;
+      if (!vjsPlayer || (res && res.aborted)) return;
+      if (!opts.isManual && selectedQuality !== 'auto') return;
+      if (!res || !res.ok) {
+        if (!isAutoDowngrade) lastAutoSwitchEpoch = Date.now() + 35000;
+        return;
+      }
+      if (!isAutoDowngrade && !opts.isManual && targetQuality === '1080p' && res.mbps > 0 && res.mbps < 3.0) {
+        lastAutoSwitchEpoch = Date.now() + 35000;
+        return;
+      }
+      if (isAutoDowngrade) {
+        applyQualitySwitch(targetQuality, {
+          isAutoDowngrade: true,
+          force: true,
+          preloadedTime: (typeof vjsPlayer.currentTime === 'function' ? vjsPlayer.currentTime() : curT) || curT,
+          targetSrc: candidate.src,
+          preWarmed: true
+        });
+      } else {
+        _pendingMobileAutoStepUp = !opts.isManual && selectedQuality === 'auto';
+        applyQualitySwitch(targetQuality, { isAutoDowngrade: false });
+      }
+    }).catch(() => {
+      _isPreloadingUpgrade = false;
+      _activePreloadCleanup = null;
+    });
     return;
   }
 
   _isPreloadingUpgrade = true;
-  console.log(`[ABR] Starting proactive pre-buffering for ${targetQuality.toUpperCase()} while current quality plays smoothly...`);
+  console.log(`[ABR] Shadow pre-buffering ${targetQuality.toUpperCase()} (${isAutoDowngrade ? 'smooth step-down' : 'upgrade'}) while current quality plays...`);
 
-  // 1. Proactive backend server warmup
-  if (candidate.chatId && candidate.messageId) {
-    const pfx = getStreamEndpointPrefix() || '';
-    fetch(`${pfx}/stream/warmup/${candidate.chatId}/${candidate.messageId}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+  // 1. Proactive backend seek-offset warmup
+  const ids = (candidate.chatId && candidate.messageId) ? candidate : extractChannelIdsFromUrl(candidate.src);
+  if (ids) {
+    prewarmStreamAtTime(candidate, curT + 1.5, totalDur, { urgent: true, warmupOnly: true, burstBytes: 4194304 }).catch(() => {});
   } else if (candidate.driveId) {
     fetch(`/api/stream?id=${encodeURIComponent(candidate.driveId)}&q=${encodeURIComponent(targetQuality)}`, {
       headers: { 'Range': 'bytes=0-1048575' },
@@ -2102,92 +2386,149 @@ function seamlessPreloadAndStepUp(targetQuality, candidate) {
     }).catch(() => {});
   }
 
-  // 2. Offscreen preloader video element
+  // 2. Shadow video element mounted inside Video.js container (invisible until handover ready)
+  const vjsRoot = (vjsPlayer && typeof vjsPlayer.el === 'function') ? vjsPlayer.el() : null;
   const bgPreloader = document.createElement('video');
+  bgPreloader.className = 'fz-shadow-handover';
   bgPreloader.preload = 'auto';
   bgPreloader.muted = true;
   bgPreloader.playsInline = true;
-  bgPreloader.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
-  document.body.appendChild(bgPreloader);
+  bgPreloader.setAttribute('playsinline', '');
+  if (vjsRoot) {
+    bgPreloader.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;opacity:0;visibility:hidden;pointer-events:none;z-index:2;transition:opacity 0.18s ease;';
+    vjsRoot.appendChild(bgPreloader);
+  } else {
+    bgPreloader.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+    document.body.appendChild(bgPreloader);
+  }
 
   let cleanedUp = false;
+  let handoverTransferred = false;
+  let checkInterval = null;
+  let preloadTimeout = null;
+
+  const destroyShadowVideo = (el) => {
+    try {
+      el.pause();
+      el.removeAttribute('src');
+      el.load();
+    } catch (e) {}
+    if (el && el.parentNode) {
+      el.parentNode.removeChild(el);
+    }
+  };
+
   const cleanup = () => {
     if (cleanedUp) return;
     cleanedUp = true;
+    if (checkInterval) clearInterval(checkInterval);
+    if (preloadTimeout) clearTimeout(preloadTimeout);
     _isPreloadingUpgrade = false;
     _activePreloadCleanup = null;
-    try {
-      bgPreloader.pause();
-      bgPreloader.removeAttribute('src');
-      bgPreloader.load();
-    } catch (e) {}
-    if (bgPreloader.parentNode) {
-      bgPreloader.parentNode.removeChild(bgPreloader);
+    if (!handoverTransferred) {
+      destroyShadowVideo(bgPreloader);
     }
   };
   _activePreloadCleanup = cleanup;
 
-  // 3. Safety timeout: if 1080p takes > 7s to buffer, connection is not fast enough for 1080p.
-  // Stay on current quality without interrupting playback!
-  const preloadTimeout = setTimeout(() => {
+  const timeoutMs = isAutoDowngrade ? 8000 : 10500;
+  preloadTimeout = setTimeout(() => {
     if (cleanedUp) return;
-    console.warn(`[ABR] Upgrade pre-buffering for ${targetQuality} timed out (>7s). Staying on ${currentEffectiveQuality} without interruption.`);
+    console.warn(`[ABR] Pre-buffering for ${targetQuality} timed out (>${timeoutMs}ms). Keeping ${currentEffectiveQuality} uninterrupted.`);
     cleanup();
-    lastAutoSwitchEpoch = Date.now() + 45000;
-  }, 7000);
+    if (!isAutoDowngrade) {
+      lastAutoSwitchEpoch = Date.now() + 45000;
+    }
+  }, timeoutMs);
 
-  // 4. Once metadata is loaded, seek ahead to upcoming playhead
-  let hasSeeked = false;
-  const onMetadata = () => {
-    if (cleanedUp || hasSeeked) return;
-    hasSeeked = true;
-    const curT = (vjsPlayer && typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
-    const targetSeek = curT + 2.5;
+  // 3. Once metadata is loaded, seek ahead right near live playhead
+  let lastTargetSeek = -1;
+  const seekShadowNearLive = () => {
+    const liveT = (vjsPlayer && typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : curT;
+    const targetSeek = liveT + 1.2;
+    lastTargetSeek = targetSeek;
     try {
       bgPreloader.currentTime = targetSeek;
-      console.log(`[ABR] Preloader metadata ready. Proactively buffering byte range at ${targetSeek.toFixed(1)}s for ${targetQuality.toUpperCase()}...`);
-    } catch (e) {
-      console.warn('[ABR] Preloader seek failed:', e);
-    }
+    } catch (e) {}
   };
-  bgPreloader.addEventListener('loadedmetadata', onMetadata, { once: true });
 
-  // 5. When future data or canplay is reached on the preloader
+  bgPreloader.addEventListener('loadedmetadata', () => {
+    if (cleanedUp) return;
+    seekShadowNearLive();
+    console.log(`[ABR] Shadow metadata ready. Buffering at ${lastTargetSeek.toFixed(1)}s for ${targetQuality.toUpperCase()}...`);
+  }, { once: true });
+
+  // 4. Frame-synced visual handover once shadow stream holds smooth runway
   let handoverDone = false;
   const executeHandover = () => {
     if (cleanedUp || handoverDone) return;
-    handoverDone = true;
-    clearTimeout(preloadTimeout);
-
-    // If user changed quality, paused, or closed player during preload, abort switch
-    if (selectedQuality !== 'auto' || !vjsPlayer || vjsPlayer.paused()) {
+    if (!opts.isManual && selectedQuality !== 'auto') {
+      cleanup();
+      return;
+    }
+    if (!vjsPlayer || (!opts.allowWhenPaused && vjsPlayer.paused())) {
       cleanup();
       return;
     }
 
-    const curT = (typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
-    console.log(`[ABR] ${targetQuality.toUpperCase()} pre-buffered successfully! Seamless handover at ${curT.toFixed(1)}s`);
+    const liveT = (typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
+    let shadowCovered = bgPreloader.readyState >= 4;
+    if (!shadowCovered && bgPreloader.buffered && bgPreloader.buffered.length > 0) {
+      for (let i = 0; i < bgPreloader.buffered.length; i++) {
+        const bs = bgPreloader.buffered.start(i);
+        const be = bgPreloader.buffered.end(i);
+        if (bs <= liveT + 0.35 && be >= liveT + 1.2) {
+          shadowCovered = true;
+          break;
+        }
+      }
+    }
+    if (!shadowCovered) {
+      if (lastTargetSeek >= 0 && liveT > lastTargetSeek + 2.5) {
+        seekShadowNearLive();
+      }
+      return;
+    }
+
+    handoverDone = true;
+    if (checkInterval) clearInterval(checkInterval);
+    if (preloadTimeout) clearTimeout(preloadTimeout);
+
+    console.log(`[ABR] ${targetQuality.toUpperCase()} pre-buffered cleanly! Zero-spinner handover at ${liveT.toFixed(1)}s`);
+
+    if (vjsRoot) {
+      handoverTransferred = true;
+      try {
+        bgPreloader.currentTime = liveT;
+        bgPreloader.style.visibility = 'visible';
+        bgPreloader.style.opacity = '1';
+        bgPreloader.play().catch(() => {});
+      } catch (e) {}
+    }
 
     cleanup();
 
     applyQualitySwitch(targetQuality, {
-      isAutoDowngrade: false,
-      isAutoStepUp: true,
-      preloadedTime: curT,
-      targetSrc: candidate.src
+      isAutoDowngrade,
+      isAutoStepUp: !isAutoDowngrade && !opts.isManual,
+      force: isAutoDowngrade,
+      preloadedTime: liveT,
+      targetSrc: candidate.src,
+      preWarmed: true,
+      shadowVideo: handoverTransferred ? bgPreloader : null,
+      destroyShadowVideo
     });
   };
 
   bgPreloader.addEventListener('canplay', executeHandover);
   bgPreloader.addEventListener('canplaythrough', executeHandover);
 
-  const checkInterval = setInterval(() => {
+  checkInterval = setInterval(() => {
     if (cleanedUp || handoverDone) {
       clearInterval(checkInterval);
       return;
     }
     if (bgPreloader.readyState >= 3) {
-      clearInterval(checkInterval);
       executeHandover();
     }
   }, 100);
@@ -2198,15 +2539,17 @@ function seamlessPreloadAndStepUp(targetQuality, candidate) {
 
 function applyQualitySwitch(targetQuality, opts = {}) {
   const isAutoDowngrade = Boolean(opts.isAutoDowngrade);
-  const isAutoStepUp = Boolean(opts.isAutoStepUp);
+  const mobileAuto = _pendingMobileAutoStepUp;
+  _pendingMobileAutoStepUp = false;
+  const isAutoStepUp = Boolean(opts.isAutoStepUp || mobileAuto);
 
-  // CRITICAL: Block auto-downgrade during initial startup or first 30s of playback
+  // Guard auto-downgrade: allow immediately when forced by stall, or once curT >= 8s
   if (isAutoDowngrade) {
     if (selectedQuality !== 'auto') return;
     if (vjsPlayer) {
       const curT = typeof vjsPlayer.currentTime === 'function' ? vjsPlayer.currentTime() : 0;
-      if (curT < 30.0) {
-        console.warn(`[ABR] Ignoring auto-downgrade during initial playback buffer period (currentTime: ${curT.toFixed(1)}s < 30s)`);
+      if (!opts.force && curT < 8.0) {
+        console.warn(`[ABR] Deferring auto-downgrade during initial buffer window (currentTime: ${curT.toFixed(1)}s < 8s)`);
         return;
       }
     }
@@ -2235,7 +2578,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     headerQual.textContent = `${currentEffectiveQuality.toUpperCase()} WEB-DL`;
   }
 
-  // 1. If Video.js Super Player is active, switch chunk stream quality and preserve exact currentTime
+  // 1. If Video.js Super Player is active, switch stream quality and preserve exact currentTime
   if (vjsPlayer && typeof vjsPlayer.currentTime === 'function') {
     const curTime = (opts.preloadedTime && opts.preloadedTime > 0)
       ? opts.preloadedTime
@@ -2251,28 +2594,63 @@ function applyQualitySwitch(targetQuality, opts = {}) {
     const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || '';
     const shouldReloadSrc = newSrc && (!isAutoDowngrade || (currentSrc && !currentSrc.includes(newSrc)));
 
+    const shadowVideo = opts.shadowVideo || null;
+    const destroyShadow = typeof opts.destroyShadowVideo === 'function'
+      ? opts.destroyShadowVideo
+      : ((el) => { try { el.pause(); el.removeAttribute('src'); el.load(); if (el.parentNode) el.parentNode.removeChild(el); } catch (e) {} });
+
     if (newSrc && shouldReloadSrc && currentSrc !== newSrc) {
       const targetTime = (curTime && curTime > 0) ? curTime : 0;
       const shouldResumePlay = !wasPaused;
+      const vjsRoot = typeof vjsPlayer.el === 'function' ? vjsPlayer.el() : null;
 
-      // Temporarily pause and mute audio during quality switch to avoid 0:00 playback glitches
-      if (!isAutoStepUp && typeof vjsPlayer.pause === 'function') vjsPlayer.pause();
+      if (shadowVideo || opts.preWarmed) {
+        _isSeamlessSwitching = true;
+        if (vjsRoot) vjsRoot.classList.add('vjs-fz-seamless-switching');
+      }
+
+      if (!isAutoStepUp && !shadowVideo && !opts.preWarmed && typeof vjsPlayer.pause === 'function') {
+        vjsPlayer.pause();
+      }
       const prevMuted = (typeof vjsPlayer.muted === 'function') ? vjsPlayer.muted() : false;
       if (targetTime > 0.5 && typeof vjsPlayer.muted === 'function') {
         vjsPlayer.muted(true);
       }
 
-      // Immediately warm target stream ahead
-      const targetMsgMatch = newSrc.match(/\/stream\/channel\/(-?\d+)\/(\d+)/);
-      if (targetMsgMatch) {
-        const pfx = getStreamEndpointPrefix() || '';
-        fetch(`${pfx}/stream/warmup/${targetMsgMatch[1]}/${targetMsgMatch[2]}`, { method: 'POST', mode: 'cors' }).catch(() => {});
+      // Warm target stream at exact seek byte offset (not just byte 0)
+      const targetDur = typeof vjsPlayer.duration === 'function' ? (vjsPlayer.duration() || 0) : 0;
+      if (!opts.preWarmed) {
+        prewarmStreamAtTime(newSrc, targetTime, targetDur, { urgent: true, warmupOnly: true, burstBytes: 4194304 }).catch(() => {});
+      }
+
+      let shadowCleaned = false;
+      let shadowFailsafeTimer = null;
+      const finishSeamlessVisual = () => {
+        if (shadowCleaned) return;
+        shadowCleaned = true;
+        if (shadowFailsafeTimer) clearTimeout(shadowFailsafeTimer);
+        if (shadowVideo) {
+          shadowVideo.style.opacity = '0';
+          setTimeout(() => destroyShadow(shadowVideo), 200);
+        }
+        if (vjsRoot) vjsRoot.classList.remove('vjs-fz-seamless-switching');
+        _isSeamlessSwitching = false;
+      };
+
+      if (shadowVideo || opts.preWarmed) {
+        shadowFailsafeTimer = setTimeout(() => {
+          if (targetTime > 0.5 && vjsPlayer && typeof vjsPlayer.muted === 'function') {
+            vjsPlayer.muted(prevMuted);
+          }
+          finishSeamlessVisual();
+        }, 5500);
       }
 
       vjsPlayer.src({ src: newSrc, type: 'video/mp4' });
       vjsPlayer.load();
 
       let isRestored = false;
+      let pollTimer = null;
       const applySeek = () => {
         if (isRestored) return;
         const techEl = (vjsPlayer.tech_ && vjsPlayer.tech_.el_) || document.getElementById('filmsubPlayer_html5_api');
@@ -2284,25 +2662,36 @@ function applyQualitySwitch(targetQuality, opts = {}) {
 
         // Player must have metadata (readyState >= 1) or valid duration to accept currentTime seek
         if (rState >= 1 || (duration > 0 && !isNaN(duration))) {
-          if (targetTime > 0.5) {
+          const liveTarget = (shadowVideo && shadowVideo.currentTime > targetTime)
+            ? shadowVideo.currentTime
+            : targetTime;
+          if (liveTarget > 0.5) {
             try {
-              vjsPlayer.currentTime(targetTime);
-              if (techEl && Math.abs((techEl.currentTime || 0) - targetTime) > 0.5) {
-                techEl.currentTime = targetTime;
+              vjsPlayer.currentTime(liveTarget);
+              if (techEl && Math.abs((techEl.currentTime || 0) - liveTarget) > 0.5) {
+                techEl.currentTime = liveTarget;
               }
-              console.log(`[FilmSub] Quality switch: successfully restored playhead to ${targetTime.toFixed(1)}s (ready=${rState}, dur=${duration.toFixed(1)}s)`);
+              console.log(`[FilmSub] Quality switch: restored playhead to ${liveTarget.toFixed(1)}s (ready=${rState}, shadow=${Boolean(shadowVideo)})`);
             } catch (err) {
               console.warn('[FilmSub] Seek failed, will retry on next tick:', err);
               return;
             }
           }
           isRestored = true;
+          if (pollTimer) clearInterval(pollTimer);
           if (targetTime > 0.5 && typeof vjsPlayer.muted === 'function') {
             vjsPlayer.muted(prevMuted);
           }
           syncSubtitles();
           if (shouldResumePlay) {
-            try { vjsPlayer.play().catch(() => {}); } catch (e) {}
+            if (shadowVideo) {
+              const revealMain = () => finishSeamlessVisual();
+              vjsPlayer.one('playing', revealMain);
+              vjsPlayer.one('canplay', () => setTimeout(revealMain, 80));
+            }
+            try { vjsPlayer.play().catch(() => finishSeamlessVisual()); } catch (e) { finishSeamlessVisual(); }
+          } else {
+            finishSeamlessVisual();
           }
         }
       };
@@ -2313,7 +2702,7 @@ function applyQualitySwitch(targetQuality, opts = {}) {
 
       // Active high-frequency polling every 40ms to catch readyState transitions immediately
       let pollCount = 0;
-      const pollTimer = setInterval(() => {
+      pollTimer = setInterval(() => {
         pollCount++;
         if (isRestored || pollCount > 150 || !vjsPlayer) {
           clearInterval(pollTimer);
@@ -2336,16 +2725,18 @@ function applyQualitySwitch(targetQuality, opts = {}) {
         }
       };
       vjsPlayer.on('timeupdate', onGuardTimeUpdate);
+    } else if (shadowVideo) {
+      destroyShadow(shadowVideo);
     }
 
     if (isAutoDowngrade) {
       FilmSub.showToast(
-        `⚡ අන්තර්ජාල වේගය අනුව හිරවීමකින් තොරව නැරඹීම සඳහා ${currentEffectiveQuality.toUpperCase()} වෙත ස්වයංක්‍රීයව මාරු විය!`,
+        `⚡ Smooth Mode (${currentEffectiveQuality.toUpperCase()}) • බාධාවකින් තොරව ක්‍රියාත්මකයි`,
         'info'
       );
     } else if (isAutoStepUp) {
       FilmSub.showToast(
-        `🚀 Full HD ${currentEffectiveQuality.toUpperCase()} වෙත බාධාවකින් තොරව උසස් විය! (Instant ABR)`,
+        `🚀 ${currentEffectiveQuality.toUpperCase()} HD වෙත බාධාවකින් තොරව උසස් විය!`,
         'info'
       );
     } else {
@@ -2461,9 +2852,9 @@ function getBufferAhead(player) {
 }
 
 /**
- * Attaches real-time buffer stall & frame-drop monitoring to Video.js.
- * Automatically steps down quality (1080p -> 720p -> 480p -> 360p) if lagging,
- * while ignoring user timeline seeks and initial moov metadata probing.
+ * Attaches real-time buffer stall, weak-signal runway monitoring, and sliding read-ahead prewarm to Video.js.
+ * Automatically steps down quality (1080p -> 720p -> 480p) seamlessly BEFORE buffer runs dry on weak signal,
+ * handles slow initial startup within 5.5s, and warms Telegram chunks 30s ahead during active playback.
  */
 function attachAdaptiveStallMonitor(player) {
   if (!player) return;
@@ -2474,42 +2865,74 @@ function attachAdaptiveStallMonitor(player) {
   }
 
   let hasEverPlayed = false;
+  let startupDowngradeTimer = null;
+  let lastSlidingWarmEpoch = 0;
+  let lastSeekEventEpoch = 0;
 
-  const triggerStepDownIfNeeded = () => {
+  const triggerStepDownIfNeeded = ({ force = false, preferSeamless = false, reason = 'stall' } = {}) => {
     if (selectedQuality !== 'auto') return;
-    // 30s cooldown between switches — prevents quality oscillation / flicker
-    if (Date.now() - lastAutoSwitchEpoch < 30000) return;
+    if (_isSeamlessSwitching) return;
+    const sinceLast = Date.now() - lastAutoSwitchEpoch;
+    if (!force && sinceLast < 20000) return;
+    if (force && sinceLast < 8000) return;
+
     const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-    if (curT < 30.0) return; // Never step down in first 30 seconds
+    if (!force && curT < 8.0) return;
+
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx !== -1 && idx < QUALITY_LADDER.length - 1) {
       const nextLower = QUALITY_LADDER[idx + 1];
-      console.log(`[ABR] Stall detected after ${curT.toFixed(1)}s. Stepping down: ${currentEffectiveQuality} -> ${nextLower}`);
-      applyQualitySwitch(nextLower, { isAutoDowngrade: true });
+      const candidate = resolveStreamUrlForQuality(currentMovie, nextLower);
+      const currentSrc = (typeof player.currentSrc === 'function' ? player.currentSrc() : '') || '';
+      if (!candidate || !candidate.src || candidate.src === currentSrc) return;
+
+      const aheadNow = getBufferAhead(player);
+      console.log(`[ABR] Switching down (${reason}) at ${curT.toFixed(1)}s (ahead=${aheadNow.toFixed(1)}s): ${currentEffectiveQuality} -> ${nextLower}`);
+      if (preferSeamless && hasEverPlayed && aheadNow >= 1.2) {
+        seamlessPreloadAndStepUp(nextLower, candidate, { isAutoDowngrade: true });
+      } else {
+        applyQualitySwitch(nextLower, { isAutoDowngrade: true, force: true });
+      }
     }
   };
 
   const triggerStepUpIfNeeded = () => {
     if (selectedQuality !== 'auto') return;
-    if (_isPreloadingUpgrade) return;
+    if (_isPreloadingUpgrade || _isSeamlessSwitching) return;
     if (Date.now() - lastAutoSwitchEpoch < 30000) return;
-    if (Date.now() - lastDowngradeEpoch < 90000) return;
+    if (Date.now() - lastDowngradeEpoch < 60000) return;
     const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-    if (curT < 60.0) return; // Only step up after 1 minute of stable playback
+    if (curT < 45.0) return;
     const idx = QUALITY_LADDER.indexOf(currentEffectiveQuality.toLowerCase());
     if (idx > 0) {
       const nextHigher = QUALITY_LADDER[idx - 1];
+      const effMbps = getEffectiveDownloadMbps();
+      if (nextHigher === '1080p' && effMbps > 0 && effMbps < 4.5) return;
       const candidate = resolveStreamUrlForQuality(currentMovie, nextHigher);
       const currentSrc = (typeof player.currentSrc === 'function' ? player.currentSrc() : '') || '';
       if (!candidate || !candidate.src || candidate.src === currentSrc) {
         return;
       }
-      console.log(`[ABR] Buffer healthy. Pre-buffering ${nextHigher.toUpperCase()} ahead in background before handover...`);
+      console.log(`[ABR] Buffer & bandwidth healthy. Shadow pre-buffering ${nextHigher.toUpperCase()} before seamless handover...`);
       seamlessPreloadAndStepUp(nextHigher, candidate);
     }
   };
 
+  player.on('play', () => {
+    if (hasEverPlayed || selectedQuality !== 'auto') return;
+    if (startupDowngradeTimer) clearTimeout(startupDowngradeTimer);
+    startupDowngradeTimer = setTimeout(() => {
+      startupDowngradeTimer = null;
+      if (!player || hasEverPlayed || player.paused()) return;
+      const rState = typeof player.readyState === 'function' ? player.readyState() : 0;
+      if (rState < 3 && currentEffectiveQuality !== '480p' && selectedQuality === 'auto') {
+        triggerStepDownIfNeeded({ force: true, reason: 'slow-startup-5.5s' });
+      }
+    }, 5500);
+  });
+
   player.on('seeking', () => {
+    lastSeekEventEpoch = Date.now();
     if (activeStallTimer) {
       clearTimeout(activeStallTimer);
       activeStallTimer = null;
@@ -2520,9 +2943,8 @@ function attachAdaptiveStallMonitor(player) {
   });
 
   player.on('waiting', () => {
-    if (!hasEverPlayed) return;
+    if (_isSeamlessSwitching || !hasEverPlayed) return;
     const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-    if (curT < 30.0) return; // Don't step down during initial buffer build-up
     if (player.seeking && player.seeking()) return;
     if (player.paused && player.paused()) return;
 
@@ -2532,28 +2954,33 @@ function attachAdaptiveStallMonitor(player) {
       stallTimestamps.push(now);
     }
 
+    const stallWaitMs = stallTimestamps.length >= 2 ? 3200 : 4500;
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
+      if (_isSeamlessSwitching) return;
       if (player && !player.paused() && !(player.seeking && player.seeking())) {
         const curTNow = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-        if (selectedQuality === 'auto' && curTNow >= 30.0) {
-          triggerStepDownIfNeeded();
+        if (selectedQuality === 'auto' && curTNow >= 6.0) {
+          triggerStepDownIfNeeded({ force: true, reason: 'continuous-waiting' });
         }
-        // Intelligent stall recovery: nudge playhead slightly to kick decoder
         try {
-          if (curTNow > 0) {
-            player.currentTime(curTNow + 0.05);
+          if (curTNow > 0 && !_isSeamlessSwitching) {
+            player.currentTime(curTNow + 0.04);
             player.play().catch(() => {});
           }
         } catch (e) {}
       }
-    }, 8000);  // 8s continuous stall before considering downgrade
+    }, stallWaitMs);
   });
 
   player.on('playing', () => {
     const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-    if (curT > 2.0) {
+    if (curT > 1.0) {
       hasEverPlayed = true;
+      if (startupDowngradeTimer) {
+        clearTimeout(startupDowngradeTimer);
+        startupDowngradeTimer = null;
+      }
     }
     if (activeStallTimer) {
       clearTimeout(activeStallTimer);
@@ -2564,8 +2991,12 @@ function attachAdaptiveStallMonitor(player) {
   let lastBufferCheck = 0;
   player.on('timeupdate', () => {
     try {
-      if (typeof player.currentTime === 'function' && player.currentTime() > 2.0) {
+      if (typeof player.currentTime === 'function' && player.currentTime() > 1.5) {
         hasEverPlayed = true;
+        if (startupDowngradeTimer) {
+          clearTimeout(startupDowngradeTimer);
+          startupDowngradeTimer = null;
+        }
       }
     } catch (e) {}
 
@@ -2575,28 +3006,117 @@ function attachAdaptiveStallMonitor(player) {
     }
 
     const now = Date.now();
-    if (now - lastBufferCheck < 5000) return;
+    if (now - lastBufferCheck < 3000) return;
     lastBufferCheck = now;
 
+    const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
+    const dur = typeof player.duration === 'function' ? player.duration() : 0;
+
     // Save progress to FilmZilla User State
-    if (window.FilmSubUser && currentMovie) {
-      const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-      const dur = typeof player.duration === 'function' ? player.duration() : 0;
-      if (curT > 10) {
-        window.FilmSubUser.ContinueWatching.saveProgress(currentMovie, curT, dur);
+    if (window.FilmSubUser && currentMovie && curT > 10) {
+      window.FilmSubUser.ContinueWatching.saveProgress(currentMovie, curT, dur);
+    }
+
+    // Proactive sliding read-ahead: keep Telegram chunks warmed 30s ahead in backend pool
+    if (!player.paused() && !(player.seeking && player.seeking()) && currentMovie && (now - lastSlidingWarmEpoch > 12000)) {
+      lastSlidingWarmEpoch = now;
+      if (!dur || curT + 25 < dur) {
+        prewarmStreamAtTime(currentMovie, curT + 30, dur, { warmupOnly: true, burstBytes: 4194304 }).catch(() => {});
       }
     }
 
-    // Progressive MP4 playback:
-    // CRITICAL: NEVER proactively step down during active playback!
-    // As long as the video is playing without stalling, DO NOT abort the media stream!
-    // Only step up if buffer ahead is extraordinarily healthy (> 30s) and playback has been running for > 60s
-    if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking())) {
+    if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking()) && !_isSeamlessSwitching) {
       const ahead = getBufferAhead(player);
-      if (ahead > 30.0 && (now - lastAutoSwitchEpoch > 30000) && (now - lastDowngradeEpoch > 90000)) {
+      const effMbps = getEffectiveDownloadMbps();
+
+      // Proactive weak-signal step-down BEFORE buffer runs dry (zero visible buffering wheel!)
+      if (hasEverPlayed && ahead > 0.6 && ahead < 4.0 && (now - lastSeekEventEpoch > 8000)) {
+        const hasSignalWeakness = stallTimestamps.length >= 1 || (effMbps > 0 && effMbps < 2.2 && currentEffectiveQuality !== '480p');
+        if (hasSignalWeakness) {
+          triggerStepDownIfNeeded({ force: true, preferSeamless: true, reason: 'low-buffer-runway' });
+          return;
+        }
+      }
+
+      // Healthy runway + strong bandwidth -> step up seamlessly via shadow overlay / mobile pre-warm
+      if (ahead > 22.0 && (now - lastAutoSwitchEpoch > 30000) && (now - lastDowngradeEpoch > 60000)) {
         triggerStepUpIfNeeded();
       }
     }
+  });
+}
+
+/**
+ * Instant Middle-Seeking Engine:
+ * - Fetches compact MP4 moov keyframe seek table (/stream/seekinfo) once per stream
+ * - Pre-warms hover / scrub bar target byte offsets before the user even releases click/touch
+ * - Fires high-priority 6 MiB burst warmup immediately on seeking events for zero-lag scrubbing
+ */
+function attachSeekPrewarmEngine(player, movie) {
+  if (!player || player._fzSeekEngineAttached) return;
+  player._fzSeekEngineAttached = true;
+
+  const ensureSeekInfoForCurrentSrc = () => {
+    try {
+      const src = (typeof player.currentSrc === 'function' ? player.currentSrc() : '') || '';
+      const ids = extractChannelIdsFromUrl(src);
+      if (ids) {
+        fetchSeekInfo(ids.chatId, ids.messageId).catch(() => {});
+      }
+    } catch (e) {}
+  };
+
+  player.on('loadedmetadata', ensureSeekInfoForCurrentSrc);
+  if (typeof player.readyState === 'function' && player.readyState() >= 1) {
+    ensureSeekInfoForCurrentSrc();
+  }
+
+  let hoverWarmTimer = null;
+  let lastHoverSec = -1;
+  const handleScrubPreview = (clientX, rect) => {
+    if (!rect || rect.width <= 0) return;
+    const dur = typeof player.duration === 'function' ? (player.duration() || 0) : 0;
+    if (!dur || dur < 10) return;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const targetSec = ratio * dur;
+    const curT = typeof player.currentTime === 'function' ? (player.currentTime() || 0) : 0;
+    if (Math.abs(targetSec - curT) < 6) return;
+    if (lastHoverSec >= 0 && Math.abs(targetSec - lastHoverSec) < 8) return;
+    lastHoverSec = targetSec;
+
+    if (hoverWarmTimer) clearTimeout(hoverWarmTimer);
+    hoverWarmTimer = setTimeout(() => {
+      const src = (typeof player.currentSrc === 'function' ? player.currentSrc() : '') || '';
+      const targetArg = src ? { src } : (movie || currentMovie);
+      prewarmStreamAtTime(targetArg, targetSec, dur, { burstBytes: 4194304 }).catch(() => {});
+    }, 280);
+  };
+
+  try {
+    const vjsEl = typeof player.el === 'function' ? player.el() : null;
+    const progressHolder = vjsEl && (vjsEl.querySelector('.vjs-progress-holder') || vjsEl.querySelector('.vjs-progress-control'));
+    if (progressHolder) {
+      progressHolder.addEventListener('mousemove', (e) => {
+        handleScrubPreview(e.clientX, progressHolder.getBoundingClientRect());
+      }, { passive: true });
+      progressHolder.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches[0]) {
+          handleScrubPreview(e.touches[0].clientX, progressHolder.getBoundingClientRect());
+        }
+      }, { passive: true });
+    }
+  } catch (e) {}
+
+  player.on('seeking', () => {
+    const targetSec = typeof player.currentTime === 'function' ? (player.currentTime() || 0) : 0;
+    const dur = typeof player.duration === 'function' ? (player.duration() || 0) : 0;
+    const src = (typeof player.currentSrc === 'function' ? player.currentSrc() : '') || '';
+    const targetArg = src ? { src } : (movie || currentMovie);
+    prewarmStreamAtTime(targetArg, targetSec, dur, { urgent: true, warmupOnly: true, burstBytes: 6291456 }).catch(() => {});
+  });
+
+  player.on('seeked', () => {
+    try { syncSubtitles(); } catch (e) {}
   });
 }
 
@@ -3990,14 +4510,18 @@ function showStreamReconnectModal(playerEl, player, stream, resumeTime, movie) {
   let countdown = 3;
   let timer = null;
 
-  const doReconnect = (targetQuality = null) => {
+  const doReconnect = async (targetQuality = null) => {
     if (timer) clearInterval(timer);
     modal.remove();
     if (targetQuality) {
       applyQualitySwitch(targetQuality, { isAutoDowngrade: false });
     } else {
       try {
-        const curSrc = stream.stream_url;
+        await loadLiveStreamConfig(true).catch(() => {});
+        const resolved = currentMovie
+          ? resolveStreamUrlForQuality(currentMovie, selectedQuality === 'auto' ? currentEffectiveQuality : selectedQuality)
+          : null;
+        const curSrc = (resolved && resolved.src) || normalizeStreamUrl(stream.stream_url) || stream.stream_url;
         player.src({ src: curSrc, type: stream.type || 'video/mp4' });
         player.ready(() => {
           player.currentTime(Math.max(0, resumeTime - 1));
@@ -4415,6 +4939,7 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
 
       mountLiveSubtitleOverlay(playerEl, movie);
       attachAdaptiveStallMonitor(vjsPlayer);
+      attachSeekPrewarmEngine(vjsPlayer, movie);
       if (autoPlay) {
         try {
           const p = vjsPlayer.play();
@@ -4521,7 +5046,7 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
     });
 
     let failoverTriggered = false;
-    const triggerFailover = (reason) => {
+    const triggerFailover = async (reason) => {
       if (!vjsPlayer || failoverTriggered) return;
       failoverTriggered = true;
       const currentSrc = (typeof vjsPlayer.currentSrc === 'function' ? vjsPlayer.currentSrc() : '') || stream.stream_url || '';
@@ -4533,25 +5058,34 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         const vm = currentMovie && (currentMovie.variant_media || (currentMovie.movie_entry && currentMovie.movie_entry.variant_media));
         if (vm && vm['480p'] && vm['480p'].message_id) {
           const targetMsgId = String(vm['480p'].message_id);
-          // Only switch if we are NOT already on 480p!
           if (!currentSrc.includes(`/${targetMsgId}`)) {
             console.warn('[FilmSub Player] Connection timed out, gracefully downgrading to 480p while preserving playhead');
             failoverTriggered = false;
             resetWatchdog(15000);
-            applyQualitySwitch('480p', { isAutoDowngrade: true });
+            applyQualitySwitch('480p', { isAutoDowngrade: true, force: true });
             return;
           }
         }
       }
 
-      // 2. Retry with direct live tunnel if edge stream failed or stalled
+      // 2. Refresh live tunnel config automatically before retrying direct tunnel
+      if (!vjsPlayer._refreshedLiveConfig) {
+        vjsPlayer._refreshedLiveConfig = true;
+        try {
+          sessionStorage.removeItem('filmsub_stream_base');
+          sessionStorage.removeItem('filmsub_stream_healthy');
+          await loadLiveStreamConfig(true);
+        } catch (e) {}
+      }
+
+      // 3. Retry with direct live tunnel (if off Cloudflare Pages) or reloaded edge stream after config refresh
       if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
         vjsPlayer._retriedDirect = true;
         const curT = (typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
         const wasPaused = vjsPlayer.paused();
-        const directPrefix = activeStreamBaseUrl.replace(/\/+$/, '');
-        const directUrl = directPrefix + (currentSrc.startsWith('http') ? currentSrc.replace(/^https?:\/\/[^/]+/, '') : (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc));
-        console.warn('[FilmSub Player] Switching directly to live tunnel:', directUrl);
+        const prefix = getStreamEndpointPrefix() || activeStreamBaseUrl.replace(/\/+$/, '');
+        const directUrl = prefix + (currentSrc.startsWith('http') ? currentSrc.replace(/^https?:\/\/[^/]+/, '') : (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc));
+        console.warn('[FilmSub Player] Switching to refreshed live stream endpoint:', directUrl);
         failoverTriggered = false;
         vjsPlayer.src({ type: stream.type || 'video/mp4', src: directUrl });
         vjsPlayer.load();
@@ -4576,13 +5110,12 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
     const resetWatchdog = (timeoutMs = 18000) => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       slowHeaderWatchdog = setTimeout(() => {
-        if (!vjsPlayer) return;
+        if (!vjsPlayer || _isSeamlessSwitching) return;
         const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : (vjsPlayer.tech_?.el_?.readyState || 0);
         const nState = typeof vjsPlayer.networkState === 'function' ? vjsPlayer.networkState() : (vjsPlayer.tech_?.el_?.networkState || 0);
 
         if (!vjsPlayer.paused() && rState === 0) {
           const timeSinceProgress = Date.now() - lastDataProgressEpoch;
-          // If browser is actively receiving data within the last 12s or networkState is active (2=NETWORK_LOADING, 1=NETWORK_IDLE), extend watchdog!
           if (timeSinceProgress < 12000 || nState === 2 || nState === 1) {
             console.log(`[FilmSub Player] Video data transfer active (${timeSinceProgress}ms since progress, nState=${nState}), extending watchdog`);
             resetWatchdog(15000);
@@ -4631,6 +5164,11 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
 
     // Seamless failover on real player error or network interruption
     vjsPlayer.on('error', () => {
+      if (_isSeamlessSwitching) {
+        const errDisplay = playerEl.querySelector('.vjs-error-display');
+        if (errDisplay) errDisplay.style.display = 'none';
+        return;
+      }
       const err = vjsPlayer ? vjsPlayer.error() : null;
       console.warn('[FilmSub Player] Video.js error event:', err);
       const errDisplay = playerEl.querySelector('.vjs-error-display');

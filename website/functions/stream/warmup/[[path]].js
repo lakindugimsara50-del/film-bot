@@ -11,14 +11,13 @@ const GITHUB_ENDPOINT_JSON =
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk
 const CANONICAL_CACHE_ORIGIN = 'https://filmsub.pages.dev';
 
-const DEFAULT_FALLBACK_TUNNEL =
-  'https://insertion-cult-pipes-sandy.trycloudflare.com';
+const DEFAULT_FALLBACK_TUNNEL = '';
 const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
 
-let cachedStreamBaseUrl = DEFAULT_FALLBACK_TUNNEL;
+let cachedStreamBaseUrl = '';
 let cachedFallbackBaseUrl = DEFAULT_FALLBACK_RENDER;
 let cachedAtEpoch = 0;
-const CACHE_TTL_MS = 60000;
+const CACHE_TTL_MS = 15000;
 
 function buildCorsHeaders() {
   return {
@@ -223,15 +222,18 @@ export async function onRequest(context) {
     } catch (e) {}
   };
 
-  if (context.waitUntil && typeof context.waitUntil === 'function') {
-    context.waitUntil(primeEdgeCache());
-  } else {
-    primeEdgeCache().catch(() => {});
+  const startByte = parseInt(urlObj.searchParams.get('start_byte') || '0', 10) || 0;
+  if (startByte <= 0) {
+    if (context.waitUntil && typeof context.waitUntil === 'function') {
+      context.waitUntil(primeEdgeCache());
+    } else {
+      primeEdgeCache().catch(() => {});
+    }
   }
 
-  // Trigger upstream server RAM cache warmup
+  // Trigger upstream server RAM cache warmup (forward start_byte / bytes params cleanly)
   for (const activeBase of urlsToTry) {
-    const targetUrl = `${activeBase}/stream/warmup/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}`;
+    const targetUrl = `${activeBase}/stream/warmup/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}${urlObj.search || ''}`;
     try {
       const upstreamRes = await fetch(targetUrl, {
         method: request.method,

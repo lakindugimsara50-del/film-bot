@@ -8,12 +8,13 @@ via SESSION_STRINGS environment variable.
 """
 
 import asyncio
+from collections import OrderedDict
 import glob
 import logging
 import math
 import os
 import time
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
 
 from pyrogram import Client, types
 from pyrogram.errors import FileReferenceExpired, FloodWait, PeerIdInvalid, SessionPasswordNeeded
@@ -22,6 +23,8 @@ log = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1024 * 1024  # 1 MiB — must match Pyrogram's internal MTProto block size (DO NOT change)
 STREAM_BATCH = 8           # fetch 8 × 1 MiB = 8 MiB per batch → 2× throughput, fewer Telegram round-trips
+_IS_RENDER_HOST = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_NAME") or os.getenv("RENDER_SERVICE_ID"))
+MAX_CHUNK_CACHE_COUNT = int(os.getenv("MAX_CHUNK_CACHE_COUNT", 192 if _IS_RENDER_HOST else 768))
 
 
 class TelegramStreamPool:
@@ -38,6 +41,75 @@ class TelegramStreamPool:
         self._media_info_cache: Dict[str, tuple[float, dict]] = {}
         self._channel_primed: set[int] = set()
         self._chunk_cache_callback = None
+        # Global sliding-window chunk LRU cache: (media_key, chunk_idx) -> bytes
+        self._chunk_cache: "OrderedDict[Tuple[str, int], bytes]" = OrderedDict()
+        # Singleflight coalesce map: (media_key, chunk_idx) -> [Task, waiter_count]
+        self._inflight_chunks: Dict[Tuple[str, int], list] = {}
+        # Performance & DC warmth tracking per client object id
+        self._client_ema_mbps: Dict[int, float] = {}
+        self._warmed_dc_pairs: set[Tuple[int, int]] = set()
+        self._prefetch_sem = asyncio.Semaphore(3)
+        self._prefetch_keys: set[Tuple[str, int]] = set()
+        self._viewer_active_until: float = 0.0
+        self._active_streams_count: int = 0
+
+    def note_viewer_activity(self, hold_sec: float = 20.0) -> None:
+        """Mark active viewer stream/seek so background catalog warmups yield cleanly."""
+        self._viewer_active_until = max(self._viewer_active_until, time.monotonic() + hold_sec)
+
+    def has_recent_viewer(self) -> bool:
+        if self._active_streams_count > 0:
+            return True
+        if os.environ.get("PYTEST_CURRENT_TEST"):
+            return False
+        return time.monotonic() < self._viewer_active_until
+
+    @staticmethod
+    def _media_cache_key(media_source: Any) -> Optional[str]:
+        if isinstance(media_source, types.Message):
+            c_id = getattr(getattr(media_source, "chat", None), "id", None)
+            m_id = getattr(media_source, "id", None)
+            if isinstance(c_id, int) and isinstance(m_id, int) and m_id > 0:
+                return f"{c_id}:{m_id}"
+        elif isinstance(media_source, str) and len(media_source) >= 24:
+            return f"fid:{media_source[:48]}"
+        return None
+
+    def _put_chunk_cache(self, mkey: Optional[str], chunk_idx: int, data: bytes) -> None:
+        if not mkey or not data or MAX_CHUNK_CACHE_COUNT <= 0:
+            return
+        ck = (mkey, chunk_idx)
+        self._chunk_cache[ck] = data
+        self._chunk_cache.move_to_end(ck)
+        while len(self._chunk_cache) > MAX_CHUNK_CACHE_COUNT:
+            self._chunk_cache.popitem(last=False)
+
+    def _get_chunk_cache(self, mkey: Optional[str], chunk_idx: int) -> Optional[bytes]:
+        if not mkey:
+            return None
+        ck = (mkey, chunk_idx)
+        val = self._chunk_cache.get(ck)
+        if val is not None:
+            self._chunk_cache.move_to_end(ck)
+        return val
+
+    def _extract_dc_id(self, media_source: Any) -> int:
+        try:
+            from pyrogram.file_id import FileId
+            media = media_source
+            if isinstance(media_source, types.Message):
+                for kind in ("video", "document", "audio", "photo", "animation"):
+                    media = getattr(media_source, kind, None)
+                    if media is not None:
+                        break
+                else:
+                    return 0
+            f_str = media if isinstance(media, str) else getattr(media, "file_id", None)
+            if isinstance(f_str, str) and len(f_str) >= 20:
+                return int(FileId.decode(f_str).dc_id or 0)
+        except Exception:
+            pass
+        return 0
 
     def register_chunk_cache_callback(self, cb) -> None:
         """Register callback (chat_id, msg_id, chunk_bytes, offset) to populate RAM/Disk header cache."""
@@ -444,20 +516,29 @@ class TelegramStreamPool:
                     pass
             asyncio.create_task(_bg_sync_peers())
 
-        # Pre-prime client messages across top admin sessions so they have valid session-bound file_references in 0ms
-        target_admins = [c for c in self._admin_clients if getattr(c, "is_connected", False)][:6]
+        # Pre-prime client messages AND DC media sessions across top 12 admin sessions
+        # so zero live stream requests ever block on cold 3-5s ExportAuthorization handshakes.
+        target_dc = self._extract_dc_id(msg)
+        target_admins = [c for c in self._admin_clients if getattr(c, "is_connected", False)][:12]
         if target_admins:
             async def _bg_preprime_admins():
                 try:
+                    sem_pw = asyncio.Semaphore(6)
                     async def _prime_one(adm_cl: Client):
-                        try:
-                            adm_ckey = f"{id(adm_cl)}:{chat_id_int}:{message_id}"
-                            if adm_ckey not in self._msg_cache:
-                                adm_msg = await asyncio.wait_for(adm_cl.get_messages(chat_id_int, message_id), timeout=4.0)
-                                if adm_msg and not getattr(adm_msg, "empty", False):
-                                    self._msg_cache[adm_ckey] = adm_msg
-                        except Exception:
-                            pass
+                        async with sem_pw:
+                            try:
+                                adm_ckey = f"{id(adm_cl)}:{chat_id_int}:{message_id}"
+                                if adm_ckey not in self._msg_cache:
+                                    adm_msg = await asyncio.wait_for(adm_cl.get_messages(chat_id_int, message_id), timeout=4.0)
+                                    if adm_msg and not getattr(adm_msg, "empty", False):
+                                        self._msg_cache[adm_ckey] = adm_msg
+                                if target_dc > 0 and (id(adm_cl), target_dc) not in self._warmed_dc_pairs:
+                                    from pyrogram.methods.messages.inline_session import get_session
+                                    sess = await asyncio.wait_for(get_session(adm_cl, target_dc), timeout=6.0)
+                                    if sess is not None:
+                                        self._warmed_dc_pairs.add((id(adm_cl), target_dc))
+                            except Exception:
+                                pass
                     await asyncio.gather(*[_prime_one(adm_cl) for adm_cl in target_admins], return_exceptions=True)
                 except Exception:
                     pass
@@ -660,20 +741,39 @@ class TelegramStreamPool:
                 thumb_size=fid.thumbnail_size or "",
             )
 
-        sess = await get_session(client, fid.dc_id)
-        offset_bytes = chunk_idx * CHUNK_SIZE
-        r = await sess.invoke(
-            raw.functions.upload.GetFile(
-                location=loc,
-                offset=offset_bytes,
-                limit=CHUNK_SIZE,
-            ),
-            sleep_threshold=30,
-        )
+        # Evict stale/disconnected cached media_session before invoking GetFile
+        media_sessions = getattr(client, "media_sessions", None)
+        if isinstance(media_sessions, dict) and fid.dc_id in media_sessions:
+            cached_ms = media_sessions.get(fid.dc_id)
+            if cached_ms is not None and cached_ms is not client and not getattr(cached_ms, "is_started", True):
+                media_sessions.pop(fid.dc_id, None)
+                self._warmed_dc_pairs.discard((id(client), fid.dc_id))
 
-        if isinstance(r, raw.types.upload.File):
-            return r.bytes
-        return None
+        t0 = time.monotonic()
+        try:
+            sess = await get_session(client, fid.dc_id)
+            offset_bytes = chunk_idx * CHUNK_SIZE
+            r = await sess.invoke(
+                raw.functions.upload.GetFile(
+                    location=loc,
+                    offset=offset_bytes,
+                    limit=CHUNK_SIZE,
+                ),
+                sleep_threshold=30,
+            )
+            if isinstance(r, raw.types.upload.File) and r.bytes:
+                elapsed = max(0.01, time.monotonic() - t0)
+                mbps = (len(r.bytes) * 8.0) / (elapsed * 1_000_000.0)
+                prev_ema = self._client_ema_mbps.get(id(client), mbps)
+                self._client_ema_mbps[id(client)] = 0.65 * prev_ema + 0.35 * mbps
+                self._warmed_dc_pairs.add((id(client), fid.dc_id))
+                return r.bytes
+            return None
+        except Exception:
+            if isinstance(media_sessions, dict) and fid.dc_id in media_sessions:
+                media_sessions.pop(fid.dc_id, None)
+            self._warmed_dc_pairs.discard((id(client), fid.dc_id))
+            raise
 
     async def _fetch_chunk(
         self,
@@ -681,10 +781,54 @@ class TelegramStreamPool:
         chunk_idx: int,
     ) -> bytes:
         """
-        Fetch a single 1 MiB chunk (offset=chunk_idx, limit=1) from Telegram MTProto.
-        Balances concurrent chunk requests across available connected pool clients via
-        session rotation to maximize throughput without hitting FloodWait.
-        Filters out clients currently on rate-limit cooldown and falls back to primary client.
+        Fetch a single 1 MiB chunk (offset=chunk_idx, limit=1) from Telegram MTProto
+        with RAM LRU chunk cache hit + singleflight request coalescing.
+        """
+        mkey = self._media_cache_key(media_source)
+        if mkey is not None:
+            cached = self._get_chunk_cache(mkey, chunk_idx)
+            if cached is not None:
+                return cached
+
+            ck = (mkey, chunk_idx)
+            entry = self._inflight_chunks.get(ck)
+            if entry is not None:
+                task_shared, _waiters = entry
+                if not task_shared.done():
+                    entry[1] += 1
+                    try:
+                        return await asyncio.shield(task_shared)
+                    finally:
+                        entry[1] -= 1
+                        if entry[1] <= 0 and not task_shared.done():
+                            task_shared.cancel()
+                            self._inflight_chunks.pop(ck, None)
+
+            shared_task = asyncio.create_task(self._fetch_chunk_uncached(media_source, chunk_idx))
+            entry = [shared_task, 1]
+            self._inflight_chunks[ck] = entry
+            try:
+                res = await asyncio.shield(shared_task)
+                if res:
+                    self._put_chunk_cache(mkey, chunk_idx, res)
+                return res
+            finally:
+                entry[1] -= 1
+                if entry[1] <= 0:
+                    if not shared_task.done():
+                        shared_task.cancel()
+                    self._inflight_chunks.pop(ck, None)
+
+        return await self._fetch_chunk_uncached(media_source, chunk_idx)
+
+    async def _fetch_chunk_uncached(
+        self,
+        media_source: Union[types.Message, str],
+        chunk_idx: int,
+    ) -> bytes:
+        """
+        Fetch a single 1 MiB chunk directly from Telegram MTProto.
+        Prioritizes pre-warmed DC-ready fastest admin sessions, then falls back cleanly.
         """
         primary_client = getattr(media_source, "_client", None)
         if not primary_client or not getattr(primary_client, "is_connected", False):
@@ -768,12 +912,25 @@ class TelegramStreamPool:
                 # If all admin sessions are temporarily cooling down, pick the one expiring soonest
                 active_admins = sorted(admin_pool, key=lambda c: self._client_cooldowns.get(c, 0.0))
 
-            # CRITICAL: For private channels, STRICTLY use verified channel admin userbots!
-            # Regular userbots lack access and looping through 70+ non-admins triggers 6s timeout cascades and crashes Colab.
+            # CRITICAL: For private channels, prioritize pre-warmed DC-ready & fast admin userbots first
+            # so viewers never stall 3-5s on cold ExportAuthorization handshakes, while striping across peers.
             if active_admins:
-                rot_a = chunk_idx % len(active_admins)
-                rotated = active_admins[rot_a:] + active_admins[:rot_a]
-                candidates.extend(rotated[:3])
+                target_dc = self._extract_dc_id(media_source)
+                if target_dc > 0 or self._warmed_dc_pairs or self._client_ema_mbps:
+                    def _admin_rank(idx_c):
+                        pos, cl = idx_c
+                        is_cold = 0 if (target_dc <= 0 or (id(cl), target_dc) in self._warmed_dc_pairs or (isinstance(media_source, types.Message) and f"{id(cl)}:{getattr(getattr(media_source, 'chat', None), 'id', 0)}:{getattr(media_source, 'id', 0)}" in self._msg_cache)) else 1
+                        tier = -min(6, int(self._client_ema_mbps.get(id(cl), 12.0) // 4))
+                        return (is_cold, tier)
+                    # Rotate first to distribute concurrent chunk indices across equal-tier peers
+                    rot_a = chunk_idx % len(active_admins)
+                    rotated = active_admins[rot_a:] + active_admins[:rot_a]
+                    rotated.sort(key=lambda cl: _admin_rank((0, cl)))
+                    candidates.extend(rotated[:4])
+                else:
+                    rot_a = chunk_idx % len(active_admins)
+                    rotated = active_admins[rot_a:] + active_admins[:rot_a]
+                    candidates.extend(rotated[:3])
 
             # 2. Main Bot Client as Fallback
             bot_fallbacks = []
@@ -792,15 +949,15 @@ class TelegramStreamPool:
             if primary_client and primary_client not in candidates and getattr(primary_client, "is_connected", False):
                 candidates.append(primary_client)
 
-        # Fast speculative hedged race for chunk 0 (MP4 moov header) across top 2 admin sessions
+        # Fast speculative hedged race for chunk 0 (MP4 moov header) across top warmed admin sessions
         if chunk_idx == 0 and is_channel_msg and len(active_admins) >= 2:
             try:
-                c1, c2 = active_admins[0], active_admins[1]
+                hedge_pool = [c for c in candidates if c is not self._main_client][:3] or active_admins[:3]
                 async def _try_hedged(cl: Client) -> Optional[bytes]:
                     tm = None
                     try:
                         tm = await self._get_client_media(cl, media_source)
-                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=8.0)
+                        res_direct = await asyncio.wait_for(self._fetch_chunk_direct(cl, tm or media_source, 0), timeout=6.0)
                         if res_direct:
                             return res_direct
                     except Exception:
@@ -810,16 +967,15 @@ class TelegramStreamPool:
                         async def _collect0():
                             async for p in cl.stream_media(tm or media_source, offset=0, limit=1):
                                 if p: buf0.extend(p)
-                        await asyncio.wait_for(_collect0(), timeout=10.0)
+                        await asyncio.wait_for(_collect0(), timeout=7.5)
                         if buf0:
                             return bytes(buf0)
                     except Exception:
                         pass
                     return None
 
-                t1 = asyncio.create_task(_try_hedged(c1))
-                t2 = asyncio.create_task(_try_hedged(c2))
-                done, pending = await asyncio.wait([t1, t2], return_when=asyncio.FIRST_COMPLETED)
+                hedge_tasks = [asyncio.create_task(_try_hedged(cl)) for cl in hedge_pool[:2]]
+                done, pending = await asyncio.wait(hedge_tasks, return_when=asyncio.FIRST_COMPLETED)
                 for d in done:
                     res_b = d.result()
                     if res_b:
@@ -863,7 +1019,7 @@ class TelegramStreamPool:
                     try:
                         direct_chunk = await asyncio.wait_for(
                             self._fetch_chunk_direct(client, target_media, chunk_idx),
-                            timeout=12.0,
+                            timeout=8.0,
                         )
                     except FileReferenceExpired:
                         target_media = await self._get_client_media(client, media_source, force_refresh=True)
@@ -871,7 +1027,7 @@ class TelegramStreamPool:
                             try:
                                 direct_chunk = await asyncio.wait_for(
                                     self._fetch_chunk_direct(client, target_media, chunk_idx),
-                                    timeout=12.0,
+                                    timeout=8.0,
                                 )
                             except Exception:
                                 direct_chunk = None
@@ -969,6 +1125,70 @@ class TelegramStreamPool:
             raise last_exc
         return b""
 
+    def _schedule_read_ahead(self, media_source: Any, next_chunk_idx: int, count: int = 4) -> None:
+        """Prefetch next chunks into RAM LRU cache in background so sequential player requests hit <5ms."""
+        mkey = self._media_cache_key(media_source)
+        if mkey is None:
+            return
+        max_chunk_bound = None
+        if isinstance(media_source, types.Message):
+            media = media_source.video or media_source.document
+            fsz = getattr(media, "file_size", 0) if media else 0
+            if fsz > 0:
+                max_chunk_bound = (fsz - 1) // CHUNK_SIZE
+
+        targets: list[int] = []
+        for idx in range(next_chunk_idx, next_chunk_idx + max(1, count)):
+            if max_chunk_bound is not None and idx > max_chunk_bound:
+                break
+            ck = (mkey, idx)
+            if ck in self._chunk_cache or ck in self._inflight_chunks or ck in self._prefetch_keys:
+                continue
+            targets.append(idx)
+        if not targets:
+            return
+
+        async def _prefetch_worker(idx_list: list[int]):
+            for idx in idx_list:
+                ck = (mkey, idx)
+                if ck in self._chunk_cache:
+                    continue
+                self._prefetch_keys.add(ck)
+                try:
+                    async with self._prefetch_sem:
+                        if ck not in self._chunk_cache:
+                            await self._fetch_chunk(media_source, idx)
+                except Exception:
+                    pass
+                finally:
+                    self._prefetch_keys.discard(ck)
+
+        try:
+            asyncio.create_task(_prefetch_worker(targets))
+        except Exception:
+            pass
+
+    async def prewarm_chunk_range(self, media_source: Any, start_byte: int, total_bytes: int = 4 * 1024 * 1024) -> int:
+        """Warm specific byte offset range (used before mid-movie seeks or seamless quality switches)."""
+        if start_byte < 0 or total_bytes <= 0:
+            return 0
+        mkey = self._media_cache_key(media_source)
+        start_c = start_byte // CHUNK_SIZE
+        end_c = (start_byte + total_bytes - 1) // CHUNK_SIZE
+        warmed = 0
+        async def _w(idx: int):
+            nonlocal warmed
+            try:
+                async with self._prefetch_sem:
+                    data = await self._fetch_chunk(media_source, idx)
+                    if data:
+                        warmed += 1
+            except Exception:
+                pass
+        if mkey:
+            await asyncio.gather(*[_w(c) for c in range(start_c, min(end_c + 1, start_c + 6))], return_exceptions=True)
+        return warmed
+
     async def stream_media_chunks(
         self,
         media_source: Union[types.Message, str],
@@ -977,11 +1197,14 @@ class TelegramStreamPool:
     ) -> AsyncGenerator[bytes, None]:
         """
         Stream exact byte range [start, end] from Telegram MTProto using
-        multi-connection parallel chunk pipelining for 15-25 MB/s throughput.
-        Fetches 1 MiB chunks concurrently across available admin clients in a continuous sliding window.
+        multi-connection parallel chunk pipelining + sliding read-ahead prefetching.
         """
         if start > end or start < 0:
             return
+
+        mkey = self._media_cache_key(media_source)
+        if mkey is not None:
+            self.note_viewer_activity(20.0)
 
         start_chunk = start // CHUNK_SIZE
         end_chunk = end // CHUNK_SIZE
@@ -993,6 +1216,7 @@ class TelegramStreamPool:
             return
 
         pending_tasks: Dict[int, asyncio.Task] = {}
+        self._active_streams_count += 1
 
         try:
             # Scale pipeline depth based on all available connected userbot accounts
@@ -1016,19 +1240,12 @@ class TelegramStreamPool:
                     if slice_chunk:
                         yield slice_chunk
 
-                # If this was initial header request (chunk 0), proactively pre-warm chunks 1..2 gently
-                if start_chunk == 0 and len(self._admin_clients) > 1:
-                    async def _bg_prewarm():
-                        try:
-                            for c in range(1, 3):
-                                await self._fetch_chunk(media_source, c)
-                                await asyncio.sleep(0.05)
-                        except Exception:
-                            pass
-                    asyncio.create_task(_bg_prewarm())
+                # Gently read-ahead next 4 chunks for instant subsequent HTTP 206 continuation
+                if mkey is not None and not ((end - start + 1) <= 128 and start_chunk > 0):
+                    self._schedule_read_ahead(media_source, start_chunk + 1, count=4)
                 return
 
-            # Optimal concurrency: 4-6 workers saturate bandwidth (20-35+ MB/s) without MTProto socket drops
+            # Optimal concurrency: 6 pre-warmed workers saturate bandwidth cleanly without MTProto socket drops
             concurrency = min(total_chunks, max(2, min(active_workers, 6)))
 
             # Pre-launch initial batch of concurrent chunk fetches
@@ -1092,6 +1309,8 @@ class TelegramStreamPool:
                 remaining -= len(slice_chunk)
                 offset += len(slice_chunk)
                 if remaining <= 0:
+                    if mkey is not None and not ((end - start + 1) <= 128):
+                        self._schedule_read_ahead(media_source, end_chunk + 1, count=4)
                     break
 
         except (asyncio.CancelledError, ConnectionResetError) as abort_exc:
@@ -1103,6 +1322,7 @@ class TelegramStreamPool:
                 return
             log.error("[StreamPool] Parallel chunk streaming pipeline error: %s", exc)
         finally:
+            self._active_streams_count = max(0, self._active_streams_count - 1)
             # Cleanly cancel and await all in-flight prefetch tasks to free MTProto workers immediately
             for t in list(pending_tasks.values()):
                 if not t.done():
@@ -1124,6 +1344,8 @@ class TelegramStreamPool:
             "active_admin_sessions": len(admin_connected),
             "sessions_supported": "up_to_100",
             "chunk_size_bytes": CHUNK_SIZE,
+            "chunk_cache_entries": len(self._chunk_cache),
+            "warmed_dc_sessions": len(self._warmed_dc_pairs),
         }
 
 

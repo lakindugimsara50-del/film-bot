@@ -1,6 +1,6 @@
 window.FILMZILLA_STREAM_CONFIG = window.FILMSUB_STREAM_CONFIG = {
   "stream_base_url": "https://potatoes-fed-supporters-strips.trycloudflare.com",
   "fallback_stream_url": "https://film-bot-2.onrender.com",
-  "updated_at": "2026-11-25T10:29:44.896165+00:00",
+  "updated_at": "2026-11-25T10:30:11.529967+00:00",
   "status": "online"
 };

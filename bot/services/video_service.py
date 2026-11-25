@@ -1092,7 +1092,7 @@ def _build_nvenc_encode_opts(
     maxrate_k: Optional[int] = None,
     bufsize_k: Optional[int] = None,
     cq: int = 20,
-    preset: str = "p4",
+    preset: str = "p3",
     for_cuda_frames: bool = False,
     caps: Optional[dict[str, Any]] = None,
     include_profile_level: bool = True,
@@ -1104,7 +1104,8 @@ def _build_nvenc_encode_opts(
     """
     c_info = caps or {}
     use_hq = bool(c_info.get("nvenc_hq", True))
-    use_qres = bool(c_info.get("nvenc_qres", False))
+    enable_qres = os.getenv("NVENC_ENABLE_MULTIPASS", "0") == "1"
+    use_qres = enable_qres and bool(c_info.get("nvenc_qres", False))
 
     opts: list[str] = [
         "-c:v", "h264_nvenc",
@@ -1655,7 +1656,7 @@ async def compress_video(
 
     caps: dict[str, Any] = {}
     nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
-    nv_preset = os.getenv("NVENC_1080P_PRESET", "p4" if in_w >= 1400 else "p3")
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p3")
 
     if hw_enc == "h264_nvenc":
         caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
@@ -4085,7 +4086,7 @@ async def cover_cinesubz_watermark(
     max_kbps = int(target_kbps * 1.38)
     buf_kbps = int(target_kbps * 2.0)
     nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
-    nv_preset = os.getenv("NVENC_1080P_PRESET", "p4" if in_w >= 1400 else "p3")
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p3")
 
     hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
     caps: dict[str, Any] = {}
@@ -4831,7 +4832,7 @@ async def generate_multi_quality_variants_ram(
                     maxrate_k=max_k,
                     bufsize_k=buf_k,
                     cq=int(prof["crf"]),
-                    preset="p4" if q == "1080p" else "p3",
+                    preset=os.getenv("NVENC_1080P_PRESET", "p3"),
                     for_cuda_frames=use_cuda_scale,
                     caps=cuda_caps,
                     include_profile_level=False,

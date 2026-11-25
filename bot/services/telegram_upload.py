@@ -75,11 +75,170 @@ log = logging.getLogger(__name__)
 # How many bytes to buffer while streaming a download to disk
 _CHUNK_SIZE = 1024 * 1024  # 1 MB
 
+# Reuse already-uploaded MTProto InputFile/InputFileBig handles across transient
+# FloodWait/timeout retries or send_video -> send_document fallbacks on the same client.
+# Skip files < 512 KB because Telegram thumbnails cannot be reused across calls.
+_SAVED_FILE_CACHE: dict[tuple[int, str], tuple[int, int, object, float]] = {}
+_SAVED_FILE_CACHE_TTL_SECONDS = 600.0
+_MIN_CACHEABLE_UPLOAD_BYTES = 512 * 1024
+
+
+def _resolve_upload_cache_key(bot_client: object, path: object) -> Optional[tuple[int, str, int, int]]:
+    """Return ``(id(bot_client), abs_path, size, mtime_ns)`` for cacheable disk uploads."""
+    real_path: Optional[str] = None
+    if isinstance(path, (str, os.PathLike)):
+        real_path = os.fspath(path)
+    elif hasattr(path, "file_path") and isinstance(getattr(path, "file_path", None), str):
+        real_path = path.file_path
+
+    if not real_path:
+        return None
+    try:
+        abs_path = os.path.abspath(real_path)
+        st = os.stat(abs_path)
+    except OSError:
+        return None
+
+    if st.st_size < _MIN_CACHEABLE_UPLOAD_BYTES:
+        return None
+    return (id(bot_client), abs_path, int(st.st_size), int(st.st_mtime_ns))
+
+
+def _get_cached_saved_file(bot_client: object, path: object) -> Optional[object]:
+    """Return a valid cached InputFile/InputFileBig handle if chunks were already uploaded."""
+    key_info = _resolve_upload_cache_key(bot_client, path)
+    if key_info is None:
+        return None
+
+    now = time.monotonic()
+    stale_keys = [
+        k for k, v in _SAVED_FILE_CACHE.items()
+        if (now - v[3]) > _SAVED_FILE_CACHE_TTL_SECONDS
+    ]
+    for k in stale_keys:
+        _SAVED_FILE_CACHE.pop(k, None)
+
+    cache_key = (key_info[0], key_info[1])
+    entry = _SAVED_FILE_CACHE.get(cache_key)
+    if entry is None:
+        return None
+    c_size, c_mtime_ns, cached_input_file, _ = entry
+    if c_size != key_info[2] or c_mtime_ns != key_info[3]:
+        _SAVED_FILE_CACHE.pop(cache_key, None)
+        return None
+    return cached_input_file
+
+
+def _put_cached_saved_file(bot_client: object, path: object, saved_input_file: object) -> None:
+    """Record a completed upload handle so immediate retries/fallbacks do not re-upload 0% -> 100%."""
+    if saved_input_file is None:
+        return
+    key_info = _resolve_upload_cache_key(bot_client, path)
+    if key_info is None:
+        return
+    _SAVED_FILE_CACHE[(key_info[0], key_info[1])] = (
+        key_info[2],
+        key_info[3],
+        saved_input_file,
+        time.monotonic(),
+    )
+
+
+def _clear_cached_saved_file(bot_client: object, path: object) -> None:
+    """Evict a cached upload handle after final completion or part expiry."""
+    key_info = _resolve_upload_cache_key(bot_client, path)
+    if key_info is None:
+        return
+    _SAVED_FILE_CACHE.pop((key_info[0], key_info[1]), None)
+
+
+def _extract_flood_wait_seconds(exc: Exception) -> Optional[int]:
+    """Return FloodWait seconds from a Pyrogram FloodWait or formatted RPC error message."""
+    if isinstance(exc, FloodWait):
+        try:
+            return int(getattr(exc, "value", 0) or 0)
+        except (TypeError, ValueError):
+            return None
+    m = re.search(r"FLOOD_WAIT_(\d+)", str(exc).upper())
+    return int(m.group(1)) if m else None
+
+
+def _is_stale_file_part_error(exc: Exception) -> bool:
+    """True when Telegram rejected previously uploaded part IDs (cache must be refreshed)."""
+    msg = str(exc).upper()
+    return any(tok in msg for tok in ("FILE_PARTS_INVALID", "FILE_ID_INVALID", "FILE_REFERENCE"))
+
+
+def _is_transient_send_media_error(exc: Exception) -> bool:
+    """True for transient socket/RPC failures during final SendMedia commit."""
+    if isinstance(exc, (TimeoutError, ConnectionError, OSError, asyncio.TimeoutError)):
+        return True
+    msg = str(exc).upper()
+    return any(
+        tok in msg
+        for tok in (
+            "TIMEOUT",
+            "TIMED OUT",
+            "CONNECTION",
+            "RESET BY PEER",
+            "BROKEN PIPE",
+            "RPC_CALL_FAIL",
+            "INTERNAL_SERVER_ERROR",
+            "SERVICE_UNAVAILABLE",
+            "WORKER_BUSY_TOO_LONG",
+        )
+    )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Ultra-Fast MTProto Parallel Multi-Connection Chunk Uploader (FastPyrogram)
 # ─────────────────────────────────────────────────────────────────────────────
 async def fast_save_file(
+    self: "Client",
+    path: Union[str, BinaryIO, os.PathLike],
+    file_id: int = None,
+    file_part: int = 0,
+    progress: Callable = None,
+    progress_args: tuple = (),
+):
+    """
+    Wrapper around ``_fast_save_file_impl`` that reuses recently uploaded MTProto
+    chunks across transient retries and ``send_video`` -> ``send_document`` fallbacks.
+    """
+    if file_id is None and file_part == 0:
+        cached_file = _get_cached_saved_file(self, path)
+        if cached_file is not None:
+            key_info = _resolve_upload_cache_key(self, path)
+            cached_size = key_info[2] if key_info else 0
+            log.info(
+                "[FastUpload] Reusing already-uploaded MTProto chunks (%d bytes, 0 bytes re-uploaded) for %s",
+                cached_size,
+                os.path.basename(key_info[1]) if key_info else str(path),
+            )
+            if progress and cached_size > 0:
+                try:
+                    if inspect.iscoroutinefunction(progress):
+                        await progress(cached_size, cached_size, *progress_args)
+                    else:
+                        progress(cached_size, cached_size, *progress_args)
+                except Exception:
+                    pass
+            return cached_file
+
+    saved = await _fast_save_file_impl(
+        self,
+        path,
+        file_id=file_id,
+        file_part=file_part,
+        progress=progress,
+        progress_args=progress_args,
+    )
+    if file_id is None and file_part == 0 and saved is not None:
+        _put_cached_saved_file(self, path, saved)
+    return saved
+
+
+async def _fast_save_file_impl(
     self: "Client",
     path: Union[str, BinaryIO, os.PathLike],
     file_id: int = None,
@@ -724,35 +883,84 @@ async def upload_video_file(
                     )
         else:
             # High-RAM / Colab / Fast upload mode: pass path directly for native multi-worker MTProto pipelining
+            async def _run_send_with_reuse(as_document: bool):
+                max_media_retries = 3
+                last_err: Optional[Exception] = None
+                for attempt in range(max_media_retries):
+                    try:
+                        if as_document:
+                            return await bot_client.send_document(
+                                chat_id=chat_id,
+                                document=file_path,
+                                file_name=file_name,
+                                caption=caption,
+                                thumb=thumb_path,
+                                force_document=True,
+                                reply_markup=reply_markup,
+                                progress=_pyrogram_progress,
+                                disable_notification=True,
+                            )
+                        return await bot_client.send_video(
+                            chat_id=chat_id,
+                            video=file_path,
+                            file_name=file_name,
+                            caption=caption,
+                            duration=duration,
+                            width=width,
+                            height=height,
+                            thumb=thumb_path,
+                            supports_streaming=True,
+                            reply_markup=reply_markup,
+                            progress=_pyrogram_progress,
+                            disable_notification=True,
+                        )
+                    except Exception as send_err:
+                        last_err = send_err
+                        if _is_stale_file_part_error(send_err):
+                            _clear_cached_saved_file(bot_client, file_path)
+                            if attempt + 1 < max_media_retries:
+                                log.warning(
+                                    "[TelegramUpload] Uploaded file parts invalid/expired (%s). Retrying fresh upload (%d/%d)...",
+                                    send_err, attempt + 1, max_media_retries,
+                                )
+                                _reset_progress_state()
+                                continue
+                        wait_s = _extract_flood_wait_seconds(send_err)
+                        if wait_s is not None and wait_s <= 45 and attempt + 1 < max_media_retries:
+                            sleep_s = max(1, wait_s) + 1
+                            log.warning(
+                                "[TelegramUpload] FloodWait %ss on %s (%s). Waiting %ss & reusing uploaded chunks (retry %d/%d)...",
+                                wait_s, "send_document" if as_document else "send_video",
+                                send_err, sleep_s, attempt + 1, max_media_retries,
+                            )
+                            await asyncio.sleep(sleep_s)
+                            continue
+                        if (
+                            _is_transient_send_media_error(send_err)
+                            and (
+                                _get_cached_saved_file(bot_client, file_path) is not None
+                                or progress_state["current"] >= file_size * 0.99
+                            )
+                            and attempt + 1 < max_media_retries
+                        ):
+                            log.warning(
+                                "[TelegramUpload] Transient post-upload error on %s (%s). Retrying SendMedia with uploaded chunks (%d/%d)...",
+                                "send_document" if as_document else "send_video",
+                                send_err, attempt + 1, max_media_retries,
+                            )
+                            await asyncio.sleep(2.0)
+                            continue
+                        raise
+                if last_err is not None:
+                    raise last_err
+
             try:
-                return await bot_client.send_video(
-                    chat_id=chat_id,
-                    video=file_path,
-                    file_name=file_name,
-                    caption=caption,
-                    duration=duration,
-                    width=width,
-                    height=height,
-                    thumb=thumb_path,
-                    supports_streaming=True,
-                    reply_markup=reply_markup,
-                    progress=_pyrogram_progress,
-                    disable_notification=True,
-                )
+                return await _run_send_with_reuse(as_document=False)
             except Exception as vid_err:
                 log.warning("[TelegramUpload] send_video failed (%s). Falling back to send_document...", vid_err)
-                _reset_progress_state()
-                return await bot_client.send_document(
-                    chat_id=chat_id,
-                    document=file_path,
-                    file_name=file_name,
-                    caption=caption,
-                    thumb=thumb_path,
-                    force_document=True,
-                    reply_markup=reply_markup,
-                    progress=_pyrogram_progress,
-                    disable_notification=True,
-                )
+                if _get_cached_saved_file(bot_client, file_path) is None:
+                    _reset_progress_state()
+                return await _run_send_with_reuse(as_document=True)
 
     monitor_task = asyncio.create_task(_progress_monitor())
     try:
@@ -767,6 +975,7 @@ async def upload_video_file(
         else:
             raise RuntimeError(f"Telegram upload to channel {target} failed: {exc}") from exc
     finally:
+        _clear_cached_saved_file(bot_client, file_path)
         progress_state["is_done"] = True
         monitor_task.cancel()
         try:

@@ -154,26 +154,33 @@ def test_gpu_device_pool_load_balances_heavy_vs_light_encodes(monkeypatch):
     asyncio.run(_run())
 
 
-def test_build_nvenc_encode_opts_turing_hq_and_qres():
-    """Verify NVENC HQ encoder preset p4 + tune hq + spatial/temporal AQ + lookahead 16."""
+def test_build_nvenc_encode_opts_turing_hq_and_qres(monkeypatch):
+    """Verify NVENC HQ encoder uses fast preset p3 + multipass disabled by default while keeping HQ AQ + lookahead 16."""
+    monkeypatch.delenv("NVENC_ENABLE_MULTIPASS", raising=False)
     opts = video_service._build_nvenc_encode_opts(
         v_bitrate_k=2050,
         maxrate_k=2706,
         bufsize_k=4100,
         cq=19,
-        preset="p4",
         for_cuda_frames=True,
         caps={"nvenc_hq": True, "nvenc_qres": True},
     )
     assert "-c:v" in opts and opts[opts.index("-c:v") + 1] == "h264_nvenc"
-    assert "-preset" in opts and opts[opts.index("-preset") + 1] == "p4"
+    assert "-preset" in opts and opts[opts.index("-preset") + 1] == "p3"
     assert "-tune" in opts and opts[opts.index("-tune") + 1] == "hq"
-    assert "-multipass" in opts and opts[opts.index("-multipass") + 1] == "qres"
+    assert "-multipass" in opts and opts[opts.index("-multipass") + 1] == "disabled"
     assert "-cq" in opts and opts[opts.index("-cq") + 1] == "19"
     assert "-spatial-aq" in opts and opts[opts.index("-spatial-aq") + 1] == "1"
     assert "-temporal-aq" in opts and opts[opts.index("-temporal-aq") + 1] == "1"
     assert "-rc-lookahead" in opts and opts[opts.index("-rc-lookahead") + 1] == "16"
     assert "-pix_fmt" not in opts  # zero CPU download for CUDA frame pipeline
+
+    monkeypatch.setenv("NVENC_ENABLE_MULTIPASS", "1")
+    opts_qres = video_service._build_nvenc_encode_opts(
+        cq=19,
+        caps={"nvenc_hq": True, "nvenc_qres": True},
+    )
+    assert "-multipass" in opts_qres and opts_qres[opts_qres.index("-multipass") + 1] == "qres"
 
 
 def test_pure_gpu_cuda_pipeline_builds_overlay_cuda_and_ts_intro_concat(tmp_path, monkeypatch):
@@ -462,5 +469,122 @@ def test_async_is_valid_downloaded_video_delegates_to_thread(monkeypatch, tmp_pa
         ok = await downloader.async_is_valid_downloaded_video(str(sample), min_size_mb=10)
         assert ok is True
         assert called_with == [(str(sample), 10)]
+
+    asyncio.run(_run())
+
+
+def test_fast_save_file_caches_large_disk_uploads_and_skips_thumbs(monkeypatch, tmp_path):
+    """fast_save_file should reuse uploaded chunks for >=512KB files on the same client, but never reuse small thumbs."""
+    async def _run():
+        telegram_upload._SAVED_FILE_CACHE.clear()
+        video_file = tmp_path / "movie_480p.mp4"
+        video_file.write_bytes(b"V" * (600 * 1024))
+        thumb_file = tmp_path / "thumb.jpg"
+        thumb_file.write_bytes(b"T" * 16384)
+
+        client = MagicMock()
+        impl_calls = []
+
+        async def _fake_impl(self_c, path, file_id=None, file_part=0, progress=None, progress_args=()):
+            impl_calls.append(str(path))
+            return {"mock_id": len(impl_calls), "path": str(path)}
+
+        monkeypatch.setattr(telegram_upload, "_fast_save_file_impl", _fake_impl)
+        progress_events = []
+
+        res1 = await telegram_upload.fast_save_file(
+            client, str(video_file), progress=lambda c, t: progress_events.append((c, t))
+        )
+        res2 = await telegram_upload.fast_save_file(
+            client, str(video_file), progress=lambda c, t: progress_events.append((c, t))
+        )
+        assert res1 is res2
+        assert len(impl_calls) == 1
+        assert progress_events == [(600 * 1024, 600 * 1024)]
+
+        # Small thumbnails (<512KB) must never be reused
+        t1 = await telegram_upload.fast_save_file(client, str(thumb_file))
+        t2 = await telegram_upload.fast_save_file(client, str(thumb_file))
+        assert t1 is not t2
+        assert len(impl_calls) == 3
+
+        telegram_upload._clear_cached_saved_file(client, str(video_file))
+        res3 = await telegram_upload.fast_save_file(client, str(video_file))
+        assert res3 is not res1
+        assert len(impl_calls) == 4
+
+    asyncio.run(_run())
+
+
+def test_upload_video_file_reuses_chunks_on_floodwait_and_doc_fallback(monkeypatch, tmp_path):
+    """FloodWait retry and send_video -> send_document fallback reuse cached chunks without resetting progress."""
+    async def _run():
+        telegram_upload._SAVED_FILE_CACHE.clear()
+        monkeypatch.setattr(telegram_upload.asyncio, "sleep", AsyncMock())
+
+        vid = tmp_path / "test_480p.mp4"
+        vid.write_bytes(b"M" * (600 * 1024))
+
+        impl_uploads = []
+
+        async def _fake_impl(self_c, path, file_id=None, file_part=0, progress=None, progress_args=()):
+            impl_uploads.append(str(path))
+            if progress:
+                progress(600 * 1024, 600 * 1024, *progress_args)
+            return {"file_id": 4242}
+
+        monkeypatch.setattr(telegram_upload, "_fast_save_file_impl", _fake_impl)
+
+        msg = MagicMock()
+        msg.id = 999
+        msg.video = MagicMock(file_id="VID_OK")
+        msg.document = None
+
+        client = MagicMock()
+        client.is_connected = True
+        client.get_chat = AsyncMock(return_value=MagicMock(title="Ch"))
+
+        # Case 1: FloodWait after chunks uploaded retries send_video with 0 re-uploads
+        sv_calls = 0
+
+        async def _send_video_flood(**kwargs):
+            nonlocal sv_calls
+            sv_calls += 1
+            await telegram_upload.fast_save_file(client, kwargs["video"], progress=kwargs.get("progress"))
+            if sv_calls == 1:
+                raise RuntimeError("Telegram says: [420 FLOOD_WAIT_3] - wait")
+            return msg
+
+        client.send_video = AsyncMock(side_effect=_send_video_flood)
+        client.send_document = AsyncMock()
+
+        res = await telegram_upload.upload_video_file(client, str(vid), target_chat=-100123)
+        assert res["file_id"] == "VID_OK"
+        assert sv_calls == 2
+        assert len(impl_uploads) == 1  # Chunks uploaded ONCE total!
+        client.send_document.assert_not_called()
+
+        # Case 2: send_video permanent failure -> send_document fallback reuses same chunks
+        impl_uploads.clear()
+
+        async def _send_video_fail(**kwargs):
+            await telegram_upload.fast_save_file(client, kwargs["video"], progress=kwargs.get("progress"))
+            raise RuntimeError("VIDEO_CONTENT_TYPE_INVALID")
+
+        doc_msg = MagicMock()
+        doc_msg.id = 1000
+        doc_msg.video = None
+        doc_msg.document = MagicMock(file_id="DOC_OK")
+
+        async def _send_doc_ok(**kwargs):
+            await telegram_upload.fast_save_file(client, kwargs["document"], progress=kwargs.get("progress"))
+            return doc_msg
+
+        client.send_video = AsyncMock(side_effect=_send_video_fail)
+        client.send_document = AsyncMock(side_effect=_send_doc_ok)
+
+        res2 = await telegram_upload.upload_video_file(client, str(vid), target_chat=-100123)
+        assert res2["file_id"] == "DOC_OK"
+        assert len(impl_uploads) == 1  # ZERO re-upload when falling back to send_document!
 
     asyncio.run(_run())

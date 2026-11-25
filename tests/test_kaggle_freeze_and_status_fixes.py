@@ -196,23 +196,211 @@ def test_upload_pool_join_channel_skips_when_manifest_admins_exist():
 
 
 @pytest.mark.asyncio
-async def test_bg_event_loop_watchdog_mtproto_ping_and_restart():
-    """Verify that _bg_event_loop_watchdog restarts client when MTProto ping probe fails consecutively."""
+async def test_bg_event_loop_watchdog_mtproto_ping_and_handler_preserving_recovery():
+    """Verify that _bg_event_loop_watchdog recovers safely after 3 probe failures WITHOUT wiping dispatcher.groups."""
     import main as main_mod
+    from collections import OrderedDict
 
     mock_app = MagicMock()
     mock_app.is_connected = True
-    # Make MTProto invoke fail with TimeoutError
+    mock_app.is_initialized = True
+    # Simulated session=None forces full stop+start path where dispatcher.groups would be cleared by Pyrogram
+    mock_app.session = None
+    mock_app.dispatcher = MagicMock()
+    dummy_handler = MagicMock()
+    mock_app.dispatcher.groups = OrderedDict({0: [dummy_handler]})
+
+    async def fake_terminate():
+        # Simulate real Pyrogram Dispatcher.stop() clearing groups!
+        mock_app.dispatcher.groups.clear()
+        mock_app.is_initialized = False
+
+    async def fake_disconnect():
+        mock_app.is_connected = False
+
+    async def fake_start():
+        mock_app.is_connected = True
+        mock_app.is_initialized = True
+
+    mock_app.terminate = AsyncMock(side_effect=fake_terminate)
+    mock_app.disconnect = AsyncMock(side_effect=fake_disconnect)
+    mock_app.start = AsyncMock(side_effect=fake_start)
     mock_app.invoke = AsyncMock(side_effect=asyncio.TimeoutError("MTProto timeout"))
-    mock_app.restart = AsyncMock()
 
     with patch.object(main_mod, "app", mock_app), \
-         patch("asyncio.sleep", AsyncMock(side_effect=[None, None, asyncio.CancelledError()])):
+         patch("asyncio.sleep", AsyncMock(side_effect=[None, None, None, None, asyncio.CancelledError()])):
         try:
             await main_mod._bg_event_loop_watchdog()
         except asyncio.CancelledError:
             pass
 
-    # Verify that after 2 consecutive probe failures, app.restart(block=False) was triggered
-    mock_app.restart.assert_called_with(block=False)
+    mock_app.terminate.assert_awaited_once()
+    mock_app.start.assert_awaited_once()
+    # Critical: handlers MUST remain intact after recovery (never wiped to {})
+    assert 0 in mock_app.dispatcher.groups
+    assert mock_app.dispatcher.groups[0] == [dummy_handler]
+
+
+@pytest.mark.asyncio
+async def test_safe_reconnect_prevents_overlapping_terminated_race():
+    """Verify overlapping calls to _safe_reconnect_main_client serialize cleanly without Client is already terminated errors."""
+    import main as main_mod
+
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    mock_app = MagicMock()
+    mock_app.is_connected = True
+    mock_app.is_initialized = True
+    mock_app.session = None
+    mock_app.dispatcher = MagicMock()
+    mock_app.dispatcher.groups = {0: [MagicMock()]}
+
+    async def slow_terminate():
+        started.set()
+        await release.wait()
+        mock_app.is_initialized = False
+
+    mock_app.terminate = AsyncMock(side_effect=slow_terminate)
+    mock_app.disconnect = AsyncMock()
+    mock_app.start = AsyncMock()
+
+    with patch.object(main_mod, "app", mock_app):
+        t1 = asyncio.create_task(main_mod._safe_reconnect_main_client())
+        await started.wait()
+        # Concurrent reconnect call while lock is held must bail out immediately without calling terminate() twice
+        res2 = await main_mod._safe_reconnect_main_client()
+        assert res2 is False
+        release.set()
+        res1 = await t1
+        assert res1 is True
+        mock_app.terminate.assert_awaited_once()
+
+
+def test_nonblocking_file_storage_open_patched():
+    """Verify FileStorage.open is patched in main.py so 98 session opens run off the event loop without synchronous VACUUM."""
+    import main as main_mod  # noqa: F401
+    import pyrogram.storage.file_storage as fs
+    assert fs.FileStorage.open.__name__ == "_nonblocking_file_storage_open"
+
+
+def test_add_imdb_sub_handler_ignores_slash_commands():
+    """Verify add_imdb.imdb_sub_input_handler does not match slash commands like /crawl or /leech."""
+    from handlers import add_imdb
+    from pyrogram import enums
+    from pyrogram.types import Message
+    registered_handlers = []
+
+    class DummyApp:
+        def on_message(self, flt):
+            def deco(fn):
+                registered_handlers.append((fn.__name__, flt))
+                return fn
+            return deco
+        def on_callback_query(self, flt):
+            return lambda fn: fn
+
+    add_imdb.register(DummyApp())
+    sub_entry = next((flt for name, flt in registered_handlers if name == "imdb_sub_input_handler"), None)
+    assert sub_entry is not None
+    # Verify filter actually rejects slash commands and still matches plain text/URLs
+    mock_client = MagicMock(me=MagicMock(username="Filmsinhala200Bot"))
+    loop = asyncio.new_event_loop()
+    try:
+        for txt in ("/crawl resume", "/leech Inception", "/status"):
+            msg = MagicMock(spec=Message)
+            msg.text = txt
+            msg.caption = None
+            msg.document = None
+            msg.chat = MagicMock(type=enums.ChatType.PRIVATE)
+            msg.command = txt.lstrip("/").split()
+            matched = loop.run_until_complete(sub_entry(mock_client, msg))
+            assert not matched, f"imdb_sub_input_handler should NOT match command {txt}"
+
+        url_msg = MagicMock(spec=Message)
+        url_msg.text = "https://example.com/sub.srt"
+        url_msg.caption = None
+        url_msg.document = None
+        url_msg.chat = MagicMock(type=enums.ChatType.PRIVATE)
+        url_msg.command = None
+        assert loop.run_until_complete(sub_entry(mock_client, url_msg))
+    finally:
+        loop.close()
+
+
+@pytest.mark.asyncio
+async def test_crawl_check_subcommand_no_unbound_local():
+    """Verify '/crawl check 2' parses tokens cleanly without UnboundLocalError on 'args'."""
+    from handlers import leech_handler
+
+    captured = {}
+    class DummyApp:
+        def on_message(self, flt):
+            def deco(fn):
+                captured[fn.__name__] = fn
+                return fn
+            return deco
+        def on_callback_query(self, flt):
+            return lambda fn: fn
+
+    leech_handler.register(DummyApp())
+    crawl_fn = captured["crawl_command"]
+
+    mock_msg = MagicMock()
+    mock_msg.from_user = MagicMock(id=8762329226)
+    mock_msg.text = "/crawl check 2"
+    st_msg = MagicMock()
+    st_msg.edit_text = AsyncMock()
+    mock_msg.reply_text = AsyncMock(return_value=st_msg)
+
+    with patch("services.cinesubz_crawler.cinesubz_crawler.check_and_enqueue_new_releases", AsyncMock(return_value=[])) as chk_mock, \
+         patch("handlers.leech_handler._is_admin", return_value=True):
+        await crawl_fn(MagicMock(), mock_msg)
+        assert chk_mock.await_count >= 1
+        assert chk_mock.await_args_list[0].kwargs.get("up_to_page") == 2
+
+
+@pytest.mark.asyncio
+async def test_get_admin_sessions_persists_admins_even_if_warmup_times_out():
+    """Verify verified admin sessions are cached into _admin_sessions BEFORE peer warmup even if warmup stalls."""
+    pool = TelegramUploadPool()
+    target_ch = -1004325759505
+
+    c1 = MagicMock(is_connected=True, _user_id=101, me=MagicMock(id=101))
+    c1.name = "adm_1"
+    c2 = MagicMock(is_connected=True, _user_id=102, me=MagicMock(id=102))
+    c2.name = "adm_2"
+
+    async def slow_get_chat(*args, **kwargs):
+        await asyncio.sleep(30.0)
+
+    c1.get_chat = AsyncMock(side_effect=slow_get_chat)
+    c2.get_chat = AsyncMock(side_effect=slow_get_chat)
+    pool.clients = [c1, c2]
+
+    mock_main = MagicMock(is_connected=True)
+    mock_main.get_chat = AsyncMock(return_value=MagicMock(username=None, invite_link=None))
+
+    async def fake_members(*args, **kwargs):
+        for uid in (101, 102):
+            yield MagicMock(
+                user=MagicMock(id=uid, is_bot=False),
+                status=MagicMock(value="administrator"),
+                privileges=MagicMock(can_post_messages=True),
+            )
+
+    mock_main.get_chat_members = fake_members
+    pool.set_main_client(mock_main)
+
+    # Even when outer wait_for is tight (0.3s) and warmup sleeps 30s, admins MUST already be saved in cache!
+    try:
+        await asyncio.wait_for(pool.get_admin_sessions(target_ch, refresh=True), timeout=0.3)
+    except asyncio.TimeoutError:
+        pass
+
+    cached = pool.get_admin_sessions_cached(target_ch)
+    assert len(cached) == 2
+    assert c1 in cached and c2 in cached
+
+
 

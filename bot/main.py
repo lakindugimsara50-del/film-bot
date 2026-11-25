@@ -9,6 +9,8 @@ that calls logging.getLogger(__name__) gets consistent output.
 import asyncio
 import logging
 import os
+import sqlite3
+import struct
 import sys
 import threading
 import time
@@ -17,12 +19,6 @@ from typing import Optional
 _bot_dir = os.path.dirname(os.path.abspath(__file__))
 if _bot_dir not in sys.path:
     sys.path.insert(0, _bot_dir)
-
-try:
-    import nest_asyncio
-    nest_asyncio.apply()
-except Exception:
-    pass
 
 import pyrogram.utils
 pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
@@ -36,6 +32,86 @@ try:
         max_workers=max(8, (os.cpu_count() or 2) * 4),
         thread_name_prefix="CryptoWorker"
     )
+except Exception:
+    pass
+
+# Set resilient MTProto timeouts globally BEFORE Client/Session instances are created
+try:
+    from pyrogram.session import Session as _PyroSession
+    _PyroSession.START_TIMEOUT = 15.0
+    _PyroSession.WAIT_TIMEOUT = 30.0
+except Exception:
+    pass
+
+# Early OpenSSL C-backed cryptography AES-IGE speedup when tgcrypto wheel is absent (e.g. Python 3.13)
+try:
+    import tgcrypto  # noqa: F401
+except ImportError:
+    try:
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        import pyrogram.crypto.aes as _pyro_aes
+
+        def _early_fast_ige_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).encryptor()
+            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
+            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
+            n = len(data)
+            out = bytearray(n)
+            for i in range(0, n, 16):
+                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
+                t = struct.pack('>QQ', c_hi ^ iv_1_hi, c_lo ^ iv_1_lo)
+                enc = cipher.update(t)
+                e_hi, e_lo = struct.unpack('>QQ', enc)
+                r_hi, r_lo = e_hi ^ iv_2_hi, e_lo ^ iv_2_lo
+                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
+                iv_1_hi, iv_1_lo = r_hi, r_lo
+                iv_2_hi, iv_2_lo = c_hi, c_lo
+            return bytes(out)
+
+        def _early_fast_ige_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).decryptor()
+            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
+            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
+            n = len(data)
+            out = bytearray(n)
+            for i in range(0, n, 16):
+                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
+                t = struct.pack('>QQ', c_hi ^ iv_2_hi, c_lo ^ iv_2_lo)
+                dec = cipher.update(t)
+                d_hi, d_lo = struct.unpack('>QQ', dec)
+                r_hi, r_lo = d_hi ^ iv_1_hi, d_lo ^ iv_1_lo
+                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
+                iv_2_hi, iv_2_lo = r_hi, r_lo
+                iv_1_hi, iv_1_lo = c_hi, c_lo
+            return bytes(out)
+
+        _pyro_aes.ige256_encrypt = _early_fast_ige_encrypt
+        _pyro_aes.ige256_decrypt = _early_fast_ige_decrypt
+    except Exception:
+        pass
+
+# Offload FileStorage SQLite opens off the asyncio event loop & skip blocking VACUUM on 98 session files
+try:
+    import pyrogram.storage.file_storage as _pyro_file_storage
+
+    async def _nonblocking_file_storage_open(self):
+        def _open_sync():
+            path = self.database
+            file_exists = path.is_file()
+            self.conn = sqlite3.connect(str(path), timeout=15.0, check_same_thread=False)
+            self.conn.execute("PRAGMA busy_timeout=15000")
+            try:
+                self.conn.execute("PRAGMA journal_mode=WAL")
+            except Exception:
+                pass
+            if not file_exists:
+                self.create()
+            else:
+                self.update()
+        await asyncio.to_thread(_open_sync)
+
+    _pyro_file_storage.FileStorage.open = _nonblocking_file_storage_open
 except Exception:
     pass
 
@@ -201,48 +277,178 @@ async def status_endpoint() -> dict:
 
 _health_server_instance: Optional[uvicorn.Server] = None
 _last_loop_heartbeat: float = time.time()
+_reconnect_locks: dict[int, asyncio.Lock] = {}
+
+
+def _get_reconnect_lock() -> asyncio.Lock:
+    """Return a per-event-loop lock serializing Pyrogram reconnects."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+    key = id(loop)
+    lock = _reconnect_locks.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _reconnect_locks[key] = lock
+    return lock
+
+
+async def _safe_reconnect_main_client() -> bool:
+    """
+    Safely recover the main Pyrogram client without ever wiping dispatcher.groups
+    or racing overlapping stop/terminate calls.
+    """
+    import inspect
+    lock = _get_reconnect_lock()
+    if lock.locked():
+        return False
+
+    async with lock:
+        running_loop = asyncio.get_running_loop()
+        is_conn = bool(getattr(app, "is_connected", False))
+        is_init = bool(getattr(app, "is_initialized", False))
+
+        # Fast-path 1: If client is initialized & connected and has a real Session,
+        # restart only the underlying MTProto TCP Session (never tears down Dispatcher).
+        sess = getattr(app, "session", None)
+        if is_conn and is_init and sess is not None and inspect.iscoroutinefunction(getattr(sess, "restart", None)):
+            try:
+                log.warning("[Watchdog] Attempting non-destructive MTProto session restart...")
+                await asyncio.wait_for(sess.restart(), timeout=15.0)
+                from pyrogram.raw.functions import Ping
+                if isinstance(app, Client):
+                    await asyncio.wait_for(
+                        app.invoke(Ping(ping_id=int(time.time())), retries=0, timeout=8.0),
+                        timeout=10.0,
+                    )
+                else:
+                    await asyncio.wait_for(app.invoke(Ping(ping_id=int(time.time()))), timeout=10.0)
+                log.info("[Watchdog] Non-destructive MTProto session restart succeeded.")
+                return True
+            except Exception as sess_err:
+                log.warning("[Watchdog] Soft session restart did not recover (%s); performing full handler-preserving recovery.", sess_err)
+
+        # Fast-path 2: Full state-safe stop + handler-preserving start
+        disp = getattr(app, "dispatcher", None)
+        raw_groups = getattr(disp, "groups", None) if disp is not None else None
+        saved_groups = {g: list(hs) for g, hs in raw_groups.items()} if isinstance(raw_groups, dict) else {}
+
+        if getattr(app, "is_initialized", False) and hasattr(app, "terminate"):
+            try:
+                await asyncio.wait_for(app.terminate(), timeout=10.0)
+            except Exception as term_err:
+                log.debug("[Watchdog] Clean terminate note: %s", term_err)
+            try:
+                app.is_initialized = False
+            except Exception:
+                pass
+
+        if getattr(app, "is_connected", False) and hasattr(app, "disconnect"):
+            try:
+                await asyncio.wait_for(app.disconnect(), timeout=10.0)
+            except Exception as disc_err:
+                log.debug("[Watchdog] Clean disconnect note: %s", disc_err)
+            try:
+                app.is_connected = False
+            except Exception:
+                pass
+
+        # Align loop references with active loop before restarting
+        try:
+            app.loop = running_loop
+            if disp is not None:
+                disp.loop = running_loop
+        except Exception:
+            pass
+
+        # Restore dispatcher handler groups BEFORE app.start() starts handler_worker tasks
+        if disp is not None and isinstance(getattr(disp, "groups", None), dict):
+            if saved_groups:
+                for g, hs in saved_groups.items():
+                    disp.groups[g] = list(hs)
+            elif not disp.groups:
+                try:
+                    _register_handlers()
+                except Exception:
+                    pass
+
+        try:
+            await asyncio.wait_for(app.start(), timeout=20.0)
+            if isinstance(app, Client):
+                for _ch in (getattr(config, "PRIVATE_CHANNEL_ID", 0), getattr(config, "PUBLIC_CHANNEL_ID", 0)):
+                    if _ch:
+                        try:
+                            await asyncio.wait_for(app.get_chat(_ch), timeout=5.0)
+                        except Exception:
+                            pass
+            if disp is not None and isinstance(getattr(disp, "groups", None), dict) and not disp.groups:
+                if saved_groups:
+                    for g, hs in saved_groups.items():
+                        disp.groups[g] = list(hs)
+                else:
+                    try:
+                        _register_handlers()
+                    except Exception:
+                        pass
+            log.info(
+                "[Watchdog] Main Pyrogram bot client recovered cleanly (handlers preserved: %d group(s)).",
+                len(getattr(disp, "groups", {}) or {}) if isinstance(getattr(disp, "groups", None), dict) else 0,
+            )
+            return True
+        except Exception as start_err:
+            log.error("[Watchdog] Error recovering main client: %s", start_err)
+            return False
 
 
 async def _bg_event_loop_watchdog() -> None:
     """Proactive asyncio event loop heartbeat monitor and bidirectional MTProto watchdog."""
     global _last_loop_heartbeat
-    log.info("[Watchdog] Asyncio event loop watchdog started (15s interval).")
+    log.info("[Watchdog] Asyncio event loop watchdog started (20s interval).")
     consecutive_probe_failures = 0
-    await asyncio.sleep(10)  # Initial boot grace period
+    await asyncio.sleep(25)  # Initial boot grace period so startup + pool handshake settle cleanly
     while True:
         try:
             _last_loop_heartbeat = time.time()
-            if not getattr(app, "is_connected", False):
-                log.warning("[Watchdog] Main Pyrogram bot client is disconnected! Reconnecting...")
-                try:
-                    await app.start()
-                    log.info("[Watchdog] Main Pyrogram bot client reconnected successfully.")
+            is_conn = bool(getattr(app, "is_connected", False))
+            # Check explicit False on real/mock clients that track is_initialized
+            has_init_flag = hasattr(app, "is_initialized") and isinstance(getattr(app, "is_initialized"), bool)
+            is_init_bad = has_init_flag and (getattr(app, "is_initialized") is False)
+
+            if not is_conn or is_init_bad:
+                log.warning(
+                    "[Watchdog] Main Pyrogram bot client needs recovery (is_connected=%s, is_initialized=%s). Recovering...",
+                    is_conn, getattr(app, "is_initialized", None),
+                )
+                if await _safe_reconnect_main_client():
                     consecutive_probe_failures = 0
-                except Exception as start_err:
-                    log.error("[Watchdog] Error reconnecting client: %s", start_err)
             else:
                 # Active bidirectional MTProto round-trip liveness probe (functions.Ping)
                 try:
                     from pyrogram.raw.functions import Ping
-                    await asyncio.wait_for(
-                        app.invoke(Ping(ping_id=int(time.time()))),
-                        timeout=5.0,
-                    )
+                    if isinstance(app, Client):
+                        await asyncio.wait_for(
+                            app.invoke(Ping(ping_id=int(time.time())), retries=0, timeout=8.0),
+                            timeout=10.0,
+                        )
+                    else:
+                        await asyncio.wait_for(
+                            app.invoke(Ping(ping_id=int(time.time()))),
+                            timeout=10.0,
+                        )
                     consecutive_probe_failures = 0
                 except Exception as probe_err:
                     consecutive_probe_failures += 1
                     log.warning("[Watchdog] Telegram MTProto ping probe failed (#%d): %s", consecutive_probe_failures, probe_err)
-                    if consecutive_probe_failures >= 2:
-                        log.warning("[Watchdog] Consecutive MTProto probes failed. Reconnecting main bot client...")
-                        try:
-                            await app.restart(block=False)
+                    if consecutive_probe_failures >= 3:
+                        log.warning("[Watchdog] 3 consecutive MTProto probes failed. Running safe reconnect...")
+                        if await _safe_reconnect_main_client():
                             consecutive_probe_failures = 0
-                            log.info("[Watchdog] Client restart initiated.")
-                        except Exception as rst_err:
-                            log.error("[Watchdog] Client restart error: %s", rst_err)
+        except asyncio.CancelledError:
+            raise
         except Exception as exc:
             log.debug("[Watchdog] Heartbeat note: %s", exc)
-        await asyncio.sleep(15)
+        await asyncio.sleep(20)
 
 
 def start_health_server_thread(port: int) -> Optional[threading.Thread]:
@@ -275,6 +481,8 @@ def start_health_server_thread(port: int) -> Optional[threading.Thread]:
         running_loop = None
 
     if running_loop and running_loop.is_running():
+        # Preserve Pyrogram's idle() signal handlers on shared loop
+        server.install_signal_handlers = lambda: None
         # SAME LOOP FAST-PATH: Run directly on Pyrogram's loop for zero-latency MTProto streaming
         running_loop.create_task(server.serve())
         log.info("FastAPI stream server started on port %d (shared Pyrogram event loop)", port)
@@ -1075,7 +1283,7 @@ async def _on_start(client: Client) -> None:
     for ch_name, ch_id in [("Private channel (Filmhost)", config.PRIVATE_CHANNEL_ID), ("Public channel", config.PUBLIC_CHANNEL_ID)]:
         if ch_id:
             try:
-                chat = await client.get_chat(ch_id)
+                chat = await asyncio.wait_for(client.get_chat(ch_id), timeout=10.0)
                 log.info("[PeerInit] Successfully primed %s: '%s' (ID: %s)", ch_name, getattr(chat, "title", "Channel"), chat.id)
             except Exception as ch_err:
                 log.error("[PeerInit] Failed to prime %s (ID: %s): %s", ch_name, ch_id, ch_err)
@@ -1196,9 +1404,20 @@ async def _on_start(client: Client) -> None:
     try:
         from streaming.stream_server import preload_catalog_headers
         async def _bg_warm_catalog():
-            await asyncio.sleep(25)  # wait 25s for bot to become fully idle & responsive first
+            await asyncio.sleep(45)  # Allow bot startup & userbot pool init to settle first
             try:
-                warmed = await preload_catalog_headers(max_movies=2, bytes_per_stream=512 * 1024)
+                from streaming.session_pool import stream_pool
+                for _ in range(12):
+                    if getattr(stream_pool, "_admin_clients", None):
+                        break
+                    await asyncio.sleep(5)
+                if not getattr(stream_pool, "_admin_clients", None):
+                    log.info("[Main] Skipping proactive catalog pre-warming (no verified admin userbots in pool; keeping main bot 100%% free).")
+                    return
+                warmed = await asyncio.wait_for(
+                    preload_catalog_headers(max_movies=2, bytes_per_stream=512 * 1024),
+                    timeout=45.0,
+                )
                 log.info("[Main] Proactive catalog pre-warming complete (%d streams warmed into RAM).", warmed)
             except Exception as w_err:
                 log.warning("[Main] Proactive catalog pre-warming note: %s", w_err)
@@ -1212,18 +1431,21 @@ async def _on_start(client: Client) -> None:
     gpu_status_line = "🟢 <b>GPU Engine:</b> NVIDIA Tesla T4 (<code>h264_nvenc</code> CUDA Active)" if hw_enc == "h264_nvenc" else f"🟡 <b>Engine:</b> Multi-Core CPU (<code>{hw_enc}</code>)"
     for admin_id in config.ADMIN_IDS:
         try:
-            await client.send_message(
-                chat_id=admin_id,
-                text=(
-                    f"🤖 <b>Film Bot started!</b> (<code>{BOT_VERSION}</code>){service_tag}\n"
-                    f"Bot: @{me.username}\n"
-                    f"{gpu_status_line}\n"
-                    f"🔥 Clean VIP Players (VidLink, AutoEmbed, MultiEmbed) Active\n"
-                    f"🔥 PirateLK Auto Subtitle Engine Active\n"
-                    f"👥 98-Session Upload & Stream Pool Active\n"
-                    "Use /help to see available commands."
+            await asyncio.wait_for(
+                client.send_message(
+                    chat_id=admin_id,
+                    text=(
+                        f"🤖 <b>Film Bot started!</b> (<code>{BOT_VERSION}</code>){service_tag}\n"
+                        f"Bot: @{me.username}\n"
+                        f"{gpu_status_line}\n"
+                        f"🔥 Clean VIP Players (VidLink, AutoEmbed, MultiEmbed) Active\n"
+                        f"🔥 PirateLK Auto Subtitle Engine Active\n"
+                        f"👥 98-Session Upload & Stream Pool Active\n"
+                        "Use /help to see available commands."
+                    ),
+                    parse_mode=ParseMode.HTML,
                 ),
-                parse_mode=ParseMode.HTML,
+                timeout=12.0,
             )
         except Exception as exc:
             log.warning("Could not send startup message to admin %d: %s", admin_id, exc)
@@ -1324,6 +1546,13 @@ async def main() -> None:
         log.warning("Could not start queue worker: %s", q_err)
 
     try:
+        running_loop = asyncio.get_running_loop()
+        try:
+            app.loop = running_loop
+            if getattr(app, "dispatcher", None) is not None:
+                app.dispatcher.loop = running_loop
+        except Exception:
+            pass
         await app.start()
         await _on_start(app)
         log.info("Bot is now running and listening for commands...")

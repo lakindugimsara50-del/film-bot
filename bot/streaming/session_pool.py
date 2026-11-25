@@ -351,7 +351,7 @@ class TelegramStreamPool:
         # Main bot is a guaranteed channel admin with valid MTProto channel access & message peers.
         if is_channel and self._main_client and getattr(self._main_client, "is_connected", False):
             try:
-                msg = await self._main_client.get_messages(chat_id_int, message_id)
+                msg = await asyncio.wait_for(self._main_client.get_messages(chat_id_int, message_id), timeout=8.0)
             except Exception as mc_err:
                 log.warning("[StreamPool] Main client get_messages error for channel %s/%s: %s", chat_id_int, message_id, mc_err)
 
@@ -394,7 +394,7 @@ class TelegramStreamPool:
         if not msg or getattr(msg, "empty", False):
             if self._main_client and getattr(self._main_client, "is_connected", False):
                 try:
-                    msg = await self._main_client.get_messages(chat_id_int, message_id)
+                    msg = await asyncio.wait_for(self._main_client.get_messages(chat_id_int, message_id), timeout=8.0)
                 except Exception as mc_err:
                     log.warning("[StreamPool] Final fallback to main client failed: %s", mc_err)
 

@@ -866,8 +866,8 @@ def register(app: Client) -> None:
 
         if subcmd in ("check", "checknew", "latest", "recent", "scan", "audit"):
             target_p = 1
-            if len(args) > 2 and args[2].isdigit():
-                target_p = max(1, int(args[2]))
+            if len(tokens) > 2 and tokens[2].isdigit():
+                target_p = max(1, int(tokens[2]))
             else:
                 target_p = max(1, cinesubz_crawler.current_movie_page)
 

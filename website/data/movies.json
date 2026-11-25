@@ -22291,7 +22291,235 @@
       "added_date": "2026-11-25",
       "added_at": "2026-11-25T11:04:49Z",
       "added_by": "bot_auto_leech"
+    },
+    {
+      "id": "cult-2026",
+      "slug": "cult-2026",
+      "title": "#Cult",
+      "title_si": "",
+      "year": 2026,
+      "imdb": "5.0",
+      "rating": "5.0",
+      "imdb_id": "tt36915004",
+      "tmdb_id": "1637705",
+      "type": "movie",
+      "season": null,
+      "episode": null,
+      "episode_title": "",
+      "number_of_seasons": 0,
+      "number_of_episodes": 0,
+      "seasons": [],
+      "poster": "https://image.tmdb.org/t/p/w500/zSRlij0VRLLpK12iKK4bUFdA2R2.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w500/zSRlij0VRLLpK12iKK4bUFdA2R2.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/original/uekvmfoHfefO1w1HDacdo8hvy8x.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/original/uekvmfoHfefO1w1HDacdo8hvy8x.jpg",
+      "trailer_url": "https://www.youtube-nocookie.com/embed/t3vVEXGvo7Y",
+      "trailer_id": "t3vVEXGvo7Y",
+      "genres": [
+        "Horror",
+        "Action",
+        "Thriller"
+      ],
+      "language": "English",
+      "subtitle_language": "Sinhala",
+      "has_sinhala_sub": true,
+      "sub_merged": true,
+      "is_already_hardsubbed": true,
+      "sub_hardcoded": true,
+      "quality": "1080p",
+      "duration": "152 min",
+      "description": "A group of young boys head to a party expecting a night of fun, but soon discover the reality is far darker than they imagined. What starts as excitement spirals into terror, pushing them into a brutal fight for survival.",
+      "director": "Vishwak Sen",
+      "cast": [
+        {
+          "name": "Vishwak Sen",
+          "character": ""
+        },
+        {
+          "name": "Gayatri Bhardwaj",
+          "character": ""
+        },
+        {
+          "name": "Tarak Ponnappa",
+          "character": ""
+        },
+        {
+          "name": "Murali Sharma",
+          "character": ""
+        },
+        {
+          "name": "Srikanth Iyengar",
+          "character": ""
+        }
+      ],
+      "featured": true,
+      "trending": true,
+      "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0lrBvu3PhUmQ5qwmAEHogLJMwnr_AACqSAAAnpwOFQLOKRAyj0qCh4E",
+      "message_id": 841,
+      "file_name": "comp_cult-2026_1080p.mp4",
+      "file_size": 1823466960,
+      "drive_file_id": "",
+      "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+      "streams": [
+        {
+          "server": "Server 1",
+          "label": "⚡ Super Player (Telegram Cloud HD • Auto Sub)",
+          "type": "video/mp4",
+          "mode": "telegram_stream",
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0lrBvu3PhUmQ5qwmAEHogLJMwnr_AACqSAAAnpwOFQLOKRAyj0qCh4E",
+          "message_id": 841,
+          "quality": "1080p"
+        },
+        {
+          "server": "Server 2",
+          "label": "🎬 VIP Player 1 (VidLink Ultra HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://vidlink.pro/movie/1637705"
+        },
+        {
+          "server": "Server 3",
+          "label": "⚡ VIP Player 2 (AutoEmbed HD)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://autoembed.co/movie/imdb/tt36915004"
+        },
+        {
+          "server": "Server 4",
+          "label": "🚀 VIP Player 3 (2Embed Fast)",
+          "type": "embed",
+          "embed": true,
+          "stream_url": "https://www.2embed.cc/embed/tt36915004"
+        }
+      ],
+      "qualities": {
+        "auto": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+        "1080p": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+        "720p": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/840",
+        "480p": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/839"
+      },
+      "downloads": [
+        {
+          "quality": "1080p (Telegram Direct)",
+          "label": "1080p Full HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1823466960,
+          "url": "https://t.me/c/4325759505/841",
+          "telegram_url": "https://t.me/c/4325759505/841",
+          "direct_url": "/stream/channel/-1004325759505/841?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0lrBvu3PhUmQ5qwmAEHogLJMwnr_AACqSAAAnpwOFQLOKRAyj0qCh4E",
+          "message_id": 841,
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p (Telegram Direct)",
+          "label": "720p HD (Telegram Channel • Fast)",
+          "size": "1.7 GB",
+          "size_bytes": 1802473878,
+          "url": "https://t.me/c/4325759505/840",
+          "telegram_url": "https://t.me/c/4325759505/840",
+          "direct_url": "/stream/channel/-1004325759505/840?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0hrBvWJrI89cxqKjW3VtFWtzy9TxAACoSAAAnpwOFSJtsxfoJXyRx4E",
+          "message_id": 840,
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/840",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p (Telegram Direct)",
+          "label": "480p SD (Telegram Channel • Fast)",
+          "size": "1.2 GB",
+          "size_bytes": 1292963202,
+          "url": "https://t.me/c/4325759505/839",
+          "telegram_url": "https://t.me/c/4325759505/839",
+          "direct_url": "/stream/channel/-1004325759505/839?dl=1",
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0drBu3obvbneyOEXm9yswpYtmPy7wACeSAAAnpwOFRGORl6EtpLjh4E",
+          "message_id": 839,
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/839",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "1080p",
+          "label": "1080p Full HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1823466960,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_cult-2026_1080p",
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "720p",
+          "label": "720p HD (Telegram Bot / Cloud)",
+          "size": "1.7 GB",
+          "size_bytes": 1802473878,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_cult-2026_720p",
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/840",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        },
+        {
+          "quality": "480p",
+          "label": "480p SD (Telegram Bot / Cloud)",
+          "size": "1.2 GB",
+          "size_bytes": 1292963202,
+          "url": "https://t.me/Filmsinhala200Bot?start=dl_cult-2026_480p",
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/839",
+          "format": "MP4",
+          "host": "Telegram",
+          "sub_merged": true,
+          "subtitle_merged": true
+        }
+      ],
+      "variant_media": {
+        "1080p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0lrBvu3PhUmQ5qwmAEHogLJMwnr_AACqSAAAnpwOFQLOKRAyj0qCh4E",
+          "message_id": 841,
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/841",
+          "size_bytes": 1823466960
+        },
+        "720p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0hrBvWJrI89cxqKjW3VtFWtzy9TxAACoSAAAnpwOFSJtsxfoJXyRx4E",
+          "message_id": 840,
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/840",
+          "size_bytes": 1802473878
+        },
+        "480p": {
+          "file_id": "BAACAgUAAyEGAAMBAdXaEQACA0drBu3obvbneyOEXm9yswpYtmPy7wACeSAAAnpwOFRGORl6EtpLjh4E",
+          "message_id": 839,
+          "stream_url": "https://film-bot-2.onrender.com/stream/channel/-1004325759505/839",
+          "size_bytes": 1292963202
+        }
+      },
+      "subtitles": [
+        {
+          "language": "Sinhala",
+          "srclang": "si",
+          "label": "සිංහල උපසිරැසි (Sinhala)",
+          "url": "https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/subs/cult-2026-si.vtt",
+          "default": false
+        }
+      ],
+      "source_method": "ddl",
+      "site_url": "https://filmsub.pages.dev/movie.html?id=cult-2026",
+      "added_date": "2026-11-25",
+      "added_at": "2026-11-25T15:16:21Z",
+      "added_by": "bot_auto_leech"
     }
   ],
-  "last_updated": "2026-11-25T11:04:51Z"
+  "last_updated": "2026-11-25T15:16:23Z"
 }

@@ -159,6 +159,11 @@ def is_valid_downloaded_video(file_path: str, min_size_mb: int = 15) -> bool:
     return True
 
 
+async def async_is_valid_downloaded_video(file_path: str, min_size_mb: int = 15) -> bool:
+    """Async non-blocking wrapper for is_valid_downloaded_video (offloads ffprobe off event loop)."""
+    return await asyncio.to_thread(is_valid_downloaded_video, file_path, min_size_mb)
+
+
 def get_referer_for_url(url: str, custom_referer: Optional[str] = None) -> str:
     """
     Derive appropriate Referer header for CDNs that require it to prevent 403 Forbidden.

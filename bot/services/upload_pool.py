@@ -143,6 +143,126 @@ class TelegramUploadPool:
         self._lock = asyncio.Lock()
         self._client_upload_locks: Dict[int, asyncio.Lock] = {}
         self._joined_sessions_cache: set[str] = set()
+        self._session_ema_mbps: Dict[int, float] = {}
+        self._session_cooldown_until: Dict[int, float] = {}
+        self._admin_expand_task: Optional[asyncio.Task] = None
+
+    def _client_key(self, client: Client) -> int:
+        return int(getattr(client, "_user_id", None) or getattr(getattr(client, "me", None), "id", None) or id(client))
+
+    def _prioritize_idle_healthy(self, tier_list: List[Client], fallback_list: List[Client]) -> List[Client]:
+        """Order upload candidates so unlocked, non-cooldown, fastest-recent sessions always run first."""
+        now = time.time()
+        combined: List[tuple[tuple, Client]] = []
+        seen: set[int] = set()
+        for is_fallback, group in ((0, tier_list), (1, fallback_list)):
+            for pos, c in enumerate(group):
+                cid = id(c)
+                if cid in seen:
+                    continue
+                seen.add(cid)
+                ck = self._client_key(c)
+                in_cooldown = 1 if self._session_cooldown_until.get(ck, 0.0) > now else 0
+                is_busy = 1 if self.get_client_lock(c).locked() else 0
+                ema = self._session_ema_mbps.get(ck, 15.0)
+                combined.append(((in_cooldown, is_busy, is_fallback, -round(ema, 2), pos), c))
+        combined.sort(key=lambda item: item[0])
+        return [c for _, c in combined]
+
+    async def expand_admin_pool_background(self, target_channel: int, target_admins: int = 42) -> None:
+        """Gently promote additional loaded sessions (up to ~42) to channel admin in background without blocking bot startup."""
+        if not self.clients or not target_channel or not (self._main_client and getattr(self._main_client, "is_connected", False)):
+            return
+        try:
+            t_key = int(target_channel)
+        except Exception:
+            t_key = target_channel
+
+        current_admins = list(self._admin_sessions.get(t_key, []))
+        if len(current_admins) >= target_admins:
+            return
+
+        admin_cids = {self._client_key(c) for c in current_admins}
+        needed = target_admins - len(current_admins)
+        candidates = [
+            c for c in self.clients
+            if getattr(c, "is_connected", False) and self._client_key(c) not in admin_cids
+        ][:max(0, needed + 4)]
+        if not candidates:
+            return
+
+        join_dest = None
+        try:
+            chat = await asyncio.wait_for(self._main_client.get_chat(target_channel), timeout=8.0)
+            join_dest = getattr(chat, "username", None) or getattr(chat, "invite_link", None)
+            if not join_dest:
+                join_dest = await asyncio.wait_for(self._main_client.export_chat_invite_link(target_channel), timeout=8.0)
+        except Exception:
+            pass
+        if not join_dest:
+            return
+
+        from pyrogram.types import ChatPrivileges
+        promoted_now = 0
+        for c in candidates:
+            if len(self._admin_sessions.get(t_key, [])) >= target_admins:
+                break
+            if not getattr(c, "is_connected", False):
+                continue
+            u_me = getattr(c, "me", None)
+            uid = getattr(c, "_user_id", None) or getattr(u_me, "id", None)
+            if not uid:
+                continue
+            sess_name = getattr(c, "name", "session")
+            cache_key = f"{sess_name}_{target_channel}"
+            try:
+                if cache_key not in self._joined_sessions_cache:
+                    try:
+                        await asyncio.wait_for(c.get_chat(target_channel), timeout=2.0)
+                        self._joined_sessions_cache.add(cache_key)
+                    except Exception:
+                        s_dest = str(join_dest)
+                        if s_dest.startswith("http") or "+" in s_dest or "joinchat" in s_dest:
+                            from pyrogram import raw
+                            inv_hash = s_dest.split("+")[-1].split("/")[-1]
+                            await asyncio.wait_for(c.invoke(raw.functions.messages.ImportChatInvite(hash=inv_hash), retries=0, timeout=4.0), timeout=5.0)
+                        else:
+                            await asyncio.wait_for(c.join_chat(join_dest), timeout=5.0)
+                        self._joined_sessions_cache.add(cache_key)
+
+                await asyncio.wait_for(
+                    self._main_client.promote_chat_member(
+                        chat_id=target_channel,
+                        user_id=uid,
+                        privileges=ChatPrivileges(can_post_messages=True, can_edit_messages=True),
+                    ),
+                    timeout=6.0,
+                )
+                promoted_now += 1
+                async with self._lock:
+                    lst = self._admin_sessions.setdefault(t_key, [])
+                    if c not in lst:
+                        lst.append(c)
+                        self.save_admin_sessions_manifest(t_key, lst)
+                try:
+                    from streaming.session_pool import stream_pool
+                    if c not in stream_pool._admin_clients:
+                        stream_pool._admin_clients.append(c)
+                except Exception:
+                    pass
+                await asyncio.sleep(1.2)
+            except Exception as exp_err:
+                err_s = str(exp_err)
+                if "ADMINS_TOO_MUCH" in err_s or "right_forbidden" in err_s.lower():
+                    log.info("[UploadPool] Background admin expansion stopped (%s). Active admins=%d", err_s[:80], len(self._admin_sessions.get(t_key, [])))
+                    break
+                if "flood" in err_s.lower():
+                    await asyncio.sleep(4.0)
+                    continue
+                await asyncio.sleep(0.5)
+
+        if promoted_now > 0:
+            log.info("[UploadPool] Background expansion promoted +%d sessions! Total admins in pool: %d", promoted_now, len(self._admin_sessions.get(t_key, [])))
 
     def get_client_lock(self, client: Client) -> asyncio.Lock:
         """Return a persistent asyncio.Lock for the given Client instance to serialize same-account uploads."""
@@ -612,6 +732,11 @@ class TelegramUploadPool:
         except Exception as sync_err:
             log.debug("[UploadPool] Stream pool sync note: %s", sync_err)
 
+        # Gently promote additional unused sessions in background (up to ~42 admins) for maximum upload & stream parallelism
+        if target_channel and not os.environ.get("PYTEST_CURRENT_TEST") and len(self.clients) > admin_count and admin_count < 42:
+            if self._admin_expand_task is None or self._admin_expand_task.done():
+                self._admin_expand_task = asyncio.create_task(self.expand_admin_pool_background(target_channel, target_admins=42))
+
         # Notify admins that session pool is loaded and ready
         if self._main_client and getattr(self._main_client, "is_connected", False):
             import config
@@ -1069,7 +1194,9 @@ class TelegramUploadPool:
                     q_key = f"{tier_name}_{t_key}"
                     cur_idx = self._indices.get(q_key, 0) % len(tier_admins)
                     self._indices[q_key] = (cur_idx + 1) % len(tier_admins)
-                    selected = tier_admins[cur_idx]
+                    rotated = tier_admins[cur_idx:] + tier_admins[:cur_idx]
+                    prioritized = self._prioritize_idle_healthy(rotated, [c for c in admin_pool if c not in tier_admins])
+                    selected = prioritized[0] if prioritized else rotated[0]
                     log.info(
                         "[UploadPool] Selected verified admin session '%s' for [%s] in channel %s (pool of %d)",
                         getattr(selected, "name", "session"), quality, target_chat, len(tier_admins)
@@ -1229,7 +1356,7 @@ class TelegramUploadPool:
                 else:
                     rotated_other_admins = []
 
-                candidates = rotated_tier_admins + rotated_other_admins
+                candidates = self._prioritize_idle_healthy(rotated_tier_admins, rotated_other_admins)
             else:
                 connected = [c for c in self.clients if getattr(c, "is_connected", False)]
                 if connected:
@@ -1242,7 +1369,7 @@ class TelegramUploadPool:
                     self._indices[tier_name] = (idx + 1) % len(tier_clients)
                     rotated_tier = tier_clients[idx:] + tier_clients[:idx]
                     other_clients = [c for c in connected if c not in rotated_tier]
-                    candidates = rotated_tier + other_clients
+                    candidates = self._prioritize_idle_healthy(rotated_tier, other_clients)
                 else:
                     candidates = []
 
@@ -1263,7 +1390,8 @@ class TelegramUploadPool:
             try:
                 c_lock = self.get_client_lock(client)
                 async with c_lock:
-                    return await telegram_upload.upload_video_file(
+                    _t_up_start = time.time()
+                    res = await telegram_upload.upload_video_file(
                         bot_client=client,
                         file_path=file_path,
                         target_chat=target_chat,
@@ -1273,8 +1401,20 @@ class TelegramUploadPool:
                         progress_callback=progress_callback,
                         fallback_chat=0,
                     )
+                    try:
+                        _up_elapsed = max(0.25, time.time() - _t_up_start)
+                        _f_mb = (os.path.getsize(file_path) / (1024 * 1024)) if os.path.exists(file_path) else 0.0
+                        if _f_mb > 1.0:
+                            ck = self._client_key(client)
+                            inst_mbps = _f_mb / _up_elapsed
+                            prev = self._session_ema_mbps.get(ck)
+                            self._session_ema_mbps[ck] = inst_mbps if prev is None else (0.65 * prev + 0.35 * inst_mbps)
+                    except Exception:
+                        pass
+                    return res
             except FloodWait as fw:
                 last_exc = fw
+                self._session_cooldown_until[self._client_key(client)] = time.time() + float(getattr(fw, "value", 30))
                 log.warning(
                     "[UploadPool] FloodWait %ds on session '%s' for [%s] — rotating to next session.",
                     fw.value, getattr(client, "name", "?"), quality,

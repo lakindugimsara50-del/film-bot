@@ -36,60 +36,20 @@ except Exception:
     pass
 
 # Set resilient MTProto timeouts globally BEFORE Client/Session instances are created
+# Note: Keep WAIT_TIMEOUT an integer because Pyrogram serializes PingDelayDisconnect(disconnect_delay=WAIT_TIMEOUT) with Int.write (.to_bytes)
 try:
     from pyrogram.session import Session as _PyroSession
-    _PyroSession.START_TIMEOUT = 15.0
-    _PyroSession.WAIT_TIMEOUT = 30.0
+    _PyroSession.START_TIMEOUT = 15
+    _PyroSession.WAIT_TIMEOUT = 30
 except Exception:
     pass
 
-# Early OpenSSL C-backed cryptography AES-IGE speedup when tgcrypto wheel is absent (e.g. Python 3.13)
+# Hardware/C AES-256-IGE acceleration (tgcrypto -> cryptg -> OpenSSL libcrypto ctypes -> ECB fallback)
 try:
-    import tgcrypto  # noqa: F401
-except ImportError:
-    try:
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-        from cryptography.hazmat.backends import default_backend
-        import pyrogram.crypto.aes as _pyro_aes
-
-        def _early_fast_ige_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
-            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).encryptor()
-            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
-            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
-            n = len(data)
-            out = bytearray(n)
-            for i in range(0, n, 16):
-                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
-                t = struct.pack('>QQ', c_hi ^ iv_1_hi, c_lo ^ iv_1_lo)
-                enc = cipher.update(t)
-                e_hi, e_lo = struct.unpack('>QQ', enc)
-                r_hi, r_lo = e_hi ^ iv_2_hi, e_lo ^ iv_2_lo
-                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
-                iv_1_hi, iv_1_lo = r_hi, r_lo
-                iv_2_hi, iv_2_lo = c_hi, c_lo
-            return bytes(out)
-
-        def _early_fast_ige_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
-            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).decryptor()
-            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
-            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
-            n = len(data)
-            out = bytearray(n)
-            for i in range(0, n, 16):
-                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
-                t = struct.pack('>QQ', c_hi ^ iv_2_hi, c_lo ^ iv_2_lo)
-                dec = cipher.update(t)
-                d_hi, d_lo = struct.unpack('>QQ', dec)
-                r_hi, r_lo = d_hi ^ iv_1_hi, d_lo ^ iv_1_lo
-                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
-                iv_2_hi, iv_2_lo = r_hi, r_lo
-                iv_1_hi, iv_1_lo = c_hi, c_lo
-            return bytes(out)
-
-        _pyro_aes.ige256_encrypt = _early_fast_ige_encrypt
-        _pyro_aes.ige256_decrypt = _early_fast_ige_decrypt
-    except Exception:
-        pass
+    from services.crypto_accel import install_fast_aes_ige as _install_fast_aes_ige
+    _install_fast_aes_ige()
+except Exception:
+    pass
 
 # Offload FileStorage SQLite opens off the asyncio event loop & skip blocking VACUUM on 98 session files
 try:
@@ -170,7 +130,9 @@ except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
 import multiprocessing as _mp
-_on_colab_env = os.path.exists('/content') or os.path.exists('/kaggle') or os.path.isdir('/dev/shm') or os.getenv("KAGGLE_KERNEL_RUN_TYPE") is not None
+_on_colab_env = (
+    (os.name != "nt") and (os.path.exists('/content') or os.path.exists('/kaggle') or os.path.isdir('/dev/shm'))
+) or os.getenv("KAGGLE_KERNEL_RUN_TYPE") is not None
 # On Colab / Kaggle (12-30GB RAM): 16 Pyrogram workers = parallel MTProto upload sessions → ultra-fast transfers
 # On Render (512MB RAM): keep 4 workers to avoid OOM
 _PYROGRAM_WORKERS = 16 if _on_colab_env else 4

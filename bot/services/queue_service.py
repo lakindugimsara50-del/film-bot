@@ -10,6 +10,7 @@ Ensures that:
 
 import asyncio
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set
 
@@ -35,6 +36,7 @@ class QueueItem:
     movie_slug: str = ""
     imdb_id: str = ""
     is_cancelled: bool = False
+    stage: str = "queued"
 
 
 class QueueService:
@@ -199,11 +201,50 @@ class QueueService:
 
     def can_accept_next(self) -> bool:
         """
-        Check if pipeline has capacity to accept another item.
-        Strict 1-movie-at-a-time execution ensures 100% of GPU/NVENC and network bandwidth
-        is dedicated to a single film with zero concurrency slowdown.
+        Check if pipeline has capacity to accept another item strictly serially (0 in-flight).
         """
         return len(self._pending_items) == 0 and len(self._active_tasks) == 0
+
+    def mark_item_stage(self, user_id: int, stage: str) -> None:
+        """Update the current execution stage ('downloading', 'encoding', 'uploading') of active item cleanly."""
+        try:
+            cur_task = asyncio.current_task()
+        except Exception:
+            cur_task = None
+        if cur_task is not None and cur_task in self._active_tasks:
+            it = self._active_tasks[cur_task]
+            if not it.is_cancelled:
+                it.stage = stage
+            return
+        for task, it in self._active_tasks.items():
+            if not task.done() and it.user_id == user_id and not it.is_cancelled:
+                it.stage = stage
+        if self._active_item and self._active_item.user_id == user_id:
+            self._active_item.stage = stage
+
+    def _can_overlap_next(self) -> bool:
+        """
+        On Cloud GPU hosts (Kaggle / Colab), allow up to 2 overlapping movies when the active item
+        has already finished GPU encoding and is in pure Telegram upload ('uploading' stage), so Movie N+1
+        saturates Download + GPU T4 x2 simultaneously while Movie N uploads via idle Admin Sessions.
+        """
+        is_cloud = (os.name != "nt") and (
+            os.path.exists("/kaggle")
+            or os.path.exists("/content")
+            or bool(os.getenv("KAGGLE_KERNEL_RUN_TYPE"))
+        )
+        if not is_cloud:
+            return False
+        active = [it for t, it in self._active_tasks.items() if not t.done() and not it.is_cancelled]
+        if len(active) == 1 and len(self._pending_items) <= 1 and active[0].stage == "uploading":
+            return True
+        return False
+
+    def can_accept_next_pipelined(self) -> bool:
+        """Pipelined capacity check: True when idle OR when single active cloud item is in final upload stage."""
+        if len(self._pending_items) == 0 and len(self._active_tasks) == 0:
+            return True
+        return self._can_overlap_next()
 
     async def _run_item_wrapper(self, item: QueueItem, leech_service) -> None:
         try:
@@ -252,11 +293,12 @@ class QueueService:
                         except ValueError:
                             pass
 
-                # 2. Strict sequential execution: if 1 active task is running, wait until it finishes
-                if len(self._active_tasks) >= 1:
+                # 2. Execution gating: allow 1 movie serially, or overlap #2 when #1 is already in final upload stage on Cloud GPU
+                if len(self._active_tasks) >= 2 or (len(self._active_tasks) == 1 and not self._can_overlap_next()):
                     done, _ = await asyncio.wait(
                         list(self._active_tasks.keys()),
-                        return_when=asyncio.FIRST_COMPLETED
+                        return_when=asyncio.FIRST_COMPLETED,
+                        timeout=2.0 if len(self._active_tasks) == 1 else None,
                     )
                     for t in done:
                         item = self._active_tasks.pop(t, None)

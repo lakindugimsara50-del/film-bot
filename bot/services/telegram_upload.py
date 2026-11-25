@@ -29,9 +29,10 @@ from pyrogram.errors import FloodWait, RPCError
 from pyrogram.session import Session
 
 # Eliminate MTProto parallel connection handshake timeouts on Cloud/Kaggle runners
+# Keep WAIT_TIMEOUT an integer for Pyrogram PingDelayDisconnect Int.write (.to_bytes)
 try:
-    Session.START_TIMEOUT = 15.0
-    Session.WAIT_TIMEOUT = 30.0
+    Session.START_TIMEOUT = 15
+    Session.WAIT_TIMEOUT = 30
 except Exception:
     pass
 
@@ -45,53 +46,12 @@ try:
 except Exception:
     pass
 
-# Hardware AES-NI OpenSSL acceleration patch when tgcrypto is missing on Python 3.13
+# Hardware/C AES-256-IGE acceleration (tgcrypto -> cryptg -> OpenSSL libcrypto ctypes -> ECB fallback)
 try:
-    import tgcrypto
-except ImportError:
-    try:
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-        from cryptography.hazmat.backends import default_backend
-        import pyrogram.crypto.aes as pyro_aes
-
-        def _fast_ige_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
-            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).encryptor()
-            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
-            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
-            n = len(data)
-            out = bytearray(n)
-            for i in range(0, n, 16):
-                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
-                t = struct.pack('>QQ', c_hi ^ iv_1_hi, c_lo ^ iv_1_lo)
-                enc = cipher.update(t)
-                e_hi, e_lo = struct.unpack('>QQ', enc)
-                r_hi, r_lo = e_hi ^ iv_2_hi, e_lo ^ iv_2_lo
-                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
-                iv_1_hi, iv_1_lo = r_hi, r_lo
-                iv_2_hi, iv_2_lo = c_hi, c_lo
-            return bytes(out)
-
-        def _fast_ige_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
-            cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend()).decryptor()
-            iv_1_hi, iv_1_lo = struct.unpack('>QQ', iv[:16])
-            iv_2_hi, iv_2_lo = struct.unpack('>QQ', iv[16:32])
-            n = len(data)
-            out = bytearray(n)
-            for i in range(0, n, 16):
-                c_hi, c_lo = struct.unpack('>QQ', data[i:i+16])
-                t = struct.pack('>QQ', c_hi ^ iv_2_hi, c_lo ^ iv_2_lo)
-                dec = cipher.update(t)
-                d_hi, d_lo = struct.unpack('>QQ', dec)
-                r_hi, r_lo = d_hi ^ iv_1_hi, d_lo ^ iv_1_lo
-                out[i:i+16] = struct.pack('>QQ', r_hi, r_lo)
-                iv_2_hi, iv_2_lo = r_hi, r_lo
-                iv_1_hi, iv_1_lo = c_hi, c_lo
-            return bytes(out)
-
-        pyro_aes.ige256_encrypt = _fast_ige_encrypt
-        pyro_aes.ige256_decrypt = _fast_ige_decrypt
-    except Exception:
-        pass
+    from services.crypto_accel import install_fast_aes_ige as _install_fast_aes_ige
+    _install_fast_aes_ige()
+except Exception:
+    pass
 
 # Support 64-bit Telegram channel IDs (e.g. -1004325759505)
 try:
@@ -208,42 +168,55 @@ async def fast_save_file(
                     pass
         return
 
-    # Scale parallel MTProto connections and worker tasks based on file size.
-    # Uses 3-4 parallel sessions per stream (configurable via FAST_UPLOAD_SESSIONS, default: 4)
-    # with 0.05s staggered session initialization to prevent exceeding Pyrogram's 2.0s START_TIMEOUT.
+    # Scale parallel MTProto connections and worker tasks based on file size and runtime.
+    # On Kaggle/Colab cloud runners, default to 8 parallel media sockets (up to 32 async pipelined workers)
+    # connected concurrently to saturate high-RTT DC5 links; locally default to 4 sockets.
+    _on_cloud_runner = (os.name != "nt") and (
+        os.path.exists("/kaggle")
+        or os.path.exists("/content")
+        or bool(os.getenv("KAGGLE_KERNEL_RUN_TYPE"))
+    )
+    _default_sess = "8" if _on_cloud_runner else "4"
     try:
-        max_parallel_sessions = int(os.getenv("FAST_UPLOAD_SESSIONS", "4"))
+        max_parallel_sessions = int(os.getenv("FAST_UPLOAD_SESSIONS", _default_sess))
     except (ValueError, TypeError):
-        max_parallel_sessions = 4
-    max_parallel_sessions = max(1, min(max_parallel_sessions, 8))
+        max_parallel_sessions = int(_default_sess)
+    max_parallel_sessions = max(1, min(max_parallel_sessions, 12))
 
     if file_size > 50 * 1024 * 1024:
-        num_sessions = min(max_parallel_sessions, 4) if max_parallel_sessions <= 4 else max_parallel_sessions
-        num_workers = max(2, num_sessions * 2)  # 6-8 worker tasks
+        num_sessions = max_parallel_sessions
+        workers_per_sess = 4 if _on_cloud_runner else 3
     elif file_size > 10 * 1024 * 1024:
-        num_sessions = min(max_parallel_sessions, 3)
-        num_workers = max(2, num_sessions * 2)
+        num_sessions = min(max_parallel_sessions, 4 if _on_cloud_runner else 3)
+        workers_per_sess = 3 if _on_cloud_runner else 2
     else:
         num_sessions = 1
-        num_workers = 2
+        workers_per_sess = 2
 
     sessions = [Session(self, dc_id, auth_key, test_mode, is_media=True) for _ in range(num_sessions)]
-    started_sessions = []
-    for i, s in enumerate(sessions):
-        if i > 0:
-            await asyncio.sleep(0.05)
+
+    async def _start_media_session(idx: int, sess_obj: Session):
+        if idx > 0:
+            await asyncio.sleep(0.02 * idx)
         try:
-            await s.start()
-            started_sessions.append(s)
+            await sess_obj.start()
+            return sess_obj
         except Exception as s_err:
             log.warning(
                 "[FastUpload] Error starting parallel session %d/%d (%s)",
-                i + 1, num_sessions, s_err
+                idx + 1, num_sessions, s_err
             )
             try:
-                await s.stop()
+                await sess_obj.stop()
             except Exception:
                 pass
+            return None
+
+    started_results = await asyncio.gather(
+        *[_start_media_session(i, s) for i, s in enumerate(sessions)],
+        return_exceptions=False,
+    )
+    started_sessions = [s for s in started_results if s is not None]
 
     if not started_sessions:
         log.warning(
@@ -255,11 +228,11 @@ async def fast_save_file(
         started_sessions.append(fallback_sess)
         num_workers = 4
     else:
-        num_workers = max(2, len(started_sessions) * 2)
+        num_workers = max(2, len(started_sessions) * workers_per_sess)
     sessions = started_sessions
     num_sessions = len(sessions)
 
-    queue = asyncio.Queue(maxsize=max(32, num_workers * 4))
+    queue = asyncio.Queue(maxsize=max(64, num_workers * 4))
     transferred_bytes = [file_part * part_size]
     transferred_lock = asyncio.Lock()
     upload_error = None
@@ -292,7 +265,7 @@ async def fast_save_file(
                         upload_error = exc
                         log.error("[FastUpload] Worker %d chunk %d failed after 5 retries: %s", worker_id, part_num, exc)
                         break
-                    await asyncio.sleep(0.4 * (retry + 1))
+                    await asyncio.sleep(0.3 * (retry + 1))
 
             if success:
                 async with transferred_lock:
@@ -310,13 +283,14 @@ async def fast_save_file(
     worker_tasks = [self.loop.create_task(worker(i)) for i in range(num_workers)]
     fp.seek(part_size * file_part)
     cur_part = file_part
+    use_thread_read = bool(should_close and file_size > 10 * 1024 * 1024)
 
     try:
         while True:
             if upload_error is not None:
                 raise upload_error
 
-            chunk = fp.read(part_size)
+            chunk = await asyncio.to_thread(fp.read, part_size) if use_thread_read else fp.read(part_size)
             if not chunk:
                 if not is_big and not is_missing_part and md5_sum:
                     md5_hex = "".join([hex(b)[2:].zfill(2) for b in md5_sum.digest()])
@@ -599,16 +573,16 @@ async def upload_video_file(
 
     log.info("[TelegramUpload] Uploading '%s' (%d bytes) to chat %s", file_name, file_size, target)
 
-    # ── Probe video metadata & generate 16:9 widescreen thumbnail ────────────
+    # ── Probe video metadata & generate 16:9 widescreen thumbnail off event loop ──
     from services.video_service import get_video_metadata, generate_video_thumbnail
-    meta = get_video_metadata(file_path)
+    meta = await asyncio.to_thread(get_video_metadata, file_path)
     width = meta.get("width", 1280)
     height = meta.get("height", 720)
     duration = meta.get("duration", 0)
 
     thumb_temp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
     thumb_temp.close()
-    thumb_path = generate_video_thumbnail(file_path, thumb_path=thumb_temp.name, duration=duration)
+    thumb_path = await asyncio.to_thread(generate_video_thumbnail, file_path, thumb_path=thumb_temp.name, duration=duration)
     if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
         thumb_path = get_branded_thumbnail(thumb_temp.name)
     if not (thumb_path and os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 500):
@@ -701,7 +675,7 @@ async def upload_video_file(
             log.warning("[TelegramUpload] Pre-resolving chat %s warning: %s", chat_id, gc_err)
 
         _reset_progress_state()
-        _is_cloud_runner = (
+        _is_cloud_runner = (os.name != "nt") and (
             os.path.exists('/kaggle')
             or os.path.exists('/content')
             or os.path.isdir('/dev/shm')

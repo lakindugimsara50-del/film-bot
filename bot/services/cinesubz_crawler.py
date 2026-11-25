@@ -896,7 +896,7 @@ class CineSubzCrawler:
                             log.info("[CineSubzCrawler] Waiting for pipeline slot before next item (current: '%s')...", item_label)
                             wait_ticks = 0
                             max_idle_safeguard_ticks = 720  # 60 minutes
-                            while self._is_running and not queue_service.can_accept_next():
+                            while self._is_running and not queue_service.can_accept_next_pipelined():
                                 is_busy = queue_service.is_user_busy(self._admin_chat_id)
                                 wait_ticks += 1
                                 self.status_detail = f"Pipelined processing '{item_label}' (Leech + Uploading)..."
@@ -1057,7 +1057,7 @@ class CineSubzCrawler:
                                 # Pipelined waiting
                                 wait_ticks_tv = 0
                                 max_idle_safeguard_tv = 720  # 60 minutes
-                                while self._is_running and not queue_service.can_accept_next():
+                                while self._is_running and not queue_service.can_accept_next_pipelined():
                                     is_busy_tv = queue_service.is_user_busy(self._admin_chat_id)
                                     wait_ticks_tv += 1
                                     self.status_detail = f"Pipelined processing '{ep_tag}' (Leech + Uploading)..."

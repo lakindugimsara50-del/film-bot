@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 # Max upload limit for standard Telegram Bot API (1.95 GB safe ceiling)
 MAX_TELEGRAM_BOT_SIZE = int(1.95 * 1024 * 1024 * 1024)
-# Target compression size for 1080p: ~1.90 GB (safe headroom below 1.95GB limit to maximize 1080p visual fidelity without overshooting)
+# Target compression size for 1080p: ~1.90 GB (keeps clean headroom below 1.95GB & MTProto 2000 MiB ceiling)
 TARGET_COMPRESS_SIZE = int(1.90 * 1024 * 1024 * 1024)
 # Hard MTProto chunk ceiling for 4000 parts * 512KB (2,097,152,000 bytes). Any file strictly <= this is 100% uploadable.
 TELEGRAM_MTPROTO_MAX_BYTES = 2_090_000_000
@@ -68,6 +68,7 @@ class GPUDevicePool:
         self._devices: list[int] = []
         self._queue: Optional[asyncio.Queue] = None
         self._lock: Optional[asyncio.Lock] = None
+        self._gpu_weights: dict[int, int] = {}
 
     def _discover_devices(self) -> list[int]:
         devs = []
@@ -133,15 +134,39 @@ class GPUDevicePool:
         return self._queue.empty()
 
     @asynccontextmanager
-    async def acquire(self, timeout: Optional[float] = 3.0):
+    async def acquire(self, timeout: Optional[float] = 3.0, weight: int = 2):
         await self._ensure_queue()
         if timeout is not None:
             gpu_id = await asyncio.wait_for(self._queue.get(), timeout=timeout)
         else:
             gpu_id = await self._queue.get()
+
+        # Load-balance across GPUs: if other idle slots exist with strictly lighter load, swap cleanly
+        # so 1080p (weight=3) stays dedicated on GPU 0 while 720p+480p share GPU 1.
+        extra_slots: list[int] = []
+        try:
+            while not self._queue.empty():
+                extra_slots.append(self._queue.get_nowait())
+        except Exception:
+            pass
+        if extra_slots:
+            all_cands = [gpu_id] + extra_slots
+            best_idx = 0
+            best_w = self._gpu_weights.get(all_cands[0], 0)
+            for idx, cid in enumerate(all_cands[1:], 1):
+                cw = self._gpu_weights.get(cid, 0)
+                if cw < best_w:
+                    best_w = cw
+                    best_idx = idx
+            gpu_id = all_cands.pop(best_idx)
+            for rem in all_cands:
+                self._queue.put_nowait(rem)
+
+        self._gpu_weights[gpu_id] = self._gpu_weights.get(gpu_id, 0) + max(1, int(weight))
         try:
             yield gpu_id
         finally:
+            self._gpu_weights[gpu_id] = max(0, self._gpu_weights.get(gpu_id, 0) - max(1, int(weight)))
             self._queue.put_nowait(gpu_id)
             self._queue.task_done()
 
@@ -413,15 +438,138 @@ def get_video_resolution(file_path: str, ffmpeg_bin: Optional[str] = None) -> tu
     return (0, 0)
 
 
+def probe_media_summary(file_path: str, ffmpeg_bin: Optional[str] = None) -> dict:
+    """
+    Single-call FFmpeg stream inspection extracting width, height, duration, fps,
+    video codec, pixel format, audio codec, sample rate, channels, and bitrate.
+    Eliminates multiple redundant ffmpeg subprocess spawns per video.
+    """
+    info = {
+        "width": 0,
+        "height": 0,
+        "duration": 0.0,
+        "fps": 0.0,
+        "fps_str": "30",
+        "vcodec": "",
+        "pix_fmt": "",
+        "acodec": None,
+        "sample_rate": 48000,
+        "channels": 2,
+        "video_bitrate_k": 0,
+    }
+    exe = ffmpeg_bin or get_ffmpeg_binary()
+    if not exe or not os.path.exists(file_path):
+        return info
+    try:
+        proc = subprocess.run(
+            [exe, "-hide_banner", "-i", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+        stderr_text = getattr(proc, "stderr", "") or ""
+
+        # Duration
+        m_dur = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text)
+        if not m_dur:
+            m_dur = re.search(r"DURATION\s*:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", stderr_text, re.IGNORECASE)
+        if m_dur:
+            h_s, m_s, s_s = m_dur.groups()
+            dur = int(h_s) * 3600 + int(m_s) * 60 + float(s_s)
+            if dur > 0:
+                info["duration"] = dur
+
+        # Overall bitrate fallback
+        m_br = re.search(r"bitrate:\s*(\d+)\s*kb/s", stderr_text, re.IGNORECASE)
+        if m_br:
+            info["video_bitrate_k"] = max(0, int(m_br.group(1)) - 128)
+
+        # Video stream details
+        v_line_m = re.search(r"(Stream #.*?: Video:[^\r\n]*)", stderr_text)
+        if v_line_m:
+            v_line = v_line_m.group(1)
+            vc_m = re.search(r"Video:\s*([a-zA-Z0-9_]+)", v_line)
+            if vc_m:
+                info["vcodec"] = vc_m.group(1).lower()
+
+            pf_m = re.search(r"Video:[^,]+,\s*([a-z0-9_]+)(?:\(|,)", v_line)
+            if pf_m:
+                info["pix_fmt"] = pf_m.group(1).lower()
+
+            dim_m = re.search(r",\s*(\d{2,5})x(\d{2,5})(?:,\s*|\s*\[|\s*|$)", v_line)
+            if dim_m:
+                w, h = int(dim_m.group(1)), int(dim_m.group(2))
+                dar_m = re.search(r"DAR\s*(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)", v_line)
+                if dar_m and w > 0 and h > 0:
+                    try:
+                        dar = float(dar_m.group(1)) / float(dar_m.group(2))
+                        if float(dar_m.group(2)) > 0 and abs(dar - (w / h)) > 0.1 and dar >= 1.3:
+                            w = int(round(h * dar))
+                            if w % 2 != 0:
+                                w += 1
+                    except Exception:
+                        pass
+                info["width"], info["height"] = w, h
+
+            fps_m = re.search(r",\s*(\d+(?:\.\d+)?)\s*(?:fps|tbr)\b", v_line)
+            if fps_m:
+                fps_v = float(fps_m.group(1))
+                if 5.0 <= fps_v <= 120.0:
+                    info["fps"] = fps_v
+                    if abs(fps_v - 23.976) < 0.05:
+                        info["fps_str"] = "24000/1001"
+                    elif abs(fps_v - 29.97) < 0.05:
+                        info["fps_str"] = "30000/1001"
+                    elif abs(fps_v - 59.94) < 0.05:
+                        info["fps_str"] = "60000/1001"
+                    else:
+                        info["fps_str"] = str(int(round(fps_v))) if abs(fps_v - round(fps_v)) < 0.01 else f"{fps_v:.3f}"
+
+            vbr_m = re.search(r",\s*(\d+)\s*kb/s\b", v_line)
+            if vbr_m:
+                info["video_bitrate_k"] = int(vbr_m.group(1))
+
+        # Audio stream details
+        a_line_m = re.search(r"(Stream #.*?: Audio:[^\r\n]*)", stderr_text)
+        if a_line_m:
+            a_line = a_line_m.group(1)
+            ac_m = re.search(r"Audio:\s*([a-zA-Z0-9_]+)", a_line)
+            if ac_m:
+                info["acodec"] = ac_m.group(1).lower()
+            sr_m = re.search(r"(\d+)\s*Hz\b", a_line)
+            if sr_m:
+                info["sample_rate"] = int(sr_m.group(1))
+            if "mono" in a_line.lower() or "1 channels" in a_line.lower():
+                info["channels"] = 1
+            elif "stereo" in a_line.lower() or "2 channels" in a_line.lower():
+                info["channels"] = 2
+            elif any(x in a_line.lower() for x in ("5.1", "7.1", "6 channels", "8 channels")):
+                info["channels"] = 6
+    except Exception as exc:
+        log.debug("[VideoService] probe_media_summary error: %s", exc)
+    return info
+
+
 def get_video_metadata(file_path: str, ffmpeg_bin: Optional[str] = None) -> dict:
     """
-    Extract video width, height, and duration.
+    Extract video width, height, and duration in a single FFmpeg probe.
     Guarantees valid widescreen (16:9) dimensions (e.g. 1920x1080, 1280x720, 854x480, 640x360)
     for Telegram native widescreen video cards without square pillarboxing ("කොටු size").
     """
     exe = ffmpeg_bin or get_ffmpeg_binary()
-    w, h = get_video_resolution(file_path, exe)
-    duration = get_video_duration(file_path, exe)
+    w, h = 0, 0
+    duration = 0.0
+    if os.path.exists(file_path):
+        summary = probe_media_summary(file_path, exe)
+        w, h = summary["width"], summary["height"]
+        duration = summary["duration"]
+    if w <= 0 or h <= 0:
+        w, h = get_video_resolution(file_path, exe)
+    if duration <= 0:
+        duration = get_video_duration(file_path, exe)
 
     # If resolution was not detected or invalid, infer from filename or fallback to standard 16:9 HD
     if w <= 0 or h <= 0:
@@ -720,8 +868,8 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
             return _CACHED_HW_ENCODER
         last_err = err_msg
 
-    # On Google Colab with GPU: if NVENC failed (e.g. due to BtbN master NVENC 13.0 driver mismatch), heal FFmpeg
-    if (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))) and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
+    # On Google Colab / Kaggle with GPU: if NVENC failed (e.g. due to BtbN master NVENC 13.0 driver mismatch), heal FFmpeg
+    if (os.name != "nt") and (os.path.exists("/content") or os.path.exists("/kaggle") or bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))) and not getattr(detect_hw_encoder, "_attempted_cuda_install", False):
         setattr(detect_hw_encoder, "_attempted_cuda_install", True)
         log.warning("[VideoService] Initial h264_nvenc probe failed (%s) — repairing Colab CUDA FFmpeg...", last_err[:160])
         if setup_colab_cuda_ffmpeg():
@@ -740,16 +888,268 @@ def detect_hw_encoder(ffmpeg_bin: Optional[str] = None) -> str:
 
 _CUDA_CTX_HANDLES: list[Any] = []
 _CUDA_MEM_PTRS: list[Any] = []
+_CACHED_CUDA_CAPS: dict[str, dict[str, Any]] = {}
+_NVDEC_SUPPORTED_VCODECS = frozenset({"h264", "hevc", "h265", "vp8", "vp9", "mpeg2video", "vc1", "mpeg4"})
+
+
+def _install_btbn_n61_ffmpeg() -> Optional[str]:
+    """Install BtbN n6.1 GPL FFmpeg (NVENC 12.1 + --enable-cuda-llvm overlay_cuda/scale_cuda) on Linux Kaggle/Colab."""
+    local_bin = "/usr/local/bin/ffmpeg"
+    try:
+        os.makedirs("/usr/local/bin", exist_ok=True)
+        cmd = (
+            "curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-linux64-gpl-6.1.tar.xz -o /tmp/ff_n61.tar.xz "
+            "&& tar -xf /tmp/ff_n61.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 -C /usr/local/bin/ "
+            "&& chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe "
+            "&& rm -rf /tmp/ff_n61.tar.xz"
+        )
+        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=180)
+        _VALIDATED_FFMPEG.pop(local_bin, None)
+        if os.path.exists(local_bin) and _is_working_ffmpeg(local_bin):
+            ok_b, _ = _test_nvenc_binary(local_bin)
+            if ok_b:
+                return local_bin
+    except Exception as exc:
+        log.debug("[VideoService] BtbN n6.1 upgrade note: %s", exc)
+    return None
+
+
+def _probe_cuda_overlay_and_nvenc_flags(exe_path: str) -> dict[str, Any]:
+    """Run fast GPU smoke tests to detect scale_cuda, overlay_cuda, and Turing HQ NVENC capabilities."""
+    res: dict[str, Any] = {
+        "hwaccel_cuda": False,
+        "scale_cuda": False,
+        "overlay_cuda": False,
+        "cuda_main_fmt": "nv12",
+        "nvenc_hq": False,
+        "nvenc_qres": False,
+    }
+    if not exe_path or os.environ.get("PYTEST_CURRENT_TEST"):
+        return res
+
+    # 1. Check compiled filter support quickly
+    try:
+        flt = subprocess.run(
+            [exe_path, "-hide_banner", "-filters"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=6,
+        )
+        flt_txt = getattr(flt, "stdout", "") or ""
+        has_scale_filter = "scale_cuda" in flt_txt
+        has_overlay_filter = "overlay_cuda" in flt_txt and "hwupload_cuda" in flt_txt
+    except Exception:
+        has_scale_filter = False
+        has_overlay_filter = False
+
+    # 2. Test NVENC HQ flags (preset p4 + tune hq + spatial/temporal AQ + rc-lookahead + qres multipass)
+    try:
+        p_qres = subprocess.run(
+            [
+                exe_path, "-hide_banner",
+                "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
+                "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
+                "-preset", "p4", "-tune", "hq", "-multipass", "qres",
+                "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
+                "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
+                "-f", "null", "-",
+            ],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+        )
+        if getattr(p_qres, "returncode", 1) == 0:
+            res["nvenc_hq"] = True
+            res["nvenc_qres"] = True
+        else:
+            p_hq = subprocess.run(
+                [
+                    exe_path, "-hide_banner",
+                    "-f", "lavfi", "-i", "color=c=black:s=320x180:r=25:d=0.1",
+                    "-pix_fmt", "yuv420p", "-c:v", "h264_nvenc",
+                    "-preset", "p4", "-tune", "hq", "-multipass", "disabled",
+                    "-rc", "vbr", "-cq", "19", "-rc-lookahead", "16",
+                    "-spatial-aq", "1", "-temporal-aq", "1", "-aq-strength", "8",
+                    "-f", "null", "-",
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+            )
+            if getattr(p_hq, "returncode", 1) == 0:
+                res["nvenc_hq"] = True
+    except Exception:
+        pass
+
+    # 3. Test CUDA hardware scale_cuda
+    if has_scale_filter:
+        try:
+            p_sc = subprocess.run(
+                [
+                    exe_path, "-hide_banner",
+                    "-init_hw_device", "cuda=cu:0", "-filter_hw_device", "cu",
+                    "-f", "lavfi", "-i", "color=c=black:s=640x360:r=25:d=0.1",
+                    "-vf", "format=nv12,hwupload_cuda,scale_cuda=w=320:h=180:format=nv12",
+                    "-c:v", "h264_nvenc", "-preset", "p3", "-f", "null", "-",
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+            )
+            if getattr(p_sc, "returncode", 1) == 0:
+                res["scale_cuda"] = True
+                res["hwaccel_cuda"] = True
+        except Exception:
+            pass
+
+    # 4. Test overlay_cuda with main CUDA frames + alpha yuva420p overlay
+    if has_overlay_filter:
+        for cand_fmt in ("nv12", "yuv420p"):
+            try:
+                p_ov = subprocess.run(
+                    [
+                        exe_path, "-hide_banner",
+                        "-init_hw_device", "cuda=cu:0", "-filter_hw_device", "cu",
+                        "-f", "lavfi", "-i", "color=c=black:s=640x360:r=25:d=0.1",
+                        "-f", "lavfi", "-i", "color=c=red:s=64x24:r=25:d=0.1",
+                        "-filter_complex",
+                        f"[0:v]format={cand_fmt},hwupload_cuda[m];[1:v]format=yuva420p,hwupload_cuda[o];[m][o]overlay_cuda=x=0:y=main_h-overlay_h:eval=init:repeatlast=1[out]",
+                        "-map", "[out]", "-c:v", "h264_nvenc", "-preset", "p3", "-f", "null", "-",
+                    ],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8,
+                )
+                if getattr(p_ov, "returncode", 1) == 0:
+                    res["overlay_cuda"] = True
+                    res["hwaccel_cuda"] = True
+                    res["cuda_main_fmt"] = cand_fmt
+                    break
+            except Exception:
+                continue
+
+    return res
+
+
+def detect_cuda_pipeline_caps(ffmpeg_bin: Optional[str] = None) -> dict[str, Any]:
+    """
+    Detect and cache full CUDA hardware pipeline capabilities (NVDEC + scale_cuda + overlay_cuda + HQ NVENC).
+    On Kaggle/Colab GPU runtimes, automatically upgrades Ubuntu FFmpeg lacking overlay_cuda to BtbN n6.1.
+    """
+    global _PREFERRED_FFMPEG_BIN, _CACHED_HW_ENCODER
+    exe = ffmpeg_bin or _PREFERRED_FFMPEG_BIN or get_ffmpeg_binary()
+    if not exe or os.environ.get("PYTEST_CURRENT_TEST"):
+        return {
+            "hwaccel_cuda": False,
+            "scale_cuda": False,
+            "overlay_cuda": False,
+            "cuda_main_fmt": "nv12",
+            "nvenc_hq": False,
+            "nvenc_qres": False,
+            "ffmpeg_bin": exe,
+        }
+
+    if exe in _CACHED_CUDA_CAPS:
+        return _CACHED_CUDA_CAPS[exe]
+
+    if detect_hw_encoder(exe) != "h264_nvenc":
+        empty = {
+            "hwaccel_cuda": False, "scale_cuda": False, "overlay_cuda": False,
+            "cuda_main_fmt": "nv12", "nvenc_hq": False, "nvenc_qres": False, "ffmpeg_bin": exe,
+        }
+        _CACHED_CUDA_CAPS[exe] = empty
+        return empty
+
+    caps = _probe_cuda_overlay_and_nvenc_flags(exe)
+    caps["ffmpeg_bin"] = exe
+
+    # On Kaggle/Colab GPU, if current ffmpeg supports h264_nvenc (e.g. Ubuntu apt) but lacks overlay_cuda/scale_cuda,
+    # upgrade once to BtbN n6.1 static GPL (--enable-cuda-llvm) to unlock full zero-CPU-copy GPU transcoding!
+    if _on_colab and (not caps["overlay_cuda"] or not caps["scale_cuda"]) and not getattr(detect_cuda_pipeline_caps, "_upgraded_n61", False):
+        setattr(detect_cuda_pipeline_caps, "_upgraded_n61", True)
+        log.info("[VideoService] Upgrading Linux GPU FFmpeg to BtbN n6.1 CUDA-LLVM build (enables full GPU overlay_cuda + scale_cuda)...")
+        n61_bin = _install_btbn_n61_ffmpeg()
+        if n61_bin:
+            n61_caps = _probe_cuda_overlay_and_nvenc_flags(n61_bin)
+            if n61_caps["overlay_cuda"] or n61_caps["scale_cuda"]:
+                _VALIDATED_FFMPEG[n61_bin] = True
+                _PREFERRED_FFMPEG_BIN = n61_bin
+                _CACHED_HW_ENCODER = "h264_nvenc"
+                n61_caps["ffmpeg_bin"] = n61_bin
+                _CACHED_CUDA_CAPS[n61_bin] = n61_caps
+                _CACHED_CUDA_CAPS[exe] = n61_caps
+                log.info(
+                    "[VideoService] Full CUDA GPU FFmpeg unlocked (%s): overlay_cuda=%s, scale_cuda=%s, nvenc_qres=%s",
+                    n61_bin, n61_caps["overlay_cuda"], n61_caps["scale_cuda"], n61_caps["nvenc_qres"],
+                )
+                return n61_caps
+
+    _CACHED_CUDA_CAPS[exe] = caps
+    log.info(
+        "[VideoService] CUDA GPU pipeline caps (bin=%s): hwaccel_cuda=%s, scale_cuda=%s, overlay_cuda=%s, nvenc_hq=%s, nvenc_qres=%s",
+        exe, caps["hwaccel_cuda"], caps["scale_cuda"], caps["overlay_cuda"], caps["nvenc_hq"], caps["nvenc_qres"],
+    )
+    return caps
+
+
+def _build_nvenc_encode_opts(
+    v_bitrate_k: Optional[int] = None,
+    maxrate_k: Optional[int] = None,
+    bufsize_k: Optional[int] = None,
+    cq: int = 20,
+    preset: str = "p4",
+    for_cuda_frames: bool = False,
+    caps: Optional[dict[str, Any]] = None,
+    include_profile_level: bool = True,
+) -> list[str]:
+    """
+    Shared Turing T4 NVENC encoder options builder.
+    Balances maximum visual fidelity (1080p <= 2GB HQ AQ + Lookahead + VBR headroom)
+    with full NVENC ASIC hardware speed.
+    """
+    c_info = caps or {}
+    use_hq = bool(c_info.get("nvenc_hq", True))
+    use_qres = bool(c_info.get("nvenc_qres", False))
+
+    opts: list[str] = [
+        "-c:v", "h264_nvenc",
+        "-preset", preset if use_hq else "p2",
+        "-tune", "hq",
+        "-multipass", "qres" if use_qres else "disabled",
+        "-rc", "vbr",
+        "-cq", str(cq),
+    ]
+    if v_bitrate_k and v_bitrate_k > 0:
+        opts.extend(["-b:v", f"{int(v_bitrate_k)}k"])
+    if maxrate_k and maxrate_k > 0:
+        opts.extend(["-maxrate", f"{int(maxrate_k)}k"])
+    if bufsize_k and bufsize_k > 0:
+        opts.extend(["-bufsize", f"{int(bufsize_k)}k"])
+
+    if use_hq:
+        opts.extend([
+            "-rc-lookahead", "16",
+            "-spatial-aq", "1",
+            "-temporal-aq", "1",
+            "-aq-strength", "8",
+        ])
+    else:
+        opts.extend([
+            "-rc-lookahead", "0",
+            "-spatial-aq", "0",
+            "-temporal-aq", "0",
+        ])
+
+    if include_profile_level:
+        opts.extend(["-profile:v", "high", "-level:v", "4.1"])
+    else:
+        opts.extend(["-profile:v", "high"])
+
+    if not for_cuda_frames:
+        opts.extend(["-pix_fmt", "yuv420p"])
+
+    return opts
 
 
 def warm_up_colab_gpu() -> str:
     """
-    Ensure FFmpeg h264_nvenc is healed/verified on Google Colab / Kaggle and hold lightweight
-    persistent CUDA contexts (~256 MB VRAM) across ALL available GPUs via libcuda.so.1 so:
-      1. Every Tesla T4 GPU stays initialized (zero cold-start latency when FFmpeg launches).
-      2. Kaggle/Colab GPU monitor shows active GPU utilization across all GPUs (GPU 1 and GPU 2)
-         and never triggers idle GPU warnings.
-    Returns the active hardware encoder name ('h264_nvenc' or 'libx264').
+    Ensure FFmpeg h264_nvenc is healed/verified on Google Colab / Kaggle, probe/upgrade
+    full CUDA filter support (overlay_cuda + scale_cuda), and hold lightweight persistent CUDA contexts.
     """
     global _CUDA_CTX_HANDLES, _CUDA_MEM_PTRS
     hw_enc = detect_hw_encoder()
@@ -773,6 +1173,11 @@ def warm_up_colab_gpu() -> str:
                                     log.info("[VideoService] Tesla T4 GPU %d CUDA context warmed up (256 MB VRAM pinned for instant NVENC).", d_idx)
         except Exception as exc:
             log.debug("[VideoService] CUDA context warmup note: %s", exc)
+    if hw_enc == "h264_nvenc" and _on_colab:
+        try:
+            detect_cuda_pipeline_caps()
+        except Exception as cap_err:
+            log.debug("[VideoService] CUDA pipeline caps warmup note: %s", cap_err)
     return hw_enc
 
 
@@ -1195,9 +1600,9 @@ async def compress_video(
     log.info("[VideoService] compress_video: '%s' (duration=%.1fs, raw=%.1fs, trim_start=%.1fs, intro=%s, size=%d bytes) -> '%s' (target=%d bytes, is_hardsub=%s)",
              input_path, duration, raw_duration, trim_start, bool(intro_video), in_bytes, output_path, target_size_bytes, is_hardsub)
 
-    # Calculate optimal target bitrate with ~4% margin reserved for container/muxing overhead
+    # Calculate optimal target bitrate (~3% headroom reserved for MP4 container/muxing overhead)
     audio_bps = 128_000
-    usable_bits = int(target_size_bytes * 8 * 0.96)
+    usable_bits = int(target_size_bytes * 8 * 0.97)
     if duration > 10.0:
         total_bps = usable_bits / duration
         video_bps = max(500_000, int(total_bps - audio_bps))
@@ -1210,9 +1615,9 @@ async def compress_video(
         video_bps = max(500_000, int(total_bps - audio_bps))
         v_bitrate_k = int(video_bps / 1000)
 
-    # Strict maxrate & buffer to prevent NVENC/x264 VBR bitrate spikes from overshooting Telegram limit
-    maxrate_k = int(v_bitrate_k * 1.06)
-    bufsize_k = int(v_bitrate_k * 1.5)
+    # Generous VBR headroom for complex scenes while maintaining average target size
+    maxrate_k = int(v_bitrate_k * 1.32)
+    bufsize_k = int(v_bitrate_k * 1.9)
 
     hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
     if is_hardsub:
@@ -1247,6 +1652,55 @@ async def compress_video(
 
     has_badge_img = bool(cover_watermark and badge_path and os.path.exists(badge_path))
     has_fallback_box = bool(cover_watermark and not has_badge_img)
+
+    caps: dict[str, Any] = {}
+    nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p4" if in_w >= 1400 else "p3")
+
+    if hw_enc == "h264_nvenc":
+        caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+        if caps.get("ffmpeg_bin"):
+            ffmpeg_bin = caps["ffmpeg_bin"]
+        # Tier 1 Fast Path: Full GPU CUDA decode -> GPU overlay_cuda -> HQ NVENC (+ TS 5s intro concat)
+        if not burn_vf and caps.get("hwaccel_cuda") and (not cover_watermark or caps.get("overlay_cuda")):
+            media_info = await asyncio.to_thread(probe_media_summary, input_path, ffmpeg_bin)
+            if not media_info.get("duration") and raw_duration > 0:
+                media_info["duration"] = raw_duration
+            if not media_info.get("width"):
+                media_info["width"] = in_w
+            if not media_info.get("height"):
+                media_info["height"] = in_h
+            gpu_out = await _execute_pure_gpu_cuda_pipeline(
+                input_path=input_path,
+                output_path=output_path,
+                ffmpeg_bin=ffmpeg_bin,
+                caps=caps,
+                media_info=media_info,
+                v_bitrate_k=v_bitrate_k,
+                maxrate_k=maxrate_k,
+                bufsize_k=bufsize_k,
+                cq=nv_cq,
+                nvenc_preset=nv_preset,
+                cover_watermark=cover_watermark,
+                badge_path=badge_path,
+                trim_start=trim_start,
+                prepend_intro=prepend_intro,
+                sub_path=sub_path if has_sub else None,
+                sub_codec=sub_codec,
+                progress_callback=progress_callback,
+                max_total_bytes=TELEGRAM_MTPROTO_MAX_BYTES,
+            )
+            if gpu_out and os.path.exists(gpu_out) and os.path.getsize(gpu_out) > 1024:
+                out_sz_gpu = os.path.getsize(gpu_out)
+                if os.path.abspath(gpu_out) != os.path.abspath(requested_output_path):
+                    try:
+                        req_dir = os.path.dirname(os.path.abspath(requested_output_path))
+                        if os.path.isdir(req_dir) and shutil.disk_usage(req_dir).free >= (out_sz_gpu + 100 * 1024 * 1024):
+                            shutil.move(gpu_out, requested_output_path)
+                            gpu_out = requested_output_path
+                    except Exception:
+                        pass
+                return gpu_out
 
     cmd = [
         ffmpeg_bin,
@@ -1346,24 +1800,16 @@ async def compress_video(
 
     nvenc_enc_opts = []
     if hw_enc == "h264_nvenc":
-        # Ultra-fast High-Throughput NVENC hardware encoding (750-1000+ fps on Tesla T4)
-        nvenc_preset = "p1"
-        nvenc_enc_opts = [
-            "-c:v", "h264_nvenc",
-            "-preset", nvenc_preset,
-            "-tune", "hq",
-            "-multipass", "disabled",
-            "-rc", "vbr",
-            "-cq", "22",
-            "-b:v", f"{v_bitrate_k}k",
-            "-maxrate", f"{maxrate_k}k",
-            "-bufsize", f"{bufsize_k}k",
-            "-rc-lookahead", "0",
-            "-profile:v", "high",
-            "-spatial-aq", "0",
-            "-temporal-aq", "0",
-            "-pix_fmt", "yuv420p",
-        ]
+        # High-Quality Turing NVENC hardware encoding with Spatial/Temporal AQ & Lookahead
+        nvenc_enc_opts = _build_nvenc_encode_opts(
+            v_bitrate_k=v_bitrate_k,
+            maxrate_k=maxrate_k,
+            bufsize_k=bufsize_k,
+            cq=nv_cq,
+            preset=nv_preset,
+            for_cuda_frames=False,
+            caps=caps,
+        )
         cmd.extend(nvenc_enc_opts)
     else:
         cpu_preset = "ultrafast" if _on_colab else "veryfast"
@@ -1424,9 +1870,10 @@ async def compress_video(
                 except Exception:
                     pass
 
-            # Dedicated GPU slot to achieve 750+ FPS and protect CPU from overload
+            # Load-balanced GPU slot (1080p weight=3 keeps GPU 0 dedicated)
             try:
-                gpu_slot_ctx = _GPU_POOL.acquire()
+                gpu_w = 3 if in_w >= 1400 else (2 if in_w >= 1000 else 1)
+                gpu_slot_ctx = _GPU_POOL.acquire(weight=gpu_w)
                 gpu_id = await gpu_slot_ctx.__aenter__()
             except (asyncio.TimeoutError, TimeoutError):
                 log.info("[VideoService] All GPU slots busy. Falling back to multi-core CPU encoding for 480p/low-res...")
@@ -2428,6 +2875,526 @@ def get_or_create_filmzilla_intro(
     return None
 
 
+def _get_or_create_fallback_box_png() -> Optional[str]:
+    """Create a tiny cached dark PNG badge used on GPU overlay_cuda if no brand PNG exists."""
+    import struct
+    import zlib
+    cache_dir = os.path.join(tempfile.gettempdir(), "filmzilla_intro_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    box_path = os.path.join(cache_dir, "fallback_black_box.png")
+    if os.path.exists(box_path) and os.path.getsize(box_path) > 32:
+        return box_path
+    try:
+        # Build minimal 16x16 RGBA solid black (alpha 240) PNG with pure stdlib zlib
+        w, h = 16, 16
+        raw_rows = b"".join(b"\x00" + (b"\x00\x00\x00\xf0" * w) for _ in range(h))
+
+        def _chunk(tag: bytes, data: bytes) -> bytes:
+            return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+        ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
+        idat = zlib.compress(raw_rows)
+        png_bytes = b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", ihdr) + _chunk(b"IDAT", idat) + _chunk(b"IEND", b"")
+        with open(box_path, "wb") as f:
+            f.write(png_bytes)
+        return box_path
+    except Exception:
+        return None
+
+
+def get_or_create_filmzilla_intro_ts(
+    target_width: int,
+    target_height: int,
+    fps_str: str = "30",
+    sample_rate: int = 48000,
+    has_audio: bool = True,
+    gpu_id: int = 0,
+    use_nvenc: bool = True,
+    duration: float = 5.0,
+    ffmpeg_bin: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Generate or retrieve a cached 5.0s MPEG-TS FilmZilla intro matching exact stream geometry
+    (w, h, fps, sample_rate, audio presence) so GPU-encoded main video joins cleanly in <1.5s
+    via concat demuxer with ZERO CPU re-encode and ZERO audio bleed.
+    """
+    exe = ffmpeg_bin or _PREFERRED_FFMPEG_BIN or get_ffmpeg_binary()
+    if not exe:
+        return None
+
+    w = int(target_width) if int(target_width) % 2 == 0 else int(target_width) + 1
+    h = int(target_height) if int(target_height) % 2 == 0 else int(target_height) + 1
+    w = max(320, w)
+    h = max(180, h)
+    ar = sample_rate if sample_rate in (44100, 48000) else 48000
+    safe_fps_tag = re.sub(r"[^0-9a-zA-Z._-]", "_", str(fps_str or "30"))
+    enc_tag = "nvenc" if use_nvenc else "x264"
+    aud_tag = f"a{ar}" if has_audio else "noa"
+
+    cache_dir = os.path.join(tempfile.gettempdir(), "filmzilla_intro_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    ts_path = os.path.join(cache_dir, f"intro_{w}x{h}_{safe_fps_tag}_{aud_tag}_{enc_tag}_{int(round(duration))}s.ts")
+
+    if os.path.exists(ts_path) and os.path.getsize(ts_path) > 50000:
+        cached_dur = get_video_duration(ts_path, exe)
+        if abs(cached_dur - duration) <= 0.6:
+            return ts_path
+    elif os.path.exists(ts_path):
+        try:
+            os.remove(ts_path)
+        except Exception:
+            pass
+
+    base_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+    web_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "website", "assets", "img")
+    card_asset = next(
+        (
+            p for p in (
+                os.path.join(base_assets_dir, "filmzilla_intro_fullscreen.png"),
+                os.path.join(web_assets_dir, "filmzilla_intro_fullscreen.png"),
+                os.path.join(base_assets_dir, "filmzilla_intro_card.png"),
+                os.path.join(web_assets_dir, "filmzilla_intro_card.png"),
+                os.path.join(base_assets_dir, "filmzilla_brand_horizontal.png"),
+            )
+            if os.path.exists(p)
+        ),
+        None,
+    )
+    sound_asset = next(
+        (
+            p for p in (
+                os.path.join(base_assets_dir, "filmzilla_intro_sound.wav"),
+                os.path.join(web_assets_dir, "filmzilla_intro_sound.wav"),
+            )
+            if os.path.exists(p)
+        ),
+        None,
+    )
+
+    fade_out_st = max(0.5, duration - 0.8)
+    enc_v = (
+        ["-c:v", "h264_nvenc", "-gpu", str(gpu_id), "-preset", "p4", "-tune", "hq", "-rc", "vbr", "-cq", "19", "-profile:v", "high", "-level:v", "4.1", "-pix_fmt", "yuv420p"]
+        if use_nvenc
+        else ["-c:v", "libx264", "-preset", "ultrafast", "-profile:v", "high", "-level:v", "4.1", "-pix_fmt", "yuv420p"]
+    )
+    audio_out = ["-c:a", "aac", "-b:a", "160k", "-ar", str(ar), "-ac", "2"] if has_audio else ["-an"]
+
+    def _build_intro_ts_cmd(use_gpu_enc: bool) -> list[str]:
+        v_enc = enc_v if use_gpu_enc else ["-c:v", "libx264", "-preset", "ultrafast", "-profile:v", "high", "-level:v", "4.1", "-pix_fmt", "yuv420p"]
+        c = [exe, "-y", "-nostdin", "-hide_banner"]
+        if card_asset:
+            c.extend(["-loop", "1", "-r", str(fps_str), "-t", str(duration), "-i", os.path.abspath(card_asset)])
+            vf = (
+                f"[0:v]scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,"
+                f"setsar=1,format=yuv420p,fade=t=in:st=0.0:d=0.7,fade=t=out:st={fade_out_st:.2f}:d=0.8[outv]"
+            )
+            if has_audio:
+                if sound_asset:
+                    c.extend(["-i", os.path.abspath(sound_asset)])
+                    fc = f"{vf};[1:a]aformat=sample_fmts=fltp:sample_rates={ar}:channel_layouts=stereo,asetpts=PTS-STARTPTS[outa]"
+                else:
+                    c.extend(["-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate={ar}:d={duration}"])
+                    fc = f"{vf};[1:a]asetpts=PTS-STARTPTS[outa]"
+                c.extend(["-filter_complex", fc, "-map", "[outv]", "-map", "[outa]"])
+            else:
+                c.extend(["-filter_complex", vf, "-map", "[outv]"])
+        else:
+            c.extend(["-f", "lavfi", "-i", f"color=c=black:s={w}x{h}:r={fps_str}:d={duration}"])
+            if has_audio:
+                c.extend(["-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate={ar}:d={duration}"])
+                c.extend(["-map", "0:v", "-map", "1:a"])
+            else:
+                c.extend(["-map", "0:v"])
+        c.extend(["-r", str(fps_str), *v_enc, *audio_out, "-t", str(duration), "-f", "mpegts", ts_path])
+        return c
+
+    for try_nvenc in ([True, False] if use_nvenc else [False]):
+        try:
+            proc = subprocess.run(
+                _build_intro_ts_cmd(try_nvenc),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=30,
+            )
+            if proc.returncode == 0 and os.path.exists(ts_path) and os.path.getsize(ts_path) > 1024:
+                return ts_path
+        except Exception as exc:
+            log.debug("[VideoService] Intro TS creation note (nvenc=%s): %s", try_nvenc, exc)
+
+    return None
+
+
+async def _execute_pure_gpu_cuda_pipeline(
+    input_path: str,
+    output_path: str,
+    ffmpeg_bin: str,
+    caps: dict[str, Any],
+    media_info: dict[str, Any],
+    v_bitrate_k: int,
+    maxrate_k: int,
+    bufsize_k: int,
+    cq: int,
+    nvenc_preset: str,
+    cover_watermark: bool = False,
+    badge_path: Optional[str] = None,
+    trim_start: float = 0.0,
+    prepend_intro: bool = False,
+    sub_path: Optional[str] = None,
+    sub_codec: str = "mov_text",
+    progress_callback: Optional[Callable[[float, str], None]] = None,
+    max_total_bytes: Optional[int] = None,
+) -> Optional[str]:
+    """
+    Execute true zero-CPU-copy Full GPU CUDA video transcode:
+      NVDEC (-hwaccel cuda -hwaccel_output_format cuda) -> scale_cuda -> overlay_cuda -> h264_nvenc
+    If `prepend_intro=True`, joins the cached matching 5.0s FilmZilla TS intro via sub-2s concat demuxer
+    with zero re-encoding of video/audio and keeps audio perfectly synchronized (-c:a copy when AAC stereo).
+    Returns output_path on success, or None if the caller should fall back cleanly to Tier 2.
+    """
+    exe = caps.get("ffmpeg_bin") or ffmpeg_bin
+    vcodec = (media_info.get("vcodec") or "").lower()
+    if vcodec and vcodec not in _NVDEC_SUPPORTED_VCODECS:
+        log.info("[VideoService] Codec '%s' unsupported by T4 NVDEC; skipping pure GPU path.", vcodec)
+        return None
+    if not caps.get("hwaccel_cuda"):
+        return None
+
+    raw_w = media_info.get("width") or 1280
+    raw_h = media_info.get("height") or 720
+    in_w = raw_w + (raw_w % 2)
+    in_h = raw_h + (raw_h % 2)
+    need_cuda_even_dim = (raw_w % 2 != 0) or (raw_h % 2 != 0)
+
+    overlay_img: Optional[str] = None
+    is_real_badge = False
+    if cover_watermark:
+        if badge_path and os.path.exists(badge_path):
+            overlay_img = badge_path
+            is_real_badge = True
+        else:
+            overlay_img = _get_or_create_fallback_box_png()
+        if overlay_img and not caps.get("overlay_cuda"):
+            return None
+
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    is_mp4 = os.path.splitext(output_path)[1].lower() in (".mp4", ".m4v", ".mov")
+    has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+    if has_sub and is_mp4 and sub_path and sub_path.lower().endswith(".vtt"):
+        try:
+            from services.subtitle_service import vtt_to_srt
+            conv_srt = os.path.join(out_dir, f"gpu_sub_{os.getpid()}.srt")
+            sub_path = vtt_to_srt(sub_path, conv_srt)
+            has_sub = bool(sub_path and os.path.exists(sub_path) and os.path.getsize(sub_path) > 16)
+        except Exception:
+            pass
+
+    has_audio = bool(media_info.get("acodec"))
+    in_acodec = (media_info.get("acodec") or "").lower()
+    in_ar = media_info.get("sample_rate") or 48000
+    in_ch = media_info.get("channels") or 2
+    can_copy_audio_ts = bool(
+        has_audio and in_acodec == "aac" and in_ch == 2 and in_ar in (44100, 48000)
+    )
+    target_ar = in_ar if can_copy_audio_ts else 48000
+
+    gpu_weight = 3 if in_w >= 1400 else (2 if in_w >= 1000 else 1)
+    gpu_slot_ctx = None
+    gpu_id = 0
+    proc = None
+    temp_main_ts: Optional[str] = None
+    concat_list_file: Optional[str] = None
+
+    try:
+        try:
+            gpu_slot_ctx = _GPU_POOL.acquire(timeout=15.0, weight=gpu_weight)
+            gpu_id = await gpu_slot_ctx.__aenter__()
+        except (asyncio.TimeoutError, TimeoutError):
+            gpu_slot_ctx = None
+            return None
+
+        intro_ts: Optional[str] = None
+        if prepend_intro:
+            intro_ts = await asyncio.to_thread(
+                get_or_create_filmzilla_intro_ts,
+                in_w,
+                in_h,
+                fps_str=media_info.get("fps_str") or "30",
+                sample_rate=target_ar,
+                has_audio=has_audio,
+                gpu_id=gpu_id,
+                use_nvenc=True,
+                duration=5.0,
+                ffmpeg_bin=exe,
+            )
+            if not intro_ts or not os.path.exists(intro_ts):
+                return None
+
+        cuda_fmt = caps.get("cuda_main_fmt", "nv12")
+        badge_w = max(100, min(220, int(in_w * 0.115)))
+        badge_w += (badge_w % 2)
+        bh = max(22, min(48, int(in_h * 0.035))) if in_h > 0 else 24
+        bh += (bh % 2)
+
+        cmd = [
+            exe, "-y",
+            "-nostdin",
+            "-hide_banner",
+            "-threads", "2",
+            "-filter_threads", "2",
+            "-filter_complex_threads", "2",
+            "-init_hw_device", f"cuda=cu:{gpu_id}",
+            "-filter_hw_device", "cu",
+        ]
+        if trim_start > 0:
+            cmd.extend(["-ss", str(trim_start)])
+        cmd.extend([
+            "-hwaccel", "cuda",
+            "-hwaccel_device", "cu",
+            "-hwaccel_output_format", "cuda",
+            "-i", os.path.abspath(input_path),
+        ])
+
+        next_idx = 1
+        badge_idx = -1
+        if overlay_img:
+            cmd.extend(["-i", os.path.abspath(overlay_img)])
+            badge_idx = next_idx
+            next_idx += 1
+
+        sub_idx = -1
+        if has_sub and not prepend_intro:
+            cmd.extend(["-i", os.path.abspath(sub_path)])
+            sub_idx = next_idx
+            next_idx += 1
+
+        main_cuda_flt = (
+            f"scale_cuda=w={in_w}:h={in_h}:format={cuda_fmt}"
+            if need_cuda_even_dim
+            else f"scale_cuda=format={cuda_fmt}"
+        )
+        if overlay_img:
+            b_scale = f"{badge_w}:-2" if is_real_badge else f"{badge_w}:{bh}"
+            fc = (
+                f"[0:v]{main_cuda_flt}[m_cu];"
+                f"[{badge_idx}:v]scale={b_scale},format=yuva420p,hwupload_cuda[b_cu];"
+                f"[m_cu][b_cu]overlay_cuda=x=0:y=main_h-overlay_h:eval=init:repeatlast=1[v_out]"
+            )
+            cmd.extend(["-filter_complex", fc, "-map", "[v_out]"])
+        else:
+            cmd.extend(["-filter_complex", f"[0:v]{main_cuda_flt}[v_out]", "-map", "[v_out]"])
+
+        if has_audio:
+            cmd.extend(["-map", "0:a:0?"])
+            if can_copy_audio_ts or (not prepend_intro and is_web_compatible_audio(in_acodec)):
+                cmd.extend(["-c:a", "copy"])
+            else:
+                cmd.extend(["-c:a", "aac", "-b:a", "160k", "-ac", "2", "-ar", str(target_ar)])
+        else:
+            cmd.extend(["-an"])
+
+        nv_opts = _build_nvenc_encode_opts(
+            v_bitrate_k=v_bitrate_k,
+            maxrate_k=maxrate_k,
+            bufsize_k=bufsize_k,
+            cq=cq,
+            preset=nvenc_preset,
+            for_cuda_frames=True,
+            caps=caps,
+        )
+        cv_idx = nv_opts.index("-c:v")
+        nv_opts.insert(cv_idx + 2, "-gpu")
+        nv_opts.insert(cv_idx + 3, str(gpu_id))
+        cmd.extend(nv_opts)
+
+        if prepend_intro:
+            temp_main_ts = os.path.join(out_dir, f"gpu_body_{os.getpid()}_{gpu_id}_{os.path.basename(output_path)}.ts")
+            cmd.extend(["-r", str(media_info.get("fps_str") or "30"), "-f", "mpegts", temp_main_ts])
+        else:
+            if sub_idx != -1:
+                cmd.extend([
+                    "-map", f"{sub_idx}:0",
+                    "-c:s", sub_codec,
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            else:
+                cmd.extend(["-sn"])
+            cmd.extend(["-max_muxing_queue_size", "9999"])
+            if is_mp4:
+                cmd.extend(["-movflags", "+faststart"])
+            cmd.append(os.path.abspath(output_path))
+
+        raw_dur = float(media_info.get("duration") or 0.0)
+        body_dur = max(1.0, raw_dur - trim_start) if raw_dur > trim_start else max(1.0, raw_dur)
+        log.info(
+            "[VideoService] Executing PURE GPU CUDA pipeline on GPU %d (%s -> %s, preset=%s, cq=%d, b:v=%dk, audio=%s, intro_ts=%s)",
+            gpu_id, os.path.basename(input_path), os.path.basename(output_path), nvenc_preset, cq, v_bitrate_k,
+            "copy" if (can_copy_audio_ts or not prepend_intro) else "aac", bool(intro_ts),
+        )
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=out_dir,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        speed_pattern = re.compile(r"speed=\s*([0-9.]+)x")
+        fps_pattern = re.compile(r"fps=\s*([0-9.]+)")
+        last_pct = 0.0
+        stderr_tail: list[str] = []
+
+        async def _read_gpu_stderr():
+            nonlocal last_pct
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(proc.stderr.read(4096), timeout=120.0)
+                except asyncio.TimeoutError:
+                    if proc.returncode is not None:
+                        break
+                    log.warning("[VideoService] GPU CUDA pipeline stderr stalled 120s; aborting to fallback.")
+                    break
+                if not chunk:
+                    break
+                decoded = chunk.decode("utf-8", errors="replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                if len(stderr_tail) >= 25:
+                    stderr_tail.pop(0)
+                stderr_tail.append(decoded)
+                matches = time_pattern.findall(decoded)
+                if matches and body_dur > 0:
+                    h_s, m_s, s_s = matches[-1]
+                    cur_secs = int(h_s) * 3600 + int(m_s) * 60 + float(s_s)
+                    pct = min(98.0, (cur_secs / body_dur) * 98.0)
+                    if pct - last_pct >= 1.5:
+                        last_pct = pct
+                        sp_m = speed_pattern.search(decoded)
+                        fp_m = fps_pattern.search(decoded)
+                        sp_v = float(sp_m.group(1)) if sp_m else 0.0
+                        fp_v = float(fp_m.group(1)) if fp_m else 0.0
+                        parts = [f"{pct:.1f}%"]
+                        if sp_v > 0:
+                            parts.append(f"⚡ {sp_v:.1f}x ({int(fp_v)} fps)" if fp_v > 0 else f"⚡ {sp_v:.1f}x")
+                            if body_dur > cur_secs:
+                                rem_s = int((body_dur - cur_secs) / sp_v)
+                                m_r, s_r = divmod(rem_s, 60)
+                                h_r, m_r = divmod(m_r, 60)
+                                parts.append(f"| ⏱ {f'{h_r}h{m_r:02d}m' if h_r else f'{m_r}m{s_r:02d}s'}")
+                        if progress_callback:
+                            p_str = " ".join(parts)
+                            try:
+                                if asyncio.iscoroutinefunction(progress_callback):
+                                    asyncio.create_task(progress_callback(pct, p_str))
+                                else:
+                                    progress_callback(pct, p_str)
+                            except Exception:
+                                pass
+
+        await asyncio.wait_for(asyncio.gather(proc.wait(), _read_gpu_stderr()), timeout=1800.0)
+        target_written = temp_main_ts if prepend_intro else output_path
+        if proc.returncode != 0 or not target_written or not os.path.exists(target_written) or os.path.getsize(target_written) < 1024:
+            log.warning(
+                "[VideoService] Pure GPU CUDA encode failed (exit=%s, tail=%s); falling back to Tier 2.",
+                proc.returncode, "".join(stderr_tail[-5:])[-240:],
+            )
+            return None
+
+        if prepend_intro and intro_ts and temp_main_ts:
+            concat_list_file = os.path.join(out_dir, f"concat_{os.getpid()}_{gpu_id}_{os.path.basename(output_path)}.txt")
+            with open(concat_list_file, "w", encoding="utf-8") as cf:
+                cf.write(f"file '{os.path.abspath(intro_ts).replace(chr(92), '/')}'\n")
+                cf.write(f"file '{os.path.abspath(temp_main_ts).replace(chr(92), '/')}'\n")
+
+            remux_cmd = [
+                exe, "-y", "-nostdin", "-hide_banner",
+                "-f", "concat", "-safe", "0", "-i", os.path.abspath(concat_list_file),
+            ]
+            if has_sub:
+                remux_cmd.extend([
+                    "-i", os.path.abspath(sub_path),
+                    "-map", "0:v", "-map", "0:a?", "-map", "1:0",
+                    "-c:v", "copy", "-c:a", "copy",
+                    "-c:s", sub_codec,
+                    "-metadata:s:s:0", "language=sin",
+                    "-metadata:s:s:0", "title=Sinhala (සිංහල)",
+                    "-disposition:s:0", "default",
+                ])
+            else:
+                remux_cmd.extend(["-map", "0:v", "-map", "0:a?", "-c", "copy", "-sn"])
+
+            if has_audio:
+                remux_cmd.extend(["-bsf:a", "aac_adtstoasc"])
+            remux_cmd.extend(["-max_muxing_queue_size", "9999"])
+            if is_mp4:
+                remux_cmd.extend(["-movflags", "+faststart"])
+            remux_cmd.append(os.path.abspath(output_path))
+
+            r_proc = await asyncio.create_subprocess_exec(
+                *remux_cmd, cwd=out_dir, stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+            )
+            _, r_err = await asyncio.wait_for(r_proc.communicate(), timeout=240.0)
+            if r_proc.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) < 1024:
+                log.warning(
+                    "[VideoService] Pure GPU TS concat remux failed (exit=%s, err=%s); falling back to Tier 2.",
+                    r_proc.returncode, r_err.decode("utf-8", errors="replace")[-240:] if r_err else "",
+                )
+                return None
+
+        out_sz = os.path.getsize(output_path) if os.path.exists(output_path) else 0
+        if max_total_bytes and out_sz > max_total_bytes:
+            log.warning("[VideoService] GPU CUDA output (%d bytes) exceeded max ceiling (%d bytes); allowing Tier 2 corrective compress.", out_sz, max_total_bytes)
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+            return None
+
+        if progress_callback:
+            try:
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(100.0, "100.0%")
+                else:
+                    progress_callback(100.0, "100.0%")
+            except Exception:
+                pass
+        log.info("[VideoService] Pure GPU CUDA pipeline SUCCESS: %s (%d bytes)", output_path, out_sz)
+        return output_path
+
+    except asyncio.CancelledError:
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        raise
+    except Exception as gpu_exc:
+        log.warning("[VideoService] Pure GPU CUDA pipeline error (%s); falling back cleanly.", gpu_exc)
+        return None
+    finally:
+        if gpu_slot_ctx:
+            try:
+                await gpu_slot_ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
+        if proc and proc.returncode is None:
+            try:
+                proc.terminate()
+                proc.kill()
+            except Exception:
+                pass
+        for tmp_f in (temp_main_ts, concat_list_file):
+            if tmp_f and os.path.exists(tmp_f):
+                try:
+                    os.remove(tmp_f)
+                except Exception:
+                    pass
+
+
 async def prepend_filmzilla_intro(
     input_path: str,
     output_path: str,
@@ -3083,53 +4050,85 @@ async def cover_cinesubz_watermark(
         if os.path.exists(default_badge):
             badge_path = default_badge
 
+    media_info = await asyncio.to_thread(probe_media_summary, video_path, ffmpeg_bin)
     in_size = os.path.getsize(video_path) if os.path.exists(video_path) else 0
-    duration = await asyncio.to_thread(get_video_duration, video_path, ffmpeg_bin)
-    in_w, in_h = await asyncio.to_thread(get_video_resolution, video_path, ffmpeg_bin)
+    duration = media_info["duration"] or await asyncio.to_thread(get_video_duration, video_path, ffmpeg_bin)
+    in_w = media_info["width"]
+    in_h = media_info["height"]
+    if in_w <= 0 or in_h <= 0:
+        in_w, in_h = await asyncio.to_thread(get_video_resolution, video_path, ffmpeg_bin)
     if in_w <= 0:
         in_w = 1280
     if in_h <= 0:
         in_h = 720
+    if not media_info.get("width"):
+        media_info["width"] = in_w
+    if not media_info.get("height"):
+        media_info["height"] = in_h
+    if not media_info.get("duration") and duration > 0:
+        media_info["duration"] = duration
 
     if duration > 0 and in_size > 0:
-        target_kbps = max(350, int((in_size * 8) / (duration * 1000)))
+        src_kbps = max(350, int((in_size * 8) / (duration * 1000)))
+        max_safe_kbps = max(400, int(((TARGET_COMPRESS_SIZE * 8 * 0.97) / duration - 160_000) / 1000))
+        target_kbps = min(int(src_kbps * (1.12 if in_w >= 1400 else 1.08)), max_safe_kbps)
     else:
         if in_w >= 1600:
-            target_kbps = 2200
+            target_kbps = 2400
         elif in_w >= 1000:
-            target_kbps = 1250
+            target_kbps = 1400
         elif in_w >= 600:
-            target_kbps = 650
+            target_kbps = 720
         else:
-            target_kbps = 420
+            target_kbps = 460
 
-    max_kbps = int(target_kbps * 1.04)
-    buf_kbps = int(target_kbps * 1.2)
+    max_kbps = int(target_kbps * 1.38)
+    buf_kbps = int(target_kbps * 2.0)
+    nv_cq = 19 if in_w >= 1400 else (20 if in_w >= 1000 else 21)
+    nv_preset = os.getenv("NVENC_1080P_PRESET", "p4" if in_w >= 1400 else "p3")
 
     hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+    caps: dict[str, Any] = {}
     if hw_enc == "h264_nvenc":
-        nvenc_preset = "p1"
-        enc_opts = [
-            "-c:v", "h264_nvenc",
-            "-preset", nvenc_preset,
-            "-tune", "hq",
-            "-multipass", "disabled",
-            "-rc", "vbr",
-            "-cq", "22",
-            "-b:v", f"{target_kbps}k",
-            "-maxrate", f"{max_kbps}k",
-            "-bufsize", f"{buf_kbps}k",
-            "-rc-lookahead", "0",
-            "-spatial-aq", "0",
-            "-temporal-aq", "0",
-            "-pix_fmt", "yuv420p",
-        ]
+        caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+        if caps.get("ffmpeg_bin"):
+            ffmpeg_bin = caps["ffmpeg_bin"]
+        if caps.get("hwaccel_cuda") and caps.get("overlay_cuda"):
+            gpu_done = await _execute_pure_gpu_cuda_pipeline(
+                input_path=video_path,
+                output_path=output_path,
+                ffmpeg_bin=ffmpeg_bin,
+                caps=caps,
+                media_info=media_info,
+                v_bitrate_k=target_kbps,
+                maxrate_k=max_kbps,
+                bufsize_k=buf_kbps,
+                cq=nv_cq,
+                nvenc_preset=nv_preset,
+                cover_watermark=True,
+                badge_path=badge_path,
+                trim_start=trim_start,
+                prepend_intro=prepend_intro,
+                progress_callback=progress_callback,
+            )
+            if gpu_done and os.path.exists(gpu_done) and os.path.getsize(gpu_done) > 1024:
+                return True
+
+        enc_opts = _build_nvenc_encode_opts(
+            v_bitrate_k=target_kbps,
+            maxrate_k=max_kbps,
+            bufsize_k=buf_kbps,
+            cq=nv_cq,
+            preset=nv_preset,
+            for_cuda_frames=False,
+            caps=caps,
+        )
     else:
         cpu_preset = "veryfast" if _on_colab else "faster"
         enc_opts = [
             "-c:v", "libx264",
             "-preset", cpu_preset,
-            "-crf", "25",
+            "-crf", "24",
             "-maxrate", f"{max_kbps}k",
             "-bufsize", f"{buf_kbps}k",
             "-threads", "0",
@@ -3145,7 +4144,7 @@ async def cover_cinesubz_watermark(
         if intro_video and not os.path.exists(intro_video):
             intro_video = None
 
-    has_audio = bool(await asyncio.to_thread(get_audio_codec, video_path, ffmpeg_bin))
+    has_audio = bool(media_info.get("acodec")) or bool(await asyncio.to_thread(get_audio_codec, video_path, ffmpeg_bin))
     badge_w = max(100, min(220, int(in_w * 0.115)))
     ox = 0
 
@@ -3267,9 +4266,10 @@ async def cover_cinesubz_watermark(
                 except Exception:
                     pass
 
-            # Dedicated GPU slot to achieve 750+ FPS and protect CPU from overload
+            # Load-balanced GPU slot (1080p weight=3 keeps GPU 0 dedicated)
             try:
-                gpu_slot_ctx = _GPU_POOL.acquire()
+                gpu_w = 3 if in_w >= 1400 else (2 if in_w >= 1000 else 1)
+                gpu_slot_ctx = _GPU_POOL.acquire(weight=gpu_w)
                 gpu_id = await gpu_slot_ctx.__aenter__()
             except (asyncio.TimeoutError, TimeoutError):
                 log.info("[VideoService] All GPU slots busy. Falling back to multi-core CPU encoding for 480p/low-res...")
@@ -3725,15 +4725,32 @@ async def generate_multi_quality_variants_ram(
         return valid_outputs
 
     hw_enc = await asyncio.to_thread(detect_hw_encoder, ffmpeg_bin)
+    cuda_caps: dict[str, Any] = {}
+    if hw_enc == "h264_nvenc":
+        cuda_caps = await asyncio.to_thread(detect_cuda_pipeline_caps, ffmpeg_bin)
+        if cuda_caps.get("ffmpeg_bin"):
+            ffmpeg_bin = cuda_caps["ffmpeg_bin"]
     num_q = len(target_q_list)
 
-    def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool) -> tuple[list[str], dict[str, str]]:
+    def _build_multi_cmd(use_hw: str, burn_subs: bool, include_soft_subs: bool, gpu_id: Optional[int] = None, allow_cuda: bool = True) -> tuple[list[str], dict[str, str]]:
         escaped_sub_file = "sub_burn_multi.ass" if os.path.exists(os.path.join(abs_out_dir, "sub_burn_multi.ass")) else "sub_burn_multi.srt"
         sub_burn_expr = build_subtitles_burn_filter(escaped_sub_file)
+        use_cuda_scale = bool(
+            allow_cuda
+            and use_hw == "h264_nvenc"
+            and not burn_subs
+            and cuda_caps.get("scale_cuda")
+            and cuda_caps.get("hwaccel_cuda")
+        )
+        cuda_fmt = cuda_caps.get("cuda_main_fmt", "nv12")
+        target_gpu = 0 if gpu_id is None else int(gpu_id)
+
         if num_q == 1:
             q0 = target_q_list[0]
             h0 = profiles[q0]["height"]
-            if burn_subs:
+            if use_cuda_scale:
+                fc = f"[0:v:0]scale_cuda=w=-2:h={h0}:interp_algo=lanczos:format={cuda_fmt}[v_{q0}]"
+            elif burn_subs:
                 fc = f"[0:v:0]{sub_burn_expr},scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
             else:
                 fc = f"[0:v:0]scale=w=-2:h={h0}:flags=fast_bilinear[v_{q0}]"
@@ -3744,19 +4761,33 @@ async def generate_multi_quality_variants_ram(
                 if burn_subs
                 else f"[0:v:0]split={num_q}{split_labels}"
             )
-            scale_branches = ";".join(
-                f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
-                for q in target_q_list
-            )
+            if use_cuda_scale:
+                scale_branches = ";".join(
+                    f"[sp_{q}]scale_cuda=w=-2:h={profiles[q]['height']}:interp_algo=lanczos:format={cuda_fmt}[v_{q}]"
+                    for q in target_q_list
+                )
+            else:
+                scale_branches = ";".join(
+                    f"[sp_{q}]scale=w=-2:h={profiles[q]['height']}:flags=fast_bilinear[v_{q}]"
+                    for q in target_q_list
+                )
             fc = f"{split_head};{scale_branches}"
 
         c: list[str] = [
             ffmpeg_bin,
             "-y",
             "-hide_banner",
-            "-threads", "0",
+            "-threads", "2" if use_cuda_scale else "0",
         ]
-        if use_hw == "h264_nvenc":
+        if use_cuda_scale:
+            c.extend([
+                "-init_hw_device", f"cuda=cu:{target_gpu}",
+                "-filter_hw_device", "cu",
+                "-hwaccel", "cuda",
+                "-hwaccel_device", "cu",
+                "-hwaccel_output_format", "cuda",
+            ])
+        elif use_hw == "h264_nvenc":
             c.extend(["-hwaccel", "auto"])
         c.extend(["-i", os.path.abspath(input_path)])
         effective_sub = sub_path
@@ -3794,21 +4825,22 @@ async def generate_multi_quality_variants_ram(
                     "-disposition:s:0", "default",
                 ])
             if use_hw == "h264_nvenc":
-                nvenc_preset = "p1"
-                c.extend([
-                    "-c:v", "h264_nvenc",
-                    "-preset", nvenc_preset,
-                    "-tune", "hq",
-                    "-multipass", "disabled",
-                    "-rc", "vbr",
-                    "-cq", prof["crf"],
-                    "-maxrate", prof["maxrate"],
-                    "-bufsize", prof["bufsize"],
-                    "-rc-lookahead", "0",
-                    "-spatial-aq", "0",
-                    "-temporal-aq", "0",
-                    "-pix_fmt", "yuv420p",
-                ])
+                max_k = int(prof["maxrate"].rstrip("k"))
+                buf_k = int(prof["bufsize"].rstrip("k"))
+                nv_opts = _build_nvenc_encode_opts(
+                    maxrate_k=max_k,
+                    bufsize_k=buf_k,
+                    cq=int(prof["crf"]),
+                    preset="p4" if q == "1080p" else "p3",
+                    for_cuda_frames=use_cuda_scale,
+                    caps=cuda_caps,
+                    include_profile_level=False,
+                )
+                if gpu_id is not None:
+                    cv_idx = nv_opts.index("-c:v")
+                    nv_opts.insert(cv_idx + 2, "-gpu")
+                    nv_opts.insert(cv_idx + 3, str(target_gpu))
+                c.extend(nv_opts)
             else:
                 c.extend([
                     "-c:v", "libx264",
@@ -3818,9 +4850,9 @@ async def generate_multi_quality_variants_ram(
                     "-maxrate", prof["maxrate"],
                     "-bufsize", prof["bufsize"],
                     "-threads", "0",
+                    "-pix_fmt", "yuv420p",
                 ])
             c.extend([
-                "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", prof["abitrate"],
                 "-ac", "2",
@@ -3830,34 +4862,54 @@ async def generate_multi_quality_variants_ram(
         return c, paths
 
     # Build ordered attempt strategies:
-    # 1. Burn + soft-sub (works on BtbN static FFmpeg with libass)
-    # 2. Soft-sub mov_text without burn (works on imageio_ffmpeg and builds without libass)
-    # 3. Clean video + audio without subtitle (guaranteed fallback if subtitle file is malformed)
-    strategies: list[tuple[str, bool, bool]] = []
+    # (enc_choice, burn_choice, soft_choice, allow_cuda_scale)
+    strategies: list[tuple[str, bool, bool, bool]] = []
+    has_cuda_sc = bool(hw_enc == "h264_nvenc" and cuda_caps.get("scale_cuda") and cuda_caps.get("hwaccel_cuda"))
     if hw_enc == "h264_nvenc":
         if has_sub:
-            strategies.append(("h264_nvenc", True, True))
-            strategies.append(("h264_nvenc", False, True))
-        strategies.append(("h264_nvenc", False, False))
+            strategies.append(("h264_nvenc", True, True, False))
+            if has_cuda_sc:
+                strategies.append(("h264_nvenc", False, True, True))
+            strategies.append(("h264_nvenc", False, True, False))
+        if has_cuda_sc:
+            strategies.append(("h264_nvenc", False, False, True))
+        strategies.append(("h264_nvenc", False, False, False))
         if has_sub:
-            strategies.append(("libx264", False, True))
-        strategies.append(("libx264", False, False))
+            strategies.append(("libx264", False, True, False))
+        strategies.append(("libx264", False, False, False))
     else:
         if has_sub:
-            strategies.append(("libx264", True, True))
-            strategies.append(("libx264", False, True))
-        strategies.append(("libx264", False, False))
+            strategies.append(("libx264", True, True, False))
+            strategies.append(("libx264", False, True, False))
+        strategies.append(("libx264", False, False, False))
 
     proc = None
     try:
-        for attempt_idx, (enc_choice, burn_choice, soft_choice) in enumerate(strategies):
-            cmd, out_paths = _build_multi_cmd(enc_choice, burn_choice, soft_choice)
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                cwd=abs_out_dir,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.PIPE,
-            )
+        for attempt_idx, (enc_choice, burn_choice, soft_choice, allow_cuda_sc) in enumerate(strategies):
+            gpu_ctx = None
+            gpu_dev = None
+            if enc_choice == "h264_nvenc" and allow_cuda_sc:
+                try:
+                    gpu_ctx = _GPU_POOL.acquire(timeout=3.0, weight=2)
+                    gpu_dev = await gpu_ctx.__aenter__()
+                except Exception:
+                    gpu_ctx = None
+                    gpu_dev = 0
+            try:
+                cmd, out_paths = _build_multi_cmd(enc_choice, burn_choice, soft_choice, gpu_id=gpu_dev, allow_cuda=allow_cuda_sc)
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    cwd=abs_out_dir,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+            except Exception:
+                if gpu_ctx:
+                    try:
+                        await gpu_ctx.__aexit__(None, None, None)
+                    except Exception:
+                        pass
+                raise
             time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
             last_pct = 0.0
             stderr_tail = collections.deque(maxlen=40)
@@ -3919,6 +4971,12 @@ async def generate_multi_quality_variants_ram(
                     except Exception:
                         pass
                 raise
+            finally:
+                if gpu_ctx:
+                    try:
+                        await gpu_ctx.__aexit__(None, None, None)
+                    except Exception:
+                        pass
 
             if proc and proc.returncode == 0:
                 for q, p in out_paths.items():

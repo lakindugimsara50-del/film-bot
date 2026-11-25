@@ -50,96 +50,168 @@ class TaskInfo:
 
 class TaskTracker:
     def __init__(self):
-        # user_id -> TaskInfo
+        # user_id -> TaskInfo (latest active task for /status compatibility)
         self._user_tasks: Dict[int, TaskInfo] = {}
+        # id(asyncio.Task) -> TaskInfo (isolates overlapping concurrent jobs cleanly)
+        self._task_infos: Dict[int, TaskInfo] = {}
         # user_id -> last finished TaskInfo
         self._user_last_tasks: Dict[int, TaskInfo] = {}
         # last finished task for global status reference
         self._last_task: Optional[TaskInfo] = None
 
+    @staticmethod
+    def _cur_task_id() -> Optional[int]:
+        try:
+            t = asyncio.current_task()
+            return id(t) if t is not None else None
+        except Exception:
+            return None
+
+    def _resolve_info(self, user_id: int) -> Optional[TaskInfo]:
+        tid = self._cur_task_id()
+        if tid is not None and tid in self._task_infos:
+            info = self._task_infos[tid]
+            if info.user_id == user_id:
+                return info
+        return self._user_tasks.get(user_id)
+
     def start_task(self, user_id: int, title: str, task: Optional[asyncio.Task] = None) -> TaskInfo:
-        task_id = f"task_{user_id}_{int(datetime.datetime.now().timestamp())}"
-        existing = self._user_tasks.get(user_id)
+        task_id = f"task_{user_id}_{int(datetime.datetime.now().timestamp() * 1000)}"
+        tid = id(task) if task is not None else self._cur_task_id()
+        existing = self._task_infos.get(tid) if (tid is not None and tid in self._task_infos) else None
+        if existing is None and task is None and tid is None:
+            existing = self._user_tasks.get(user_id)
         task_handle = task or (existing.task if existing else None)
         info = TaskInfo(task_id, user_id, title, task_handle)
-        if existing:
+        if existing and existing.user_id == user_id:
             info.task_key = existing.task_key
             info.temp_dir = existing.temp_dir
             info.cleanup_callbacks = list(existing.cleanup_callbacks)
+            for k, v in list(self._task_infos.items()):
+                if v is existing:
+                    self._task_infos[k] = info
         self._user_tasks[user_id] = info
+        if tid is not None:
+            self._task_infos[tid] = info
+        if task_handle is not None:
+            self._task_infos[id(task_handle)] = info
         log.info("Task started for user %s: %s (%s)", user_id, title, task_id)
         return info
 
     def set_task_handle(self, user_id: int, task: asyncio.Task) -> None:
-        if user_id in self._user_tasks:
-            self._user_tasks[user_id].task = task
+        info = self._resolve_info(user_id)
+        if info:
+            info.task = task
+            self._task_infos[id(task)] = info
+            cur_tid = self._cur_task_id()
+            if cur_tid is not None and cur_tid not in self._task_infos:
+                self._task_infos[cur_tid] = info
 
     def set_metadata(self, user_id: int, task_key: Optional[str] = None, temp_dir: Optional[str] = None) -> None:
-        if user_id in self._user_tasks:
+        info = self._resolve_info(user_id)
+        if info:
             if task_key:
-                self._user_tasks[user_id].task_key = task_key
+                info.task_key = task_key
             if temp_dir:
-                self._user_tasks[user_id].temp_dir = temp_dir
+                info.temp_dir = temp_dir
 
     def register_cleanup(self, user_id: int, callback) -> None:
-        if user_id in self._user_tasks:
-            self._user_tasks[user_id].cleanup_callbacks.append(callback)
+        info = self._resolve_info(user_id)
+        if info:
+            info.cleanup_callbacks.append(callback)
 
     def set_step(self, user_id: int, step: str) -> None:
-        if user_id in self._user_tasks:
-            self._user_tasks[user_id].step = step
-            log.info("Task step for user %s [%s]: %s", user_id, self._user_tasks[user_id].title, step)
+        info = self._resolve_info(user_id)
+        if info:
+            info.step = step
+            log.info("Task step for user %s [%s]: %s", user_id, info.title, step)
 
     def store_upload_results(self, user_id: int, results: Dict[str, Any], subtitle_url: Optional[str] = None) -> None:
-        if user_id in self._user_tasks:
-            self._user_tasks[user_id].upload_results = results
+        info = self._resolve_info(user_id)
+        if info:
+            info.upload_results = results
             if subtitle_url:
-                self._user_tasks[user_id].subtitle_url = subtitle_url
+                info.subtitle_url = subtitle_url
 
     def get_upload_results(self, user_id: int) -> Optional[Dict[str, Any]]:
-        if user_id in self._user_tasks:
-            return self._user_tasks[user_id].upload_results
+        info = self._resolve_info(user_id)
+        if info:
+            return info.upload_results
         if user_id in self._user_last_tasks:
             return self._user_last_tasks[user_id].upload_results
         return None
 
     def get_subtitle_url(self, user_id: int) -> Optional[str]:
-        if user_id in self._user_tasks:
-            return self._user_tasks[user_id].subtitle_url
+        info = self._resolve_info(user_id)
+        if info:
+            return info.subtitle_url
         if user_id in self._user_last_tasks:
             return self._user_last_tasks[user_id].subtitle_url
         return None
 
-    def complete_task(self, user_id: int) -> None:
-        if user_id in self._user_tasks:
-            info = self._user_tasks.pop(user_id)
-            info.status = TaskStatus.COMPLETED
+    def _finalize_task_info(self, user_id: int, status: str, error: Optional[str] = None) -> None:
+        tid = self._cur_task_id()
+        info = None
+        if tid is not None and tid in self._task_infos and self._task_infos[tid].user_id == user_id:
+            info = self._task_infos.pop(tid)
+        if info is None and user_id in self._user_tasks:
+            info = self._user_tasks.get(user_id)
+        if info is not None:
+            # Remove any task_infos referencing this TaskInfo
+            for k in [k for k, v in list(self._task_infos.items()) if v is info]:
+                self._task_infos.pop(k, None)
+            if self._user_tasks.get(user_id) is info:
+                self._user_tasks.pop(user_id, None)
+                # If another overlapping task for same user is still active, keep it in _user_tasks
+                for rem_info in self._task_infos.values():
+                    if rem_info.user_id == user_id and rem_info.status == TaskStatus.PROCESSING:
+                        self._user_tasks[user_id] = rem_info
+                        break
+            info.status = status
             info.end_time = datetime.datetime.now()
+            if error is not None:
+                info.error = error
             self._last_task = info
             self._user_last_tasks[user_id] = info
-            log.info("Task completed for user %s: %s", user_id, info.title)
+            if status == TaskStatus.COMPLETED:
+                log.info("Task completed for user %s: %s", user_id, info.title)
+            else:
+                log.error("Task failed for user %s: %s, error: %s", user_id, info.title, error)
+
+    def complete_task(self, user_id: int) -> None:
+        self._finalize_task_info(user_id, TaskStatus.COMPLETED)
 
     def fail_task(self, user_id: int, error: str) -> None:
-        if user_id in self._user_tasks:
-            info = self._user_tasks.pop(user_id)
-            info.status = TaskStatus.FAILED
-            info.end_time = datetime.datetime.now()
-            info.error = error
-            self._last_task = info
-            self._user_last_tasks[user_id] = info
-            log.error("Task failed for user %s: %s, error: %s", user_id, info.title, error)
+        self._finalize_task_info(user_id, TaskStatus.FAILED, error=error)
 
     def cancel_task(self, user_id: Optional[int] = None) -> bool:
-        """Cancel active task for user_id (or any active task if user_id is None). Returns True if a task was actively cancelled."""
-        target_info = None
-        if user_id is not None and user_id in self._user_tasks:
-            target_info = self._user_tasks.pop(user_id)
-        elif user_id is None and self._user_tasks:
-            target_info = self._user_tasks.pop(next(iter(self._user_tasks)))
+        """Cancel active task(s) for user_id (or any active user if user_id is None). Returns True if actively cancelled."""
+        target_uid = user_id
+        if target_uid is None:
+            if self._user_tasks:
+                target_uid = next(iter(self._user_tasks))
+            elif self._task_infos:
+                target_uid = next(iter(self._task_infos.values())).user_id
+
+        targets_to_cancel: list[TaskInfo] = []
+        seen_ids: set[int] = set()
+
+        if target_uid is not None and target_uid in self._user_tasks:
+            primary_info = self._user_tasks.pop(target_uid)
+            seen_ids.add(id(primary_info))
+            targets_to_cancel.append(primary_info)
+
+        if target_uid is not None:
+            for tid, info in list(self._task_infos.items()):
+                if info.user_id == target_uid:
+                    self._task_infos.pop(tid, None)
+                    if id(info) not in seen_ids:
+                        seen_ids.add(id(info))
+                        targets_to_cancel.append(info)
 
         was_cancelled = False
 
-        if target_info:
+        for target_info in targets_to_cancel:
             target_info.status = TaskStatus.CANCELLED
             target_info.end_time = datetime.datetime.now()
             self._last_task = target_info

@@ -1109,6 +1109,12 @@
                 <i class="fa-solid fa-lock"></i>
               </button>
               <input type="text" class="wp-chat-input" id="wp-chat-input" placeholder="Send a message..." autocomplete="off">
+              <button type="button" class="wp-btn-smiley wp-btn-quick-media ${this.isMicOn ? 'active' : ''}" id="wp-quick-mic" title="Mic ON / OFF (M)" aria-label="Toggle Microphone">
+                <i class="fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+              </button>
+              <button type="button" class="wp-btn-smiley wp-btn-quick-media ${this.isCamOn ? 'active' : ''}" id="wp-quick-cam" title="Camera ON / OFF (V)" aria-label="Toggle Camera">
+                <i class="fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}"></i>
+              </button>
               <button type="submit" class="wp-btn-send" id="wp-btn-send" aria-label="Send message">
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
@@ -1189,14 +1195,22 @@
       }
       this.updateChatPopupsUI();
 
-      // Wire Mic & Cam inside Party Controls Popover
+      // Wire Mic & Cam inside Party Controls Popover & Quick Message Bar
       const wpMicBtn = container.querySelector('#wp-btn-mic');
       if (wpMicBtn) {
         wpMicBtn.addEventListener('click', () => this.toggleMic());
       }
+      const quickMicBtn = container.querySelector('#wp-quick-mic');
+      if (quickMicBtn) {
+        quickMicBtn.addEventListener('click', () => this.toggleMic());
+      }
       const wpCamBtn = container.querySelector('#wp-btn-cam');
       if (wpCamBtn) {
         wpCamBtn.addEventListener('click', () => this.toggleCam());
+      }
+      const quickCamBtn = container.querySelector('#wp-quick-cam');
+      if (quickCamBtn) {
+        quickCamBtn.addEventListener('click', () => this.toggleCam());
       }
       this.updateMediaControlsUI();
 
@@ -1824,23 +1838,22 @@
     }
 
     updateMediaControlsUI() {
-      const wpMic = document.getElementById('wp-btn-mic');
-      if (wpMic) {
-        wpMic.classList.toggle('active', this.isMicOn);
-        const icon = wpMic.querySelector('i');
-        if (icon) icon.className = `fa-solid ${this.isMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`;
-        const lbl = wpMic.querySelector('#wp-mic-label') || wpMic.querySelector('.wp-media-label');
-        if (lbl) lbl.textContent = this.isMicOn ? 'ON' : 'OFF';
-      }
+      const syncBtn = (btnId, lblId, isOn, onIcon, offIcon) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.classList.toggle('active', isOn);
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = `fa-solid ${isOn ? onIcon : offIcon}`;
+        if (lblId) {
+          const lbl = btn.querySelector(`#${lblId}`) || btn.querySelector('.wp-media-label');
+          if (lbl) lbl.textContent = isOn ? 'ON' : 'OFF';
+        }
+      };
 
-      const wpCam = document.getElementById('wp-btn-cam');
-      if (wpCam) {
-        wpCam.classList.toggle('active', this.isCamOn);
-        const icon = wpCam.querySelector('i');
-        if (icon) icon.className = `fa-solid ${this.isCamOn ? 'fa-video' : 'fa-video-slash'}`;
-        const lbl = wpCam.querySelector('#wp-cam-label') || wpCam.querySelector('.wp-media-label');
-        if (lbl) lbl.textContent = this.isCamOn ? 'ON' : 'OFF';
-      }
+      syncBtn('wp-btn-mic', 'wp-mic-label', this.isMicOn, 'fa-microphone', 'fa-microphone-slash');
+      syncBtn('wp-quick-mic', null, this.isMicOn, 'fa-microphone', 'fa-microphone-slash');
+      syncBtn('wp-btn-cam', 'wp-cam-label', this.isCamOn, 'fa-video', 'fa-video-slash');
+      syncBtn('wp-quick-cam', null, this.isCamOn, 'fa-video', 'fa-video-slash');
 
       const controlsDot = document.getElementById('wp-controls-dot');
       if (controlsDot) {

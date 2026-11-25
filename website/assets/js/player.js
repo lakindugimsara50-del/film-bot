@@ -227,7 +227,7 @@ let currentEpisode = 1;
 
 const QUALITY_LADDER = ['1080p', '720p', '480p'];
 let selectedQuality = (function() { try { return sessionStorage.getItem('filmsub_pref_quality') || 'auto'; } catch(e) { return 'auto'; } })();
-let currentEffectiveQuality = '720p';
+let currentEffectiveQuality = '1080p';
 let liveSubEnabled = true;
 let liveSubOffsetSec = 0.0;
 let liveSubTimer = null;
@@ -815,9 +815,9 @@ function prewarmQualityTier(movie, quality) {
 
 function prewarmAllVariants(movie) {
   if (!movie) return;
-  prewarmQualityTier(movie, '720p');
-  setTimeout(() => prewarmQualityTier(movie, '480p'), 80);
-  setTimeout(() => prewarmQualityTier(movie, '1080p'), 160);
+  prewarmQualityTier(movie, '1080p');
+  setTimeout(() => prewarmQualityTier(movie, '720p'), 80);
+  setTimeout(() => prewarmQualityTier(movie, '480p'), 180);
 }
 
 // ── Helper: Locate exact episode catalog entry for a TV Series ──
@@ -1422,12 +1422,12 @@ function getMovieStreams(movie) {
   const vm = effectiveMovie.variant_media || (effectiveMovie.movie_entry && effectiveMovie.movie_entry.variant_media);
   if (vm && typeof vm === 'object') {
     const isValidV = v => Boolean(v && ((typeof v.message_id === 'number' && v.message_id > 0) || (v.stream_url && !v.stream_url.includes('/0')) || v.file_id));
-    const qKey = (currentEffectiveQuality || '720p').toLowerCase();
+    const qKey = (currentEffectiveQuality || '1080p').toLowerCase();
     let vOpt = null;
     if (isValidV(vm[qKey])) {
       vOpt = vm[qKey];
     } else {
-      const candidates = ['720p', '480p', '1080p'];
+      const candidates = ['1080p', '720p', '480p'];
       for (const q of candidates) {
         if (isValidV(vm[q])) {
           vOpt = vm[q];
@@ -2052,7 +2052,7 @@ function renderServerTabs(movie) {
 function detectNetworkSpeed() {
   const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''));
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  const apiDownlink = (conn && typeof conn.downlink === 'number' && conn.downlink > 0) ? conn.downlink : 5;
+  const apiDownlink = (conn && typeof conn.downlink === 'number' && conn.downlink > 0) ? conn.downlink : 10;
   const effectiveType = (conn && conn.effectiveType) ? conn.effectiveType : '4g';
   const saveData = Boolean(conn && conn.saveData);
   const effMbps = getEffectiveDownloadMbps() || apiDownlink;
@@ -2060,11 +2060,12 @@ function detectNetworkSpeed() {
   if (saveData || effectiveType === '2g' || effectiveType === 'slow-2g' || effMbps < 1.8 || (effectiveType === '3g' && effMbps < 2.5)) {
     return { speed: 'slow', downlink: effMbps, effectiveType, recommendedQuality: '480p' };
   }
-  if (_measuredMbps > 0 ? _measuredMbps >= 5.5 : apiDownlink >= 25.0) {
+  // Chrome/Edge/Brave cap navigator.connection.downlink at 10 Mbps; prioritize 1080p Full HD on fast 4G/broadband
+  if (_measuredMbps > 0 ? _measuredMbps >= 4.2 : (!saveData && effectiveType === '4g' && apiDownlink >= 4.5)) {
     return { speed: 'fast', downlink: effMbps, effectiveType, recommendedQuality: '1080p' };
   }
   if (!conn && _measuredMbps <= 0) {
-    return { speed: isMobile ? 'medium' : 'fast', downlink: 5, effectiveType: '4g', recommendedQuality: '720p' };
+    return { speed: isMobile ? 'medium' : 'fast', downlink: 10, effectiveType: '4g', recommendedQuality: isMobile ? '720p' : '1080p' };
   }
   return { speed: 'medium', downlink: effMbps, effectiveType, recommendedQuality: '720p' };
 }
@@ -2156,7 +2157,7 @@ function resolveStreamUrlForQuality(movie, quality) {
     } else if (isValidV(vm[quality])) {
       vEntry = vm[quality];
     } else {
-      const candidates = ['720p', '480p', '1080p'];
+      const candidates = ['1080p', '720p', '480p'];
       for (const q of candidates) {
         if (isValidV(vm[q])) {
           vEntry = vm[q];
@@ -2926,9 +2927,9 @@ function attachAdaptiveStallMonitor(player) {
       if (!player || hasEverPlayed || player.paused()) return;
       const rState = typeof player.readyState === 'function' ? player.readyState() : 0;
       if (rState < 3 && currentEffectiveQuality !== '480p' && selectedQuality === 'auto') {
-        triggerStepDownIfNeeded({ force: true, reason: 'slow-startup-5.5s' });
+        triggerStepDownIfNeeded({ force: true, reason: 'slow-startup-8.5s' });
       }
-    }, 5500);
+    }, 8500);
   });
 
   player.on('seeking', () => {

@@ -4014,3 +4014,44 @@
   width: 100%;
   margin-top: 6px;
 }
+
+/* Quick Mic & Camera Buttons Inline With Chat Input Bar */
+.wp-chat-input-bar {
+  gap: 5px !important;
+}
+
+.wp-chat-input-bar .wp-btn-smiley {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 12.5px !important;
+}
+
+.wp-chat-input-bar .wp-chat-input {
+  min-width: 0 !important;
+  padding: 6px 10px !important;
+  font-size: 12.5px !important;
+}
+
+.wp-chat-input-bar .wp-btn-send {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 12px !important;
+}
+
+.wp-btn-quick-media {
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.wp-btn-quick-media:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.wp-btn-quick-media.active {
+  background: #e50914 !important;
+  border-color: rgba(255, 71, 87, 0.85) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.45) !important;
+}

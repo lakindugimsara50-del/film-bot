@@ -6207,7 +6207,7 @@ main > .section:first-of-type {
 }
 
 .video-js video {
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 /* CineSubz Signature Standby Player Overlay (Clear Movie Backdrop) */

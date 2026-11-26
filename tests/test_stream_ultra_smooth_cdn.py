@@ -441,7 +441,7 @@ def test_player_js_syntax_helpers_and_contracts():
     assert "attachSeekPrewarmEngine" in player_txt
     assert "fz-shadow-handover" in player_txt
     assert "vjs-fz-seamless-switching" in css_txt
-    assert "v=20261125_cinema_v68" in movie_txt
+    assert "v=20261126_cinema_v69" in movie_txt
 
     # Mobile responsive & auto-refresh regression contracts
     app_path = _ROOT / "website" / "assets" / "js" / "app.js"
@@ -544,3 +544,25 @@ console.log('PLAYER_HELPERS_OK');
     res = subprocess.run(["node", "-e", vm_test, str(player_path)], capture_output=True, text=True)
     assert res.returncode == 0, f"Player VM test failed:\nSTDOUT:{res.stdout}\nSTDERR:{res.stderr}"
     assert "PLAYER_HELPERS_OK" in res.stdout
+
+
+def test_mobile_hero_banner_gpu_and_memory_protections():
+    """Ensures hero banner never loads 4K textures, runs hidden blur loops, or leaks compositor layers on mobile."""
+    app_js = (_ROOT / "website" / "assets" / "js" / "app.js").read_text(encoding="utf-8")
+    style_css = (_ROOT / "website" / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+
+    # 1. Hero 3D card deck and preloader must use viewport-aware sizing
+    assert "const backdrop = optimizeTmdbImageForViewport(rawBackdrop, true);" in app_js
+    assert "const src = optimizeTmdbImageForViewport(rawSrc, true);" in app_js
+    assert "ensureHeroViewportObserver" in app_js
+    assert "void mainEl.offsetWidth" not in app_js
+    assert "void infoMain.offsetWidth" not in app_js
+
+    # 2. Mobile CSS must hide heavy viewport blurs, expanded-mode hidden 3D deck & watermark animations
+    assert "#hero-section.is-expanded-mode .hero-3d-deck-wrap" in style_css
+    assert "#hero-section.is-expanded-mode .hero-stage-watermark" in style_css
+    assert "#hero-section .hero-stage-spotlight" in style_css
+    assert "#hero-section .hero-ambient-glow" in style_css
+    assert "#hero-section .hero-watermark-word" in style_css
+    assert "transform-style: flat !important;" in style_css
+

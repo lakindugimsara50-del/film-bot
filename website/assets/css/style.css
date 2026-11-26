@@ -12588,9 +12588,53 @@ body.cinema-drawer-lock {
     contain-intrinsic-size: auto !important;
   }
   .cs-movie-details-section::before,
-  .cs-details-backdrop-glow {
+  .cs-details-backdrop-glow,
+  #hero-section .hero-stage-spotlight,
+  #hero-section .hero-stage-glow,
+  #hero-section .hero-ambient-glow,
+  #hero-section .hero-watermark-emblem-sheen,
+  #hero-section.is-expanded-mode .hero-3d-deck-wrap,
+  #hero-section.is-expanded-mode .hero-stage-watermark {
     display: none !important;
   }
+  #hero-section .hero-stage-watermark,
+  #hero-section .hero-fs-backdrop-wrap,
+  #hero-section .hero-showcase-container,
+  #hero-section .hero-3d-deck-wrap,
+  #hero-section .hero-3d-deck-stage,
+  #hero-section .hero-3d-card,
+  #hero-section .hero-bg-layer,
+  #hero-section .hero-backdrop,
+  #hero-section .hero-content,
+  #hero-section .hero-video-wrap {
+    will-change: auto !important;
+  }
+  #hero-section .hero-watermark-flank,
+  #hero-section .hero-3d-deck-stage,
+  #hero-section .hero-3d-card {
+    transform-style: flat !important;
+  }
+  #hero-section .hero-watermark-word,
+  #hero-section .hero-watermark-word::before,
+  #hero-section .hero-watermark-logo,
+  #hero-section .hero-btn-watch,
+  #hero-section .hero-showcase-main.hero-info-enter,
+  #hero-section .hero-bg-layer.animating {
+    animation: none !important;
+  }
+  #hero-section .hero-watermark-word,
+  #hero-section .hero-watermark-word::before,
+  #hero-section .hero-watermark-logo,
+  #hero-section .hero-3d-card {
+    filter: none !important;
+  }
+  #hero-section .hero-watermark-bubble-pod,
+  #hero-section .hero-watermark-subline,
+  #hero-section .hero-watermark-emblem-wrap,
+  #hero-section .hero-watermark-tagline,
+  #hero-section .btn-hero-trailer,
+  #hero-section .btn-hero-download,
+  #hero-section .hero-3d-card-badge,
   .badge-top-left,
   .badge-card-new,
   .badge-card-type,
@@ -12605,6 +12649,13 @@ body.cinema-drawer-lock {
   .toast {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+  #hero-section .btn-hero-trailer,
+  #hero-section .btn-hero-download {
+    background: rgba(18, 18, 26, 0.88) !important;
+  }
+  #hero-section .hero-fs-title {
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85) !important;
   }
   .badge-top-left,
   .badge-top-right {

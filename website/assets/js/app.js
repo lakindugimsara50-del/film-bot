@@ -1120,18 +1120,21 @@ function updateDeckToggleBtn(mode) {
 
 function buildHero3DCardsHTML() {
   const total = heroShowcaseMovies.length;
+  const isMob = typeof window !== 'undefined' && window.innerWidth <= 768;
   return heroShowcaseMovies.map((movie, idx) => {
-    const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+    const rawBackdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+    const backdrop = optimizeTmdbImageForViewport(rawBackdrop, true);
     const rel = (idx - heroShowcaseCurrent + total) % total;
     const slotClass = rel < 6 ? `slot-${rel}` : 'slot-hidden';
     const yr = movie.year || '';
     const qLabel = formatQualityLabel(movie.quality);
     const rating = movie.imdb || movie.rating || '8.2';
+    const loadMode = (!isMob && idx < 2) ? 'eager' : 'lazy';
 
     return `
       <div class="hero-3d-card ${slotClass}${rel === 0 ? ' is-active' : ''}" data-idx="${idx}">
         <div class="hero-3d-card-inner">
-          <img src="${FilmSub.escHtml(backdrop)}" class="hero-3d-card-img" alt="${FilmSub.escHtml(movie.title || '')}" loading="${idx < 2 ? 'eager' : 'lazy'}" decoding="async">
+          <img src="${FilmSub.escHtml(backdrop)}" class="hero-3d-card-img" alt="${FilmSub.escHtml(movie.title || '')}" loading="${loadMode}" decoding="async">
           <div class="hero-3d-card-grad"></div>
           <div class="hero-3d-card-top-row">
             <span class="hero-3d-card-badge">${idx + 1}</span>
@@ -1159,6 +1162,9 @@ function bindHeroCardClicks(stage) {
 }
 
 function assignHeroSlotClasses() {
+  const section = document.getElementById('hero-section');
+  const isMobExpanded = typeof window !== 'undefined' && window.innerWidth <= 768 && section && section.classList.contains('is-expanded-mode');
+  if (isMobExpanded) return;
   const stage = document.getElementById('hero-3d-deck-stage') || document.getElementById('hero-cards-deck');
   if (!stage) return;
   const len = heroShowcaseMovies.length;
@@ -1178,16 +1184,46 @@ function updateHeroNavCounter() {
   }
 }
 
+let heroViewportObserver = null;
+let heroIsInViewport = true;
+
+function getHeroCycleDuration() {
+  return (typeof window !== 'undefined' && window.innerWidth <= 768) ? 8000 : HERO_FS_DURATION;
+}
+
+function ensureHeroViewportObserver(sectionEl) {
+  const section = sectionEl || document.getElementById('hero-section');
+  if (!section || heroViewportObserver || typeof IntersectionObserver === 'undefined') return;
+  heroViewportObserver = new IntersectionObserver((entries) => {
+    const entry = entries[0];
+    if (!entry) return;
+    const wasVisible = heroIsInViewport;
+    heroIsInViewport = entry.isIntersecting;
+    if (!heroIsInViewport) {
+      clearAllHeroTimers();
+      stopProgressBar();
+    } else if (!wasVisible && document.visibilityState === 'visible') {
+      const cycleMs = getHeroCycleDuration();
+      startProgressBar(cycleMs);
+      scheduleCycleAfter(cycleMs, ++heroCycleToken);
+    }
+  }, { threshold: 0.05 });
+  heroViewportObserver.observe(section);
+}
+
 function preloadHeroImage(idx) {
+  ensureHeroViewportObserver();
   if (!heroShowcaseMovies || heroShowcaseMovies.length === 0) return;
   const movie = heroShowcaseMovies[idx % heroShowcaseMovies.length];
   if (!movie) return;
-  const src = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url;
+  const rawSrc = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url;
+  const src = optimizeTmdbImageForViewport(rawSrc, true);
   if (src && typeof Image !== 'undefined') {
     const img = new Image();
     img.decoding = 'async';
     img.src = src;
-    if (img.decode) {
+    const isMob = typeof window !== 'undefined' && window.innerWidth <= 768;
+    if (!isMob && img.decode) {
       img.decode().catch(() => {});
     }
   }
@@ -1265,11 +1301,15 @@ function advanceHeroShowcase(token) {
 
   const section = document.getElementById('hero-section');
   if (!section) return;
+  ensureHeroViewportObserver(section);
+  if (!heroIsInViewport || document.visibilityState !== 'visible') return;
 
   const len = heroShowcaseMovies.length;
   if (len < 2) return;
 
   const nextIdx = (heroShowcaseCurrent + 1) % len;
+  const isMob = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const cycleMs = getHeroCycleDuration();
 
   // CINEMATIC FULLSCREEN VIDEO CROSSFADE:
   // When in Fullscreen mode, smoothly crossfade directly to the next movie!
@@ -1283,14 +1323,13 @@ function advanceHeroShowcase(token) {
     preloadHeroImage((nextIdx + 1) % len);
 
     const mainEl = document.querySelector('.hero-showcase-main');
-    if (mainEl) {
+    if (mainEl && !isMob) {
       mainEl.classList.remove('hero-info-enter');
-      void mainEl.offsetWidth;
-      mainEl.classList.add('hero-info-enter');
+      requestAnimationFrame(() => mainEl.classList.add('hero-info-enter'));
     }
 
-    startProgressBar(HERO_FS_DURATION);
-    scheduleCycleAfter(HERO_FS_DURATION, currentToken);
+    startProgressBar(cycleMs);
+    scheduleCycleAfter(cycleMs, currentToken);
     return;
   }
 
@@ -1674,9 +1713,9 @@ function updateHeroContent(movie) {
     }
   }
 
-  // Restart text animation without layout thrashing
+  // Restart text animation without layout thrashing on desktop; keep flat on mobile
   const mainInfo = document.getElementById('hero-showcase-main');
-  if (mainInfo) {
+  if (mainInfo && !(typeof window !== 'undefined' && window.innerWidth <= 768)) {
     mainInfo.classList.remove('hero-info-enter');
     requestAnimationFrame(() => {
       mainInfo.classList.add('hero-info-enter');
@@ -1724,7 +1763,8 @@ function renderHero(targetMovie, forcedIdx) {
   }
 
   // Smooth Backdrop Crossfade
-  const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+  const rawBackdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+  const backdrop = optimizeTmdbImageForViewport(rawBackdrop, true);
   const backdropEl = document.getElementById('hero-backdrop');
   const bufferEl = document.getElementById('hero-backdrop-buffer');
 
@@ -1741,9 +1781,10 @@ function renderHero(targetMovie, forcedIdx) {
     backdropEl.style.opacity = '1';
   }
 
-  // Dynamic theme color extraction from poster
-  const colorSrc = movie.poster || movie.poster_url || movie.backdrop || backdrop;
-  if (colorSrc && colorSrc.startsWith('http')) {
+  // Dynamic theme color extraction from poster (skip external hosts without CORS)
+  const rawColorSrc = movie.poster || movie.poster_url || movie.backdrop || backdrop;
+  const colorSrc = optimizeTmdbImageForViewport(rawColorSrc, false);
+  if (colorSrc && colorSrc.startsWith('http') && !colorSrc.includes('image.tmdb.org')) {
     extractDominantColor(colorSrc, function(color) {
       if (color) {
         applyDynamicTheme(color.r, color.g, color.b);
@@ -1761,7 +1802,7 @@ function renderHero(targetMovie, forcedIdx) {
   // Update hero right poster
   const heroPosterEl = document.getElementById('hero-poster-thumb');
   if (heroPosterEl) {
-    const posterSrc = movie.poster || movie.poster_url || '';
+    const posterSrc = optimizeTmdbImageForViewport(movie.poster || movie.poster_url || '', false);
     if (posterSrc) {
       heroPosterEl.src = posterSrc;
       heroPosterEl.style.display = '';
@@ -1836,12 +1877,13 @@ function renderHero(targetMovie, forcedIdx) {
     }
   }
 
-  // Re-trigger text slide-in animation smoothly on each slide transition
+  // Re-trigger text slide-in animation smoothly on desktop without forced synchronous reflow
   const infoMain = document.querySelector('.hero-info-main');
-  if (infoMain) {
+  if (infoMain && !(typeof window !== 'undefined' && window.innerWidth <= 768)) {
     infoMain.style.animation = 'none';
-    void infoMain.offsetWidth; // Force CSS reflow
-    infoMain.style.animation = '';
+    requestAnimationFrame(() => {
+      infoMain.style.animation = '';
+    });
   }
 
   // Update Apple TV+ indicator dots

@@ -28,15 +28,23 @@ const GITHUB_ENDPOINT_JSON =
   'https://raw.githubusercontent.com/lakindugimsara50-del/film-bot/main/website/data/stream_endpoint.json';
 
 const EDGE_INITIAL_CHUNK_BYTES = 8 * 1024 * 1024; // 8 MiB initial chunk (moov atom + first video frames)
+const EDGE_BLOCK_BYTES = 4 * 1024 * 1024;         // 4 MiB aligned edge block cache across full movie
 const CANONICAL_CACHE_ORIGIN = 'https://filmsub.pages.dev';
 
 const DEFAULT_FALLBACK_TUNNEL = '';
-const DEFAULT_FALLBACK_RENDER = '';
+const DEFAULT_FALLBACK_RENDER = 'https://film-bot-2.onrender.com';
 
 let cachedStreamBaseUrl = '';
-let cachedFallbackBaseUrl = '';
+let cachedFallbackBaseUrl = DEFAULT_FALLBACK_RENDER;
 let cachedAtEpoch = 0;
-const CACHE_TTL_MS = 60000;
+const CACHE_TTL_MS = 15000;
+
+function getBlockCacheKey(chatId, msgId, blockStart) {
+  return new Request(
+    `${CANONICAL_CACHE_ORIGIN}/__edge_stream_cache/v3/${encodeURIComponent(chatId)}/${encodeURIComponent(msgId)}/blk_${blockStart}`,
+    { method: 'GET' }
+  );
+}
 
 function buildCorsHeaders() {
   return {
@@ -293,8 +301,9 @@ export async function onRequest(context) {
                      isDownloaderUA;
 
   // Suffix ranges (bytes=-N) must not match the initial 0-8MB chunk
-  // For file downloads (dl=1 without range), do NOT constrain to initial 8MB chunk
+  // Initial range ONLY rewrites open/zero-start requests; never rewrite clientStart > 0 into byte 0!
   const isInitialRange = !isDownload && suffixBytes === null && (clientStart === null || clientStart < EDGE_INITIAL_CHUNK_BYTES);
+  const isZeroStartInitial = !isDownload && suffixBytes === null && (clientStart === null || clientStart === 0);
   const isBoundedProbe = isInitialRange && clientStart === 0 && clientEnd !== null && (clientEnd - clientStart + 1) <= 2 * 1024 * 1024;
 
   // ── 1. Cloudflare Edge Cache Lookup (caches.default) ────────────────────────
@@ -318,7 +327,6 @@ export async function onRequest(context) {
 
         // Fast-path: Open-ended requests (bytes=0- or no range):
         // Deliver initial 8MB chunk directly from Cloudflare Edge Cache in <20ms
-        // Browser reads moov atom and GOPs immediately, then sends subsequent byte-range requests
         if (!isDownload && (clientStart === null || clientStart === 0) && clientEnd === null) {
           const chunkLenNum = parseInt(cachedHit.headers.get('Content-Length') || String(EDGE_INITIAL_CHUNK_BYTES), 10);
           outHeaders.set('Content-Length', String(chunkLenNum));
@@ -332,7 +340,7 @@ export async function onRequest(context) {
         const cachedBuffer = new Uint8Array(await cachedHit.arrayBuffer());
         if (cachedBuffer && cachedBuffer.byteLength > 0) {
           const effectiveStart = clientStart !== null ? clientStart : 0;
-          if (effectiveStart < cachedBuffer.byteLength) {
+          if (effectiveStart < cachedBuffer.byteLength && (clientEnd === null || clientEnd < cachedBuffer.byteLength)) {
             const effectiveEnd = (clientEnd !== null)
               ? Math.min(clientEnd, cachedBuffer.byteLength - 1)
               : (cachedBuffer.byteLength - 1);
@@ -349,6 +357,42 @@ export async function onRequest(context) {
         }
       }
     } catch (cErr) {}
+  }
+
+  // Check full-movie 4 MiB aligned Cloudflare Edge Block Cache for middle/sequential ranges
+  const blkStart = (!isDownload && suffixBytes === null && clientStart !== null && clientStart >= EDGE_INITIAL_CHUNK_BYTES)
+    ? Math.floor(clientStart / EDGE_BLOCK_BYTES) * EDGE_BLOCK_BYTES
+    : -1;
+  const blockCacheKey = (edgeCache && blkStart >= EDGE_INITIAL_CHUNK_BYTES)
+    ? getBlockCacheKey(chatId, msgId, blkStart)
+    : null;
+
+  if (edgeCache && blockCacheKey && !isDownload && request.method === 'GET') {
+    try {
+      const blkHit = await edgeCache.match(blockCacheKey);
+      if (blkHit) {
+        const totalSize = blkHit.headers.get('X-Total-Size') || '*';
+        const contentType = blkHit.headers.get('Content-Type') || 'video/mp4';
+        const blkBuf = new Uint8Array(await blkHit.arrayBuffer());
+        const offsetInBlk = clientStart - blkStart;
+        if (blkBuf.byteLength > offsetInBlk) {
+          const maxAvailEnd = blkStart + blkBuf.byteLength - 1;
+          if (clientEnd === null || clientEnd <= maxAvailEnd) {
+            const effEnd = clientEnd !== null ? Math.min(clientEnd, maxAvailEnd) : maxAvailEnd;
+            const slice = blkBuf.subarray(offsetInBlk, effEnd - blkStart + 1);
+            const outHeaders = new Headers(corsHeaders);
+            outHeaders.set('Content-Type', contentType);
+            outHeaders.set('Accept-Ranges', 'bytes');
+            outHeaders.set('X-Edge-Cache', 'HIT-BLOCK');
+            outHeaders.set('X-Accel-Buffering', 'no');
+            outHeaders.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+            outHeaders.set('Content-Length', String(slice.byteLength));
+            outHeaders.set('Content-Range', `bytes ${clientStart}-${clientStart + slice.byteLength - 1}/${totalSize}`);
+            return new Response(slice, { status: 206, headers: outHeaders });
+          }
+        }
+      }
+    } catch (bErr) {}
   }
 
   // ── 2. Upstream Backend Resolution & Proxying ───────────────────────────────
@@ -448,7 +492,7 @@ export async function onRequest(context) {
       upstreamHeaders['X-Download'] = '1';
     }
 
-    if (isInitialRange) {
+    if (isZeroStartInitial) {
       if (isBoundedProbe && rangeHeader) {
         // Request only the small probe slice from upstream to respond in <300ms
         upstreamHeaders['Range'] = rangeHeader;
@@ -457,20 +501,21 @@ export async function onRequest(context) {
         upstreamHeaders['Range'] = `bytes=0-${EDGE_INITIAL_CHUNK_BYTES - 1}`;
       }
     } else if (rangeHeader) {
+      // STRICT RFC 7233: preserve exact client Range offset when clientStart > 0!
       upstreamHeaders['Range'] = rangeHeader;
     }
 
     const abortCtrl = new AbortController();
     const tId = setTimeout(() => {
       try { abortCtrl.abort(); } catch (e) {}
-    }, 7000);
+    }, 28000);
     const combinedSignal = (request.signal && typeof AbortSignal.any === 'function')
       ? AbortSignal.any([request.signal, abortCtrl.signal])
       : abortCtrl.signal;
 
     try {
       const upstreamRes = await fetch(targetUrl, {
-        method: request.method === 'HEAD' && !isInitialRange ? 'HEAD' : 'GET',
+        method: request.method === 'HEAD' && !isZeroStartInitial ? 'HEAD' : 'GET',
         headers: upstreamHeaders,
         redirect: 'follow',
         signal: combinedSignal,
@@ -496,8 +541,8 @@ export async function onRequest(context) {
       const contentRange = upstreamRes.headers.get('Content-Range');
       const responseBody = upstreamRes.body;
 
-      // ── Handle Initial Range (0-8MB) on Cache MISS ──
-      if (isInitialRange && (upstreamRes.status === 206 || upstreamRes.status === 200)) {
+      // ── Handle Zero-Start Initial Range (0-8MB) on Cache MISS ──
+      if (isZeroStartInitial && (upstreamRes.status === 206 || upstreamRes.status === 200)) {
         let totalSize = '*';
         if (contentRange) {
           const m = contentRange.match(/bytes\s+\d+-\d+\/(\d+|\*)/);
@@ -563,6 +608,59 @@ export async function onRequest(context) {
           return new Response(null, { status: 206, headers: outHeaders });
         }
         return new Response(clientStream, { status: 206, headers: outHeaders });
+      }
+
+      // If client requested a non-zero offset inside 0-8MB while cache missed,
+      // background-prime initial 0-8MB chunk without altering the client's exact range response!
+      if (isInitialRange && !isZeroStartInitial && edgeCache) {
+        primeEdgeCacheInBackground(urlsToTry);
+      }
+
+      // Cache 4 MiB aligned mid-movie blocks cleanly via .tee() when upstream aligns on blkStart
+      if (
+        edgeCache &&
+        blockCacheKey &&
+        clientStart === blkStart &&
+        request.method === 'GET' &&
+        (upstreamRes.status === 206 || upstreamRes.status === 200) &&
+        responseBody
+      ) {
+        let totalSize = '*';
+        if (contentRange) {
+          const m = contentRange.match(/bytes\s+\d+-\d+\/(\d+|\*)/);
+          if (m) totalSize = m[1];
+        }
+        const [clientStream, blkCacheStream] = responseBody.tee();
+        const blkCacheTask = async () => {
+          try {
+            const blkBuf = await readExactBytes(blkCacheStream, 0, EDGE_BLOCK_BYTES, false);
+            if (blkBuf && blkBuf.byteLength > 0) {
+              await edgeCache.put(
+                blockCacheKey,
+                new Response(blkBuf, {
+                  status: 200,
+                  headers: {
+                    'Content-Type': contentType,
+                    'Content-Length': String(blkBuf.byteLength),
+                    'X-Total-Size': String(totalSize),
+                    'Cache-Control': 'public, max-age=604800, s-maxage=604800',
+                  },
+                })
+              );
+            }
+          } catch (e) {}
+        };
+        if (context.waitUntil && typeof context.waitUntil === 'function') {
+          context.waitUntil(blkCacheTask());
+        } else {
+          blkCacheTask().catch(() => {});
+        }
+        outHeaders.set('X-Edge-Cache', 'MISS-BLOCK-STREAMING');
+        outHeaders.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+        if (contentRange && rangeHeader) outHeaders.set('Content-Range', contentRange);
+        const upLen = upstreamRes.headers.get('Content-Length');
+        if (upLen) outHeaders.set('Content-Length', upLen);
+        return new Response(clientStream, { status: upstreamRes.status, headers: outHeaders });
       }
 
       // ── Handle Subsequent/Seeking Ranges (past 8MB or suffix ranges) ──

@@ -289,6 +289,9 @@ def test_cloudflare_edge_range_alignment_block_cache_and_identical_download():
 
     assert chan_path.read_text(encoding="utf-8") == dl_path.read_text(encoding="utf-8")
     for p in (chan_path, dl_path, warmup_path, seekinfo_path, ping_path):
+        root_mirror = _ROOT / p.relative_to(_ROOT / "website")
+        assert root_mirror.exists(), f"Missing root Cloudflare Pages function mirror: {root_mirror}"
+        assert root_mirror.read_text(encoding="utf-8") == p.read_text(encoding="utf-8"), f"Out-of-sync root mirror: {root_mirror}"
         chk = subprocess.run(["node", "--check", str(p)], capture_output=True, text=True)
         assert chk.returncode == 0, f"Syntax error in {p}: {chk.stderr}"
 
@@ -438,7 +441,7 @@ def test_player_js_syntax_helpers_and_contracts():
     assert "attachSeekPrewarmEngine" in player_txt
     assert "fz-shadow-handover" in player_txt
     assert "vjs-fz-seamless-switching" in css_txt
-    assert "v=20261125_cinema_v67" in movie_txt
+    assert "v=20261125_cinema_v68" in movie_txt
 
     # Mobile responsive & auto-refresh regression contracts
     app_path = _ROOT / "website" / "assets" / "js" / "app.js"

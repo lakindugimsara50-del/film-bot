@@ -844,7 +844,7 @@ function ensureHeroDOMStructure(heroEl) {
    Avatar (blue) -> blue theme, red movie -> red theme, etc.
 ============================================================ */
 function extractDominantColor(imageUrl, callback) {
-  if (!imageUrl || imageUrl.startsWith('data:')) {
+  if (!imageUrl || imageUrl.startsWith('data:') || imageUrl.includes('image.tmdb.org')) {
     callback(null);
     return;
   }
@@ -1570,9 +1570,21 @@ function initHero3DParallax(section, stage) {
   });
 }
 
+function optimizeTmdbImageForViewport(url, isBackdrop = false) {
+  if (!url || typeof url !== 'string') return url;
+  if (!url.includes('image.tmdb.org/t/p/')) return url;
+  const isMob = typeof window !== 'undefined' && window.innerWidth <= 768;
+  if (!isMob) return url;
+  if (isBackdrop) {
+    return url.replace('/t/p/original/', '/t/p/w780/');
+  }
+  return url.replace('/t/p/original/', '/t/p/w342/').replace('/t/p/w500/', '/t/p/w342/');
+}
+
 function updateHeroContent(movie) {
   if (!movie) return;
-  const backdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+  const rawBackdrop = movie.backdrop || movie.backdrop_url || movie.poster || movie.poster_url || SITE_CONFIG.defaultBackdrop;
+  const backdrop = optimizeTmdbImageForViewport(rawBackdrop, true);
 
   // Pre-buffered smooth backdrop crossfade
   const bgCurrent = document.getElementById('hero-bg-current');
@@ -2133,7 +2145,8 @@ function formatQualityLabel(q) {
 function generateMovieCard(movie, opts = {}) {
   const isTrending = typeof opts === 'boolean' ? opts : Boolean(opts.isTrending);
   const rank = opts.rank ? `<span class="card-rank-num">${opts.rank}</span>` : '';
-  const poster = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
+  const rawPoster = movie.poster || movie.poster_url || SITE_CONFIG.defaultPoster;
+  const poster = optimizeTmdbImageForViewport(rawPoster, false);
   
   // Clean IMDb badge (top right, completely unobstructed)
   const imdbVal = movie.imdb || movie.rating || '';

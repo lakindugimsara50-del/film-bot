@@ -73,17 +73,15 @@ export async function onRequest(context) {
   }
 
   const { primary, fallback } = await resolveLiveStreamBaseUrl(env);
-  // Only probe if we have a real, non-empty backend URL
-  const targetBackend = primary || fallback || '';
-
+  const candidates = [primary, fallback, 'https://film-bot-2.onrender.com'].filter((u, idx, arr) => u && u.startsWith('http') && arr.indexOf(u) === idx);
+  let targetBackend = candidates[0] || '';
   let backendReady = false;
-  let backendOffline = false;
 
-  if (targetBackend && targetBackend.startsWith('http')) {
+  for (const cand of candidates) {
     try {
       const probeCtrl = new AbortController();
-      const probeTimer = setTimeout(() => probeCtrl.abort(), 1800);
-      const probeResp = await fetch(`${targetBackend}/health?t=${Date.now()}`, {
+      const probeTimer = setTimeout(() => probeCtrl.abort(), 3800);
+      const probeResp = await fetch(`${cand}/health?t=${Date.now()}`, {
         method: 'GET',
         headers: { 'User-Agent': 'FilmSub-Edge-Proxy/2.0' },
         signal: probeCtrl.signal,
@@ -91,37 +89,19 @@ export async function onRequest(context) {
       clearTimeout(probeTimer);
       if (probeResp.ok) {
         backendReady = true;
-      } else {
-        backendOffline = true;
+        targetBackend = cand;
+        break;
       }
-    } catch (e) {
-      backendOffline = true;
-      backendReady = false;
-    }
-  } else {
-    // No backend URL configured — tunnel is offline
-    backendOffline = true;
-    backendReady = false;
+    } catch (e) {}
   }
 
-  const responseBody = backendReady
-    ? {
-        status: 'pong',
-        service: 'filmsub_edge_stream',
-        mode: 'telegram_cloud',
-        ready: true,
-        backend: targetBackend,
-      }
-    : {
-        status: 'pong',
-        service: 'filmsub_edge_stream',
-        mode: 'telegram_cloud',
-        ready: false,
-        backend_offline: true,
-        message: 'Stream backend offline. Please restart Kaggle session.',
-      };
-
-  return new Response(JSON.stringify(responseBody), {
+  return new Response(JSON.stringify({
+    status: 'pong',
+    service: 'filmsub_edge_stream',
+    mode: 'telegram_cloud',
+    ready: backendReady,
+    backend: targetBackend
+  }), {
     status: 200,
     headers: {
       ...corsHeaders,

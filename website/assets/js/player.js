@@ -258,6 +258,23 @@ let activeStreamBaseUrl = (window.FILMSUB_STREAM_CONFIG && window.FILMSUB_STREAM
 let streamServerHealthy = false;
 let edgeProxyHealthy = false;
 
+function isPlayerAlive(p) {
+  try {
+    return Boolean(p && !(typeof p.isDisposed === 'function' && p.isDisposed()) && p.tech_);
+  } catch (_) {
+    return false;
+  }
+}
+
+function safeIsPaused(p) {
+  try {
+    if (!isPlayerAlive(p)) return true;
+    return typeof p.paused === 'function' ? Boolean(p.paused()) : true;
+  } catch (_) {
+    return true;
+  }
+}
+
 function _recordMeasuredThroughput(bytes, durationMs) {
   if (!bytes || bytes < 65536 || !durationMs || durationMs < 20) return;
   const mbps = (bytes * 8) / (durationMs * 1000);
@@ -411,9 +428,16 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     } catch (e) {}
   }
 
-  // 4. Test candidate URL (Colab tunnel)
+  // 4. Test Edge proxy FIRST when running on Cloudflare Pages (same-origin, zero DNS/CORS console errors)
   let activeUrl = '';
-  if (candidateUrl) {
+  edgeProxyHealthy = false;
+  const onCfPages = isRunningOnCloudflarePages();
+  if (onCfPages) {
+    edgeProxyHealthy = await probeStreamServerHealth('');
+  }
+
+  // 5. Only probe direct tunnel / fallback directly from browser when off Cloudflare Pages or edge ping unavailable
+  if (!onCfPages && candidateUrl) {
     const isAlive = await probeStreamServerHealth(candidateUrl);
     if (isAlive) {
       activeUrl = candidateUrl;
@@ -421,14 +445,7 @@ async function loadLiveStreamConfig(forceRefresh = false) {
     }
   }
 
-  // 5. Test Edge proxy (/stream/ping)
-  edgeProxyHealthy = false;
-  if (isRunningOnCloudflarePages()) {
-    edgeProxyHealthy = await probeStreamServerHealth('');
-  }
-
-  // 6. Test fallback URL (e.g. Render 24/7 backend)
-  if (!activeUrl && !edgeProxyHealthy && fallbackUrl) {
+  if (!onCfPages && !activeUrl && !edgeProxyHealthy && fallbackUrl) {
     const isFallbackAlive = await probeStreamServerHealth(fallbackUrl);
     if (isFallbackAlive) {
       activeUrl = fallbackUrl;
@@ -2871,7 +2888,7 @@ function attachAdaptiveStallMonitor(player) {
   let lastSeekEventEpoch = 0;
 
   const triggerStepDownIfNeeded = ({ force = false, preferSeamless = false, reason = 'stall' } = {}) => {
-    if (selectedQuality !== 'auto') return;
+    if (!isPlayerAlive(player) || selectedQuality !== 'auto') return;
     if (_isSeamlessSwitching) return;
     const sinceLast = Date.now() - lastAutoSwitchEpoch;
     if (!force && sinceLast < 20000) return;
@@ -2898,7 +2915,7 @@ function attachAdaptiveStallMonitor(player) {
   };
 
   const triggerStepUpIfNeeded = () => {
-    if (selectedQuality !== 'auto') return;
+    if (!isPlayerAlive(player) || selectedQuality !== 'auto') return;
     if (_isPreloadingUpgrade || _isSeamlessSwitching) return;
     if (Date.now() - lastAutoSwitchEpoch < 30000) return;
     if (Date.now() - lastDowngradeEpoch < 60000) return;
@@ -2919,12 +2936,17 @@ function attachAdaptiveStallMonitor(player) {
     }
   };
 
+  player.on('dispose', () => {
+    if (startupDowngradeTimer) { clearTimeout(startupDowngradeTimer); startupDowngradeTimer = null; }
+    if (activeStallTimer) { clearTimeout(activeStallTimer); activeStallTimer = null; }
+  });
+
   player.on('play', () => {
-    if (hasEverPlayed || selectedQuality !== 'auto') return;
+    if (!isPlayerAlive(player) || hasEverPlayed || selectedQuality !== 'auto') return;
     if (startupDowngradeTimer) clearTimeout(startupDowngradeTimer);
     startupDowngradeTimer = setTimeout(() => {
       startupDowngradeTimer = null;
-      if (!player || hasEverPlayed || player.paused()) return;
+      if (!isPlayerAlive(player) || hasEverPlayed || safeIsPaused(player)) return;
       const rState = typeof player.readyState === 'function' ? player.readyState() : 0;
       if (rState < 3 && currentEffectiveQuality !== '480p' && selectedQuality === 'auto') {
         triggerStepDownIfNeeded({ force: true, reason: 'slow-startup-8.5s' });
@@ -2933,6 +2955,7 @@ function attachAdaptiveStallMonitor(player) {
   });
 
   player.on('seeking', () => {
+    if (!isPlayerAlive(player)) return;
     lastSeekEventEpoch = Date.now();
     if (activeStallTimer) {
       clearTimeout(activeStallTimer);
@@ -2944,10 +2967,8 @@ function attachAdaptiveStallMonitor(player) {
   });
 
   player.on('waiting', () => {
-    if (_isSeamlessSwitching || !hasEverPlayed) return;
-    const curT = typeof player.currentTime === 'function' ? player.currentTime() : 0;
-    if (player.seeking && player.seeking()) return;
-    if (player.paused && player.paused()) return;
+    if (!isPlayerAlive(player) || _isSeamlessSwitching || !hasEverPlayed) return;
+    if ((player.seeking && player.seeking()) || safeIsPaused(player)) return;
 
     if (selectedQuality === 'auto') {
       const now = Date.now();
@@ -2958,14 +2979,14 @@ function attachAdaptiveStallMonitor(player) {
     const stallWaitMs = stallTimestamps.length >= 2 ? 3200 : 4500;
     if (activeStallTimer) clearTimeout(activeStallTimer);
     activeStallTimer = setTimeout(() => {
-      if (_isSeamlessSwitching) return;
-      if (player && !player.paused() && !(player.seeking && player.seeking())) {
+      if (_isSeamlessSwitching || !isPlayerAlive(player)) return;
+      if (!safeIsPaused(player) && !(player.seeking && player.seeking())) {
         const curTNow = typeof player.currentTime === 'function' ? player.currentTime() : 0;
         if (selectedQuality === 'auto' && curTNow >= 6.0) {
           triggerStepDownIfNeeded({ force: true, reason: 'continuous-waiting' });
         }
         try {
-          if (curTNow > 0 && !_isSeamlessSwitching) {
+          if (isPlayerAlive(player) && curTNow > 0 && !_isSeamlessSwitching) {
             player.currentTime(curTNow + 0.04);
             player.play().catch(() => {});
           }
@@ -3019,14 +3040,14 @@ function attachAdaptiveStallMonitor(player) {
     }
 
     // Proactive sliding read-ahead: keep Telegram chunks warmed 30s ahead in backend pool
-    if (!player.paused() && !(player.seeking && player.seeking()) && currentMovie && (now - lastSlidingWarmEpoch > 12000)) {
+    if (isPlayerAlive(player) && !safeIsPaused(player) && !(player.seeking && player.seeking()) && currentMovie && (now - lastSlidingWarmEpoch > 12000)) {
       lastSlidingWarmEpoch = now;
       if (!dur || curT + 25 < dur) {
         prewarmStreamAtTime(currentMovie, curT + 30, dur, { warmupOnly: true, burstBytes: 4194304 }).catch(() => {});
       }
     }
 
-    if (selectedQuality === 'auto' && !player.paused() && !(player.seeking && player.seeking()) && !_isSeamlessSwitching) {
+    if (selectedQuality === 'auto' && isPlayerAlive(player) && !safeIsPaused(player) && !(player.seeking && player.seeking()) && !_isSeamlessSwitching) {
       const ahead = getBufferAhead(player);
       const effMbps = getEffectiveDownloadMbps();
 
@@ -3983,9 +4004,9 @@ function mountCenterPlayerControls(playerEl, player, movie) {
   };
 
   attachFastAction(playBtn, (e) => {
-    if (!player) return;
+    if (!isPlayerAlive(player)) return;
     if (isPlayPending) return;
-    if (player.paused()) {
+    if (safeIsPaused(player)) {
       executePlay();
     } else {
       executePause();
@@ -3993,7 +4014,7 @@ function mountCenterPlayerControls(playerEl, player, movie) {
   });
 
   attachFastAction(rewindBtn, (e) => {
-    if (!player) return;
+    if (!isPlayerAlive(player)) return;
     const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
     player.currentTime(Math.max(0, cur - 10));
     showSeekRipple(playerEl, 'backward', 10);
@@ -4001,7 +4022,7 @@ function mountCenterPlayerControls(playerEl, player, movie) {
   });
 
   attachFastAction(forwardBtn, (e) => {
-    if (!player) return;
+    if (!isPlayerAlive(player)) return;
     const cur = (typeof player.currentTime === 'function') ? player.currentTime() : 0;
     const dur = getEffectiveDuration(player, movie);
     player.currentTime(Math.min(dur || (cur + 10), cur + 10));
@@ -4013,7 +4034,7 @@ function mountCenterPlayerControls(playerEl, player, movie) {
   player.on('playing', setButtonPlaying);
   player.on('pause', setButtonPaused);
   player.on('waiting', () => {
-    if (player && !player.paused()) {
+    if (!safeIsPaused(player)) {
       setButtonLoading();
     }
   });
@@ -4029,13 +4050,13 @@ function mountCenterPlayerControls(playerEl, player, movie) {
   playerDom.addEventListener('pointermove', showOverlay, { passive: true });
   playerDom.addEventListener('touchstart', showOverlay, { passive: true });
   playerDom.addEventListener('mouseleave', () => {
-    if (player && !player.paused()) {
+    if (!safeIsPaused(player)) {
       overlay.classList.add('hidden');
     }
   });
 
   if (!isStandbyActive) {
-    if (player.paused()) {
+    if (safeIsPaused(player)) {
       setButtonPaused();
     } else {
       setButtonPlaying();
@@ -4436,13 +4457,13 @@ function attachMobileTouchControls(playerEl, player) {
           centerOverlay.classList.remove('hidden');
           centerOverlay.style.display = '';
           centerOverlay.style.pointerEvents = 'auto';
-          if (player && !player.paused()) {
+          if (!safeIsPaused(player)) {
             setTimeout(() => {
-              if (player && !player.paused()) centerOverlay.classList.add('hidden');
+              if (!safeIsPaused(player)) centerOverlay.classList.add('hidden');
             }, 3000);
           }
         } else {
-          if (player && !player.paused()) {
+          if (!safeIsPaused(player)) {
             centerOverlay.classList.add('hidden');
           }
         }
@@ -4457,19 +4478,20 @@ function attachMobileTouchControls(playerEl, player) {
 
       if (singleTapTimeout) clearTimeout(singleTapTimeout);
       singleTapTimeout = setTimeout(() => {
+        if (!isPlayerAlive(player)) return;
         const centerOverlay = wrap.querySelector('.cs-player-center-overlay');
         if (centerOverlay) {
           if (centerOverlay.classList.contains('hidden') || centerOverlay.style.display === 'none') {
             centerOverlay.classList.remove('hidden');
             centerOverlay.style.display = '';
             centerOverlay.style.pointerEvents = 'auto';
-            if (player && !player.paused()) {
+            if (!safeIsPaused(player)) {
               setTimeout(() => {
-                if (player && !player.paused()) centerOverlay.classList.add('hidden');
+                if (!safeIsPaused(player)) centerOverlay.classList.add('hidden');
               }, 3000);
             }
           } else {
-            if (player && !player.paused()) {
+            if (!safeIsPaused(player)) {
               centerOverlay.classList.add('hidden');
             }
           }
@@ -4566,7 +4588,6 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
            ${(sub.default || i === 0) && !isHardcoded ? 'default' : ''}>`).join('');
 
   const posterUrl = movie.backdrop || movie.poster || '';
-  const posterAttr = posterUrl ? `poster="${FilmSub.escHtml(posterUrl)}"` : '';
 
   playerEl.innerHTML = `
     <div class="player-iframe-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#000000 !important;border-radius:14px;overflow:hidden">
@@ -4599,7 +4620,7 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         </div>
       </div>
       <video id="filmsubPlayer" class="video-js vjs-big-play-centered vjs-theme-fantasy"
-             controls preload="auto" playsinline webkit-playsinline crossorigin="anonymous" ${posterAttr}
+             controls preload="${autoPlay ? 'auto' : 'metadata'}" playsinline webkit-playsinline crossorigin="anonymous"
              style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000000 !important">
         <source src="${FilmSub.escHtml(stream.stream_url)}" type="${FilmSub.escHtml(stream.type || 'video/mp4')}">
         ${tracksHTML}
@@ -4982,7 +5003,7 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
           if (badgeEl && pctEl) {
             badgeEl.classList.add('visible');
             pctEl.textContent = `Buffer: ${pct}%`;
-            if (bufferedAhead > 35 && !vjsPlayer.paused()) {
+            if (bufferedAhead > 35 && !safeIsPaused(vjsPlayer)) {
               badgeEl.classList.add('healthy');
             } else {
               badgeEl.classList.remove('healthy');
@@ -5070,6 +5091,11 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
       }
 
       // 2. Refresh live tunnel config automatically before retrying direct tunnel
+      if (!isPlayerAlive(vjsPlayer)) {
+        failoverTriggered = false;
+        renderPlayerFallback(playerEl, movie);
+        return;
+      }
       if (!vjsPlayer._refreshedLiveConfig) {
         vjsPlayer._refreshedLiveConfig = true;
         try {
@@ -5079,11 +5105,17 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         } catch (e) {}
       }
 
+      if (!isPlayerAlive(vjsPlayer)) {
+        failoverTriggered = false;
+        renderPlayerFallback(playerEl, movie);
+        return;
+      }
+
       // 3. Retry with direct live tunnel (if off Cloudflare Pages) or reloaded edge stream after config refresh
       if (!vjsPlayer._retriedDirect && activeStreamBaseUrl && activeStreamBaseUrl.startsWith('http') && !isDeadTunnel(activeStreamBaseUrl)) {
         vjsPlayer._retriedDirect = true;
         const curT = (typeof vjsPlayer.currentTime === 'function') ? (vjsPlayer.currentTime() || 0) : 0;
-        const wasPaused = vjsPlayer.paused();
+        const wasPaused = safeIsPaused(vjsPlayer);
         const prefix = getStreamEndpointPrefix() || activeStreamBaseUrl.replace(/\/+$/, '');
         const directUrl = prefix + (currentSrc.startsWith('http') ? currentSrc.replace(/^https?:\/\/[^/]+/, '') : (currentSrc.startsWith('/') ? currentSrc : '/' + currentSrc));
         console.warn('[FilmSub Player] Switching to refreshed live stream endpoint:', directUrl);
@@ -5092,6 +5124,7 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
         vjsPlayer.load();
         if (curT > 0) {
           vjsPlayer.one('loadedmetadata', () => {
+            if (!isPlayerAlive(vjsPlayer)) return;
             try { vjsPlayer.currentTime(curT); } catch (e) {}
             if (!wasPaused) vjsPlayer.play().catch(() => {});
           });
@@ -5111,11 +5144,11 @@ function createVjsPlayer(playerEl, stream, movie, autoPlay = false) {
     const resetWatchdog = (timeoutMs = 18000) => {
       if (slowHeaderWatchdog) clearTimeout(slowHeaderWatchdog);
       slowHeaderWatchdog = setTimeout(() => {
-        if (!vjsPlayer || _isSeamlessSwitching) return;
+        if (!isPlayerAlive(vjsPlayer) || _isSeamlessSwitching) return;
         const rState = typeof vjsPlayer.readyState === 'function' ? vjsPlayer.readyState() : (vjsPlayer.tech_?.el_?.readyState || 0);
         const nState = typeof vjsPlayer.networkState === 'function' ? vjsPlayer.networkState() : (vjsPlayer.tech_?.el_?.networkState || 0);
 
-        if (!vjsPlayer.paused() && rState === 0) {
+        if (!safeIsPaused(vjsPlayer) && rState === 0) {
           const timeSinceProgress = Date.now() - lastDataProgressEpoch;
           if (timeSinceProgress < 12000 || nState === 2 || nState === 1) {
             console.log(`[FilmSub Player] Video data transfer active (${timeSinceProgress}ms since progress, nState=${nState}), extending watchdog`);
